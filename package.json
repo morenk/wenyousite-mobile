@@ -1,0 +1,15 @@
+{
+  "name": "wenyousite-mobile-tooling",
+  "private": true,
+  "scripts": {
+    "api:generate:source": "openapi-generator-cli generate -i contracts/openapi.json -g dart-dio -o packages/wenyou_api -c tool/openapi-generator-config.yaml --global-property apiDocs=false,modelDocs=false,apiTests=false,modelTests=false",
+    "api:normalize": "dart run tool/normalize_generated_api.dart",
+    "api:generate": "npm run api:generate:source && npm run api:normalize && cd packages/wenyou_api && dart pub get && dart run build_runner build && cd ../.. && flutter pub get",
+    "api:validate": "openapi-generator-cli validate -i contracts/openapi.json",
+    "api:check": "npm run api:generate && git diff --exit-code -- packages/wenyou_api",
+    "docs:check": "dart run tool/check_docs.dart"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.40.1"
+  }
+}

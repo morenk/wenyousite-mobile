@@ -1,0 +1,42 @@
+name: 缺陷
+description: 记录可复现问题和回归测试要求
+title: '[Bug] '
+labels: [bug]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: 风险与影响
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: 文档影响
+    validations:
+      required: true
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: 回归门禁
+      options:
+        - label: 修复包含能复现旧问题的自动测试
+          required: true

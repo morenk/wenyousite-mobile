@@ -1,0 +1,8 @@
+pubName: wenyou_api
+pubVersion: 0.1.0
+pubDescription: Generated API client for the Wenyousite mobile app.
+enumUnknownDefaultCase: true
+disallowAdditionalPropertiesIfNotPresent: false
+dateLibrary: core
+ensureUniqueParams: true
+hideGenerationTimestamp: true

@@ -1,0 +1,44 @@
+name: 垂直功能切片
+description: 规划一个可独立操作、测试和回滚的功能切片
+title: '[Slice] '
+labels: [slice]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+      description: 这个切片完成后，用户能做什么？
+    validations:
+      required: true
+  - type: textarea
+    id: non_goal
+    attributes:
+      label: 非目标
+      description: 明确本切片不处理的相邻范围。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 使用可观察、可测试的检查项。
+      value: |
+        - [ ] 主路径
+        - [ ] 加载、空、错、重试和权限/冲突状态
+        - [ ] 自动测试与文档同步
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: 风险
+      description: 契约、数据、弱网、权限、兼容或破坏性操作风险。
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: 文档影响
+      description: 列出要同步的模块与架构文档；无影响时说明原因。
+    validations:
+      required: true
