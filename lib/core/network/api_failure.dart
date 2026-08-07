@@ -7,6 +7,7 @@ class ApiFailure implements Exception {
     this.businessCode,
     this.requestId,
     this.contractVersion,
+    this.retryAfter,
     this.cause,
   });
 
@@ -25,12 +26,18 @@ class ApiFailure implements Exception {
         response?.headers.value('x-request-id') ??
         exception.requestOptions.headers['X-Request-ID']?.toString();
     final contractVersion = response?.headers.value('x-api-contract-version');
+    final retryAfterSeconds = int.tryParse(
+      response?.headers.value('retry-after') ?? '',
+    );
 
     return ApiFailure(
       httpStatus: response?.statusCode,
       businessCode: businessCode,
       requestId: requestId,
       contractVersion: contractVersion,
+      retryAfter: retryAfterSeconds == null
+          ? null
+          : Duration(seconds: retryAfterSeconds < 0 ? 0 : retryAfterSeconds),
       userMessage: _messageFor(exception, businessCode),
       cause: exception,
     );
@@ -40,6 +47,7 @@ class ApiFailure implements Exception {
   final int? businessCode;
   final String? requestId;
   final String? contractVersion;
+  final Duration? retryAfter;
   final String userMessage;
   final Object? cause;
 
@@ -66,6 +74,18 @@ class ApiFailure implements Exception {
         return '请先完成邮箱验证。';
       case 40110:
         return '账号或密码错误。';
+      case 40111:
+        return '验证码已过期，请重新获取。';
+      case 40112:
+        return '验证码不正确，请检查后重试。';
+      case 40113:
+        return '验证码错误次数过多，请重新获取。';
+      case 40114:
+        return '请先获取邮箱验证码。';
+      case 40901:
+        return '该邮箱已经注册，请直接登录。';
+      case 40902:
+        return '该用户名已被使用，请换一个。';
       case 40912:
         return '这次操作与待确认请求冲突，请重新发起。';
       case 42900:
@@ -88,6 +108,7 @@ class ApiFailure implements Exception {
   @override
   String toString() {
     return 'ApiFailure(httpStatus: $httpStatus, businessCode: $businessCode, '
-        'requestId: $requestId, message: $userMessage)';
+        'requestId: $requestId, retryAfter: $retryAfter, '
+        'message: $userMessage)';
   }
 }

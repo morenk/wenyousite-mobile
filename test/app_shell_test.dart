@@ -113,6 +113,58 @@ void main() {
     expect(tokenStore.value?.refreshToken, 'refresh-token');
   });
 
+  testWidgets('游客完成邮箱注册后建立移动会话并恢复创建目标', (tester) async {
+    final tokenStore = _MemoryTokenStore();
+    final authRepository = _SuccessfulAuthRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(tokenStore),
+          authRepositoryProvider.overrideWithValue(authRepository),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.edit_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('login-register')));
+    await tester.pumpAndSettle();
+    expect(find.text('创建温油站账号'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('register-email')),
+      'new-user@example.com',
+    );
+    await tester.tap(find.byKey(const Key('register-request-code')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('验证码已发送至 new-user@example.com'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('register-code')), '123456');
+    await tester.enterText(find.byKey(const Key('register-username')), '新用户2');
+    await tester.enterText(
+      find.byKey(const Key('register-password')),
+      'password123',
+    );
+    await tester.enterText(
+      find.byKey(const Key('register-confirm-password')),
+      'password123',
+    );
+    final completeButton = find.byKey(const Key('register-complete'));
+    await tester.ensureVisible(completeButton);
+    await tester.pumpAndSettle();
+    await tester.tap(completeButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('创建主题'), findsOneWidget);
+    expect(authRepository.lastRegistrationEmail, 'new-user@example.com');
+    expect(authRepository.lastCode, '123456');
+    expect(authRepository.lastUsername, '新用户2');
+    expect(tokenStore.value?.refreshToken, 'refresh-token');
+  });
+
   testWidgets('已登录用户从我的页安全退出并回到游客状态', (tester) async {
     final tokenStore = _MemoryTokenStore(_tokens);
     final sessionRemote = _FakeSessionRemote();
@@ -249,6 +301,9 @@ class _RetryMetaRepository implements MetaRepository {
 
 class _SuccessfulAuthRepository implements AuthRepository {
   String? lastAccount;
+  String? lastRegistrationEmail;
+  String? lastCode;
+  String? lastUsername;
 
   @override
   Future<SessionTokens> login({
@@ -256,6 +311,30 @@ class _SuccessfulAuthRepository implements AuthRepository {
     required String password,
   }) async {
     lastAccount = account;
+    return const SessionTokens(
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+    );
+  }
+
+  @override
+  Future<RegistrationCodeInfo> requestRegistrationCode({
+    required String email,
+  }) async {
+    lastRegistrationEmail = email;
+    return const RegistrationCodeInfo(expiresIn: Duration(minutes: 15));
+  }
+
+  @override
+  Future<SessionTokens> completeRegistration({
+    required String email,
+    required String code,
+    required String username,
+    required String password,
+  }) async {
+    lastRegistrationEmail = email;
+    lastCode = code;
+    lastUsername = username;
     return const SessionTokens(
       accessToken: 'access-token',
       refreshToken: 'refresh-token',

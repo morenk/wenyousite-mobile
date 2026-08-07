@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
+import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -14,6 +15,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final session = ref.read(sessionControllerProvider);
       final authenticated = session.isAuthenticated;
       final isLogin = state.matchedLocation == '/auth/login';
+      final isRegistration = state.matchedLocation == '/auth/register';
       if (session.status == SessionStatus.invalidated && !isLogin) {
         return Uri(
           path: '/auth/login',
@@ -26,7 +28,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           queryParameters: {'returnTo': state.uri.toString()},
         ).toString();
       }
-      if (authenticated && isLogin) {
+      if (authenticated && (isLogin || isRegistration)) {
         final returnTo = state.uri.queryParameters['returnTo'];
         return sanitizeReturnLocation(returnTo);
       }
@@ -86,6 +88,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'login',
         builder: (context, state) {
           return LoginPage(returnTo: state.uri.queryParameters['returnTo']);
+        },
+      ),
+      GoRoute(
+        path: '/auth/register',
+        name: 'register',
+        builder: (context, state) {
+          return RegistrationPage(
+            returnTo: state.uri.queryParameters['returnTo'],
+          );
         },
       ),
     ],

@@ -195,6 +195,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             : const Text('登录并继续'),
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      key: const Key('login-register'),
+                      onPressed: state.isSubmitting
+                          ? null
+                          : () => context.push(
+                              Uri(
+                                path: '/auth/register',
+                                queryParameters: widget.returnTo == null
+                                    ? null
+                                    : {'returnTo': widget.returnTo!},
+                              ).toString(),
+                            ),
+                      child: const Text('没有账号？注册'),
+                    ),
                   ],
                 ),
               ),

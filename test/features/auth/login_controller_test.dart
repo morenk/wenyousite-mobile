@@ -104,6 +104,19 @@ class _FakeAuthRepository implements AuthRepository {
     lastPassword = password;
     return onLogin(account, password);
   }
+
+  @override
+  Future<RegistrationCodeInfo> requestRegistrationCode({
+    required String email,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<SessionTokens> completeRegistration({
+    required String email,
+    required String code,
+    required String username,
+    required String password,
+  }) => throw UnimplementedError();
 }
 
 class _MemoryTokenStore implements TokenStore {

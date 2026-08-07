@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-启动门禁包裹 `/home`、`/search`、`/notifications`、`/me` 四个保状态分支；悬浮按钮进入受保护的 `/compose/thread`。游客会先进入 `/auth/login?returnTo=/compose/thread`，成功后恢复创建目标；会话撤销、盗用、锁定、注销或刷新失败时统一进入带原因的登录页，也可明确继续游客浏览。
+启动门禁包裹 `/home`、`/search`、`/notifications`、`/me` 四个保状态分支；悬浮按钮进入受保护的 `/compose/thread`。游客会先进入 `/auth/login?returnTo=/compose/thread`，可继续进入 `/auth/register`，登录或注册成功后恢复创建目标；会话撤销、盗用、锁定、注销或刷新失败时统一进入带原因的登录页，也可明确继续游客浏览。
 
 ## 4. 用户操作流程
 
