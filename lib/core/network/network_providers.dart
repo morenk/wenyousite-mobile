@@ -24,7 +24,9 @@ final refreshDioProvider = Provider<Dio>((ref) {
   final environment = ref.watch(appEnvironmentProvider);
   final dio = Dio(
     BaseOptions(
-      baseUrl: environment.apiBaseUri.toString(),
+      // 生成客户端的 endpoint 已包含 /api/v1；这里只能配置 origin，
+      // 否则会请求成 /api/v1/api/v1/...。
+      baseUrl: environment.apiOrigin,
       connectTimeout: const Duration(seconds: 8),
       receiveTimeout: const Duration(seconds: 12),
       sendTimeout: const Duration(seconds: 12),
@@ -58,7 +60,8 @@ final dioProvider = Provider<Dio>((ref) {
   final environment = ref.watch(appEnvironmentProvider);
   final dio = Dio(
     BaseOptions(
-      baseUrl: environment.apiBaseUri.toString(),
+      // 与 refresh 客户端保持一致，版本化路径由生成客户端负责。
+      baseUrl: environment.apiOrigin,
       connectTimeout: const Duration(seconds: 8),
       receiveTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),

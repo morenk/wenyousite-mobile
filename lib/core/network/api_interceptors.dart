@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -44,6 +45,7 @@ class RequestContextInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final failure = ApiFailure.fromDio(err);
+    _logError(err, failure);
     if (failure.invalidatesSession) {
       unawaited(
         _sessionController.invalidate(_reasonFor(failure.businessCode)),
@@ -87,13 +89,29 @@ class RequestContextInterceptor extends Interceptor {
 
   void _logResponse(Response<Object?> response) {
     final options = response.requestOptions;
-    final uri = options.uri.replace(query: '', fragment: '');
+    final uri = options.uri.replace(query: null, fragment: null);
     developer.log(
       '${options.method} $uri ${response.statusCode} '
       'requestId=${options.headers['X-Request-ID']} '
       'contract=${response.headers.value('x-api-contract-version') ?? '-'}',
       name: 'wenyou.network',
     );
+  }
+
+  void _logError(DioException error, ApiFailure failure) {
+    final options = error.requestOptions;
+    final uri = options.uri.replace(query: null, fragment: null);
+    final summary =
+        '${options.method} $uri failed '
+        'type=${error.type.name} status=${failure.httpStatus ?? '-'} '
+        'code=${failure.businessCode ?? '-'} requestId=${failure.requestId ?? '-'}';
+    developer.log(
+      summary,
+      name: 'wenyou.network',
+      error: error.error,
+      stackTrace: error.stackTrace,
+    );
+    if (kDebugMode) debugPrint('$summary error=${error.error}');
   }
 
   SessionInvalidationReason _reasonFor(int? code) {

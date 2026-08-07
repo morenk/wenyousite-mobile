@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
@@ -39,6 +40,12 @@ class ApiMetaRepository implements MetaRepository {
         buildSha: data.buildSha,
       );
     } on DioException catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+          'meta response failed type=${error.type.name} '
+          'status=${error.response?.statusCode} error=${error.error}',
+        );
+      }
       throw ApiFailure.fromDio(error);
     }
   }

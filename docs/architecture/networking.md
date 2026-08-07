@@ -2,11 +2,11 @@
 
 ## 环境
 
-`AppEnvironment` 从 `--dart-define=API_BASE_URL=...` 读取地址。Debug 默认值为 `https://wenyou.site/api/v1`；Android 模拟器连接本地后端时使用 `http://10.0.2.2:3000/api/v1`。业务代码只依赖注入后的 Dio 和仓储，不读取全局常量。
+`AppEnvironment` 从 `--dart-define=API_BASE_URL=...` 读取地址。Debug 默认值为 `https://wenyou.site/api/v1`；Android 模拟器连接本地后端时使用 `http://10.0.2.2:3000/api/v1`。生成客户端的 endpoint 已包含 `/api/v1`，因此底层 Dio 只使用配置地址的 origin，避免版本路径重复拼接。业务代码只依赖注入后的 Dio 和仓储，不读取全局常量。
 
 ## 请求链
 
-每个请求生成 UUID v4 `X-Request-ID`。登录和完成注册额外发送 `X-Client-Platform: mobile`。日志只记录方法、脱敏路径、请求 ID、HTTP 状态和响应契约版本，不记录认证头、密码、验证码、正文、预签名 URL 查询参数或隐私资料。
+每个请求生成 UUID v4 `X-Request-ID`。登录和完成注册额外发送 `X-Client-Platform: mobile`。日志只记录方法、脱敏路径、请求 ID、HTTP 状态、业务码和响应契约版本；Debug 包额外记录传输或序列化异常原因，不记录认证头、密码、验证码、正文、预签名 URL 查询参数或隐私资料。
 
 Access Token 与 Refresh Token 都保存到安全存储。刷新和退出由无业务拦截器的独立生成客户端发起，避免刷新请求递归进入 `40101` 拦截链。并发请求遇到 `40101` 时共享同一个刷新 Future；刷新成功后原子替换双 Token，每个原请求最多重放一次。`40103` 至 `40106`、刷新失败或重放仍为 `40101` 时清空会话并携带失效原因进入登录页。
 
