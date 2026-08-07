@@ -1,15 +1,7 @@
 name: Android Debug APK
 
 on:
-  push:
-    branches: [dev]
-    paths:
-      - android/**
-      - pubspec.yaml
-      - pubspec.lock
-      - packages/wenyou_api/pubspec.yaml
-      - packages/wenyou_api/pubspec.lock
-      - .github/workflows/android-debug.yml
+  # 第一阶段快速迭代期间不自动构建；需要远端制品时由维护者手动执行。
   workflow_dispatch:
 
 permissions:

@@ -56,6 +56,8 @@ npm run api:generate
 
 ## 质量门禁
 
+第一阶段以快速本地迭代为主：日常切片只运行相关测试和受影响范围检查；认证、契约、网络、持久化等高风险变更或阶段验收时运行完整本地门禁：
+
 ```bash
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze --fatal-infos --fatal-warnings
@@ -65,4 +67,4 @@ npm run docs:check
 flutter build apk --debug
 ```
 
-日常切片完成后默认原子提交并推送 `dev`。`main` 的合并与正式 Tag 只在维护者明确决定时执行。
+GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后默认原子提交并推送 `dev`；`main` 的合并与正式 Tag 只在维护者明确决定时执行。
