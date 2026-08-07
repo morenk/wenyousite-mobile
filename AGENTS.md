@@ -26,14 +26,18 @@ V1 暂不实现：私聊、收藏表情、FCM 系统推送、举报/管理后台
 
 1. 后端运行时代码与 DTO 定义真实行为。
 2. `contracts/openapi.json` 是 Flutter API/model 生成的固定机器契约。
-3. `contracts/markdown-v2-fixtures.json` 是 Markdown 规范化与可见性黄金语料。
-4. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
+3. `contracts/markdown-v2-fixtures.json` 与 `contracts/markdown-v2-nodes-fixtures.json` 分别固定 Markdown 规范化/可见性和扩展节点往返语义。
+4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
+5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
 每个切片开始先 fetch 后端并比较：
 
 - `contracts/openapi.json`
 - `contracts/CHANGELOG.md`
 - `contracts/markdown-v2-fixtures.json`
+- `contracts/markdown-v2-nodes-fixtures.json`
+- `contracts/mobile-push-v1.schema.json`
+- `contracts/mobile-push-v1-fixtures.json`
 - `docs/mobile-client-guide.md`
 
 契约变化时，必须先用独立 `chore` 切片同步契约、重新生成客户端、审查生成 diff、更新受影响模块文档和 CHANGELOG，再开发业务功能。
@@ -41,7 +45,7 @@ V1 暂不实现：私聊、收藏表情、FCM 系统推送、举报/管理后台
 同步命令：
 
 ```powershell
-pwsh -File tool/sync_backend_contract.ps1
+powershell.exe -NoProfile -File tool/sync_backend_contract.ps1
 npm ci
 npm run api:validate
 npm run api:generate

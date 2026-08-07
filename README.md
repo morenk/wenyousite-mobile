@@ -44,7 +44,7 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 
 ## 契约同步
 
-后端契约只在 API、Markdown 语料或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。
+后端契约只在 API、Markdown 语料、移动推送协议或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。同步脚本会固定 OpenAPI、两层 Markdown v2 语料、mobile push v1 Schema/样例、合同变更记录和接入指南。
 
 ```bash
 powershell.exe -NoProfile -File tool/sync_backend_contract.ps1

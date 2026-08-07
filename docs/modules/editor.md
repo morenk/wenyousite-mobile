@@ -41,7 +41,7 @@ Drift 保存完整 Markdown 形式的 `LocalEditorSnapshot` 与 `PendingCreateOp
 
 ## 10. 跨模块约束
 
-严格通过 Markdown v2 与 Codec 往返黄金语料；不依赖 `markdown_quill` 做事实转换；骰子结果只由服务端生成；媒体遵循[媒体](media.md)状态；参见[Codec 架构](../architecture/editor-codec.md)。
+严格通过 Markdown v2 规范化/可见性语料与扩展节点往返语料；不依赖 `markdown_quill` 做事实转换；骰子结果只由服务端生成；媒体遵循[媒体](media.md)状态；参见[Codec 架构](../architecture/editor-codec.md)。
 
 ## 11. 测试场景与验收条件
 
@@ -57,7 +57,7 @@ Drift 保存完整 Markdown 形式的 `LocalEditorSnapshot` 与 `PendingCreateOp
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `3.0.0-dev.20260807.1`；Markdown v2；后端 `4a9c9bbcf67d9419768675455980810e9765cdf1`。
+契约 `3.0.0-dev.20260807.2`；Markdown v2；后端 `cf8aa382f0ad74d5209ffbfd9aba48b085ddafe3`。
 
 ## 14. 相关代码与架构文档
 

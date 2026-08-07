@@ -10,6 +10,9 @@ $contractDir = Join-Path $mobile "contracts"
 New-Item -ItemType Directory -Force -Path $contractDir | Out-Null
 Copy-Item -LiteralPath (Join-Path $backend "contracts\openapi.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-v2-fixtures.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-v2-nodes-fixtures.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1-fixtures.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1.schema.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\CHANGELOG.md") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "docs\mobile-client-guide.md") -Destination (Join-Path $contractDir "mobile-client-guide.md") -Force
 

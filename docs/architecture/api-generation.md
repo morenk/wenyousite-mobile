@@ -19,6 +19,6 @@ npm run api:generate
 npm run api:check
 ```
 
-`api:check` 重新生成并检查 Git diff。契约变化先独立同步：运行 `tool/sync_backend_contract.ps1`，审查 OpenAPI、Markdown v2 黄金语料、后端移动指南和契约 CHANGELOG，再生成、测试并更新受影响模块的第 13 节。
+`api:check` 重新生成并检查 Git diff。契约变化先独立同步：运行 `tool/sync_backend_contract.ps1`，审查 OpenAPI、Markdown v2 规范化/可见性语料、扩展节点往返语料、mobile push v1 Schema/样例、后端移动指南和契约 CHANGELOG，再生成、测试并更新所有模块的第 13 节。
 
 业务仓储引用 operationId 和生成类型；模块文档不复制请求/响应 Schema。
