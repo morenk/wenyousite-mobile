@@ -52,7 +52,14 @@ class RequestContextInterceptor extends Interceptor {
       return;
     }
     final alreadyRetried = err.requestOptions.extra[_retriedKey] == true;
-    if (!failure.isExpiredAccessToken || alreadyRetried) {
+    if (failure.isExpiredAccessToken && alreadyRetried) {
+      unawaited(
+        _sessionController.invalidate(SessionInvalidationReason.refreshFailed),
+      );
+      handler.next(err);
+      return;
+    }
+    if (!failure.isExpiredAccessToken) {
       handler.next(err);
       return;
     }

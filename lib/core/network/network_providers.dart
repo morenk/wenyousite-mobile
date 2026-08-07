@@ -5,6 +5,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/network/api_interceptors.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 final appEnvironmentProvider = Provider<AppEnvironment>(
@@ -35,11 +36,21 @@ final refreshDioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
+final sessionRemoteProvider = Provider<SessionRemote>((ref) {
+  final environment = ref.watch(appEnvironmentProvider);
+  final api = WenyouApi(
+    dio: ref.watch(refreshDioProvider),
+    basePathOverride: environment.apiOrigin,
+    interceptors: const [],
+  );
+  return ApiSessionRemote(api.getAuthApi());
+});
+
 final sessionControllerProvider =
     StateNotifierProvider<SessionController, SessionState>((ref) {
       return SessionController(
         ref.watch(tokenStoreProvider),
-        ref.watch(refreshDioProvider),
+        ref.watch(sessionRemoteProvider),
       );
     });
 

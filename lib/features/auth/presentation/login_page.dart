@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/auth/application/login_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -43,6 +45,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(loginControllerProvider);
+    final session = ref.watch(sessionControllerProvider);
+    final invalidationMessage = _invalidationMessage(session.reason);
     return Scaffold(
       appBar: AppBar(title: const Text('登录')),
       body: SafeArea(
@@ -65,6 +69,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       '使用邮箱或用户名登录。登录后会继续刚才的操作。',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    if (invalidationMessage != null) ...[
+                      const SizedBox(height: 20),
+                      Semantics(
+                        liveRegion: true,
+                        child: Card(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(invalidationMessage),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  key: const Key('continue-as-guest'),
+                                  onPressed: () async {
+                                    await ref
+                                        .read(
+                                          sessionControllerProvider.notifier,
+                                        )
+                                        .logoutLocally();
+                                    if (context.mounted) context.go('/home');
+                                  },
+                                  child: const Text('以游客身份继续'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 28),
                     TextFormField(
                       key: const Key('login-account'),
@@ -167,4 +204,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
   }
+}
+
+String? _invalidationMessage(SessionInvalidationReason? reason) {
+  return switch (reason) {
+    SessionInvalidationReason.revoked => '当前登录已被撤销，请重新登录。',
+    SessionInvalidationReason.compromised => '检测到登录安全风险，请重新登录。',
+    SessionInvalidationReason.locked => '账号已被锁定，请联系站点管理员。',
+    SessionInvalidationReason.deactivated => '账号已注销，当前会话已退出。',
+    SessionInvalidationReason.refreshFailed => '登录已失效，请重新登录。',
+    null => null,
+  };
 }

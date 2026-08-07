@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
@@ -10,14 +11,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/home',
     redirect: (context, state) {
-      final authenticated = ref.read(sessionControllerProvider).isAuthenticated;
+      final session = ref.read(sessionControllerProvider);
+      final authenticated = session.isAuthenticated;
+      final isLogin = state.matchedLocation == '/auth/login';
+      if (session.status == SessionStatus.invalidated && !isLogin) {
+        return Uri(
+          path: '/auth/login',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
       if (!authenticated && state.matchedLocation == '/compose/thread') {
         return Uri(
           path: '/auth/login',
           queryParameters: {'returnTo': state.uri.toString()},
         ).toString();
       }
-      if (authenticated && state.matchedLocation == '/auth/login') {
+      if (authenticated && isLogin) {
         final returnTo = state.uri.queryParameters['returnTo'];
         return sanitizeReturnLocation(returnTo);
       }

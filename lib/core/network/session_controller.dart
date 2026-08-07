@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 enum SessionStatus { guest, restoring, authenticated, invalidated }
@@ -35,15 +34,11 @@ class SessionState {
 }
 
 class SessionController extends StateNotifier<SessionState> {
-  SessionController(
-    this._tokenStore,
-    this._refreshDio, [
-    this._uuid = const Uuid(),
-  ]) : super(const SessionState.guest());
+  SessionController(this._tokenStore, this._remote)
+    : super(const SessionState.guest());
 
   final TokenStore _tokenStore;
-  final Dio _refreshDio;
-  final Uuid _uuid;
+  final SessionRemote _remote;
   SessionTokens? _tokens;
   Future<SessionTokens>? _refreshInFlight;
 
@@ -83,40 +78,52 @@ class SessionController extends StateNotifier<SessionState> {
       throw const ApiFailure(userMessage: '登录已失效，请重新登录。');
     }
     try {
-      final response = await _refreshDio.post<Map<String, dynamic>>(
-        'auth/refresh',
-        data: {'refreshToken': current.refreshToken},
-        options: Options(
-          headers: {'X-Request-ID': _uuid.v4(), 'X-Client-Platform': 'mobile'},
-        ),
-      );
-      final payload = response.data?['data'];
-      if (payload is! Map) {
-        throw const FormatException('刷新响应缺少 data');
-      }
-      final accessToken = payload['accessToken'];
-      final refreshToken = payload['refreshToken'];
-      if (accessToken is! String || refreshToken is! String) {
-        throw const FormatException('刷新响应缺少双 Token');
-      }
-      final next = SessionTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      );
+      final next = await _remote.refresh(current.refreshToken);
       await authenticate(next);
       return next;
-    } on DioException catch (error) {
-      final failure = ApiFailure.fromDio(error);
+    } on ApiFailure catch (failure) {
       await invalidate(
         failure.invalidatesSession
             ? _reasonFor(failure.businessCode)
             : SessionInvalidationReason.refreshFailed,
       );
-      throw failure;
+      rethrow;
     } on Object catch (error) {
       await invalidate(SessionInvalidationReason.refreshFailed);
       throw ApiFailure(userMessage: '登录已失效，请重新登录。', cause: error);
     }
+  }
+
+  Future<void> logout() async {
+    var current = _tokens;
+    if (current == null) {
+      await logoutLocally();
+      return;
+    }
+    try {
+      await _remote.logout(current);
+    } on ApiFailure catch (failure) {
+      if (failure.isExpiredAccessToken) {
+        current = await refresh();
+        try {
+          await _remote.logout(current);
+        } on ApiFailure catch (retryFailure) {
+          if (retryFailure.invalidatesSession) {
+            await logoutLocally();
+            return;
+          }
+          rethrow;
+        }
+        await logoutLocally();
+        return;
+      }
+      if (failure.invalidatesSession) {
+        await logoutLocally();
+        return;
+      }
+      rethrow;
+    }
+    await logoutLocally();
   }
 
   Future<void> invalidate(SessionInvalidationReason reason) async {

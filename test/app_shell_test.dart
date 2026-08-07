@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
@@ -110,6 +112,96 @@ void main() {
     expect(tokenStore.value?.accessToken, 'access-token');
     expect(tokenStore.value?.refreshToken, 'refresh-token');
   });
+
+  testWidgets('已登录用户从我的页安全退出并回到游客状态', (tester) async {
+    final tokenStore = _MemoryTokenStore(_tokens);
+    final sessionRemote = _FakeSessionRemote();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(tokenStore),
+          sessionRemoteProvider.overrideWithValue(sessionRemote),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+    expect(find.text('已恢复登录会话'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('logout-submit')));
+    await tester.pumpAndSettle();
+    expect(find.text('退出当前账号？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('logout-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(sessionRemote.logoutCalls, 1);
+    expect(tokenStore.value, isNull);
+    expect(find.text('当前以游客身份浏览'), findsOneWidget);
+    expect(find.text('已安全退出当前账号。'), findsOneWidget);
+  });
+
+  testWidgets('服务端退出失败保留会话并展示请求 ID 与本机后备', (tester) async {
+    final tokenStore = _MemoryTokenStore(_tokens);
+    final sessionRemote = _FakeSessionRemote(
+      onLogout: (_) => throw const ApiFailure(
+        userMessage: '服务器暂时开小差了，请稍后重试。',
+        requestId: 'logout-request-id',
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(tokenStore),
+          sessionRemoteProvider.overrideWithValue(sessionRemote),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('logout-submit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('logout-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(tokenStore.value, same(_tokens));
+    expect(find.text('重试安全退出'), findsOneWidget);
+    expect(find.text('请求 ID：logout-request-id'), findsOneWidget);
+    expect(find.byKey(const Key('logout-local-only')), findsOneWidget);
+  });
+
+  testWidgets('会话被撤销时进入登录页并可继续游客浏览', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore(_tokens)),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const WenyouApp()),
+    );
+    await tester.pumpAndSettle();
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .invalidate(SessionInvalidationReason.revoked);
+    await tester.pumpAndSettle();
+
+    expect(find.text('欢迎回到温油站'), findsOneWidget);
+    expect(find.text('当前登录已被撤销，请重新登录。'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('continue-as-guest')));
+    await tester.pumpAndSettle();
+    expect(find.text('公网开发环境已连接'), findsOneWidget);
+  });
 }
 
 class _CompatibleMetaRepository implements MetaRepository {
@@ -171,7 +263,14 @@ class _SuccessfulAuthRepository implements AuthRepository {
   }
 }
 
+const _tokens = SessionTokens(
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+);
+
 class _MemoryTokenStore implements TokenStore {
+  _MemoryTokenStore([this.value]);
+
   SessionTokens? value;
 
   @override
@@ -182,4 +281,20 @@ class _MemoryTokenStore implements TokenStore {
 
   @override
   Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _FakeSessionRemote implements SessionRemote {
+  _FakeSessionRemote({this.onLogout});
+
+  final Future<void> Function(SessionTokens tokens)? onLogout;
+  int logoutCalls = 0;
+
+  @override
+  Future<void> logout(SessionTokens tokens) {
+    logoutCalls += 1;
+    return onLogout?.call(tokens) ?? Future.value();
+  }
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) async => _tokens;
 }

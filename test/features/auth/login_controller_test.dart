@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/auth/application/login_controller.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
@@ -17,9 +17,7 @@ void main() {
       ),
     );
     final store = _MemoryTokenStore();
-    final dio = Dio();
-    addTearDown(dio.close);
-    final session = SessionController(store, dio);
+    final session = SessionController(store, _UnusedSessionRemote());
     final controller = LoginController(repository, session);
 
     final result = await controller.submit(
@@ -41,11 +39,9 @@ void main() {
     final repository = _FakeAuthRepository(
       onLogin: (account, password) => pending.future,
     );
-    final dio = Dio();
-    addTearDown(dio.close);
     final controller = LoginController(
       repository,
-      SessionController(_MemoryTokenStore(), dio),
+      SessionController(_MemoryTokenStore(), _UnusedSessionRemote()),
     );
 
     final first = controller.submit(account: 'user', password: 'password123');
@@ -73,11 +69,9 @@ void main() {
         requestId: 'request-id',
       ),
     );
-    final dio = Dio();
-    addTearDown(dio.close);
     final controller = LoginController(
       repository,
-      SessionController(_MemoryTokenStore(), dio),
+      SessionController(_MemoryTokenStore(), _UnusedSessionRemote()),
     );
 
     final result = await controller.submit(
@@ -123,4 +117,13 @@ class _MemoryTokenStore implements TokenStore {
 
   @override
   Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _UnusedSessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) => throw UnimplementedError();
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) =>
+      throw UnimplementedError();
 }
