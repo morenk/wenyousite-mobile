@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.2.0-dev.3+5`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.2.0-dev.4+6`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -13,8 +13,9 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v2
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
+- WenyouThemeTokens：粉白语义色、间距、圆角、触控与共享状态组件
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；视觉实现以 [`docs/architecture/design-system.md`](docs/architecture/design-system.md) 为唯一事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 

@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/registration_controller.dart';
 
 class RegistrationPage extends ConsumerStatefulWidget {
@@ -63,35 +64,32 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     final state = ref.watch(registrationControllerProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('注册')),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: state.step == RegistrationStep.email
-                  ? _buildEmailStep(context, state)
-                  : _buildVerifyStep(context, state),
-            ),
-          ),
+      body: WenyouPageBody(
+        maxWidth: 480,
+        child: WenyouPanel(
+          child: state.step == RegistrationStep.email
+              ? _buildEmailStep(context, state)
+              : _buildVerifyStep(context, state),
         ),
       ),
     );
   }
 
   Widget _buildEmailStep(BuildContext context, RegistrationState state) {
+    final tokens = context.wenyouTokens;
+    final buttonLabel = state.resendSecondsRemaining > 0
+        ? '${state.resendSecondsRemaining} 秒后重试'
+        : '发送验证码';
     return Form(
       key: _emailFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('创建温油站账号', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-            '先验证邮箱，再设置用户名和密码。验证码不会保存在本机。',
-            style: Theme.of(context).textTheme.bodyMedium,
+          const WenyouSectionHeader(
+            title: '创建温油站账号',
+            subtitle: '先验证邮箱，再设置用户名和密码。验证码不会保存在本机。',
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: tokens.space24),
           TextFormField(
             key: const Key('register-email'),
             controller: _emailController,
@@ -107,30 +105,26 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             validator: _validateEmail,
           ),
           if (state.failure != null) ...[
-            const SizedBox(height: 16),
-            _FailureCard(failure: state.failure!),
+            SizedBox(height: tokens.space16),
+            WenyouStatusBanner(
+              message: state.failure!.userMessage,
+              detail: state.failure!.requestId == null
+                  ? null
+                  : '请求 ID：${state.failure!.requestId}',
+              tone: WenyouStatusTone.error,
+            ),
           ],
-          const SizedBox(height: 24),
-          FilledButton(
+          SizedBox(height: tokens.space24),
+          WenyouAsyncPrimaryButton(
             key: const Key('register-request-code'),
+            label: buttonLabel,
+            loadingLabel: '正在发送验证码',
+            isLoading: state.status == RegistrationStatus.requestingCode,
             onPressed: state.isBusy || state.resendSecondsRemaining > 0
                 ? null
                 : _requestCode,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: state.status == RegistrationStatus.requestingCode
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      state.resendSecondsRemaining > 0
-                          ? '${state.resendSecondsRemaining} 秒后重试'
-                          : '发送验证码',
-                    ),
-            ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: tokens.space8),
           TextButton(
             onPressed: state.isBusy
                 ? null
@@ -143,6 +137,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   }
 
   Widget _buildVerifyStep(BuildContext context, RegistrationState state) {
+    final tokens = context.wenyouTokens;
     final expiryMinutes = ((state.codeExpiresInSeconds ?? 900) / 60).ceil();
     return Form(
       key: _detailsFormKey,
@@ -150,11 +145,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('查收邮箱验证码', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(
-              '验证码已发送至 ${state.email}，有效期约 $expiryMinutes 分钟。',
-              style: Theme.of(context).textTheme.bodyMedium,
+            WenyouSectionHeader(
+              title: '查收邮箱验证码',
+              subtitle: '验证码已发送至 ${state.email}，有效期约 $expiryMinutes 分钟。',
             ),
             Align(
               alignment: Alignment.centerLeft,
@@ -173,7 +166,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                 child: const Text('修改邮箱'),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: tokens.space8),
             TextFormField(
               key: const Key('register-code'),
               controller: _codeController,
@@ -192,7 +185,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               textInputAction: TextInputAction.next,
               validator: (value) => value?.length == 6 ? null : '请输入 6 位数字验证码',
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: tokens.space16),
             TextFormField(
               key: const Key('register-username'),
               controller: _usernameController,
@@ -206,7 +199,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               textInputAction: TextInputAction.next,
               validator: _validateUsername,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: tokens.space16),
             TextFormField(
               key: const Key('register-password'),
               controller: _passwordController,
@@ -234,7 +227,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               textInputAction: TextInputAction.next,
               validator: _validatePassword,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: tokens.space16),
             TextFormField(
               key: const Key('register-confirm-password'),
               controller: _confirmPasswordController,
@@ -250,10 +243,16 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                   value == _passwordController.text ? null : '两次输入的密码不一致',
             ),
             if (state.failure != null) ...[
-              const SizedBox(height: 16),
-              _FailureCard(failure: state.failure!),
+              SizedBox(height: tokens.space16),
+              WenyouStatusBanner(
+                message: state.failure!.userMessage,
+                detail: state.failure!.requestId == null
+                    ? null
+                    : '请求 ID：${state.failure!.requestId}',
+                tone: WenyouStatusTone.error,
+              ),
             ],
-            const SizedBox(height: 20),
+            SizedBox(height: tokens.space20),
             Row(
               children: [
                 Expanded(
@@ -275,19 +274,13 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            FilledButton(
+            SizedBox(height: tokens.space8),
+            WenyouAsyncPrimaryButton(
               key: const Key('register-complete'),
+              label: '完成注册并登录',
+              loadingLabel: '正在完成注册',
+              isLoading: state.status == RegistrationStatus.completing,
               onPressed: state.isBusy ? null : _complete,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: state.status == RegistrationStatus.completing
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('完成注册并登录'),
-              ),
             ),
           ],
         ),
@@ -302,38 +295,6 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           ? null
           : {'returnTo': widget.returnTo!},
     ).toString();
-  }
-}
-
-class _FailureCard extends StatelessWidget {
-  const _FailureCard({required this.failure});
-
-  final ApiFailure failure;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Card(
-        color: Theme.of(context).colorScheme.errorContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(failure.userMessage),
-              if (failure.requestId != null) ...[
-                const SizedBox(height: 6),
-                SelectableText(
-                  '请求 ID：${failure.requestId}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

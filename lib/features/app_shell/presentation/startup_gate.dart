@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 
 class StartupGate extends ConsumerWidget {
@@ -31,11 +33,30 @@ class _CheckingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     return Scaffold(
-      body: Center(
-        child: Semantics(
-          label: '正在检查服务端兼容性',
-          child: const CircularProgressIndicator(),
+      body: WenyouPageBody(
+        maxWidth: 420,
+        child: WenyouPanel(
+          child: Semantics(
+            label: '正在检查服务端兼容性',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                SizedBox(height: tokens.space16),
+                Text('正在连接温油站', style: Theme.of(context).textTheme.titleMedium),
+                SizedBox(height: tokens.space8),
+                Text(
+                  '正在检查公网服务与客户端兼容性。',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -104,33 +125,15 @@ class _MessagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 56,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 20),
-                Text(title, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 10),
-                Text(message, textAlign: TextAlign.center),
-                if (detail != null) ...[
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    detail!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-                if (action != null) ...[const SizedBox(height: 24), action!],
-              ],
-            ),
+      body: WenyouPageBody(
+        maxWidth: 520,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: icon,
+            title: title,
+            message: message,
+            detail: detail,
+            action: action,
           ),
         ),
       ),

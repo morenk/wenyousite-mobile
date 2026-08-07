@@ -40,7 +40,7 @@
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)和[网络与会话](../architecture/networking.md)；主粉 `#FB7299`、背景 `#FFF7FA`，Android 竖屏优先。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)和[粉白视觉设计系统](../architecture/design-system.md)。应用壳使用粉白页面底、白色面板、弱粉选中态、细分隔底部导航和深色前景主按钮；Android 竖屏优先，所有主操作至少 48dp。
 
 ## 11. 测试场景与验收条件
 
@@ -49,11 +49,12 @@
 - [x] 会话失效进入带原因的登录页，并可回到游客首页。
 - [ ] 切换分支保留页面状态，悬浮按钮触发创建入口。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
+- [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
 - [ ] Android 8+ 模拟器通过启动冒烟。
 
 ## 12. 已知限制和后续功能
 
-0.1 已完成工程、兼容与可重试启动基线；0.2 已接入创建入口的登录回跳，后续补齐更多受保护动作与真实业务页面。V1 不做 App Links、暗色主题与 FCM。
+0.1 已完成工程、兼容与可重试启动基线；0.2 已接入创建入口的登录回跳，并建立粉白视觉 Token、共享面板/标题/状态/异步按钮/空状态与应用壳样板。后续真实首页卡片按设计系统增量实现。V1 不做 App Links、暗色主题与 FCM。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -61,4 +62,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/`、`lib/app/`。参见[导航](../architecture/navigation.md)和[网络与会话](../architecture/networking.md)。
+代码入口：`lib/features/app_shell/`、`lib/app/`、`lib/core/widgets/wenyou_ui.dart`。参见[粉白视觉设计系统](../architecture/design-system.md)、[导航](../architecture/navigation.md)和[网络与会话](../architecture/networking.md)。

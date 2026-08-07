@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/auth/application/logout_controller.dart';
 
@@ -84,27 +85,12 @@ class _LogoutAction extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (logout.failure != null) ...[
-          Semantics(
-            liveRegion: true,
-            child: Card(
-              color: Theme.of(context).colorScheme.errorContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(logout.failure!.userMessage),
-                    if (logout.failure!.requestId != null) ...[
-                      const SizedBox(height: 4),
-                      SelectableText(
-                        '请求 ID：${logout.failure!.requestId}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+          WenyouStatusBanner(
+            message: logout.failure!.userMessage,
+            detail: logout.failure!.requestId == null
+                ? null
+                : '请求 ID：${logout.failure!.requestId}',
+            tone: WenyouStatusTone.error,
           ),
           const SizedBox(height: 8),
         ],
@@ -199,12 +185,13 @@ class ComposeBaselinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('创建主题')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Text(
-            '创建入口已经固定；编辑器、草稿和图片上传将在对应垂直切片接入。',
-            textAlign: TextAlign.center,
+      body: const WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: Icons.edit_note_rounded,
+            title: '创建入口已就绪',
+            message: '编辑器、草稿和图片上传将在对应垂直切片接入。',
           ),
         ),
       ),
@@ -231,30 +218,19 @@ class _BaselinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 112),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    icon,
-                    size: 36,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 18),
-                  Text(headline, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-                  if (action != null) ...[const SizedBox(height: 20), action!],
-                ],
-              ),
-            ),
+      body: WenyouPageBody(
+        maxWidth: 600,
+        bottomPadding: 112,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: icon,
+            title: headline,
+            message: detail,
+            action: action == null
+                ? null
+                : SizedBox(width: double.infinity, child: action),
           ),
-        ],
+        ),
       ),
     );
   }

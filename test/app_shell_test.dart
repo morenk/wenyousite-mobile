@@ -254,6 +254,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('公网开发环境已连接'), findsOneWidget);
   });
+
+  for (final width in [360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 下启动状态、应用壳、登录和注册无溢出且主操作可触控', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 900);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            metaRepositoryProvider.overrideWithValue(_RetryMetaRepository()),
+            tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          ],
+          child: const WenyouApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.widgetWithText(FilledButton, '重试')).height,
+        greaterThanOrEqualTo(48),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            metaRepositoryProvider.overrideWithValue(
+              _CompatibleMetaRepository(),
+            ),
+            tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          ],
+          child: const WenyouApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byIcon(Icons.edit_rounded));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byKey(const Key('login-submit'))).height,
+        greaterThanOrEqualTo(48),
+      );
+
+      await tester.tap(find.byKey(const Key('login-register')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byKey(const Key('register-request-code'))).height,
+        greaterThanOrEqualTo(48),
+      );
+    });
+  }
 }
 
 class _CompatibleMetaRepository implements MetaRepository {
