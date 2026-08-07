@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 
@@ -61,6 +62,13 @@ class ProfileBaselinePage extends ConsumerWidget {
       icon: Icons.person_outline_rounded,
       headline: session.isAuthenticated ? '已恢复登录会话' : '当前以游客身份浏览',
       detail: environment.apiBaseUrl,
+      action: session.isAuthenticated
+          ? null
+          : FilledButton.icon(
+              onPressed: () => context.push('/auth/login?returnTo=/me'),
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('登录'),
+            ),
     );
   }
 }
@@ -91,12 +99,14 @@ class _BaselinePage extends StatelessWidget {
     required this.icon,
     required this.headline,
     required this.detail,
+    this.action,
   });
 
   final String title;
   final IconData icon;
   final String headline;
   final String detail;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +130,7 @@ class _BaselinePage extends StatelessWidget {
                   Text(headline, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(detail, style: Theme.of(context).textTheme.bodyMedium),
+                  if (action != null) ...[const SizedBox(height: 20), action!],
                 ],
               ),
             ),

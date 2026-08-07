@@ -1,11 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/internal_location.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages.dart';
+import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/home',
+    redirect: (context, state) {
+      final authenticated = ref.read(sessionControllerProvider).isAuthenticated;
+      if (!authenticated && state.matchedLocation == '/compose/thread') {
+        return Uri(
+          path: '/auth/login',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
+      if (authenticated && state.matchedLocation == '/auth/login') {
+        final returnTo = state.uri.queryParameters['returnTo'];
+        return sanitizeReturnLocation(returnTo);
+      }
+      return null;
+    },
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -55,8 +72,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'compose-thread',
         builder: (context, state) => const ComposeBaselinePage(),
       ),
+      GoRoute(
+        path: '/auth/login',
+        name: 'login',
+        builder: (context, state) {
+          return LoginPage(returnTo: state.uri.queryParameters['returnTo']);
+        },
+      ),
     ],
   );
+  ref.listen(sessionControllerProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
   return router;
 });

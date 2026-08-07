@@ -5,7 +5,7 @@
 | 模块 | 状态 | 当前里程碑 | 文档 |
 | --- | --- | --- | --- |
 | app-shell | in_progress | 0.1.0-dev / 0.2.0-dev | [应用壳](app-shell.md) |
-| auth | planned | 0.2.0-dev / 0.7.0-dev | [认证](auth.md) |
+| auth | in_progress | 0.2.0-dev / 0.7.0-dev | [认证](auth.md) |
 | home | planned | 0.3.0-dev | [首页](home.md) |
 | search | planned | 0.3.0-dev | [搜索](search.md) |
 | threads | planned | 0.3.0-dev / 0.6.0-dev | [主题](threads.md) |

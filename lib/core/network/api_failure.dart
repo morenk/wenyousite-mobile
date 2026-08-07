@@ -64,6 +64,8 @@ class ApiFailure implements Exception {
         return '账号已注销。';
       case 40107:
         return '请先完成邮箱验证。';
+      case 40110:
+        return '账号或密码错误。';
       case 40912:
         return '这次操作与待确认请求冲突，请重新发起。';
       case 42900:

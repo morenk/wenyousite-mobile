@@ -30,4 +30,21 @@ void main() {
     expect(failure.userMessage, contains('锁定'));
     expect(failure.userMessage, isNot(contains('sensitive')));
   });
+
+  test('登录凭据错误按业务码展示稳定提示', () {
+    final options = RequestOptions(path: '/api/v1/auth/login');
+    final failure = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        response: Response<Object?>(
+          requestOptions: options,
+          statusCode: 401,
+          data: {'code': 40110, 'message': 'server wording'},
+        ),
+      ),
+    );
+
+    expect(failure.userMessage, '账号或密码错误。');
+    expect(failure.userMessage, isNot(contains('server wording')));
+  });
 }
