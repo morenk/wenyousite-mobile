@@ -4,11 +4,11 @@
 
 ## 1. 模块目标与非目标
 
-逐步实现用户主页、个人资料、隐私字段、创建/参与主题、最近回复、收藏、关注与粉丝列表。当前已提供只读公开资料与内容分区，以及“我的”本人资料读取、用户名、简介和公开范围编辑；账号安全写操作归 settings/auth。
+逐步实现用户主页、个人资料、隐私字段、创建/参与主题、最近回复、收藏、关注与粉丝列表。当前已提供公开资料与内容分区、登录用户对他人的关注/拉黑操作，以及“我的”本人资料与公开范围编辑；账号安全写操作归 settings/auth。
 
 ## 2. 用户角色与使用场景
 
-游客浏览服务端允许的公开资料和内容；登录用户额外查看响应中存在的关系状态，并在“我的”管理服务端返回的本人私有资料与公开范围。
+游客浏览服务端允许的公开资料和内容；登录用户查看关系状态，在确认目标不是本人后可关注或拉黑，并在“我的”管理本人私有资料与公开范围。
 
 ## 3. 页面、入口和导航关系
 
@@ -16,22 +16,22 @@
 
 ## 4. 用户操作流程
 
-公开页按用户 ID 读取资料，展示头像、用户名、等级、简介、加入日期、统计与关系状态；内容按隐私字段惰性请求并支持游标分页。“我的”读取邮箱验证、成长区间、温油与社交统计；用户名在独立编辑态按 2–24 位规则提交，简介和三项公开范围在同一表单只发送变化字段。所有保存采用响应中的服务端最终值；退出保持二次确认和本机后备。
+公开页按用户 ID 读取资料，展示头像、用户名、等级、简介、加入日期、统计与关系状态；内容按隐私字段惰性请求并支持游标分页。登录身份确认后，他人页可关注/取消关注，拉黑需确认，解除拉黑直接执行；关系成功同步按钮、标记和粉丝数。“我的”读取成长与统计，用户名、简介和三项公开范围只发送变化字段。
 
 ## 5. API operationId 与生成类型
 
-- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`。
+- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`，并消费 social 的 `usersFollowFollow`、`usersFollowUnfollow`、`usersFollowBlock`、`usersFollowUnblock`。
 - 主要生成类型：`PublicUserResponseDto`、`CurrentUserResponseDto`、`PrivateUserResponseDto`、`UpdateUserDto`、`ThreadListItemResponseDto`、`RecentReplyResponseDto`、`BookmarkThreadResponseDto` 与 `ApiPaginationMeta`。
 - `usersDeleteMe` 由后续账号生命周期切片接入。
 - `usersFollowFollowing`、`usersFollowFollowers`、`usersFollowUserFollowing`、`usersFollowUserFollowers` 由 social 模块接入。
 
 ## 6. 状态模型和数据流
 
-`PublicUserController` 以 userId 为 family 参数，资料与四个内容分区分别保存请求代次；`MeProfileController` 独立管理本人 loading/ready/failed、用户名或资料提交、局部失败和服务端回写。公开和私有 DTO 分别映射为不同展示模型，不互相复用；PATCH 响应没有社交计数时只更新私有可编辑字段并保留刚读取的计数。
+`PublicUserController` 管理公开资料与四个内容分区；`MeProfileController` 管理本人资料和编辑。公开页用本人 ID 排除自我操作后，消费 social 的目标关系 family；关系状态独立串行化写入并在页内覆盖公开资料的关系标记与粉丝数。公开和私有 DTO 分别映射，不互相复用。
 
 ## 7. 鉴权、权限和隐私规则
 
-公开页的“创建”遵循服务端投影并始终显示入口；“参与”“回复”“收藏”分别只在三个公开字段为真时显示和请求，公开页面不猜测本人权限。`/me` 仅在认证状态下创建私有资料请求；游客、退出或会话失效不读取或保留私有字段。公开范围以 PATCH 响应为权威，关闭后公开页仍会重新按服务端权限读取。
+公开内容继续严格按服务端投影和三个公开字段请求。关系按钮只在 authenticated 且 `usersGetMe.id != target.id` 时出现；身份加载失败宁可隐藏，不猜测自我关系。拉黑影响由服务端决定，客户端不会据此删除关注。游客、退出或会话失效不读取或保留私有字段，也不触发关系写入。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -43,7 +43,7 @@
 
 ## 10. 跨模块约束
 
-关系写操作由 social 管理；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。搜索与 Markdown 只传 userId，资料页自行重新校验可见性，不复用搜索摘要当作资料事实。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
+关系写操作由 social 管理，users 只负责身份排除和展示同步；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。搜索与 Markdown 只传 userId，资料页重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
 
 ## 11. 测试场景与验收条件
 
@@ -54,12 +54,13 @@
 - [x] 三类主题列表独立分页、按 ID 去重，cursor 失效从第一页恢复；最近回复使用精确帖子目标。
 - [x] 本人资料读取、用户名/简介/公开范围更新、失败重试与服务端结果回写正确。
 - [x] 游客不读取私有资料，本人资料与设置在 360dp、400dp、600dp 无布局溢出。
+- [x] 他人页关注和拉黑可逆，自我页与游客不显示写操作，失败保留原关系。
 - [ ] 头像变化和重启后显示正确。
 - [ ] 关注、拉黑与隐私变化后的跨页面缓存失效完成验证。
 
 ## 12. 已知限制和后续功能
 
-不做资料离线缓存、复杂勋章系统或后台用户管理。当前公开资料页只读，不提供关注/拉黑按钮；“我的”尚不上传头像，也不管理密码、邮箱、终端或注销。用户动态、勋章、关注/粉丝列表和本人私密内容筛选后续接入；公开路由不会绕过关闭的隐私字段。
+不做资料离线缓存、复杂勋章系统或后台用户管理。“我的”尚不上传头像，也不管理密码、邮箱、终端或注销。用户动态、勋章、关注/粉丝与黑名单列表、跨页面关系同步和本人私密内容筛选后续接入；公开路由不会绕过关闭的隐私字段。
 
 ## 13. 最近审查的契约版本和后端提交
 

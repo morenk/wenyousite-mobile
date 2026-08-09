@@ -5,7 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
+import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
+import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 
@@ -36,6 +42,59 @@ void main() {
 
     expect(find.text('温柔测试员'), findsOneWidget);
     expect(repository.calls, 2);
+  });
+
+  testWidgets('登录身份确认目标非本人后显示关系操作并同步粉丝数', (tester) async {
+    final relationRepository = _FakeUserRelationRepository();
+    final container = await _authenticatedContainer(
+      currentUserId: 'me-1',
+      publicRepository: _FakePublicUserRepository(),
+      relationRepository: relationRepository,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PublicUserPage(userId: 'user-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('user-relation-follow')), findsOneWidget);
+    expect(find.byKey(const Key('user-relation-block')), findsOneWidget);
+    expect(find.text('9'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('user-relation-follow')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('user-relation-follow')));
+    await tester.pumpAndSettle();
+
+    expect(relationRepository.unfollowCalls, 1);
+    expect(find.text('8'), findsOneWidget);
+  });
+
+  testWidgets('公开页目标是本人时不显示关注和拉黑操作', (tester) async {
+    final container = await _authenticatedContainer(
+      currentUserId: 'user-1',
+      publicRepository: _FakePublicUserRepository(),
+      relationRepository: _FakeUserRelationRepository(),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PublicUserPage(userId: 'user-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('user-relation-follow')), findsNothing);
+    expect(find.byKey(const Key('user-relation-block')), findsNothing);
   });
 
   testWidgets('公开内容按隐私页签惰性加载并展示真实结果', (tester) async {
@@ -195,6 +254,28 @@ Widget _userApp(PublicUserRepository repository) {
   );
 }
 
+Future<ProviderContainer> _authenticatedContainer({
+  required String currentUserId,
+  required PublicUserRepository publicRepository,
+  required UserRelationRepository relationRepository,
+}) async {
+  final container = ProviderContainer(
+    overrides: [
+      tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+      sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+      meProfileRepositoryProvider.overrideWithValue(
+        _FakeMeProfileRepository(currentUserId),
+      ),
+      publicUserRepositoryProvider.overrideWithValue(publicRepository),
+      userRelationRepositoryProvider.overrideWithValue(relationRepository),
+    ],
+  );
+  await container
+      .read(sessionControllerProvider.notifier)
+      .authenticate(_tokens);
+  return container;
+}
+
 class _FakePublicUserRepository implements PublicUserRepository {
   _FakePublicUserRepository({
     this.failFirstRequest = false,
@@ -325,3 +406,82 @@ final _contentReply = PublicUserReplyModel(
   createdAt: DateTime.utc(2026, 8, 10, 8),
   parentPostId: 'floor-1',
 );
+
+class _FakeMeProfileRepository implements MeProfileRepository {
+  _FakeMeProfileRepository(this.userId);
+
+  final String userId;
+
+  @override
+  Future<MeProfileModel> fetchMe() async {
+    return MeProfileModel(
+      id: userId,
+      email: 'owner@example.com',
+      username: '本人',
+      level: 4,
+      experience: 150,
+      currentLevelExperience: 100,
+      nextLevelExperience: 200,
+      receivedTipTotal: '18',
+      receivedTipCount: 6,
+      showRecentReplies: true,
+      showPlayedThreads: true,
+      showBookmarks: true,
+      emailVerified: true,
+      followingCount: 7,
+      followerCount: 9,
+      createdAt: DateTime.utc(2026, 8, 1),
+      updatedAt: DateTime.utc(2026, 8, 10),
+    );
+  }
+
+  @override
+  Future<MeProfileUpdateResult> updateMe(MeProfilePatch patch) {
+    throw UnimplementedError();
+  }
+}
+
+class _FakeUserRelationRepository implements UserRelationRepository {
+  int followCalls = 0;
+  int unfollowCalls = 0;
+  int blockCalls = 0;
+  int unblockCalls = 0;
+
+  @override
+  Future<void> follow(String userId) async => followCalls += 1;
+
+  @override
+  Future<void> unfollow(String userId) async => unfollowCalls += 1;
+
+  @override
+  Future<void> block(String userId) async => blockCalls += 1;
+
+  @override
+  Future<void> unblock(String userId) async => unblockCalls += 1;
+}
+
+const _tokens = SessionTokens(
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+);
+
+class _MemoryTokenStore implements TokenStore {
+  SessionTokens? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<SessionTokens?> read() async => value;
+
+  @override
+  Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _FakeSessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}

@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
+import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/user_relation_actions.dart';
+import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
@@ -17,6 +22,10 @@ class PublicUserPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = publicUserControllerProvider(userId);
     final state = ref.watch(provider);
+    final session = ref.watch(sessionControllerProvider);
+    final meState = session.isAuthenticated
+        ? ref.watch(meProfileControllerProvider)
+        : null;
     return Scaffold(
       appBar: AppBar(title: const Text('用户主页')),
       body: switch (state.phase) {
@@ -42,7 +51,10 @@ class PublicUserPage extends ConsumerWidget {
                   ),
                 )
               else ...[
-                _UserProfileContent(profile: state.profile!),
+                _UserProfileContent(
+                  profile: state.profile!,
+                  relationTarget: _relationTarget(state.profile!, meState),
+                ),
                 SizedBox(height: context.wenyouTokens.space12),
                 PublicUserContentArea(userId: userId, state: state),
               ],
@@ -50,6 +62,24 @@ class PublicUserPage extends ConsumerWidget {
           ),
         ),
       },
+    );
+  }
+
+  UserRelationTarget? _relationTarget(
+    PublicUserProfileModel profile,
+    MeProfileState? meState,
+  ) {
+    if (meState?.phase != MeProfilePhase.ready ||
+        meState!.profile!.id == profile.id) {
+      return null;
+    }
+    return UserRelationTarget(
+      userId: profile.id,
+      username: profile.username,
+      isFollowing: profile.isFollowing,
+      isBlocked: profile.isBlocked,
+      isBlockedBy: profile.isBlockedBy,
+      followerCount: profile.followerCount,
     );
   }
 
@@ -67,14 +97,21 @@ class PublicUserPage extends ConsumerWidget {
   }
 }
 
-class _UserProfileContent extends StatelessWidget {
-  const _UserProfileContent({required this.profile});
+class _UserProfileContent extends ConsumerWidget {
+  const _UserProfileContent({required this.profile, this.relationTarget});
 
   final PublicUserProfileModel profile;
+  final UserRelationTarget? relationTarget;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
+    final relationState = relationTarget == null
+        ? null
+        : ref.watch(userRelationControllerProvider(relationTarget!));
+    final isFollowing = relationState?.isFollowing ?? profile.isFollowing;
+    final isBlocked = relationState?.isBlocked ?? profile.isBlocked;
+    final isBlockedBy = relationState?.isBlockedBy ?? profile.isBlockedBy;
     return Column(
       children: [
         WenyouPanel(
@@ -128,7 +165,8 @@ class _UserProfileContent extends StatelessWidget {
               Expanded(
                 child: _ProfileStat(
                   label: '粉丝',
-                  value: '${profile.followerCount}',
+                  value:
+                      '${relationState?.followerCount ?? profile.followerCount}',
                 ),
               ),
               SizedBox(
@@ -144,10 +182,10 @@ class _UserProfileContent extends StatelessWidget {
             ],
           ),
         ),
-        if (profile.isFollowing ||
+        if (isFollowing ||
             profile.isFollowedBy ||
-            profile.isBlocked ||
-            profile.isBlockedBy) ...[
+            isBlocked ||
+            isBlockedBy) ...[
           SizedBox(height: tokens.space12),
           WenyouPanel(
             padding: EdgeInsets.all(tokens.space16),
@@ -155,7 +193,7 @@ class _UserProfileContent extends StatelessWidget {
               spacing: tokens.space8,
               runSpacing: tokens.space8,
               children: [
-                if (profile.isFollowing)
+                if (isFollowing)
                   const _ProfilePill(
                     icon: Icons.check_circle_outline_rounded,
                     label: '已关注',
@@ -165,15 +203,22 @@ class _UserProfileContent extends StatelessWidget {
                     icon: Icons.people_outline_rounded,
                     label: '关注了你',
                   ),
-                if (profile.isBlocked)
+                if (isBlocked)
                   const _ProfilePill(icon: Icons.block_rounded, label: '已拉黑'),
-                if (profile.isBlockedBy)
+                if (isBlockedBy)
                   const _ProfilePill(
                     icon: Icons.visibility_off_outlined,
                     label: '互动受限',
                   ),
               ],
             ),
+          ),
+        ],
+        if (relationTarget != null) ...[
+          SizedBox(height: tokens.space12),
+          WenyouPanel(
+            padding: EdgeInsets.all(tokens.space16),
+            child: UserRelationActions(target: relationTarget!),
           ),
         ],
       ],
