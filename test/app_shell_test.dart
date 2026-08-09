@@ -41,7 +41,7 @@ void main() {
 
     await tester.tap(find.text('搜索'));
     await tester.pumpAndSettle();
-    expect(find.text('搜索模块已进入规划'), findsOneWidget);
+    expect(find.text('输入关键词开始搜索'), findsOneWidget);
   });
 
   testWidgets('未知契约主版本显示不可绕过的升级页', (tester) async {
@@ -142,9 +142,7 @@ void main() {
           mobileUpdateServiceProvider.overrideWithValue(
             _FakeMobileUpdateService(build: 7),
           ),
-          recommendedUpdateDismissStoreProvider.overrideWithValue(
-            dismissStore,
-          ),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(dismissStore),
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
@@ -498,11 +496,7 @@ class _FakeMobileUpdateService implements MobileUpdateService {
 
   @override
   Future<InstalledAppInfo> readInstalledApp() async {
-    return InstalledAppInfo(
-      platform: platform,
-      version: '0.3.0',
-      build: build,
-    );
+    return InstalledAppInfo(platform: platform, version: '0.3.0', build: build);
   }
 
   @override

@@ -76,4 +76,20 @@ void main() {
       '🎲 2d6+3（结果不可用）',
     );
   });
+
+  test('搜索预览移除 Markdown 语法并保留图片与骰子语义', () {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    expect(
+      MarkdownContent.toPlainTextPreview(
+        '**星海正文** ![航图](https://cdn.example.com/map.jpg) '
+        '[[dice:v1:$nodeId:2d6+1]]',
+      ),
+      '星海正文 [图片：航图] [2d6+1]',
+    );
+  });
+
+  test('搜索预览按 Unicode 字符截断且使用省略号', () {
+    expect(MarkdownContent.toPlainTextPreview('一二三四五', maxLength: 4), '一二三…');
+    expect(MarkdownContent.toPlainTextPreview('正文', maxLength: 0), isEmpty);
+  });
 }

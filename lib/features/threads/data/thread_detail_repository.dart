@@ -9,6 +9,8 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 abstract interface class ThreadDetailRepository {
   Future<ThreadDetailModel> fetchThread(String threadId);
 
+  Future<ThreadPostTargetModel> fetchPostTarget(String postId);
+
   Future<CursorPage<ThreadFloorModel>> fetchFloors({
     required String subthreadId,
     String? cursor,
@@ -31,6 +33,49 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
         throw const ApiFailure(userMessage: '主题详情返回不完整，请稍后重试。');
       }
       return _mapThread(dto);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<ThreadPostTargetModel> fetchPostTarget(String postId) async {
+    try {
+      final targetResponse = await _postsApi.postsFindById(id: postId);
+      final target = targetResponse.data?.data;
+      if (target == null) {
+        throw const ApiFailure(userMessage: '目标楼层返回不完整，请稍后重试。');
+      }
+      if (target.parentPostId == null) {
+        return ThreadPostTargetModel(
+          requestedPostId: target.id,
+          threadId: target.threadId,
+          subthreadId: target.subthreadId,
+          floor: _mapPostDetailFloor(target),
+        );
+      }
+      final parentResponse = await _postsApi.postsFindById(
+        id: target.parentPostId!,
+      );
+      final parent = parentResponse.data?.data;
+      if (parent == null) {
+        throw const ApiFailure(userMessage: '目标楼层上下文返回不完整，请稍后重试。');
+      }
+      if (parent.threadId != target.threadId ||
+          parent.subthreadId != target.subthreadId ||
+          parent.parentPostId != null) {
+        throw const ApiFailure(userMessage: '目标楼层上下文不一致，请返回搜索后重试。');
+      }
+      return ThreadPostTargetModel(
+        requestedPostId: target.id,
+        threadId: target.threadId,
+        subthreadId: target.subthreadId,
+        floor: _mapPostDetailFloor(
+          parent,
+          focusedReply: _mapPostDetailReply(target),
+        ),
+        focusedReplyId: target.id,
+      );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
@@ -142,6 +187,39 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
             ),
           )
           .toList(growable: false),
+    );
+  }
+
+  ThreadFloorModel _mapPostDetailFloor(
+    PostDetailResponseDto dto, {
+    ThreadReplyModel? focusedReply,
+  }) {
+    return ThreadFloorModel(
+      id: dto.id,
+      floorNumber: dto.floorNumber?.toInt(),
+      author: _mapAuthor(dto.author),
+      body: ThreadBodyModel(
+        markdown: dto.content,
+        diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
+      ),
+      createdAt: dto.createdAt,
+      isDeleted: dto.deletedAt != null,
+      replyCount: dto.count.replies.toInt(),
+      replies: focusedReply == null ? const [] : [focusedReply],
+    );
+  }
+
+  ThreadReplyModel _mapPostDetailReply(PostDetailResponseDto dto) {
+    return ThreadReplyModel(
+      id: dto.id,
+      author: _mapAuthor(dto.author),
+      body: ThreadBodyModel(
+        markdown: dto.content,
+        diceRolls: dto.diceRolls.map(_mapDiceRoll).toList(growable: false),
+      ),
+      createdAt: dto.createdAt,
+      isDeleted: dto.deletedAt != null,
+      replyToUsername: null,
     );
   }
 

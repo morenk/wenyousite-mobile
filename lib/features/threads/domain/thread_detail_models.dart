@@ -166,3 +166,19 @@ class ThreadFloorModel {
   final int replyCount;
   final List<ThreadReplyModel> replies;
 }
+
+class ThreadPostTargetModel {
+  const ThreadPostTargetModel({
+    required this.requestedPostId,
+    required this.threadId,
+    required this.subthreadId,
+    required this.floor,
+    this.focusedReplyId,
+  });
+
+  final String requestedPostId;
+  final String threadId;
+  final String subthreadId;
+  final ThreadFloorModel floor;
+  final String? focusedReplyId;
+}

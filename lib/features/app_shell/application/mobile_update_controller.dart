@@ -96,9 +96,9 @@ final mobileUpdateServiceProvider = Provider<MobileUpdateService>((ref) {
   return DeviceMobileUpdateService(ref.watch(mobileUpdateDownloadDioProvider));
 });
 
-final mobileUpdateControllerProvider = StateNotifierProvider<
-  MobileUpdateController,
-  MobileUpdateActionState
->((ref) {
-  return MobileUpdateController(ref.watch(mobileUpdateServiceProvider));
-});
+final mobileUpdateControllerProvider =
+    StateNotifierProvider<MobileUpdateController, MobileUpdateActionState>((
+      ref,
+    ) {
+      return MobileUpdateController(ref.watch(mobileUpdateServiceProvider));
+    });

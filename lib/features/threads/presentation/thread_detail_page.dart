@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -13,11 +14,13 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
     required this.threadId,
     this.categoryNameHint,
+    this.targetPostId,
     super.key,
   });
 
   final String threadId;
   final String? categoryNameHint;
+  final String? targetPostId;
 
   @override
   ConsumerState<ThreadDetailPage> createState() => _ThreadDetailPageState();
@@ -25,6 +28,8 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
 
 class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _scrollController = ScrollController();
+  final _targetKey = GlobalKey();
+  String? _lastRevealedTargetId;
 
   @override
   void initState() {
@@ -38,6 +43,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       ..removeListener(_loadMoreNearEnd)
       ..dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ThreadDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.targetPostId != widget.targetPostId) {
+      _lastRevealedTargetId = null;
+    }
   }
 
   void _loadMoreNearEnd() {
@@ -54,6 +67,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
     final state = ref.watch(provider);
+    final target = widget.targetPostId == null
+        ? null
+        : ref.watch(threadPostTargetProvider(widget.targetPostId!));
+    final resolvedTarget = target?.valueOrNull;
+    if (state.phase == ThreadDetailPhase.ready &&
+        resolvedTarget != null &&
+        resolvedTarget.threadId == widget.threadId &&
+        state.detail?.subthreadById(resolvedTarget.subthreadId) != null &&
+        state.selectedSubthreadId != resolvedTarget.subthreadId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(provider.notifier).selectSubthread(resolvedTarget.subthreadId);
+      });
+    }
+    _revealTargetWhenReady(state, resolvedTarget);
     return Scaffold(
       appBar: AppBar(title: const Text('主题详情')),
       body: switch (state.phase) {
@@ -68,11 +96,35 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             key: PageStorageKey('thread-detail-${widget.threadId}'),
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            slivers: _buildReadySlivers(context, state, provider),
+            slivers: _buildReadySlivers(context, state, provider, target),
           ),
         ),
       },
     );
+  }
+
+  void _revealTargetWhenReady(
+    ThreadDetailState state,
+    ThreadPostTargetModel? target,
+  ) {
+    if (target == null ||
+        target.threadId != widget.threadId ||
+        state.selectedSubthreadId != target.subthreadId ||
+        state.isLoadingFloors ||
+        _lastRevealedTargetId == target.requestedPostId) {
+      return;
+    }
+    _lastRevealedTargetId = target.requestedPostId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetContext = _targetKey.currentContext;
+      if (!mounted || targetContext == null) return;
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: context.wenyouTokens.feedbackDuration,
+        curve: Curves.easeOut,
+        alignment: 0.12,
+      );
+    });
   }
 
   List<Widget> _buildReadySlivers(
@@ -80,9 +132,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ThreadDetailState state,
     AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
     provider,
+    AsyncValue<ThreadPostTargetModel>? targetState,
   ) {
     final detail = state.detail!;
     final selected = state.selectedSubthread;
+    final target = targetState?.valueOrNull;
+    final usableTarget =
+        target != null &&
+            target.threadId == widget.threadId &&
+            target.subthreadId == state.selectedSubthreadId
+        ? target
+        : null;
+    final displayedFloors = _floorsWithTarget(state.floors, usableTarget);
     return [
       SliverToBoxAdapter(
         child: _DetailContent(
@@ -147,6 +208,22 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             ),
           ),
         ),
+        if (targetState != null)
+          SliverToBoxAdapter(
+            child: _DetailContent(
+              top: 12,
+              child: _TargetPostStatus(
+                targetState: targetState,
+                expectedThreadId: widget.threadId,
+                availableSubthreadIds: {
+                  for (final subthread in detail.subthreads) subthread.id,
+                },
+                onRetry: () => ref.invalidate(
+                  threadPostTargetProvider(widget.targetPostId!),
+                ),
+              ),
+            ),
+          ),
         if (state.isLoadingFloors)
           const SliverToBoxAdapter(
             child: _DetailContent(top: 12, child: _FloorsLoadingState()),
@@ -162,7 +239,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               ),
             ),
           )
-        else if (state.floors.isEmpty)
+        else if (displayedFloors.isEmpty)
           const SliverToBoxAdapter(
             child: _DetailContent(
               top: 12,
@@ -178,11 +255,17 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         else
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
+              final floor = displayedFloors[index];
+              final focused = usableTarget?.floor.id == floor.id;
               return _DetailContent(
                 top: 12,
-                child: _FloorCard(floor: state.floors[index]),
+                child: _FloorCard(
+                  key: focused ? _targetKey : null,
+                  floor: floor,
+                  isFocused: focused,
+                ),
               );
-            }, childCount: state.floors.length),
+            }, childCount: displayedFloors.length),
           ),
         SliverToBoxAdapter(
           child: _DetailContent(
@@ -195,6 +278,37 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         ),
       ],
+    ];
+  }
+
+  List<ThreadFloorModel> _floorsWithTarget(
+    List<ThreadFloorModel> floors,
+    ThreadPostTargetModel? target,
+  ) {
+    if (target == null) return floors;
+    final index = floors.indexWhere((floor) => floor.id == target.floor.id);
+    var focusedFloor = index == -1 ? target.floor : floors[index];
+    if (target.focusedReplyId != null &&
+        !focusedFloor.replies.any(
+          (reply) => reply.id == target.focusedReplyId,
+        )) {
+      final focusedReply = target.floor.replies.single;
+      final replies = [...focusedFloor.replies, focusedReply]
+        ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
+      focusedFloor = ThreadFloorModel(
+        id: focusedFloor.id,
+        floorNumber: focusedFloor.floorNumber,
+        author: focusedFloor.author,
+        body: focusedFloor.body,
+        createdAt: focusedFloor.createdAt,
+        isDeleted: focusedFloor.isDeleted,
+        replyCount: focusedFloor.replyCount,
+        replies: replies,
+      );
+    }
+    return [
+      focusedFloor,
+      ...floors.where((floor) => floor.id != focusedFloor.id),
     ];
   }
 }
@@ -522,6 +636,79 @@ class _SubthreadBody extends StatelessWidget {
   }
 }
 
+class _TargetPostStatus extends StatelessWidget {
+  const _TargetPostStatus({
+    required this.targetState,
+    required this.expectedThreadId,
+    required this.availableSubthreadIds,
+    required this.onRetry,
+  });
+
+  final AsyncValue<ThreadPostTargetModel> targetState;
+  final String expectedThreadId;
+  final Set<String> availableSubthreadIds;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return targetState.when(
+      loading: () => const WenyouStatusBanner(
+        message: '正在定位搜索结果…',
+        detail: '会自动切换到所属子贴并展示目标上下文。',
+      ),
+      error: (error, _) {
+        final failure = error is ApiFailure ? error : null;
+        return WenyouStatusBanner(
+          tone: WenyouStatusTone.error,
+          message: failure?.httpStatus == 404
+              ? '目标内容已不可见'
+              : (failure?.userMessage ?? '目标内容定位失败，请重试。'),
+          detail: failure?.requestId == null
+              ? null
+              : '请求 ID：${failure!.requestId}',
+          action: TextButton.icon(
+            key: const Key('thread-target-retry'),
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('重试定位'),
+          ),
+        );
+      },
+      data: (target) {
+        if (target.threadId != expectedThreadId) {
+          return WenyouStatusBanner(
+            tone: WenyouStatusTone.error,
+            message: '目标内容不属于当前主题',
+            detail: '请返回搜索结果后重新打开。',
+            action: TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('重新确认'),
+            ),
+          );
+        }
+        if (!availableSubthreadIds.contains(target.subthreadId)) {
+          return WenyouStatusBanner(
+            tone: WenyouStatusTone.error,
+            message: '目标内容所属子贴暂时不可见',
+            detail: '请返回搜索结果后重新打开，或稍后重试。',
+            action: TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('重新确认'),
+            ),
+          );
+        }
+        return WenyouStatusBanner(
+          tone: WenyouStatusTone.accent,
+          message: target.focusedReplyId == null ? '已定位到匹配楼层' : '已定位到匹配的楼中楼回复',
+          detail: '目标上下文置顶并使用强调底色；其余楼层保持原有顺序。',
+        );
+      },
+    );
+  }
+}
+
 class _FloorsLoadingState extends StatelessWidget {
   const _FloorsLoadingState();
 
@@ -545,9 +732,10 @@ class _FloorsLoadingState extends StatelessWidget {
 }
 
 class _FloorCard extends StatelessWidget {
-  const _FloorCard({required this.floor});
+  const _FloorCard({required this.floor, this.isFocused = false, super.key});
 
   final ThreadFloorModel floor;
+  final bool isFocused;
 
   @override
   Widget build(BuildContext context) {
@@ -556,6 +744,7 @@ class _FloorCard extends StatelessWidget {
       container: true,
       label: floor.floorNumber == null ? '楼层' : '第 ${floor.floorNumber} 楼',
       child: WenyouPanel(
+        color: isFocused ? tokens.accentedBackground : null,
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -897,9 +1086,13 @@ Map<String, String> _diceLabels(List<ThreadDiceRollModel> rolls) {
 void _showInternalLinkNotice(BuildContext context, Uri uri) {
   final isUser =
       uri.pathSegments.length == 2 && uri.pathSegments.first == 'users';
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(isUser ? '用户主页将在后续迭代开放。' : '这个站内目标暂未开放。')),
-  );
+  if (isUser) {
+    context.push(uri.toString());
+    return;
+  }
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(const SnackBar(content: Text('这个站内目标暂未开放。')));
 }
 
 String _formatTime(DateTime value) {

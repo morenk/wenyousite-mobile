@@ -8,7 +8,9 @@ import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -56,7 +58,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/search',
                 name: 'search',
-                builder: (context, state) => const SearchBaselinePage(),
+                builder: (context, state) => const SearchPage(),
               ),
             ],
           ),
@@ -88,7 +90,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ThreadDetailPage(
             threadId: state.pathParameters['threadId']!,
             categoryNameHint: extra is String ? extra : null,
+            targetPostId: state.uri.queryParameters['post'],
           );
+        },
+      ),
+      GoRoute(
+        path: '/users/:userId',
+        name: 'user-profile',
+        builder: (context, state) {
+          return PublicUserPage(userId: state.pathParameters['userId']!);
         },
       ),
       GoRoute(

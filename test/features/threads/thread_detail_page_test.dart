@@ -52,6 +52,25 @@ void main() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
+  testWidgets('搜索结果中的帖子会切换所属子贴并展示目标上下文', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-2',
+        floor: _targetFloor,
+      ),
+    );
+    await tester.pumpWidget(
+      _detailApp(repository, targetPostId: 'floor-target'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('目标楼层内容'), findsOneWidget);
+    expect(repository.targetPostIds, ['floor-target']);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
+  });
+
   testWidgets('楼层首屏失败展示局部错误而不是空数据', (tester) async {
     await tester.pumpWidget(
       _detailApp(
@@ -181,14 +200,15 @@ void main() {
   });
 }
 
-Widget _detailApp(ThreadDetailRepository repository) {
+Widget _detailApp(ThreadDetailRepository repository, {String? targetPostId}) {
   return ProviderScope(
     overrides: [threadDetailRepositoryProvider.overrideWithValue(repository)],
     child: MaterialApp(
       theme: AppTheme.light,
-      home: const ThreadDetailPage(
+      home: ThreadDetailPage(
         threadId: 'thread-1',
         categoryNameHint: '角色扮演',
+        targetPostId: targetPostId,
       ),
     ),
   );
@@ -199,17 +219,26 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     this.threadFailure,
     this.floorFailure,
     this.loadMoreFailure,
+    this.postTarget,
   });
 
   final ApiFailure? threadFailure;
   final ApiFailure? floorFailure;
   final ApiFailure? loadMoreFailure;
+  final ThreadPostTargetModel? postTarget;
   final List<String> requestedSubthreads = [];
+  final List<String> targetPostIds = [];
 
   @override
   Future<ThreadDetailModel> fetchThread(String threadId) async {
     if (threadFailure case final failure?) throw failure;
     return _detail;
+  }
+
+  @override
+  Future<ThreadPostTargetModel> fetchPostTarget(String postId) async {
+    targetPostIds.add(postId);
+    return postTarget!;
   }
 
   @override
@@ -335,6 +364,17 @@ final _sideFloor = ThreadFloorModel(
   author: _author,
   body: const ThreadBodyModel(markdown: '支线楼层'),
   createdAt: DateTime.utc(2026, 8, 9, 13),
+  isDeleted: false,
+  replyCount: 0,
+  replies: const [],
+);
+
+final _targetFloor = ThreadFloorModel(
+  id: 'floor-target',
+  floorNumber: 9,
+  author: _author,
+  body: const ThreadBodyModel(markdown: '目标楼层内容'),
+  createdAt: DateTime.utc(2026, 8, 10, 8),
   isDeleted: false,
   replyCount: 0,
   replies: const [],

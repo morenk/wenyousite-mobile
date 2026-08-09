@@ -336,3 +336,8 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
         threadId,
       );
     });
+
+final threadPostTargetProvider = FutureProvider.autoDispose
+    .family<ThreadPostTargetModel, String>((ref, postId) {
+      return ref.watch(threadDetailRepositoryProvider).fetchPostTarget(postId);
+    });

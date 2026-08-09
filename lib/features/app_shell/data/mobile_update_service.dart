@@ -38,9 +38,7 @@ abstract interface class MobileUpdateService {
 class DeviceMobileUpdateService implements MobileUpdateService {
   DeviceMobileUpdateService(this._downloadDio);
 
-  static const _installerChannel = MethodChannel(
-    'site.wenyou.app/app_update',
-  );
+  static const _installerChannel = MethodChannel('site.wenyou.app/app_update');
 
   final Dio _downloadDio;
 
@@ -87,10 +85,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
       throw const MobileUpdateException('新版本下载地址尚未配置，请稍后重试。');
     }
     if (update.platform != MobileClientPlatform.android) {
-      final opened = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened) {
         throw const MobileUpdateException('无法打开 TestFlight 更新页面。');
       }
@@ -149,10 +144,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
     } on DioException catch (error) {
       throw MobileUpdateException('安装包下载失败，请检查网络后重试。', error);
     } on PlatformException catch (error) {
-      throw MobileUpdateException(
-        error.message ?? '无法唤起系统安装器，请稍后重试。',
-        error,
-      );
+      throw MobileUpdateException(error.message ?? '无法唤起系统安装器，请稍后重试。', error);
     } on Object catch (error) {
       throw MobileUpdateException('更新没有完成，请稍后重试。', error);
     }

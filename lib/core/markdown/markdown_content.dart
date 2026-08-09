@@ -24,6 +24,19 @@ class MarkdownContent {
     r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]\r\n]+)\]\]',
     caseSensitive: false,
   );
+  static final _previewImage = RegExp(
+    r'!\[([^\]]*)\]\(\s*[^)\s]+[^)]*\)',
+    unicode: true,
+  );
+  static final _previewUrl = RegExp(
+    r'https?://[^\s<>()]+',
+    caseSensitive: false,
+    unicode: true,
+  );
+  static final _previewDice = RegExp(
+    r'\[\[dice:v1:[0-9a-f-]+:([^\]\r\n]+)\]\]',
+    caseSensitive: false,
+  );
 
   static String normalize(String markdown) {
     final lines = markdown.replaceAll(RegExp(r'\r\n?'), '\n').split('\n');
@@ -103,6 +116,30 @@ class MarkdownContent {
 
   static bool isSafeImage(Uri uri) =>
       uri.scheme == 'https' || uri.scheme == 'http';
+
+  static String toPlainTextPreview(String markdown, {int maxLength = 180}) {
+    if (maxLength <= 0) return '';
+    final visible = normalize(markdown)
+        .replaceAllMapped(
+          _previewDice,
+          (match) => '[${match.group(1)!.trim()}]',
+        )
+        .replaceAllMapped(_previewImage, (match) {
+          final alt = match.group(1)?.trim() ?? '';
+          return alt.isEmpty ? '[图片]' : '[图片：$alt]';
+        })
+        .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
+        .replaceAll(_httpAutolink, '[链接]')
+        .replaceAll(_previewUrl, '[链接]')
+        .replaceAll(_html, ' ')
+        .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
+        .replaceAll(RegExp(r'[`*_~|]'), '')
+        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
+        .trim();
+    final runes = visible.runes.toList(growable: false);
+    if (runes.length <= maxLength) return visible;
+    return '${String.fromCharCodes(runes.take(maxLength - 1))}…';
+  }
 
   static String renderDiceForDisplay(
     String markdown,

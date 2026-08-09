@@ -5,20 +5,6 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/logout_controller.dart';
 
-class SearchBaselinePage extends StatelessWidget {
-  const SearchBaselinePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const _BaselinePage(
-      title: '搜索',
-      icon: Icons.search_rounded,
-      headline: '搜索模块已进入规划',
-      detail: '主题、用户和正文将按需加载。',
-    );
-  }
-}
-
 class NotificationsBaselinePage extends ConsumerWidget {
   const NotificationsBaselinePage({super.key});
 

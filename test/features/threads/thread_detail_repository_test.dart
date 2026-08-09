@@ -110,6 +110,59 @@ void main() {
     expect(reply.createdAt, DateTime.utc(2026, 8, 9, 13, 5));
     expect(reply.isDeleted, isTrue);
   });
+
+  test('帖子定位直接映射主楼层上下文', () async {
+    final threadsApi = _MockThreadsApi();
+    final postsApi = _MockPostsApi();
+    when(() => postsApi.postsFindById(id: 'floor-7')).thenAnswer(
+      (_) async => _postDetailResponse(
+        _postDetail(id: 'floor-7', floorNumber: 7, content: '目标楼层'),
+      ),
+    );
+
+    final target = await ApiThreadDetailRepository(
+      threadsApi,
+      postsApi,
+    ).fetchPostTarget('floor-7');
+
+    verify(() => postsApi.postsFindById(id: 'floor-7')).called(1);
+    expect(target.threadId, 'thread-1');
+    expect(target.subthreadId, 'subthread-early');
+    expect(target.floor.id, 'floor-7');
+    expect(target.floor.floorNumber, 7);
+    expect(target.floor.body.markdown, '目标楼层');
+    expect(target.focusedReplyId, isNull);
+  });
+
+  test('楼中楼定位补取父楼层并注入目标回复', () async {
+    final threadsApi = _MockThreadsApi();
+    final postsApi = _MockPostsApi();
+    when(() => postsApi.postsFindById(id: 'reply-7')).thenAnswer(
+      (_) async => _postDetailResponse(
+        _postDetail(id: 'reply-7', parentPostId: 'floor-7', content: '目标回复'),
+      ),
+    );
+    when(() => postsApi.postsFindById(id: 'floor-7')).thenAnswer(
+      (_) async => _postDetailResponse(
+        _postDetail(id: 'floor-7', floorNumber: 7, content: '父楼层'),
+      ),
+    );
+
+    final target = await ApiThreadDetailRepository(
+      threadsApi,
+      postsApi,
+    ).fetchPostTarget('reply-7');
+
+    verifyInOrder([
+      () => postsApi.postsFindById(id: 'reply-7'),
+      () => postsApi.postsFindById(id: 'floor-7'),
+    ]);
+    expect(target.floor.id, 'floor-7');
+    expect(target.floor.body.markdown, '父楼层');
+    expect(target.focusedReplyId, 'reply-7');
+    expect(target.floor.replies.single.id, 'reply-7');
+    expect(target.floor.replies.single.body.markdown, '目标回复');
+  });
 }
 
 class _MockThreadsApi extends Mock implements ThreadsApi {}
@@ -376,5 +429,54 @@ DiceRollResponseDto _diceRoll({
       ..results.addAll(results)
       ..total = total
       ..createdAt = DateTime.utc(2026, 8, 9, 13),
+  );
+}
+
+Response<PostsFindById200Response> _postDetailResponse(
+  PostDetailResponseDto detail,
+) {
+  return Response(
+    requestOptions: RequestOptions(path: '/api/v1/posts/${detail.id}'),
+    data: PostsFindById200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.replace(detail),
+    ),
+  );
+}
+
+PostDetailResponseDto _postDetail({
+  required String id,
+  required String content,
+  int? floorNumber,
+  String? parentPostId,
+}) {
+  final createdAt = DateTime.utc(2026, 8, 10, 8);
+  return PostDetailResponseDto(
+    (post) => post
+      ..id = id
+      ..threadId = 'thread-1'
+      ..subthreadId = 'subthread-early'
+      ..authorId = 'post-author'
+      ..kind = PostDetailResponseDtoKindEnum.FLOOR
+      ..floorNumber = floorNumber
+      ..parentPostId = parentPostId
+      ..content = content
+      ..version = 1
+      ..createdAt = createdAt
+      ..updatedAt = createdAt
+      ..author.replace(_author(id: 'post-author', username: '定位作者', level: 2))
+      ..thread.update(
+        (thread) => thread
+          ..id = 'thread-1'
+          ..title = '星海旅团',
+      )
+      ..subthread.update(
+        (subthread) => subthread
+          ..id = 'subthread-early'
+          ..title = '主线',
+      )
+      ..count.update((count) => count.replies = parentPostId == null ? 3 : 0),
   );
 }

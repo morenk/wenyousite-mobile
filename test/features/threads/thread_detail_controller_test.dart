@@ -290,6 +290,11 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   }
 
   @override
+  Future<ThreadPostTargetModel> fetchPostTarget(String postId) {
+    throw UnsupportedError('not used by controller tests');
+  }
+
+  @override
   Future<CursorPage<ThreadFloorModel>> fetchFloors({
     required String subthreadId,
     String? cursor,
