@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/features/auth/presentation/registration_page.d
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
@@ -36,7 +37,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/me/following' ||
           state.matchedLocation == '/me/followers' ||
           state.matchedLocation == '/me/blocks' ||
-          state.matchedLocation == '/me/bookmarks';
+          state.matchedLocation == '/me/bookmarks' ||
+          state.matchedLocation == '/me/security/sessions';
       if (!authenticated && protectedRoute) {
         return Uri(
           path: '/auth/login',
@@ -167,6 +169,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/me/bookmarks',
         name: 'me-bookmarks',
         builder: (context, state) => const BookmarkListPage(),
+      ),
+      GoRoute(
+        path: '/me/security/sessions',
+        name: 'login-sessions',
+        builder: (context, state) => const LoginSessionsPage(),
       ),
       GoRoute(
         path: '/compose/thread',

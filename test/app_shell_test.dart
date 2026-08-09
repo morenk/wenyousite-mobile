@@ -262,7 +262,11 @@ void main() {
     expect(tokenStore.value?.refreshToken, 'refresh-token');
   });
 
-  for (final protectedLocation in ['/me/blocks', '/me/bookmarks']) {
+  for (final protectedLocation in [
+    '/me/blocks',
+    '/me/bookmarks',
+    '/me/security/sessions',
+  ]) {
     testWidgets('游客打开 $protectedLocation 先登录并保留原目标', (tester) async {
       final container = ProviderContainer(
         overrides: [

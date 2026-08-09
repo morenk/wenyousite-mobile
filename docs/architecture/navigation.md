@@ -2,7 +2,7 @@
 
 go_router 是唯一导航入口。根级兼容检查先于业务路由；未知契约主版本进入升级提示页，网络失败进入可重试页。
 
-主导航使用保留状态的四分支壳：首页 `/home`、搜索 `/search`、通知 `/notifications`、我的 `/me`。`/me` 对游客提供登录入口，登录后读取本人私有资料并可进入 `/users/:userId` 预览自己的公开主页，或进入 `/me/bookmarks`、`/me/following`、`/me/followers`、`/me/blocks` 管理本人内容与关系；四个私有列表路径与 `/compose/thread` 一样，未登录时先去 `/auth/login?returnTo=...`。登录页与 `/auth/register` 之间透传同一个 `returnTo`，任一路径成功后恢复原目标。会话失效时统一跳转登录页并保留安全的仓库内目标；用户可重新登录或将 invalidated 状态归一为 guest 后返回首页。回跳只接受仓库内绝对路径并拒绝认证页自循环；主题、楼层、用户和通知目标使用命名路由，禁止页面自行拼接不透明参数。
+主导航使用保留状态的四分支壳：首页 `/home`、搜索 `/search`、通知 `/notifications`、我的 `/me`。`/me` 对游客提供登录入口，登录后读取本人私有资料并可进入 `/users/:userId` 预览自己的公开主页，或进入 `/me/bookmarks`、`/me/following`、`/me/followers`、`/me/blocks` 管理本人内容与关系，并通过 `/me/security/sessions` 管理登录终端；这些私有路径与 `/compose/thread` 一样，未登录时先去 `/auth/login?returnTo=...`。登录页与 `/auth/register` 之间透传同一个 `returnTo`，任一路径成功后恢复原目标。会话失效时统一跳转登录页并保留安全的仓库内目标；用户可重新登录或将 invalidated 状态归一为 guest 后返回首页。回跳只接受仓库内绝对路径并拒绝认证页自循环；主题、楼层、用户和通知目标使用命名路由，禁止页面自行拼接不透明参数。
 
 公开主题详情使用命名路由 `/threads/:threadId`。首页和搜索主题卡片通过主题 ID 进入该路由；系统返回时回到原分支，并保留分支状态。详情页优先选择响应中的 `defaultSubthreadId`，子贴切换只更新正文与楼层数据源，不把子贴 ID 拼入临时页面路径。
 

@@ -16,4 +16,4 @@
 | notifications | in_progress | 0.3.0-dev / 0.4.0-dev | [通知](notifications.md) |
 | users | in_progress | 0.3.0-dev / 0.7.0-dev | [用户](users.md) |
 | social | planned | 0.4.0-dev | [社交关系](social.md) |
-| settings | planned | 0.2.0-dev / 0.7.0-dev | [设置](settings.md) |
+| settings | in_progress | 0.2.0-dev / 0.7.0-dev | [设置](settings.md) |

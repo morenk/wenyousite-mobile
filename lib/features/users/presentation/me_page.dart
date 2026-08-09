@@ -524,6 +524,16 @@ class _AccountContentPanel extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: disabled ? null : () => context.pushNamed('me-blocks'),
           ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('me-open-login-sessions'),
+            enabled: !disabled,
+            leading: const Icon(Icons.devices_other_outlined),
+            title: const Text('登录终端'),
+            subtitle: const Text('查看并退出其他活跃终端'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled ? null : () => context.pushNamed('login-sessions'),
+          ),
         ],
       ),
     );

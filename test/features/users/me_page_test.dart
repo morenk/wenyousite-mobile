@@ -50,6 +50,7 @@ void main() {
     expect(find.text('我关注的人'), findsOneWidget);
     expect(find.text('我的粉丝'), findsOneWidget);
     expect(find.text('管理黑名单'), findsOneWidget);
+    expect(find.text('登录终端'), findsOneWidget);
     expect(repository.fetchCalls, 1);
   });
 

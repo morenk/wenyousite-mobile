@@ -1,0 +1,348 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
+import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
+
+class LoginSessionsPage extends ConsumerWidget {
+  const LoginSessionsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(loginSessionsControllerProvider);
+    final notifier = ref.read(loginSessionsControllerProvider.notifier);
+    return Scaffold(
+      appBar: AppBar(title: const Text('登录终端')),
+      body: switch (state.phase) {
+        LoginSessionsPhase.loading => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        LoginSessionsPhase.failed => WenyouPageBody(
+          maxWidth: 600,
+          child: WenyouPanel(
+            child: WenyouEmptyState(
+              icon: Icons.devices_other_outlined,
+              title: '登录终端没有加载完成',
+              message: state.failure?.userMessage ?? '请稍后重试。',
+              detail: state.failure?.requestId == null
+                  ? null
+                  : '请求 ID：${state.failure!.requestId}',
+              action: OutlinedButton.icon(
+                key: const Key('login-sessions-retry'),
+                onPressed: notifier.load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重新加载'),
+              ),
+            ),
+          ),
+        ),
+        LoginSessionsPhase.ready => _ReadyLoginSessions(
+          state: state,
+          onRefresh: notifier.load,
+          onRevoke: (session) => _confirmAndRevoke(context, notifier, session),
+          onDismissFailure: notifier.clearActionFailure,
+        ),
+      },
+    );
+  }
+
+  Future<void> _confirmAndRevoke(
+    BuildContext context,
+    LoginSessionsController notifier,
+    LoginSessionModel session,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('退出这个登录终端？'),
+        content: Text('${_platformLabel(session.platform)}将立即失效，需要重新登录才能继续使用。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const Key('login-session-revoke-confirm'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('退出终端'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final succeeded = await notifier.revokeSession(session.id);
+    if (!context.mounted || !succeeded) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('该登录终端已退出。')));
+  }
+}
+
+class _ReadyLoginSessions extends StatelessWidget {
+  const _ReadyLoginSessions({
+    required this.state,
+    required this.onRefresh,
+    required this.onRevoke,
+    required this.onDismissFailure,
+  });
+
+  final LoginSessionsState state;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function(LoginSessionModel session) onRevoke;
+  final VoidCallback onDismissFailure;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final horizontal = MediaQuery.sizeOf(context).width <= 400
+        ? tokens.space12
+        : tokens.space24;
+    return RefreshIndicator(
+      onRefresh: state.isMutating ? () async {} : onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          horizontal,
+          tokens.space16,
+          horizontal,
+          tokens.space32,
+        ),
+        children: [
+          const _CenteredContent(child: _SessionGuidance()),
+          if (state.actionFailure != null) ...[
+            SizedBox(height: tokens.space12),
+            _CenteredContent(
+              child: WenyouStatusBanner(
+                tone: WenyouStatusTone.error,
+                message: state.actionFailure!.userMessage,
+                detail: state.actionFailure!.requestId == null
+                    ? null
+                    : '请求 ID：${state.actionFailure!.requestId}',
+                action: TextButton(
+                  key: const Key('login-session-error-dismiss'),
+                  onPressed: onDismissFailure,
+                  child: const Text('知道了'),
+                ),
+              ),
+            ),
+          ],
+          SizedBox(height: tokens.space12),
+          if (state.sessions.isEmpty)
+            const _CenteredContent(
+              child: WenyouPanel(
+                child: WenyouEmptyState(
+                  icon: Icons.devices_other_outlined,
+                  title: '暂无活跃登录终端',
+                  message: '下拉刷新后仍为空时，请重新登录以恢复当前终端。',
+                ),
+              ),
+            )
+          else
+            for (var index = 0; index < state.sessions.length; index++) ...[
+              if (index > 0) SizedBox(height: tokens.space12),
+              _CenteredContent(
+                child: _LoginSessionCard(
+                  session: state.sessions[index],
+                  isPending: state.pendingSessionId == state.sessions[index].id,
+                  disableAction:
+                      state.isMutating &&
+                      state.pendingSessionId != state.sessions[index].id,
+                  onRevoke: () => onRevoke(state.sessions[index]),
+                ),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionGuidance extends StatelessWidget {
+  const _SessionGuidance();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return WenyouPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const WenyouSectionHeader(
+            title: '账号安全',
+            subtitle: '查看当前活跃的 Web 与移动端登录；发现陌生终端时，可在这里立即退出。',
+          ),
+          SizedBox(height: tokens.space12),
+          Text(
+            '为保护隐私，这里只显示终端平台和活动时间，不展示浏览器或设备原始标识。',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoginSessionCard extends StatelessWidget {
+  const _LoginSessionCard({
+    required this.session,
+    required this.isPending,
+    required this.disableAction,
+    required this.onRevoke,
+  });
+
+  final LoginSessionModel session;
+  final bool isPending;
+  final bool disableAction;
+  final VoidCallback onRevoke;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final titleStyle = Theme.of(context).textTheme.titleMedium;
+    final detailStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText);
+    return WenyouPanel(
+      key: ValueKey('login-session-${session.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(_platformIcon(session.platform), color: tokens.mutedText),
+              SizedBox(width: tokens.space12),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: tokens.space8,
+                  runSpacing: tokens.space4,
+                  children: [
+                    Text(_platformLabel(session.platform), style: titleStyle),
+                    if (session.isCurrent) const _CurrentSessionPill(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: tokens.space12),
+          _SessionTimeRow(
+            label: '登录时间',
+            value: _formatTime(session.signedInAt),
+            style: detailStyle,
+          ),
+          SizedBox(height: tokens.space4),
+          _SessionTimeRow(
+            label: '最近活动',
+            value: _formatTime(session.lastActiveAt),
+            style: detailStyle,
+          ),
+          SizedBox(height: tokens.space4),
+          _SessionTimeRow(
+            label: '有效期至',
+            value: _formatTime(session.expiresAt),
+            style: detailStyle,
+          ),
+          if (session.isCurrent) ...[
+            SizedBox(height: tokens.space12),
+            Text('当前正在使用的终端需通过“退出当前账号”安全退出。', style: detailStyle),
+          ] else ...[
+            SizedBox(height: tokens.space16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                key: ValueKey('login-session-revoke-${session.id}'),
+                onPressed: isPending || disableAction ? null : onRevoke,
+                icon: isPending
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.logout_rounded),
+                label: Text(isPending ? '正在退出' : '退出此终端'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionTimeRow extends StatelessWidget {
+  const _SessionTimeRow({
+    required this.label,
+    required this.value,
+    required this.style,
+  });
+
+  final String label;
+  final String value;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text('$label：$value', style: style);
+  }
+}
+
+class _CurrentSessionPill extends StatelessWidget {
+  const _CurrentSessionPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.space8,
+        vertical: tokens.space4,
+      ),
+      decoration: BoxDecoration(
+        color: tokens.brand.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '当前终端',
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: tokens.brand),
+      ),
+    );
+  }
+}
+
+class _CenteredContent extends StatelessWidget {
+  const _CenteredContent({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: child,
+      ),
+    );
+  }
+}
+
+String _platformLabel(LoginSessionPlatform platform) => switch (platform) {
+  LoginSessionPlatform.mobile => '移动端登录',
+  LoginSessionPlatform.web => 'Web 端登录',
+  LoginSessionPlatform.unknown => '其他终端登录',
+};
+
+IconData _platformIcon(LoginSessionPlatform platform) => switch (platform) {
+  LoginSessionPlatform.mobile => Icons.smartphone_rounded,
+  LoginSessionPlatform.web => Icons.laptop_rounded,
+  LoginSessionPlatform.unknown => Icons.devices_other_outlined,
+};
+
+String _formatTime(DateTime value) {
+  return DateFormat('yyyy-MM-dd HH:mm').format(value.toLocal());
+}
