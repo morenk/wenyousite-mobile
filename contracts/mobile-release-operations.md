@@ -9,6 +9,7 @@
 - 在移动端仓库配置独立的 release keystore，所有后续构建必须使用同一个签名。
 - keystore、别名和密码只保存在开发机的安全存储中，不提交 Git、不上传 VPS。
 - 移动端仓库提供 `android/key.properties.example`，并从未跟踪的 `android/key.properties` 读取 `storeFile`、`storePassword`、`keyAlias`、`keyPassword`；发布脚本缺少任一项都会停止。
+- 当前 Windows 开发机的 keystore 位于 `C:\Users\quhui\.wenyousite\signing\wenyousite-release.jks`，仅当前用户与 `SYSTEM` 可读写；`android/key.properties` 采用相同的 ACL。两者必须一起复制到用户管理的加密离线备份，不能只备份 keystore。
 - 第一版分发前在至少一台真机完成“安装旧版 → 发布新版 → 覆盖安装”验证。Android 会拒绝使用不同签名覆盖现有应用。
 
 ### VPS 下载目录
@@ -39,6 +40,18 @@ chmod +x tool/release-mobile-from-local.sh
 该脚本不包含服务端密码或签名材料，可以提交到移动端仓库。Android 默认使用 `root@wenyou.site`；若使用专用 SSH 用户，通过 `WENYOU_RELEASE_SSH_TARGET` 覆盖。
 
 ## 日常发布
+
+当前 Windows 开发机使用 `D:\software\Git\git-bash.exe`。从仓库根目录打开 Git Bash 后可先只完成本地构建和验签，不连接 VPS：
+
+```bash
+./tool/release-mobile-from-local.sh \
+  --version 0.3.0-dev.13 \
+  --build 19 \
+  --platform android \
+  --build-only
+```
+
+脚本从自身位置解析 Flutter 项目，不要求调用者先切换到特定目录。Android 本地构建会校验 APK 对齐、签名、`applicationId`、`versionName` 和 `versionCode`，然后在 `build/releases/` 生成带版本文件名的 APK、`.sha256` sidecar 和不含密码的 JSON 构建摘要。`--build-only` 路径不会调用 SSH、SCP 或服务端发布脚本。
 
 只发布 Android：
 
