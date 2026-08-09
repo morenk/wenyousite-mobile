@@ -20,6 +20,12 @@
 
 Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定字段。未知版本在编辑器中显示不可编辑的兼容占位，序列化时保留原始 token，禁止静默丢弃。
 
+## 当前实现状态
+
+`MarkdownDeltaCodec` 已实现协议引擎第一阶段：普通 Markdown 暂以源码文本留在 Delta，用户提及、全体玩家、骰子、表情、普通图片和独占 `<br />` 提升为稳定 embed 或行属性。解码结果同时返回兼容问题；未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed。序列化遇到未知或损坏 embed、retain/delete 操作时直接失败，避免覆盖原稿。
+
+源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。普通 Markdown 富文本属性、编辑器 Widget 和 embed builder 属于下一阶段，不能用当前源码兼容模式伪装为已完成的富文本编辑体验。
+
 ## 往返不变量
 
 1. `decode(markdown) → encode(delta)` 经 Markdown v2 规范化后必须与 canonical 输入一致。
