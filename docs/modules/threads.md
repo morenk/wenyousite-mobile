@@ -62,4 +62,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/threads/`。参见[楼层与回复](posts.md)、[导航](../architecture/navigation.md)、[粉白视觉设计系统](../architecture/design-system.md)。
+代码入口：`lib/features/threads/`。参见[楼层与回复](posts.md)、[导航](../architecture/navigation.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

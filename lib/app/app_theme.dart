@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 abstract final class AppTheme {
-  static const primary = Color(0xFFFB7299);
-  static const background = Color(0xFFFFF7FA);
+  static const primary = WenyouFoundationPalette.primary;
+  static const background = WenyouFoundationPalette.background;
 
   static ThemeData get light {
     const tokens = WenyouThemeTokens.light;
@@ -16,7 +17,11 @@ abstract final class AppTheme {
           primary: tokens.brand,
           onPrimary: tokens.onBrand,
           primaryContainer: tokens.accentedBackground,
-          onPrimaryContainer: tokens.text,
+          onPrimaryContainer: WenyouFoundationPalette.onAccent,
+          secondary: WenyouFoundationPalette.secondary,
+          onSecondary: WenyouFoundationPalette.onSecondary,
+          secondaryContainer: WenyouFoundationPalette.infoSoft,
+          onSecondaryContainer: WenyouFoundationPalette.info,
           surface: tokens.panel,
           onSurface: tokens.text,
           surfaceContainerLowest: tokens.panel,
@@ -24,28 +29,40 @@ abstract final class AppTheme {
           onSurfaceVariant: tokens.mutedText,
           outline: tokens.border,
           outlineVariant: tokens.border,
+          error: WenyouFoundationPalette.destructive,
+          onError: WenyouFoundationPalette.onDestructive,
+          errorContainer: WenyouFoundationPalette.destructiveSoft,
+          onErrorContainer: WenyouFoundationPalette.destructive,
         );
     final baseTextTheme = ThemeData.light().textTheme.apply(
+      fontFamily: WenyouFoundationTypography.body,
+      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       bodyColor: tokens.text,
       displayColor: tokens.text,
     );
     final textTheme = baseTextTheme.copyWith(
       headlineSmall: baseTextTheme.headlineSmall?.copyWith(
+        fontFamily: WenyouFoundationTypography.display,
+        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
         fontSize: 22,
         height: 1.3,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
+        fontFamily: WenyouFoundationTypography.display,
+        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
         fontSize: 18,
         height: 1.35,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
       ),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
+        fontFamily: WenyouFoundationTypography.display,
+        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
         fontSize: 16,
         height: 1.35,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
       ),
-      bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.45),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.6),
       bodyMedium: baseTextTheme.bodyMedium?.copyWith(
         fontSize: 14,
         height: 1.45,
@@ -54,6 +71,10 @@ abstract final class AppTheme {
         fontSize: 12,
         height: 1.4,
         color: tokens.mutedText,
+      ),
+      labelSmall: baseTextTheme.labelSmall?.copyWith(
+        fontFamily: WenyouFoundationTypography.utility,
+        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       ),
       labelLarge: baseTextTheme.labelLarge?.copyWith(
         fontSize: 14,
@@ -175,7 +196,7 @@ abstract final class AppTheme {
           tokens.border.withValues(alpha: 0.72),
           tokens.radius16,
         ),
-        focusedBorder: _inputBorder(tokens.brand, tokens.radius16, width: 2),
+        focusedBorder: _inputBorder(tokens.focus, tokens.radius16, width: 2),
         errorBorder: _inputBorder(colorScheme.error, tokens.radius16),
         focusedErrorBorder: _inputBorder(
           colorScheme.error,

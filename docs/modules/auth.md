@@ -45,7 +45,7 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[粉白视觉设计系统](../architecture/design-system.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -59,7 +59,7 @@
 
 ## 12. 已知限制和后续功能
 
-当前完成邮箱验证码注册、账号/密码登录、创建入口回跳、会话恢复/刷新及当前终端退出，并将登录、注册改造成粉白视觉样板；找回密码、邮箱/密码/终端管理和注销仍待后续切片。验证码有效期由服务端响应展示，应用退出或页面销毁后不持久化注册进度。仅本机退出无法确认服务端 refresh token 已撤销，后续登录后应通过终端管理检查。不做第三方登录、生物识别登录和多账号切换；破坏性注销只用一次性测试账号验收。
+当前完成邮箱验证码注册、账号/密码登录、创建入口回跳、会话恢复/刷新及当前终端退出，并将登录、注册接入 Foundation 主题与共享表单组件；找回密码、邮箱/密码/终端管理和注销仍待后续切片。验证码有效期由服务端响应展示，应用退出或页面销毁后不持久化注册进度。仅本机退出无法确认服务端 refresh token 已撤销，后续登录后应通过终端管理检查。不做第三方登录、生物识别登录和多账号切换；破坏性注销只用一次性测试账号验收。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -67,4 +67,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/`、`lib/core/network/session_remote.dart`。参见[粉白视觉设计系统](../architecture/design-system.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/`、`lib/core/network/session_remote.dart`。参见[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

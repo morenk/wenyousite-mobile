@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
 @immutable
 class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
@@ -29,29 +30,29 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   });
 
   static const light = WenyouThemeTokens(
-    brand: Color(0xFFFB7299),
-    onBrand: Color(0xFF35272C),
-    background: Color(0xFFFFF7FA),
-    panel: Color(0xFFFFFFFF),
-    softPanel: Color(0xFFFFF0F5),
-    border: Color(0xFFF2DDE5),
-    text: Color(0xFF35272C),
-    mutedText: Color(0xFF806A73),
-    accentedBackground: Color(0x26FB7299),
-    focus: Color(0x4DFB7299),
-    space4: 4,
-    space8: 8,
-    space12: 12,
-    space16: 16,
-    space20: 20,
-    space24: 24,
-    space32: 32,
-    radius12: 12,
-    radius16: 16,
-    radius20: 20,
-    radiusPill: 999,
-    minimumTouchTarget: 48,
-    feedbackDuration: Duration(milliseconds: 120),
+    brand: WenyouFoundationPalette.primary,
+    onBrand: WenyouFoundationPalette.onPrimary,
+    background: WenyouFoundationPalette.background,
+    panel: WenyouFoundationPalette.surface,
+    softPanel: WenyouFoundationPalette.muted,
+    border: WenyouFoundationPalette.border,
+    text: WenyouFoundationPalette.foreground,
+    mutedText: WenyouFoundationPalette.mutedForeground,
+    accentedBackground: WenyouFoundationPalette.accent,
+    focus: WenyouFoundationPalette.brandStrong,
+    space4: WenyouFoundationMobile.space4,
+    space8: WenyouFoundationMobile.space8,
+    space12: WenyouFoundationMobile.space12,
+    space16: WenyouFoundationMobile.space16,
+    space20: WenyouFoundationMobile.space20,
+    space24: WenyouFoundationMobile.space24,
+    space32: WenyouFoundationMobile.space32,
+    radius12: WenyouFoundationMobile.radiusCompact,
+    radius16: WenyouFoundationMobile.radiusControl,
+    radius20: WenyouFoundationMobile.radiusPanel,
+    radiusPill: WenyouFoundationMobile.radiusPill,
+    minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
+    feedbackDuration: WenyouFoundationMotion.fast,
   );
 
   final Color brand;

@@ -40,7 +40,7 @@
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)和[粉白视觉设计系统](../architecture/design-system.md)。更新页复用粉白页面底、白色面板、状态横幅和 48dp 主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)和[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。更新页复用中央 Token、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 
@@ -64,4 +64,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[粉白视觉设计系统](../architecture/design-system.md)、[导航](../architecture/navigation.md)和[网络与会话](../architecture/networking.md)。
+代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)和[网络与会话](../architecture/networking.md)。

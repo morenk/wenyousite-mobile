@@ -61,4 +61,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[粉白视觉设计系统](../architecture/design-system.md)、[主题](threads.md)。
+代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[主题](threads.md)。

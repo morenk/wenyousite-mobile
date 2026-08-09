@@ -62,4 +62,4 @@
 
 ## 14. 相关代码与架构文档
 
-当前只读代码由 `lib/features/threads/` 协调；独立楼中楼与写入切片再建立 `lib/features/posts/`。参见[主题与子贴](threads.md)、[网络与会话](../architecture/networking.md)、[粉白视觉设计系统](../architecture/design-system.md)。
+当前只读代码由 `lib/features/threads/` 协调；独立楼中楼与写入切片再建立 `lib/features/posts/`。参见[主题与子贴](threads.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

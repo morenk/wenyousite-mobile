@@ -20,7 +20,7 @@ V1 包含认证、公开浏览、搜索、主题/子贴/楼层、创作管理、
 
 V1 暂不实现：私聊、收藏表情、FCM 系统推送、举报/管理后台、离线阅读、离线自动发帖、暗色主题、阅读进度、子贴标签和 Android App Links。
 
-视觉基线为浅色粉白主题：主粉 `#FB7299`、背景 `#FFF7FA`、白色表面、圆角面板和轻量反馈。`docs/architecture/design-system.md` 是唯一视觉事实源；页面必须复用 `WenyouThemeTokens` 与共享组件，新增视觉模式先更新设计文档和共享实现，禁止在页面内创建近似 Token。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的已发布版本；当前由 `pubspec.yaml` 锁定 Foundation v1.1.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 
@@ -30,7 +30,9 @@ V1 暂不实现：私聊、收藏表情、FCM 系统推送、举报/管理后台
 4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
 5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
-视觉实现另以 `docs/architecture/design-system.md` 为事实源。它不得覆盖接口与业务契约，但所有页面、共享组件和视觉验收必须遵循其中的颜色、密度、状态、无障碍与变更规则。
+视觉实现以锁定版本的 Foundation `contracts/foundation.v1.json`、Flutter profile、图片契约和生成常量为唯一事实源。视觉契约不得覆盖接口与业务契约，但所有页面、共享组件和视觉验收必须遵循中央颜色、字体、密度、状态、图片与无障碍规则。
+
+视觉切片开始前还要 fetch Foundation，确认 `pubspec.yaml` 的 tag 仍是目标版本并阅读该版本 CHANGELOG；需要升级时先做独立 `chore`，不得直接跟随主分支。
 
 每个切片开始先 fetch 后端并比较：
 
@@ -222,4 +224,4 @@ Docs-Impact: updated|none - 原因
 - `0.6.0-dev`：主题工作台、子贴、成员、玩家和私密邀请。
 - `0.7.0-dev`：账号生命周期、性能、弱网、无障碍和真机验收。
 
-粉白视觉基础在首页等内容功能前建立；复杂动效、骨架屏、插画和全局像素级精修在功能闭环稳定后作为独立里程碑实施。
+Foundation 视觉基础在首页等内容功能前建立；复杂动效、骨架屏、插画和全局像素级精修在功能闭环稳定后作为独立里程碑实施。

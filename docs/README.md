@@ -6,7 +6,7 @@
 
 - [模块状态与文档索引](modules/README.md)
 - [网络与会话](architecture/networking.md)
-- [粉白视觉设计系统](architecture/design-system.md)
+- [Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)
 - [导航](architecture/navigation.md)
 - [本地持久化](architecture/persistence.md)
 - [API 生成](architecture/api-generation.md)
