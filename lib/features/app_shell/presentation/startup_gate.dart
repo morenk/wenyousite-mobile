@@ -103,7 +103,6 @@ class _CheckingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final statusMessage = _statusMessage(action);
     return Scaffold(
       body: WenyouPageBody(
         maxWidth: 420,
@@ -151,6 +150,7 @@ class _UpdatePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final statusMessage = _statusMessage(action);
     return Scaffold(
       body: WenyouPageBody(
         maxWidth: 520,
@@ -185,9 +185,7 @@ class _UpdatePage extends StatelessWidget {
               ),
               SizedBox(height: tokens.space8),
               Text(
-                isRequired
-                    ? '当前版本已停止支持。更新后即可继续访问温油站。'
-                    : '建议现在更新，以获得最新功能和问题修复。',
+                isRequired ? '当前版本已停止支持。更新后即可继续访问温油站。' : '建议现在更新，以获得最新功能和问题修复。',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -417,10 +415,7 @@ class _MessagePage extends StatelessWidget {
   }
 }
 
-String _buttonLabel(
-  MobileUpdateInfo update,
-  MobileUpdateActionState action,
-) {
+String _buttonLabel(MobileUpdateInfo update, MobileUpdateActionState action) {
   if (action.status == MobileUpdateActionStatus.permissionRequired) {
     return '权限已开启，继续安装';
   }

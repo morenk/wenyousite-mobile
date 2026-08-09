@@ -68,5 +68,6 @@ flutter {
 }
 
 dependencies {
-    implementation("androidx.core:core:1.19.0")
+    // 1.19.0 requires AGP 9.1; keep this aligned with the project's AGP 9.0.1.
+    implementation("androidx.core:core:1.18.0")
 }

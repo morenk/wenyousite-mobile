@@ -46,11 +46,7 @@ class StartupState {
   const StartupState.updateRequired(
     ContractInfo contract,
     MobileUpdateInfo update,
-  ) : this._(
-        StartupStatus.updateRequired,
-        contract: contract,
-        update: update,
-      );
+  ) : this._(StartupStatus.updateRequired, contract: contract, update: update);
 
   const StartupState.incompatible(
     ContractInfo contract,
@@ -78,12 +74,10 @@ class StartupController extends StateNotifier<StartupState> {
     this._metaRepository,
     this._environment,
     this._sessionController, {
-    required MobileUpdateService mobileUpdateService,
-    required RecommendedUpdateDismissStore dismissStore,
+    required this._mobileUpdateService,
+    required this._dismissStore,
     bool autoStart = true,
-  }) : _mobileUpdateService = mobileUpdateService,
-       _dismissStore = dismissStore,
-       super(const StartupState.checking()) {
+  }) : super(const StartupState.checking()) {
     if (autoStart) unawaited(check());
   }
 
