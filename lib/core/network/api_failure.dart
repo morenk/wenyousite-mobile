@@ -82,6 +82,8 @@ class ApiFailure implements Exception {
         return '验证码错误次数过多，请重新获取。';
       case 40114:
         return '请先获取邮箱验证码。';
+      case 40116:
+        return '当前密码不正确。';
       case 40901:
         return '该邮箱已经注册，请直接登录。';
       case 40902:

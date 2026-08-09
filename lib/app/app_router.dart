@@ -10,6 +10,8 @@ import 'package:wenyousite_mobile/features/auth/presentation/registration_page.d
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
@@ -38,7 +40,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/me/followers' ||
           state.matchedLocation == '/me/blocks' ||
           state.matchedLocation == '/me/bookmarks' ||
-          state.matchedLocation == '/me/security/sessions';
+          state.matchedLocation == '/me/security/sessions' ||
+          state.matchedLocation == '/me/security/password' ||
+          state.matchedLocation == '/me/security/email';
       if (!authenticated && protectedRoute) {
         return Uri(
           path: '/auth/login',
@@ -174,6 +178,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/me/security/sessions',
         name: 'login-sessions',
         builder: (context, state) => const LoginSessionsPage(),
+      ),
+      GoRoute(
+        path: '/me/security/password',
+        name: 'change-password',
+        builder: (context, state) => const ChangePasswordPage(),
+      ),
+      GoRoute(
+        path: '/me/security/email',
+        name: 'change-email',
+        builder: (context, state) => const ChangeEmailPage(),
       ),
       GoRoute(
         path: '/compose/thread',

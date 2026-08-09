@@ -88,6 +88,7 @@ void main() {
     expect(messageFor(40112), contains('不正确'));
     expect(messageFor(40113), contains('错误次数过多'));
     expect(messageFor(40114), contains('先获取'));
+    expect(messageFor(40116), '当前密码不正确。');
     expect(messageFor(40901), contains('邮箱已经注册'));
     expect(messageFor(40902), contains('用户名已被使用'));
   });

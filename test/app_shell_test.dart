@@ -266,6 +266,8 @@ void main() {
     '/me/blocks',
     '/me/bookmarks',
     '/me/security/sessions',
+    '/me/security/password',
+    '/me/security/email',
   ]) {
     testWidgets('游客打开 $protectedLocation 先登录并保留原目标', (tester) async {
       final container = ProviderContainer(
