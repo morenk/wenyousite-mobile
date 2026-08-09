@@ -6,46 +6,6 @@ part of 'thread_list_item_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const ThreadListItemResponseDtoCategoryEnum
-_$threadListItemResponseDtoCategoryEnum_DEDUCTION =
-    const ThreadListItemResponseDtoCategoryEnum._('DEDUCTION');
-const ThreadListItemResponseDtoCategoryEnum
-_$threadListItemResponseDtoCategoryEnum_NATION =
-    const ThreadListItemResponseDtoCategoryEnum._('NATION');
-const ThreadListItemResponseDtoCategoryEnum
-_$threadListItemResponseDtoCategoryEnum_RPG =
-    const ThreadListItemResponseDtoCategoryEnum._('RPG');
-const ThreadListItemResponseDtoCategoryEnum
-_$threadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const ThreadListItemResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-ThreadListItemResponseDtoCategoryEnum
-_$threadListItemResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$threadListItemResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$threadListItemResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$threadListItemResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$threadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$threadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<ThreadListItemResponseDtoCategoryEnum>
-_$threadListItemResponseDtoCategoryEnumValues =
-    BuiltSet<ThreadListItemResponseDtoCategoryEnum>(
-      const <ThreadListItemResponseDtoCategoryEnum>[
-        _$threadListItemResponseDtoCategoryEnum_DEDUCTION,
-        _$threadListItemResponseDtoCategoryEnum_NATION,
-        _$threadListItemResponseDtoCategoryEnum_RPG,
-        _$threadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const ThreadListItemResponseDtoStatusEnum
 _$threadListItemResponseDtoStatusEnum_RECRUITING =
     const ThreadListItemResponseDtoStatusEnum._('RECRUITING');
@@ -120,54 +80,12 @@ _$threadListItemResponseDtoVisibilityEnumValues =
       ],
     );
 
-Serializer<ThreadListItemResponseDtoCategoryEnum>
-_$threadListItemResponseDtoCategoryEnumSerializer =
-    _$ThreadListItemResponseDtoCategoryEnumSerializer();
 Serializer<ThreadListItemResponseDtoStatusEnum>
 _$threadListItemResponseDtoStatusEnumSerializer =
     _$ThreadListItemResponseDtoStatusEnumSerializer();
 Serializer<ThreadListItemResponseDtoVisibilityEnum>
 _$threadListItemResponseDtoVisibilityEnumSerializer =
     _$ThreadListItemResponseDtoVisibilityEnumSerializer();
-
-class _$ThreadListItemResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<ThreadListItemResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    ThreadListItemResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'ThreadListItemResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    ThreadListItemResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  ThreadListItemResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => ThreadListItemResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$ThreadListItemResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<ThreadListItemResponseDtoStatusEnum> {
@@ -251,7 +169,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
   @override
   final String title;
   @override
-  final ThreadListItemResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final ThreadListItemResponseDtoStatusEnum status;
   @override
@@ -260,6 +178,8 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
   final bool published;
   @override
   final bool pinned;
+  @override
+  final String tipTotal;
   @override
   final DateTime createdAt;
   @override
@@ -284,11 +204,12 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
   _$ThreadListItemResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
     required this.status,
     required this.visibility,
     required this.published,
     required this.pinned,
+    required this.tipTotal,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -318,6 +239,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
         visibility == other.visibility &&
         published == other.published &&
         pinned == other.pinned &&
+        tipTotal == other.tipTotal &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
         deletedAt == other.deletedAt &&
@@ -338,6 +260,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
     _$hash = $jc(_$hash, visibility.hashCode);
     _$hash = $jc(_$hash, published.hashCode);
     _$hash = $jc(_$hash, pinned.hashCode);
+    _$hash = $jc(_$hash, tipTotal.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
@@ -360,6 +283,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
           ..add('visibility', visibility)
           ..add('published', published)
           ..add('pinned', pinned)
+          ..add('tipTotal', tipTotal)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
           ..add('deletedAt', deletedAt)
@@ -385,10 +309,9 @@ class ThreadListItemResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  ThreadListItemResponseDtoCategoryEnum? _category;
-  ThreadListItemResponseDtoCategoryEnum? get category => _$this._category;
-  set category(ThreadListItemResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   ThreadListItemResponseDtoStatusEnum? _status;
   ThreadListItemResponseDtoStatusEnum? get status => _$this._status;
@@ -407,6 +330,10 @@ class ThreadListItemResponseDtoBuilder
   bool? _pinned;
   bool? get pinned => _$this._pinned;
   set pinned(bool? pinned) => _$this._pinned = pinned;
+
+  String? _tipTotal;
+  String? get tipTotal => _$this._tipTotal;
+  set tipTotal(String? tipTotal) => _$this._tipTotal = tipTotal;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -462,6 +389,7 @@ class ThreadListItemResponseDtoBuilder
       _visibility = $v.visibility;
       _published = $v.published;
       _pinned = $v.pinned;
+      _tipTotal = $v.tipTotal;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _deletedAt = $v.deletedAt;
@@ -504,11 +432,7 @@ class ThreadListItemResponseDtoBuilder
               r'ThreadListItemResponseDto',
               'title',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'ThreadListItemResponseDto',
-              'category',
-            ),
+            category: category,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'ThreadListItemResponseDto',
@@ -528,6 +452,11 @@ class ThreadListItemResponseDtoBuilder
               pinned,
               r'ThreadListItemResponseDto',
               'pinned',
+            ),
+            tipTotal: BuiltValueNullFieldError.checkNotNull(
+              tipTotal,
+              r'ThreadListItemResponseDto',
+              'tipTotal',
             ),
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,

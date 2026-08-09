@@ -10,6 +10,10 @@ import 'package:wenyou_api/src/auth/basic_auth.dart';
 import 'package:wenyou_api/src/auth/bearer_auth.dart';
 import 'package:wenyou_api/src/auth/oauth.dart';
 import 'package:wenyou_api/src/api/admin_api.dart';
+import 'package:wenyou_api/src/api/admin_dashboard_api.dart';
+import 'package:wenyou_api/src/api/admin_moderation_api.dart';
+import 'package:wenyou_api/src/api/admin_reports_api.dart';
+import 'package:wenyou_api/src/api/admin_taxonomy_api.dart';
 import 'package:wenyou_api/src/api/auth_api.dart';
 import 'package:wenyou_api/src/api/bookmarks_api.dart';
 import 'package:wenyou_api/src/api/direct_messages_api.dart';
@@ -18,6 +22,7 @@ import 'package:wenyou_api/src/api/health_api.dart';
 import 'package:wenyou_api/src/api/media_api.dart';
 import 'package:wenyou_api/src/api/meta_api.dart';
 import 'package:wenyou_api/src/api/mobile_devices_api.dart';
+import 'package:wenyou_api/src/api/moments_api.dart';
 import 'package:wenyou_api/src/api/notifications_api.dart';
 import 'package:wenyou_api/src/api/posts_api.dart';
 import 'package:wenyou_api/src/api/reports_api.dart';
@@ -26,8 +31,10 @@ import 'package:wenyou_api/src/api/stickers_api.dart';
 import 'package:wenyou_api/src/api/subscriptions_api.dart';
 import 'package:wenyou_api/src/api/subthreads_api.dart';
 import 'package:wenyou_api/src/api/tags_api.dart';
+import 'package:wenyou_api/src/api/thread_categories_api.dart';
 import 'package:wenyou_api/src/api/threads_api.dart';
 import 'package:wenyou_api/src/api/users_api.dart';
+import 'package:wenyou_api/src/api/wallet_api.dart';
 
 class WenyouApi {
   static const String basePath = r'https://wenyou.site';
@@ -129,6 +136,30 @@ class WenyouApi {
     return AdminApi(dio, serializers);
   }
 
+  /// Get AdminDashboardApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminDashboardApi getAdminDashboardApi() {
+    return AdminDashboardApi(dio, serializers);
+  }
+
+  /// Get AdminModerationApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminModerationApi getAdminModerationApi() {
+    return AdminModerationApi(dio, serializers);
+  }
+
+  /// Get AdminReportsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminReportsApi getAdminReportsApi() {
+    return AdminReportsApi(dio, serializers);
+  }
+
+  /// Get AdminTaxonomyApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminTaxonomyApi getAdminTaxonomyApi() {
+    return AdminTaxonomyApi(dio, serializers);
+  }
+
   /// Get AuthApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   AuthApi getAuthApi() {
@@ -175,6 +206,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   MobileDevicesApi getMobileDevicesApi() {
     return MobileDevicesApi(dio, serializers);
+  }
+
+  /// Get MomentsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MomentsApi getMomentsApi() {
+    return MomentsApi(dio, serializers);
   }
 
   /// Get NotificationsApi instance, base route and serializer can be overridden by a given but be careful,
@@ -225,6 +262,12 @@ class WenyouApi {
     return TagsApi(dio, serializers);
   }
 
+  /// Get ThreadCategoriesApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ThreadCategoriesApi getThreadCategoriesApi() {
+    return ThreadCategoriesApi(dio, serializers);
+  }
+
   /// Get ThreadsApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   ThreadsApi getThreadsApi() {
@@ -235,5 +278,11 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   UsersApi getUsersApi() {
     return UsersApi(dio, serializers);
+  }
+
+  /// Get WalletApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  WalletApi getWalletApi() {
+    return WalletApi(dio, serializers);
   }
 }

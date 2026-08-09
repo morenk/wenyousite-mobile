@@ -15,6 +15,8 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
   final num markdownContractVersion;
   @override
   final ApiCapabilitiesResponseDto capabilities;
+  @override
+  final MobileCompatibilityDto mobileCompatibility;
 
   factory _$ApiMetaResponseDto([
     void Function(ApiMetaResponseDtoBuilder)? updates,
@@ -25,6 +27,7 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
     this.buildSha,
     required this.markdownContractVersion,
     required this.capabilities,
+    required this.mobileCompatibility,
   }) : super._();
   @override
   ApiMetaResponseDto rebuild(
@@ -42,7 +45,8 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
         contractVersion == other.contractVersion &&
         buildSha == other.buildSha &&
         markdownContractVersion == other.markdownContractVersion &&
-        capabilities == other.capabilities;
+        capabilities == other.capabilities &&
+        mobileCompatibility == other.mobileCompatibility;
   }
 
   @override
@@ -52,6 +56,7 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
     _$hash = $jc(_$hash, buildSha.hashCode);
     _$hash = $jc(_$hash, markdownContractVersion.hashCode);
     _$hash = $jc(_$hash, capabilities.hashCode);
+    _$hash = $jc(_$hash, mobileCompatibility.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -62,7 +67,8 @@ class _$ApiMetaResponseDto extends ApiMetaResponseDto {
           ..add('contractVersion', contractVersion)
           ..add('buildSha', buildSha)
           ..add('markdownContractVersion', markdownContractVersion)
-          ..add('capabilities', capabilities))
+          ..add('capabilities', capabilities)
+          ..add('mobileCompatibility', mobileCompatibility))
         .toString();
   }
 }
@@ -91,6 +97,12 @@ class ApiMetaResponseDtoBuilder
   set capabilities(ApiCapabilitiesResponseDtoBuilder? capabilities) =>
       _$this._capabilities = capabilities;
 
+  MobileCompatibilityDtoBuilder? _mobileCompatibility;
+  MobileCompatibilityDtoBuilder get mobileCompatibility =>
+      _$this._mobileCompatibility ??= MobileCompatibilityDtoBuilder();
+  set mobileCompatibility(MobileCompatibilityDtoBuilder? mobileCompatibility) =>
+      _$this._mobileCompatibility = mobileCompatibility;
+
   ApiMetaResponseDtoBuilder() {
     ApiMetaResponseDto._defaults(this);
   }
@@ -102,6 +114,7 @@ class ApiMetaResponseDtoBuilder
       _buildSha = $v.buildSha;
       _markdownContractVersion = $v.markdownContractVersion;
       _capabilities = $v.capabilities.toBuilder();
+      _mobileCompatibility = $v.mobileCompatibility.toBuilder();
       _$v = null;
     }
     return this;
@@ -138,12 +151,15 @@ class ApiMetaResponseDtoBuilder
               'markdownContractVersion',
             ),
             capabilities: capabilities.build(),
+            mobileCompatibility: mobileCompatibility.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'capabilities';
         capabilities.build();
+        _$failedField = 'mobileCompatibility';
+        mobileCompatibility.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ApiMetaResponseDto',

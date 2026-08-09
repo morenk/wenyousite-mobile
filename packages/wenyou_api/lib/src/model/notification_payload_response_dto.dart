@@ -20,8 +20,15 @@ part 'notification_payload_response_dto.g.dart';
 /// * [preview]
 /// * [subthreadTitle]
 /// * [threadTitle]
+/// * [momentTitle]
 /// * [totalCount]
 /// * [likers]
+/// * [grossAmount]
+/// * [recipientAmount]
+/// * [platformAmount]
+/// * [previousLevel]
+/// * [level]
+/// * [experience]
 @BuiltValue()
 abstract class NotificationPayloadResponseDto implements Built<NotificationPayloadResponseDto, NotificationPayloadResponseDtoBuilder> {
   @BuiltValueField(wireName: r'schemaVersion')
@@ -46,11 +53,32 @@ abstract class NotificationPayloadResponseDto implements Built<NotificationPaylo
   @BuiltValueField(wireName: r'threadTitle')
   String? get threadTitle;
 
+  @BuiltValueField(wireName: r'momentTitle')
+  String? get momentTitle;
+
   @BuiltValueField(wireName: r'totalCount')
   num? get totalCount;
 
   @BuiltValueField(wireName: r'likers')
   BuiltList<NotificationLikerResponseDto>? get likers;
+
+  @BuiltValueField(wireName: r'grossAmount')
+  String? get grossAmount;
+
+  @BuiltValueField(wireName: r'recipientAmount')
+  String? get recipientAmount;
+
+  @BuiltValueField(wireName: r'platformAmount')
+  String? get platformAmount;
+
+  @BuiltValueField(wireName: r'previousLevel')
+  num? get previousLevel;
+
+  @BuiltValueField(wireName: r'level')
+  num? get level;
+
+  @BuiltValueField(wireName: r'experience')
+  num? get experience;
 
   NotificationPayloadResponseDto._();
 
@@ -122,6 +150,13 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
         specifiedType: const FullType.nullable(String),
       );
     }
+    if (object.momentTitle != null) {
+      yield r'momentTitle';
+      yield serializers.serialize(
+        object.momentTitle,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
     if (object.totalCount != null) {
       yield r'totalCount';
       yield serializers.serialize(
@@ -134,6 +169,48 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
       yield serializers.serialize(
         object.likers,
         specifiedType: const FullType(BuiltList, [FullType(NotificationLikerResponseDto)]),
+      );
+    }
+    if (object.grossAmount != null) {
+      yield r'grossAmount';
+      yield serializers.serialize(
+        object.grossAmount,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.recipientAmount != null) {
+      yield r'recipientAmount';
+      yield serializers.serialize(
+        object.recipientAmount,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.platformAmount != null) {
+      yield r'platformAmount';
+      yield serializers.serialize(
+        object.platformAmount,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.previousLevel != null) {
+      yield r'previousLevel';
+      yield serializers.serialize(
+        object.previousLevel,
+        specifiedType: const FullType.nullable(num),
+      );
+    }
+    if (object.level != null) {
+      yield r'level';
+      yield serializers.serialize(
+        object.level,
+        specifiedType: const FullType.nullable(num),
+      );
+    }
+    if (object.experience != null) {
+      yield r'experience';
+      yield serializers.serialize(
+        object.experience,
+        specifiedType: const FullType.nullable(num),
       );
     }
   }
@@ -214,6 +291,14 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
           if (valueDes == null) continue;
           result.threadTitle = valueDes;
           break;
+        case r'momentTitle':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.momentTitle = valueDes;
+          break;
         case r'totalCount':
           final valueDes = serializers.deserialize(
             value,
@@ -228,6 +313,54 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
             specifiedType: const FullType(BuiltList, [FullType(NotificationLikerResponseDto)]),
           ) as BuiltList<NotificationLikerResponseDto>;
           result.likers.replace(valueDes);
+          break;
+        case r'grossAmount':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.grossAmount = valueDes;
+          break;
+        case r'recipientAmount':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.recipientAmount = valueDes;
+          break;
+        case r'platformAmount':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.platformAmount = valueDes;
+          break;
+        case r'previousLevel':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.previousLevel = valueDes;
+          break;
+        case r'level':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.level = valueDes;
+          break;
+        case r'experience':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.experience = valueDes;
           break;
         default:
           unhandled.add(key);

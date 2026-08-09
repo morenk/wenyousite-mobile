@@ -13,7 +13,7 @@ part 'update_thread_dto.g.dart';
 ///
 /// Properties:
 /// * [title]
-/// * [category]
+/// * [category] - 管理员配置的分类 slug
 /// * [status]
 /// * [visibility] - 可见性（PUBLIC=公开, PRIVATE=仅成员）
 /// * [published] - 设为 true 发布草稿。发布时校验 title/category 是否填写、是否至少有一个子贴含楼层。发布后通知粉丝
@@ -23,9 +23,9 @@ abstract class UpdateThreadDto implements Built<UpdateThreadDto, UpdateThreadDto
   @BuiltValueField(wireName: r'title')
   String? get title;
 
+  /// 管理员配置的分类 slug
   @BuiltValueField(wireName: r'category')
-  UpdateThreadDtoCategoryEnum? get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   UpdateThreadDtoStatusEnum? get status;
@@ -78,7 +78,7 @@ class _$UpdateThreadDtoSerializer implements PrimitiveSerializer<UpdateThreadDto
       yield r'category';
       yield serializers.serialize(
         object.category,
-        specifiedType: const FullType(UpdateThreadDtoCategoryEnum),
+        specifiedType: const FullType(String),
       );
     }
     if (object.status != null) {
@@ -140,8 +140,8 @@ class _$UpdateThreadDtoSerializer implements PrimitiveSerializer<UpdateThreadDto
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(UpdateThreadDtoCategoryEnum),
-          ) as UpdateThreadDtoCategoryEnum;
+            specifiedType: const FullType(String),
+          ) as String;
           result.category = valueDes;
           break;
         case r'status':
@@ -199,25 +199,6 @@ class _$UpdateThreadDtoSerializer implements PrimitiveSerializer<UpdateThreadDto
     );
     return result.build();
   }
-}
-
-class UpdateThreadDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const UpdateThreadDtoCategoryEnum DEDUCTION = _$updateThreadDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const UpdateThreadDtoCategoryEnum NATION = _$updateThreadDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const UpdateThreadDtoCategoryEnum RPG = _$updateThreadDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const UpdateThreadDtoCategoryEnum unknownDefaultOpenApi = _$updateThreadDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<UpdateThreadDtoCategoryEnum> get serializer => _$updateThreadDtoCategoryEnumSerializer;
-
-  const UpdateThreadDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<UpdateThreadDtoCategoryEnum> get values => _$updateThreadDtoCategoryEnumValues;
-  static UpdateThreadDtoCategoryEnum valueOf(String name) => _$updateThreadDtoCategoryEnumValueOf(name);
 }
 
 class UpdateThreadDtoStatusEnum extends EnumClass {

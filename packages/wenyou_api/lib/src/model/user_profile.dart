@@ -17,6 +17,7 @@ part 'user_profile.g.dart';
 /// * [avatar] - 头像 URL
 /// * [role] - 用户角色（USER / ADMIN / SUPER_ADMIN）
 /// * [emailVerified] - 邮箱是否已验证
+/// * [level]
 @BuiltValue()
 abstract class UserProfile implements Built<UserProfile, UserProfileBuilder> {
   /// 用户 ID
@@ -42,6 +43,9 @@ abstract class UserProfile implements Built<UserProfile, UserProfileBuilder> {
   /// 邮箱是否已验证
   @BuiltValueField(wireName: r'emailVerified')
   bool get emailVerified;
+
+  @BuiltValueField(wireName: r'level')
+  num get level;
 
   UserProfile._();
 
@@ -95,6 +99,11 @@ class _$UserProfileSerializer implements PrimitiveSerializer<UserProfile> {
     yield serializers.serialize(
       object.emailVerified,
       specifiedType: const FullType(bool),
+    );
+    yield r'level';
+    yield serializers.serialize(
+      object.level,
+      specifiedType: const FullType(num),
     );
   }
 
@@ -161,6 +170,13 @@ class _$UserProfileSerializer implements PrimitiveSerializer<UserProfile> {
             specifiedType: const FullType(bool),
           ) as bool;
           result.emailVerified = valueDes;
+          break;
+        case r'level':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.level = valueDes;
           break;
         default:
           unhandled.add(key);

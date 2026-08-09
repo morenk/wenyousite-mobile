@@ -6,40 +6,6 @@ part of 'create_thread_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const CreateThreadDtoCategoryEnum _$createThreadDtoCategoryEnum_DEDUCTION =
-    const CreateThreadDtoCategoryEnum._('DEDUCTION');
-const CreateThreadDtoCategoryEnum _$createThreadDtoCategoryEnum_NATION =
-    const CreateThreadDtoCategoryEnum._('NATION');
-const CreateThreadDtoCategoryEnum _$createThreadDtoCategoryEnum_RPG =
-    const CreateThreadDtoCategoryEnum._('RPG');
-const CreateThreadDtoCategoryEnum
-_$createThreadDtoCategoryEnum_unknownDefaultOpenApi =
-    const CreateThreadDtoCategoryEnum._('unknownDefaultOpenApi');
-
-CreateThreadDtoCategoryEnum _$createThreadDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$createThreadDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$createThreadDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$createThreadDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$createThreadDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$createThreadDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<CreateThreadDtoCategoryEnum>
-_$createThreadDtoCategoryEnumValues =
-    BuiltSet<CreateThreadDtoCategoryEnum>(const <CreateThreadDtoCategoryEnum>[
-      _$createThreadDtoCategoryEnum_DEDUCTION,
-      _$createThreadDtoCategoryEnum_NATION,
-      _$createThreadDtoCategoryEnum_RPG,
-      _$createThreadDtoCategoryEnum_unknownDefaultOpenApi,
-    ]);
-
 const CreateThreadDtoVisibilityEnum _$createThreadDtoVisibilityEnum_PUBLIC =
     const CreateThreadDtoVisibilityEnum._('PUBLIC');
 const CreateThreadDtoVisibilityEnum _$createThreadDtoVisibilityEnum_PRIVATE =
@@ -72,49 +38,9 @@ _$createThreadDtoVisibilityEnumValues = BuiltSet<CreateThreadDtoVisibilityEnum>(
   ],
 );
 
-Serializer<CreateThreadDtoCategoryEnum>
-_$createThreadDtoCategoryEnumSerializer =
-    _$CreateThreadDtoCategoryEnumSerializer();
 Serializer<CreateThreadDtoVisibilityEnum>
 _$createThreadDtoVisibilityEnumSerializer =
     _$CreateThreadDtoVisibilityEnumSerializer();
-
-class _$CreateThreadDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<CreateThreadDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[CreateThreadDtoCategoryEnum];
-  @override
-  final String wireName = 'CreateThreadDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    CreateThreadDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  CreateThreadDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => CreateThreadDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$CreateThreadDtoVisibilityEnumSerializer
     implements PrimitiveSerializer<CreateThreadDtoVisibilityEnum> {
@@ -157,7 +83,7 @@ class _$CreateThreadDto extends CreateThreadDto {
   @override
   final String? title;
   @override
-  final CreateThreadDtoCategoryEnum? category;
+  final String? category;
   @override
   final String? content;
   @override
@@ -240,10 +166,9 @@ class CreateThreadDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  CreateThreadDtoCategoryEnum? _category;
-  CreateThreadDtoCategoryEnum? get category => _$this._category;
-  set category(CreateThreadDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   String? _content;
   String? get content => _$this._content;

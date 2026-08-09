@@ -13,6 +13,9 @@ const NotificationTargetResponseDtoKindEnum
 _$notificationTargetResponseDtoKindEnum_thread =
     const NotificationTargetResponseDtoKindEnum._('thread');
 const NotificationTargetResponseDtoKindEnum
+_$notificationTargetResponseDtoKindEnum_moment =
+    const NotificationTargetResponseDtoKindEnum._('moment');
+const NotificationTargetResponseDtoKindEnum
 _$notificationTargetResponseDtoKindEnum_user =
     const NotificationTargetResponseDtoKindEnum._('user');
 const NotificationTargetResponseDtoKindEnum
@@ -29,6 +32,8 @@ _$notificationTargetResponseDtoKindEnumValueOf(String name) {
       return _$notificationTargetResponseDtoKindEnum_post;
     case 'thread':
       return _$notificationTargetResponseDtoKindEnum_thread;
+    case 'moment':
+      return _$notificationTargetResponseDtoKindEnum_moment;
     case 'user':
       return _$notificationTargetResponseDtoKindEnum_user;
     case 'none':
@@ -46,6 +51,7 @@ _$notificationTargetResponseDtoKindEnumValues =
       const <NotificationTargetResponseDtoKindEnum>[
         _$notificationTargetResponseDtoKindEnum_post,
         _$notificationTargetResponseDtoKindEnum_thread,
+        _$notificationTargetResponseDtoKindEnum_moment,
         _$notificationTargetResponseDtoKindEnum_user,
         _$notificationTargetResponseDtoKindEnum_none,
         _$notificationTargetResponseDtoKindEnum_unknownDefaultOpenApi,
@@ -61,6 +67,7 @@ class _$NotificationTargetResponseDtoKindEnumSerializer
   static const Map<String, Object> _toWire = const <String, Object>{
     'post': 'post',
     'thread': 'thread',
+    'moment': 'moment',
     'user': 'user',
     'none': 'none',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
@@ -68,6 +75,7 @@ class _$NotificationTargetResponseDtoKindEnumSerializer
   static const Map<Object, String> _fromWire = const <Object, String>{
     'post': 'post',
     'thread': 'thread',
+    'moment': 'moment',
     'user': 'user',
     'none': 'none',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
@@ -105,6 +113,10 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
   @override
   final String? postId;
   @override
+  final String? momentId;
+  @override
+  final String? momentCommentId;
+  @override
   final String? userId;
 
   factory _$NotificationTargetResponseDto([
@@ -115,6 +127,8 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
     required this.kind,
     this.threadId,
     this.postId,
+    this.momentId,
+    this.momentCommentId,
     this.userId,
   }) : super._();
   @override
@@ -133,6 +147,8 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
         kind == other.kind &&
         threadId == other.threadId &&
         postId == other.postId &&
+        momentId == other.momentId &&
+        momentCommentId == other.momentCommentId &&
         userId == other.userId;
   }
 
@@ -142,6 +158,8 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, postId.hashCode);
+    _$hash = $jc(_$hash, momentId.hashCode);
+    _$hash = $jc(_$hash, momentCommentId.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -153,6 +171,8 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
           ..add('kind', kind)
           ..add('threadId', threadId)
           ..add('postId', postId)
+          ..add('momentId', momentId)
+          ..add('momentCommentId', momentCommentId)
           ..add('userId', userId))
         .toString();
   }
@@ -178,6 +198,15 @@ class NotificationTargetResponseDtoBuilder
   String? get postId => _$this._postId;
   set postId(String? postId) => _$this._postId = postId;
 
+  String? _momentId;
+  String? get momentId => _$this._momentId;
+  set momentId(String? momentId) => _$this._momentId = momentId;
+
+  String? _momentCommentId;
+  String? get momentCommentId => _$this._momentCommentId;
+  set momentCommentId(String? momentCommentId) =>
+      _$this._momentCommentId = momentCommentId;
+
   String? _userId;
   String? get userId => _$this._userId;
   set userId(String? userId) => _$this._userId = userId;
@@ -192,6 +221,8 @@ class NotificationTargetResponseDtoBuilder
       _kind = $v.kind;
       _threadId = $v.threadId;
       _postId = $v.postId;
+      _momentId = $v.momentId;
+      _momentCommentId = $v.momentCommentId;
       _userId = $v.userId;
       _$v = null;
     }
@@ -222,6 +253,8 @@ class NotificationTargetResponseDtoBuilder
           ),
           threadId: threadId,
           postId: postId,
+          momentId: momentId,
+          momentCommentId: momentCommentId,
           userId: userId,
         );
     replace(_$result);

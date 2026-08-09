@@ -96,6 +96,8 @@ class _$MediaResponseDto extends MediaResponseDto {
   @override
   final String? thumbnailUrl;
   @override
+  final String? feedUrl;
+  @override
   final String? mediumUrl;
   @override
   final String key;
@@ -121,6 +123,7 @@ class _$MediaResponseDto extends MediaResponseDto {
     required this.userId,
     required this.url,
     this.thumbnailUrl,
+    this.feedUrl,
     this.mediumUrl,
     required this.key,
     this.contentType,
@@ -146,6 +149,7 @@ class _$MediaResponseDto extends MediaResponseDto {
         userId == other.userId &&
         url == other.url &&
         thumbnailUrl == other.thumbnailUrl &&
+        feedUrl == other.feedUrl &&
         mediumUrl == other.mediumUrl &&
         key == other.key &&
         contentType == other.contentType &&
@@ -163,6 +167,7 @@ class _$MediaResponseDto extends MediaResponseDto {
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, thumbnailUrl.hashCode);
+    _$hash = $jc(_$hash, feedUrl.hashCode);
     _$hash = $jc(_$hash, mediumUrl.hashCode);
     _$hash = $jc(_$hash, key.hashCode);
     _$hash = $jc(_$hash, contentType.hashCode);
@@ -182,6 +187,7 @@ class _$MediaResponseDto extends MediaResponseDto {
           ..add('userId', userId)
           ..add('url', url)
           ..add('thumbnailUrl', thumbnailUrl)
+          ..add('feedUrl', feedUrl)
           ..add('mediumUrl', mediumUrl)
           ..add('key', key)
           ..add('contentType', contentType)
@@ -213,6 +219,10 @@ class MediaResponseDtoBuilder
   String? _thumbnailUrl;
   String? get thumbnailUrl => _$this._thumbnailUrl;
   set thumbnailUrl(String? thumbnailUrl) => _$this._thumbnailUrl = thumbnailUrl;
+
+  String? _feedUrl;
+  String? get feedUrl => _$this._feedUrl;
+  set feedUrl(String? feedUrl) => _$this._feedUrl = feedUrl;
 
   String? _mediumUrl;
   String? get mediumUrl => _$this._mediumUrl;
@@ -257,6 +267,7 @@ class MediaResponseDtoBuilder
       _userId = $v.userId;
       _url = $v.url;
       _thumbnailUrl = $v.thumbnailUrl;
+      _feedUrl = $v.feedUrl;
       _mediumUrl = $v.mediumUrl;
       _key = $v.key;
       _contentType = $v.contentType;
@@ -303,6 +314,7 @@ class MediaResponseDtoBuilder
             'url',
           ),
           thumbnailUrl: thumbnailUrl,
+          feedUrl: feedUrl,
           mediumUrl: mediumUrl,
           key: BuiltValueNullFieldError.checkNotNull(
             key,

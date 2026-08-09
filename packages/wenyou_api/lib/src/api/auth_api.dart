@@ -418,7 +418,7 @@ class AuthApi {
     );
   }
 
-  /// 登出：撤销当前登录终端的 refresh token（Cookie 优先），同时清除客户端 Cookie
+  /// 登出：按 access token 的稳定终端 ID 撤销当前终端，旧客户端回退到 refresh token
   ///
   ///
   /// Parameters:

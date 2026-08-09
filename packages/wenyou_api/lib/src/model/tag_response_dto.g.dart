@@ -14,7 +14,15 @@ class _$TagResponseDto extends TagResponseDto {
   @override
   final String? color;
   @override
+  final String? description;
+  @override
+  final num sortOrder;
+  @override
+  final bool isActive;
+  @override
   final DateTime createdAt;
+  @override
+  final DateTime updatedAt;
 
   factory _$TagResponseDto([void Function(TagResponseDtoBuilder)? updates]) =>
       (TagResponseDtoBuilder()..update(updates))._build();
@@ -23,7 +31,11 @@ class _$TagResponseDto extends TagResponseDto {
     required this.id,
     required this.name,
     this.color,
+    this.description,
+    required this.sortOrder,
+    required this.isActive,
     required this.createdAt,
+    required this.updatedAt,
   }) : super._();
   @override
   TagResponseDto rebuild(void Function(TagResponseDtoBuilder) updates) =>
@@ -39,7 +51,11 @@ class _$TagResponseDto extends TagResponseDto {
         id == other.id &&
         name == other.name &&
         color == other.color &&
-        createdAt == other.createdAt;
+        description == other.description &&
+        sortOrder == other.sortOrder &&
+        isActive == other.isActive &&
+        createdAt == other.createdAt &&
+        updatedAt == other.updatedAt;
   }
 
   @override
@@ -48,7 +64,11 @@ class _$TagResponseDto extends TagResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, color.hashCode);
+    _$hash = $jc(_$hash, description.hashCode);
+    _$hash = $jc(_$hash, sortOrder.hashCode);
+    _$hash = $jc(_$hash, isActive.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
+    _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -59,7 +79,11 @@ class _$TagResponseDto extends TagResponseDto {
           ..add('id', id)
           ..add('name', name)
           ..add('color', color)
-          ..add('createdAt', createdAt))
+          ..add('description', description)
+          ..add('sortOrder', sortOrder)
+          ..add('isActive', isActive)
+          ..add('createdAt', createdAt)
+          ..add('updatedAt', updatedAt))
         .toString();
   }
 }
@@ -80,9 +104,25 @@ class TagResponseDtoBuilder
   String? get color => _$this._color;
   set color(String? color) => _$this._color = color;
 
+  String? _description;
+  String? get description => _$this._description;
+  set description(String? description) => _$this._description = description;
+
+  num? _sortOrder;
+  num? get sortOrder => _$this._sortOrder;
+  set sortOrder(num? sortOrder) => _$this._sortOrder = sortOrder;
+
+  bool? _isActive;
+  bool? get isActive => _$this._isActive;
+  set isActive(bool? isActive) => _$this._isActive = isActive;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
+
+  DateTime? _updatedAt;
+  DateTime? get updatedAt => _$this._updatedAt;
+  set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
 
   TagResponseDtoBuilder() {
     TagResponseDto._defaults(this);
@@ -94,7 +134,11 @@ class TagResponseDtoBuilder
       _id = $v.id;
       _name = $v.name;
       _color = $v.color;
+      _description = $v.description;
+      _sortOrder = $v.sortOrder;
+      _isActive = $v.isActive;
       _createdAt = $v.createdAt;
+      _updatedAt = $v.updatedAt;
       _$v = null;
     }
     return this;
@@ -128,10 +172,26 @@ class TagResponseDtoBuilder
             'name',
           ),
           color: color,
+          description: description,
+          sortOrder: BuiltValueNullFieldError.checkNotNull(
+            sortOrder,
+            r'TagResponseDto',
+            'sortOrder',
+          ),
+          isActive: BuiltValueNullFieldError.checkNotNull(
+            isActive,
+            r'TagResponseDto',
+            'isActive',
+          ),
           createdAt: BuiltValueNullFieldError.checkNotNull(
             createdAt,
             r'TagResponseDto',
             'createdAt',
+          ),
+          updatedAt: BuiltValueNullFieldError.checkNotNull(
+            updatedAt,
+            r'TagResponseDto',
+            'updatedAt',
           ),
         );
     replace(_$result);

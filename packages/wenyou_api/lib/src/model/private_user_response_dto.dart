@@ -18,6 +18,12 @@ part 'private_user_response_dto.g.dart';
 /// * [avatar]
 /// * [bio]
 /// * [role]
+/// * [level]
+/// * [experience]
+/// * [currentLevelExperience]
+/// * [nextLevelExperience]
+/// * [receivedTipTotal]
+/// * [receivedTipCount]
 /// * [showRecentReplies]
 /// * [showPlayerBadges]
 /// * [showBookmarks]
@@ -45,6 +51,24 @@ abstract class PrivateUserResponseDto implements Built<PrivateUserResponseDto, P
   @BuiltValueField(wireName: r'role')
   PrivateUserResponseDtoRoleEnum get role;
   // enum roleEnum {  USER,  ADMIN,  SUPER_ADMIN,  };
+
+  @BuiltValueField(wireName: r'level')
+  num get level;
+
+  @BuiltValueField(wireName: r'experience')
+  num get experience;
+
+  @BuiltValueField(wireName: r'currentLevelExperience')
+  num get currentLevelExperience;
+
+  @BuiltValueField(wireName: r'nextLevelExperience')
+  num? get nextLevelExperience;
+
+  @BuiltValueField(wireName: r'receivedTipTotal')
+  String get receivedTipTotal;
+
+  @BuiltValueField(wireName: r'receivedTipCount')
+  num get receivedTipCount;
 
   @BuiltValueField(wireName: r'showRecentReplies')
   bool get showRecentReplies;
@@ -119,6 +143,36 @@ class _$PrivateUserResponseDtoSerializer implements PrimitiveSerializer<PrivateU
     yield serializers.serialize(
       object.role,
       specifiedType: const FullType(PrivateUserResponseDtoRoleEnum),
+    );
+    yield r'level';
+    yield serializers.serialize(
+      object.level,
+      specifiedType: const FullType(num),
+    );
+    yield r'experience';
+    yield serializers.serialize(
+      object.experience,
+      specifiedType: const FullType(num),
+    );
+    yield r'currentLevelExperience';
+    yield serializers.serialize(
+      object.currentLevelExperience,
+      specifiedType: const FullType(num),
+    );
+    yield r'nextLevelExperience';
+    yield object.nextLevelExperience == null ? null : serializers.serialize(
+      object.nextLevelExperience,
+      specifiedType: const FullType.nullable(num),
+    );
+    yield r'receivedTipTotal';
+    yield serializers.serialize(
+      object.receivedTipTotal,
+      specifiedType: const FullType(String),
+    );
+    yield r'receivedTipCount';
+    yield serializers.serialize(
+      object.receivedTipCount,
+      specifiedType: const FullType(num),
     );
     yield r'showRecentReplies';
     yield serializers.serialize(
@@ -221,6 +275,49 @@ class _$PrivateUserResponseDtoSerializer implements PrimitiveSerializer<PrivateU
             specifiedType: const FullType(PrivateUserResponseDtoRoleEnum),
           ) as PrivateUserResponseDtoRoleEnum;
           result.role = valueDes;
+          break;
+        case r'level':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.level = valueDes;
+          break;
+        case r'experience':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.experience = valueDes;
+          break;
+        case r'currentLevelExperience':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.currentLevelExperience = valueDes;
+          break;
+        case r'nextLevelExperience':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(num),
+          ) as num?;
+          if (valueDes == null) continue;
+          result.nextLevelExperience = valueDes;
+          break;
+        case r'receivedTipTotal':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.receivedTipTotal = valueDes;
+          break;
+        case r'receivedTipCount':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.receivedTipCount = valueDes;
           break;
         case r'showRecentReplies':
           final valueDes = serializers.deserialize(

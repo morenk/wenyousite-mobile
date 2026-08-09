@@ -6,46 +6,6 @@ part of 'thread_detail_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const ThreadDetailResponseDtoCategoryEnum
-_$threadDetailResponseDtoCategoryEnum_DEDUCTION =
-    const ThreadDetailResponseDtoCategoryEnum._('DEDUCTION');
-const ThreadDetailResponseDtoCategoryEnum
-_$threadDetailResponseDtoCategoryEnum_NATION =
-    const ThreadDetailResponseDtoCategoryEnum._('NATION');
-const ThreadDetailResponseDtoCategoryEnum
-_$threadDetailResponseDtoCategoryEnum_RPG =
-    const ThreadDetailResponseDtoCategoryEnum._('RPG');
-const ThreadDetailResponseDtoCategoryEnum
-_$threadDetailResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const ThreadDetailResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-ThreadDetailResponseDtoCategoryEnum
-_$threadDetailResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$threadDetailResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$threadDetailResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$threadDetailResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$threadDetailResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$threadDetailResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<ThreadDetailResponseDtoCategoryEnum>
-_$threadDetailResponseDtoCategoryEnumValues =
-    BuiltSet<ThreadDetailResponseDtoCategoryEnum>(
-      const <ThreadDetailResponseDtoCategoryEnum>[
-        _$threadDetailResponseDtoCategoryEnum_DEDUCTION,
-        _$threadDetailResponseDtoCategoryEnum_NATION,
-        _$threadDetailResponseDtoCategoryEnum_RPG,
-        _$threadDetailResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const ThreadDetailResponseDtoStatusEnum
 _$threadDetailResponseDtoStatusEnum_RECRUITING =
     const ThreadDetailResponseDtoStatusEnum._('RECRUITING');
@@ -121,54 +81,12 @@ _$threadDetailResponseDtoVisibilityEnumValues =
       ],
     );
 
-Serializer<ThreadDetailResponseDtoCategoryEnum>
-_$threadDetailResponseDtoCategoryEnumSerializer =
-    _$ThreadDetailResponseDtoCategoryEnumSerializer();
 Serializer<ThreadDetailResponseDtoStatusEnum>
 _$threadDetailResponseDtoStatusEnumSerializer =
     _$ThreadDetailResponseDtoStatusEnumSerializer();
 Serializer<ThreadDetailResponseDtoVisibilityEnum>
 _$threadDetailResponseDtoVisibilityEnumSerializer =
     _$ThreadDetailResponseDtoVisibilityEnumSerializer();
-
-class _$ThreadDetailResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<ThreadDetailResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    ThreadDetailResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'ThreadDetailResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    ThreadDetailResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  ThreadDetailResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => ThreadDetailResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$ThreadDetailResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<ThreadDetailResponseDtoStatusEnum> {
@@ -252,7 +170,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   @override
   final String ownerId;
   @override
-  final ThreadDetailResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final ThreadDetailResponseDtoStatusEnum status;
   @override
@@ -271,6 +189,8 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   final num version;
   @override
   final num likeCount;
+  @override
+  final String tipTotal;
   @override
   final String? defaultSubthreadId;
   @override
@@ -306,7 +226,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     required this.id,
     this.title,
     required this.ownerId,
-    required this.category,
+    this.category,
     required this.status,
     required this.visibility,
     required this.published,
@@ -316,6 +236,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     required this.viewCount,
     required this.version,
     required this.likeCount,
+    required this.tipTotal,
     this.defaultSubthreadId,
     required this.createdAt,
     required this.updatedAt,
@@ -356,6 +277,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
         viewCount == other.viewCount &&
         version == other.version &&
         likeCount == other.likeCount &&
+        tipTotal == other.tipTotal &&
         defaultSubthreadId == other.defaultSubthreadId &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
@@ -387,6 +309,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     _$hash = $jc(_$hash, viewCount.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, likeCount.hashCode);
+    _$hash = $jc(_$hash, tipTotal.hashCode);
     _$hash = $jc(_$hash, defaultSubthreadId.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
@@ -420,6 +343,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
           ..add('viewCount', viewCount)
           ..add('version', version)
           ..add('likeCount', likeCount)
+          ..add('tipTotal', tipTotal)
           ..add('defaultSubthreadId', defaultSubthreadId)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
@@ -454,10 +378,9 @@ class ThreadDetailResponseDtoBuilder
   String? get ownerId => _$this._ownerId;
   set ownerId(String? ownerId) => _$this._ownerId = ownerId;
 
-  ThreadDetailResponseDtoCategoryEnum? _category;
-  ThreadDetailResponseDtoCategoryEnum? get category => _$this._category;
-  set category(ThreadDetailResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   ThreadDetailResponseDtoStatusEnum? _status;
   ThreadDetailResponseDtoStatusEnum? get status => _$this._status;
@@ -496,6 +419,10 @@ class ThreadDetailResponseDtoBuilder
   num? _likeCount;
   num? get likeCount => _$this._likeCount;
   set likeCount(num? likeCount) => _$this._likeCount = likeCount;
+
+  String? _tipTotal;
+  String? get tipTotal => _$this._tipTotal;
+  set tipTotal(String? tipTotal) => _$this._tipTotal = tipTotal;
 
   String? _defaultSubthreadId;
   String? get defaultSubthreadId => _$this._defaultSubthreadId;
@@ -581,6 +508,7 @@ class ThreadDetailResponseDtoBuilder
       _viewCount = $v.viewCount;
       _version = $v.version;
       _likeCount = $v.likeCount;
+      _tipTotal = $v.tipTotal;
       _defaultSubthreadId = $v.defaultSubthreadId;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
@@ -629,11 +557,7 @@ class ThreadDetailResponseDtoBuilder
               r'ThreadDetailResponseDto',
               'ownerId',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'ThreadDetailResponseDto',
-              'category',
-            ),
+            category: category,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'ThreadDetailResponseDto',
@@ -670,6 +594,11 @@ class ThreadDetailResponseDtoBuilder
               likeCount,
               r'ThreadDetailResponseDto',
               'likeCount',
+            ),
+            tipTotal: BuiltValueNullFieldError.checkNotNull(
+              tipTotal,
+              r'ThreadDetailResponseDto',
+              'tipTotal',
             ),
             defaultSubthreadId: defaultSubthreadId,
             createdAt: BuiltValueNullFieldError.checkNotNull(

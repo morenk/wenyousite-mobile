@@ -39,6 +39,9 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40007)
   static const BusinessErrorCode INVALID_CURSOR = _$INVALID_CURSOR;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40008)
+  static const BusinessErrorCode INVALID_WENYOU_AMOUNT = _$INVALID_WENYOU_AMOUNT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
@@ -62,6 +65,12 @@ class BusinessErrorCode extends EnumClass {
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40107)
   static const BusinessErrorCode EMAIL_NOT_VERIFIED = _$EMAIL_NOT_VERIFIED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40108)
+  static const BusinessErrorCode ACCOUNT_SUSPENDED = _$ACCOUNT_SUSPENDED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40109)
+  static const BusinessErrorCode ACCOUNT_BANNED = _$ACCOUNT_BANNED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40110)
   static const BusinessErrorCode LOGIN_FAILED = _$LOGIN_FAILED;
@@ -105,6 +114,15 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40306)
   static const BusinessErrorCode DIRECT_MESSAGE_NOT_ALLOWED = _$DIRECT_MESSAGE_NOT_ALLOWED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40307)
+  static const BusinessErrorCode TIP_NOT_ALLOWED = _$TIP_NOT_ALLOWED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40308)
+  static const BusinessErrorCode ADMIN_REQUIRED = _$ADMIN_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40309)
+  static const BusinessErrorCode CANNOT_MODERATE_ADMIN = _$CANNOT_MODERATE_ADMIN;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40400)
   static const BusinessErrorCode NOT_FOUND = _$NOT_FOUND;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
@@ -147,6 +165,12 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40413)
   static const BusinessErrorCode STICKER_NOT_FOUND = _$STICKER_NOT_FOUND;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40414)
+  static const BusinessErrorCode THREAD_CATEGORY_NOT_FOUND = _$THREAD_CATEGORY_NOT_FOUND;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40415)
+  static const BusinessErrorCode MOMENT_NOT_FOUND = _$MOMENT_NOT_FOUND;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40900)
   static const BusinessErrorCode CONFLICT = _$CONFLICT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
@@ -185,6 +209,27 @@ class BusinessErrorCode extends EnumClass {
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40912)
   static const BusinessErrorCode IDEMPOTENCY_KEY_REUSED = _$IDEMPOTENCY_KEY_REUSED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40913)
+  static const BusinessErrorCode INSUFFICIENT_WENYOU = _$INSUFFICIENT_WENYOU;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40914)
+  static const BusinessErrorCode REPORT_ALREADY_PENDING = _$REPORT_ALREADY_PENDING;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40915)
+  static const BusinessErrorCode REPORT_ALREADY_HANDLED = _$REPORT_ALREADY_HANDLED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40916)
+  static const BusinessErrorCode CONTENT_STATE_CONFLICT = _$CONTENT_STATE_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40917)
+  static const BusinessErrorCode SANCTION_STATE_CONFLICT = _$SANCTION_STATE_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40918)
+  static const BusinessErrorCode THREAD_CATEGORY_ALREADY_EXISTS = _$THREAD_CATEGORY_ALREADY_EXISTS;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40919)
+  static const BusinessErrorCode TAXONOMY_STATE_CONFLICT = _$TAXONOMY_STATE_CONFLICT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 42900)
   static const BusinessErrorCode RATE_LIMITED = _$RATE_LIMITED;

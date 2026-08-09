@@ -21,7 +21,7 @@ part 'thread_detail_response_dto.g.dart';
 /// * [id]
 /// * [title]
 /// * [ownerId]
-/// * [category]
+/// * [category] - 动态分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published]
@@ -31,6 +31,7 @@ part 'thread_detail_response_dto.g.dart';
 /// * [viewCount]
 /// * [version]
 /// * [likeCount]
+/// * [tipTotal] - 用户投入的累计打赏升数
 /// * [defaultSubthreadId]
 /// * [createdAt]
 /// * [updatedAt]
@@ -55,9 +56,9 @@ abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto,
   @BuiltValueField(wireName: r'ownerId')
   String get ownerId;
 
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  ThreadDetailResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   ThreadDetailResponseDtoStatusEnum get status;
@@ -87,6 +88,10 @@ abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto,
 
   @BuiltValueField(wireName: r'likeCount')
   num get likeCount;
+
+  /// 用户投入的累计打赏升数
+  @BuiltValueField(wireName: r'tipTotal')
+  String get tipTotal;
 
   @BuiltValueField(wireName: r'defaultSubthreadId')
   String? get defaultSubthreadId;
@@ -167,9 +172,9 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(ThreadDetailResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -215,6 +220,11 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
     yield serializers.serialize(
       object.likeCount,
       specifiedType: const FullType(num),
+    );
+    yield r'tipTotal';
+    yield serializers.serialize(
+      object.tipTotal,
+      specifiedType: const FullType(String),
     );
     yield r'defaultSubthreadId';
     yield object.defaultSubthreadId == null ? null : serializers.serialize(
@@ -339,8 +349,9 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(ThreadDetailResponseDtoCategoryEnum),
-          ) as ThreadDetailResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -407,6 +418,13 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
             specifiedType: const FullType(num),
           ) as num;
           result.likeCount = valueDes;
+          break;
+        case r'tipTotal':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.tipTotal = valueDes;
           break;
         case r'defaultSubthreadId':
           final valueDes = serializers.deserialize(
@@ -530,25 +548,6 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
     );
     return result.build();
   }
-}
-
-class ThreadDetailResponseDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const ThreadDetailResponseDtoCategoryEnum DEDUCTION = _$threadDetailResponseDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const ThreadDetailResponseDtoCategoryEnum NATION = _$threadDetailResponseDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const ThreadDetailResponseDtoCategoryEnum RPG = _$threadDetailResponseDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const ThreadDetailResponseDtoCategoryEnum unknownDefaultOpenApi = _$threadDetailResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<ThreadDetailResponseDtoCategoryEnum> get serializer => _$threadDetailResponseDtoCategoryEnumSerializer;
-
-  const ThreadDetailResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<ThreadDetailResponseDtoCategoryEnum> get values => _$threadDetailResponseDtoCategoryEnumValues;
-  static ThreadDetailResponseDtoCategoryEnum valueOf(String name) => _$threadDetailResponseDtoCategoryEnumValueOf(name);
 }
 
 class ThreadDetailResponseDtoStatusEnum extends EnumClass {

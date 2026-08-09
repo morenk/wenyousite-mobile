@@ -16,11 +16,12 @@ part 'bookmark_thread_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [title]
-/// * [category]
+/// * [category] - 动态分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published]
 /// * [pinned]
+/// * [tipTotal] - 用户投入的累计打赏升数
 /// * [createdAt]
 /// * [updatedAt]
 /// * [deletedAt]
@@ -35,9 +36,9 @@ abstract class BookmarkThreadResponseDto implements Built<BookmarkThreadResponse
   @BuiltValueField(wireName: r'title')
   String get title;
 
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  BookmarkThreadResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   BookmarkThreadResponseDtoStatusEnum get status;
@@ -52,6 +53,10 @@ abstract class BookmarkThreadResponseDto implements Built<BookmarkThreadResponse
 
   @BuiltValueField(wireName: r'pinned')
   bool get pinned;
+
+  /// 用户投入的累计打赏升数
+  @BuiltValueField(wireName: r'tipTotal')
+  String get tipTotal;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -106,9 +111,9 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(BookmarkThreadResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -129,6 +134,11 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
     yield serializers.serialize(
       object.pinned,
       specifiedType: const FullType(bool),
+    );
+    yield r'tipTotal';
+    yield serializers.serialize(
+      object.tipTotal,
+      specifiedType: const FullType(String),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -202,8 +212,9 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BookmarkThreadResponseDtoCategoryEnum),
-          ) as BookmarkThreadResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -233,6 +244,13 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
             specifiedType: const FullType(bool),
           ) as bool;
           result.pinned = valueDes;
+          break;
+        case r'tipTotal':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.tipTotal = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(
@@ -304,25 +322,6 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
     );
     return result.build();
   }
-}
-
-class BookmarkThreadResponseDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const BookmarkThreadResponseDtoCategoryEnum DEDUCTION = _$bookmarkThreadResponseDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const BookmarkThreadResponseDtoCategoryEnum NATION = _$bookmarkThreadResponseDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const BookmarkThreadResponseDtoCategoryEnum RPG = _$bookmarkThreadResponseDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const BookmarkThreadResponseDtoCategoryEnum unknownDefaultOpenApi = _$bookmarkThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<BookmarkThreadResponseDtoCategoryEnum> get serializer => _$bookmarkThreadResponseDtoCategoryEnumSerializer;
-
-  const BookmarkThreadResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<BookmarkThreadResponseDtoCategoryEnum> get values => _$bookmarkThreadResponseDtoCategoryEnumValues;
-  static BookmarkThreadResponseDtoCategoryEnum valueOf(String name) => _$bookmarkThreadResponseDtoCategoryEnumValueOf(name);
 }
 
 class BookmarkThreadResponseDtoStatusEnum extends EnumClass {

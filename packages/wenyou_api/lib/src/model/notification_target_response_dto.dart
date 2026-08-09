@@ -15,18 +15,26 @@ part 'notification_target_response_dto.g.dart';
 /// * [kind]
 /// * [threadId]
 /// * [postId]
+/// * [momentId]
+/// * [momentCommentId]
 /// * [userId]
 @BuiltValue()
 abstract class NotificationTargetResponseDto implements Built<NotificationTargetResponseDto, NotificationTargetResponseDtoBuilder> {
   @BuiltValueField(wireName: r'kind')
   NotificationTargetResponseDtoKindEnum get kind;
-  // enum kindEnum {  post,  thread,  user,  none,  };
+  // enum kindEnum {  post,  thread,  moment,  user,  none,  };
 
   @BuiltValueField(wireName: r'threadId')
   String? get threadId;
 
   @BuiltValueField(wireName: r'postId')
   String? get postId;
+
+  @BuiltValueField(wireName: r'momentId')
+  String? get momentId;
+
+  @BuiltValueField(wireName: r'momentCommentId')
+  String? get momentCommentId;
 
   @BuiltValueField(wireName: r'userId')
   String? get userId;
@@ -67,6 +75,16 @@ class _$NotificationTargetResponseDtoSerializer implements PrimitiveSerializer<N
     yield r'postId';
     yield object.postId == null ? null : serializers.serialize(
       object.postId,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'momentId';
+    yield object.momentId == null ? null : serializers.serialize(
+      object.momentId,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'momentCommentId';
+    yield object.momentCommentId == null ? null : serializers.serialize(
+      object.momentCommentId,
       specifiedType: const FullType.nullable(String),
     );
     yield r'userId';
@@ -120,6 +138,22 @@ class _$NotificationTargetResponseDtoSerializer implements PrimitiveSerializer<N
           if (valueDes == null) continue;
           result.postId = valueDes;
           break;
+        case r'momentId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.momentId = valueDes;
+          break;
+        case r'momentCommentId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.momentCommentId = valueDes;
+          break;
         case r'userId':
           final valueDes = serializers.deserialize(
             value,
@@ -163,6 +197,8 @@ class NotificationTargetResponseDtoKindEnum extends EnumClass {
   static const NotificationTargetResponseDtoKindEnum post = _$notificationTargetResponseDtoKindEnum_post;
   @BuiltValueEnumConst(wireName: r'thread')
   static const NotificationTargetResponseDtoKindEnum thread = _$notificationTargetResponseDtoKindEnum_thread;
+  @BuiltValueEnumConst(wireName: r'moment')
+  static const NotificationTargetResponseDtoKindEnum moment = _$notificationTargetResponseDtoKindEnum_moment;
   @BuiltValueEnumConst(wireName: r'user')
   static const NotificationTargetResponseDtoKindEnum user = _$notificationTargetResponseDtoKindEnum_user;
   @BuiltValueEnumConst(wireName: r'none')

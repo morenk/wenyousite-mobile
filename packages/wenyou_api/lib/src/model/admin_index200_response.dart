@@ -4,7 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
-import 'package:wenyou_api/src/model/admin_status_response_dto.dart';
+import 'package:wenyou_api/src/model/admin_capability_response_dto.dart';
 import 'package:wenyou_api/src/model/api_success_envelope.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -20,7 +20,7 @@ part 'admin_index200_response.g.dart';
 @BuiltValue()
 abstract class AdminIndex200Response implements ApiSuccessEnvelope, Built<AdminIndex200Response, AdminIndex200ResponseBuilder> {
   @BuiltValueField(wireName: r'data')
-  AdminStatusResponseDto get data;
+  AdminCapabilityResponseDto get data;
 
   AdminIndex200Response._();
 
@@ -48,7 +48,7 @@ class _$AdminIndex200ResponseSerializer implements PrimitiveSerializer<AdminInde
     yield r'data';
     yield serializers.serialize(
       object.data,
-      specifiedType: const FullType(AdminStatusResponseDto),
+      specifiedType: const FullType(AdminCapabilityResponseDto),
     );
     yield r'message';
     yield serializers.serialize(
@@ -86,8 +86,8 @@ class _$AdminIndex200ResponseSerializer implements PrimitiveSerializer<AdminInde
         case r'data':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(AdminStatusResponseDto),
-          ) as AdminStatusResponseDto;
+            specifiedType: const FullType(AdminCapabilityResponseDto),
+          ) as AdminCapabilityResponseDto;
           result.data.replace(valueDes);
           break;
         case r'message':

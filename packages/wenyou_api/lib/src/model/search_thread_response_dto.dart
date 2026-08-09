@@ -16,10 +16,11 @@ part 'search_thread_response_dto.g.dart';
 /// Properties:
 /// * [id] - 主题帖 ID
 /// * [title] - 主题帖标题
-/// * [category] - 主题帖分区
+/// * [category] - 动态分类 slug
 /// * [createdAt] - 创建时间
 /// * [owner] - 楼主信息
 /// * [count] - 主题帖统计
+/// * [coverImages] - 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
 @BuiltValue()
 abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto, SearchThreadResponseDtoBuilder> {
   /// 主题帖 ID
@@ -30,10 +31,9 @@ abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto,
   @BuiltValueField(wireName: r'title')
   String get title;
 
-  /// 主题帖分区
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  SearchThreadResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   /// 创建时间
   @BuiltValueField(wireName: r'createdAt')
@@ -46,6 +46,10 @@ abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto,
   /// 主题帖统计
   @BuiltValueField(wireName: r'_count')
   SearchThreadCountResponseDto get count;
+
+  /// 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
+  @BuiltValueField(wireName: r'coverImages')
+  BuiltList<String> get coverImages;
 
   SearchThreadResponseDto._();
 
@@ -81,9 +85,9 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(SearchThreadResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -99,6 +103,11 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
     yield serializers.serialize(
       object.count,
       specifiedType: const FullType(SearchThreadCountResponseDto),
+    );
+    yield r'coverImages';
+    yield serializers.serialize(
+      object.coverImages,
+      specifiedType: const FullType(BuiltList, [FullType(String)]),
     );
   }
 
@@ -140,8 +149,9 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(SearchThreadResponseDtoCategoryEnum),
-          ) as SearchThreadResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'createdAt':
@@ -164,6 +174,13 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
             specifiedType: const FullType(SearchThreadCountResponseDto),
           ) as SearchThreadCountResponseDto;
           result.count.replace(valueDes);
+          break;
+        case r'coverImages':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(String)]),
+          ) as BuiltList<String>;
+          result.coverImages.replace(valueDes);
           break;
         default:
           unhandled.add(key);
@@ -192,27 +209,4 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
     );
     return result.build();
   }
-}
-
-class SearchThreadResponseDtoCategoryEnum extends EnumClass {
-
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const SearchThreadResponseDtoCategoryEnum DEDUCTION = _$searchThreadResponseDtoCategoryEnum_DEDUCTION;
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const SearchThreadResponseDtoCategoryEnum NATION = _$searchThreadResponseDtoCategoryEnum_NATION;
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const SearchThreadResponseDtoCategoryEnum RPG = _$searchThreadResponseDtoCategoryEnum_RPG;
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const SearchThreadResponseDtoCategoryEnum unknownDefaultOpenApi = _$searchThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<SearchThreadResponseDtoCategoryEnum> get serializer => _$searchThreadResponseDtoCategoryEnumSerializer;
-
-  const SearchThreadResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<SearchThreadResponseDtoCategoryEnum> get values => _$searchThreadResponseDtoCategoryEnumValues;
-  static SearchThreadResponseDtoCategoryEnum valueOf(String name) => _$searchThreadResponseDtoCategoryEnumValueOf(name);
 }

@@ -18,11 +18,12 @@ part 'home_thread_list_item_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [title]
-/// * [category]
+/// * [category] - 动态分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published]
 /// * [pinned]
+/// * [tipTotal] - 用户投入的累计打赏升数
 /// * [createdAt]
 /// * [updatedAt]
 /// * [deletedAt]
@@ -31,6 +32,7 @@ part 'home_thread_list_item_response_dto.g.dart';
 /// * [topicTags]
 /// * [count]
 /// * [preview] - 首页列表正文预览
+/// * [coverImages] - 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
 @BuiltValue()
 abstract class HomeThreadListItemResponseDto implements Built<HomeThreadListItemResponseDto, HomeThreadListItemResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -39,9 +41,9 @@ abstract class HomeThreadListItemResponseDto implements Built<HomeThreadListItem
   @BuiltValueField(wireName: r'title')
   String get title;
 
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  HomeThreadListItemResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   HomeThreadListItemResponseDtoStatusEnum get status;
@@ -56,6 +58,10 @@ abstract class HomeThreadListItemResponseDto implements Built<HomeThreadListItem
 
   @BuiltValueField(wireName: r'pinned')
   bool get pinned;
+
+  /// 用户投入的累计打赏升数
+  @BuiltValueField(wireName: r'tipTotal')
+  String get tipTotal;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -81,6 +87,10 @@ abstract class HomeThreadListItemResponseDto implements Built<HomeThreadListItem
   /// 首页列表正文预览
   @BuiltValueField(wireName: r'preview')
   String? get preview;
+
+  /// 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
+  @BuiltValueField(wireName: r'coverImages')
+  BuiltList<String> get coverImages;
 
   HomeThreadListItemResponseDto._();
 
@@ -116,9 +126,9 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(HomeThreadListItemResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -139,6 +149,11 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
     yield serializers.serialize(
       object.pinned,
       specifiedType: const FullType(bool),
+    );
+    yield r'tipTotal';
+    yield serializers.serialize(
+      object.tipTotal,
+      specifiedType: const FullType(String),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -182,6 +197,11 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
         specifiedType: const FullType(String),
       );
     }
+    yield r'coverImages';
+    yield serializers.serialize(
+      object.coverImages,
+      specifiedType: const FullType(BuiltList, [FullType(String)]),
+    );
   }
 
   @override
@@ -222,8 +242,9 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(HomeThreadListItemResponseDtoCategoryEnum),
-          ) as HomeThreadListItemResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -253,6 +274,13 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
             specifiedType: const FullType(bool),
           ) as bool;
           result.pinned = valueDes;
+          break;
+        case r'tipTotal':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.tipTotal = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(
@@ -312,6 +340,13 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
           ) as String;
           result.preview = valueDes;
           break;
+        case r'coverImages':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(String)]),
+          ) as BuiltList<String>;
+          result.coverImages.replace(valueDes);
+          break;
         default:
           unhandled.add(key);
           unhandled.add(value);
@@ -339,25 +374,6 @@ class _$HomeThreadListItemResponseDtoSerializer implements PrimitiveSerializer<H
     );
     return result.build();
   }
-}
-
-class HomeThreadListItemResponseDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const HomeThreadListItemResponseDtoCategoryEnum DEDUCTION = _$homeThreadListItemResponseDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const HomeThreadListItemResponseDtoCategoryEnum NATION = _$homeThreadListItemResponseDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const HomeThreadListItemResponseDtoCategoryEnum RPG = _$homeThreadListItemResponseDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const HomeThreadListItemResponseDtoCategoryEnum unknownDefaultOpenApi = _$homeThreadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<HomeThreadListItemResponseDtoCategoryEnum> get serializer => _$homeThreadListItemResponseDtoCategoryEnumSerializer;
-
-  const HomeThreadListItemResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<HomeThreadListItemResponseDtoCategoryEnum> get values => _$homeThreadListItemResponseDtoCategoryEnumValues;
-  static HomeThreadListItemResponseDtoCategoryEnum valueOf(String name) => _$homeThreadListItemResponseDtoCategoryEnumValueOf(name);
 }
 
 class HomeThreadListItemResponseDtoStatusEnum extends EnumClass {

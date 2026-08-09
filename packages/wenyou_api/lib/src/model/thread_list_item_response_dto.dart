@@ -18,11 +18,12 @@ part 'thread_list_item_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [title]
-/// * [category]
+/// * [category] - 动态分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published]
 /// * [pinned]
+/// * [tipTotal] - 用户投入的累计打赏升数
 /// * [createdAt]
 /// * [updatedAt]
 /// * [deletedAt]
@@ -39,9 +40,9 @@ abstract class ThreadListItemResponseDto implements Built<ThreadListItemResponse
   @BuiltValueField(wireName: r'title')
   String get title;
 
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  ThreadListItemResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   ThreadListItemResponseDtoStatusEnum get status;
@@ -56,6 +57,10 @@ abstract class ThreadListItemResponseDto implements Built<ThreadListItemResponse
 
   @BuiltValueField(wireName: r'pinned')
   bool get pinned;
+
+  /// 用户投入的累计打赏升数
+  @BuiltValueField(wireName: r'tipTotal')
+  String get tipTotal;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -116,9 +121,9 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(ThreadListItemResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -139,6 +144,11 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
     yield serializers.serialize(
       object.pinned,
       specifiedType: const FullType(bool),
+    );
+    yield r'tipTotal';
+    yield serializers.serialize(
+      object.tipTotal,
+      specifiedType: const FullType(String),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -222,8 +232,9 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(ThreadListItemResponseDtoCategoryEnum),
-          ) as ThreadListItemResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -253,6 +264,13 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
             specifiedType: const FullType(bool),
           ) as bool;
           result.pinned = valueDes;
+          break;
+        case r'tipTotal':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.tipTotal = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(
@@ -339,25 +357,6 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
     );
     return result.build();
   }
-}
-
-class ThreadListItemResponseDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const ThreadListItemResponseDtoCategoryEnum DEDUCTION = _$threadListItemResponseDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const ThreadListItemResponseDtoCategoryEnum NATION = _$threadListItemResponseDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const ThreadListItemResponseDtoCategoryEnum RPG = _$threadListItemResponseDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const ThreadListItemResponseDtoCategoryEnum unknownDefaultOpenApi = _$threadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<ThreadListItemResponseDtoCategoryEnum> get serializer => _$threadListItemResponseDtoCategoryEnumSerializer;
-
-  const ThreadListItemResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<ThreadListItemResponseDtoCategoryEnum> get values => _$threadListItemResponseDtoCategoryEnumValues;
-  static ThreadListItemResponseDtoCategoryEnum valueOf(String name) => _$threadListItemResponseDtoCategoryEnumValueOf(name);
 }
 
 class ThreadListItemResponseDtoStatusEnum extends EnumClass {

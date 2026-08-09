@@ -17,7 +17,7 @@ part 'draft_thread_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [title]
-/// * [category]
+/// * [category] - 动态分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published]
@@ -36,9 +36,9 @@ abstract class DraftThreadResponseDto implements Built<DraftThreadResponseDto, D
   @BuiltValueField(wireName: r'title')
   String get title;
 
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  DraftThreadResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   DraftThreadResponseDtoStatusEnum get status;
@@ -106,9 +106,9 @@ class _$DraftThreadResponseDtoSerializer implements PrimitiveSerializer<DraftThr
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(DraftThreadResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -200,8 +200,9 @@ class _$DraftThreadResponseDtoSerializer implements PrimitiveSerializer<DraftThr
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(DraftThreadResponseDtoCategoryEnum),
-          ) as DraftThreadResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -304,25 +305,6 @@ class _$DraftThreadResponseDtoSerializer implements PrimitiveSerializer<DraftThr
     );
     return result.build();
   }
-}
-
-class DraftThreadResponseDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const DraftThreadResponseDtoCategoryEnum DEDUCTION = _$draftThreadResponseDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const DraftThreadResponseDtoCategoryEnum NATION = _$draftThreadResponseDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const DraftThreadResponseDtoCategoryEnum RPG = _$draftThreadResponseDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const DraftThreadResponseDtoCategoryEnum unknownDefaultOpenApi = _$draftThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<DraftThreadResponseDtoCategoryEnum> get serializer => _$draftThreadResponseDtoCategoryEnumSerializer;
-
-  const DraftThreadResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<DraftThreadResponseDtoCategoryEnum> get values => _$draftThreadResponseDtoCategoryEnumValues;
-  static DraftThreadResponseDtoCategoryEnum valueOf(String name) => _$draftThreadResponseDtoCategoryEnumValueOf(name);
 }
 
 class DraftThreadResponseDtoStatusEnum extends EnumClass {

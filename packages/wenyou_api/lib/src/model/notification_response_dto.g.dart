@@ -27,6 +27,11 @@ const NotificationResponseDtoTypeEnum _$notificationResponseDtoTypeEnum_follow =
     const NotificationResponseDtoTypeEnum._('follow');
 const NotificationResponseDtoTypeEnum _$notificationResponseDtoTypeEnum_like =
     const NotificationResponseDtoTypeEnum._('like');
+const NotificationResponseDtoTypeEnum _$notificationResponseDtoTypeEnum_tip =
+    const NotificationResponseDtoTypeEnum._('tip');
+const NotificationResponseDtoTypeEnum
+_$notificationResponseDtoTypeEnum_levelUp =
+    const NotificationResponseDtoTypeEnum._('levelUp');
 const NotificationResponseDtoTypeEnum _$notificationResponseDtoTypeEnum_system =
     const NotificationResponseDtoTypeEnum._('system');
 const NotificationResponseDtoTypeEnum
@@ -53,6 +58,10 @@ NotificationResponseDtoTypeEnum _$notificationResponseDtoTypeEnumValueOf(
       return _$notificationResponseDtoTypeEnum_follow;
     case 'like':
       return _$notificationResponseDtoTypeEnum_like;
+    case 'tip':
+      return _$notificationResponseDtoTypeEnum_tip;
+    case 'levelUp':
+      return _$notificationResponseDtoTypeEnum_levelUp;
     case 'system':
       return _$notificationResponseDtoTypeEnum_system;
     case 'unknownDefaultOpenApi':
@@ -74,6 +83,8 @@ _$notificationResponseDtoTypeEnumValues =
         _$notificationResponseDtoTypeEnum_threadCreated,
         _$notificationResponseDtoTypeEnum_follow,
         _$notificationResponseDtoTypeEnum_like,
+        _$notificationResponseDtoTypeEnum_tip,
+        _$notificationResponseDtoTypeEnum_levelUp,
         _$notificationResponseDtoTypeEnum_system,
         _$notificationResponseDtoTypeEnum_unknownDefaultOpenApi,
       ],
@@ -94,6 +105,8 @@ class _$NotificationResponseDtoTypeEnumSerializer
     'threadCreated': 'thread_created',
     'follow': 'follow',
     'like': 'like',
+    'tip': 'tip',
+    'levelUp': 'level_up',
     'system': 'system',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
@@ -106,6 +119,8 @@ class _$NotificationResponseDtoTypeEnumSerializer
     'thread_created': 'threadCreated',
     'follow': 'follow',
     'like': 'like',
+    'tip': 'tip',
+    'level_up': 'levelUp',
     'system': 'system',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
@@ -150,6 +165,10 @@ class _$NotificationResponseDto extends NotificationResponseDto {
   @override
   final String? threadId;
   @override
+  final String? momentId;
+  @override
+  final String? momentCommentId;
+  @override
   final String? fromUserId;
   @override
   final String eventKey;
@@ -161,6 +180,10 @@ class _$NotificationResponseDto extends NotificationResponseDto {
   final NotificationPostResponseDto? post;
   @override
   final NotificationThreadResponseDto? thread;
+  @override
+  final NotificationMomentResponseDto? moment;
+  @override
+  final NotificationMomentCommentResponseDto? momentComment;
   @override
   final NotificationFromUserResponseDto? fromUser;
 
@@ -177,12 +200,16 @@ class _$NotificationResponseDto extends NotificationResponseDto {
     required this.target,
     this.postId,
     this.threadId,
+    this.momentId,
+    this.momentCommentId,
     this.fromUserId,
     required this.eventKey,
     required this.isRead,
     required this.createdAt,
     this.post,
     this.thread,
+    this.moment,
+    this.momentComment,
     this.fromUser,
   }) : super._();
   @override
@@ -206,12 +233,16 @@ class _$NotificationResponseDto extends NotificationResponseDto {
         target == other.target &&
         postId == other.postId &&
         threadId == other.threadId &&
+        momentId == other.momentId &&
+        momentCommentId == other.momentCommentId &&
         fromUserId == other.fromUserId &&
         eventKey == other.eventKey &&
         isRead == other.isRead &&
         createdAt == other.createdAt &&
         post == other.post &&
         thread == other.thread &&
+        moment == other.moment &&
+        momentComment == other.momentComment &&
         fromUser == other.fromUser;
   }
 
@@ -226,12 +257,16 @@ class _$NotificationResponseDto extends NotificationResponseDto {
     _$hash = $jc(_$hash, target.hashCode);
     _$hash = $jc(_$hash, postId.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
+    _$hash = $jc(_$hash, momentId.hashCode);
+    _$hash = $jc(_$hash, momentCommentId.hashCode);
     _$hash = $jc(_$hash, fromUserId.hashCode);
     _$hash = $jc(_$hash, eventKey.hashCode);
     _$hash = $jc(_$hash, isRead.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, post.hashCode);
     _$hash = $jc(_$hash, thread.hashCode);
+    _$hash = $jc(_$hash, moment.hashCode);
+    _$hash = $jc(_$hash, momentComment.hashCode);
     _$hash = $jc(_$hash, fromUser.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -248,12 +283,16 @@ class _$NotificationResponseDto extends NotificationResponseDto {
           ..add('target', target)
           ..add('postId', postId)
           ..add('threadId', threadId)
+          ..add('momentId', momentId)
+          ..add('momentCommentId', momentCommentId)
           ..add('fromUserId', fromUserId)
           ..add('eventKey', eventKey)
           ..add('isRead', isRead)
           ..add('createdAt', createdAt)
           ..add('post', post)
           ..add('thread', thread)
+          ..add('moment', moment)
+          ..add('momentComment', momentComment)
           ..add('fromUser', fromUser))
         .toString();
   }
@@ -300,6 +339,15 @@ class NotificationResponseDtoBuilder
   String? get threadId => _$this._threadId;
   set threadId(String? threadId) => _$this._threadId = threadId;
 
+  String? _momentId;
+  String? get momentId => _$this._momentId;
+  set momentId(String? momentId) => _$this._momentId = momentId;
+
+  String? _momentCommentId;
+  String? get momentCommentId => _$this._momentCommentId;
+  set momentCommentId(String? momentCommentId) =>
+      _$this._momentCommentId = momentCommentId;
+
   String? _fromUserId;
   String? get fromUserId => _$this._fromUserId;
   set fromUserId(String? fromUserId) => _$this._fromUserId = fromUserId;
@@ -327,6 +375,19 @@ class NotificationResponseDtoBuilder
   set thread(NotificationThreadResponseDtoBuilder? thread) =>
       _$this._thread = thread;
 
+  NotificationMomentResponseDtoBuilder? _moment;
+  NotificationMomentResponseDtoBuilder get moment =>
+      _$this._moment ??= NotificationMomentResponseDtoBuilder();
+  set moment(NotificationMomentResponseDtoBuilder? moment) =>
+      _$this._moment = moment;
+
+  NotificationMomentCommentResponseDtoBuilder? _momentComment;
+  NotificationMomentCommentResponseDtoBuilder get momentComment =>
+      _$this._momentComment ??= NotificationMomentCommentResponseDtoBuilder();
+  set momentComment(
+    NotificationMomentCommentResponseDtoBuilder? momentComment,
+  ) => _$this._momentComment = momentComment;
+
   NotificationFromUserResponseDtoBuilder? _fromUser;
   NotificationFromUserResponseDtoBuilder get fromUser =>
       _$this._fromUser ??= NotificationFromUserResponseDtoBuilder();
@@ -348,12 +409,16 @@ class NotificationResponseDtoBuilder
       _target = $v.target.toBuilder();
       _postId = $v.postId;
       _threadId = $v.threadId;
+      _momentId = $v.momentId;
+      _momentCommentId = $v.momentCommentId;
       _fromUserId = $v.fromUserId;
       _eventKey = $v.eventKey;
       _isRead = $v.isRead;
       _createdAt = $v.createdAt;
       _post = $v.post?.toBuilder();
       _thread = $v.thread?.toBuilder();
+      _moment = $v.moment?.toBuilder();
+      _momentComment = $v.momentComment?.toBuilder();
       _fromUser = $v.fromUser?.toBuilder();
       _$v = null;
     }
@@ -399,6 +464,8 @@ class NotificationResponseDtoBuilder
             target: target.build(),
             postId: postId,
             threadId: threadId,
+            momentId: momentId,
+            momentCommentId: momentCommentId,
             fromUserId: fromUserId,
             eventKey: BuiltValueNullFieldError.checkNotNull(
               eventKey,
@@ -417,6 +484,8 @@ class NotificationResponseDtoBuilder
             ),
             post: _post?.build(),
             thread: _thread?.build(),
+            moment: _moment?.build(),
+            momentComment: _momentComment?.build(),
             fromUser: _fromUser?.build(),
           );
     } catch (_) {
@@ -431,6 +500,10 @@ class NotificationResponseDtoBuilder
         _post?.build();
         _$failedField = 'thread';
         _thread?.build();
+        _$failedField = 'moment';
+        _moment?.build();
+        _$failedField = 'momentComment';
+        _momentComment?.build();
         _$failedField = 'fromUser';
         _fromUser?.build();
       } catch (e) {

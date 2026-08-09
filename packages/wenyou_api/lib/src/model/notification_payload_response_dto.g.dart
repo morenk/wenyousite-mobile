@@ -92,9 +92,23 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   @override
   final String? threadTitle;
   @override
+  final String? momentTitle;
+  @override
   final num? totalCount;
   @override
   final BuiltList<NotificationLikerResponseDto>? likers;
+  @override
+  final String? grossAmount;
+  @override
+  final String? recipientAmount;
+  @override
+  final String? platformAmount;
+  @override
+  final num? previousLevel;
+  @override
+  final num? level;
+  @override
+  final num? experience;
 
   factory _$NotificationPayloadResponseDto([
     void Function(NotificationPayloadResponseDtoBuilder)? updates,
@@ -108,8 +122,15 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
     this.preview,
     this.subthreadTitle,
     this.threadTitle,
+    this.momentTitle,
     this.totalCount,
     this.likers,
+    this.grossAmount,
+    this.recipientAmount,
+    this.platformAmount,
+    this.previousLevel,
+    this.level,
+    this.experience,
   }) : super._();
   @override
   NotificationPayloadResponseDto rebuild(
@@ -131,8 +152,15 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
         preview == other.preview &&
         subthreadTitle == other.subthreadTitle &&
         threadTitle == other.threadTitle &&
+        momentTitle == other.momentTitle &&
         totalCount == other.totalCount &&
-        likers == other.likers;
+        likers == other.likers &&
+        grossAmount == other.grossAmount &&
+        recipientAmount == other.recipientAmount &&
+        platformAmount == other.platformAmount &&
+        previousLevel == other.previousLevel &&
+        level == other.level &&
+        experience == other.experience;
   }
 
   @override
@@ -145,8 +173,15 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, subthreadTitle.hashCode);
     _$hash = $jc(_$hash, threadTitle.hashCode);
+    _$hash = $jc(_$hash, momentTitle.hashCode);
     _$hash = $jc(_$hash, totalCount.hashCode);
     _$hash = $jc(_$hash, likers.hashCode);
+    _$hash = $jc(_$hash, grossAmount.hashCode);
+    _$hash = $jc(_$hash, recipientAmount.hashCode);
+    _$hash = $jc(_$hash, platformAmount.hashCode);
+    _$hash = $jc(_$hash, previousLevel.hashCode);
+    _$hash = $jc(_$hash, level.hashCode);
+    _$hash = $jc(_$hash, experience.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -161,8 +196,15 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
           ..add('preview', preview)
           ..add('subthreadTitle', subthreadTitle)
           ..add('threadTitle', threadTitle)
+          ..add('momentTitle', momentTitle)
           ..add('totalCount', totalCount)
-          ..add('likers', likers))
+          ..add('likers', likers)
+          ..add('grossAmount', grossAmount)
+          ..add('recipientAmount', recipientAmount)
+          ..add('platformAmount', platformAmount)
+          ..add('previousLevel', previousLevel)
+          ..add('level', level)
+          ..add('experience', experience))
         .toString();
   }
 }
@@ -207,6 +249,10 @@ class NotificationPayloadResponseDtoBuilder
   String? get threadTitle => _$this._threadTitle;
   set threadTitle(String? threadTitle) => _$this._threadTitle = threadTitle;
 
+  String? _momentTitle;
+  String? get momentTitle => _$this._momentTitle;
+  set momentTitle(String? momentTitle) => _$this._momentTitle = momentTitle;
+
   num? _totalCount;
   num? get totalCount => _$this._totalCount;
   set totalCount(num? totalCount) => _$this._totalCount = totalCount;
@@ -216,6 +262,33 @@ class NotificationPayloadResponseDtoBuilder
       _$this._likers ??= ListBuilder<NotificationLikerResponseDto>();
   set likers(ListBuilder<NotificationLikerResponseDto>? likers) =>
       _$this._likers = likers;
+
+  String? _grossAmount;
+  String? get grossAmount => _$this._grossAmount;
+  set grossAmount(String? grossAmount) => _$this._grossAmount = grossAmount;
+
+  String? _recipientAmount;
+  String? get recipientAmount => _$this._recipientAmount;
+  set recipientAmount(String? recipientAmount) =>
+      _$this._recipientAmount = recipientAmount;
+
+  String? _platformAmount;
+  String? get platformAmount => _$this._platformAmount;
+  set platformAmount(String? platformAmount) =>
+      _$this._platformAmount = platformAmount;
+
+  num? _previousLevel;
+  num? get previousLevel => _$this._previousLevel;
+  set previousLevel(num? previousLevel) =>
+      _$this._previousLevel = previousLevel;
+
+  num? _level;
+  num? get level => _$this._level;
+  set level(num? level) => _$this._level = level;
+
+  num? _experience;
+  num? get experience => _$this._experience;
+  set experience(num? experience) => _$this._experience = experience;
 
   NotificationPayloadResponseDtoBuilder() {
     NotificationPayloadResponseDto._defaults(this);
@@ -231,8 +304,15 @@ class NotificationPayloadResponseDtoBuilder
       _preview = $v.preview;
       _subthreadTitle = $v.subthreadTitle;
       _threadTitle = $v.threadTitle;
+      _momentTitle = $v.momentTitle;
       _totalCount = $v.totalCount;
       _likers = $v.likers?.toBuilder();
+      _grossAmount = $v.grossAmount;
+      _recipientAmount = $v.recipientAmount;
+      _platformAmount = $v.platformAmount;
+      _previousLevel = $v.previousLevel;
+      _level = $v.level;
+      _experience = $v.experience;
       _$v = null;
     }
     return this;
@@ -268,8 +348,15 @@ class NotificationPayloadResponseDtoBuilder
             preview: preview,
             subthreadTitle: subthreadTitle,
             threadTitle: threadTitle,
+            momentTitle: momentTitle,
             totalCount: totalCount,
             likers: _likers?.build(),
+            grossAmount: grossAmount,
+            recipientAmount: recipientAmount,
+            platformAmount: platformAmount,
+            previousLevel: previousLevel,
+            level: level,
+            experience: experience,
           );
     } catch (_) {
       late String _$failedField;

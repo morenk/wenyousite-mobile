@@ -11,10 +11,10 @@ part 'logout_dto.g.dart';
 /// LogoutDto
 ///
 /// Properties:
-/// * [refreshToken] - 待撤销的刷新令牌（Cookie 中已有则无需传）
+/// * [refreshToken] - 旧客户端兼容：待撤销的刷新令牌；当前 access token 含 sid 时可省略
 @BuiltValue()
 abstract class LogoutDto implements Built<LogoutDto, LogoutDtoBuilder> {
-  /// 待撤销的刷新令牌（Cookie 中已有则无需传）
+  /// 旧客户端兼容：待撤销的刷新令牌；当前 access token 含 sid 时可省略
   @BuiltValueField(wireName: r'refreshToken')
   String? get refreshToken;
 

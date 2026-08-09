@@ -6,40 +6,6 @@ part of 'update_thread_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const UpdateThreadDtoCategoryEnum _$updateThreadDtoCategoryEnum_DEDUCTION =
-    const UpdateThreadDtoCategoryEnum._('DEDUCTION');
-const UpdateThreadDtoCategoryEnum _$updateThreadDtoCategoryEnum_NATION =
-    const UpdateThreadDtoCategoryEnum._('NATION');
-const UpdateThreadDtoCategoryEnum _$updateThreadDtoCategoryEnum_RPG =
-    const UpdateThreadDtoCategoryEnum._('RPG');
-const UpdateThreadDtoCategoryEnum
-_$updateThreadDtoCategoryEnum_unknownDefaultOpenApi =
-    const UpdateThreadDtoCategoryEnum._('unknownDefaultOpenApi');
-
-UpdateThreadDtoCategoryEnum _$updateThreadDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$updateThreadDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$updateThreadDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$updateThreadDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$updateThreadDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$updateThreadDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<UpdateThreadDtoCategoryEnum>
-_$updateThreadDtoCategoryEnumValues =
-    BuiltSet<UpdateThreadDtoCategoryEnum>(const <UpdateThreadDtoCategoryEnum>[
-      _$updateThreadDtoCategoryEnum_DEDUCTION,
-      _$updateThreadDtoCategoryEnum_NATION,
-      _$updateThreadDtoCategoryEnum_RPG,
-      _$updateThreadDtoCategoryEnum_unknownDefaultOpenApi,
-    ]);
-
 const UpdateThreadDtoStatusEnum _$updateThreadDtoStatusEnum_RECRUITING =
     const UpdateThreadDtoStatusEnum._('RECRUITING');
 const UpdateThreadDtoStatusEnum _$updateThreadDtoStatusEnum_CLOSED =
@@ -105,51 +71,11 @@ _$updateThreadDtoVisibilityEnumValues = BuiltSet<UpdateThreadDtoVisibilityEnum>(
   ],
 );
 
-Serializer<UpdateThreadDtoCategoryEnum>
-_$updateThreadDtoCategoryEnumSerializer =
-    _$UpdateThreadDtoCategoryEnumSerializer();
 Serializer<UpdateThreadDtoStatusEnum> _$updateThreadDtoStatusEnumSerializer =
     _$UpdateThreadDtoStatusEnumSerializer();
 Serializer<UpdateThreadDtoVisibilityEnum>
 _$updateThreadDtoVisibilityEnumSerializer =
     _$UpdateThreadDtoVisibilityEnumSerializer();
-
-class _$UpdateThreadDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<UpdateThreadDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[UpdateThreadDtoCategoryEnum];
-  @override
-  final String wireName = 'UpdateThreadDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    UpdateThreadDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  UpdateThreadDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => UpdateThreadDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$UpdateThreadDtoStatusEnumSerializer
     implements PrimitiveSerializer<UpdateThreadDtoStatusEnum> {
@@ -227,7 +153,7 @@ class _$UpdateThreadDto extends UpdateThreadDto {
   @override
   final String? title;
   @override
-  final UpdateThreadDtoCategoryEnum? category;
+  final String? category;
   @override
   final UpdateThreadDtoStatusEnum? status;
   @override
@@ -301,10 +227,9 @@ class UpdateThreadDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  UpdateThreadDtoCategoryEnum? _category;
-  UpdateThreadDtoCategoryEnum? get category => _$this._category;
-  set category(UpdateThreadDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   UpdateThreadDtoStatusEnum? _status;
   UpdateThreadDtoStatusEnum? get status => _$this._status;

@@ -14,6 +14,9 @@ part 'thread_tag_response_dto.g.dart';
 /// * [id]
 /// * [name]
 /// * [color]
+/// * [description]
+/// * [sortOrder]
+/// * [isActive]
 @BuiltValue()
 abstract class ThreadTagResponseDto implements Built<ThreadTagResponseDto, ThreadTagResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -24,6 +27,15 @@ abstract class ThreadTagResponseDto implements Built<ThreadTagResponseDto, Threa
 
   @BuiltValueField(wireName: r'color')
   String? get color;
+
+  @BuiltValueField(wireName: r'description')
+  String? get description;
+
+  @BuiltValueField(wireName: r'sortOrder')
+  num get sortOrder;
+
+  @BuiltValueField(wireName: r'isActive')
+  bool get isActive;
 
   ThreadTagResponseDto._();
 
@@ -62,6 +74,21 @@ class _$ThreadTagResponseDtoSerializer implements PrimitiveSerializer<ThreadTagR
     yield object.color == null ? null : serializers.serialize(
       object.color,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'description';
+    yield object.description == null ? null : serializers.serialize(
+      object.description,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'sortOrder';
+    yield serializers.serialize(
+      object.sortOrder,
+      specifiedType: const FullType(num),
+    );
+    yield r'isActive';
+    yield serializers.serialize(
+      object.isActive,
+      specifiedType: const FullType(bool),
     );
   }
 
@@ -107,6 +134,28 @@ class _$ThreadTagResponseDtoSerializer implements PrimitiveSerializer<ThreadTagR
           ) as String?;
           if (valueDes == null) continue;
           result.color = valueDes;
+          break;
+        case r'description':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.description = valueDes;
+          break;
+        case r'sortOrder':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.sortOrder = valueDes;
+          break;
+        case r'isActive':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.isActive = valueDes;
           break;
         default:
           unhandled.add(key);

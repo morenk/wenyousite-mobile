@@ -6,96 +6,13 @@ part of 'subscription_thread_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const SubscriptionThreadResponseDtoCategoryEnum
-_$subscriptionThreadResponseDtoCategoryEnum_DEDUCTION =
-    const SubscriptionThreadResponseDtoCategoryEnum._('DEDUCTION');
-const SubscriptionThreadResponseDtoCategoryEnum
-_$subscriptionThreadResponseDtoCategoryEnum_NATION =
-    const SubscriptionThreadResponseDtoCategoryEnum._('NATION');
-const SubscriptionThreadResponseDtoCategoryEnum
-_$subscriptionThreadResponseDtoCategoryEnum_RPG =
-    const SubscriptionThreadResponseDtoCategoryEnum._('RPG');
-const SubscriptionThreadResponseDtoCategoryEnum
-_$subscriptionThreadResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const SubscriptionThreadResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-SubscriptionThreadResponseDtoCategoryEnum
-_$subscriptionThreadResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$subscriptionThreadResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$subscriptionThreadResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$subscriptionThreadResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$subscriptionThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$subscriptionThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<SubscriptionThreadResponseDtoCategoryEnum>
-_$subscriptionThreadResponseDtoCategoryEnumValues =
-    BuiltSet<SubscriptionThreadResponseDtoCategoryEnum>(
-      const <SubscriptionThreadResponseDtoCategoryEnum>[
-        _$subscriptionThreadResponseDtoCategoryEnum_DEDUCTION,
-        _$subscriptionThreadResponseDtoCategoryEnum_NATION,
-        _$subscriptionThreadResponseDtoCategoryEnum_RPG,
-        _$subscriptionThreadResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
-Serializer<SubscriptionThreadResponseDtoCategoryEnum>
-_$subscriptionThreadResponseDtoCategoryEnumSerializer =
-    _$SubscriptionThreadResponseDtoCategoryEnumSerializer();
-
-class _$SubscriptionThreadResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<SubscriptionThreadResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    SubscriptionThreadResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'SubscriptionThreadResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    SubscriptionThreadResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  SubscriptionThreadResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => SubscriptionThreadResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
   @override
   final String id;
   @override
   final String title;
   @override
-  final SubscriptionThreadResponseDtoCategoryEnum category;
+  final String? category;
 
   factory _$SubscriptionThreadResponseDto([
     void Function(SubscriptionThreadResponseDtoBuilder)? updates,
@@ -104,7 +21,7 @@ class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
   _$SubscriptionThreadResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
   }) : super._();
   @override
   SubscriptionThreadResponseDto rebuild(
@@ -160,10 +77,9 @@ class SubscriptionThreadResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  SubscriptionThreadResponseDtoCategoryEnum? _category;
-  SubscriptionThreadResponseDtoCategoryEnum? get category => _$this._category;
-  set category(SubscriptionThreadResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   SubscriptionThreadResponseDtoBuilder() {
     SubscriptionThreadResponseDto._defaults(this);
@@ -207,11 +123,7 @@ class SubscriptionThreadResponseDtoBuilder
             r'SubscriptionThreadResponseDto',
             'title',
           ),
-          category: BuiltValueNullFieldError.checkNotNull(
-            category,
-            r'SubscriptionThreadResponseDto',
-            'category',
-          ),
+          category: category,
         );
     replace(_$result);
     return _$result;

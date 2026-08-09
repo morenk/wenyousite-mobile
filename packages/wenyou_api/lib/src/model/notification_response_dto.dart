@@ -5,9 +5,11 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/notification_post_response_dto.dart';
 import 'package:wenyou_api/src/model/notification_target_response_dto.dart';
+import 'package:wenyou_api/src/model/notification_moment_response_dto.dart';
 import 'package:wenyou_api/src/model/notification_thread_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/notification_from_user_response_dto.dart';
+import 'package:wenyou_api/src/model/notification_moment_comment_response_dto.dart';
 import 'package:wenyou_api/src/model/notification_payload_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -25,12 +27,16 @@ part 'notification_response_dto.g.dart';
 /// * [target]
 /// * [postId]
 /// * [threadId]
+/// * [momentId]
+/// * [momentCommentId]
 /// * [fromUserId]
 /// * [eventKey]
 /// * [isRead]
 /// * [createdAt]
 /// * [post]
 /// * [thread]
+/// * [moment]
+/// * [momentComment]
 /// * [fromUser]
 @BuiltValue()
 abstract class NotificationResponseDto implements Built<NotificationResponseDto, NotificationResponseDtoBuilder> {
@@ -42,7 +48,7 @@ abstract class NotificationResponseDto implements Built<NotificationResponseDto,
 
   @BuiltValueField(wireName: r'type')
   NotificationResponseDtoTypeEnum get type;
-  // enum typeEnum {  reply,  mention,  new_floor,  subthread_created,  new_post,  thread_created,  follow,  like,  system,  };
+  // enum typeEnum {  reply,  mention,  new_floor,  subthread_created,  new_post,  thread_created,  follow,  like,  tip,  level_up,  system,  };
 
   @BuiltValueField(wireName: r'content')
   String? get content;
@@ -58,6 +64,12 @@ abstract class NotificationResponseDto implements Built<NotificationResponseDto,
 
   @BuiltValueField(wireName: r'threadId')
   String? get threadId;
+
+  @BuiltValueField(wireName: r'momentId')
+  String? get momentId;
+
+  @BuiltValueField(wireName: r'momentCommentId')
+  String? get momentCommentId;
 
   @BuiltValueField(wireName: r'fromUserId')
   String? get fromUserId;
@@ -76,6 +88,12 @@ abstract class NotificationResponseDto implements Built<NotificationResponseDto,
 
   @BuiltValueField(wireName: r'thread')
   NotificationThreadResponseDto? get thread;
+
+  @BuiltValueField(wireName: r'moment')
+  NotificationMomentResponseDto? get moment;
+
+  @BuiltValueField(wireName: r'momentComment')
+  NotificationMomentCommentResponseDto? get momentComment;
 
   @BuiltValueField(wireName: r'fromUser')
   NotificationFromUserResponseDto? get fromUser;
@@ -143,6 +161,16 @@ class _$NotificationResponseDtoSerializer implements PrimitiveSerializer<Notific
       object.threadId,
       specifiedType: const FullType.nullable(String),
     );
+    yield r'momentId';
+    yield object.momentId == null ? null : serializers.serialize(
+      object.momentId,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'momentCommentId';
+    yield object.momentCommentId == null ? null : serializers.serialize(
+      object.momentCommentId,
+      specifiedType: const FullType.nullable(String),
+    );
     yield r'fromUserId';
     yield object.fromUserId == null ? null : serializers.serialize(
       object.fromUserId,
@@ -172,6 +200,16 @@ class _$NotificationResponseDtoSerializer implements PrimitiveSerializer<Notific
     yield object.thread == null ? null : serializers.serialize(
       object.thread,
       specifiedType: const FullType.nullable(NotificationThreadResponseDto),
+    );
+    yield r'moment';
+    yield object.moment == null ? null : serializers.serialize(
+      object.moment,
+      specifiedType: const FullType.nullable(NotificationMomentResponseDto),
+    );
+    yield r'momentComment';
+    yield object.momentComment == null ? null : serializers.serialize(
+      object.momentComment,
+      specifiedType: const FullType.nullable(NotificationMomentCommentResponseDto),
     );
     yield r'fromUser';
     yield object.fromUser == null ? null : serializers.serialize(
@@ -261,6 +299,22 @@ class _$NotificationResponseDtoSerializer implements PrimitiveSerializer<Notific
           if (valueDes == null) continue;
           result.threadId = valueDes;
           break;
+        case r'momentId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.momentId = valueDes;
+          break;
+        case r'momentCommentId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.momentCommentId = valueDes;
+          break;
         case r'fromUserId':
           final valueDes = serializers.deserialize(
             value,
@@ -305,6 +359,22 @@ class _$NotificationResponseDtoSerializer implements PrimitiveSerializer<Notific
           ) as NotificationThreadResponseDto?;
           if (valueDes == null) continue;
           result.thread.replace(valueDes);
+          break;
+        case r'moment':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(NotificationMomentResponseDto),
+          ) as NotificationMomentResponseDto?;
+          if (valueDes == null) continue;
+          result.moment.replace(valueDes);
+          break;
+        case r'momentComment':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(NotificationMomentCommentResponseDto),
+          ) as NotificationMomentCommentResponseDto?;
+          if (valueDes == null) continue;
+          result.momentComment.replace(valueDes);
           break;
         case r'fromUser':
           final valueDes = serializers.deserialize(
@@ -361,6 +431,10 @@ class NotificationResponseDtoTypeEnum extends EnumClass {
   static const NotificationResponseDtoTypeEnum follow = _$notificationResponseDtoTypeEnum_follow;
   @BuiltValueEnumConst(wireName: r'like')
   static const NotificationResponseDtoTypeEnum like = _$notificationResponseDtoTypeEnum_like;
+  @BuiltValueEnumConst(wireName: r'tip')
+  static const NotificationResponseDtoTypeEnum tip = _$notificationResponseDtoTypeEnum_tip;
+  @BuiltValueEnumConst(wireName: r'level_up')
+  static const NotificationResponseDtoTypeEnum levelUp = _$notificationResponseDtoTypeEnum_levelUp;
   @BuiltValueEnumConst(wireName: r'system')
   static const NotificationResponseDtoTypeEnum system = _$notificationResponseDtoTypeEnum_system;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)

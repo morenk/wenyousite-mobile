@@ -13,13 +13,25 @@ class _$ThreadTagResponseDto extends ThreadTagResponseDto {
   final String name;
   @override
   final String? color;
+  @override
+  final String? description;
+  @override
+  final num sortOrder;
+  @override
+  final bool isActive;
 
   factory _$ThreadTagResponseDto([
     void Function(ThreadTagResponseDtoBuilder)? updates,
   ]) => (ThreadTagResponseDtoBuilder()..update(updates))._build();
 
-  _$ThreadTagResponseDto._({required this.id, required this.name, this.color})
-    : super._();
+  _$ThreadTagResponseDto._({
+    required this.id,
+    required this.name,
+    this.color,
+    this.description,
+    required this.sortOrder,
+    required this.isActive,
+  }) : super._();
   @override
   ThreadTagResponseDto rebuild(
     void Function(ThreadTagResponseDtoBuilder) updates,
@@ -35,7 +47,10 @@ class _$ThreadTagResponseDto extends ThreadTagResponseDto {
     return other is ThreadTagResponseDto &&
         id == other.id &&
         name == other.name &&
-        color == other.color;
+        color == other.color &&
+        description == other.description &&
+        sortOrder == other.sortOrder &&
+        isActive == other.isActive;
   }
 
   @override
@@ -44,6 +59,9 @@ class _$ThreadTagResponseDto extends ThreadTagResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, color.hashCode);
+    _$hash = $jc(_$hash, description.hashCode);
+    _$hash = $jc(_$hash, sortOrder.hashCode);
+    _$hash = $jc(_$hash, isActive.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -53,7 +71,10 @@ class _$ThreadTagResponseDto extends ThreadTagResponseDto {
     return (newBuiltValueToStringHelper(r'ThreadTagResponseDto')
           ..add('id', id)
           ..add('name', name)
-          ..add('color', color))
+          ..add('color', color)
+          ..add('description', description)
+          ..add('sortOrder', sortOrder)
+          ..add('isActive', isActive))
         .toString();
   }
 }
@@ -74,6 +95,18 @@ class ThreadTagResponseDtoBuilder
   String? get color => _$this._color;
   set color(String? color) => _$this._color = color;
 
+  String? _description;
+  String? get description => _$this._description;
+  set description(String? description) => _$this._description = description;
+
+  num? _sortOrder;
+  num? get sortOrder => _$this._sortOrder;
+  set sortOrder(num? sortOrder) => _$this._sortOrder = sortOrder;
+
+  bool? _isActive;
+  bool? get isActive => _$this._isActive;
+  set isActive(bool? isActive) => _$this._isActive = isActive;
+
   ThreadTagResponseDtoBuilder() {
     ThreadTagResponseDto._defaults(this);
   }
@@ -84,6 +117,9 @@ class ThreadTagResponseDtoBuilder
       _id = $v.id;
       _name = $v.name;
       _color = $v.color;
+      _description = $v.description;
+      _sortOrder = $v.sortOrder;
+      _isActive = $v.isActive;
       _$v = null;
     }
     return this;
@@ -117,6 +153,17 @@ class ThreadTagResponseDtoBuilder
             'name',
           ),
           color: color,
+          description: description,
+          sortOrder: BuiltValueNullFieldError.checkNotNull(
+            sortOrder,
+            r'ThreadTagResponseDto',
+            'sortOrder',
+          ),
+          isActive: BuiltValueNullFieldError.checkNotNull(
+            isActive,
+            r'ThreadTagResponseDto',
+            'isActive',
+          ),
         );
     replace(_$result);
     return _$result;

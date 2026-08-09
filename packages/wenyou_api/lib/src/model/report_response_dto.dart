@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -16,27 +17,39 @@ part 'report_response_dto.g.dart';
 /// * [reporterId]
 /// * [targetType]
 /// * [targetId]
-/// * [reason]
+/// * [reasonCode]
+/// * [details]
+/// * [targetSnapshot]
 /// * [status]
 /// * [handledBy]
 /// * [handledAt]
+/// * [resolutionNote]
 /// * [createdAt]
+/// * [updatedAt]
 @BuiltValue()
 abstract class ReportResponseDto implements Built<ReportResponseDto, ReportResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
   String get id;
 
   @BuiltValueField(wireName: r'reporterId')
-  String get reporterId;
+  String? get reporterId;
 
   @BuiltValueField(wireName: r'targetType')
-  String get targetType;
+  ReportResponseDtoTargetTypeEnum get targetType;
+  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  };
 
   @BuiltValueField(wireName: r'targetId')
   String get targetId;
 
-  @BuiltValueField(wireName: r'reason')
-  String get reason;
+  @BuiltValueField(wireName: r'reasonCode')
+  ReportResponseDtoReasonCodeEnum get reasonCode;
+  // enum reasonCodeEnum {  SPAM,  HARASSMENT,  HATE_OR_THREATS,  SEXUAL_CONTENT,  VIOLENT_CONTENT,  PERSONAL_INFORMATION,  ILLEGAL_CONTENT,  OTHER,  };
+
+  @BuiltValueField(wireName: r'details')
+  String? get details;
+
+  @BuiltValueField(wireName: r'targetSnapshot')
+  BuiltMap<String, JsonObject?>? get targetSnapshot;
 
   @BuiltValueField(wireName: r'status')
   ReportResponseDtoStatusEnum get status;
@@ -48,8 +61,14 @@ abstract class ReportResponseDto implements Built<ReportResponseDto, ReportRespo
   @BuiltValueField(wireName: r'handledAt')
   DateTime? get handledAt;
 
+  @BuiltValueField(wireName: r'resolutionNote')
+  String? get resolutionNote;
+
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
+
+  @BuiltValueField(wireName: r'updatedAt')
+  DateTime get updatedAt;
 
   ReportResponseDto._();
 
@@ -80,24 +99,34 @@ class _$ReportResponseDtoSerializer implements PrimitiveSerializer<ReportRespons
       specifiedType: const FullType(String),
     );
     yield r'reporterId';
-    yield serializers.serialize(
+    yield object.reporterId == null ? null : serializers.serialize(
       object.reporterId,
-      specifiedType: const FullType(String),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'targetType';
     yield serializers.serialize(
       object.targetType,
-      specifiedType: const FullType(String),
+      specifiedType: const FullType(ReportResponseDtoTargetTypeEnum),
     );
     yield r'targetId';
     yield serializers.serialize(
       object.targetId,
       specifiedType: const FullType(String),
     );
-    yield r'reason';
+    yield r'reasonCode';
     yield serializers.serialize(
-      object.reason,
-      specifiedType: const FullType(String),
+      object.reasonCode,
+      specifiedType: const FullType(ReportResponseDtoReasonCodeEnum),
+    );
+    yield r'details';
+    yield object.details == null ? null : serializers.serialize(
+      object.details,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'targetSnapshot';
+    yield object.targetSnapshot == null ? null : serializers.serialize(
+      object.targetSnapshot,
+      specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
     );
     yield r'status';
     yield serializers.serialize(
@@ -114,9 +143,19 @@ class _$ReportResponseDtoSerializer implements PrimitiveSerializer<ReportRespons
       object.handledAt,
       specifiedType: const FullType.nullable(DateTime),
     );
+    yield r'resolutionNote';
+    yield object.resolutionNote == null ? null : serializers.serialize(
+      object.resolutionNote,
+      specifiedType: const FullType.nullable(String),
+    );
     yield r'createdAt';
     yield serializers.serialize(
       object.createdAt,
+      specifiedType: const FullType(DateTime),
+    );
+    yield r'updatedAt';
+    yield serializers.serialize(
+      object.updatedAt,
       specifiedType: const FullType(DateTime),
     );
   }
@@ -152,15 +191,16 @@ class _$ReportResponseDtoSerializer implements PrimitiveSerializer<ReportRespons
         case r'reporterId':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(String),
-          ) as String;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.reporterId = valueDes;
           break;
         case r'targetType':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(String),
-          ) as String;
+            specifiedType: const FullType(ReportResponseDtoTargetTypeEnum),
+          ) as ReportResponseDtoTargetTypeEnum;
           result.targetType = valueDes;
           break;
         case r'targetId':
@@ -170,12 +210,28 @@ class _$ReportResponseDtoSerializer implements PrimitiveSerializer<ReportRespons
           ) as String;
           result.targetId = valueDes;
           break;
-        case r'reason':
+        case r'reasonCode':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.reason = valueDes;
+            specifiedType: const FullType(ReportResponseDtoReasonCodeEnum),
+          ) as ReportResponseDtoReasonCodeEnum;
+          result.reasonCode = valueDes;
+          break;
+        case r'details':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.details = valueDes;
+          break;
+        case r'targetSnapshot':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+          ) as BuiltMap<String, JsonObject?>?;
+          if (valueDes == null) continue;
+          result.targetSnapshot.replace(valueDes);
           break;
         case r'status':
           final valueDes = serializers.deserialize(
@@ -200,12 +256,27 @@ class _$ReportResponseDtoSerializer implements PrimitiveSerializer<ReportRespons
           if (valueDes == null) continue;
           result.handledAt = valueDes;
           break;
+        case r'resolutionNote':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.resolutionNote = valueDes;
+          break;
         case r'createdAt':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(DateTime),
           ) as DateTime;
           result.createdAt = valueDes;
+          break;
+        case r'updatedAt':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime;
+          result.updatedAt = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -234,6 +305,58 @@ class _$ReportResponseDtoSerializer implements PrimitiveSerializer<ReportRespons
     );
     return result.build();
   }
+}
+
+class ReportResponseDtoTargetTypeEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'USER')
+  static const ReportResponseDtoTargetTypeEnum USER = _$reportResponseDtoTargetTypeEnum_USER;
+  @BuiltValueEnumConst(wireName: r'THREAD')
+  static const ReportResponseDtoTargetTypeEnum THREAD = _$reportResponseDtoTargetTypeEnum_THREAD;
+  @BuiltValueEnumConst(wireName: r'POST')
+  static const ReportResponseDtoTargetTypeEnum POST = _$reportResponseDtoTargetTypeEnum_POST;
+  @BuiltValueEnumConst(wireName: r'MOMENT')
+  static const ReportResponseDtoTargetTypeEnum MOMENT = _$reportResponseDtoTargetTypeEnum_MOMENT;
+  @BuiltValueEnumConst(wireName: r'MOMENT_COMMENT')
+  static const ReportResponseDtoTargetTypeEnum MOMENT_COMMENT = _$reportResponseDtoTargetTypeEnum_MOMENT_COMMENT;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const ReportResponseDtoTargetTypeEnum unknownDefaultOpenApi = _$reportResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
+
+  static Serializer<ReportResponseDtoTargetTypeEnum> get serializer => _$reportResponseDtoTargetTypeEnumSerializer;
+
+  const ReportResponseDtoTargetTypeEnum._(String name): super(name);
+
+  static BuiltSet<ReportResponseDtoTargetTypeEnum> get values => _$reportResponseDtoTargetTypeEnumValues;
+  static ReportResponseDtoTargetTypeEnum valueOf(String name) => _$reportResponseDtoTargetTypeEnumValueOf(name);
+}
+
+class ReportResponseDtoReasonCodeEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'SPAM')
+  static const ReportResponseDtoReasonCodeEnum SPAM = _$reportResponseDtoReasonCodeEnum_SPAM;
+  @BuiltValueEnumConst(wireName: r'HARASSMENT')
+  static const ReportResponseDtoReasonCodeEnum HARASSMENT = _$reportResponseDtoReasonCodeEnum_HARASSMENT;
+  @BuiltValueEnumConst(wireName: r'HATE_OR_THREATS')
+  static const ReportResponseDtoReasonCodeEnum HATE_OR_THREATS = _$reportResponseDtoReasonCodeEnum_HATE_OR_THREATS;
+  @BuiltValueEnumConst(wireName: r'SEXUAL_CONTENT')
+  static const ReportResponseDtoReasonCodeEnum SEXUAL_CONTENT = _$reportResponseDtoReasonCodeEnum_SEXUAL_CONTENT;
+  @BuiltValueEnumConst(wireName: r'VIOLENT_CONTENT')
+  static const ReportResponseDtoReasonCodeEnum VIOLENT_CONTENT = _$reportResponseDtoReasonCodeEnum_VIOLENT_CONTENT;
+  @BuiltValueEnumConst(wireName: r'PERSONAL_INFORMATION')
+  static const ReportResponseDtoReasonCodeEnum PERSONAL_INFORMATION = _$reportResponseDtoReasonCodeEnum_PERSONAL_INFORMATION;
+  @BuiltValueEnumConst(wireName: r'ILLEGAL_CONTENT')
+  static const ReportResponseDtoReasonCodeEnum ILLEGAL_CONTENT = _$reportResponseDtoReasonCodeEnum_ILLEGAL_CONTENT;
+  @BuiltValueEnumConst(wireName: r'OTHER')
+  static const ReportResponseDtoReasonCodeEnum OTHER = _$reportResponseDtoReasonCodeEnum_OTHER;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const ReportResponseDtoReasonCodeEnum unknownDefaultOpenApi = _$reportResponseDtoReasonCodeEnum_unknownDefaultOpenApi;
+
+  static Serializer<ReportResponseDtoReasonCodeEnum> get serializer => _$reportResponseDtoReasonCodeEnumSerializer;
+
+  const ReportResponseDtoReasonCodeEnum._(String name): super(name);
+
+  static BuiltSet<ReportResponseDtoReasonCodeEnum> get values => _$reportResponseDtoReasonCodeEnumValues;
+  static ReportResponseDtoReasonCodeEnum valueOf(String name) => _$reportResponseDtoReasonCodeEnumValueOf(name);
 }
 
 class ReportResponseDtoStatusEnum extends EnumClass {

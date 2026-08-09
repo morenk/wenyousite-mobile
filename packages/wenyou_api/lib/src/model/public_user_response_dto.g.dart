@@ -97,6 +97,12 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   @override
   final PublicUserResponseDtoRoleEnum? role;
   @override
+  final num? level;
+  @override
+  final String? receivedTipTotal;
+  @override
+  final num? receivedTipCount;
+  @override
   final bool? showRecentReplies;
   @override
   final bool? showPlayerBadges;
@@ -127,6 +133,9 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
     this.avatar,
     this.bio,
     this.role,
+    this.level,
+    this.receivedTipTotal,
+    this.receivedTipCount,
     this.showRecentReplies,
     this.showPlayerBadges,
     this.showBookmarks,
@@ -156,6 +165,9 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
         avatar == other.avatar &&
         bio == other.bio &&
         role == other.role &&
+        level == other.level &&
+        receivedTipTotal == other.receivedTipTotal &&
+        receivedTipCount == other.receivedTipCount &&
         showRecentReplies == other.showRecentReplies &&
         showPlayerBadges == other.showPlayerBadges &&
         showBookmarks == other.showBookmarks &&
@@ -176,6 +188,9 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
     _$hash = $jc(_$hash, avatar.hashCode);
     _$hash = $jc(_$hash, bio.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
+    _$hash = $jc(_$hash, level.hashCode);
+    _$hash = $jc(_$hash, receivedTipTotal.hashCode);
+    _$hash = $jc(_$hash, receivedTipCount.hashCode);
     _$hash = $jc(_$hash, showRecentReplies.hashCode);
     _$hash = $jc(_$hash, showPlayerBadges.hashCode);
     _$hash = $jc(_$hash, showBookmarks.hashCode);
@@ -198,6 +213,9 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
           ..add('avatar', avatar)
           ..add('bio', bio)
           ..add('role', role)
+          ..add('level', level)
+          ..add('receivedTipTotal', receivedTipTotal)
+          ..add('receivedTipCount', receivedTipCount)
           ..add('showRecentReplies', showRecentReplies)
           ..add('showPlayerBadges', showPlayerBadges)
           ..add('showBookmarks', showBookmarks)
@@ -235,6 +253,20 @@ class PublicUserResponseDtoBuilder
   PublicUserResponseDtoRoleEnum? _role;
   PublicUserResponseDtoRoleEnum? get role => _$this._role;
   set role(PublicUserResponseDtoRoleEnum? role) => _$this._role = role;
+
+  num? _level;
+  num? get level => _$this._level;
+  set level(num? level) => _$this._level = level;
+
+  String? _receivedTipTotal;
+  String? get receivedTipTotal => _$this._receivedTipTotal;
+  set receivedTipTotal(String? receivedTipTotal) =>
+      _$this._receivedTipTotal = receivedTipTotal;
+
+  num? _receivedTipCount;
+  num? get receivedTipCount => _$this._receivedTipCount;
+  set receivedTipCount(num? receivedTipCount) =>
+      _$this._receivedTipCount = receivedTipCount;
 
   bool? _showRecentReplies;
   bool? get showRecentReplies => _$this._showRecentReplies;
@@ -293,6 +325,9 @@ class PublicUserResponseDtoBuilder
       _avatar = $v.avatar;
       _bio = $v.bio;
       _role = $v.role;
+      _level = $v.level;
+      _receivedTipTotal = $v.receivedTipTotal;
+      _receivedTipCount = $v.receivedTipCount;
       _showRecentReplies = $v.showRecentReplies;
       _showPlayerBadges = $v.showPlayerBadges;
       _showBookmarks = $v.showBookmarks;
@@ -340,6 +375,9 @@ class PublicUserResponseDtoBuilder
             avatar: avatar,
             bio: bio,
             role: role,
+            level: level,
+            receivedTipTotal: receivedTipTotal,
+            receivedTipCount: receivedTipCount,
             showRecentReplies: showRecentReplies,
             showPlayerBadges: showPlayerBadges,
             showBookmarks: showBookmarks,

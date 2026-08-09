@@ -304,13 +304,15 @@ class PostsApi {
     );
   }
 
-  /// 获取楼中楼回复列表（cursor 分页，无限下拉）
+  /// 获取楼中楼回复列表（支持顺序与玩家/楼主/协作者筛选）
   ///
   ///
   /// Parameters:
   /// * [id]
   /// * [cursor] - 分页游标（上一页最后一条记录 ID）
   /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [order] - 回复顺序；帖子回复默认 OLDEST，动态主评论默认 NEWEST
+  /// * [authorId] - 只返回指定作者的回复
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -324,6 +326,8 @@ class PostsApi {
     required String id,
     String? cursor,
     num? limit = 20,
+    String? order,
+    String? authorId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -353,6 +357,8 @@ class PostsApi {
     final _queryParameters = <String, dynamic>{
       if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
       if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (order != null) r'order': encodeQueryParameter(_serializers, order, const FullType(String)),
+      if (authorId != null) r'authorId': encodeQueryParameter(_serializers, authorId, const FullType(String)),
     };
 
     final _response = await _dio.request<Object>(

@@ -6,47 +6,6 @@ part of 'save_thread_aggregate_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const SaveThreadAggregateDtoCategoryEnum
-_$saveThreadAggregateDtoCategoryEnum_DEDUCTION =
-    const SaveThreadAggregateDtoCategoryEnum._('DEDUCTION');
-const SaveThreadAggregateDtoCategoryEnum
-_$saveThreadAggregateDtoCategoryEnum_NATION =
-    const SaveThreadAggregateDtoCategoryEnum._('NATION');
-const SaveThreadAggregateDtoCategoryEnum
-_$saveThreadAggregateDtoCategoryEnum_RPG =
-    const SaveThreadAggregateDtoCategoryEnum._('RPG');
-const SaveThreadAggregateDtoCategoryEnum
-_$saveThreadAggregateDtoCategoryEnum_unknownDefaultOpenApi =
-    const SaveThreadAggregateDtoCategoryEnum._('unknownDefaultOpenApi');
-
-SaveThreadAggregateDtoCategoryEnum _$saveThreadAggregateDtoCategoryEnumValueOf(
-  String name,
-) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$saveThreadAggregateDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$saveThreadAggregateDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$saveThreadAggregateDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$saveThreadAggregateDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$saveThreadAggregateDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<SaveThreadAggregateDtoCategoryEnum>
-_$saveThreadAggregateDtoCategoryEnumValues =
-    BuiltSet<SaveThreadAggregateDtoCategoryEnum>(
-      const <SaveThreadAggregateDtoCategoryEnum>[
-        _$saveThreadAggregateDtoCategoryEnum_DEDUCTION,
-        _$saveThreadAggregateDtoCategoryEnum_NATION,
-        _$saveThreadAggregateDtoCategoryEnum_RPG,
-        _$saveThreadAggregateDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const SaveThreadAggregateDtoStatusEnum
 _$saveThreadAggregateDtoStatusEnum_RECRUITING =
     const SaveThreadAggregateDtoStatusEnum._('RECRUITING');
@@ -122,52 +81,12 @@ _$saveThreadAggregateDtoVisibilityEnumValues =
       ],
     );
 
-Serializer<SaveThreadAggregateDtoCategoryEnum>
-_$saveThreadAggregateDtoCategoryEnumSerializer =
-    _$SaveThreadAggregateDtoCategoryEnumSerializer();
 Serializer<SaveThreadAggregateDtoStatusEnum>
 _$saveThreadAggregateDtoStatusEnumSerializer =
     _$SaveThreadAggregateDtoStatusEnumSerializer();
 Serializer<SaveThreadAggregateDtoVisibilityEnum>
 _$saveThreadAggregateDtoVisibilityEnumSerializer =
     _$SaveThreadAggregateDtoVisibilityEnumSerializer();
-
-class _$SaveThreadAggregateDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<SaveThreadAggregateDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[SaveThreadAggregateDtoCategoryEnum];
-  @override
-  final String wireName = 'SaveThreadAggregateDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    SaveThreadAggregateDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  SaveThreadAggregateDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => SaveThreadAggregateDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$SaveThreadAggregateDtoStatusEnumSerializer
     implements PrimitiveSerializer<SaveThreadAggregateDtoStatusEnum> {
@@ -247,7 +166,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   final String? title;
   @override
-  final SaveThreadAggregateDtoCategoryEnum? category;
+  final String? category;
   @override
   final SaveThreadAggregateDtoStatusEnum? status;
   @override
@@ -348,10 +267,9 @@ class SaveThreadAggregateDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  SaveThreadAggregateDtoCategoryEnum? _category;
-  SaveThreadAggregateDtoCategoryEnum? get category => _$this._category;
-  set category(SaveThreadAggregateDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   SaveThreadAggregateDtoStatusEnum? _status;
   SaveThreadAggregateDtoStatusEnum? get status => _$this._status;

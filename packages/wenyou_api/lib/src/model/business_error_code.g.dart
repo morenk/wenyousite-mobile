@@ -31,6 +31,9 @@ const BusinessErrorCode _$INVALID_STICKER = const BusinessErrorCode._(
 const BusinessErrorCode _$INVALID_CURSOR = const BusinessErrorCode._(
   'INVALID_CURSOR',
 );
+const BusinessErrorCode _$INVALID_WENYOU_AMOUNT = const BusinessErrorCode._(
+  'INVALID_WENYOU_AMOUNT',
+);
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -54,6 +57,12 @@ const BusinessErrorCode _$ACCOUNT_DEACTIVATED = const BusinessErrorCode._(
 );
 const BusinessErrorCode _$EMAIL_NOT_VERIFIED = const BusinessErrorCode._(
   'EMAIL_NOT_VERIFIED',
+);
+const BusinessErrorCode _$ACCOUNT_SUSPENDED = const BusinessErrorCode._(
+  'ACCOUNT_SUSPENDED',
+);
+const BusinessErrorCode _$ACCOUNT_BANNED = const BusinessErrorCode._(
+  'ACCOUNT_BANNED',
 );
 const BusinessErrorCode _$LOGIN_FAILED = const BusinessErrorCode._(
   'LOGIN_FAILED',
@@ -92,6 +101,15 @@ const BusinessErrorCode _$DIRECT_MESSAGE_BLOCKED = const BusinessErrorCode._(
 );
 const BusinessErrorCode _$DIRECT_MESSAGE_NOT_ALLOWED =
     const BusinessErrorCode._('DIRECT_MESSAGE_NOT_ALLOWED');
+const BusinessErrorCode _$TIP_NOT_ALLOWED = const BusinessErrorCode._(
+  'TIP_NOT_ALLOWED',
+);
+const BusinessErrorCode _$ADMIN_REQUIRED = const BusinessErrorCode._(
+  'ADMIN_REQUIRED',
+);
+const BusinessErrorCode _$CANNOT_MODERATE_ADMIN = const BusinessErrorCode._(
+  'CANNOT_MODERATE_ADMIN',
+);
 const BusinessErrorCode _$NOT_FOUND = const BusinessErrorCode._('NOT_FOUND');
 const BusinessErrorCode _$USER_NOT_FOUND = const BusinessErrorCode._(
   'USER_NOT_FOUND',
@@ -131,6 +149,12 @@ const BusinessErrorCode _$DIRECT_MESSAGE_NOT_FOUND = const BusinessErrorCode._(
 const BusinessErrorCode _$STICKER_NOT_FOUND = const BusinessErrorCode._(
   'STICKER_NOT_FOUND',
 );
+const BusinessErrorCode _$THREAD_CATEGORY_NOT_FOUND = const BusinessErrorCode._(
+  'THREAD_CATEGORY_NOT_FOUND',
+);
+const BusinessErrorCode _$MOMENT_NOT_FOUND = const BusinessErrorCode._(
+  'MOMENT_NOT_FOUND',
+);
 const BusinessErrorCode _$CONFLICT = const BusinessErrorCode._('CONFLICT');
 const BusinessErrorCode _$EMAIL_ALREADY_REGISTERED = const BusinessErrorCode._(
   'EMAIL_ALREADY_REGISTERED',
@@ -163,6 +187,26 @@ const BusinessErrorCode _$STICKER_COLLECTION_VERSION_CONFLICT =
 const BusinessErrorCode _$IDEMPOTENCY_KEY_REUSED = const BusinessErrorCode._(
   'IDEMPOTENCY_KEY_REUSED',
 );
+const BusinessErrorCode _$INSUFFICIENT_WENYOU = const BusinessErrorCode._(
+  'INSUFFICIENT_WENYOU',
+);
+const BusinessErrorCode _$REPORT_ALREADY_PENDING = const BusinessErrorCode._(
+  'REPORT_ALREADY_PENDING',
+);
+const BusinessErrorCode _$REPORT_ALREADY_HANDLED = const BusinessErrorCode._(
+  'REPORT_ALREADY_HANDLED',
+);
+const BusinessErrorCode _$CONTENT_STATE_CONFLICT = const BusinessErrorCode._(
+  'CONTENT_STATE_CONFLICT',
+);
+const BusinessErrorCode _$SANCTION_STATE_CONFLICT = const BusinessErrorCode._(
+  'SANCTION_STATE_CONFLICT',
+);
+const BusinessErrorCode _$THREAD_CATEGORY_ALREADY_EXISTS =
+    const BusinessErrorCode._('THREAD_CATEGORY_ALREADY_EXISTS');
+const BusinessErrorCode _$TAXONOMY_STATE_CONFLICT = const BusinessErrorCode._(
+  'TAXONOMY_STATE_CONFLICT',
+);
 const BusinessErrorCode _$RATE_LIMITED = const BusinessErrorCode._(
   'RATE_LIMITED',
 );
@@ -193,6 +237,8 @@ BusinessErrorCode _$valueOf(String name) {
       return _$INVALID_STICKER;
     case 'INVALID_CURSOR':
       return _$INVALID_CURSOR;
+    case 'INVALID_WENYOU_AMOUNT':
+      return _$INVALID_WENYOU_AMOUNT;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -209,6 +255,10 @@ BusinessErrorCode _$valueOf(String name) {
       return _$ACCOUNT_DEACTIVATED;
     case 'EMAIL_NOT_VERIFIED':
       return _$EMAIL_NOT_VERIFIED;
+    case 'ACCOUNT_SUSPENDED':
+      return _$ACCOUNT_SUSPENDED;
+    case 'ACCOUNT_BANNED':
+      return _$ACCOUNT_BANNED;
     case 'LOGIN_FAILED':
       return _$LOGIN_FAILED;
     case 'CODE_EXPIRED':
@@ -237,6 +287,12 @@ BusinessErrorCode _$valueOf(String name) {
       return _$DIRECT_MESSAGE_BLOCKED;
     case 'DIRECT_MESSAGE_NOT_ALLOWED':
       return _$DIRECT_MESSAGE_NOT_ALLOWED;
+    case 'TIP_NOT_ALLOWED':
+      return _$TIP_NOT_ALLOWED;
+    case 'ADMIN_REQUIRED':
+      return _$ADMIN_REQUIRED;
+    case 'CANNOT_MODERATE_ADMIN':
+      return _$CANNOT_MODERATE_ADMIN;
     case 'NOT_FOUND':
       return _$NOT_FOUND;
     case 'USER_NOT_FOUND':
@@ -265,6 +321,10 @@ BusinessErrorCode _$valueOf(String name) {
       return _$DIRECT_MESSAGE_NOT_FOUND;
     case 'STICKER_NOT_FOUND':
       return _$STICKER_NOT_FOUND;
+    case 'THREAD_CATEGORY_NOT_FOUND':
+      return _$THREAD_CATEGORY_NOT_FOUND;
+    case 'MOMENT_NOT_FOUND':
+      return _$MOMENT_NOT_FOUND;
     case 'CONFLICT':
       return _$CONFLICT;
     case 'EMAIL_ALREADY_REGISTERED':
@@ -291,6 +351,20 @@ BusinessErrorCode _$valueOf(String name) {
       return _$STICKER_COLLECTION_VERSION_CONFLICT;
     case 'IDEMPOTENCY_KEY_REUSED':
       return _$IDEMPOTENCY_KEY_REUSED;
+    case 'INSUFFICIENT_WENYOU':
+      return _$INSUFFICIENT_WENYOU;
+    case 'REPORT_ALREADY_PENDING':
+      return _$REPORT_ALREADY_PENDING;
+    case 'REPORT_ALREADY_HANDLED':
+      return _$REPORT_ALREADY_HANDLED;
+    case 'CONTENT_STATE_CONFLICT':
+      return _$CONTENT_STATE_CONFLICT;
+    case 'SANCTION_STATE_CONFLICT':
+      return _$SANCTION_STATE_CONFLICT;
+    case 'THREAD_CATEGORY_ALREADY_EXISTS':
+      return _$THREAD_CATEGORY_ALREADY_EXISTS;
+    case 'TAXONOMY_STATE_CONFLICT':
+      return _$TAXONOMY_STATE_CONFLICT;
     case 'RATE_LIMITED':
       return _$RATE_LIMITED;
     case 'INTERNAL_ERROR':
@@ -313,6 +387,7 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$INVALID_DIRECT_MESSAGE,
       _$INVALID_STICKER,
       _$INVALID_CURSOR,
+      _$INVALID_WENYOU_AMOUNT,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -321,6 +396,8 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$ACCOUNT_LOCKED,
       _$ACCOUNT_DEACTIVATED,
       _$EMAIL_NOT_VERIFIED,
+      _$ACCOUNT_SUSPENDED,
+      _$ACCOUNT_BANNED,
       _$LOGIN_FAILED,
       _$CODE_EXPIRED,
       _$CODE_INVALID,
@@ -335,6 +412,9 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$CANNOT_MODERATE_OWNER,
       _$DIRECT_MESSAGE_BLOCKED,
       _$DIRECT_MESSAGE_NOT_ALLOWED,
+      _$TIP_NOT_ALLOWED,
+      _$ADMIN_REQUIRED,
+      _$CANNOT_MODERATE_ADMIN,
       _$NOT_FOUND,
       _$USER_NOT_FOUND,
       _$THREAD_NOT_FOUND,
@@ -349,6 +429,8 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$DIRECT_CONVERSATION_NOT_FOUND,
       _$DIRECT_MESSAGE_NOT_FOUND,
       _$STICKER_NOT_FOUND,
+      _$THREAD_CATEGORY_NOT_FOUND,
+      _$MOMENT_NOT_FOUND,
       _$CONFLICT,
       _$EMAIL_ALREADY_REGISTERED,
       _$USERNAME_TAKEN,
@@ -362,6 +444,13 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$STICKER_LIMIT_REACHED,
       _$STICKER_COLLECTION_VERSION_CONFLICT,
       _$IDEMPOTENCY_KEY_REUSED,
+      _$INSUFFICIENT_WENYOU,
+      _$REPORT_ALREADY_PENDING,
+      _$REPORT_ALREADY_HANDLED,
+      _$CONTENT_STATE_CONFLICT,
+      _$SANCTION_STATE_CONFLICT,
+      _$THREAD_CATEGORY_ALREADY_EXISTS,
+      _$TAXONOMY_STATE_CONFLICT,
       _$RATE_LIMITED,
       _$INTERNAL_ERROR,
       _$unknownDefaultOpenApi,
@@ -378,6 +467,7 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get INVALID_DIRECT_MESSAGE => _$INVALID_DIRECT_MESSAGE;
   BusinessErrorCode get INVALID_STICKER => _$INVALID_STICKER;
   BusinessErrorCode get INVALID_CURSOR => _$INVALID_CURSOR;
+  BusinessErrorCode get INVALID_WENYOU_AMOUNT => _$INVALID_WENYOU_AMOUNT;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -386,6 +476,8 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get ACCOUNT_LOCKED => _$ACCOUNT_LOCKED;
   BusinessErrorCode get ACCOUNT_DEACTIVATED => _$ACCOUNT_DEACTIVATED;
   BusinessErrorCode get EMAIL_NOT_VERIFIED => _$EMAIL_NOT_VERIFIED;
+  BusinessErrorCode get ACCOUNT_SUSPENDED => _$ACCOUNT_SUSPENDED;
+  BusinessErrorCode get ACCOUNT_BANNED => _$ACCOUNT_BANNED;
   BusinessErrorCode get LOGIN_FAILED => _$LOGIN_FAILED;
   BusinessErrorCode get CODE_EXPIRED => _$CODE_EXPIRED;
   BusinessErrorCode get CODE_INVALID => _$CODE_INVALID;
@@ -401,6 +493,9 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get DIRECT_MESSAGE_BLOCKED => _$DIRECT_MESSAGE_BLOCKED;
   BusinessErrorCode get DIRECT_MESSAGE_NOT_ALLOWED =>
       _$DIRECT_MESSAGE_NOT_ALLOWED;
+  BusinessErrorCode get TIP_NOT_ALLOWED => _$TIP_NOT_ALLOWED;
+  BusinessErrorCode get ADMIN_REQUIRED => _$ADMIN_REQUIRED;
+  BusinessErrorCode get CANNOT_MODERATE_ADMIN => _$CANNOT_MODERATE_ADMIN;
   BusinessErrorCode get NOT_FOUND => _$NOT_FOUND;
   BusinessErrorCode get USER_NOT_FOUND => _$USER_NOT_FOUND;
   BusinessErrorCode get THREAD_NOT_FOUND => _$THREAD_NOT_FOUND;
@@ -416,6 +511,9 @@ class _$BusinessErrorCodeMeta {
       _$DIRECT_CONVERSATION_NOT_FOUND;
   BusinessErrorCode get DIRECT_MESSAGE_NOT_FOUND => _$DIRECT_MESSAGE_NOT_FOUND;
   BusinessErrorCode get STICKER_NOT_FOUND => _$STICKER_NOT_FOUND;
+  BusinessErrorCode get THREAD_CATEGORY_NOT_FOUND =>
+      _$THREAD_CATEGORY_NOT_FOUND;
+  BusinessErrorCode get MOMENT_NOT_FOUND => _$MOMENT_NOT_FOUND;
   BusinessErrorCode get CONFLICT => _$CONFLICT;
   BusinessErrorCode get EMAIL_ALREADY_REGISTERED => _$EMAIL_ALREADY_REGISTERED;
   BusinessErrorCode get USERNAME_TAKEN => _$USERNAME_TAKEN;
@@ -434,6 +532,14 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get STICKER_COLLECTION_VERSION_CONFLICT =>
       _$STICKER_COLLECTION_VERSION_CONFLICT;
   BusinessErrorCode get IDEMPOTENCY_KEY_REUSED => _$IDEMPOTENCY_KEY_REUSED;
+  BusinessErrorCode get INSUFFICIENT_WENYOU => _$INSUFFICIENT_WENYOU;
+  BusinessErrorCode get REPORT_ALREADY_PENDING => _$REPORT_ALREADY_PENDING;
+  BusinessErrorCode get REPORT_ALREADY_HANDLED => _$REPORT_ALREADY_HANDLED;
+  BusinessErrorCode get CONTENT_STATE_CONFLICT => _$CONTENT_STATE_CONFLICT;
+  BusinessErrorCode get SANCTION_STATE_CONFLICT => _$SANCTION_STATE_CONFLICT;
+  BusinessErrorCode get THREAD_CATEGORY_ALREADY_EXISTS =>
+      _$THREAD_CATEGORY_ALREADY_EXISTS;
+  BusinessErrorCode get TAXONOMY_STATE_CONFLICT => _$TAXONOMY_STATE_CONFLICT;
   BusinessErrorCode get RATE_LIMITED => _$RATE_LIMITED;
   BusinessErrorCode get INTERNAL_ERROR => _$INTERNAL_ERROR;
   BusinessErrorCode get unknownDefaultOpenApi => _$unknownDefaultOpenApi;
@@ -462,6 +568,7 @@ class _$BusinessErrorCodeSerializer
     'INVALID_DIRECT_MESSAGE': 40005,
     'INVALID_STICKER': 40006,
     'INVALID_CURSOR': 40007,
+    'INVALID_WENYOU_AMOUNT': 40008,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -470,6 +577,8 @@ class _$BusinessErrorCodeSerializer
     'ACCOUNT_LOCKED': 40105,
     'ACCOUNT_DEACTIVATED': 40106,
     'EMAIL_NOT_VERIFIED': 40107,
+    'ACCOUNT_SUSPENDED': 40108,
+    'ACCOUNT_BANNED': 40109,
     'LOGIN_FAILED': 40110,
     'CODE_EXPIRED': 40111,
     'CODE_INVALID': 40112,
@@ -484,6 +593,9 @@ class _$BusinessErrorCodeSerializer
     'CANNOT_MODERATE_OWNER': 40304,
     'DIRECT_MESSAGE_BLOCKED': 40305,
     'DIRECT_MESSAGE_NOT_ALLOWED': 40306,
+    'TIP_NOT_ALLOWED': 40307,
+    'ADMIN_REQUIRED': 40308,
+    'CANNOT_MODERATE_ADMIN': 40309,
     'NOT_FOUND': 40400,
     'USER_NOT_FOUND': 40401,
     'THREAD_NOT_FOUND': 40402,
@@ -498,6 +610,8 @@ class _$BusinessErrorCodeSerializer
     'DIRECT_CONVERSATION_NOT_FOUND': 40411,
     'DIRECT_MESSAGE_NOT_FOUND': 40412,
     'STICKER_NOT_FOUND': 40413,
+    'THREAD_CATEGORY_NOT_FOUND': 40414,
+    'MOMENT_NOT_FOUND': 40415,
     'CONFLICT': 40900,
     'EMAIL_ALREADY_REGISTERED': 40901,
     'USERNAME_TAKEN': 40902,
@@ -511,6 +625,13 @@ class _$BusinessErrorCodeSerializer
     'STICKER_LIMIT_REACHED': 40910,
     'STICKER_COLLECTION_VERSION_CONFLICT': 40911,
     'IDEMPOTENCY_KEY_REUSED': 40912,
+    'INSUFFICIENT_WENYOU': 40913,
+    'REPORT_ALREADY_PENDING': 40914,
+    'REPORT_ALREADY_HANDLED': 40915,
+    'CONTENT_STATE_CONFLICT': 40916,
+    'SANCTION_STATE_CONFLICT': 40917,
+    'THREAD_CATEGORY_ALREADY_EXISTS': 40918,
+    'TAXONOMY_STATE_CONFLICT': 40919,
     'RATE_LIMITED': 42900,
     'INTERNAL_ERROR': 50000,
     'unknownDefaultOpenApi': 11184809,
@@ -525,6 +646,7 @@ class _$BusinessErrorCodeSerializer
     40005: 'INVALID_DIRECT_MESSAGE',
     40006: 'INVALID_STICKER',
     40007: 'INVALID_CURSOR',
+    40008: 'INVALID_WENYOU_AMOUNT',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',
@@ -533,6 +655,8 @@ class _$BusinessErrorCodeSerializer
     40105: 'ACCOUNT_LOCKED',
     40106: 'ACCOUNT_DEACTIVATED',
     40107: 'EMAIL_NOT_VERIFIED',
+    40108: 'ACCOUNT_SUSPENDED',
+    40109: 'ACCOUNT_BANNED',
     40110: 'LOGIN_FAILED',
     40111: 'CODE_EXPIRED',
     40112: 'CODE_INVALID',
@@ -547,6 +671,9 @@ class _$BusinessErrorCodeSerializer
     40304: 'CANNOT_MODERATE_OWNER',
     40305: 'DIRECT_MESSAGE_BLOCKED',
     40306: 'DIRECT_MESSAGE_NOT_ALLOWED',
+    40307: 'TIP_NOT_ALLOWED',
+    40308: 'ADMIN_REQUIRED',
+    40309: 'CANNOT_MODERATE_ADMIN',
     40400: 'NOT_FOUND',
     40401: 'USER_NOT_FOUND',
     40402: 'THREAD_NOT_FOUND',
@@ -561,6 +688,8 @@ class _$BusinessErrorCodeSerializer
     40411: 'DIRECT_CONVERSATION_NOT_FOUND',
     40412: 'DIRECT_MESSAGE_NOT_FOUND',
     40413: 'STICKER_NOT_FOUND',
+    40414: 'THREAD_CATEGORY_NOT_FOUND',
+    40415: 'MOMENT_NOT_FOUND',
     40900: 'CONFLICT',
     40901: 'EMAIL_ALREADY_REGISTERED',
     40902: 'USERNAME_TAKEN',
@@ -574,6 +703,13 @@ class _$BusinessErrorCodeSerializer
     40910: 'STICKER_LIMIT_REACHED',
     40911: 'STICKER_COLLECTION_VERSION_CONFLICT',
     40912: 'IDEMPOTENCY_KEY_REUSED',
+    40913: 'INSUFFICIENT_WENYOU',
+    40914: 'REPORT_ALREADY_PENDING',
+    40915: 'REPORT_ALREADY_HANDLED',
+    40916: 'CONTENT_STATE_CONFLICT',
+    40917: 'SANCTION_STATE_CONFLICT',
+    40918: 'THREAD_CATEGORY_ALREADY_EXISTS',
+    40919: 'TAXONOMY_STATE_CONFLICT',
     42900: 'RATE_LIMITED',
     50000: 'INTERNAL_ERROR',
     11184809: 'unknownDefaultOpenApi',

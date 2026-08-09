@@ -16,6 +16,7 @@ part 'media_response_dto.g.dart';
 /// * [userId]
 /// * [url] - 原图公开访问地址
 /// * [thumbnailUrl] - 处理完成后的 300px WebP 缩略图地址
+/// * [feedUrl] - 处理完成后的 480px 等比例 WebP 信息流图片地址
 /// * [mediumUrl] - 处理完成后的 800px WebP 中图地址
 /// * [key] - 对象存储 key
 /// * [contentType] - 经对象存储确认的 MIME 类型；历史记录可能为空
@@ -39,6 +40,10 @@ abstract class MediaResponseDto implements Built<MediaResponseDto, MediaResponse
   /// 处理完成后的 300px WebP 缩略图地址
   @BuiltValueField(wireName: r'thumbnailUrl')
   String? get thumbnailUrl;
+
+  /// 处理完成后的 480px 等比例 WebP 信息流图片地址
+  @BuiltValueField(wireName: r'feedUrl')
+  String? get feedUrl;
 
   /// 处理完成后的 800px WebP 中图地址
   @BuiltValueField(wireName: r'mediumUrl')
@@ -110,6 +115,11 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
     yield r'thumbnailUrl';
     yield object.thumbnailUrl == null ? null : serializers.serialize(
       object.thumbnailUrl,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'feedUrl';
+    yield object.feedUrl == null ? null : serializers.serialize(
+      object.feedUrl,
       specifiedType: const FullType.nullable(String),
     );
     yield r'mediumUrl';
@@ -203,6 +213,14 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
           ) as String?;
           if (valueDes == null) continue;
           result.thumbnailUrl = valueDes;
+          break;
+        case r'feedUrl':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.feedUrl = valueDes;
           break;
         case r'mediumUrl':
           final valueDes = serializers.deserialize(

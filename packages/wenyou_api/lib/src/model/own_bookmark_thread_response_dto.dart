@@ -16,11 +16,12 @@ part 'own_bookmark_thread_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [title]
-/// * [category]
+/// * [category] - 动态分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published]
 /// * [pinned]
+/// * [tipTotal] - 用户投入的累计打赏升数
 /// * [createdAt]
 /// * [updatedAt]
 /// * [deletedAt]
@@ -35,9 +36,9 @@ abstract class OwnBookmarkThreadResponseDto implements Built<OwnBookmarkThreadRe
   @BuiltValueField(wireName: r'title')
   String get title;
 
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  OwnBookmarkThreadResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   OwnBookmarkThreadResponseDtoStatusEnum get status;
@@ -52,6 +53,10 @@ abstract class OwnBookmarkThreadResponseDto implements Built<OwnBookmarkThreadRe
 
   @BuiltValueField(wireName: r'pinned')
   bool get pinned;
+
+  /// 用户投入的累计打赏升数
+  @BuiltValueField(wireName: r'tipTotal')
+  String get tipTotal;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -106,9 +111,9 @@ class _$OwnBookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Ow
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(OwnBookmarkThreadResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -129,6 +134,11 @@ class _$OwnBookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Ow
     yield serializers.serialize(
       object.pinned,
       specifiedType: const FullType(bool),
+    );
+    yield r'tipTotal';
+    yield serializers.serialize(
+      object.tipTotal,
+      specifiedType: const FullType(String),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -202,8 +212,9 @@ class _$OwnBookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Ow
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(OwnBookmarkThreadResponseDtoCategoryEnum),
-          ) as OwnBookmarkThreadResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -233,6 +244,13 @@ class _$OwnBookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Ow
             specifiedType: const FullType(bool),
           ) as bool;
           result.pinned = valueDes;
+          break;
+        case r'tipTotal':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.tipTotal = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(
@@ -304,25 +322,6 @@ class _$OwnBookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Ow
     );
     return result.build();
   }
-}
-
-class OwnBookmarkThreadResponseDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const OwnBookmarkThreadResponseDtoCategoryEnum DEDUCTION = _$ownBookmarkThreadResponseDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const OwnBookmarkThreadResponseDtoCategoryEnum NATION = _$ownBookmarkThreadResponseDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const OwnBookmarkThreadResponseDtoCategoryEnum RPG = _$ownBookmarkThreadResponseDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const OwnBookmarkThreadResponseDtoCategoryEnum unknownDefaultOpenApi = _$ownBookmarkThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<OwnBookmarkThreadResponseDtoCategoryEnum> get serializer => _$ownBookmarkThreadResponseDtoCategoryEnumSerializer;
-
-  const OwnBookmarkThreadResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<OwnBookmarkThreadResponseDtoCategoryEnum> get values => _$ownBookmarkThreadResponseDtoCategoryEnumValues;
-  static OwnBookmarkThreadResponseDtoCategoryEnum valueOf(String name) => _$ownBookmarkThreadResponseDtoCategoryEnumValueOf(name);
 }
 
 class OwnBookmarkThreadResponseDtoStatusEnum extends EnumClass {

@@ -6,46 +6,6 @@ part of 'home_thread_list_item_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const HomeThreadListItemResponseDtoCategoryEnum
-_$homeThreadListItemResponseDtoCategoryEnum_DEDUCTION =
-    const HomeThreadListItemResponseDtoCategoryEnum._('DEDUCTION');
-const HomeThreadListItemResponseDtoCategoryEnum
-_$homeThreadListItemResponseDtoCategoryEnum_NATION =
-    const HomeThreadListItemResponseDtoCategoryEnum._('NATION');
-const HomeThreadListItemResponseDtoCategoryEnum
-_$homeThreadListItemResponseDtoCategoryEnum_RPG =
-    const HomeThreadListItemResponseDtoCategoryEnum._('RPG');
-const HomeThreadListItemResponseDtoCategoryEnum
-_$homeThreadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const HomeThreadListItemResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-HomeThreadListItemResponseDtoCategoryEnum
-_$homeThreadListItemResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$homeThreadListItemResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$homeThreadListItemResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$homeThreadListItemResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$homeThreadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$homeThreadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<HomeThreadListItemResponseDtoCategoryEnum>
-_$homeThreadListItemResponseDtoCategoryEnumValues =
-    BuiltSet<HomeThreadListItemResponseDtoCategoryEnum>(
-      const <HomeThreadListItemResponseDtoCategoryEnum>[
-        _$homeThreadListItemResponseDtoCategoryEnum_DEDUCTION,
-        _$homeThreadListItemResponseDtoCategoryEnum_NATION,
-        _$homeThreadListItemResponseDtoCategoryEnum_RPG,
-        _$homeThreadListItemResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const HomeThreadListItemResponseDtoStatusEnum
 _$homeThreadListItemResponseDtoStatusEnum_RECRUITING =
     const HomeThreadListItemResponseDtoStatusEnum._('RECRUITING');
@@ -122,54 +82,12 @@ _$homeThreadListItemResponseDtoVisibilityEnumValues =
       ],
     );
 
-Serializer<HomeThreadListItemResponseDtoCategoryEnum>
-_$homeThreadListItemResponseDtoCategoryEnumSerializer =
-    _$HomeThreadListItemResponseDtoCategoryEnumSerializer();
 Serializer<HomeThreadListItemResponseDtoStatusEnum>
 _$homeThreadListItemResponseDtoStatusEnumSerializer =
     _$HomeThreadListItemResponseDtoStatusEnumSerializer();
 Serializer<HomeThreadListItemResponseDtoVisibilityEnum>
 _$homeThreadListItemResponseDtoVisibilityEnumSerializer =
     _$HomeThreadListItemResponseDtoVisibilityEnumSerializer();
-
-class _$HomeThreadListItemResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<HomeThreadListItemResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    HomeThreadListItemResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'HomeThreadListItemResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    HomeThreadListItemResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  HomeThreadListItemResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => HomeThreadListItemResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$HomeThreadListItemResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<HomeThreadListItemResponseDtoStatusEnum> {
@@ -254,7 +172,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
   @override
   final String title;
   @override
-  final HomeThreadListItemResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final HomeThreadListItemResponseDtoStatusEnum status;
   @override
@@ -263,6 +181,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
   final bool published;
   @override
   final bool pinned;
+  @override
+  final String tipTotal;
   @override
   final DateTime createdAt;
   @override
@@ -279,6 +199,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
   final ThreadListCountResponseDto count;
   @override
   final String? preview;
+  @override
+  final BuiltList<String> coverImages;
 
   factory _$HomeThreadListItemResponseDto([
     void Function(HomeThreadListItemResponseDtoBuilder)? updates,
@@ -287,11 +209,12 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
   _$HomeThreadListItemResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
     required this.status,
     required this.visibility,
     required this.published,
     required this.pinned,
+    required this.tipTotal,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -300,6 +223,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
     required this.topicTags,
     required this.count,
     this.preview,
+    required this.coverImages,
   }) : super._();
   @override
   HomeThreadListItemResponseDto rebuild(
@@ -321,6 +245,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
         visibility == other.visibility &&
         published == other.published &&
         pinned == other.pinned &&
+        tipTotal == other.tipTotal &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
         deletedAt == other.deletedAt &&
@@ -328,7 +253,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
         defaultSubthread == other.defaultSubthread &&
         topicTags == other.topicTags &&
         count == other.count &&
-        preview == other.preview;
+        preview == other.preview &&
+        coverImages == other.coverImages;
   }
 
   @override
@@ -341,6 +267,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
     _$hash = $jc(_$hash, visibility.hashCode);
     _$hash = $jc(_$hash, published.hashCode);
     _$hash = $jc(_$hash, pinned.hashCode);
+    _$hash = $jc(_$hash, tipTotal.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
@@ -349,6 +276,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
     _$hash = $jc(_$hash, topicTags.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
+    _$hash = $jc(_$hash, coverImages.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -363,6 +291,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
           ..add('visibility', visibility)
           ..add('published', published)
           ..add('pinned', pinned)
+          ..add('tipTotal', tipTotal)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
           ..add('deletedAt', deletedAt)
@@ -370,7 +299,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
           ..add('defaultSubthread', defaultSubthread)
           ..add('topicTags', topicTags)
           ..add('count', count)
-          ..add('preview', preview))
+          ..add('preview', preview)
+          ..add('coverImages', coverImages))
         .toString();
   }
 }
@@ -391,10 +321,9 @@ class HomeThreadListItemResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  HomeThreadListItemResponseDtoCategoryEnum? _category;
-  HomeThreadListItemResponseDtoCategoryEnum? get category => _$this._category;
-  set category(HomeThreadListItemResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   HomeThreadListItemResponseDtoStatusEnum? _status;
   HomeThreadListItemResponseDtoStatusEnum? get status => _$this._status;
@@ -414,6 +343,10 @@ class HomeThreadListItemResponseDtoBuilder
   bool? _pinned;
   bool? get pinned => _$this._pinned;
   set pinned(bool? pinned) => _$this._pinned = pinned;
+
+  String? _tipTotal;
+  String? get tipTotal => _$this._tipTotal;
+  set tipTotal(String? tipTotal) => _$this._tipTotal = tipTotal;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -455,6 +388,12 @@ class HomeThreadListItemResponseDtoBuilder
   String? get preview => _$this._preview;
   set preview(String? preview) => _$this._preview = preview;
 
+  ListBuilder<String>? _coverImages;
+  ListBuilder<String> get coverImages =>
+      _$this._coverImages ??= ListBuilder<String>();
+  set coverImages(ListBuilder<String>? coverImages) =>
+      _$this._coverImages = coverImages;
+
   HomeThreadListItemResponseDtoBuilder() {
     HomeThreadListItemResponseDto._defaults(this);
   }
@@ -469,6 +408,7 @@ class HomeThreadListItemResponseDtoBuilder
       _visibility = $v.visibility;
       _published = $v.published;
       _pinned = $v.pinned;
+      _tipTotal = $v.tipTotal;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _deletedAt = $v.deletedAt;
@@ -477,6 +417,7 @@ class HomeThreadListItemResponseDtoBuilder
       _topicTags = $v.topicTags.toBuilder();
       _count = $v.count.toBuilder();
       _preview = $v.preview;
+      _coverImages = $v.coverImages.toBuilder();
       _$v = null;
     }
     return this;
@@ -511,11 +452,7 @@ class HomeThreadListItemResponseDtoBuilder
               r'HomeThreadListItemResponseDto',
               'title',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'HomeThreadListItemResponseDto',
-              'category',
-            ),
+            category: category,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'HomeThreadListItemResponseDto',
@@ -536,6 +473,11 @@ class HomeThreadListItemResponseDtoBuilder
               r'HomeThreadListItemResponseDto',
               'pinned',
             ),
+            tipTotal: BuiltValueNullFieldError.checkNotNull(
+              tipTotal,
+              r'HomeThreadListItemResponseDto',
+              'tipTotal',
+            ),
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
               r'HomeThreadListItemResponseDto',
@@ -552,6 +494,7 @@ class HomeThreadListItemResponseDtoBuilder
             topicTags: topicTags.build(),
             count: count.build(),
             preview: preview,
+            coverImages: coverImages.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -564,6 +507,9 @@ class HomeThreadListItemResponseDtoBuilder
         topicTags.build();
         _$failedField = 'count';
         count.build();
+
+        _$failedField = 'coverImages';
+        coverImages.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'HomeThreadListItemResponseDto',

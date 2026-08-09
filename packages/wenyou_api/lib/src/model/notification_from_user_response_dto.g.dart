@@ -15,6 +15,8 @@ class _$NotificationFromUserResponseDto
   @override
   final String? avatar;
   @override
+  final num level;
+  @override
   final DateTime? deletedAt;
 
   factory _$NotificationFromUserResponseDto([
@@ -25,6 +27,7 @@ class _$NotificationFromUserResponseDto
     required this.id,
     required this.username,
     this.avatar,
+    required this.level,
     this.deletedAt,
   }) : super._();
   @override
@@ -43,6 +46,7 @@ class _$NotificationFromUserResponseDto
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
+        level == other.level &&
         deletedAt == other.deletedAt;
   }
 
@@ -52,6 +56,7 @@ class _$NotificationFromUserResponseDto
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
+    _$hash = $jc(_$hash, level.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -63,6 +68,7 @@ class _$NotificationFromUserResponseDto
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
+          ..add('level', level)
           ..add('deletedAt', deletedAt))
         .toString();
   }
@@ -88,6 +94,10 @@ class NotificationFromUserResponseDtoBuilder
   String? get avatar => _$this._avatar;
   set avatar(String? avatar) => _$this._avatar = avatar;
 
+  num? _level;
+  num? get level => _$this._level;
+  set level(num? level) => _$this._level = level;
+
   DateTime? _deletedAt;
   DateTime? get deletedAt => _$this._deletedAt;
   set deletedAt(DateTime? deletedAt) => _$this._deletedAt = deletedAt;
@@ -102,6 +112,7 @@ class NotificationFromUserResponseDtoBuilder
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
+      _level = $v.level;
       _deletedAt = $v.deletedAt;
       _$v = null;
     }
@@ -136,6 +147,11 @@ class NotificationFromUserResponseDtoBuilder
             'username',
           ),
           avatar: avatar,
+          level: BuiltValueNullFieldError.checkNotNull(
+            level,
+            r'NotificationFromUserResponseDto',
+            'level',
+          ),
           deletedAt: deletedAt,
         );
     replace(_$result);

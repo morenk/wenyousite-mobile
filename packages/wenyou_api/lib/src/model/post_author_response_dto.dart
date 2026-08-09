@@ -14,6 +14,7 @@ part 'post_author_response_dto.g.dart';
 /// * [id]
 /// * [username]
 /// * [avatar]
+/// * [level]
 @BuiltValue()
 abstract class PostAuthorResponseDto implements Built<PostAuthorResponseDto, PostAuthorResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -24,6 +25,9 @@ abstract class PostAuthorResponseDto implements Built<PostAuthorResponseDto, Pos
 
   @BuiltValueField(wireName: r'avatar')
   String? get avatar;
+
+  @BuiltValueField(wireName: r'level')
+  num get level;
 
   PostAuthorResponseDto._();
 
@@ -62,6 +66,11 @@ class _$PostAuthorResponseDtoSerializer implements PrimitiveSerializer<PostAutho
     yield object.avatar == null ? null : serializers.serialize(
       object.avatar,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'level';
+    yield serializers.serialize(
+      object.level,
+      specifiedType: const FullType(num),
     );
   }
 
@@ -107,6 +116,13 @@ class _$PostAuthorResponseDtoSerializer implements PrimitiveSerializer<PostAutho
           ) as String?;
           if (valueDes == null) continue;
           result.avatar = valueDes;
+          break;
+        case r'level':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.level = valueDes;
           break;
         default:
           unhandled.add(key);

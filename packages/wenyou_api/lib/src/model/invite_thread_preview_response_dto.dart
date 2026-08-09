@@ -15,7 +15,7 @@ part 'invite_thread_preview_response_dto.g.dart';
 /// Properties:
 /// * [id] - 主题帖 ID
 /// * [title] - 主题帖标题
-/// * [category] - 主题帖分区
+/// * [category] - 动态分类 slug
 /// * [status] - 主题帖状态
 /// * [owner] - 楼主信息
 /// * [memberCount] - 当前参与人数
@@ -30,10 +30,9 @@ abstract class InviteThreadPreviewResponseDto implements Built<InviteThreadPrevi
   @BuiltValueField(wireName: r'title')
   String get title;
 
-  /// 主题帖分区
+  /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
-  InviteThreadPreviewResponseDtoCategoryEnum get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   /// 主题帖状态
   @BuiltValueField(wireName: r'status')
@@ -86,9 +85,9 @@ class _$InviteThreadPreviewResponseDtoSerializer implements PrimitiveSerializer<
       specifiedType: const FullType(String),
     );
     yield r'category';
-    yield serializers.serialize(
+    yield object.category == null ? null : serializers.serialize(
       object.category,
-      specifiedType: const FullType(InviteThreadPreviewResponseDtoCategoryEnum),
+      specifiedType: const FullType.nullable(String),
     );
     yield r'status';
     yield serializers.serialize(
@@ -150,8 +149,9 @@ class _$InviteThreadPreviewResponseDtoSerializer implements PrimitiveSerializer<
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(InviteThreadPreviewResponseDtoCategoryEnum),
-          ) as InviteThreadPreviewResponseDtoCategoryEnum;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.category = valueDes;
           break;
         case r'status':
@@ -209,29 +209,6 @@ class _$InviteThreadPreviewResponseDtoSerializer implements PrimitiveSerializer<
     );
     return result.build();
   }
-}
-
-class InviteThreadPreviewResponseDtoCategoryEnum extends EnumClass {
-
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const InviteThreadPreviewResponseDtoCategoryEnum DEDUCTION = _$inviteThreadPreviewResponseDtoCategoryEnum_DEDUCTION;
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const InviteThreadPreviewResponseDtoCategoryEnum NATION = _$inviteThreadPreviewResponseDtoCategoryEnum_NATION;
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const InviteThreadPreviewResponseDtoCategoryEnum RPG = _$inviteThreadPreviewResponseDtoCategoryEnum_RPG;
-  /// 主题帖分区
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const InviteThreadPreviewResponseDtoCategoryEnum unknownDefaultOpenApi = _$inviteThreadPreviewResponseDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<InviteThreadPreviewResponseDtoCategoryEnum> get serializer => _$inviteThreadPreviewResponseDtoCategoryEnumSerializer;
-
-  const InviteThreadPreviewResponseDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<InviteThreadPreviewResponseDtoCategoryEnum> get values => _$inviteThreadPreviewResponseDtoCategoryEnumValues;
-  static InviteThreadPreviewResponseDtoCategoryEnum valueOf(String name) => _$inviteThreadPreviewResponseDtoCategoryEnumValueOf(name);
 }
 
 class InviteThreadPreviewResponseDtoStatusEnum extends EnumClass {

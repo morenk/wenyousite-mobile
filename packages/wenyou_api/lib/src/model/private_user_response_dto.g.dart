@@ -100,6 +100,18 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
   @override
   final PrivateUserResponseDtoRoleEnum role;
   @override
+  final num level;
+  @override
+  final num experience;
+  @override
+  final num currentLevelExperience;
+  @override
+  final num? nextLevelExperience;
+  @override
+  final String receivedTipTotal;
+  @override
+  final num receivedTipCount;
+  @override
   final bool showRecentReplies;
   @override
   final bool showPlayerBadges;
@@ -125,6 +137,12 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
     this.avatar,
     this.bio,
     required this.role,
+    required this.level,
+    required this.experience,
+    required this.currentLevelExperience,
+    this.nextLevelExperience,
+    required this.receivedTipTotal,
+    required this.receivedTipCount,
     required this.showRecentReplies,
     required this.showPlayerBadges,
     required this.showBookmarks,
@@ -152,6 +170,12 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
         avatar == other.avatar &&
         bio == other.bio &&
         role == other.role &&
+        level == other.level &&
+        experience == other.experience &&
+        currentLevelExperience == other.currentLevelExperience &&
+        nextLevelExperience == other.nextLevelExperience &&
+        receivedTipTotal == other.receivedTipTotal &&
+        receivedTipCount == other.receivedTipCount &&
         showRecentReplies == other.showRecentReplies &&
         showPlayerBadges == other.showPlayerBadges &&
         showBookmarks == other.showBookmarks &&
@@ -170,6 +194,12 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
     _$hash = $jc(_$hash, avatar.hashCode);
     _$hash = $jc(_$hash, bio.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
+    _$hash = $jc(_$hash, level.hashCode);
+    _$hash = $jc(_$hash, experience.hashCode);
+    _$hash = $jc(_$hash, currentLevelExperience.hashCode);
+    _$hash = $jc(_$hash, nextLevelExperience.hashCode);
+    _$hash = $jc(_$hash, receivedTipTotal.hashCode);
+    _$hash = $jc(_$hash, receivedTipCount.hashCode);
     _$hash = $jc(_$hash, showRecentReplies.hashCode);
     _$hash = $jc(_$hash, showPlayerBadges.hashCode);
     _$hash = $jc(_$hash, showBookmarks.hashCode);
@@ -190,6 +220,12 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
           ..add('avatar', avatar)
           ..add('bio', bio)
           ..add('role', role)
+          ..add('level', level)
+          ..add('experience', experience)
+          ..add('currentLevelExperience', currentLevelExperience)
+          ..add('nextLevelExperience', nextLevelExperience)
+          ..add('receivedTipTotal', receivedTipTotal)
+          ..add('receivedTipCount', receivedTipCount)
           ..add('showRecentReplies', showRecentReplies)
           ..add('showPlayerBadges', showPlayerBadges)
           ..add('showBookmarks', showBookmarks)
@@ -228,6 +264,34 @@ class PrivateUserResponseDtoBuilder
   PrivateUserResponseDtoRoleEnum? _role;
   PrivateUserResponseDtoRoleEnum? get role => _$this._role;
   set role(PrivateUserResponseDtoRoleEnum? role) => _$this._role = role;
+
+  num? _level;
+  num? get level => _$this._level;
+  set level(num? level) => _$this._level = level;
+
+  num? _experience;
+  num? get experience => _$this._experience;
+  set experience(num? experience) => _$this._experience = experience;
+
+  num? _currentLevelExperience;
+  num? get currentLevelExperience => _$this._currentLevelExperience;
+  set currentLevelExperience(num? currentLevelExperience) =>
+      _$this._currentLevelExperience = currentLevelExperience;
+
+  num? _nextLevelExperience;
+  num? get nextLevelExperience => _$this._nextLevelExperience;
+  set nextLevelExperience(num? nextLevelExperience) =>
+      _$this._nextLevelExperience = nextLevelExperience;
+
+  String? _receivedTipTotal;
+  String? get receivedTipTotal => _$this._receivedTipTotal;
+  set receivedTipTotal(String? receivedTipTotal) =>
+      _$this._receivedTipTotal = receivedTipTotal;
+
+  num? _receivedTipCount;
+  num? get receivedTipCount => _$this._receivedTipCount;
+  set receivedTipCount(num? receivedTipCount) =>
+      _$this._receivedTipCount = receivedTipCount;
 
   bool? _showRecentReplies;
   bool? get showRecentReplies => _$this._showRecentReplies;
@@ -274,6 +338,12 @@ class PrivateUserResponseDtoBuilder
       _avatar = $v.avatar;
       _bio = $v.bio;
       _role = $v.role;
+      _level = $v.level;
+      _experience = $v.experience;
+      _currentLevelExperience = $v.currentLevelExperience;
+      _nextLevelExperience = $v.nextLevelExperience;
+      _receivedTipTotal = $v.receivedTipTotal;
+      _receivedTipCount = $v.receivedTipCount;
       _showRecentReplies = $v.showRecentReplies;
       _showPlayerBadges = $v.showPlayerBadges;
       _showBookmarks = $v.showBookmarks;
@@ -324,6 +394,32 @@ class PrivateUserResponseDtoBuilder
             role,
             r'PrivateUserResponseDto',
             'role',
+          ),
+          level: BuiltValueNullFieldError.checkNotNull(
+            level,
+            r'PrivateUserResponseDto',
+            'level',
+          ),
+          experience: BuiltValueNullFieldError.checkNotNull(
+            experience,
+            r'PrivateUserResponseDto',
+            'experience',
+          ),
+          currentLevelExperience: BuiltValueNullFieldError.checkNotNull(
+            currentLevelExperience,
+            r'PrivateUserResponseDto',
+            'currentLevelExperience',
+          ),
+          nextLevelExperience: nextLevelExperience,
+          receivedTipTotal: BuiltValueNullFieldError.checkNotNull(
+            receivedTipTotal,
+            r'PrivateUserResponseDto',
+            'receivedTipTotal',
+          ),
+          receivedTipCount: BuiltValueNullFieldError.checkNotNull(
+            receivedTipCount,
+            r'PrivateUserResponseDto',
+            'receivedTipCount',
           ),
           showRecentReplies: BuiltValueNullFieldError.checkNotNull(
             showRecentReplies,

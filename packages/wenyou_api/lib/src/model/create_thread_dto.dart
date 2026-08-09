@@ -14,7 +14,7 @@ part 'create_thread_dto.g.dart';
 /// Properties:
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [title] - 主题帖标题（可为空，发布时校验）
-/// * [category] - 分区
+/// * [category] - 管理员配置的主题帖分类 slug；草稿可暂不选择
 /// * [content] - 默认子贴正文（kind=BODY，可选，留空仅创建空子贴）
 /// * [subthreadTitle] - 默认子贴标题（可选，不填则取主题帖标题）
 /// * [tagNames] - 主题帖标签名称列表
@@ -29,10 +29,9 @@ abstract class CreateThreadDto implements Built<CreateThreadDto, CreateThreadDto
   @BuiltValueField(wireName: r'title')
   String? get title;
 
-  /// 分区
+  /// 管理员配置的主题帖分类 slug；草稿可暂不选择
   @BuiltValueField(wireName: r'category')
-  CreateThreadDtoCategoryEnum? get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   /// 默认子贴正文（kind=BODY，可选，留空仅创建空子贴）
   @BuiltValueField(wireName: r'content')
@@ -57,7 +56,6 @@ abstract class CreateThreadDto implements Built<CreateThreadDto, CreateThreadDto
 
   @BuiltValueHook(initializeBuilder: true)
   static void _defaults(CreateThreadDtoBuilder b) => b
-      ..category = CreateThreadDtoCategoryEnum.valueOf('DEDUCTION')
       ..visibility = CreateThreadDtoVisibilityEnum.valueOf('PUBLIC');
 
   @BuiltValueSerializer(custom: true)
@@ -94,7 +92,7 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
       yield r'category';
       yield serializers.serialize(
         object.category,
-        specifiedType: const FullType(CreateThreadDtoCategoryEnum),
+        specifiedType: const FullType(String),
       );
     }
     if (object.content != null) {
@@ -165,8 +163,8 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(CreateThreadDtoCategoryEnum),
-          ) as CreateThreadDtoCategoryEnum;
+            specifiedType: const FullType(String),
+          ) as String;
           result.category = valueDes;
           break;
         case r'content':
@@ -224,29 +222,6 @@ class _$CreateThreadDtoSerializer implements PrimitiveSerializer<CreateThreadDto
     );
     return result.build();
   }
-}
-
-class CreateThreadDtoCategoryEnum extends EnumClass {
-
-  /// 分区
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const CreateThreadDtoCategoryEnum DEDUCTION = _$createThreadDtoCategoryEnum_DEDUCTION;
-  /// 分区
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const CreateThreadDtoCategoryEnum NATION = _$createThreadDtoCategoryEnum_NATION;
-  /// 分区
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const CreateThreadDtoCategoryEnum RPG = _$createThreadDtoCategoryEnum_RPG;
-  /// 分区
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const CreateThreadDtoCategoryEnum unknownDefaultOpenApi = _$createThreadDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<CreateThreadDtoCategoryEnum> get serializer => _$createThreadDtoCategoryEnumSerializer;
-
-  const CreateThreadDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<CreateThreadDtoCategoryEnum> get values => _$createThreadDtoCategoryEnumValues;
-  static CreateThreadDtoCategoryEnum valueOf(String name) => _$createThreadDtoCategoryEnumValueOf(name);
 }
 
 class CreateThreadDtoVisibilityEnum extends EnumClass {

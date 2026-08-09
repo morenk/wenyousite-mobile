@@ -72,7 +72,7 @@ class _$AdminIndex200ResponseCodeEnumSerializer
 
 class _$AdminIndex200Response extends AdminIndex200Response {
   @override
-  final AdminStatusResponseDto data;
+  final AdminCapabilityResponseDto data;
   @override
   final ApiSuccessEnvelopeCodeEnum code;
   @override
@@ -131,10 +131,10 @@ class AdminIndex200ResponseBuilder
         ApiSuccessEnvelopeBuilder {
   _$AdminIndex200Response? _$v;
 
-  AdminStatusResponseDtoBuilder? _data;
-  AdminStatusResponseDtoBuilder get data =>
-      _$this._data ??= AdminStatusResponseDtoBuilder();
-  set data(covariant AdminStatusResponseDtoBuilder? data) =>
+  AdminCapabilityResponseDtoBuilder? _data;
+  AdminCapabilityResponseDtoBuilder get data =>
+      _$this._data ??= AdminCapabilityResponseDtoBuilder();
+  set data(covariant AdminCapabilityResponseDtoBuilder? data) =>
       _$this._data = data;
 
   ApiSuccessEnvelopeCodeEnum? _code;

@@ -6,102 +6,21 @@ part of 'search_thread_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const SearchThreadResponseDtoCategoryEnum
-_$searchThreadResponseDtoCategoryEnum_DEDUCTION =
-    const SearchThreadResponseDtoCategoryEnum._('DEDUCTION');
-const SearchThreadResponseDtoCategoryEnum
-_$searchThreadResponseDtoCategoryEnum_NATION =
-    const SearchThreadResponseDtoCategoryEnum._('NATION');
-const SearchThreadResponseDtoCategoryEnum
-_$searchThreadResponseDtoCategoryEnum_RPG =
-    const SearchThreadResponseDtoCategoryEnum._('RPG');
-const SearchThreadResponseDtoCategoryEnum
-_$searchThreadResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const SearchThreadResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-SearchThreadResponseDtoCategoryEnum
-_$searchThreadResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$searchThreadResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$searchThreadResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$searchThreadResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$searchThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$searchThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<SearchThreadResponseDtoCategoryEnum>
-_$searchThreadResponseDtoCategoryEnumValues =
-    BuiltSet<SearchThreadResponseDtoCategoryEnum>(
-      const <SearchThreadResponseDtoCategoryEnum>[
-        _$searchThreadResponseDtoCategoryEnum_DEDUCTION,
-        _$searchThreadResponseDtoCategoryEnum_NATION,
-        _$searchThreadResponseDtoCategoryEnum_RPG,
-        _$searchThreadResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
-Serializer<SearchThreadResponseDtoCategoryEnum>
-_$searchThreadResponseDtoCategoryEnumSerializer =
-    _$SearchThreadResponseDtoCategoryEnumSerializer();
-
-class _$SearchThreadResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<SearchThreadResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    SearchThreadResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'SearchThreadResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    SearchThreadResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  SearchThreadResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => SearchThreadResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$SearchThreadResponseDto extends SearchThreadResponseDto {
   @override
   final String id;
   @override
   final String title;
   @override
-  final SearchThreadResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final DateTime createdAt;
   @override
   final SearchThreadOwnerResponseDto owner;
   @override
   final SearchThreadCountResponseDto count;
+  @override
+  final BuiltList<String> coverImages;
 
   factory _$SearchThreadResponseDto([
     void Function(SearchThreadResponseDtoBuilder)? updates,
@@ -110,10 +29,11 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
   _$SearchThreadResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
     required this.createdAt,
     required this.owner,
     required this.count,
+    required this.coverImages,
   }) : super._();
   @override
   SearchThreadResponseDto rebuild(
@@ -133,7 +53,8 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
         category == other.category &&
         createdAt == other.createdAt &&
         owner == other.owner &&
-        count == other.count;
+        count == other.count &&
+        coverImages == other.coverImages;
   }
 
   @override
@@ -145,6 +66,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, owner.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
+    _$hash = $jc(_$hash, coverImages.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -157,7 +79,8 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
           ..add('category', category)
           ..add('createdAt', createdAt)
           ..add('owner', owner)
-          ..add('count', count))
+          ..add('count', count)
+          ..add('coverImages', coverImages))
         .toString();
   }
 }
@@ -175,10 +98,9 @@ class SearchThreadResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  SearchThreadResponseDtoCategoryEnum? _category;
-  SearchThreadResponseDtoCategoryEnum? get category => _$this._category;
-  set category(SearchThreadResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -196,6 +118,12 @@ class SearchThreadResponseDtoBuilder
   set count(SearchThreadCountResponseDtoBuilder? count) =>
       _$this._count = count;
 
+  ListBuilder<String>? _coverImages;
+  ListBuilder<String> get coverImages =>
+      _$this._coverImages ??= ListBuilder<String>();
+  set coverImages(ListBuilder<String>? coverImages) =>
+      _$this._coverImages = coverImages;
+
   SearchThreadResponseDtoBuilder() {
     SearchThreadResponseDto._defaults(this);
   }
@@ -209,6 +137,7 @@ class SearchThreadResponseDtoBuilder
       _createdAt = $v.createdAt;
       _owner = $v.owner.toBuilder();
       _count = $v.count.toBuilder();
+      _coverImages = $v.coverImages.toBuilder();
       _$v = null;
     }
     return this;
@@ -243,11 +172,7 @@ class SearchThreadResponseDtoBuilder
               r'SearchThreadResponseDto',
               'title',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'SearchThreadResponseDto',
-              'category',
-            ),
+            category: category,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
               r'SearchThreadResponseDto',
@@ -255,6 +180,7 @@ class SearchThreadResponseDtoBuilder
             ),
             owner: owner.build(),
             count: count.build(),
+            coverImages: coverImages.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -263,6 +189,8 @@ class SearchThreadResponseDtoBuilder
         owner.build();
         _$failedField = 'count';
         count.build();
+        _$failedField = 'coverImages';
+        coverImages.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'SearchThreadResponseDto',

@@ -13,6 +13,8 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   final String username;
   @override
   final String? avatar;
+  @override
+  final num level;
 
   factory _$PostAuthorResponseDto([
     void Function(PostAuthorResponseDtoBuilder)? updates,
@@ -22,6 +24,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
     required this.id,
     required this.username,
     this.avatar,
+    required this.level,
   }) : super._();
   @override
   PostAuthorResponseDto rebuild(
@@ -38,7 +41,8 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
     return other is PostAuthorResponseDto &&
         id == other.id &&
         username == other.username &&
-        avatar == other.avatar;
+        avatar == other.avatar &&
+        level == other.level;
   }
 
   @override
@@ -47,6 +51,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
+    _$hash = $jc(_$hash, level.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -56,7 +61,8 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
     return (newBuiltValueToStringHelper(r'PostAuthorResponseDto')
           ..add('id', id)
           ..add('username', username)
-          ..add('avatar', avatar))
+          ..add('avatar', avatar)
+          ..add('level', level))
         .toString();
   }
 }
@@ -77,6 +83,10 @@ class PostAuthorResponseDtoBuilder
   String? get avatar => _$this._avatar;
   set avatar(String? avatar) => _$this._avatar = avatar;
 
+  num? _level;
+  num? get level => _$this._level;
+  set level(num? level) => _$this._level = level;
+
   PostAuthorResponseDtoBuilder() {
     PostAuthorResponseDto._defaults(this);
   }
@@ -87,6 +97,7 @@ class PostAuthorResponseDtoBuilder
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
+      _level = $v.level;
       _$v = null;
     }
     return this;
@@ -120,6 +131,11 @@ class PostAuthorResponseDtoBuilder
             'username',
           ),
           avatar: avatar,
+          level: BuiltValueNullFieldError.checkNotNull(
+            level,
+            r'PostAuthorResponseDto',
+            'level',
+          ),
         );
     replace(_$result);
     return _$result;

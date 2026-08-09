@@ -13,7 +13,7 @@ part 'save_thread_aggregate_dto.g.dart';
 ///
 /// Properties:
 /// * [title]
-/// * [category]
+/// * [category] - 管理员配置的分类 slug
 /// * [status]
 /// * [visibility]
 /// * [published] - 仅允许从草稿发布，不允许撤回
@@ -27,9 +27,9 @@ abstract class SaveThreadAggregateDto implements Built<SaveThreadAggregateDto, S
   @BuiltValueField(wireName: r'title')
   String? get title;
 
+  /// 管理员配置的分类 slug
   @BuiltValueField(wireName: r'category')
-  SaveThreadAggregateDtoCategoryEnum? get category;
-  // enum categoryEnum {  DEDUCTION,  NATION,  RPG,  };
+  String? get category;
 
   @BuiltValueField(wireName: r'status')
   SaveThreadAggregateDtoStatusEnum? get status;
@@ -96,7 +96,7 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
       yield r'category';
       yield serializers.serialize(
         object.category,
-        specifiedType: const FullType(SaveThreadAggregateDtoCategoryEnum),
+        specifiedType: const FullType(String),
       );
     }
     if (object.status != null) {
@@ -180,8 +180,8 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
         case r'category':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(SaveThreadAggregateDtoCategoryEnum),
-          ) as SaveThreadAggregateDtoCategoryEnum;
+            specifiedType: const FullType(String),
+          ) as String;
           result.category = valueDes;
           break;
         case r'status':
@@ -267,25 +267,6 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
     );
     return result.build();
   }
-}
-
-class SaveThreadAggregateDtoCategoryEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'DEDUCTION')
-  static const SaveThreadAggregateDtoCategoryEnum DEDUCTION = _$saveThreadAggregateDtoCategoryEnum_DEDUCTION;
-  @BuiltValueEnumConst(wireName: r'NATION')
-  static const SaveThreadAggregateDtoCategoryEnum NATION = _$saveThreadAggregateDtoCategoryEnum_NATION;
-  @BuiltValueEnumConst(wireName: r'RPG')
-  static const SaveThreadAggregateDtoCategoryEnum RPG = _$saveThreadAggregateDtoCategoryEnum_RPG;
-  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
-  static const SaveThreadAggregateDtoCategoryEnum unknownDefaultOpenApi = _$saveThreadAggregateDtoCategoryEnum_unknownDefaultOpenApi;
-
-  static Serializer<SaveThreadAggregateDtoCategoryEnum> get serializer => _$saveThreadAggregateDtoCategoryEnumSerializer;
-
-  const SaveThreadAggregateDtoCategoryEnum._(String name): super(name);
-
-  static BuiltSet<SaveThreadAggregateDtoCategoryEnum> get values => _$saveThreadAggregateDtoCategoryEnumValues;
-  static SaveThreadAggregateDtoCategoryEnum valueOf(String name) => _$saveThreadAggregateDtoCategoryEnumValueOf(name);
 }
 
 class SaveThreadAggregateDtoStatusEnum extends EnumClass {

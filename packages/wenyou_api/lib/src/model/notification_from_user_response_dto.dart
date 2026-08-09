@@ -14,6 +14,7 @@ part 'notification_from_user_response_dto.g.dart';
 /// * [id]
 /// * [username]
 /// * [avatar]
+/// * [level]
 /// * [deletedAt]
 @BuiltValue()
 abstract class NotificationFromUserResponseDto implements Built<NotificationFromUserResponseDto, NotificationFromUserResponseDtoBuilder> {
@@ -25,6 +26,9 @@ abstract class NotificationFromUserResponseDto implements Built<NotificationFrom
 
   @BuiltValueField(wireName: r'avatar')
   String? get avatar;
+
+  @BuiltValueField(wireName: r'level')
+  num get level;
 
   @BuiltValueField(wireName: r'deletedAt')
   DateTime? get deletedAt;
@@ -66,6 +70,11 @@ class _$NotificationFromUserResponseDtoSerializer implements PrimitiveSerializer
     yield object.avatar == null ? null : serializers.serialize(
       object.avatar,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'level';
+    yield serializers.serialize(
+      object.level,
+      specifiedType: const FullType(num),
     );
     yield r'deletedAt';
     yield object.deletedAt == null ? null : serializers.serialize(
@@ -116,6 +125,13 @@ class _$NotificationFromUserResponseDtoSerializer implements PrimitiveSerializer
           ) as String?;
           if (valueDes == null) continue;
           result.avatar = valueDes;
+          break;
+        case r'level':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.level = valueDes;
           break;
         case r'deletedAt':
           final valueDes = serializers.deserialize(

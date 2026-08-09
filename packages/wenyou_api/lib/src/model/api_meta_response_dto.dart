@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/mobile_compatibility_dto.dart';
 import 'package:wenyou_api/src/model/api_capabilities_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -16,6 +17,7 @@ part 'api_meta_response_dto.g.dart';
 /// * [buildSha]
 /// * [markdownContractVersion]
 /// * [capabilities]
+/// * [mobileCompatibility]
 @BuiltValue()
 abstract class ApiMetaResponseDto implements Built<ApiMetaResponseDto, ApiMetaResponseDtoBuilder> {
   @BuiltValueField(wireName: r'contractVersion')
@@ -29,6 +31,9 @@ abstract class ApiMetaResponseDto implements Built<ApiMetaResponseDto, ApiMetaRe
 
   @BuiltValueField(wireName: r'capabilities')
   ApiCapabilitiesResponseDto get capabilities;
+
+  @BuiltValueField(wireName: r'mobileCompatibility')
+  MobileCompatibilityDto get mobileCompatibility;
 
   ApiMetaResponseDto._();
 
@@ -72,6 +77,11 @@ class _$ApiMetaResponseDtoSerializer implements PrimitiveSerializer<ApiMetaRespo
     yield serializers.serialize(
       object.capabilities,
       specifiedType: const FullType(ApiCapabilitiesResponseDto),
+    );
+    yield r'mobileCompatibility';
+    yield serializers.serialize(
+      object.mobileCompatibility,
+      specifiedType: const FullType(MobileCompatibilityDto),
     );
   }
 
@@ -124,6 +134,13 @@ class _$ApiMetaResponseDtoSerializer implements PrimitiveSerializer<ApiMetaRespo
             specifiedType: const FullType(ApiCapabilitiesResponseDto),
           ) as ApiCapabilitiesResponseDto;
           result.capabilities.replace(valueDes);
+          break;
+        case r'mobileCompatibility':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(MobileCompatibilityDto),
+          ) as MobileCompatibilityDto;
+          result.mobileCompatibility.replace(valueDes);
           break;
         default:
           unhandled.add(key);

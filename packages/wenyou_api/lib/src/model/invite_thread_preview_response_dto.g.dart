@@ -6,46 +6,6 @@ part of 'invite_thread_preview_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const InviteThreadPreviewResponseDtoCategoryEnum
-_$inviteThreadPreviewResponseDtoCategoryEnum_DEDUCTION =
-    const InviteThreadPreviewResponseDtoCategoryEnum._('DEDUCTION');
-const InviteThreadPreviewResponseDtoCategoryEnum
-_$inviteThreadPreviewResponseDtoCategoryEnum_NATION =
-    const InviteThreadPreviewResponseDtoCategoryEnum._('NATION');
-const InviteThreadPreviewResponseDtoCategoryEnum
-_$inviteThreadPreviewResponseDtoCategoryEnum_RPG =
-    const InviteThreadPreviewResponseDtoCategoryEnum._('RPG');
-const InviteThreadPreviewResponseDtoCategoryEnum
-_$inviteThreadPreviewResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const InviteThreadPreviewResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-InviteThreadPreviewResponseDtoCategoryEnum
-_$inviteThreadPreviewResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$inviteThreadPreviewResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$inviteThreadPreviewResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$inviteThreadPreviewResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$inviteThreadPreviewResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$inviteThreadPreviewResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<InviteThreadPreviewResponseDtoCategoryEnum>
-_$inviteThreadPreviewResponseDtoCategoryEnumValues =
-    BuiltSet<InviteThreadPreviewResponseDtoCategoryEnum>(
-      const <InviteThreadPreviewResponseDtoCategoryEnum>[
-        _$inviteThreadPreviewResponseDtoCategoryEnum_DEDUCTION,
-        _$inviteThreadPreviewResponseDtoCategoryEnum_NATION,
-        _$inviteThreadPreviewResponseDtoCategoryEnum_RPG,
-        _$inviteThreadPreviewResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const InviteThreadPreviewResponseDtoStatusEnum
 _$inviteThreadPreviewResponseDtoStatusEnum_RECRUITING =
     const InviteThreadPreviewResponseDtoStatusEnum._('RECRUITING');
@@ -86,51 +46,9 @@ _$inviteThreadPreviewResponseDtoStatusEnumValues =
       ],
     );
 
-Serializer<InviteThreadPreviewResponseDtoCategoryEnum>
-_$inviteThreadPreviewResponseDtoCategoryEnumSerializer =
-    _$InviteThreadPreviewResponseDtoCategoryEnumSerializer();
 Serializer<InviteThreadPreviewResponseDtoStatusEnum>
 _$inviteThreadPreviewResponseDtoStatusEnumSerializer =
     _$InviteThreadPreviewResponseDtoStatusEnumSerializer();
-
-class _$InviteThreadPreviewResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<InviteThreadPreviewResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    InviteThreadPreviewResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'InviteThreadPreviewResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    InviteThreadPreviewResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  InviteThreadPreviewResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => InviteThreadPreviewResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$InviteThreadPreviewResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<InviteThreadPreviewResponseDtoStatusEnum> {
@@ -177,7 +95,7 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
   @override
   final String title;
   @override
-  final InviteThreadPreviewResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final InviteThreadPreviewResponseDtoStatusEnum status;
   @override
@@ -194,7 +112,7 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
   _$InviteThreadPreviewResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
     required this.status,
     required this.owner,
     required this.memberCount,
@@ -266,10 +184,9 @@ class InviteThreadPreviewResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  InviteThreadPreviewResponseDtoCategoryEnum? _category;
-  InviteThreadPreviewResponseDtoCategoryEnum? get category => _$this._category;
-  set category(InviteThreadPreviewResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   InviteThreadPreviewResponseDtoStatusEnum? _status;
   InviteThreadPreviewResponseDtoStatusEnum? get status => _$this._status;
@@ -337,11 +254,7 @@ class InviteThreadPreviewResponseDtoBuilder
               r'InviteThreadPreviewResponseDto',
               'title',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'InviteThreadPreviewResponseDto',
-              'category',
-            ),
+            category: category,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'InviteThreadPreviewResponseDto',

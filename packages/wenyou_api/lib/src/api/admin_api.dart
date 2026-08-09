@@ -111,7 +111,7 @@ class AdminApi {
     );
   }
 
-  /// 管理后台入口
+  /// 当前管理员能力
   ///
   ///
   /// Parameters:
@@ -139,7 +139,13 @@ class AdminApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,

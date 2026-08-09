@@ -6,46 +6,6 @@ part of 'bookmark_thread_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const BookmarkThreadResponseDtoCategoryEnum
-_$bookmarkThreadResponseDtoCategoryEnum_DEDUCTION =
-    const BookmarkThreadResponseDtoCategoryEnum._('DEDUCTION');
-const BookmarkThreadResponseDtoCategoryEnum
-_$bookmarkThreadResponseDtoCategoryEnum_NATION =
-    const BookmarkThreadResponseDtoCategoryEnum._('NATION');
-const BookmarkThreadResponseDtoCategoryEnum
-_$bookmarkThreadResponseDtoCategoryEnum_RPG =
-    const BookmarkThreadResponseDtoCategoryEnum._('RPG');
-const BookmarkThreadResponseDtoCategoryEnum
-_$bookmarkThreadResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const BookmarkThreadResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-BookmarkThreadResponseDtoCategoryEnum
-_$bookmarkThreadResponseDtoCategoryEnumValueOf(String name) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$bookmarkThreadResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$bookmarkThreadResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$bookmarkThreadResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$bookmarkThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$bookmarkThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<BookmarkThreadResponseDtoCategoryEnum>
-_$bookmarkThreadResponseDtoCategoryEnumValues =
-    BuiltSet<BookmarkThreadResponseDtoCategoryEnum>(
-      const <BookmarkThreadResponseDtoCategoryEnum>[
-        _$bookmarkThreadResponseDtoCategoryEnum_DEDUCTION,
-        _$bookmarkThreadResponseDtoCategoryEnum_NATION,
-        _$bookmarkThreadResponseDtoCategoryEnum_RPG,
-        _$bookmarkThreadResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const BookmarkThreadResponseDtoStatusEnum
 _$bookmarkThreadResponseDtoStatusEnum_RECRUITING =
     const BookmarkThreadResponseDtoStatusEnum._('RECRUITING');
@@ -120,54 +80,12 @@ _$bookmarkThreadResponseDtoVisibilityEnumValues =
       ],
     );
 
-Serializer<BookmarkThreadResponseDtoCategoryEnum>
-_$bookmarkThreadResponseDtoCategoryEnumSerializer =
-    _$BookmarkThreadResponseDtoCategoryEnumSerializer();
 Serializer<BookmarkThreadResponseDtoStatusEnum>
 _$bookmarkThreadResponseDtoStatusEnumSerializer =
     _$BookmarkThreadResponseDtoStatusEnumSerializer();
 Serializer<BookmarkThreadResponseDtoVisibilityEnum>
 _$bookmarkThreadResponseDtoVisibilityEnumSerializer =
     _$BookmarkThreadResponseDtoVisibilityEnumSerializer();
-
-class _$BookmarkThreadResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<BookmarkThreadResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[
-    BookmarkThreadResponseDtoCategoryEnum,
-  ];
-  @override
-  final String wireName = 'BookmarkThreadResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    BookmarkThreadResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  BookmarkThreadResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => BookmarkThreadResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$BookmarkThreadResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<BookmarkThreadResponseDtoStatusEnum> {
@@ -251,7 +169,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
   @override
   final String title;
   @override
-  final BookmarkThreadResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final BookmarkThreadResponseDtoStatusEnum status;
   @override
@@ -260,6 +178,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
   final bool published;
   @override
   final bool pinned;
+  @override
+  final String tipTotal;
   @override
   final DateTime createdAt;
   @override
@@ -280,11 +200,12 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
   _$BookmarkThreadResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
     required this.status,
     required this.visibility,
     required this.published,
     required this.pinned,
+    required this.tipTotal,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -312,6 +233,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
         visibility == other.visibility &&
         published == other.published &&
         pinned == other.pinned &&
+        tipTotal == other.tipTotal &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
         deletedAt == other.deletedAt &&
@@ -330,6 +252,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
     _$hash = $jc(_$hash, visibility.hashCode);
     _$hash = $jc(_$hash, published.hashCode);
     _$hash = $jc(_$hash, pinned.hashCode);
+    _$hash = $jc(_$hash, tipTotal.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
@@ -350,6 +273,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
           ..add('visibility', visibility)
           ..add('published', published)
           ..add('pinned', pinned)
+          ..add('tipTotal', tipTotal)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
           ..add('deletedAt', deletedAt)
@@ -373,10 +297,9 @@ class BookmarkThreadResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  BookmarkThreadResponseDtoCategoryEnum? _category;
-  BookmarkThreadResponseDtoCategoryEnum? get category => _$this._category;
-  set category(BookmarkThreadResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   BookmarkThreadResponseDtoStatusEnum? _status;
   BookmarkThreadResponseDtoStatusEnum? get status => _$this._status;
@@ -395,6 +318,10 @@ class BookmarkThreadResponseDtoBuilder
   bool? _pinned;
   bool? get pinned => _$this._pinned;
   set pinned(bool? pinned) => _$this._pinned = pinned;
+
+  String? _tipTotal;
+  String? get tipTotal => _$this._tipTotal;
+  set tipTotal(String? tipTotal) => _$this._tipTotal = tipTotal;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -437,6 +364,7 @@ class BookmarkThreadResponseDtoBuilder
       _visibility = $v.visibility;
       _published = $v.published;
       _pinned = $v.pinned;
+      _tipTotal = $v.tipTotal;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _deletedAt = $v.deletedAt;
@@ -477,11 +405,7 @@ class BookmarkThreadResponseDtoBuilder
               r'BookmarkThreadResponseDto',
               'title',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'BookmarkThreadResponseDto',
-              'category',
-            ),
+            category: category,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'BookmarkThreadResponseDto',
@@ -501,6 +425,11 @@ class BookmarkThreadResponseDtoBuilder
               pinned,
               r'BookmarkThreadResponseDto',
               'pinned',
+            ),
+            tipTotal: BuiltValueNullFieldError.checkNotNull(
+              tipTotal,
+              r'BookmarkThreadResponseDto',
+              'tipTotal',
             ),
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,

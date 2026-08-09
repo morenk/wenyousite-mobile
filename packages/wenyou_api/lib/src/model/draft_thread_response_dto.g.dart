@@ -6,47 +6,6 @@ part of 'draft_thread_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const DraftThreadResponseDtoCategoryEnum
-_$draftThreadResponseDtoCategoryEnum_DEDUCTION =
-    const DraftThreadResponseDtoCategoryEnum._('DEDUCTION');
-const DraftThreadResponseDtoCategoryEnum
-_$draftThreadResponseDtoCategoryEnum_NATION =
-    const DraftThreadResponseDtoCategoryEnum._('NATION');
-const DraftThreadResponseDtoCategoryEnum
-_$draftThreadResponseDtoCategoryEnum_RPG =
-    const DraftThreadResponseDtoCategoryEnum._('RPG');
-const DraftThreadResponseDtoCategoryEnum
-_$draftThreadResponseDtoCategoryEnum_unknownDefaultOpenApi =
-    const DraftThreadResponseDtoCategoryEnum._('unknownDefaultOpenApi');
-
-DraftThreadResponseDtoCategoryEnum _$draftThreadResponseDtoCategoryEnumValueOf(
-  String name,
-) {
-  switch (name) {
-    case 'DEDUCTION':
-      return _$draftThreadResponseDtoCategoryEnum_DEDUCTION;
-    case 'NATION':
-      return _$draftThreadResponseDtoCategoryEnum_NATION;
-    case 'RPG':
-      return _$draftThreadResponseDtoCategoryEnum_RPG;
-    case 'unknownDefaultOpenApi':
-      return _$draftThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-    default:
-      return _$draftThreadResponseDtoCategoryEnum_unknownDefaultOpenApi;
-  }
-}
-
-final BuiltSet<DraftThreadResponseDtoCategoryEnum>
-_$draftThreadResponseDtoCategoryEnumValues =
-    BuiltSet<DraftThreadResponseDtoCategoryEnum>(
-      const <DraftThreadResponseDtoCategoryEnum>[
-        _$draftThreadResponseDtoCategoryEnum_DEDUCTION,
-        _$draftThreadResponseDtoCategoryEnum_NATION,
-        _$draftThreadResponseDtoCategoryEnum_RPG,
-        _$draftThreadResponseDtoCategoryEnum_unknownDefaultOpenApi,
-      ],
-    );
-
 const DraftThreadResponseDtoStatusEnum
 _$draftThreadResponseDtoStatusEnum_RECRUITING =
     const DraftThreadResponseDtoStatusEnum._('RECRUITING');
@@ -122,52 +81,12 @@ _$draftThreadResponseDtoVisibilityEnumValues =
       ],
     );
 
-Serializer<DraftThreadResponseDtoCategoryEnum>
-_$draftThreadResponseDtoCategoryEnumSerializer =
-    _$DraftThreadResponseDtoCategoryEnumSerializer();
 Serializer<DraftThreadResponseDtoStatusEnum>
 _$draftThreadResponseDtoStatusEnumSerializer =
     _$DraftThreadResponseDtoStatusEnumSerializer();
 Serializer<DraftThreadResponseDtoVisibilityEnum>
 _$draftThreadResponseDtoVisibilityEnumSerializer =
     _$DraftThreadResponseDtoVisibilityEnumSerializer();
-
-class _$DraftThreadResponseDtoCategoryEnumSerializer
-    implements PrimitiveSerializer<DraftThreadResponseDtoCategoryEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknownDefaultOpenApi': 'unknown_default_open_api',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'DEDUCTION': 'DEDUCTION',
-    'NATION': 'NATION',
-    'RPG': 'RPG',
-    'unknown_default_open_api': 'unknownDefaultOpenApi',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[DraftThreadResponseDtoCategoryEnum];
-  @override
-  final String wireName = 'DraftThreadResponseDtoCategoryEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    DraftThreadResponseDtoCategoryEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  DraftThreadResponseDtoCategoryEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => DraftThreadResponseDtoCategoryEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
 
 class _$DraftThreadResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<DraftThreadResponseDtoStatusEnum> {
@@ -249,7 +168,7 @@ class _$DraftThreadResponseDto extends DraftThreadResponseDto {
   @override
   final String title;
   @override
-  final DraftThreadResponseDtoCategoryEnum category;
+  final String? category;
   @override
   final DraftThreadResponseDtoStatusEnum status;
   @override
@@ -278,7 +197,7 @@ class _$DraftThreadResponseDto extends DraftThreadResponseDto {
   _$DraftThreadResponseDto._({
     required this.id,
     required this.title,
-    required this.category,
+    this.category,
     required this.status,
     required this.visibility,
     required this.published,
@@ -370,10 +289,9 @@ class DraftThreadResponseDtoBuilder
   String? get title => _$this._title;
   set title(String? title) => _$this._title = title;
 
-  DraftThreadResponseDtoCategoryEnum? _category;
-  DraftThreadResponseDtoCategoryEnum? get category => _$this._category;
-  set category(DraftThreadResponseDtoCategoryEnum? category) =>
-      _$this._category = category;
+  String? _category;
+  String? get category => _$this._category;
+  set category(String? category) => _$this._category = category;
 
   DraftThreadResponseDtoStatusEnum? _status;
   DraftThreadResponseDtoStatusEnum? get status => _$this._status;
@@ -478,11 +396,7 @@ class DraftThreadResponseDtoBuilder
               r'DraftThreadResponseDto',
               'title',
             ),
-            category: BuiltValueNullFieldError.checkNotNull(
-              category,
-              r'DraftThreadResponseDto',
-              'category',
-            ),
+            category: category,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'DraftThreadResponseDto',

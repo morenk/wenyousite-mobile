@@ -14,7 +14,11 @@ part 'tag_response_dto.g.dart';
 /// * [id]
 /// * [name]
 /// * [color]
+/// * [description]
+/// * [sortOrder]
+/// * [isActive]
 /// * [createdAt]
+/// * [updatedAt]
 @BuiltValue()
 abstract class TagResponseDto implements Built<TagResponseDto, TagResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -26,8 +30,20 @@ abstract class TagResponseDto implements Built<TagResponseDto, TagResponseDtoBui
   @BuiltValueField(wireName: r'color')
   String? get color;
 
+  @BuiltValueField(wireName: r'description')
+  String? get description;
+
+  @BuiltValueField(wireName: r'sortOrder')
+  num get sortOrder;
+
+  @BuiltValueField(wireName: r'isActive')
+  bool get isActive;
+
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
+
+  @BuiltValueField(wireName: r'updatedAt')
+  DateTime get updatedAt;
 
   TagResponseDto._();
 
@@ -67,9 +83,29 @@ class _$TagResponseDtoSerializer implements PrimitiveSerializer<TagResponseDto> 
       object.color,
       specifiedType: const FullType.nullable(String),
     );
+    yield r'description';
+    yield object.description == null ? null : serializers.serialize(
+      object.description,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'sortOrder';
+    yield serializers.serialize(
+      object.sortOrder,
+      specifiedType: const FullType(num),
+    );
+    yield r'isActive';
+    yield serializers.serialize(
+      object.isActive,
+      specifiedType: const FullType(bool),
+    );
     yield r'createdAt';
     yield serializers.serialize(
       object.createdAt,
+      specifiedType: const FullType(DateTime),
+    );
+    yield r'updatedAt';
+    yield serializers.serialize(
+      object.updatedAt,
       specifiedType: const FullType(DateTime),
     );
   }
@@ -117,12 +153,41 @@ class _$TagResponseDtoSerializer implements PrimitiveSerializer<TagResponseDto> 
           if (valueDes == null) continue;
           result.color = valueDes;
           break;
+        case r'description':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.description = valueDes;
+          break;
+        case r'sortOrder':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.sortOrder = valueDes;
+          break;
+        case r'isActive':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.isActive = valueDes;
+          break;
         case r'createdAt':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(DateTime),
           ) as DateTime;
           result.createdAt = valueDes;
+          break;
+        case r'updatedAt':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime;
+          result.updatedAt = valueDes;
           break;
         default:
           unhandled.add(key);
