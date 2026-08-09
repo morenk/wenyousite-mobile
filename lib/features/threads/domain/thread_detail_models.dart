@@ -89,6 +89,9 @@ class ThreadDetailModel {
     required this.subthreads,
     required this.createdAt,
     required this.updatedAt,
+    this.isLiked = false,
+    this.isBookmarked = false,
+    this.bookmarkId,
     this.categorySlug,
     this.defaultSubthreadId,
   });
@@ -102,6 +105,9 @@ class ThreadDetailModel {
   final bool isPinned;
   final int viewCount;
   final int likeCount;
+  final bool isLiked;
+  final bool isBookmarked;
+  final String? bookmarkId;
   final String tipTotal;
   final int memberCount;
   final int playerCount;

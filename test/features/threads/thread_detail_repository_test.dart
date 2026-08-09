@@ -31,6 +31,9 @@ void main() {
     expect(detail.isPinned, isTrue);
     expect(detail.viewCount, 128);
     expect(detail.likeCount, 12);
+    expect(detail.isLiked, isTrue);
+    expect(detail.isBookmarked, isTrue);
+    expect(detail.bookmarkId, 'bookmark-1');
     expect(detail.tipTotal, '42');
     expect(detail.memberCount, 8);
     expect(detail.playerCount, 3);
@@ -199,6 +202,9 @@ ThreadDetailResponseDto _threadDetail() {
       ..viewCount = 128
       ..version = 4
       ..likeCount = 12
+      ..isLiked = true
+      ..isBookmarked = true
+      ..bookmarkId = 'bookmark-1'
       ..tipTotal = '42'
       ..defaultSubthreadId = 'subthread-early'
       ..createdAt = createdAt

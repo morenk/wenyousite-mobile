@@ -5,8 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
+import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -66,6 +70,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   @override
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
+    ref.listen(sessionControllerProvider.select((session) => session.status), (
+      previous,
+      next,
+    ) {
+      if (previous == null || previous == next) return;
+      ref.invalidate(provider);
+    });
     final state = ref.watch(provider);
     final target = widget.targetPostId == null
         ? null
@@ -152,6 +163,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             detail: detail,
             categoryName:
                 widget.categoryNameHint ?? detail.categorySlug ?? '未分类',
+            onRequireAuthentication: () => context.pushNamed(
+              'login',
+              queryParameters: {'returnTo': _currentThreadLocation()},
+            ),
           ),
         ),
       ),
@@ -279,6 +294,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ),
       ],
     ];
+  }
+
+  String _currentThreadLocation() {
+    return Uri(
+      pathSegments: ['', 'threads', widget.threadId],
+      queryParameters: widget.targetPostId == null
+          ? null
+          : {'post': widget.targetPostId!},
+    ).toString();
   }
 
   List<ThreadFloorModel> _floorsWithTarget(
@@ -428,15 +452,30 @@ class _DetailTransientFailure extends StatelessWidget {
   }
 }
 
-class _ThreadOverview extends StatelessWidget {
-  const _ThreadOverview({required this.detail, required this.categoryName});
+class _ThreadOverview extends ConsumerWidget {
+  const _ThreadOverview({
+    required this.detail,
+    required this.categoryName,
+    required this.onRequireAuthentication,
+  });
 
   final ThreadDetailModel detail;
   final String categoryName;
+  final VoidCallback onRequireAuthentication;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
+    final interactionTarget = ThreadInteractionTarget(
+      threadId: detail.id,
+      isLiked: detail.isLiked,
+      likeCount: detail.likeCount,
+      isBookmarked: detail.isBookmarked,
+      bookmarkId: detail.bookmarkId,
+    );
+    final interactionState = ref.watch(
+      threadInteractionControllerProvider(interactionTarget),
+    );
     return WenyouPanel(
       padding: EdgeInsets.all(tokens.space16),
       child: Column(
@@ -511,7 +550,7 @@ class _ThreadOverview extends StatelessWidget {
               ),
               _DetailStat(
                 icon: Icons.favorite_border_rounded,
-                label: '${detail.likeCount} 喜欢',
+                label: '${interactionState.likeCount} 喜欢',
               ),
               if (detail.tipTotal != '0')
                 _DetailStat(
@@ -520,6 +559,13 @@ class _ThreadOverview extends StatelessWidget {
                   accent: true,
                 ),
             ],
+          ),
+          SizedBox(height: tokens.space12),
+          Divider(color: tokens.border),
+          SizedBox(height: tokens.space12),
+          ThreadInteractionActions(
+            target: interactionTarget,
+            onRequireAuthentication: onRequireAuthentication,
           ),
         ],
       ),

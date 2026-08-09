@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
@@ -198,6 +201,78 @@ void main() {
     expect(find.text('发现主题'), findsOneWidget);
     expect(homeRepository.threadCalls, 1);
   });
+
+  testWidgets('游客点赞先登录并保留主题帖子目标', (tester) async {
+    final detailRepository = _FakeThreadDetailRepository();
+    final router = GoRouter(
+      initialLocation: '/threads/thread-1?post=floor-target',
+      routes: [
+        GoRoute(
+          path: '/threads/:threadId',
+          name: 'thread-detail',
+          builder: (_, state) => ThreadDetailPage(
+            threadId: state.pathParameters['threadId']!,
+            targetPostId: state.uri.queryParameters['post'],
+          ),
+        ),
+        GoRoute(
+          path: '/auth/login',
+          name: 'login',
+          builder: (_, state) => Scaffold(
+            body: Text('登录回跳=${state.uri.queryParameters['returnTo']}'),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          threadDetailRepositoryProvider.overrideWithValue(detailRepository),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-interaction-like')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('登录回跳=/threads/thread-1?post=floor-target'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('登录身份变化重新读取主题互动投影', (tester) async {
+    final repository = _FakeThreadDetailRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.threadCalls, 1);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokens);
+    await tester.pumpAndSettle();
+
+    expect(repository.threadCalls, 2);
+  });
 }
 
 Widget _detailApp(ThreadDetailRepository repository, {String? targetPostId}) {
@@ -228,9 +303,11 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final ThreadPostTargetModel? postTarget;
   final List<String> requestedSubthreads = [];
   final List<String> targetPostIds = [];
+  int threadCalls = 0;
 
   @override
   Future<ThreadDetailModel> fetchThread(String threadId) async {
+    threadCalls += 1;
     if (threadFailure case final failure?) throw failure;
     return _detail;
   }
@@ -337,6 +414,32 @@ final _detail = ThreadDetailModel(
 );
 
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);
+
+const _tokens = SessionTokens(
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+);
+
+class _MemoryTokenStore implements TokenStore {
+  SessionTokens? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<SessionTokens?> read() async => value;
+
+  @override
+  Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _FakeSessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}
 
 final _mainFloor = ThreadFloorModel(
   id: 'floor-1',
