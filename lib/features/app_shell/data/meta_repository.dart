@@ -2,17 +2,30 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 class ContractInfo {
   const ContractInfo({
     required this.contractVersion,
     required this.markdownContractVersion,
     this.buildSha,
+    this.android = const MobilePlatformPolicy(),
+    this.ios = const MobilePlatformPolicy(),
   });
 
   final String contractVersion;
   final int markdownContractVersion;
   final String? buildSha;
+  final MobilePlatformPolicy android;
+  final MobilePlatformPolicy ios;
+
+  MobilePlatformPolicy policyFor(MobileClientPlatform platform) {
+    return switch (platform) {
+      MobileClientPlatform.android => android,
+      MobileClientPlatform.ios => ios,
+      MobileClientPlatform.unsupported => const MobilePlatformPolicy(),
+    };
+  }
 }
 
 abstract interface class MetaRepository {
@@ -38,6 +51,8 @@ class ApiMetaRepository implements MetaRepository {
         contractVersion: data.contractVersion,
         markdownContractVersion: data.markdownContractVersion.toInt(),
         buildSha: data.buildSha,
+        android: _policyFromDto(data.mobileCompatibility.android),
+        ios: _policyFromDto(data.mobileCompatibility.ios),
       );
     } on DioException catch (error) {
       if (kDebugMode) {
@@ -48,5 +63,19 @@ class ApiMetaRepository implements MetaRepository {
       }
       throw ApiFailure.fromDio(error);
     }
+  }
+
+  MobilePlatformPolicy _policyFromDto(MobilePlatformCompatibilityDto dto) {
+    return MobilePlatformPolicy(
+      minimumSupportedBuild: _integerOrNull(dto.minimumSupportedBuild),
+      recommendedBuild: _integerOrNull(dto.recommendedBuild),
+      updateUrl: dto.updateUrl,
+    );
+  }
+
+  int? _integerOrNull(num? value) {
+    if (value == null || !value.isFinite || value < 1) return null;
+    final integer = value.toInt();
+    return integer == value ? integer : null;
   }
 }

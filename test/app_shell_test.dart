@@ -8,8 +8,12 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
+import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
+import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -81,6 +85,115 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('发现主题'), findsOneWidget);
     expect(repository.calls, 2);
+  });
+
+  testWidgets('低于最低支持构建时优先强制更新且不可跳过', (tester) async {
+    final updateService = _FakeMobileUpdateService(build: 7);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.0.0',
+              android: const MobilePlatformPolicy(
+                minimumSupportedBuild: 8,
+                recommendedBuild: 10,
+                updateUrl: _androidUpdateUrl,
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(updateService),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('需要更新后继续'), findsOneWidget);
+    expect(find.text('当前 0.3.0+7'), findsOneWidget);
+    expect(find.text('可用构建 10'), findsOneWidget);
+    expect(find.byKey(const Key('mobile-update-dismiss')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('mobile-update-start')));
+    await tester.pumpAndSettle();
+    expect(find.text('系统安装器已打开，请按提示完成更新。'), findsOneWidget);
+    expect(updateService.launchCalls, 1);
+  });
+
+  testWidgets('推荐更新可跳过并记住该目标构建', (tester) async {
+    final dismissStore = _MemoryRecommendedUpdateDismissStore();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '4.4.0-dev.test',
+              android: const MobilePlatformPolicy(
+                recommendedBuild: 10,
+                updateUrl: _androidUpdateUrl,
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(
+            _FakeMobileUpdateService(build: 7),
+          ),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            dismissStore,
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('温油站有新版本'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('mobile-update-dismiss')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('发现主题'), findsOneWidget);
+    expect(dismissStore.dismissedBuild, 10);
+  });
+
+  testWidgets('iOS 推荐更新交给 TestFlight', (tester) async {
+    final updateService = _FakeMobileUpdateService(
+      build: 7,
+      clientPlatform: MobileClientPlatform.ios,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '4.4.0-dev.test',
+              ios: const MobilePlatformPolicy(
+                recommendedBuild: 8,
+                updateUrl: 'https://testflight.apple.com/join/example',
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(updateService),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('前往 TestFlight'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('mobile-update-start')));
+    await tester.pumpAndSettle();
+    expect(find.text('TestFlight 已打开，请在那里完成更新后返回。'), findsOneWidget);
   });
 
   testWidgets('游客创建主题先登录，成功后恢复创建目标', (tester) async {
@@ -349,16 +462,74 @@ class _EmptyHomeRepository implements HomeRepository {
 }
 
 class _FixedMetaRepository implements MetaRepository {
-  _FixedMetaRepository({required this.contractVersion});
+  _FixedMetaRepository({
+    required this.contractVersion,
+    this.android = const MobilePlatformPolicy(),
+    this.ios = const MobilePlatformPolicy(),
+  });
 
   final String contractVersion;
+  final MobilePlatformPolicy android;
+  final MobilePlatformPolicy ios;
 
   @override
   Future<ContractInfo> fetch() async {
     return ContractInfo(
       contractVersion: contractVersion,
       markdownContractVersion: 2,
+      android: android,
+      ios: ios,
     );
+  }
+}
+
+class _FakeMobileUpdateService implements MobileUpdateService {
+  _FakeMobileUpdateService({
+    required this.build,
+    this.clientPlatform = MobileClientPlatform.android,
+  });
+
+  final int build;
+  final MobileClientPlatform clientPlatform;
+  int launchCalls = 0;
+
+  @override
+  MobileClientPlatform get platform => clientPlatform;
+
+  @override
+  Future<InstalledAppInfo> readInstalledApp() async {
+    return InstalledAppInfo(
+      platform: platform,
+      version: '0.3.0',
+      build: build,
+    );
+  }
+
+  @override
+  Future<UpdateLaunchResult> launchUpdate(
+    MobileUpdateInfo update, {
+    required void Function(double progress) onProgress,
+  }) async {
+    launchCalls += 1;
+    onProgress(1);
+    return platform == MobileClientPlatform.ios
+        ? UpdateLaunchResult.externalPageOpened
+        : UpdateLaunchResult.installerOpened;
+  }
+}
+
+class _MemoryRecommendedUpdateDismissStore
+    implements RecommendedUpdateDismissStore {
+  int? dismissedBuild;
+
+  @override
+  Future<void> dismiss(MobileClientPlatform platform, int build) async {
+    dismissedBuild = build;
+  }
+
+  @override
+  Future<bool> isDismissed(MobileClientPlatform platform, int build) async {
+    return dismissedBuild == build;
   }
 }
 
@@ -428,6 +599,9 @@ const _tokens = SessionTokens(
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
 );
+
+const _androidUpdateUrl =
+    'https://wenyou.site/downloads/mobile/android/app.apk';
 
 class _MemoryTokenStore implements TokenStore {
   _MemoryTokenStore([this.value]);

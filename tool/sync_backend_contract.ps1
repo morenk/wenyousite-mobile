@@ -15,6 +15,7 @@ Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1-fixtures.js
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1.schema.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\CHANGELOG.md") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "docs\mobile-client-guide.md") -Destination (Join-Path $contractDir "mobile-client-guide.md") -Force
+Copy-Item -LiteralPath (Join-Path $backend "docs\mobile-release-operations.md") -Destination (Join-Path $contractDir "mobile-release-operations.md") -Force
 
 $revision = (& git -C $backend rev-parse HEAD).Trim()
 $contractVersionLine = Select-String -LiteralPath (Join-Path $backend "contracts\CHANGELOG.md") -Pattern '^##\s+(.+)$' | Select-Object -First 1

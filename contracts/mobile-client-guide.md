@@ -24,6 +24,8 @@
 | Android | `MOBILE_ANDROID_MIN_SUPPORTED_BUILD` | `MOBILE_ANDROID_RECOMMENDED_BUILD` | `MOBILE_ANDROID_UPDATE_URL` |
 | iOS | `MOBILE_IOS_MIN_SUPPORTED_BUILD` | `MOBILE_IOS_RECOMMENDED_BUILD` | `MOBILE_IOS_UPDATE_URL` |
 
+当前私有测试发布不要求移动端仓库位于 VPS。Android release APK 由开发机通过发布脚本上传到 `wenyou.site`，iOS 由 TestFlight 托管；构建、签名、三版本保留和故障处理见 [`mobile-release-operations.md`](./mobile-release-operations.md)。
+
 ## 认证与安全存储
 
 创建原生登录终端的 `POST /auth/login` 和 `POST /auth/register/verify-and-complete` 必须携带：

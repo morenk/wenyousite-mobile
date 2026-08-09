@@ -1,0 +1,6 @@
+# 复制为 android/key.properties，并只在开发机填写真实值。
+# Windows 建议使用双反斜杠，例如 D:\\keys\\wenyou-upload.jks。
+storeFile=/absolute/path/to/wenyou-upload.jks
+storePassword=replace-with-local-secret
+keyAlias=wenyou-upload
+keyPassword=replace-with-local-secret
