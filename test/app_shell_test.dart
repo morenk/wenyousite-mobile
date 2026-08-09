@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
+import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -10,6 +11,8 @@ import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
+import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
+import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 
 void main() {
   testWidgets('兼容契约下游客直接进入四栏首页', (tester) async {
@@ -18,13 +21,14 @@ void main() {
         overrides: [
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('公网开发环境已连接'), findsOneWidget);
+    expect(find.text('发现主题'), findsOneWidget);
     expect(find.text('首页'), findsOneWidget);
     expect(find.text('搜索'), findsOneWidget);
     expect(find.text('通知'), findsOneWidget);
@@ -44,6 +48,7 @@ void main() {
             _FixedMetaRepository(contractVersion: '5.0.0'),
           ),
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -62,6 +67,7 @@ void main() {
         overrides: [
           metaRepositoryProvider.overrideWithValue(repository),
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -73,7 +79,7 @@ void main() {
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
-    expect(find.text('公网开发环境已连接'), findsOneWidget);
+    expect(find.text('发现主题'), findsOneWidget);
     expect(repository.calls, 2);
   });
 
@@ -86,6 +92,7 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           authRepositoryProvider.overrideWithValue(authRepository),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -122,6 +129,7 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           authRepositoryProvider.overrideWithValue(authRepository),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -174,6 +182,7 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           sessionRemoteProvider.overrideWithValue(sessionRemote),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -210,6 +219,7 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           sessionRemoteProvider.overrideWithValue(sessionRemote),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -235,6 +245,7 @@ void main() {
         metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore(_tokens)),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -252,7 +263,7 @@ void main() {
     expect(find.text('当前登录已被撤销，请重新登录。'), findsOneWidget);
     await tester.tap(find.byKey(const Key('continue-as-guest')));
     await tester.pumpAndSettle();
-    expect(find.text('公网开发环境已连接'), findsOneWidget);
+    expect(find.text('发现主题'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -267,6 +278,7 @@ void main() {
           overrides: [
             metaRepositoryProvider.overrideWithValue(_RetryMetaRepository()),
             tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+            homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
           ],
           child: const WenyouApp(),
         ),
@@ -285,6 +297,7 @@ void main() {
               _CompatibleMetaRepository(),
             ),
             tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+            homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
           ],
           child: const WenyouApp(),
         ),
@@ -318,6 +331,20 @@ class _CompatibleMetaRepository implements MetaRepository {
       contractVersion: '4.4.0-dev.test',
       markdownContractVersion: 2,
     );
+  }
+}
+
+class _EmptyHomeRepository implements HomeRepository {
+  @override
+  Future<List<HomeCategory>> fetchCategories() async => const [];
+
+  @override
+  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+    required HomeFeedQuery query,
+    String? cursor,
+    int limit = 20,
+  }) async {
+    return const CursorPage(items: [], hasMore: false);
   }
 }
 

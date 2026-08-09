@@ -3,25 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/auth/application/logout_controller.dart';
-
-class HomeBaselinePage extends ConsumerWidget {
-  const HomeBaselinePage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final contract = ref.watch(startupControllerProvider).contract;
-    return _BaselinePage(
-      title: '温油站',
-      icon: Icons.wb_sunny_outlined,
-      headline: '公网开发环境已连接',
-      detail: contract == null
-          ? '正在读取契约信息'
-          : 'API ${contract.contractVersion} · Markdown v${contract.markdownContractVersion}',
-    );
-  }
-}
 
 class SearchBaselinePage extends StatelessWidget {
   const SearchBaselinePage({super.key});

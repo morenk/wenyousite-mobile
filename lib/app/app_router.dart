@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.d
 import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
+import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -45,7 +46,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/home',
                 name: 'home',
-                builder: (context, state) => const HomeBaselinePage(),
+                builder: (context, state) => const HomePage(),
               ),
             ],
           ),
