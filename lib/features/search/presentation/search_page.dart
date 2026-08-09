@@ -292,7 +292,7 @@ class _PostSectionBody extends ConsumerWidget {
                 ref.read(searchControllerProvider.notifier).loadMorePosts(),
           ),
         ],
-        if (state.hasMore) ...[
+        if (state.hasMore && state.failure == null) ...[
           SizedBox(height: tokens.space12),
           SizedBox(
             width: double.infinity,

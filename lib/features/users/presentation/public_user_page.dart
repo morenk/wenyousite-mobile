@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
 
 class PublicUserPage extends ConsumerWidget {
   const PublicUserPage({required this.userId, super.key});
@@ -40,8 +41,11 @@ class PublicUserPage extends ConsumerWidget {
                     message: '该账号已经注销，公开资料不再展示。',
                   ),
                 )
-              else
+              else ...[
                 _UserProfileContent(profile: state.profile!),
+                SizedBox(height: context.wenyouTokens.space12),
+                PublicUserContentArea(userId: userId, state: state),
+              ],
             ],
           ),
         ),
