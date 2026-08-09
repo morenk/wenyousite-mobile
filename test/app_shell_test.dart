@@ -17,6 +17,8 @@ import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
+import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
 void main() {
   testWidgets('兼容契约下游客直接进入四栏首页', (tester) async {
@@ -294,6 +296,9 @@ void main() {
           tokenStoreProvider.overrideWithValue(tokenStore),
           sessionRemoteProvider.overrideWithValue(sessionRemote),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+          meProfileRepositoryProvider.overrideWithValue(
+            _FakeMeProfileRepository(),
+          ),
         ],
         child: const WenyouApp(),
       ),
@@ -302,8 +307,14 @@ void main() {
 
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
-    expect(find.text('已恢复登录会话'), findsOneWidget);
+    expect(find.text('温柔测试员'), findsWidgets);
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('logout-submit')),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('logout-submit')));
     await tester.pumpAndSettle();
     expect(find.text('退出当前账号？'), findsOneWidget);
@@ -331,6 +342,9 @@ void main() {
           tokenStoreProvider.overrideWithValue(tokenStore),
           sessionRemoteProvider.overrideWithValue(sessionRemote),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+          meProfileRepositoryProvider.overrideWithValue(
+            _FakeMeProfileRepository(),
+          ),
         ],
         child: const WenyouApp(),
       ),
@@ -339,6 +353,12 @@ void main() {
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('logout-submit')),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('logout-submit')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('logout-confirm')));
@@ -458,6 +478,36 @@ class _EmptyHomeRepository implements HomeRepository {
     return const CursorPage(items: [], hasMore: false);
   }
 }
+
+class _FakeMeProfileRepository implements MeProfileRepository {
+  @override
+  Future<MeProfileModel> fetchMe() async => _meProfile;
+
+  @override
+  Future<MeProfileUpdateResult> updateMe(MeProfilePatch patch) {
+    throw UnimplementedError();
+  }
+}
+
+final _meProfile = MeProfileModel(
+  id: 'user-1',
+  email: 'owner@example.com',
+  username: '温柔测试员',
+  level: 4,
+  experience: 150,
+  currentLevelExperience: 100,
+  nextLevelExperience: 200,
+  receivedTipTotal: '18',
+  receivedTipCount: 6,
+  showRecentReplies: true,
+  showPlayedThreads: true,
+  showBookmarks: true,
+  emailVerified: true,
+  followingCount: 7,
+  followerCount: 9,
+  createdAt: DateTime.utc(2026, 8, 1),
+  updatedAt: DateTime.utc(2026, 8, 10),
+);
 
 class _FixedMetaRepository implements MetaRepository {
   _FixedMetaRepository({

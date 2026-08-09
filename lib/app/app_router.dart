@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/features/auth/presentation/registration_page.d
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -76,7 +77,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/me',
                 name: 'me',
-                builder: (context, state) => const ProfileBaselinePage(),
+                builder: (context, state) => const MePage(),
               ),
             ],
           ),
