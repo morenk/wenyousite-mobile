@@ -222,7 +222,7 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
           ),
         ),
         SizedBox(height: tokens.space12),
-        _RelationshipManagementPanel(disabled: widget.state.isSubmitting),
+        _AccountContentPanel(disabled: widget.state.isSubmitting),
       ],
     );
   }
@@ -478,8 +478,8 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
   }
 }
 
-class _RelationshipManagementPanel extends StatelessWidget {
-  const _RelationshipManagementPanel({required this.disabled});
+class _AccountContentPanel extends StatelessWidget {
+  const _AccountContentPanel({required this.disabled});
 
   final bool disabled;
 
@@ -489,6 +489,15 @@ class _RelationshipManagementPanel extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
+          ListTile(
+            key: const Key('me-open-bookmarks'),
+            enabled: !disabled,
+            leading: const Icon(Icons.bookmarks_outlined),
+            title: const Text('我的收藏'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled ? null : () => context.pushNamed('me-bookmarks'),
+          ),
+          const Divider(height: 1),
           ListTile(
             key: const Key('me-open-following'),
             enabled: !disabled,

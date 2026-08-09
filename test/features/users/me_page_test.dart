@@ -46,6 +46,7 @@ void main() {
     expect(find.text('公开最近回复'), findsOneWidget);
     expect(find.text('公开参与主题'), findsOneWidget);
     expect(find.text('公开收藏'), findsOneWidget);
+    expect(find.text('我的收藏'), findsOneWidget);
     expect(find.text('我关注的人'), findsOneWidget);
     expect(find.text('我的粉丝'), findsOneWidget);
     expect(find.text('管理黑名单'), findsOneWidget);

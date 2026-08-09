@@ -234,34 +234,39 @@ void main() {
     expect(tokenStore.value?.refreshToken, 'refresh-token');
   });
 
-  testWidgets('游客打开本人关系列表先登录并保留原目标', (tester) async {
-    final container = ProviderContainer(
-      overrides: [
-        metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
-        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
-        homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
-      ],
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const WenyouApp()),
-    );
-    await tester.pumpAndSettle();
+  for (final protectedLocation in ['/me/blocks', '/me/bookmarks']) {
+    testWidgets('游客打开 $protectedLocation 先登录并保留原目标', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const WenyouApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    final router = container.read(appRouterProvider);
-    router.go('/me/blocks');
-    await tester.pumpAndSettle();
+      final router = container.read(appRouterProvider);
+      router.go(protectedLocation);
+      await tester.pumpAndSettle();
 
-    expect(find.text('欢迎回到温油站'), findsOneWidget);
-    expect(
-      router
-          .routerDelegate
-          .currentConfiguration
-          .uri
-          .queryParameters['returnTo'],
-      '/me/blocks',
-    );
-  });
+      expect(find.text('欢迎回到温油站'), findsOneWidget);
+      expect(
+        router
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .queryParameters['returnTo'],
+        protectedLocation,
+      );
+    });
+  }
 
   testWidgets('游客完成邮箱注册后建立移动会话并恢复创建目标', (tester) async {
     final tokenStore = _MemoryTokenStore();
