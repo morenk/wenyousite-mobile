@@ -43,4 +43,37 @@ void main() {
       isFalse,
     );
   });
+
+  test('阅读态只替换正文中的骰子节点并保留代码与转义内容', () {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    const markdown =
+        '''
+结果 [[dice:v1:$nodeId:1d20]]
+`[[dice:v1:$nodeId:2d6]]`
+\\[[dice:v1:$nodeId:3d6]]
+```md
+[[dice:v1:$nodeId:4d6]]
+```
+''';
+
+    final rendered = MarkdownContent.renderDiceForDisplay(markdown, const {
+      nodeId: '🎲 1d20 = 16',
+    });
+
+    expect(rendered, contains('结果 🎲 1d20 = 16'));
+    expect(rendered, contains('`[[dice:v1:$nodeId:2d6]]`'));
+    expect(rendered, contains('\\[[dice:v1:$nodeId:3d6]]'));
+    expect(rendered, contains('[[dice:v1:$nodeId:4d6]]'));
+  });
+
+  test('阅读态未知骰子结果使用可理解的降级文本', () {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    expect(
+      MarkdownContent.renderDiceForDisplay(
+        '[[dice:v1:$nodeId:2d6+3]]',
+        const {},
+      ),
+      '🎲 2d6+3（结果不可用）',
+    );
+  });
 }

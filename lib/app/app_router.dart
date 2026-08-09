@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -78,6 +79,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/threads/:threadId',
+        name: 'thread-detail',
+        builder: (context, state) {
+          final extra = state.extra;
+          return ThreadDetailPage(
+            threadId: state.pathParameters['threadId']!,
+            categoryNameHint: extra is String ? extra : null,
+          );
+        },
       ),
       GoRoute(
         path: '/compose/thread',

@@ -4,6 +4,10 @@ go_router 是唯一导航入口。根级兼容检查先于业务路由；未知�
 
 主导航使用保留状态的四分支壳：首页 `/home`、搜索 `/search`、通知 `/notifications`、我的 `/me`。悬浮创建按钮是独立入口 `/compose/thread`，未登录时先去 `/auth/login?returnTo=/compose/thread`；登录页与 `/auth/register` 之间透传同一个 `returnTo`，任一路径成功后恢复原目标。会话失效时统一跳转登录页并保留安全的仓库内目标；用户可重新登录或将 invalidated 状态归一为 guest 后返回首页。回跳只接受仓库内绝对路径并拒绝认证页自循环；主题、楼层、用户和通知目标使用命名路由，禁止页面自行拼接不透明参数。
 
+公开主题详情使用命名路由 `/threads/:threadId`。首页主题卡片通过主题 ID 进入该路由；系统返回时回到原首页分支，并保留首页筛选、分页和滚动位置。详情页优先选择响应中的 `defaultSubthreadId`，子贴切换只更新正文与楼层数据源，不把子贴 ID 拼入临时页面路径。
+
+0.3 当前只在主题详情内提供子贴正文、升序楼层分页和服务端内嵌回复的只读浏览，不建立独立楼层或楼中楼路由。后续搜索、通知和用户页统一复用稳定主题路径；精确楼层与回复目标按后端约定扩展命名路由或查询参数，不通过本地页码猜测位置。
+
 V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。
 
-参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)。
+参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)、[主题与子贴](../modules/threads.md)、[楼层与回复](../modules/posts.md)。

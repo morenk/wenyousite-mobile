@@ -39,6 +39,21 @@ void main() {
     expect(find.text('星海旅团'), findsOneWidget);
   });
 
+  testWidgets('首页不显示右上刷新按钮但仍可下拉刷新', (tester) async {
+    final repository = _FakeHomeRepository();
+    await tester.pumpWidget(_homeApp(repository));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('home-refresh')), findsNothing);
+    expect(find.byTooltip('刷新主题'), findsNothing);
+
+    final callsBeforeRefresh = repository.threadCalls;
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
+    await tester.pumpAndSettle();
+
+    expect(repository.threadCalls, callsBeforeRefresh + 1);
+  });
+
   for (final width in [360.0, 400.0, 600.0]) {
     testWidgets('$width dp 首页筛选与主题卡片无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;

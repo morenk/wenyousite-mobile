@@ -43,21 +43,30 @@ class WenyouPageBody extends StatelessWidget {
 }
 
 class WenyouPanel extends StatelessWidget {
-  const WenyouPanel({required this.child, this.padding, this.color, super.key});
+  const WenyouPanel({
+    required this.child,
+    this.padding,
+    this.color,
+    this.onTap,
+    super.key,
+  });
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final Color? color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final content = Padding(
+      padding: padding ?? EdgeInsets.all(tokens.space20),
+      child: child,
+    );
     return Card(
       color: color ?? tokens.panel,
-      child: Padding(
-        padding: padding ?? EdgeInsets.all(tokens.space20),
-        child: child,
-      ),
+      clipBehavior: onTap == null ? Clip.none : Clip.antiAlias,
+      child: onTap == null ? content : InkWell(onTap: onTap, child: content),
     );
   }
 }

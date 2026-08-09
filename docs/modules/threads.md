@@ -1,60 +1,60 @@
 # 主题与子贴
 
-状态：`planned`
+状态：`in_progress`
 
 ## 1. 模块目标与非目标
 
-实现主题详情、子贴选择、创建/编辑/删除、点赞收藏订阅、私密邀请和成员工作台。V1 不实现举报后台或子贴标签。
+0.3 当前切片实现公开主题详情、子贴选择与 Markdown 正文只读展示，并协调 posts 模块加载所选子贴的升序楼层。创建/编辑/删除、点赞收藏订阅、私密邀请和成员工作台后置；V1 不实现举报后台或子贴标签。
 
 ## 2. 用户角色与使用场景
 
-游客阅读公开主题；成员参与；拥有者和管理员维护主题、子贴、成员与玩家；受邀用户预览并确认加入私密主题。
+游客和登录用户都能阅读公开主题、切换子贴并浏览楼层。成员参与、拥有者管理以及私密邀请属于后续写入与工作台切片。
 
 ## 3. 页面、入口和导航关系
 
-主题详情从首页/搜索/用户页进入；子贴切换控制楼层源；工作台、成员页和邀请预览为二级路由。
+本轮从首页主题卡片进入命名路由 `/threads/:threadId`；搜索和用户页后续复用同一路由。子贴切换同时控制正文与楼层数据源；工作台、成员页和邀请预览为后续二级路由。
 
 ## 4. 用户操作流程
 
-加载主题与子贴，选择子贴后加载楼层；写操作按服务端权限显示；创建操作复用稳定 `clientRequestId`；邀请先预览再明确加入。
+调用主题详情接口加载元数据、标签与按 `sortOrder` 排列的子贴；优先选中 `defaultSubthreadId`，缺失时安全回退到首个可用子贴。展示所选子贴的 `bodyPost` Markdown 正文，并由 posts 模块加载该子贴楼层；切换子贴时切换正文和楼层页。当前只读切片不显示尚未实现的写操作。
 
 ## 5. API operationId 与生成类型
 
-- `threadsFindById`、`threadsCreate`、`threadsUpdate`、`threadsRemove`、`threadsSaveAggregate`。
-- `subthreadsFindAll`、`subthreadsCreate`、`subthreadsFindById`、`subthreadsUpdate`、`subthreadsRemove`、`subthreadsReorder`。
-- `threadsLike`、`threadsUnlike`、`threadsCreateInviteLink`、`threadsPreviewInviteLink`、`threadsJoinByInviteLink`。
-- `threadMembersFindAll`、`threadMembersJoin`、`threadMembersUpdateMember`、`threadMembersExitMember`。
+- 当前只读切片：`threadsFindById`；主题详情响应已经包含子贴集合、子贴正文、主题标签、统计和可选登录态投影，不额外请求子贴列表。
+- 主要生成类型：`ThreadDetailResponseDto`、`ThreadSubthreadResponseDto`、`ThreadBodyPostResponseDto`、`ThreadTagRelationResponseDto`。
+- 后续写入与工作台：`threadsCreate`、`threadsUpdate`、`threadsRemove`、`threadsSaveAggregate`、`subthreadsCreate`、`subthreadsUpdate`、`subthreadsRemove`、`subthreadsReorder`、邀请和成员管理 operationId。
 
 ## 6. 状态模型和数据流
 
-主题详情、当前成员身份、子贴列表和选中 ID 分离；写操作成功后按返回结果更新，权限变化触发详情失效。
+主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离。控制器丢弃过期请求结果；详情刷新或主题失效时重新校验选中子贴，切换子贴会清空并重载当前正文对应的楼层页，不篡改详情 DTO。
 
 ## 7. 鉴权、权限和隐私规则
 
-私密主题未授权时不显示标题、成员或缓存内容。所有管理按钮依据服务端成员角色与能力字段；客户端判断只用于隐藏 UI，不替代服务端鉴权。
+公开详情使用 OptionalAuth，游客可读取，登录态附加字段缺失时安全降级。私密、未发布、已删除或无权主题统一按服务端 404/权限结果显示不可访问状态，不泄露标题、成员、正文或缓存内容。当前不依据 capability 投影伪造写入口。
 
 ## 8. 本地存储、缓存及失效规则
 
-编辑快照和待确认创建存 Drift；详情进程内缓存。退出主题、被移除、切号或 403 时清除私密缓存。
+本轮详情、所选子贴和楼层仅做 Riverpod 进程内状态；不写 Drift，不提供离线阅读。返回首页时保留首页状态；切号、权限变化、404 或 403 会清除对应受限详情缓存。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-主题不存在、无权限、已删除、无子贴、成员为空和邀请失效有专用状态。版本 409 保护本地正文并提示刷新；幂等键冲突停止自动重试。
+首次加载、重新加载、主题不可访问、无子贴、子贴无正文和正文安全降级分别展示明确状态。错误提供可执行重试并保留请求 ID；404/无权限不展示服务端私密文案。写入冲突和邀请失效状态在对应后续切片接入。
 
 ## 10. 跨模块约束
 
-正文使用编辑器与 Markdown v2；媒体必须 COMPLETED；社交状态由 social 仓储协调；楼层由 posts 模块加载。
+正文按 Markdown v2 只读规则渲染，未知扩展节点显示安全且可复制的降级文本；详情图片遵循媒体降级规则。楼层由 posts 模块按所选子贴加载；社交状态和编辑器写入后置。
 
 ## 11. 测试场景与验收条件
 
-- [ ] 公开阅读、子贴切换、创建编辑删除闭环通过。
-- [ ] 点赞、收藏、订阅状态可恢复且错误可重试。
-- [ ] 私密邀请预览/确认、成员权限和退出流程正确。
-- [ ] 超时重试复用幂等键，409 不丢本地编辑内容。
+- [ ] 首页卡片进入正确的公开详情，系统返回后首页筛选、分页和滚动位置保持。
+- [ ] 默认子贴选择和无默认值回退正确；切换子贴同步切换 Markdown 正文和对应楼层页。
+- [ ] 标题、作者、分类、状态、标签、统计与正文可安全展示；未知分类、枚举、Markdown 节点和失效图片可降级。
+- [ ] 加载、重试、无子贴、无正文、404/无权限状态完整且不泄露私密信息。
+- [ ] 公开详情与 posts 只读验收通过后，再单独接入创建编辑删除、点赞收藏订阅、邀请及成员权限。
 
 ## 12. 已知限制和后续功能
 
-0.3 先完成阅读，0.6 完成工作台与成员；V1 不做举报管理和子贴标签。
+0.3 当前只完成“详情 + 子贴正文 + 楼层分页/内嵌回复”的公开只读链路；独立楼中楼页、精确定位和全部写操作后置。0.4 接入互动关系，0.5 接入编辑器与发布，0.6 完成工作台、成员和私密邀请；V1 不做举报管理和子贴标签。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -62,4 +62,4 @@
 
 ## 14. 相关代码与架构文档
 
-计划代码入口：`lib/features/threads/`。参见[楼层与回复](posts.md)、[编辑器](editor.md)、[持久化](../architecture/persistence.md)。
+代码入口：`lib/features/threads/`。参见[楼层与回复](posts.md)、[导航](../architecture/navigation.md)、[粉白视觉设计系统](../architecture/design-system.md)。

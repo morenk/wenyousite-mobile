@@ -20,6 +20,10 @@ class MarkdownContent {
     r'\uFEFF\uFFA0]',
     unicode: true,
   );
+  static final _diceNode = RegExp(
+    r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]\r\n]+)\]\]',
+    caseSensitive: false,
+  );
 
   static String normalize(String markdown) {
     final lines = markdown.replaceAll(RegExp(r'\r\n?'), '\n').split('\n');
@@ -99,6 +103,75 @@ class MarkdownContent {
 
   static bool isSafeImage(Uri uri) =>
       uri.scheme == 'https' || uri.scheme == 'http';
+
+  static String renderDiceForDisplay(
+    String markdown,
+    Map<String, String> labelsByNodeId,
+  ) {
+    final lines = normalize(markdown).split('\n');
+    _Fence? fence;
+    for (var index = 0; index < lines.length; index++) {
+      final line = lines[index];
+      final opening = _openingFence(line);
+      if (fence != null) {
+        final closing = _closingFence(line);
+        if (closing != null &&
+            closing.marker == fence.marker &&
+            closing.length >= fence.length) {
+          fence = null;
+        }
+        continue;
+      }
+      if (opening != null) {
+        fence = opening;
+        continue;
+      }
+      lines[index] = _renderLineDice(line, labelsByNodeId);
+    }
+    return lines.join('\n');
+  }
+
+  static String _renderLineDice(
+    String line,
+    Map<String, String> labelsByNodeId,
+  ) {
+    final output = StringBuffer();
+    var index = 0;
+    while (index < line.length) {
+      if (line[index] == r'\' && index + 1 < line.length) {
+        output.write(line.substring(index, index + 2));
+        index += 2;
+        continue;
+      }
+      if (line[index] == '`') {
+        var runLength = 1;
+        while (index + runLength < line.length &&
+            line[index + runLength] == '`') {
+          runLength += 1;
+        }
+        final delimiter = '`' * runLength;
+        final closing = line.indexOf(delimiter, index + runLength);
+        if (closing == -1) {
+          output.write(line.substring(index));
+          break;
+        }
+        output.write(line.substring(index, closing + runLength));
+        index = closing + runLength;
+        continue;
+      }
+      final match = _diceNode.firstMatch(line.substring(index));
+      if (match != null) {
+        final nodeId = match.group(1)!.toLowerCase();
+        final notation = match.group(2)!.trim();
+        output.write(labelsByNodeId[nodeId] ?? '🎲 $notation（结果不可用）');
+        index += match.group(0)!.length;
+        continue;
+      }
+      output.write(line[index]);
+      index += 1;
+    }
+    return output.toString();
+  }
 
   static bool _hasNonIgnorableText(String value) {
     return value.replaceAll(_defaultIgnorable, '').trim().isNotEmpty;

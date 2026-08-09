@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -43,25 +44,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(homeFeedControllerProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('温油站'),
-        actions: [
-          IconButton(
-            key: const Key('home-refresh'),
-            onPressed: state.isRefreshing
-                ? null
-                : () => ref.read(homeFeedControllerProvider.notifier).refresh(),
-            tooltip: '刷新主题',
-            icon: state.isRefreshing
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+      appBar: AppBar(title: const Text('温油站')),
       body: RefreshIndicator(
         onRefresh: () =>
             ref.read(homeFeedControllerProvider.notifier).refresh(),
@@ -162,9 +145,16 @@ class _HomePageState extends ConsumerState<HomePage> {
             return _HomeContent(
               top: 12,
               child: HomeThreadCard(
+                key: Key('home-thread-${thread.id}'),
                 thread: thread,
                 categoryName:
                     categoryNames[thread.categorySlug] ?? thread.categorySlug,
+                onTap: () => context.pushNamed(
+                  'thread-detail',
+                  pathParameters: {'threadId': thread.id},
+                  extra:
+                      categoryNames[thread.categorySlug] ?? thread.categorySlug,
+                ),
               ),
             );
           }, childCount: state.items.length),
@@ -462,19 +452,23 @@ class HomeThreadCard extends StatelessWidget {
   const HomeThreadCard({
     required this.thread,
     required this.categoryName,
+    required this.onTap,
     super.key,
   });
 
   final HomeThreadCardModel thread;
   final String? categoryName;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Semantics(
       container: true,
-      label: '主题：${thread.title}，作者 ${thread.ownerName}',
+      button: true,
+      label: '打开主题：${thread.title}，作者 ${thread.ownerName}',
       child: WenyouPanel(
+        onTap: onTap,
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
