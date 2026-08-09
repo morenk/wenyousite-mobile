@@ -9,8 +9,8 @@ void main() {
 
     expect(environment.apiBaseUri.toString(), 'https://wenyou.site/api/v1/');
     expect(environment.apiOrigin, 'https://wenyou.site');
-    expect(environment.supportsContract('3.4.0'), isTrue);
-    expect(environment.supportsContract('4.0.0'), isFalse);
+    expect(environment.supportsContract('4.4.0'), isTrue);
+    expect(environment.supportsContract('5.0.0'), isFalse);
     expect(environment.supportsMarkdown(2), isTrue);
   });
 }

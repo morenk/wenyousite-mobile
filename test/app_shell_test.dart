@@ -41,7 +41,7 @@ void main() {
       ProviderScope(
         overrides: [
           metaRepositoryProvider.overrideWithValue(
-            _FixedMetaRepository(contractVersion: '4.0.0'),
+            _FixedMetaRepository(contractVersion: '5.0.0'),
           ),
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         ],
@@ -51,7 +51,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('需要升级温油站'), findsOneWidget);
-    expect(find.textContaining('服务端为 4.0.0'), findsOneWidget);
+    expect(find.textContaining('服务端为 5.0.0'), findsOneWidget);
     expect(find.text('首页'), findsNothing);
   });
 
@@ -315,7 +315,7 @@ class _CompatibleMetaRepository implements MetaRepository {
   @override
   Future<ContractInfo> fetch() async {
     return const ContractInfo(
-      contractVersion: '3.0.0-dev.test',
+      contractVersion: '4.4.0-dev.test',
       markdownContractVersion: 2,
     );
   }
@@ -348,7 +348,7 @@ class _RetryMetaRepository implements MetaRepository {
       );
     }
     return const ContractInfo(
-      contractVersion: '3.0.0-dev.test',
+      contractVersion: '4.4.0-dev.test',
       markdownContractVersion: 2,
     );
   }
