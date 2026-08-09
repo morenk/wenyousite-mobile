@@ -221,6 +221,8 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
             label: const Text('查看我的公开主页'),
           ),
         ),
+        SizedBox(height: tokens.space12),
+        _RelationshipManagementPanel(disabled: widget.state.isSubmitting),
       ],
     );
   }
@@ -473,6 +475,49 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
 
   void _clearFeedback() {
     ref.read(meProfileControllerProvider.notifier).clearFeedback();
+  }
+}
+
+class _RelationshipManagementPanel extends StatelessWidget {
+  const _RelationshipManagementPanel({required this.disabled});
+
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return WenyouPanel(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          ListTile(
+            key: const Key('me-open-following'),
+            enabled: !disabled,
+            leading: const Icon(Icons.person_add_alt_1_outlined),
+            title: const Text('我关注的人'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled ? null : () => context.pushNamed('me-following'),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('me-open-followers'),
+            enabled: !disabled,
+            leading: const Icon(Icons.people_outline_rounded),
+            title: const Text('我的粉丝'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled ? null : () => context.pushNamed('me-followers'),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('me-open-blocks'),
+            enabled: !disabled,
+            leading: const Icon(Icons.block_outlined),
+            title: const Text('管理黑名单'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled ? null : () => context.pushNamed('me-blocks'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

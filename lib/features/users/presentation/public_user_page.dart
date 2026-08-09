@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -54,6 +55,9 @@ class PublicUserPage extends ConsumerWidget {
                 _UserProfileContent(
                   profile: state.profile!,
                   relationTarget: _relationTarget(state.profile!, meState),
+                  isCurrentUser:
+                      meState?.phase == MeProfilePhase.ready &&
+                      meState!.profile!.id == state.profile!.id,
                 ),
                 SizedBox(height: context.wenyouTokens.space12),
                 PublicUserContentArea(userId: userId, state: state),
@@ -98,9 +102,14 @@ class PublicUserPage extends ConsumerWidget {
 }
 
 class _UserProfileContent extends ConsumerWidget {
-  const _UserProfileContent({required this.profile, this.relationTarget});
+  const _UserProfileContent({
+    required this.profile,
+    required this.isCurrentUser,
+    this.relationTarget,
+  });
 
   final PublicUserProfileModel profile;
+  final bool isCurrentUser;
   final UserRelationTarget? relationTarget;
 
   @override
@@ -156,6 +165,12 @@ class _UserProfileContent extends ConsumerWidget {
                 child: _ProfileStat(
                   label: '关注',
                   value: '${profile.followingCount}',
+                  onTap: () => context.pushNamed(
+                    isCurrentUser ? 'me-following' : 'user-following',
+                    pathParameters: isCurrentUser
+                        ? const {}
+                        : {'userId': profile.id},
+                  ),
                 ),
               ),
               SizedBox(
@@ -167,6 +182,12 @@ class _UserProfileContent extends ConsumerWidget {
                   label: '粉丝',
                   value:
                       '${relationState?.followerCount ?? profile.followerCount}',
+                  onTap: () => context.pushNamed(
+                    isCurrentUser ? 'me-followers' : 'user-followers',
+                    pathParameters: isCurrentUser
+                        ? const {}
+                        : {'userId': profile.id},
+                  ),
                 ),
               ),
               SizedBox(
@@ -259,20 +280,42 @@ class _ProfileAvatar extends StatelessWidget {
 }
 
 class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({required this.label, required this.value});
+  const _ProfileStat({required this.label, required this.value, this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Column(
-      children: [
-        Text(value, style: Theme.of(context).textTheme.titleMedium),
-        SizedBox(height: tokens.space4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(tokens.radius12),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(value, style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(height: tokens.space4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
+                if (onTap != null) ...[
+                  SizedBox(width: tokens.space4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: tokens.mutedText,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

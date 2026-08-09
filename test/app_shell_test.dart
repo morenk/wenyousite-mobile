@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -231,6 +232,35 @@ void main() {
     expect(authRepository.lastAccount, 'user@example.com');
     expect(tokenStore.value?.accessToken, 'access-token');
     expect(tokenStore.value?.refreshToken, 'refresh-token');
+  });
+
+  testWidgets('游客打开本人关系列表先登录并保留原目标', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const WenyouApp()),
+    );
+    await tester.pumpAndSettle();
+
+    final router = container.read(appRouterProvider);
+    router.go('/me/blocks');
+    await tester.pumpAndSettle();
+
+    expect(find.text('欢迎回到温油站'), findsOneWidget);
+    expect(
+      router
+          .routerDelegate
+          .currentConfiguration
+          .uri
+          .queryParameters['returnTo'],
+      '/me/blocks',
+    );
   });
 
   testWidgets('游客完成邮箱注册后建立移动会话并恢复创建目标', (tester) async {

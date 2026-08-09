@@ -9,6 +9,8 @@ import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
+import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
@@ -27,7 +29,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           queryParameters: {'returnTo': state.uri.toString()},
         ).toString();
       }
-      if (!authenticated && state.matchedLocation == '/compose/thread') {
+      final protectedRoute =
+          state.matchedLocation == '/compose/thread' ||
+          state.matchedLocation == '/me/following' ||
+          state.matchedLocation == '/me/followers' ||
+          state.matchedLocation == '/me/blocks';
+      if (!authenticated && protectedRoute) {
         return Uri(
           path: '/auth/login',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -101,6 +108,57 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           return PublicUserPage(userId: state.pathParameters['userId']!);
         },
+      ),
+      GoRoute(
+        path: '/users/:userId/following',
+        name: 'user-following',
+        builder: (context, state) {
+          return UserRelationListPage(
+            target: UserRelationListTarget.public(
+              kind: UserRelationListKind.following,
+              userId: state.pathParameters['userId']!,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/users/:userId/followers',
+        name: 'user-followers',
+        builder: (context, state) {
+          return UserRelationListPage(
+            target: UserRelationListTarget.public(
+              kind: UserRelationListKind.followers,
+              userId: state.pathParameters['userId']!,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/me/following',
+        name: 'me-following',
+        builder: (context, state) => const UserRelationListPage(
+          target: UserRelationListTarget.current(
+            kind: UserRelationListKind.following,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/me/followers',
+        name: 'me-followers',
+        builder: (context, state) => const UserRelationListPage(
+          target: UserRelationListTarget.current(
+            kind: UserRelationListKind.followers,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/me/blocks',
+        name: 'me-blocks',
+        builder: (context, state) => const UserRelationListPage(
+          target: UserRelationListTarget.current(
+            kind: UserRelationListKind.blocks,
+          ),
+        ),
       ),
       GoRoute(
         path: '/compose/thread',

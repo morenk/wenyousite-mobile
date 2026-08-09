@@ -211,6 +211,52 @@ void main() {
     expect(find.text('主题=thread-1;帖子=reply-1'), findsOneWidget);
   });
 
+  testWidgets('公开统计进入指定用户关注与粉丝稳定路径', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/users/user-1',
+      routes: [
+        GoRoute(
+          path: '/users/:userId',
+          name: 'user-profile',
+          builder: (_, state) =>
+              PublicUserPage(userId: state.pathParameters['userId']!),
+        ),
+        GoRoute(
+          path: '/users/:userId/following',
+          name: 'user-following',
+          builder: (_, state) => Text('关注列表=${state.pathParameters['userId']}'),
+        ),
+        GoRoute(
+          path: '/users/:userId/followers',
+          name: 'user-followers',
+          builder: (_, state) => Text('粉丝列表=${state.pathParameters['userId']}'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          publicUserRepositoryProvider.overrideWithValue(
+            _FakePublicUserRepository(),
+          ),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('关注'));
+    await tester.pumpAndSettle();
+    expect(find.text('关注列表=user-1'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('粉丝'));
+    await tester.pumpAndSettle();
+    expect(find.text('粉丝列表=user-1'), findsOneWidget);
+  });
+
   testWidgets('404 与已注销资料使用不泄露旧信息的收敛状态', (tester) async {
     await tester.pumpWidget(
       _userApp(_FakePublicUserRepository(notFound: true)),
