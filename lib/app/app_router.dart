@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
@@ -77,7 +78,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/notifications',
                 name: 'notifications',
-                builder: (context, state) => const NotificationsBaselinePage(),
+                builder: (context, state) => const NotificationsPage(),
               ),
             ],
           ),

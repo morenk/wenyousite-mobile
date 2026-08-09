@@ -1,17 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 
-class AppScaffold extends StatelessWidget {
+class AppScaffold extends ConsumerStatefulWidget {
   const AppScaffold({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
   @override
+  ConsumerState<AppScaffold> createState() => _AppScaffoldState();
+}
+
+class _AppScaffoldState extends ConsumerState<AppScaffold>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed ||
+        !ref.read(sessionControllerProvider).isAuthenticated) {
+      return;
+    }
+    ref.read(notificationUnreadControllerProvider.notifier).refresh();
+    if (widget.navigationShell.currentIndex == 2 &&
+        ref.exists(notificationListControllerProvider)) {
+      ref.read(notificationListControllerProvider.notifier).load();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final session = ref.watch(sessionControllerProvider);
+    final unreadCount = session.isAuthenticated
+        ? ref.watch(notificationUnreadControllerProvider).count
+        : 0;
     return Scaffold(
-      body: navigationShell,
+      body: widget.navigationShell,
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/compose/thread'),
         tooltip: '创建主题',
@@ -23,35 +61,71 @@ class AppScaffold extends StatelessWidget {
           border: Border(top: BorderSide(color: tokens.border)),
         ),
         child: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
+          selectedIndex: widget.navigationShell.currentIndex,
           onDestinationSelected: (index) {
-            navigationShell.goBranch(
+            widget.navigationShell.goBranch(
               index,
-              initialLocation: index == navigationShell.currentIndex,
+              initialLocation: index == widget.navigationShell.currentIndex,
             );
+            if (index == 2 && session.isAuthenticated) {
+              ref.read(notificationUnreadControllerProvider.notifier).refresh();
+              if (ref.exists(notificationListControllerProvider)) {
+                ref.read(notificationListControllerProvider.notifier).load();
+              }
+            }
           },
-          destinations: const [
-            NavigationDestination(
+          destinations: [
+            const NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home_rounded),
               label: '首页',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.search_rounded),
               label: '搜索',
             ),
             NavigationDestination(
-              icon: Icon(Icons.notifications_none_rounded),
-              selectedIcon: Icon(Icons.notifications_rounded),
+              icon: _NotificationNavigationIcon(
+                count: unreadCount,
+                selected: false,
+              ),
+              selectedIcon: _NotificationNavigationIcon(
+                count: unreadCount,
+                selected: true,
+              ),
               label: '通知',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.person_outline_rounded),
               selectedIcon: Icon(Icons.person_rounded),
               label: '我的',
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NotificationNavigationIcon extends StatelessWidget {
+  const _NotificationNavigationIcon({
+    required this.count,
+    required this.selected,
+  });
+
+  final int count;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Badge(
+      key: const Key('notification-navigation-badge'),
+      isLabelVisible: count > 0,
+      label: Text(count > 99 ? '99+' : '$count'),
+      child: Icon(
+        selected
+            ? Icons.notifications_rounded
+            : Icons.notifications_none_rounded,
       ),
     );
   }

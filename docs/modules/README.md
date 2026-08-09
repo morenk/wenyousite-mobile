@@ -13,7 +13,7 @@
 | editor | planned | 0.5.0-dev | [编辑器](editor.md) |
 | drafts | planned | 0.5.0-dev | [草稿](drafts.md) |
 | media | planned | 0.5.0-dev | [媒体](media.md) |
-| notifications | planned | 0.4.0-dev | [通知](notifications.md) |
+| notifications | in_progress | 0.3.0-dev / 0.4.0-dev | [通知](notifications.md) |
 | users | in_progress | 0.3.0-dev / 0.7.0-dev | [用户](users.md) |
 | social | planned | 0.4.0-dev | [社交关系](social.md) |
 | settings | planned | 0.2.0-dev / 0.7.0-dev | [设置](settings.md) |

@@ -18,6 +18,8 @@ import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
@@ -45,6 +47,29 @@ void main() {
     await tester.tap(find.text('搜索'));
     await tester.pumpAndSettle();
     expect(find.text('输入关键词开始搜索'), findsOneWidget);
+  });
+
+  testWidgets('登录用户底栏展示服务端未读角标并可进入通知列表', (tester) async {
+    final notifications = _EmptyNotificationRepository(unreadCount: 7);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore(_tokens)),
+          sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+          notificationRepositoryProvider.overrideWithValue(notifications),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('7'), findsWidgets);
+    await tester.tap(find.text('通知'));
+    await tester.pumpAndSettle();
+    expect(find.text('暂无通知'), findsOneWidget);
+    expect(notifications.fetchCalls, greaterThanOrEqualTo(1));
   });
 
   testWidgets('未知契约主版本显示不可绕过的升级页', (tester) async {
@@ -206,6 +231,9 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           authRepositoryProvider.overrideWithValue(authRepository),
+          notificationRepositoryProvider.overrideWithValue(
+            _EmptyNotificationRepository(),
+          ),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
@@ -277,6 +305,9 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           authRepositoryProvider.overrideWithValue(authRepository),
+          notificationRepositoryProvider.overrideWithValue(
+            _EmptyNotificationRepository(),
+          ),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
         ],
         child: const WenyouApp(),
@@ -330,6 +361,9 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           sessionRemoteProvider.overrideWithValue(sessionRemote),
+          notificationRepositoryProvider.overrideWithValue(
+            _EmptyNotificationRepository(),
+          ),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
           meProfileRepositoryProvider.overrideWithValue(
             _FakeMeProfileRepository(),
@@ -376,6 +410,9 @@ void main() {
           metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
           tokenStoreProvider.overrideWithValue(tokenStore),
           sessionRemoteProvider.overrideWithValue(sessionRemote),
+          notificationRepositoryProvider.overrideWithValue(
+            _EmptyNotificationRepository(),
+          ),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
           meProfileRepositoryProvider.overrideWithValue(
             _FakeMeProfileRepository(),
@@ -411,6 +448,9 @@ void main() {
         metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore(_tokens)),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        notificationRepositoryProvider.overrideWithValue(
+          _EmptyNotificationRepository(),
+        ),
         homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
       ],
     );
@@ -711,4 +751,32 @@ class _FakeSessionRemote implements SessionRemote {
 
   @override
   Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}
+
+class _EmptyNotificationRepository implements NotificationRepository {
+  _EmptyNotificationRepository({this.unreadCount = 0});
+
+  final int unreadCount;
+  int fetchCalls = 0;
+
+  @override
+  Future<CursorPage<NotificationListItem>> fetchPage({
+    NotificationFilter filter = NotificationFilter.all,
+    String? cursor,
+  }) async {
+    fetchCalls += 1;
+    return CursorPage(items: const [], hasMore: false);
+  }
+
+  @override
+  Future<int> fetchUnreadCount() async => unreadCount;
+
+  @override
+  Future<void> markAllRead() async {}
+
+  @override
+  Future<void> remove(String id) async {}
+
+  @override
+  Future<void> setReadStatus(String id, {required bool isRead}) async {}
 }
