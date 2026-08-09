@@ -92,6 +92,8 @@ class ThreadDetailModel {
     this.isLiked = false,
     this.isBookmarked = false,
     this.bookmarkId,
+    this.hasAutomaticUpdates = false,
+    this.currentUserId,
     this.categorySlug,
     this.defaultSubthreadId,
   });
@@ -108,6 +110,8 @@ class ThreadDetailModel {
   final bool isLiked;
   final bool isBookmarked;
   final String? bookmarkId;
+  final bool hasAutomaticUpdates;
+  final String? currentUserId;
   final String tipTotal;
   final int memberCount;
   final int playerCount;

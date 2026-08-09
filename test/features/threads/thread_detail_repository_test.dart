@@ -34,6 +34,8 @@ void main() {
     expect(detail.isLiked, isTrue);
     expect(detail.isBookmarked, isTrue);
     expect(detail.bookmarkId, 'bookmark-1');
+    expect(detail.hasAutomaticUpdates, isTrue);
+    expect(detail.currentUserId, 'collaborator-1');
     expect(detail.tipTotal, '42');
     expect(detail.memberCount, 8);
     expect(detail.playerCount, 3);
@@ -205,6 +207,23 @@ ThreadDetailResponseDto _threadDetail() {
       ..isLiked = true
       ..isBookmarked = true
       ..bookmarkId = 'bookmark-1'
+      ..currentMembership.replace(
+        CurrentThreadMembershipResponseDto(
+          (membership) => membership
+            ..id = 'member-1'
+            ..userId = 'collaborator-1'
+            ..role = CurrentThreadMembershipResponseDtoRoleEnum.COLLABORATOR
+            ..playerMarked = false,
+        ),
+      )
+      ..capabilities.replace(
+        ThreadCapabilitiesResponseDto(
+          (capabilities) => capabilities
+            ..canManageThread = true
+            ..canManageMembers = true
+            ..isOwner = false,
+        ),
+      )
       ..tipTotal = '42'
       ..defaultSubthreadId = 'subthread-early'
       ..createdAt = createdAt

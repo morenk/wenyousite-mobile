@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
+import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -566,6 +567,11 @@ class _ThreadOverview extends ConsumerWidget {
           ThreadInteractionActions(
             target: interactionTarget,
             onRequireAuthentication: onRequireAuthentication,
+          ),
+          ThreadSubscriptionControls(
+            threadId: detail.id,
+            viewerUserId: detail.currentUserId,
+            hasAutomaticUpdates: detail.hasAutomaticUpdates,
           ),
         ],
       ),

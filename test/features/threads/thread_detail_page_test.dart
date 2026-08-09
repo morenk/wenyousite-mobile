@@ -11,6 +11,8 @@ import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
+import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
@@ -251,6 +253,9 @@ void main() {
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         threadDetailRepositoryProvider.overrideWithValue(repository),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -439,6 +444,34 @@ class _FakeSessionRemote implements SessionRemote {
 
   @override
   Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}
+
+class _FakeThreadSubscriptionRepository
+    implements ThreadSubscriptionRepository {
+  @override
+  Future<List<ThreadSubscriptionRecord>> fetchSubscriptions(
+    String threadId,
+  ) async => const [];
+
+  @override
+  Future<List<ThreadSubscriptionCandidate>> fetchCandidates(
+    String threadId, {
+    String? viewerUserId,
+  }) async => const [];
+
+  @override
+  Future<ThreadSubscriptionRecord> create({
+    required String threadId,
+    required ThreadSubscriptionType type,
+    String? targetUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> remove(String subscriptionId) {
+    throw UnimplementedError();
+  }
 }
 
 final _mainFloor = ThreadFloorModel(
