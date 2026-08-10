@@ -35,11 +35,13 @@ enum HomeThreadStatus {
 class HomeFeedQuery {
   const HomeFeedQuery({
     this.categorySlug,
+    this.tagId,
     this.sort = HomeFeedSort.recommended,
     this.status = HomeThreadStatusFilter.all,
   });
 
   final String? categorySlug;
+  final String? tagId;
   final HomeFeedSort sort;
   final HomeThreadStatusFilter status;
 }

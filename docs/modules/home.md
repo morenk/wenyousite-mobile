@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-提供推荐主题流、动态分类、状态和排序筛选，并把主题卡片连接到公开主题详情。当前切片不实现标签筛选、离线浏览或阅读进度。
+提供推荐主题流、动态分类、状态和排序筛选，并把主题卡片连接到公开主题详情和稳定标签主题页。当前切片不实现首页多标签组合筛选、离线浏览或阅读进度。
 
 ## 2. 用户角色与使用场景
 
@@ -12,15 +12,15 @@
 
 ## 3. 页面、入口和导航关系
 
-首页是默认分支；筛选与滚动状态随保状态分支保留。主题卡片整卡进入命名公开主题详情路由，返回首页后保持原筛选、分页与滚动位置。
+首页是默认分支；筛选与滚动状态随保状态分支保留。主题卡片整卡进入命名公开主题详情路由，卡片内标签进入 `/tags/:tagId`，返回首页后保持原筛选、分页与滚动位置。
 
 ## 4. 用户操作流程
 
-首次并行加载服务端分类和推荐流；下拉刷新重置 cursor，接近列表尾部或点击“加载更多”时按原筛选继续；改变分类、状态或排序先清空数据与 cursor，再请求第一页。点击主题卡片后进入对应公开主题详情。
+首次并行加载服务端分类和推荐流；下拉刷新重置 cursor，接近列表尾部或点击“加载更多”时按原筛选继续；改变分类、状态或排序先清空数据与 cursor，再请求第一页。点击主题卡片后进入对应公开主题详情，点击标签则由 tags 模块按稳定 ID 精确聚合主题。
 
 ## 5. API operationId 与生成类型
 
-- `threadCategoriesList`、`threadsFindAll`；标签筛选后续接入 `threadTagsFindAll`、`tagsSearch`。
+- `threadCategoriesList`、`threadsFindAll`；公开标签聚合由 tags 模块使用同一列表 operation 的 tagId 参数，并通过 `tagsGetById` 固定标签事实。
 - 主要生成类型：`ThreadCategoryResponseDto`、`HomeThreadListItemResponseDto`、`ThreadsFindAll200Response`。
 
 ## 6. 状态模型和数据流
@@ -46,14 +46,14 @@
 ## 11. 测试场景与验收条件
 
 - [x] 游客通过公网 API 进入推荐主题流并看到动态分类、作者、摘要、封面、标签与计数。
-- [x] 分类、状态和排序改变后正确重置分页；标签筛选后置。
+- [x] 分类、状态和排序改变后正确重置分页；卡片标签进入稳定标签主题页。
 - [x] 加载、空、错、重试、到底、去重和无效 cursor 状态完整。
 - [x] 页面切换后 Riverpod 保留筛选，`PageStorageKey` 保留滚动位置。
 - [ ] 主题卡片整卡进入正确的公开主题详情，返回后筛选与滚动位置不丢失。
 
 ## 12. 已知限制和后续功能
 
-当前不做标签筛选、离线流、阅读进度和复杂个性化解释；主题详情的写操作、社交关系与管理能力由后续里程碑实现。主题卡片遵循视觉基础，复杂骨架与动效后置。
+当前首页不做多标签组合筛选、离线流、阅读进度和复杂个性化解释；单标签浏览由 tags 模块的独立公开页承接。主题卡片遵循视觉基础，复杂骨架与动效后置。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -61,4 +61,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[主题](threads.md)。
+代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[主题](threads.md)、[标签](tags.md)。

@@ -92,7 +92,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 children: [
                   const WenyouSectionHeader(
                     title: '主题信息',
-                    subtitle: '这些信息会立即同步到 Web 与移动端。标签和正文仍在各自编辑入口维护。',
+                    subtitle: '这些信息会立即同步到 Web 与移动端。标签、子贴和正文在各自入口维护。',
                   ),
                   SizedBox(height: tokens.space16),
                   TextFormField(
@@ -197,6 +197,16 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   ),
                 ],
               ),
+            ),
+            SizedBox(height: tokens.space12),
+            OutlinedButton.icon(
+              key: const Key('thread-management-open-tags'),
+              onPressed: locked
+                  ? null
+                  : () =>
+                        context.push('/threads/${widget.threadId}/manage/tags'),
+              icon: const Icon(Icons.sell_outlined),
+              label: const Text('管理主题标签'),
             ),
             SizedBox(height: tokens.space12),
             OutlinedButton.icon(

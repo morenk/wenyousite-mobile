@@ -132,6 +132,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
     state = state.copyWith(
       query: HomeFeedQuery(
         categorySlug: slug,
+        tagId: state.query.tagId,
         sort: state.query.sort,
         status: state.query.status,
       ),
@@ -144,6 +145,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
     state = state.copyWith(
       query: HomeFeedQuery(
         categorySlug: state.query.categorySlug,
+        tagId: state.query.tagId,
         sort: sort,
         status: state.query.status,
       ),
@@ -156,6 +158,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
     state = state.copyWith(
       query: HomeFeedQuery(
         categorySlug: state.query.categorySlug,
+        tagId: state.query.tagId,
         sort: state.query.sort,
         status: status,
       ),

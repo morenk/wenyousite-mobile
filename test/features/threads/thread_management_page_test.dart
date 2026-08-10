@@ -25,6 +25,17 @@ void main() {
     expect(find.text('子贴工作台占位'), findsOneWidget);
   });
 
+  testWidgets('主题管理页进入独立标签工作台', (tester) async {
+    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+
+    final entry = find.byKey(const Key('thread-management-open-tags'));
+    await tester.ensureVisible(entry);
+    await tester.tap(entry);
+    await tester.pumpAndSettle();
+
+    expect(find.text('标签工作台占位'), findsOneWidget);
+  });
+
   testWidgets('楼主修改标题并保存后返回主题详情调用方', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
@@ -135,9 +146,9 @@ void main() {
           .text,
       '本机待保存标题',
     );
-    await tester.tap(
-      find.byKey(const Key('thread-management-resolve-conflict')),
-    );
+    final resolve = find.byKey(const Key('thread-management-resolve-conflict'));
+    await tester.ensureVisible(resolve);
+    await tester.tap(resolve);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('thread-management-use-latest')));
     await tester.pumpAndSettle();
@@ -173,7 +184,9 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('thread-management-save')));
     await tester.tap(find.byKey(const Key('thread-management-save')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('thread-management-verify-email')));
+    final verify = find.byKey(const Key('thread-management-verify-email'));
+    await tester.ensureVisible(verify);
+    await tester.tap(verify);
     await tester.pumpAndSettle();
     expect(find.text('邮箱验证占位'), findsOneWidget);
     await tester.tap(find.text('完成验证'));
@@ -262,6 +275,10 @@ Future<void> _pumpPage(
         path: '/threads/:threadId/manage',
         builder: (_, state) =>
             ThreadManagementPage(threadId: state.pathParameters['threadId']!),
+      ),
+      GoRoute(
+        path: '/threads/:threadId/manage/tags',
+        builder: (_, _) => const Scaffold(body: Text('标签工作台占位')),
       ),
       GoRoute(
         path: '/threads/:threadId/manage/subthreads',

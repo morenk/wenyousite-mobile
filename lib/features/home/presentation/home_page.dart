@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/application/home_feed_controller.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/tags/presentation/wenyou_tag_chip.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -154,6 +155,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   pathParameters: {'threadId': thread.id},
                   extra:
                       categoryNames[thread.categorySlug] ?? thread.categorySlug,
+                ),
+                onTagTap: (tag) => context.pushNamed(
+                  'tag-threads',
+                  pathParameters: {'tagId': tag.id},
                 ),
               ),
             );
@@ -453,12 +458,14 @@ class HomeThreadCard extends StatelessWidget {
     required this.thread,
     required this.categoryName,
     required this.onTap,
+    this.onTagTap,
     super.key,
   });
 
   final HomeThreadCardModel thread;
   final String? categoryName;
   final VoidCallback onTap;
+  final ValueChanged<HomeThreadTag>? onTagTap;
 
   @override
   Widget build(BuildContext context) {
@@ -519,7 +526,11 @@ class HomeThreadCard extends StatelessWidget {
                 runSpacing: tokens.space4,
                 children: [
                   for (final tag in thread.tags.take(4))
-                    _ThreadPill(icon: Icons.tag_rounded, label: tag.name),
+                    WenyouTagChip(
+                      key: Key('home-thread-tag-${thread.id}-${tag.id}'),
+                      name: tag.name,
+                      onPressed: onTagTap == null ? null : () => onTagTap!(tag),
+                    ),
                 ],
               ),
             ],

@@ -151,6 +151,27 @@ void main() {
       Uri.parse(subthreadsRedirect!).queryParameters['returnTo'],
       '/threads/thread-1/manage/subthreads',
     );
+
+    final tagsRedirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: '/threads/thread-1/manage/tags',
+      uri: Uri.parse('/threads/thread-1/manage/tags'),
+    );
+    expect(
+      Uri.parse(tagsRedirect!).queryParameters['returnTo'],
+      '/threads/thread-1/manage/tags',
+    );
+  });
+
+  test('公开标签主题页不要求登录', () {
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: '/tags/tag-1',
+        uri: Uri.parse('/tags/tag-1'),
+      ),
+      isNull,
+    );
   });
 
   test('私密邀请预览要求登录并完整保留不透明 token', () {

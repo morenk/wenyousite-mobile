@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/features/social/domain/thread_interaction_mode
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
+import 'package:wenyousite_mobile/features/tags/presentation/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
@@ -689,7 +690,14 @@ class _ThreadOverview extends ConsumerWidget {
               runSpacing: tokens.space4,
               children: [
                 for (final tag in detail.tags)
-                  _DetailPill(icon: Icons.tag_rounded, label: tag.name),
+                  WenyouTagChip(
+                    key: Key('thread-detail-tag-${tag.id}'),
+                    name: tag.name,
+                    onPressed: () => context.pushNamed(
+                      'tag-threads',
+                      pathParameters: {'tagId': tag.id},
+                    ),
+                  ),
               ],
             ),
           ],

@@ -21,6 +21,8 @@ import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
+import 'package:wenyousite_mobile/features/tags/presentation/tag_threads_page.dart';
+import 'package:wenyousite_mobile/features/tags/presentation/thread_tag_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
@@ -91,6 +93,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/tags/:tagId',
+        name: 'tag-threads',
+        builder: (context, state) {
+          return TagThreadsPage(tagId: state.pathParameters['tagId']!);
+        },
+      ),
+      GoRoute(
         path: '/threads/:threadId/posts/:postId/replies',
         name: 'post-replies',
         builder: (context, state) {
@@ -106,6 +115,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'thread-member-management',
         builder: (context, state) {
           return ThreadMemberManagementPage(
+            threadId: state.pathParameters['threadId']!,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/threads/:threadId/manage/tags',
+        name: 'thread-tag-management',
+        builder: (context, state) {
+          return ThreadTagManagementPage(
             threadId: state.pathParameters['threadId']!,
           );
         },
@@ -336,8 +354,9 @@ bool _isThreadManagementLocation(String location) {
   if (location == '/threads/:threadId/manage') return true;
   if (location == '/threads/:threadId/manage/members') return true;
   if (location == '/threads/:threadId/manage/subthreads') return true;
+  if (location == '/threads/:threadId/manage/tags') return true;
   return RegExp(
-    r'^/threads/[^/]+/manage(?:/(?:members|subthreads))?$',
+    r'^/threads/[^/]+/manage(?:/(?:members|subthreads|tags))?$',
   ).hasMatch(location);
 }
 

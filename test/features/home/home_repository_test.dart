@@ -34,6 +34,7 @@ void main() {
         category: 'RPG',
         sort: 'active',
         status: 'FINISHED',
+        tagId: 'tag-1',
       ),
     ).thenAnswer((_) async => _threadsResponse());
 
@@ -41,6 +42,7 @@ void main() {
         .fetchThreads(
           query: const HomeFeedQuery(
             categorySlug: 'RPG',
+            tagId: 'tag-1',
             sort: HomeFeedSort.active,
             status: HomeThreadStatusFilter.finished,
           ),

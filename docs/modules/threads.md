@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-当前实现公开主题详情、子贴选择、Markdown 正文展示、点赞/收藏/订阅互动、新建主题的本地恢复/服务端草稿/聚合发布，并让楼主或协作者添加和编辑子贴正文、完整管理子贴目录、已有主题元数据与成员玩家标记。楼主还可任免协作者、管理已发布私密主题邀请并在二次确认后删除主题；V1 不实现举报后台或子贴标签。
+当前实现公开主题详情、子贴选择、Markdown 正文展示、点赞/收藏/订阅互动、新建主题的本地恢复/服务端草稿/聚合发布，并让楼主或协作者添加和编辑子贴正文、完整管理子贴目录、主题标签、已有主题元数据与成员玩家标记。楼主还可任免协作者、管理已发布私密主题邀请并在二次确认后删除主题；V1 不实现举报后台或子贴级标签。
 
 ## 2. 用户角色与使用场景
 
@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-首页和搜索主题卡片进入命名路由 `/threads/:threadId`；正文搜索结果使用 `/threads/:threadId?post=:postId` 复用同一详情页，楼层卡片再进入 `/threads/:threadId/posts/:postId/replies`。详情 capability 对管理者开放受保护的 `/threads/:threadId/manage`，子贴目录和成员身份分别进入 `/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；已发布私密主题楼主在管理页刷新并复制 Web 兼容邀请。受保护路由 `/join/:token` 登录回跳后预览邀请，加入或已加入时进入稳定主题详情。保存后返回并刷新详情，删除成功清栈回首页。应用壳创建按钮进入受保护路由 `/compose/thread`，发布确认后替换到新主题详情。游客从互动、发帖、创建、管理或邀请入口登录时保留完整目标。子贴切换同时控制正文与楼层数据源。
+首页和搜索主题卡片进入命名路由 `/threads/:threadId`，详情标签进入公开 `/tags/:tagId`；正文搜索结果使用 `/threads/:threadId?post=:postId` 复用同一详情页，楼层卡片再进入 `/threads/:threadId/posts/:postId/replies`。详情 capability 对管理者开放受保护的 `/threads/:threadId/manage`，标签、子贴目录和成员身份分别进入 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；已发布私密主题楼主在管理页刷新并复制 Web 兼容邀请。受保护路由 `/join/:token` 登录回跳后预览邀请，加入或已加入时进入稳定主题详情。保存后返回并刷新详情，删除成功清栈回首页。应用壳创建按钮进入受保护路由 `/compose/thread`，发布确认后替换到新主题详情。游客从互动、发帖、创建、管理或邀请入口登录时保留完整目标。子贴切换同时控制正文与楼层数据源。
 
 ## 4. 用户操作流程
 
@@ -28,6 +28,8 @@
 
 管理子贴时并发读取主题 capability 与 `sortOrder` 权威目录；默认子贴只读展示并保持第一位。创建在同一次用户操作和网络重试间复用 `clientRequestId`，编辑前读取单条最新版并携带 `version`，删除必须二次确认会连带正文与讨论。移动端用明确的上移/下移按钮替代桌面拖拽，始终提交包含默认子贴在内的完整 ID 集合并只采用服务端确认顺序；正文继续从主题详情的 posts 编辑器维护。
 
+管理主题标签时并发读取主题 capability、完整关联和全局候选；最多保留五个标签，添加已有候选前读取单条标签事实，新建遇到同名竞态时只解析唯一精确结果。移除只解除当前主题关联，标签仍可供其他主题使用；搜索、防抖和公开标签聚合由 tags 模块维护。
+
 ## 5. API operationId 与生成类型
 
 - 当前读取：`threadsFindById`、用于目标定位的 `postsFindById`；普通详情响应已经包含子贴集合、子贴正文 ID/版本、主题标签、统计、互动状态和 capability 等可选登录态投影，不额外请求子贴列表。独立管理工作台使用 `subthreadsFindAll` 取得规范目录，并在编辑前使用 `subthreadsFindById` 取得最新版和所属主题事实。
@@ -37,12 +39,13 @@
 - 当前已有主题管理：`threadsUpdate`、`threadsRemove`，使用 `UpdateThreadDto`、`ThreadDetailResponseDto`、`ThreadCapabilitiesResponseDto` 与 `MessageResponseDto`；动态分区继续使用 `threadCategoriesList`。
 - 当前私密邀请：`threadsCreateInviteLink`、`threadsPreviewInviteLink`、`threadsJoinByInviteLink`，使用 `InviteLinkResponseDto`、`InvitePreviewResponseDto`、`InviteThreadPreviewResponseDto` 与 `JoinedThreadMemberResponseDto`。
 - 当前子贴管理：`subthreadsFindAll`、`subthreadsFindById`、`subthreadsCreate`、`subthreadsUpdate`、`subthreadsRemove`、`subthreadsReorder`，使用 `SubthreadResponseDto`、`CreateSubthreadDto`、`UpdateSubthreadDto`、`ReorderSubthreadsDto` 与 `ReorderedSubthreadResponseDto`。
+- 当前主题标签管理：`threadTagsFindAll`、`threadTagsAdd`、`threadTagsRemove`；全局发现与创建由 tags 模块使用 `tagsSearch`、`tagsGetById`、`tagsCreate`。
 - 子贴正文与楼层写入由 posts 模块调用 `postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`。
 - 已废弃的 `threadMembersJoin` 不接入；公开主题成员身份由服务端发帖等真实业务行为建立，私密主题只通过邀请加入。
 
 ## 6. 状态模型和数据流
 
-主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离，控制器丢弃过期请求；目标帖子由独立 FutureProvider 读取。点赞/收藏与订阅分别由 social 的 autoDispose family 管理。创建状态由 editor 模块管理表单、本地快照、远端草稿版本、待确认幂等请求和提交动作。已有主题、子贴、成员、邀请生成和邀请访问分别使用独立 autoDispose family。子贴创建键按规范化表单指纹稳定复用，单条编辑先刷新版本，排序写入不乐观覆盖；成员写入串行执行并只替换响应确认的目标成员，退出状态与列表状态分离。邀请预览丢弃过期刷新，加入写入串行执行并校验返回主题与预览目标一致。身份变化会释放旧状态并切换本地分区。
+主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离，控制器丢弃过期请求；目标帖子由独立 FutureProvider 读取。点赞/收藏与订阅分别由 social 的 autoDispose family 管理。创建状态由 editor 模块管理表单、本地快照、远端草稿版本、待确认幂等请求和提交动作。已有主题、子贴、标签、成员、邀请生成和邀请访问分别使用独立 autoDispose family。子贴创建键按规范化表单指纹稳定复用，单条编辑先刷新版本，排序写入不乐观覆盖；标签搜索丢弃旧响应，单个标签写入串行；成员写入串行执行并只替换响应确认的目标成员，退出状态与列表状态分离。邀请预览丢弃过期刷新，加入写入串行执行并校验返回主题与预览目标一致。身份变化会释放旧状态并切换本地分区。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -81,10 +84,11 @@
 - [x] 仅已发布私密主题楼主可在旧链接失效确认后生成并复制邀请，空响应、目标错配、`40107` 和请求 ID 均可恢复。
 - [x] 受保护邀请路由完整保留 token 登录回跳；预览、已加入直达、幂等加入、失效终态、竞态与 360/400/600dp 布局通过。
 - [x] 子贴目录覆盖列表/单条读取、稳定幂等创建、带版本更新、二次确认删除和完整集合重排；默认子贴保护、冲突刷新、`40107` 恢复及 360/400/600dp 布局通过。
+- [x] 主题标签覆盖全局搜索/创建、单条校验、关联列表/添加/移除、五标签上限、同名竞态与 `40107` 恢复；公开标签页和 360/400/600dp 布局通过。
 
 ## 12. 已知限制和后续功能
 
-当前完成“详情 + 完整子贴目录/正文读写 + 楼层读写/楼中楼 + 搜索目标定位 + 点赞收藏订阅 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。V1 不做举报管理、子贴标签或 Android App Links。
+当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 搜索目标定位 + 点赞收藏订阅 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。V1 不做举报管理、子贴级标签或 Android App Links。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -92,4 +96,4 @@
 
 ## 14. 相关代码与架构文档
 
-阅读与已有主题管理代码入口：`lib/features/threads/`；创建代码入口：`lib/features/editor/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[导航](../architecture/navigation.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+阅读与已有主题管理代码入口：`lib/features/threads/`；标签代码入口：`lib/features/tags/`；创建代码入口：`lib/features/editor/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[导航](../architecture/navigation.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
