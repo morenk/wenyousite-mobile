@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -129,6 +130,78 @@ void main() {
     expect(find.byKey(const Key('moment-detail-login')), findsOneWidget);
   });
 
+  testWidgets('动态详情多图使用固定舞台横滑并从当前图片进入原图', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final semantics = tester.ensureSemantics();
+    final repository = _PageRepository(detail: _detailWithImages());
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final gallery = find.byKey(const Key('moment-detail-gallery'));
+    final carousel = find.byKey(const Key('moment-detail-carousel'));
+    expect(gallery, findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('动态图片轮播，共 3 张，左右滑动切换')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: gallery, matching: find.byType(GridView)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: gallery, matching: find.byType(PageView)),
+      findsOneWidget,
+    );
+    expect(find.text('1 / 3'), findsOneWidget);
+    final firstImage = tester.widget<CachedNetworkImage>(
+      find.byKey(const Key('moment-content-image-0')),
+    );
+    expect(firstImage.imageUrl, 'https://cdn.example.com/1-md.webp');
+    expect(firstImage.fit, BoxFit.contain);
+    expect(
+      tester.getBottomRight(find.text('今日微光')).dy,
+      lessThan(tester.getTopLeft(gallery).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('动态正文是纯文本')).dy,
+      greaterThan(tester.getBottomRight(gallery).dy),
+    );
+    final initialStageSize = tester.getSize(gallery);
+    expect(initialStageSize.aspectRatio, closeTo(1, 0.01));
+
+    await tester.drag(carousel, const Offset(-320, 0));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('2 / 3'), findsOneWidget);
+    expect(tester.getSize(gallery), initialStageSize);
+    final secondImage = tester.widget<CachedNetworkImage>(
+      find.byKey(const Key('moment-content-image-1')),
+    );
+    expect(secondImage.imageUrl, 'https://cdn.example.com/2-md.webp');
+    expect(secondImage.fit, BoxFit.contain);
+
+    await tester.tap(find.byKey(const Key('moment-detail-image')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const Key('moment-gallery-close')), findsOneWidget);
+    expect(find.text('2 / 3'), findsOneWidget);
+    semantics.dispose();
+  });
+
   testWidgets('纯文字动态可完成发布且保留稳定详情目标', (tester) async {
     final repository = _PageRepository();
     final router = GoRouter(
@@ -225,8 +298,11 @@ Widget _feedApp(MomentRepository repository) {
 }
 
 class _PageRepository extends Fake implements MomentRepository {
+  _PageRepository({MomentDetail? detail}) : _detailValue = detail ?? _detail();
+
   final feedModes = <MomentFeedMode>[];
   final createdInputs = <MomentDraftInput>[];
+  final MomentDetail _detailValue;
 
   @override
   Future<CursorPage<MomentCard>> fetchFeed({
@@ -255,7 +331,7 @@ class _PageRepository extends Fake implements MomentRepository {
   }
 
   @override
-  Future<MomentDetail> fetchDetail(String momentId) async => _detail();
+  Future<MomentDetail> fetchDetail(String momentId) async => _detailValue;
 
   @override
   Future<CursorPage<MomentRootComment>> fetchComments({
@@ -304,6 +380,8 @@ MomentCard _card({
   String id = 'moment-1',
   String title = '今日微光',
   MomentTextCoverTheme theme = MomentTextCoverTheme.mint,
+  MomentMedia? coverMedia,
+  int imageCount = 0,
 }) {
   final now = DateTime.utc(2026, 8, 10, 12);
   return MomentCard(
@@ -311,9 +389,12 @@ MomentCard _card({
     author: _author(),
     title: title,
     contentExcerpt: '动态正文是纯文本',
-    coverType: MomentCoverType.text,
+    coverType: coverMedia == null
+        ? MomentCoverType.text
+        : MomentCoverType.image,
     textCoverTheme: theme,
-    imageCount: 0,
+    coverMedia: coverMedia,
+    imageCount: imageCount,
     likeCount: 2,
     commentCount: 1,
     bookmarkCount: 0,
@@ -333,6 +414,40 @@ MomentDetail _detail() => MomentDetail(
   canEdit: false,
   canDelete: false,
 );
+
+MomentDetail _detailWithImages() {
+  const images = [
+    MomentMedia(
+      id: 'image-1',
+      url: 'https://cdn.example.com/1.webp',
+      mediumUrl: 'https://cdn.example.com/1-md.webp',
+      width: 1200,
+      height: 1600,
+    ),
+    MomentMedia(
+      id: 'image-2',
+      url: 'https://cdn.example.com/2.webp',
+      mediumUrl: 'https://cdn.example.com/2-md.webp',
+      width: 1600,
+      height: 1000,
+    ),
+    MomentMedia(
+      id: 'image-3',
+      url: 'https://cdn.example.com/3.webp',
+      mediumUrl: 'https://cdn.example.com/3-md.webp',
+      width: 1000,
+      height: 1000,
+    ),
+  ];
+  return MomentDetail(
+    card: _card(coverMedia: images[2], imageCount: images.length),
+    content: '动态正文是纯文本',
+    images: images,
+    version: 3,
+    canEdit: false,
+    canDelete: false,
+  );
+}
 
 MomentRootComment _rootComment() => MomentRootComment(
   id: 'comment-root',

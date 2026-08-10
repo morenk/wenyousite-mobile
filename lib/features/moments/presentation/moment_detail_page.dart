@@ -289,6 +289,13 @@ class _MomentDetailPanel extends StatelessWidget {
           ),
           SizedBox(height: tokens.space16),
           Text(card.title, style: Theme.of(context).textTheme.headlineSmall),
+          if (detail.images.isNotEmpty) ...[
+            SizedBox(height: tokens.space16),
+            MomentGallery(
+              images: detail.images,
+              coverMedia: detail.card.coverMedia,
+            ),
+          ],
           if (detail.content.isNotEmpty) ...[
             SizedBox(height: tokens.space12),
             SelectableText(
@@ -297,10 +304,6 @@ class _MomentDetailPanel extends StatelessWidget {
                 context,
               ).textTheme.bodyLarge?.copyWith(height: 1.7),
             ),
-          ],
-          if (detail.images.isNotEmpty) ...[
-            SizedBox(height: tokens.space16),
-            MomentGallery(images: detail.images),
           ],
           SizedBox(height: tokens.space16),
           const Divider(),

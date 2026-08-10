@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -306,58 +308,242 @@ class MomentAvatar extends StatelessWidget {
   }
 }
 
-class MomentGallery extends StatelessWidget {
-  const MomentGallery({required this.images, super.key});
+class MomentGallery extends StatefulWidget {
+  const MomentGallery({required this.images, this.coverMedia, super.key});
 
   final List<MomentMedia> images;
+  final MomentMedia? coverMedia;
+
+  @override
+  State<MomentGallery> createState() => _MomentGalleryState();
+}
+
+class _MomentGalleryState extends State<MomentGallery> {
+  static const _minimumAspectRatio = 3 / 4;
+  static const _maximumAspectRatio = 16 / 10;
+  static const _maximumStageHeight = 672.0;
+
+  late final PageController _pageController;
+  var _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void didUpdateWidget(covariant MomentGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    String? currentImageId;
+    if (_index < oldWidget.images.length) {
+      currentImageId = oldWidget.images[_index].id;
+    }
+    final updatedIndex = currentImageId == null
+        ? 0
+        : widget.images.indexWhere((image) => image.id == currentImageId);
+    final nextIndex = updatedIndex < 0 ? 0 : updatedIndex;
+    if (_index == nextIndex) return;
+    _index = nextIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        _pageController.jumpToPage(_index);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final images = widget.images;
     if (images.isEmpty) return const SizedBox.shrink();
     final tokens = context.wenyouTokens;
-    final columns = images.length == 1
-        ? 1
-        : images.length == 2
-        ? 2
-        : 3;
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        crossAxisSpacing: tokens.space8,
-        mainAxisSpacing: tokens.space8,
-        childAspectRatio: images.length == 1
-            ? (images.first.aspectRatio ?? 4 / 3).clamp(0.75, 1.8)
-            : 1,
-      ),
-      itemCount: images.length,
-      itemBuilder: (context, index) {
-        final image = images[index];
+    final ratio =
+        (widget.coverMedia?.aspectRatio ?? images.first.aspectRatio ?? 1)
+            .clamp(_minimumAspectRatio, _maximumAspectRatio)
+            .toDouble();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportHeight = MediaQuery.sizeOf(context).height * 0.72;
+        final maximumHeight = math.min(viewportHeight, _maximumStageHeight);
+        final stageHeight = math.min(
+          constraints.maxWidth / ratio,
+          maximumHeight,
+        );
         return Semantics(
-          button: true,
-          image: true,
-          label: '查看第 ${index + 1} 张动态图片，共 ${images.length} 张',
-          child: Material(
-            color: tokens.softPanel,
-            borderRadius: BorderRadius.circular(tokens.radius12),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              key: Key('moment-image-$index'),
-              onTap: () => openMomentGallery(context, images, index),
-              child: CachedNetworkImage(
-                imageUrl: image.bestContentUrl,
-                fit: BoxFit.contain,
-                placeholder: (_, _) => const Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
+          container: true,
+          label: images.length == 1
+              ? '动态图片，共 1 张'
+              : '动态图片轮播，共 ${images.length} 张，左右滑动切换',
+          child: SizedBox(
+            key: const Key('moment-detail-gallery'),
+            width: double.infinity,
+            height: stageHeight,
+            child: Material(
+              color: tokens.softPanel,
+              borderRadius: BorderRadius.circular(tokens.radius12),
+              clipBehavior: Clip.antiAlias,
+              child: Semantics(
+                button: true,
+                label: '查看第 ${_index + 1} 张动态图片，共 ${images.length} 张',
+                child: GestureDetector(
+                  key: const Key('moment-detail-image'),
+                  behavior: HitTestBehavior.opaque,
+                  excludeFromSemantics: true,
+                  onTap: () => openMomentGallery(context, images, _index),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PageView.builder(
+                        key: const Key('moment-detail-carousel'),
+                        controller: _pageController,
+                        physics: images.length == 1
+                            ? const NeverScrollableScrollPhysics()
+                            : const PageScrollPhysics(),
+                        onPageChanged: (index) =>
+                            setState(() => _index = index),
+                        itemCount: images.length,
+                        itemBuilder: (context, index) => _MomentGalleryPage(
+                          image: images[index],
+                          index: index,
+                          imageCount: images.length,
+                        ),
+                      ),
+                      if (images.length > 1)
+                        Positioned(
+                          right: tokens.space8,
+                          bottom: tokens.space8,
+                          child: IgnorePointer(
+                            child: Semantics(
+                              liveRegion: true,
+                              label: '第 ${_index + 1} 张，共 ${images.length} 张',
+                              excludeSemantics: true,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: tokens.text.withValues(alpha: 0.72),
+                                  borderRadius: BorderRadius.circular(
+                                    tokens.radiusPill,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: tokens.space8,
+                                    vertical: tokens.space4,
+                                  ),
+                                  child: Text(
+                                    '${_index + 1} / ${images.length}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: tokens.background,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                errorWidget: (_, _, _) =>
-                    Icon(Icons.broken_image_outlined, color: tokens.mutedText),
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _MomentGalleryPage extends StatelessWidget {
+  const _MomentGalleryPage({
+    required this.image,
+    required this.index,
+    required this.imageCount,
+  });
+
+  final MomentMedia image;
+  final int index;
+  final int imageCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      key: Key('moment-image-$index'),
+      image: true,
+      label: '第 ${index + 1} 张动态图片，共 $imageCount 张',
+      excludeSemantics: true,
+      child: CachedNetworkImage(
+        key: Key('moment-content-image-$index'),
+        imageUrl: image.bestContentUrl,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.contain,
+        placeholder: (_, _) => _MomentImageStatus(
+          icon: const SizedBox.square(
+            dimension: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          label: '第 ${index + 1} 张图片加载中',
+        ),
+        errorWidget: (_, _, _) => _MomentImageStatus(
+          icon: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
+          label: '第 ${index + 1} 张图片加载失败',
+          detail: '点按查看原图',
+        ),
+      ),
+    );
+  }
+}
+
+class _MomentImageStatus extends StatelessWidget {
+  const _MomentImageStatus({
+    required this.icon,
+    required this.label,
+    this.detail,
+  });
+
+  final Widget icon;
+  final String label;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(tokens.space16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            SizedBox(height: tokens.space8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (detail != null) ...[
+              SizedBox(height: tokens.space4),
+              Text(
+                detail!,
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: tokens.mutedText),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
