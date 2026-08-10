@@ -9,9 +9,14 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/login_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({this.returnTo, super.key});
+  const LoginPage({
+    this.returnTo,
+    this.passwordResetSucceeded = false,
+    super.key,
+  });
 
   final String? returnTo;
+  final bool passwordResetSucceeded;
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -84,6 +89,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                 ],
+                if (widget.passwordResetSucceeded) ...[
+                  SizedBox(height: tokens.space20),
+                  const WenyouStatusBanner(
+                    key: Key('login-password-reset-success'),
+                    message: '密码已重置，所有旧登录终端均已退出。请使用新密码重新登录。',
+                    tone: WenyouStatusTone.accent,
+                  ),
+                ],
                 SizedBox(height: tokens.space24),
                 TextFormField(
                   key: const Key('login-account'),
@@ -150,6 +163,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   loadingLabel: '正在登录',
                   isLoading: state.isSubmitting,
                   onPressed: _submit,
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    key: const Key('login-forgot-password'),
+                    onPressed: state.isSubmitting
+                        ? null
+                        : () => context.pushNamed(
+                            'forgot-password',
+                            queryParameters: widget.returnTo == null
+                                ? const {}
+                                : {'returnTo': widget.returnTo!},
+                          ),
+                    child: const Text('忘记密码？'),
+                  ),
                 ),
                 SizedBox(height: tokens.space8),
                 TextButton(

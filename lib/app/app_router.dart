@@ -4,8 +4,10 @@ import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
+import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
+import 'package:wenyousite_mobile/features/auth/presentation/reset_password_page.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
@@ -25,36 +27,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/home',
     redirect: (context, state) {
-      final session = ref.read(sessionControllerProvider);
-      final authenticated = session.isAuthenticated;
-      final isLogin = state.matchedLocation == '/auth/login';
-      final isRegistration = state.matchedLocation == '/auth/register';
-      if (session.status == SessionStatus.invalidated && !isLogin) {
-        return Uri(
-          path: '/auth/login',
-          queryParameters: {'returnTo': state.uri.toString()},
-        ).toString();
-      }
-      final protectedRoute =
-          state.matchedLocation == '/compose/thread' ||
-          state.matchedLocation == '/me/following' ||
-          state.matchedLocation == '/me/followers' ||
-          state.matchedLocation == '/me/blocks' ||
-          state.matchedLocation == '/me/bookmarks' ||
-          state.matchedLocation == '/me/security/sessions' ||
-          state.matchedLocation == '/me/security/password' ||
-          state.matchedLocation == '/me/security/email';
-      if (!authenticated && protectedRoute) {
-        return Uri(
-          path: '/auth/login',
-          queryParameters: {'returnTo': state.uri.toString()},
-        ).toString();
-      }
-      if (authenticated && (isLogin || isRegistration)) {
-        final returnTo = state.uri.queryParameters['returnTo'];
-        return sanitizeReturnLocation(returnTo);
-      }
-      return null;
+      return resolveSessionRedirect(
+        session: ref.read(sessionControllerProvider),
+        matchedLocation: state.matchedLocation,
+        uri: state.uri,
+      );
     },
     routes: [
       StatefulShellRoute.indexedStack(
@@ -210,7 +187,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/auth/login',
         name: 'login',
         builder: (context, state) {
-          return LoginPage(returnTo: state.uri.queryParameters['returnTo']);
+          return LoginPage(
+            returnTo: state.uri.queryParameters['returnTo'],
+            passwordResetSucceeded: state.extra is PasswordResetLoginNotice,
+          );
         },
       ),
       GoRoute(
@@ -222,9 +202,75 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      GoRoute(
+        path: '/auth/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) {
+          return ForgotPasswordPage(
+            returnTo: state.uri.queryParameters['returnTo'],
+          );
+        },
+      ),
+      GoRoute(
+        path: '/auth/reset-password',
+        name: 'reset-password',
+        builder: (context, state) {
+          final routeData = state.extra;
+          return ResetPasswordPage(
+            returnTo: state.uri.queryParameters['returnTo'],
+            initialEmail: routeData is PasswordResetRouteData
+                ? routeData.initialEmail
+                : null,
+            codeRecentlySent:
+                routeData is PasswordResetRouteData &&
+                routeData.codeRecentlySent,
+          );
+        },
+      ),
     ],
   );
   ref.listen(sessionControllerProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
   return router;
 });
+
+String? resolveSessionRedirect({
+  required SessionState session,
+  required String matchedLocation,
+  required Uri uri,
+}) {
+  final isGuestOnlyAuth = switch (matchedLocation) {
+    '/auth/login' ||
+    '/auth/register' ||
+    '/auth/forgot-password' ||
+    '/auth/reset-password' => true,
+    _ => false,
+  };
+  if (session.status == SessionStatus.invalidated && !isGuestOnlyAuth) {
+    return Uri(
+      path: '/auth/login',
+      queryParameters: {'returnTo': uri.toString()},
+    ).toString();
+  }
+  final protectedRoute = switch (matchedLocation) {
+    '/compose/thread' ||
+    '/me/following' ||
+    '/me/followers' ||
+    '/me/blocks' ||
+    '/me/bookmarks' ||
+    '/me/security/sessions' ||
+    '/me/security/password' ||
+    '/me/security/email' => true,
+    _ => false,
+  };
+  if (!session.isAuthenticated && protectedRoute) {
+    return Uri(
+      path: '/auth/login',
+      queryParameters: {'returnTo': uri.toString()},
+    ).toString();
+  }
+  if (session.isAuthenticated && isGuestOnlyAuth) {
+    return sanitizeReturnLocation(uri.queryParameters['returnTo']);
+  }
+  return null;
+}

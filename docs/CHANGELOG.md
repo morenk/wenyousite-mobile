@@ -4,6 +4,7 @@
 
 ### Added
 
+- 登录页新增 `/auth/forgot-password` 与 `/auth/reset-password` 账号恢复闭环：反枚举发送提示、60 秒/`Retry-After` 冷却、验证码专用错误、全终端撤销语义和原目标回跳均可操作。
 - 新增 `/threads/:threadId/posts/:postId/replies` 独立楼中楼：公开阅读、最早/最新排序、回复者筛选、目标补齐、cursor 分页、下拉刷新和 360dp 布局形成闭环。
 - 主题详情与楼中楼接入楼层/回复创建、作者编辑删除、管理者楼层删除及子贴正文 upsert；复用 Quill、图片、骰子和五槽位正文草稿，稳定幂等键与乐观锁冲突均要求明确确认。
 - 编辑器工具栏接入后端用户级五槽位正文草稿：并发读取列表/用量、自动或指定空槽保存、恢复前刷新、版本覆盖、删除、满额提示和 360dp 面板均形成闭环；主题实体草稿继续保留独立入口。
@@ -40,6 +41,7 @@
 
 ### Changed
 
+- 开发版本进入 `0.3.0-dev.19+25`；`authForgotPassword` 与 `authResetPassword` 完整接入，失效会话也可进入公开找回流程，成功后不建立伪会话而是要求使用新密码登录。
 - 开发版本进入 `0.3.0-dev.18+24`；`postsFindReplies`、`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove` 与既有楼层读取全部闭环，`40302/40303`、`40007`、`40002` 和不明确创建结果有稳定恢复状态。
 - 开发版本进入 `0.3.0-dev.17+23`；`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove` 全部接入，`40002` 冲突保留当前正文并要求基于最新版二次确认。
 - 开发版本进入 `0.3.0-dev.16+22`；主题创建、服务端草稿、聚合发布、媒体上传和本地快照形成首个可真机操作的创作闭环，后端五槽位正文草稿仍作为后续独立切片。

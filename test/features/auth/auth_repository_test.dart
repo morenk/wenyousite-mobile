@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
+import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
 
 void main() {
   setUpAll(() {
@@ -24,6 +25,17 @@ void main() {
           ..code = '123456'
           ..username = 'fallback'
           ..password = 'fallback123',
+      ),
+    );
+    registerFallbackValue(
+      ForgotPasswordDto((builder) => builder.email = 'fallback@example.com'),
+    );
+    registerFallbackValue(
+      ResetPasswordDto(
+        (builder) => builder
+          ..email = 'fallback@example.com'
+          ..token = '123456'
+          ..newPassword = 'fallback123',
       ),
     );
   });
@@ -156,6 +168,72 @@ void main() {
       ),
     );
   });
+
+  test('找回密码与重置密码完整映射生成 DTO', () async {
+    final api = _MockAuthApi();
+    when(
+      () => api.authForgotPassword(
+        forgotPasswordDto: any(named: 'forgotPasswordDto'),
+      ),
+    ).thenAnswer((_) async => _forgotPasswordResponse());
+    when(
+      () => api.authResetPassword(
+        resetPasswordDto: any(named: 'resetPasswordDto'),
+      ),
+    ).thenAnswer((_) async => _resetPasswordResponse());
+    final repository = ApiPasswordRecoveryRepository(api);
+
+    await repository.requestCode(email: 'user@example.com');
+    await repository.resetPassword(
+      email: 'user@example.com',
+      code: '654321',
+      newPassword: 'next-pass9',
+    );
+
+    final forgotDto =
+        verify(
+              () => api.authForgotPassword(
+                forgotPasswordDto: captureAny(named: 'forgotPasswordDto'),
+              ),
+            ).captured.single
+            as ForgotPasswordDto;
+    expect(forgotDto.email, 'user@example.com');
+    final resetDto =
+        verify(
+              () => api.authResetPassword(
+                resetPasswordDto: captureAny(named: 'resetPasswordDto'),
+              ),
+            ).captured.single
+            as ResetPasswordDto;
+    expect(resetDto.email, 'user@example.com');
+    expect(resetDto.token, '654321');
+    expect(resetDto.newPassword, 'next-pass9');
+  });
+
+  test('找回与重置成功响应缺少 data 时不伪装完成', () async {
+    final api = _MockAuthApi();
+    when(
+      () => api.authForgotPassword(
+        forgotPasswordDto: any(named: 'forgotPasswordDto'),
+      ),
+    ).thenAnswer(
+      (_) async => Response<AuthForgotPassword200Response>(
+        requestOptions: RequestOptions(path: '/api/v1/auth/forgot-password'),
+      ),
+    );
+    final repository = ApiPasswordRecoveryRepository(api);
+
+    expect(
+      repository.requestCode(email: 'user@example.com'),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.userMessage,
+          'userMessage',
+          contains('发送结果不完整'),
+        ),
+      ),
+    );
+  });
 }
 
 class _MockAuthApi extends Mock implements AuthApi {}
@@ -227,6 +305,30 @@ Response<AuthVerifyAndComplete200Response> _registrationResponse({
                 ..level = 1,
             ),
         ),
+    ),
+  );
+}
+
+Response<AuthForgotPassword200Response> _forgotPasswordResponse() {
+  return Response<AuthForgotPassword200Response>(
+    requestOptions: RequestOptions(path: '/api/v1/auth/forgot-password'),
+    data: AuthForgotPassword200Response(
+      (builder) => builder
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.update((data) => data.message = 'sent'),
+    ),
+  );
+}
+
+Response<AuthResetPassword200Response> _resetPasswordResponse() {
+  return Response<AuthResetPassword200Response>(
+    requestOptions: RequestOptions(path: '/api/v1/auth/reset-password'),
+    data: AuthResetPassword200Response(
+      (builder) => builder
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.update((data) => data.message = 'reset'),
     ),
   );
 }
