@@ -28,6 +28,7 @@ part 'bookmark_thread_response_dto.g.dart';
 /// * [owner]
 /// * [count]
 /// * [bookmarkId] - 查看自己的收藏时返回收藏记录 ID
+/// * [bookmarkFolderId] - 查看自己的收藏时返回所属收藏夹 ID
 @BuiltValue()
 abstract class BookmarkThreadResponseDto implements Built<BookmarkThreadResponseDto, BookmarkThreadResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -76,6 +77,10 @@ abstract class BookmarkThreadResponseDto implements Built<BookmarkThreadResponse
   /// 查看自己的收藏时返回收藏记录 ID
   @BuiltValueField(wireName: r'bookmarkId')
   String? get bookmarkId;
+
+  /// 查看自己的收藏时返回所属收藏夹 ID
+  @BuiltValueField(wireName: r'bookmarkFolderId')
+  String? get bookmarkFolderId;
 
   BookmarkThreadResponseDto._();
 
@@ -169,6 +174,13 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
       yield r'bookmarkId';
       yield serializers.serialize(
         object.bookmarkId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.bookmarkFolderId != null) {
+      yield r'bookmarkFolderId';
+      yield serializers.serialize(
+        object.bookmarkFolderId,
         specifiedType: const FullType(String),
       );
     }
@@ -294,6 +306,13 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
             specifiedType: const FullType(String),
           ) as String;
           result.bookmarkId = valueDes;
+          break;
+        case r'bookmarkFolderId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.bookmarkFolderId = valueDes;
           break;
         default:
           unhandled.add(key);

@@ -26,6 +26,7 @@ part 'public_user_response_dto.g.dart';
 /// * [showBookmarks]
 /// * [createdAt]
 /// * [count]
+/// * [accountStatus] - 公开账号状态；只区分有效的临时或永久封禁，不包含处罚截止时间
 /// * [isFollowing]
 /// * [isFollowedBy]
 /// * [isBlocked]
@@ -72,6 +73,11 @@ abstract class PublicUserResponseDto implements Built<PublicUserResponseDto, Pub
 
   @BuiltValueField(wireName: r'_count')
   UserSocialCountResponseDto? get count;
+
+  /// 公开账号状态；只区分有效的临时或永久封禁，不包含处罚截止时间
+  @BuiltValueField(wireName: r'accountStatus')
+  PublicUserResponseDtoAccountStatusEnum? get accountStatus;
+  // enum accountStatusEnum {  ACTIVE,  SUSPENDED,  BANNED,  };
 
   @BuiltValueField(wireName: r'isFollowing')
   bool? get isFollowing;
@@ -196,6 +202,13 @@ class _$PublicUserResponseDtoSerializer implements PrimitiveSerializer<PublicUse
       yield serializers.serialize(
         object.count,
         specifiedType: const FullType(UserSocialCountResponseDto),
+      );
+    }
+    if (object.accountStatus != null) {
+      yield r'accountStatus';
+      yield serializers.serialize(
+        object.accountStatus,
+        specifiedType: const FullType(PublicUserResponseDtoAccountStatusEnum),
       );
     }
     if (object.isFollowing != null) {
@@ -349,6 +362,13 @@ class _$PublicUserResponseDtoSerializer implements PrimitiveSerializer<PublicUse
           ) as UserSocialCountResponseDto;
           result.count.replace(valueDes);
           break;
+        case r'accountStatus':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(PublicUserResponseDtoAccountStatusEnum),
+          ) as PublicUserResponseDtoAccountStatusEnum;
+          result.accountStatus = valueDes;
+          break;
         case r'isFollowing':
           final valueDes = serializers.deserialize(
             value,
@@ -430,4 +450,27 @@ class PublicUserResponseDtoRoleEnum extends EnumClass {
 
   static BuiltSet<PublicUserResponseDtoRoleEnum> get values => _$publicUserResponseDtoRoleEnumValues;
   static PublicUserResponseDtoRoleEnum valueOf(String name) => _$publicUserResponseDtoRoleEnumValueOf(name);
+}
+
+class PublicUserResponseDtoAccountStatusEnum extends EnumClass {
+
+  /// 公开账号状态；只区分有效的临时或永久封禁，不包含处罚截止时间
+  @BuiltValueEnumConst(wireName: r'ACTIVE')
+  static const PublicUserResponseDtoAccountStatusEnum ACTIVE = _$publicUserResponseDtoAccountStatusEnum_ACTIVE;
+  /// 公开账号状态；只区分有效的临时或永久封禁，不包含处罚截止时间
+  @BuiltValueEnumConst(wireName: r'SUSPENDED')
+  static const PublicUserResponseDtoAccountStatusEnum SUSPENDED = _$publicUserResponseDtoAccountStatusEnum_SUSPENDED;
+  /// 公开账号状态；只区分有效的临时或永久封禁，不包含处罚截止时间
+  @BuiltValueEnumConst(wireName: r'BANNED')
+  static const PublicUserResponseDtoAccountStatusEnum BANNED = _$publicUserResponseDtoAccountStatusEnum_BANNED;
+  /// 公开账号状态；只区分有效的临时或永久封禁，不包含处罚截止时间
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const PublicUserResponseDtoAccountStatusEnum unknownDefaultOpenApi = _$publicUserResponseDtoAccountStatusEnum_unknownDefaultOpenApi;
+
+  static Serializer<PublicUserResponseDtoAccountStatusEnum> get serializer => _$publicUserResponseDtoAccountStatusEnumSerializer;
+
+  const PublicUserResponseDtoAccountStatusEnum._(String name): super(name);
+
+  static BuiltSet<PublicUserResponseDtoAccountStatusEnum> get values => _$publicUserResponseDtoAccountStatusEnumValues;
+  static PublicUserResponseDtoAccountStatusEnum valueOf(String name) => _$publicUserResponseDtoAccountStatusEnumValueOf(name);
 }

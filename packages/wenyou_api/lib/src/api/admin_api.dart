@@ -29,6 +29,7 @@ class AdminApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cursor] - 分页游标
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -40,6 +41,7 @@ class AdminApi {
   /// Returns a [Future] containing a [Response] with a [AdminGetHistory200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminGetHistory200Response>> adminGetHistory({
+    String? xCSRFToken,
     String? cursor,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -52,14 +54,21 @@ class AdminApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -115,6 +124,7 @@ class AdminApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -125,6 +135,7 @@ class AdminApi {
   /// Returns a [Future] containing a [Response] with a [AdminIndex200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminIndex200Response>> adminIndex({
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -136,14 +147,21 @@ class AdminApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -195,6 +213,7 @@ class AdminApi {
   ///
   /// Parameters:
   /// * [sendSystemNotificationDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -206,6 +225,7 @@ class AdminApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminPreviewRecipients201Response>> adminPreviewRecipients({
     required SendSystemNotificationDto sendSystemNotificationDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -217,14 +237,21 @@ class AdminApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -296,6 +323,7 @@ class AdminApi {
   ///
   /// Parameters:
   /// * [q] - 用户名或邮箱关键词
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -307,6 +335,7 @@ class AdminApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminSearchUsers200Response>> adminSearchUsers({
     required String q,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -318,14 +347,21 @@ class AdminApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -382,6 +418,7 @@ class AdminApi {
   ///
   /// Parameters:
   /// * [sendSystemNotificationDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -393,6 +430,7 @@ class AdminApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminSendSystemNotification201Response>> adminSendSystemNotification({
     required SendSystemNotificationDto sendSystemNotificationDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -404,14 +442,21 @@ class AdminApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,

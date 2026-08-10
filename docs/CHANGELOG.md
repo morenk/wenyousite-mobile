@@ -57,6 +57,7 @@
 
 ### Changed
 
+- 同步后端契约 `4.5.0-dev.20260809.1`：固定 196 个 operationId 的移动分类与 V1 黄金旅程，公开用户状态、默认收藏夹分类和站务错误码均为向后兼容新增；本轮在线更新继续消费既有 `/meta.mobileCompatibility`，新收藏夹分类与用户申诉明确留作独立切片。
 - 开发版本进入 `0.3.0-dev.36+42`；携带稳定 `clientRequestId` 的创建调用统一声明 `ApiRequestPolicy.idempotentCreate` 并由真实 Dio 重试测试固定请求 ID，feature 业务错误文案退出 core；新增 domain 依赖、跨 feature 边、路由字面量、版本一致性和未使用依赖门禁，并移除四个未使用直接依赖。
 - app 组合层接管 capability 和跨 feature 缓存失效，主题卡片读模型归属 threads；路由位置与访问级别改为纯 Dart 定义，首页/标签复用请求世代和分页合并工具，主题详情、私聊目标与动态编辑器协调文件完成接口不变的职责拆分。
 - 新增登录回跳策略、真实幂等重试、跨 feature 缓存失效、TalkBack 语义与 Foundation 核心视觉黄金图回归；OpenAPI 适用范围保持 138/138。
@@ -111,4 +112,4 @@
 
 - 后端移动接入指南恢复为 `0fb9d35` 的只读同步快照；私有构建与发布运维继续由移动端本地 `mobile-release-operations.md` 维护，不再从后端已移除的路径复制。
 - 视觉与跨端体验契约锁定 Foundation `1.1.0`（`4974b09a29d5d1c9632f4b2683c8d36c9e3c69bd`）。
-- 后端契约 `4.4.0-dev.20260809.1`，后端提交 `0fb9d351e4344b0bdb347e5530278f02fd0a7418`，Markdown v2；已重新生成 Dart 客户端并清理不再存在的旧管理端模型。
+- 后端契约 `4.5.0-dev.20260809.1`，后端提交 `437e76049a371ff8b6aee1b8a613dc864aa30f11`，Markdown v2；已同步移动 V1 黄金旅程、operationId 分类与动态分类 fixture，并重新生成 Dart 客户端。

@@ -10,8 +10,14 @@ import 'package:wenyou_api/src/auth/basic_auth.dart';
 import 'package:wenyou_api/src/auth/bearer_auth.dart';
 import 'package:wenyou_api/src/auth/oauth.dart';
 import 'package:wenyou_api/src/api/admin_api.dart';
+import 'package:wenyou_api/src/api/admin_accounts_api.dart';
+import 'package:wenyou_api/src/api/admin_appeals_api.dart';
+import 'package:wenyou_api/src/api/admin_auth_api.dart';
+import 'package:wenyou_api/src/api/admin_campaigns_api.dart';
+import 'package:wenyou_api/src/api/admin_cases_api.dart';
 import 'package:wenyou_api/src/api/admin_dashboard_api.dart';
 import 'package:wenyou_api/src/api/admin_moderation_api.dart';
+import 'package:wenyou_api/src/api/admin_operations_api.dart';
 import 'package:wenyou_api/src/api/admin_reports_api.dart';
 import 'package:wenyou_api/src/api/admin_taxonomy_api.dart';
 import 'package:wenyou_api/src/api/auth_api.dart';
@@ -22,6 +28,7 @@ import 'package:wenyou_api/src/api/health_api.dart';
 import 'package:wenyou_api/src/api/media_api.dart';
 import 'package:wenyou_api/src/api/meta_api.dart';
 import 'package:wenyou_api/src/api/mobile_devices_api.dart';
+import 'package:wenyou_api/src/api/moderation_appeals_api.dart';
 import 'package:wenyou_api/src/api/moments_api.dart';
 import 'package:wenyou_api/src/api/notifications_api.dart';
 import 'package:wenyou_api/src/api/posts_api.dart';
@@ -136,6 +143,36 @@ class WenyouApi {
     return AdminApi(dio, serializers);
   }
 
+  /// Get AdminAccountsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminAccountsApi getAdminAccountsApi() {
+    return AdminAccountsApi(dio, serializers);
+  }
+
+  /// Get AdminAppealsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminAppealsApi getAdminAppealsApi() {
+    return AdminAppealsApi(dio, serializers);
+  }
+
+  /// Get AdminAuthApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminAuthApi getAdminAuthApi() {
+    return AdminAuthApi(dio, serializers);
+  }
+
+  /// Get AdminCampaignsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminCampaignsApi getAdminCampaignsApi() {
+    return AdminCampaignsApi(dio, serializers);
+  }
+
+  /// Get AdminCasesApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminCasesApi getAdminCasesApi() {
+    return AdminCasesApi(dio, serializers);
+  }
+
   /// Get AdminDashboardApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   AdminDashboardApi getAdminDashboardApi() {
@@ -146,6 +183,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   AdminModerationApi getAdminModerationApi() {
     return AdminModerationApi(dio, serializers);
+  }
+
+  /// Get AdminOperationsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminOperationsApi getAdminOperationsApi() {
+    return AdminOperationsApi(dio, serializers);
   }
 
   /// Get AdminReportsApi instance, base route and serializer can be overridden by a given but be careful,
@@ -206,6 +249,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   MobileDevicesApi getMobileDevicesApi() {
     return MobileDevicesApi(dio, serializers);
+  }
+
+  /// Get ModerationAppealsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ModerationAppealsApi getModerationAppealsApi() {
+    return ModerationAppealsApi(dio, serializers);
   }
 
   /// Get MomentsApi instance, base route and serializer can be overridden by a given but be careful,

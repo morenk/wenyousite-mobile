@@ -212,6 +212,8 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
   @override
   final String? bookmarkId;
   @override
+  final String? bookmarkFolderId;
+  @override
   final bool? isLiked;
   @override
   final CurrentThreadMembershipResponseDto? currentMembership;
@@ -247,6 +249,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     required this.count,
     this.isBookmarked,
     this.bookmarkId,
+    this.bookmarkFolderId,
     this.isLiked,
     this.currentMembership,
     this.capabilities,
@@ -288,6 +291,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
         count == other.count &&
         isBookmarked == other.isBookmarked &&
         bookmarkId == other.bookmarkId &&
+        bookmarkFolderId == other.bookmarkFolderId &&
         isLiked == other.isLiked &&
         currentMembership == other.currentMembership &&
         capabilities == other.capabilities;
@@ -320,6 +324,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, isBookmarked.hashCode);
     _$hash = $jc(_$hash, bookmarkId.hashCode);
+    _$hash = $jc(_$hash, bookmarkFolderId.hashCode);
     _$hash = $jc(_$hash, isLiked.hashCode);
     _$hash = $jc(_$hash, currentMembership.hashCode);
     _$hash = $jc(_$hash, capabilities.hashCode);
@@ -354,6 +359,7 @@ class _$ThreadDetailResponseDto extends ThreadDetailResponseDto {
           ..add('count', count)
           ..add('isBookmarked', isBookmarked)
           ..add('bookmarkId', bookmarkId)
+          ..add('bookmarkFolderId', bookmarkFolderId)
           ..add('isLiked', isLiked)
           ..add('currentMembership', currentMembership)
           ..add('capabilities', capabilities))
@@ -471,6 +477,11 @@ class ThreadDetailResponseDtoBuilder
   String? get bookmarkId => _$this._bookmarkId;
   set bookmarkId(String? bookmarkId) => _$this._bookmarkId = bookmarkId;
 
+  String? _bookmarkFolderId;
+  String? get bookmarkFolderId => _$this._bookmarkFolderId;
+  set bookmarkFolderId(String? bookmarkFolderId) =>
+      _$this._bookmarkFolderId = bookmarkFolderId;
+
   bool? _isLiked;
   bool? get isLiked => _$this._isLiked;
   set isLiked(bool? isLiked) => _$this._isLiked = isLiked;
@@ -519,6 +530,7 @@ class ThreadDetailResponseDtoBuilder
       _count = $v.count.toBuilder();
       _isBookmarked = $v.isBookmarked;
       _bookmarkId = $v.bookmarkId;
+      _bookmarkFolderId = $v.bookmarkFolderId;
       _isLiked = $v.isLiked;
       _currentMembership = $v.currentMembership?.toBuilder();
       _capabilities = $v.capabilities?.toBuilder();
@@ -618,6 +630,7 @@ class ThreadDetailResponseDtoBuilder
             count: count.build(),
             isBookmarked: isBookmarked,
             bookmarkId: bookmarkId,
+            bookmarkFolderId: bookmarkFolderId,
             isLiked: isLiked,
             currentMembership: _currentMembership?.build(),
             capabilities: _capabilities?.build(),

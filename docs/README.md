@@ -1,6 +1,6 @@
 # 温油站移动端文档
 
-本目录维护移动端的当前工程事实。接口字段以 [`contracts/openapi.json`](../contracts/openapi.json) 为唯一机器事实源；跨端生命周期以 [`contracts/mobile-client-guide.md`](../contracts/mobile-client-guide.md) 为补充约束；模块文档只记录客户端流程、状态、权限、存储和验收。
+本目录维护移动端的当前工程事实。接口字段以 [`contracts/openapi.json`](../contracts/openapi.json) 为唯一机器事实源；跨端生命周期以 [`contracts/mobile-client-guide.md`](../contracts/mobile-client-guide.md) 为补充约束；V1 状态旅程、operationId 分类与动态分类分别由 `mobile-v1-golden-fixtures.json`、`mobile-v1-operation-coverage.json` 和 `thread-category-v1-fixtures.json` 固定。模块文档只记录客户端流程、状态、权限、存储和验收。
 
 ## 阅读入口
 

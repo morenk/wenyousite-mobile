@@ -17,6 +17,7 @@ part 'tag_response_dto.g.dart';
 /// * [description]
 /// * [sortOrder]
 /// * [isActive]
+/// * [mergedIntoId] - 合并目标标签 ID；未合并时为 null
 /// * [createdAt]
 /// * [updatedAt]
 @BuiltValue()
@@ -38,6 +39,10 @@ abstract class TagResponseDto implements Built<TagResponseDto, TagResponseDtoBui
 
   @BuiltValueField(wireName: r'isActive')
   bool get isActive;
+
+  /// 合并目标标签 ID；未合并时为 null
+  @BuiltValueField(wireName: r'mergedIntoId')
+  String? get mergedIntoId;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -97,6 +102,11 @@ class _$TagResponseDtoSerializer implements PrimitiveSerializer<TagResponseDto> 
     yield serializers.serialize(
       object.isActive,
       specifiedType: const FullType(bool),
+    );
+    yield r'mergedIntoId';
+    yield object.mergedIntoId == null ? null : serializers.serialize(
+      object.mergedIntoId,
+      specifiedType: const FullType.nullable(String),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -174,6 +184,14 @@ class _$TagResponseDtoSerializer implements PrimitiveSerializer<TagResponseDto> 
             specifiedType: const FullType(bool),
           ) as bool;
           result.isActive = valueDes;
+          break;
+        case r'mergedIntoId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.mergedIntoId = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(

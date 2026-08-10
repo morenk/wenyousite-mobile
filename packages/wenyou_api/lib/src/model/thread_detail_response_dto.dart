@@ -42,6 +42,7 @@ part 'thread_detail_response_dto.g.dart';
 /// * [count]
 /// * [isBookmarked]
 /// * [bookmarkId]
+/// * [bookmarkFolderId] - 当前收藏所属收藏夹 ID
 /// * [isLiked]
 /// * [currentMembership]
 /// * [capabilities]
@@ -123,6 +124,10 @@ abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto,
 
   @BuiltValueField(wireName: r'bookmarkId')
   String? get bookmarkId;
+
+  /// 当前收藏所属收藏夹 ID
+  @BuiltValueField(wireName: r'bookmarkFolderId')
+  String? get bookmarkFolderId;
 
   @BuiltValueField(wireName: r'isLiked')
   bool? get isLiked;
@@ -277,6 +282,13 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
       yield r'bookmarkId';
       yield serializers.serialize(
         object.bookmarkId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.bookmarkFolderId != null) {
+      yield r'bookmarkFolderId';
+      yield serializers.serialize(
+        object.bookmarkFolderId,
         specifiedType: const FullType.nullable(String),
       );
     }
@@ -498,6 +510,14 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
           ) as String?;
           if (valueDes == null) continue;
           result.bookmarkId = valueDes;
+          break;
+        case r'bookmarkFolderId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.bookmarkFolderId = valueDes;
           break;
         case r'isLiked':
           final valueDes = serializers.deserialize(

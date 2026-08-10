@@ -30,11 +30,11 @@ abstract class AdminAuditLogResponseDto implements Built<AdminAuditLogResponseDt
 
   @BuiltValueField(wireName: r'action')
   AdminAuditLogResponseDtoActionEnum get action;
-  // enum actionEnum {  SUPER_ADMIN_BOOTSTRAPPED,  ADMIN_ROLE_GRANTED,  ADMIN_ROLE_REVOKED,  USER_SUSPENDED,  USER_BANNED,  USER_SANCTION_REVOKED,  CONTENT_HIDDEN,  CONTENT_RESTORED,  REPORT_RESOLVED,  REPORT_DISMISSED,  SYSTEM_NOTIFICATION_SENT,  THREAD_CATEGORY_CREATED,  THREAD_CATEGORY_UPDATED,  TAG_CREATED,  TAG_UPDATED,  };
+  // enum actionEnum {  SUPER_ADMIN_BOOTSTRAPPED,  ADMIN_ROLE_GRANTED,  ADMIN_ROLE_REVOKED,  USER_SUSPENDED,  USER_BANNED,  USER_SANCTION_REVOKED,  CONTENT_HIDDEN,  CONTENT_RESTORED,  REPORT_RESOLVED,  REPORT_DISMISSED,  SYSTEM_NOTIFICATION_SENT,  THREAD_CATEGORY_CREATED,  THREAD_CATEGORY_UPDATED,  TAG_CREATED,  TAG_UPDATED,  ADMIN_INVITED,  ADMIN_INVITE_ACCEPTED,  ADMIN_INVITE_CANCELED,  SUPER_ADMIN_TRANSFERRED,  ADMIN_SESSION_REVOKED,  CASE_RESOLVED,  CASE_DISMISSED,  APPEAL_SUBMITTED,  APPEAL_UPHELD,  APPEAL_OVERTURNED,  USER_SESSIONS_REVOKED,  PASSWORD_RESET_REQUESTED_BY_ADMIN,  NOTIFICATION_CAMPAIGN_SCHEDULED,  NOTIFICATION_CAMPAIGN_CANCELED,  THREAD_CATEGORY_MERGED,  TAG_MERGED,  SITE_SETTINGS_UPDATED,  };
 
   @BuiltValueField(wireName: r'targetType')
   AdminAuditLogResponseDtoTargetTypeEnum get targetType;
-  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  REPORT,  SYSTEM_NOTIFICATION,  THREAD_CATEGORY,  TAG,  };
+  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  REPORT,  SYSTEM_NOTIFICATION,  THREAD_CATEGORY,  TAG,  MODERATION_CASE,  MODERATION_DECISION,  MODERATION_APPEAL,  ADMIN_INVITE,  ADMIN_SESSION,  NOTIFICATION_CAMPAIGN,  SITE_SETTINGS,  };
 
   @BuiltValueField(wireName: r'targetId')
   String? get targetId;
@@ -274,6 +274,40 @@ class AdminAuditLogResponseDtoActionEnum extends EnumClass {
   static const AdminAuditLogResponseDtoActionEnum TAG_CREATED = _$adminAuditLogResponseDtoActionEnum_TAG_CREATED;
   @BuiltValueEnumConst(wireName: r'TAG_UPDATED')
   static const AdminAuditLogResponseDtoActionEnum TAG_UPDATED = _$adminAuditLogResponseDtoActionEnum_TAG_UPDATED;
+  @BuiltValueEnumConst(wireName: r'ADMIN_INVITED')
+  static const AdminAuditLogResponseDtoActionEnum ADMIN_INVITED = _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITED;
+  @BuiltValueEnumConst(wireName: r'ADMIN_INVITE_ACCEPTED')
+  static const AdminAuditLogResponseDtoActionEnum ADMIN_INVITE_ACCEPTED = _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_ACCEPTED;
+  @BuiltValueEnumConst(wireName: r'ADMIN_INVITE_CANCELED')
+  static const AdminAuditLogResponseDtoActionEnum ADMIN_INVITE_CANCELED = _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_CANCELED;
+  @BuiltValueEnumConst(wireName: r'SUPER_ADMIN_TRANSFERRED')
+  static const AdminAuditLogResponseDtoActionEnum SUPER_ADMIN_TRANSFERRED = _$adminAuditLogResponseDtoActionEnum_SUPER_ADMIN_TRANSFERRED;
+  @BuiltValueEnumConst(wireName: r'ADMIN_SESSION_REVOKED')
+  static const AdminAuditLogResponseDtoActionEnum ADMIN_SESSION_REVOKED = _$adminAuditLogResponseDtoActionEnum_ADMIN_SESSION_REVOKED;
+  @BuiltValueEnumConst(wireName: r'CASE_RESOLVED')
+  static const AdminAuditLogResponseDtoActionEnum CASE_RESOLVED = _$adminAuditLogResponseDtoActionEnum_CASE_RESOLVED;
+  @BuiltValueEnumConst(wireName: r'CASE_DISMISSED')
+  static const AdminAuditLogResponseDtoActionEnum CASE_DISMISSED = _$adminAuditLogResponseDtoActionEnum_CASE_DISMISSED;
+  @BuiltValueEnumConst(wireName: r'APPEAL_SUBMITTED')
+  static const AdminAuditLogResponseDtoActionEnum APPEAL_SUBMITTED = _$adminAuditLogResponseDtoActionEnum_APPEAL_SUBMITTED;
+  @BuiltValueEnumConst(wireName: r'APPEAL_UPHELD')
+  static const AdminAuditLogResponseDtoActionEnum APPEAL_UPHELD = _$adminAuditLogResponseDtoActionEnum_APPEAL_UPHELD;
+  @BuiltValueEnumConst(wireName: r'APPEAL_OVERTURNED')
+  static const AdminAuditLogResponseDtoActionEnum APPEAL_OVERTURNED = _$adminAuditLogResponseDtoActionEnum_APPEAL_OVERTURNED;
+  @BuiltValueEnumConst(wireName: r'USER_SESSIONS_REVOKED')
+  static const AdminAuditLogResponseDtoActionEnum USER_SESSIONS_REVOKED = _$adminAuditLogResponseDtoActionEnum_USER_SESSIONS_REVOKED;
+  @BuiltValueEnumConst(wireName: r'PASSWORD_RESET_REQUESTED_BY_ADMIN')
+  static const AdminAuditLogResponseDtoActionEnum PASSWORD_RESET_REQUESTED_BY_ADMIN = _$adminAuditLogResponseDtoActionEnum_PASSWORD_RESET_REQUESTED_BY_ADMIN;
+  @BuiltValueEnumConst(wireName: r'NOTIFICATION_CAMPAIGN_SCHEDULED')
+  static const AdminAuditLogResponseDtoActionEnum NOTIFICATION_CAMPAIGN_SCHEDULED = _$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_SCHEDULED;
+  @BuiltValueEnumConst(wireName: r'NOTIFICATION_CAMPAIGN_CANCELED')
+  static const AdminAuditLogResponseDtoActionEnum NOTIFICATION_CAMPAIGN_CANCELED = _$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_CANCELED;
+  @BuiltValueEnumConst(wireName: r'THREAD_CATEGORY_MERGED')
+  static const AdminAuditLogResponseDtoActionEnum THREAD_CATEGORY_MERGED = _$adminAuditLogResponseDtoActionEnum_THREAD_CATEGORY_MERGED;
+  @BuiltValueEnumConst(wireName: r'TAG_MERGED')
+  static const AdminAuditLogResponseDtoActionEnum TAG_MERGED = _$adminAuditLogResponseDtoActionEnum_TAG_MERGED;
+  @BuiltValueEnumConst(wireName: r'SITE_SETTINGS_UPDATED')
+  static const AdminAuditLogResponseDtoActionEnum SITE_SETTINGS_UPDATED = _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const AdminAuditLogResponseDtoActionEnum unknownDefaultOpenApi = _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi;
 
@@ -305,6 +339,20 @@ class AdminAuditLogResponseDtoTargetTypeEnum extends EnumClass {
   static const AdminAuditLogResponseDtoTargetTypeEnum THREAD_CATEGORY = _$adminAuditLogResponseDtoTargetTypeEnum_THREAD_CATEGORY;
   @BuiltValueEnumConst(wireName: r'TAG')
   static const AdminAuditLogResponseDtoTargetTypeEnum TAG = _$adminAuditLogResponseDtoTargetTypeEnum_TAG;
+  @BuiltValueEnumConst(wireName: r'MODERATION_CASE')
+  static const AdminAuditLogResponseDtoTargetTypeEnum MODERATION_CASE = _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_CASE;
+  @BuiltValueEnumConst(wireName: r'MODERATION_DECISION')
+  static const AdminAuditLogResponseDtoTargetTypeEnum MODERATION_DECISION = _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_DECISION;
+  @BuiltValueEnumConst(wireName: r'MODERATION_APPEAL')
+  static const AdminAuditLogResponseDtoTargetTypeEnum MODERATION_APPEAL = _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_APPEAL;
+  @BuiltValueEnumConst(wireName: r'ADMIN_INVITE')
+  static const AdminAuditLogResponseDtoTargetTypeEnum ADMIN_INVITE = _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_INVITE;
+  @BuiltValueEnumConst(wireName: r'ADMIN_SESSION')
+  static const AdminAuditLogResponseDtoTargetTypeEnum ADMIN_SESSION = _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_SESSION;
+  @BuiltValueEnumConst(wireName: r'NOTIFICATION_CAMPAIGN')
+  static const AdminAuditLogResponseDtoTargetTypeEnum NOTIFICATION_CAMPAIGN = _$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN;
+  @BuiltValueEnumConst(wireName: r'SITE_SETTINGS')
+  static const AdminAuditLogResponseDtoTargetTypeEnum SITE_SETTINGS = _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const AdminAuditLogResponseDtoTargetTypeEnum unknownDefaultOpenApi = _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
 

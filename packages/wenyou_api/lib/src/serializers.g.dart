@@ -11,13 +11,28 @@ Serializers _$serializers =
           ..add($ApiPaginatedSuccessEnvelope.serializer)
           ..add($ApiSuccessEnvelope.serializer)
           ..add(AddThreadTagDto.serializer)
+          ..add(AdminAccountReasonDto.serializer)
+          ..add(AdminAccountsCancel200Response.serializer)
+          ..add(AdminAccountsInvite201Response.serializer)
+          ..add(AdminAccountsList200Response.serializer)
+          ..add(AdminAccountsResponseDto.serializer)
+          ..add(AdminAccountsRevoke200Response.serializer)
+          ..add(AdminAccountsTransfer201Response.serializer)
           ..add(AdminAuditActorResponseDto.serializer)
           ..add(AdminAuditActorResponseDtoRoleEnum.serializer)
           ..add(AdminAuditLogResponseDto.serializer)
           ..add(AdminAuditLogResponseDtoActionEnum.serializer)
           ..add(AdminAuditLogResponseDtoTargetTypeEnum.serializer)
+          ..add(AdminAuthChallenge200Response.serializer)
+          ..add(AdminAuthLogout200Response.serializer)
+          ..add(AdminAuthSession200Response.serializer)
+          ..add(AdminAuthStepUpChallenge200Response.serializer)
+          ..add(AdminAuthVerify200Response.serializer)
+          ..add(AdminAuthVerifyStepUp200Response.serializer)
           ..add(AdminCapabilityResponseDto.serializer)
           ..add(AdminCapabilityResponseDtoRoleEnum.serializer)
+          ..add(AdminChallengeResponseDto.serializer)
+          ..add(AdminChallengeVerifyDto.serializer)
           ..add(AdminContentModerationResponseDto.serializer)
           ..add(AdminContentModerationResponseDtoTargetTypeEnum.serializer)
           ..add(AdminDashboardActivityMetricsDto.serializer)
@@ -34,6 +49,11 @@ Serializers _$serializers =
           ..add(AdminDashboardTimeseriesResponseDto.serializer)
           ..add(AdminGetHistory200Response.serializer)
           ..add(AdminIndex200Response.serializer)
+          ..add(AdminInviteAcceptanceAccept201Response.serializer)
+          ..add(AdminInviteCreatedResponseDto.serializer)
+          ..add(AdminLoginChallengeDto.serializer)
+          ..add(AdminModerationAppealsList200Response.serializer)
+          ..add(AdminModerationAppealsResolve201Response.serializer)
           ..add(AdminModerationGetUser200Response.serializer)
           ..add(AdminModerationHideContent200Response.serializer)
           ..add(AdminModerationListAuditLogs200Response.serializer)
@@ -54,6 +74,8 @@ Serializers _$serializers =
           ..add(AdminReportsResolve200Response.serializer)
           ..add(AdminSearchUsers200Response.serializer)
           ..add(AdminSendSystemNotification201Response.serializer)
+          ..add(AdminSessionResponseDto.serializer)
+          ..add(AdminStepUpResponseDto.serializer)
           ..add(AdminSystemNotificationHistoryItemDto.serializer)
           ..add(AdminSystemNotificationHistoryResponseDto.serializer)
           ..add(AdminTaxonomyCreateCategory201Response.serializer)
@@ -91,13 +113,17 @@ Serializers _$serializers =
           ..add(AuthVerifyChangeEmail200Response.serializer)
           ..add(AuthVerifyEmail200Response.serializer)
           ..add(BlockedUserRecordResponseDto.serializer)
+          ..add(BookmarkFolderResponseDto.serializer)
           ..add(BookmarkResponseDto.serializer)
           ..add(BookmarkThreadCountResponseDto.serializer)
           ..add(BookmarkThreadResponseDto.serializer)
           ..add(BookmarkThreadResponseDtoStatusEnum.serializer)
           ..add(BookmarkThreadResponseDtoVisibilityEnum.serializer)
           ..add(BookmarksCreate201Response.serializer)
+          ..add(BookmarksCreateFolder201Response.serializer)
           ..add(BookmarksFindAll200Response.serializer)
+          ..add(BookmarksFindFolders200Response.serializer)
+          ..add(BookmarksMove200Response.serializer)
           ..add(BookmarksRemove200Response.serializer)
           ..add(BusinessErrorCode.serializer)
           ..add(ChangeEmailRequestDto.serializer)
@@ -105,13 +131,18 @@ Serializers _$serializers =
           ..add(ChangePasswordDto.serializer)
           ..add(ConfirmUploadDto.serializer)
           ..add(ConfirmUploadResponseDto.serializer)
+          ..add(CreateAdminInviteDto.serializer)
           ..add(CreateBookmarkDto.serializer)
+          ..add(CreateBookmarkFolderDto.serializer)
           ..add(CreateDirectConversationDto.serializer)
           ..add(CreateDirectMessageDto.serializer)
           ..add(CreateDraftDto.serializer)
           ..add(CreateManagedTagDto.serializer)
+          ..add(CreateModerationAppealDto.serializer)
           ..add(CreateMomentCommentDto.serializer)
           ..add(CreateMomentDto.serializer)
+          ..add(CreateNotificationCampaignDto.serializer)
+          ..add(CreateNotificationCampaignDtoDestinationTypeEnum.serializer)
           ..add(CreatePostDto.serializer)
           ..add(CreateReportDto.serializer)
           ..add(CreateReportDtoReasonCodeEnum.serializer)
@@ -218,6 +249,18 @@ Serializers _$serializers =
           ..add(MobileDeviceUnregister200Response.serializer)
           ..add(MobilePlatformCompatibilityDto.serializer)
           ..add(ModerateContentDto.serializer)
+          ..add(ModerationAppealResponseDto.serializer)
+          ..add(ModerationAppealResponseDtoStatusEnum.serializer)
+          ..add(ModerationCaseResponseDto.serializer)
+          ..add(ModerationCaseResponseDtoStatusEnum.serializer)
+          ..add(ModerationCaseResponseDtoTargetTypeEnum.serializer)
+          ..add(ModerationCasesGet200Response.serializer)
+          ..add(ModerationCasesList200Response.serializer)
+          ..add(ModerationCasesResolve201Response.serializer)
+          ..add(ModerationDecisionPublicResponseDto.serializer)
+          ..add(ModerationDecisionPublicResponseDtoActionEnum.serializer)
+          ..add(ModerationDecisionPublicResponseDtoPolicyCodeEnum.serializer)
+          ..add(ModerationDecisionPublicResponseDtoTargetTypeEnum.serializer)
           ..add(MomentActionResponseDto.serializer)
           ..add(MomentCardResponseDto.serializer)
           ..add(MomentCardResponseDtoCoverTypeEnum.serializer)
@@ -249,6 +292,16 @@ Serializers _$serializers =
           ..add(MomentsUnbookmark200Response.serializer)
           ..add(MomentsUnlike200Response.serializer)
           ..add(MomentsUpdate200Response.serializer)
+          ..add(MoveBookmarkDto.serializer)
+          ..add(NotificationAudienceDto.serializer)
+          ..add(NotificationAudienceDtoRolesEnum.serializer)
+          ..add(NotificationCampaignCancel200Response.serializer)
+          ..add(NotificationCampaignCreate201Response.serializer)
+          ..add(NotificationCampaignList200Response.serializer)
+          ..add(NotificationCampaignPreview200Response.serializer)
+          ..add(NotificationCampaignResponseDto.serializer)
+          ..add(NotificationCampaignResponseDtoAudienceRoleEnum.serializer)
+          ..add(NotificationCampaignResponseDtoStatusEnum.serializer)
           ..add(NotificationFromUserResponseDto.serializer)
           ..add(NotificationLikerResponseDto.serializer)
           ..add(NotificationMomentCommentResponseDto.serializer)
@@ -289,6 +342,7 @@ Serializers _$serializers =
           ..add(PrivateUserResponseDtoRoleEnum.serializer)
           ..add(ProgressionResponseDto.serializer)
           ..add(PublicUserResponseDto.serializer)
+          ..add(PublicUserResponseDtoAccountStatusEnum.serializer)
           ..add(PublicUserResponseDtoRoleEnum.serializer)
           ..add(RecentReplyDiceResponseDto.serializer)
           ..add(RecentReplyResponseDto.serializer)
@@ -314,6 +368,12 @@ Serializers _$serializers =
           ..add(RequestCodeDto.serializer)
           ..add(ResendVerificationDto.serializer)
           ..add(ResetPasswordDto.serializer)
+          ..add(ResolveModerationAppealDto.serializer)
+          ..add(ResolveModerationAppealDtoOutcomeEnum.serializer)
+          ..add(ResolveModerationCaseDto.serializer)
+          ..add(ResolveModerationCaseDtoActionEnum.serializer)
+          ..add(ResolveModerationCaseDtoOutcomeEnum.serializer)
+          ..add(ResolveModerationCaseDtoPolicyCodeEnum.serializer)
           ..add(ResolveReportDto.serializer)
           ..add(ResolveReportDtoActionEnum.serializer)
           ..add(ResolveReportDtoOutcomeEnum.serializer)
@@ -344,6 +404,9 @@ Serializers _$serializers =
           ..add(SetAvatarDto.serializer)
           ..add(SetDirectConversationArchiveDto.serializer)
           ..add(SetReadStatusDto.serializer)
+          ..add(SiteOperationalSettingsGet200Response.serializer)
+          ..add(SiteOperationalSettingsResponseDto.serializer)
+          ..add(SiteOperationalSettingsUpdate200Response.serializer)
           ..add(StickerAssetResponseDto.serializer)
           ..add(StickerCollectionResponseDto.serializer)
           ..add(StickerImportResponseDto.serializer)
@@ -421,6 +484,7 @@ Serializers _$serializers =
           ..add(ThreadsUpdate200Response.serializer)
           ..add(TipRequestDto.serializer)
           ..add(TipResponseDto.serializer)
+          ..add(TransferSuperAdminDto.serializer)
           ..add(UnreadNotificationCountResponseDto.serializer)
           ..add(UpdateAdminRoleDto.serializer)
           ..add(UpdateAdminRoleDtoRoleEnum.serializer)
@@ -428,6 +492,7 @@ Serializers _$serializers =
           ..add(UpdateManagedTagDto.serializer)
           ..add(UpdateMomentDto.serializer)
           ..add(UpdatePostDto.serializer)
+          ..add(UpdateSiteSettingsDto.serializer)
           ..add(UpdateSubthreadDto.serializer)
           ..add(UpdateSubthreadDtoPostingPolicyEnum.serializer)
           ..add(UpdateThreadCategoryDto.serializer)
@@ -440,6 +505,8 @@ Serializers _$serializers =
           ..add(UserConditionDto.serializer)
           ..add(UserConditionDtoRoleEnum.serializer)
           ..add(UserFollowRecordResponseDto.serializer)
+          ..add(UserModerationAppealsAppeal201Response.serializer)
+          ..add(UserModerationAppealsMine200Response.serializer)
           ..add(UserMomentsList200Response.serializer)
           ..add(UserProfile.serializer)
           ..add(UserSocialCountResponseDto.serializer)
@@ -547,9 +614,51 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(BookmarkFolderResponseDto),
+            ]),
+            () => ListBuilder<BookmarkFolderResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(BookmarkThreadResponseDto),
             ]),
             () => ListBuilder<BookmarkThreadResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(BuiltMap, const [
+                const FullType(String),
+                const FullType.nullable(JsonObject),
+              ]),
+            ]),
+            () => ListBuilder<BuiltMap<String, JsonObject?>>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(BuiltMap, const [
+                const FullType(String),
+                const FullType.nullable(JsonObject),
+              ]),
+            ]),
+            () => ListBuilder<BuiltMap<String, JsonObject?>>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(BuiltMap, const [
+                const FullType(String),
+                const FullType.nullable(JsonObject),
+              ]),
+            ]),
+            () => ListBuilder<BuiltMap<String, JsonObject?>>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(BuiltMap, const [
+                const FullType(String),
+                const FullType.nullable(JsonObject),
+              ]),
+            ]),
+            () => ListBuilder<BuiltMap<String, JsonObject?>>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -625,6 +734,24 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(ModerationAppealResponseDto),
+            ]),
+            () => ListBuilder<ModerationAppealResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ModerationCaseResponseDto),
+            ]),
+            () => ListBuilder<ModerationCaseResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ModerationDecisionPublicResponseDto),
+            ]),
+            () => ListBuilder<ModerationDecisionPublicResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(MomentCardResponseDto),
             ]),
             () => ListBuilder<MomentCardResponseDto>(),
@@ -670,6 +797,18 @@ Serializers _$serializers =
               const FullType(MomentSearchResponseDto),
             ]),
             () => ListBuilder<MomentSearchResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(NotificationAudienceDtoRolesEnum),
+            ]),
+            () => ListBuilder<NotificationAudienceDtoRolesEnum>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(NotificationCampaignResponseDto),
+            ]),
+            () => ListBuilder<NotificationCampaignResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
@@ -988,6 +1127,48 @@ Serializers _$serializers =
               ]),
             ]),
             () => MapBuilder<String, BuiltMap<String, JsonObject?>>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

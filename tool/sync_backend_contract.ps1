@@ -13,8 +13,21 @@ Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-v2-fixtures.json"
 Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-v2-nodes-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1.schema.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-v1-golden-fixtures.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-v1-operation-coverage.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\thread-category-v1-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\CHANGELOG.md") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "docs\mobile-client-guide.md") -Destination (Join-Path $contractDir "mobile-client-guide.md") -Force
+
+Push-Location $mobile
+try {
+  & dart run "tool/normalize_synced_contract.dart" "contracts/openapi.json"
+  if ($LASTEXITCODE -ne 0) {
+    throw "OpenAPI contract normalization failed with exit code $LASTEXITCODE"
+  }
+} finally {
+  Pop-Location
+}
 
 $revision = (& git -C $backend rev-parse HEAD).Trim()
 $contractVersionLine = Select-String -LiteralPath (Join-Path $backend "contracts\CHANGELOG.md") -Pattern '^##\s+(.+)$' | Select-Object -First 1

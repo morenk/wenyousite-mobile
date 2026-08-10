@@ -192,6 +192,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
   final BookmarkThreadCountResponseDto count;
   @override
   final String? bookmarkId;
+  @override
+  final String? bookmarkFolderId;
 
   factory _$BookmarkThreadResponseDto([
     void Function(BookmarkThreadResponseDtoBuilder)? updates,
@@ -212,6 +214,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
     required this.owner,
     required this.count,
     this.bookmarkId,
+    this.bookmarkFolderId,
   }) : super._();
   @override
   BookmarkThreadResponseDto rebuild(
@@ -239,7 +242,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
         deletedAt == other.deletedAt &&
         owner == other.owner &&
         count == other.count &&
-        bookmarkId == other.bookmarkId;
+        bookmarkId == other.bookmarkId &&
+        bookmarkFolderId == other.bookmarkFolderId;
   }
 
   @override
@@ -259,6 +263,7 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
     _$hash = $jc(_$hash, owner.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, bookmarkId.hashCode);
+    _$hash = $jc(_$hash, bookmarkFolderId.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -279,7 +284,8 @@ class _$BookmarkThreadResponseDto extends BookmarkThreadResponseDto {
           ..add('deletedAt', deletedAt)
           ..add('owner', owner)
           ..add('count', count)
-          ..add('bookmarkId', bookmarkId))
+          ..add('bookmarkId', bookmarkId)
+          ..add('bookmarkFolderId', bookmarkFolderId))
         .toString();
   }
 }
@@ -350,6 +356,11 @@ class BookmarkThreadResponseDtoBuilder
   String? get bookmarkId => _$this._bookmarkId;
   set bookmarkId(String? bookmarkId) => _$this._bookmarkId = bookmarkId;
 
+  String? _bookmarkFolderId;
+  String? get bookmarkFolderId => _$this._bookmarkFolderId;
+  set bookmarkFolderId(String? bookmarkFolderId) =>
+      _$this._bookmarkFolderId = bookmarkFolderId;
+
   BookmarkThreadResponseDtoBuilder() {
     BookmarkThreadResponseDto._defaults(this);
   }
@@ -371,6 +382,7 @@ class BookmarkThreadResponseDtoBuilder
       _owner = $v.owner.toBuilder();
       _count = $v.count.toBuilder();
       _bookmarkId = $v.bookmarkId;
+      _bookmarkFolderId = $v.bookmarkFolderId;
       _$v = null;
     }
     return this;
@@ -445,6 +457,7 @@ class BookmarkThreadResponseDtoBuilder
             owner: owner.build(),
             count: count.build(),
             bookmarkId: bookmarkId,
+            bookmarkFolderId: bookmarkFolderId,
           );
     } catch (_) {
       late String _$failedField;

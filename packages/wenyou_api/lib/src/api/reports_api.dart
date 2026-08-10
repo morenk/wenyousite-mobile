@@ -20,7 +20,7 @@ class ReportsApi {
 
   const ReportsApi(this._dio, this._serializers);
 
-  /// 提交公开社区目标举报
+  /// 提交社区内容、用户或自己收到的私聊消息举报（Web/移动端兼容）
   ///
   ///
   /// Parameters:

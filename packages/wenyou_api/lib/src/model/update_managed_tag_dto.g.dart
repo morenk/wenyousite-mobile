@@ -10,9 +10,9 @@ class _$UpdateManagedTagDto extends UpdateManagedTagDto {
   @override
   final String? name;
   @override
-  final JsonObject? color;
+  final String? color;
   @override
-  final JsonObject? description;
+  final String? description;
   @override
   final num? sortOrder;
   @override
@@ -87,13 +87,13 @@ class UpdateManagedTagDtoBuilder
   String? get name => _$this._name;
   set name(String? name) => _$this._name = name;
 
-  JsonObject? _color;
-  JsonObject? get color => _$this._color;
-  set color(JsonObject? color) => _$this._color = color;
+  String? _color;
+  String? get color => _$this._color;
+  set color(String? color) => _$this._color = color;
 
-  JsonObject? _description;
-  JsonObject? get description => _$this._description;
-  set description(JsonObject? description) => _$this._description = description;
+  String? _description;
+  String? get description => _$this._description;
+  set description(String? description) => _$this._description = description;
 
   num? _sortOrder;
   num? get sortOrder => _$this._sortOrder;

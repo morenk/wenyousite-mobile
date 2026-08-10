@@ -18,6 +18,9 @@ const ReportResponseDtoTargetTypeEnum
 _$reportResponseDtoTargetTypeEnum_MOMENT_COMMENT =
     const ReportResponseDtoTargetTypeEnum._('MOMENT_COMMENT');
 const ReportResponseDtoTargetTypeEnum
+_$reportResponseDtoTargetTypeEnum_DIRECT_MESSAGE =
+    const ReportResponseDtoTargetTypeEnum._('DIRECT_MESSAGE');
+const ReportResponseDtoTargetTypeEnum
 _$reportResponseDtoTargetTypeEnum_unknownDefaultOpenApi =
     const ReportResponseDtoTargetTypeEnum._('unknownDefaultOpenApi');
 
@@ -35,6 +38,8 @@ ReportResponseDtoTargetTypeEnum _$reportResponseDtoTargetTypeEnumValueOf(
       return _$reportResponseDtoTargetTypeEnum_MOMENT;
     case 'MOMENT_COMMENT':
       return _$reportResponseDtoTargetTypeEnum_MOMENT_COMMENT;
+    case 'DIRECT_MESSAGE':
+      return _$reportResponseDtoTargetTypeEnum_DIRECT_MESSAGE;
     case 'unknownDefaultOpenApi':
       return _$reportResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
     default:
@@ -51,6 +56,7 @@ _$reportResponseDtoTargetTypeEnumValues =
         _$reportResponseDtoTargetTypeEnum_POST,
         _$reportResponseDtoTargetTypeEnum_MOMENT,
         _$reportResponseDtoTargetTypeEnum_MOMENT_COMMENT,
+        _$reportResponseDtoTargetTypeEnum_DIRECT_MESSAGE,
         _$reportResponseDtoTargetTypeEnum_unknownDefaultOpenApi,
       ],
     );
@@ -72,6 +78,12 @@ _$reportResponseDtoReasonCodeEnum_VIOLENT_CONTENT =
 const ReportResponseDtoReasonCodeEnum
 _$reportResponseDtoReasonCodeEnum_PERSONAL_INFORMATION =
     const ReportResponseDtoReasonCodeEnum._('PERSONAL_INFORMATION');
+const ReportResponseDtoReasonCodeEnum
+_$reportResponseDtoReasonCodeEnum_IMPERSONATION_OR_FRAUD =
+    const ReportResponseDtoReasonCodeEnum._('IMPERSONATION_OR_FRAUD');
+const ReportResponseDtoReasonCodeEnum
+_$reportResponseDtoReasonCodeEnum_INTELLECTUAL_PROPERTY =
+    const ReportResponseDtoReasonCodeEnum._('INTELLECTUAL_PROPERTY');
 const ReportResponseDtoReasonCodeEnum
 _$reportResponseDtoReasonCodeEnum_ILLEGAL_CONTENT =
     const ReportResponseDtoReasonCodeEnum._('ILLEGAL_CONTENT');
@@ -97,6 +109,10 @@ ReportResponseDtoReasonCodeEnum _$reportResponseDtoReasonCodeEnumValueOf(
       return _$reportResponseDtoReasonCodeEnum_VIOLENT_CONTENT;
     case 'PERSONAL_INFORMATION':
       return _$reportResponseDtoReasonCodeEnum_PERSONAL_INFORMATION;
+    case 'IMPERSONATION_OR_FRAUD':
+      return _$reportResponseDtoReasonCodeEnum_IMPERSONATION_OR_FRAUD;
+    case 'INTELLECTUAL_PROPERTY':
+      return _$reportResponseDtoReasonCodeEnum_INTELLECTUAL_PROPERTY;
     case 'ILLEGAL_CONTENT':
       return _$reportResponseDtoReasonCodeEnum_ILLEGAL_CONTENT;
     case 'OTHER':
@@ -118,6 +134,8 @@ _$reportResponseDtoReasonCodeEnumValues =
         _$reportResponseDtoReasonCodeEnum_SEXUAL_CONTENT,
         _$reportResponseDtoReasonCodeEnum_VIOLENT_CONTENT,
         _$reportResponseDtoReasonCodeEnum_PERSONAL_INFORMATION,
+        _$reportResponseDtoReasonCodeEnum_IMPERSONATION_OR_FRAUD,
+        _$reportResponseDtoReasonCodeEnum_INTELLECTUAL_PROPERTY,
         _$reportResponseDtoReasonCodeEnum_ILLEGAL_CONTENT,
         _$reportResponseDtoReasonCodeEnum_OTHER,
         _$reportResponseDtoReasonCodeEnum_unknownDefaultOpenApi,
@@ -176,6 +194,7 @@ class _$ReportResponseDtoTargetTypeEnumSerializer
     'POST': 'POST',
     'MOMENT': 'MOMENT',
     'MOMENT_COMMENT': 'MOMENT_COMMENT',
+    'DIRECT_MESSAGE': 'DIRECT_MESSAGE',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -184,6 +203,7 @@ class _$ReportResponseDtoTargetTypeEnumSerializer
     'POST': 'POST',
     'MOMENT': 'MOMENT',
     'MOMENT_COMMENT': 'MOMENT_COMMENT',
+    'DIRECT_MESSAGE': 'DIRECT_MESSAGE',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 
@@ -218,6 +238,8 @@ class _$ReportResponseDtoReasonCodeEnumSerializer
     'SEXUAL_CONTENT': 'SEXUAL_CONTENT',
     'VIOLENT_CONTENT': 'VIOLENT_CONTENT',
     'PERSONAL_INFORMATION': 'PERSONAL_INFORMATION',
+    'IMPERSONATION_OR_FRAUD': 'IMPERSONATION_OR_FRAUD',
+    'INTELLECTUAL_PROPERTY': 'INTELLECTUAL_PROPERTY',
     'ILLEGAL_CONTENT': 'ILLEGAL_CONTENT',
     'OTHER': 'OTHER',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
@@ -229,6 +251,8 @@ class _$ReportResponseDtoReasonCodeEnumSerializer
     'SEXUAL_CONTENT': 'SEXUAL_CONTENT',
     'VIOLENT_CONTENT': 'VIOLENT_CONTENT',
     'PERSONAL_INFORMATION': 'PERSONAL_INFORMATION',
+    'IMPERSONATION_OR_FRAUD': 'IMPERSONATION_OR_FRAUD',
+    'INTELLECTUAL_PROPERTY': 'INTELLECTUAL_PROPERTY',
     'ILLEGAL_CONTENT': 'ILLEGAL_CONTENT',
     'OTHER': 'OTHER',
     'unknown_default_open_api': 'unknownDefaultOpenApi',

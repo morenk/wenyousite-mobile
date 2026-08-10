@@ -34,6 +34,7 @@ class AdminTaxonomyApi {
   ///
   /// Parameters:
   /// * [createThreadCategoryDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -45,6 +46,7 @@ class AdminTaxonomyApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminTaxonomyCreateCategory201Response>> adminTaxonomyCreateCategory({
     required CreateThreadCategoryDto createThreadCategoryDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -56,14 +58,21 @@ class AdminTaxonomyApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -135,6 +144,7 @@ class AdminTaxonomyApi {
   ///
   /// Parameters:
   /// * [createManagedTagDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -146,6 +156,7 @@ class AdminTaxonomyApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminTaxonomyCreateTag201Response>> adminTaxonomyCreateTag({
     required CreateManagedTagDto createManagedTagDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -157,14 +168,21 @@ class AdminTaxonomyApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -235,6 +253,7 @@ class AdminTaxonomyApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -245,6 +264,7 @@ class AdminTaxonomyApi {
   /// Returns a [Future] containing a [Response] with a [AdminTaxonomyListCategories200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminTaxonomyListCategories200Response>> adminTaxonomyListCategories({
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -256,14 +276,21 @@ class AdminTaxonomyApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -314,6 +341,7 @@ class AdminTaxonomyApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -324,6 +352,7 @@ class AdminTaxonomyApi {
   /// Returns a [Future] containing a [Response] with a [AdminTaxonomyListTags200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminTaxonomyListTags200Response>> adminTaxonomyListTags({
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -335,14 +364,21 @@ class AdminTaxonomyApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -395,6 +431,7 @@ class AdminTaxonomyApi {
   /// Parameters:
   /// * [id]
   /// * [updateThreadCategoryDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -407,6 +444,7 @@ class AdminTaxonomyApi {
   Future<Response<AdminTaxonomyUpdateCategory200Response>> adminTaxonomyUpdateCategory({
     required String id,
     required UpdateThreadCategoryDto updateThreadCategoryDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -418,14 +456,21 @@ class AdminTaxonomyApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -498,6 +543,7 @@ class AdminTaxonomyApi {
   /// Parameters:
   /// * [id]
   /// * [updateManagedTagDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -510,6 +556,7 @@ class AdminTaxonomyApi {
   Future<Response<AdminTaxonomyUpdateTag200Response>> adminTaxonomyUpdateTag({
     required String id,
     required UpdateManagedTagDto updateManagedTagDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -521,14 +568,21 @@ class AdminTaxonomyApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,

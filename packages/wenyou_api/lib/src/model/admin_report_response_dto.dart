@@ -40,14 +40,14 @@ abstract class AdminReportResponseDto implements Built<AdminReportResponseDto, A
 
   @BuiltValueField(wireName: r'targetType')
   AdminReportResponseDtoTargetTypeEnum get targetType;
-  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  };
+  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  DIRECT_MESSAGE,  };
 
   @BuiltValueField(wireName: r'targetId')
   String get targetId;
 
   @BuiltValueField(wireName: r'reasonCode')
   AdminReportResponseDtoReasonCodeEnum get reasonCode;
-  // enum reasonCodeEnum {  SPAM,  HARASSMENT,  HATE_OR_THREATS,  SEXUAL_CONTENT,  VIOLENT_CONTENT,  PERSONAL_INFORMATION,  ILLEGAL_CONTENT,  OTHER,  };
+  // enum reasonCodeEnum {  SPAM,  HARASSMENT,  HATE_OR_THREATS,  SEXUAL_CONTENT,  VIOLENT_CONTENT,  PERSONAL_INFORMATION,  IMPERSONATION_OR_FRAUD,  INTELLECTUAL_PROPERTY,  ILLEGAL_CONTENT,  OTHER,  };
 
   @BuiltValueField(wireName: r'details')
   String? get details;
@@ -373,6 +373,8 @@ class AdminReportResponseDtoTargetTypeEnum extends EnumClass {
   static const AdminReportResponseDtoTargetTypeEnum MOMENT = _$adminReportResponseDtoTargetTypeEnum_MOMENT;
   @BuiltValueEnumConst(wireName: r'MOMENT_COMMENT')
   static const AdminReportResponseDtoTargetTypeEnum MOMENT_COMMENT = _$adminReportResponseDtoTargetTypeEnum_MOMENT_COMMENT;
+  @BuiltValueEnumConst(wireName: r'DIRECT_MESSAGE')
+  static const AdminReportResponseDtoTargetTypeEnum DIRECT_MESSAGE = _$adminReportResponseDtoTargetTypeEnum_DIRECT_MESSAGE;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const AdminReportResponseDtoTargetTypeEnum unknownDefaultOpenApi = _$adminReportResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
 
@@ -398,6 +400,10 @@ class AdminReportResponseDtoReasonCodeEnum extends EnumClass {
   static const AdminReportResponseDtoReasonCodeEnum VIOLENT_CONTENT = _$adminReportResponseDtoReasonCodeEnum_VIOLENT_CONTENT;
   @BuiltValueEnumConst(wireName: r'PERSONAL_INFORMATION')
   static const AdminReportResponseDtoReasonCodeEnum PERSONAL_INFORMATION = _$adminReportResponseDtoReasonCodeEnum_PERSONAL_INFORMATION;
+  @BuiltValueEnumConst(wireName: r'IMPERSONATION_OR_FRAUD')
+  static const AdminReportResponseDtoReasonCodeEnum IMPERSONATION_OR_FRAUD = _$adminReportResponseDtoReasonCodeEnum_IMPERSONATION_OR_FRAUD;
+  @BuiltValueEnumConst(wireName: r'INTELLECTUAL_PROPERTY')
+  static const AdminReportResponseDtoReasonCodeEnum INTELLECTUAL_PROPERTY = _$adminReportResponseDtoReasonCodeEnum_INTELLECTUAL_PROPERTY;
   @BuiltValueEnumConst(wireName: r'ILLEGAL_CONTENT')
   static const AdminReportResponseDtoReasonCodeEnum ILLEGAL_CONTENT = _$adminReportResponseDtoReasonCodeEnum_ILLEGAL_CONTENT;
   @BuiltValueEnumConst(wireName: r'OTHER')

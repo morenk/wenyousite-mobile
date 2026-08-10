@@ -26,6 +26,7 @@ class AdminDashboardApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -36,6 +37,7 @@ class AdminDashboardApi {
   /// Returns a [Future] containing a [Response] with a [AdminDashboardDistributions200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminDashboardDistributions200Response>> adminDashboardDistributions({
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -47,14 +49,21 @@ class AdminDashboardApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -105,6 +114,7 @@ class AdminDashboardApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [from] - 北京时间起始日期（含）
   /// * [to] - 北京时间结束日期（含）
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -117,6 +127,7 @@ class AdminDashboardApi {
   /// Returns a [Future] containing a [Response] with a [AdminDashboardOverview200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminDashboardOverview200Response>> adminDashboardOverview({
+    String? xCSRFToken,
     String? from,
     String? to,
     CancelToken? cancelToken,
@@ -130,14 +141,21 @@ class AdminDashboardApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -194,6 +212,7 @@ class AdminDashboardApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [from] - 北京时间起始日期（含）
   /// * [to] - 北京时间结束日期（含）
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -206,6 +225,7 @@ class AdminDashboardApi {
   /// Returns a [Future] containing a [Response] with a [AdminDashboardTimeseries200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminDashboardTimeseries200Response>> adminDashboardTimeseries({
+    String? xCSRFToken,
     String? from,
     String? to,
     CancelToken? cancelToken,
@@ -219,14 +239,21 @@ class AdminDashboardApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,

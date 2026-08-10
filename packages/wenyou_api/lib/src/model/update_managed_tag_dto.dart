@@ -3,7 +3,6 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -24,10 +23,10 @@ abstract class UpdateManagedTagDto implements Built<UpdateManagedTagDto, UpdateM
   String? get name;
 
   @BuiltValueField(wireName: r'color')
-  JsonObject? get color;
+  String? get color;
 
   @BuiltValueField(wireName: r'description')
-  JsonObject? get description;
+  String? get description;
 
   @BuiltValueField(wireName: r'sortOrder')
   num? get sortOrder;
@@ -72,14 +71,14 @@ class _$UpdateManagedTagDtoSerializer implements PrimitiveSerializer<UpdateManag
       yield r'color';
       yield serializers.serialize(
         object.color,
-        specifiedType: const FullType.nullable(JsonObject),
+        specifiedType: const FullType.nullable(String),
       );
     }
     if (object.description != null) {
       yield r'description';
       yield serializers.serialize(
         object.description,
-        specifiedType: const FullType.nullable(JsonObject),
+        specifiedType: const FullType.nullable(String),
       );
     }
     if (object.sortOrder != null) {
@@ -136,16 +135,16 @@ class _$UpdateManagedTagDtoSerializer implements PrimitiveSerializer<UpdateManag
         case r'color':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(JsonObject),
-          ) as JsonObject?;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
           if (valueDes == null) continue;
           result.color = valueDes;
           break;
         case r'description':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(JsonObject),
-          ) as JsonObject?;
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
           if (valueDes == null) continue;
           result.description = valueDes;
           break;

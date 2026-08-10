@@ -27,6 +27,7 @@ class AdminReportsApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [status]
@@ -42,6 +43,7 @@ class AdminReportsApi {
   /// Returns a [Future] containing a [Response] with a [AdminReportsFindAll200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminReportsFindAll200Response>> adminReportsFindAll({
+    String? xCSRFToken,
     String? cursor,
     num? limit = 20,
     String? status,
@@ -58,14 +60,21 @@ class AdminReportsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -126,6 +135,7 @@ class AdminReportsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -137,6 +147,7 @@ class AdminReportsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminReportsFindOne200Response>> adminReportsFindOne({
     required String id,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -148,14 +159,21 @@ class AdminReportsApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -208,6 +226,7 @@ class AdminReportsApi {
   /// Parameters:
   /// * [id]
   /// * [resolveReportDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -220,6 +239,7 @@ class AdminReportsApi {
   Future<Response<AdminReportsResolve200Response>> adminReportsResolve({
     required String id,
     required ResolveReportDto resolveReportDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -231,14 +251,21 @@ class AdminReportsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,

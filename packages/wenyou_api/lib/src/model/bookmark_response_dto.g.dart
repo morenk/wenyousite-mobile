@@ -14,6 +14,8 @@ class _$BookmarkResponseDto extends BookmarkResponseDto {
   @override
   final String threadId;
   @override
+  final String folderId;
+  @override
   final DateTime createdAt;
 
   factory _$BookmarkResponseDto([
@@ -24,6 +26,7 @@ class _$BookmarkResponseDto extends BookmarkResponseDto {
     required this.id,
     required this.userId,
     required this.threadId,
+    required this.folderId,
     required this.createdAt,
   }) : super._();
   @override
@@ -42,6 +45,7 @@ class _$BookmarkResponseDto extends BookmarkResponseDto {
         id == other.id &&
         userId == other.userId &&
         threadId == other.threadId &&
+        folderId == other.folderId &&
         createdAt == other.createdAt;
   }
 
@@ -51,6 +55,7 @@ class _$BookmarkResponseDto extends BookmarkResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, userId.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
+    _$hash = $jc(_$hash, folderId.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -62,6 +67,7 @@ class _$BookmarkResponseDto extends BookmarkResponseDto {
           ..add('id', id)
           ..add('userId', userId)
           ..add('threadId', threadId)
+          ..add('folderId', folderId)
           ..add('createdAt', createdAt))
         .toString();
   }
@@ -83,6 +89,10 @@ class BookmarkResponseDtoBuilder
   String? get threadId => _$this._threadId;
   set threadId(String? threadId) => _$this._threadId = threadId;
 
+  String? _folderId;
+  String? get folderId => _$this._folderId;
+  set folderId(String? folderId) => _$this._folderId = folderId;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -97,6 +107,7 @@ class BookmarkResponseDtoBuilder
       _id = $v.id;
       _userId = $v.userId;
       _threadId = $v.threadId;
+      _folderId = $v.folderId;
       _createdAt = $v.createdAt;
       _$v = null;
     }
@@ -134,6 +145,11 @@ class BookmarkResponseDtoBuilder
             threadId,
             r'BookmarkResponseDto',
             'threadId',
+          ),
+          folderId: BuiltValueNullFieldError.checkNotNull(
+            folderId,
+            r'BookmarkResponseDto',
+            'folderId',
           ),
           createdAt: BuiltValueNullFieldError.checkNotNull(
             createdAt,

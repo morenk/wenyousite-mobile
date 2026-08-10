@@ -8,6 +8,7 @@ import 'package:built_value/json_object.dart';
 import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 
+import 'dart:typed_data';
 import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/admin_moderation_get_user200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_hide_content200_response.dart';
@@ -31,11 +32,126 @@ class AdminModerationApi {
 
   const AdminModerationApi(this._dio, this._serializers);
 
+  /// 按当前筛选导出管理员审计日志 CSV（最多 10000 条）
+  ///
+  ///
+  /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
+  /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [action]
+  /// * [targetType]
+  /// * [targetId]
+  /// * [actorId]
+  /// * [createdAfter]
+  /// * [createdBefore]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Uint8List] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Uint8List>> adminModerationExportAuditLogs({
+    String? xCSRFToken,
+    String? cursor,
+    num? limit = 20,
+    String? action,
+    String? targetType,
+    String? targetId,
+    String? actorId,
+    DateTime? createdAfter,
+    DateTime? createdBefore,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/audit-logs/export';
+    final _options = Options(
+      method: r'GET',
+      responseType: ResponseType.bytes,
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (action != null) r'action': encodeQueryParameter(_serializers, action, const FullType(String)),
+      if (targetType != null) r'targetType': encodeQueryParameter(_serializers, targetType, const FullType(String)),
+      if (targetId != null) r'targetId': encodeQueryParameter(_serializers, targetId, const FullType(String)),
+      if (actorId != null) r'actorId': encodeQueryParameter(_serializers, actorId, const FullType(String)),
+      if (createdAfter != null) r'createdAfter': encodeQueryParameter(_serializers, createdAfter, const FullType(DateTime)),
+      if (createdBefore != null) r'createdBefore': encodeQueryParameter(_serializers, createdBefore, const FullType(DateTime)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Uint8List? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : rawResponse as Uint8List;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Uint8List>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// 管理员用户详情
   ///
   ///
   /// Parameters:
   /// * [id]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -47,6 +163,7 @@ class AdminModerationApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminModerationGetUser200Response>> adminModerationGetUser({
     required String id,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -58,14 +175,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -119,6 +243,7 @@ class AdminModerationApi {
   /// * [type]
   /// * [id]
   /// * [moderateContentDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -132,6 +257,7 @@ class AdminModerationApi {
     required String type,
     required String id,
     required ModerateContentDto moderateContentDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -143,14 +269,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -221,6 +354,7 @@ class AdminModerationApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [action]
@@ -239,6 +373,7 @@ class AdminModerationApi {
   /// Returns a [Future] containing a [Response] with a [AdminModerationListAuditLogs200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminModerationListAuditLogs200Response>> adminModerationListAuditLogs({
+    String? xCSRFToken,
     String? cursor,
     num? limit = 20,
     String? action,
@@ -258,14 +393,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -328,6 +470,7 @@ class AdminModerationApi {
   ///
   ///
   /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
   /// * [q] - 用户名或邮箱关键词
@@ -343,6 +486,7 @@ class AdminModerationApi {
   /// Returns a [Future] containing a [Response] with a [AdminModerationListUsers200Response] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AdminModerationListUsers200Response>> adminModerationListUsers({
+    String? xCSRFToken,
     String? cursor,
     num? limit = 20,
     String? q,
@@ -359,14 +503,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -429,6 +580,7 @@ class AdminModerationApi {
   /// * [type]
   /// * [id]
   /// * [moderateContentDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -442,6 +594,7 @@ class AdminModerationApi {
     required String type,
     required String id,
     required ModerateContentDto moderateContentDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -453,14 +606,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -533,6 +693,7 @@ class AdminModerationApi {
   /// Parameters:
   /// * [id]
   /// * [revokeSanctionDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -545,6 +706,7 @@ class AdminModerationApi {
   Future<Response<AdminModerationRevokeSanction200Response>> adminModerationRevokeSanction({
     required String id,
     required RevokeSanctionDto revokeSanctionDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -556,14 +718,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -636,6 +805,7 @@ class AdminModerationApi {
   /// Parameters:
   /// * [id]
   /// * [sanctionUserDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -648,6 +818,7 @@ class AdminModerationApi {
   Future<Response<AdminModerationSanctionUser201Response>> adminModerationSanctionUser({
     required String id,
     required SanctionUserDto sanctionUserDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -659,14 +830,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,
@@ -733,12 +911,13 @@ class AdminModerationApi {
     );
   }
 
-  /// 授予或撤销管理员角色（超级管理员）
+  /// 撤销管理员角色；授予请使用邀请流程（超级管理员）
   ///
   ///
   /// Parameters:
   /// * [id]
   /// * [updateAdminRoleDto]
+  /// * [xCSRFToken] - 管理后台写操作必填
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -751,6 +930,7 @@ class AdminModerationApi {
   Future<Response<AdminModerationUpdateRole200Response>> adminModerationUpdateRole({
     required String id,
     required UpdateAdminRoleDto updateAdminRoleDto,
+    String? xCSRFToken,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -762,14 +942,21 @@ class AdminModerationApi {
     final _options = Options(
       method: r'PATCH',
       headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
         ...?headers,
       },
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
           },
         ],
         ...?extra,

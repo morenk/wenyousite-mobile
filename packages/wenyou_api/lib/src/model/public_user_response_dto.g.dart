@@ -44,9 +44,52 @@ _$publicUserResponseDtoRoleEnumValues = BuiltSet<PublicUserResponseDtoRoleEnum>(
   ],
 );
 
+const PublicUserResponseDtoAccountStatusEnum
+_$publicUserResponseDtoAccountStatusEnum_ACTIVE =
+    const PublicUserResponseDtoAccountStatusEnum._('ACTIVE');
+const PublicUserResponseDtoAccountStatusEnum
+_$publicUserResponseDtoAccountStatusEnum_SUSPENDED =
+    const PublicUserResponseDtoAccountStatusEnum._('SUSPENDED');
+const PublicUserResponseDtoAccountStatusEnum
+_$publicUserResponseDtoAccountStatusEnum_BANNED =
+    const PublicUserResponseDtoAccountStatusEnum._('BANNED');
+const PublicUserResponseDtoAccountStatusEnum
+_$publicUserResponseDtoAccountStatusEnum_unknownDefaultOpenApi =
+    const PublicUserResponseDtoAccountStatusEnum._('unknownDefaultOpenApi');
+
+PublicUserResponseDtoAccountStatusEnum
+_$publicUserResponseDtoAccountStatusEnumValueOf(String name) {
+  switch (name) {
+    case 'ACTIVE':
+      return _$publicUserResponseDtoAccountStatusEnum_ACTIVE;
+    case 'SUSPENDED':
+      return _$publicUserResponseDtoAccountStatusEnum_SUSPENDED;
+    case 'BANNED':
+      return _$publicUserResponseDtoAccountStatusEnum_BANNED;
+    case 'unknownDefaultOpenApi':
+      return _$publicUserResponseDtoAccountStatusEnum_unknownDefaultOpenApi;
+    default:
+      return _$publicUserResponseDtoAccountStatusEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<PublicUserResponseDtoAccountStatusEnum>
+_$publicUserResponseDtoAccountStatusEnumValues =
+    BuiltSet<PublicUserResponseDtoAccountStatusEnum>(
+      const <PublicUserResponseDtoAccountStatusEnum>[
+        _$publicUserResponseDtoAccountStatusEnum_ACTIVE,
+        _$publicUserResponseDtoAccountStatusEnum_SUSPENDED,
+        _$publicUserResponseDtoAccountStatusEnum_BANNED,
+        _$publicUserResponseDtoAccountStatusEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 Serializer<PublicUserResponseDtoRoleEnum>
 _$publicUserResponseDtoRoleEnumSerializer =
     _$PublicUserResponseDtoRoleEnumSerializer();
+Serializer<PublicUserResponseDtoAccountStatusEnum>
+_$publicUserResponseDtoAccountStatusEnumSerializer =
+    _$PublicUserResponseDtoAccountStatusEnumSerializer();
 
 class _$PublicUserResponseDtoRoleEnumSerializer
     implements PrimitiveSerializer<PublicUserResponseDtoRoleEnum> {
@@ -85,6 +128,45 @@ class _$PublicUserResponseDtoRoleEnumSerializer
   );
 }
 
+class _$PublicUserResponseDtoAccountStatusEnumSerializer
+    implements PrimitiveSerializer<PublicUserResponseDtoAccountStatusEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACTIVE': 'ACTIVE',
+    'SUSPENDED': 'SUSPENDED',
+    'BANNED': 'BANNED',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACTIVE': 'ACTIVE',
+    'SUSPENDED': 'SUSPENDED',
+    'BANNED': 'BANNED',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    PublicUserResponseDtoAccountStatusEnum,
+  ];
+  @override
+  final String wireName = 'PublicUserResponseDtoAccountStatusEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    PublicUserResponseDtoAccountStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  PublicUserResponseDtoAccountStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => PublicUserResponseDtoAccountStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$PublicUserResponseDto extends PublicUserResponseDto {
   @override
   final String id;
@@ -112,6 +194,8 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   final DateTime? createdAt;
   @override
   final UserSocialCountResponseDto? count;
+  @override
+  final PublicUserResponseDtoAccountStatusEnum? accountStatus;
   @override
   final bool? isFollowing;
   @override
@@ -141,6 +225,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
     this.showBookmarks,
     this.createdAt,
     this.count,
+    this.accountStatus,
     this.isFollowing,
     this.isFollowedBy,
     this.isBlocked,
@@ -173,6 +258,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
         showBookmarks == other.showBookmarks &&
         createdAt == other.createdAt &&
         count == other.count &&
+        accountStatus == other.accountStatus &&
         isFollowing == other.isFollowing &&
         isFollowedBy == other.isFollowedBy &&
         isBlocked == other.isBlocked &&
@@ -196,6 +282,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
     _$hash = $jc(_$hash, showBookmarks.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
+    _$hash = $jc(_$hash, accountStatus.hashCode);
     _$hash = $jc(_$hash, isFollowing.hashCode);
     _$hash = $jc(_$hash, isFollowedBy.hashCode);
     _$hash = $jc(_$hash, isBlocked.hashCode);
@@ -221,6 +308,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
           ..add('showBookmarks', showBookmarks)
           ..add('createdAt', createdAt)
           ..add('count', count)
+          ..add('accountStatus', accountStatus)
           ..add('isFollowing', isFollowing)
           ..add('isFollowedBy', isFollowedBy)
           ..add('isBlocked', isBlocked)
@@ -292,6 +380,12 @@ class PublicUserResponseDtoBuilder
       _$this._count ??= UserSocialCountResponseDtoBuilder();
   set count(UserSocialCountResponseDtoBuilder? count) => _$this._count = count;
 
+  PublicUserResponseDtoAccountStatusEnum? _accountStatus;
+  PublicUserResponseDtoAccountStatusEnum? get accountStatus =>
+      _$this._accountStatus;
+  set accountStatus(PublicUserResponseDtoAccountStatusEnum? accountStatus) =>
+      _$this._accountStatus = accountStatus;
+
   bool? _isFollowing;
   bool? get isFollowing => _$this._isFollowing;
   set isFollowing(bool? isFollowing) => _$this._isFollowing = isFollowing;
@@ -333,6 +427,7 @@ class PublicUserResponseDtoBuilder
       _showBookmarks = $v.showBookmarks;
       _createdAt = $v.createdAt;
       _count = $v.count?.toBuilder();
+      _accountStatus = $v.accountStatus;
       _isFollowing = $v.isFollowing;
       _isFollowedBy = $v.isFollowedBy;
       _isBlocked = $v.isBlocked;
@@ -383,6 +478,7 @@ class PublicUserResponseDtoBuilder
             showBookmarks: showBookmarks,
             createdAt: createdAt,
             count: _count?.build(),
+            accountStatus: accountStatus,
             isFollowing: isFollowing,
             isFollowedBy: isFollowedBy,
             isBlocked: isBlocked,

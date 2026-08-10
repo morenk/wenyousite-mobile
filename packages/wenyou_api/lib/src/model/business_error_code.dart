@@ -93,6 +93,18 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40116)
   static const BusinessErrorCode WRONG_OLD_PASSWORD = _$WRONG_OLD_PASSWORD;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40117)
+  static const BusinessErrorCode ADMIN_SESSION_REQUIRED = _$ADMIN_SESSION_REQUIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40118)
+  static const BusinessErrorCode ADMIN_SESSION_EXPIRED = _$ADMIN_SESSION_EXPIRED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40119)
+  static const BusinessErrorCode ADMIN_CHALLENGE_INVALID = _$ADMIN_CHALLENGE_INVALID;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40120)
+  static const BusinessErrorCode APPEAL_TOKEN_INVALID = _$APPEAL_TOKEN_INVALID;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40300)
   static const BusinessErrorCode FORBIDDEN = _$FORBIDDEN;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
@@ -122,6 +134,9 @@ class BusinessErrorCode extends EnumClass {
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40309)
   static const BusinessErrorCode CANNOT_MODERATE_ADMIN = _$CANNOT_MODERATE_ADMIN;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40310)
+  static const BusinessErrorCode ADMIN_STEP_UP_REQUIRED = _$ADMIN_STEP_UP_REQUIRED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40400)
   static const BusinessErrorCode NOT_FOUND = _$NOT_FOUND;
@@ -170,6 +185,15 @@ class BusinessErrorCode extends EnumClass {
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40415)
   static const BusinessErrorCode MOMENT_NOT_FOUND = _$MOMENT_NOT_FOUND;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40416)
+  static const BusinessErrorCode MODERATION_CASE_NOT_FOUND = _$MODERATION_CASE_NOT_FOUND;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40417)
+  static const BusinessErrorCode MODERATION_DECISION_NOT_FOUND = _$MODERATION_DECISION_NOT_FOUND;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40418)
+  static const BusinessErrorCode MODERATION_APPEAL_NOT_FOUND = _$MODERATION_APPEAL_NOT_FOUND;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40900)
   static const BusinessErrorCode CONFLICT = _$CONFLICT;
@@ -230,6 +254,24 @@ class BusinessErrorCode extends EnumClass {
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40919)
   static const BusinessErrorCode TAXONOMY_STATE_CONFLICT = _$TAXONOMY_STATE_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40920)
+  static const BusinessErrorCode MODERATION_CASE_ALREADY_CLOSED = _$MODERATION_CASE_ALREADY_CLOSED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40921)
+  static const BusinessErrorCode APPEAL_ALREADY_SUBMITTED = _$APPEAL_ALREADY_SUBMITTED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40922)
+  static const BusinessErrorCode APPEAL_WINDOW_CLOSED = _$APPEAL_WINDOW_CLOSED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40923)
+  static const BusinessErrorCode ADMIN_INVITE_CONFLICT = _$ADMIN_INVITE_CONFLICT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40924)
+  static const BusinessErrorCode REGISTRATION_PAUSED = _$REGISTRATION_PAUSED;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40925)
+  static const BusinessErrorCode CONTENT_WRITES_PAUSED = _$CONTENT_WRITES_PAUSED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 42900)
   static const BusinessErrorCode RATE_LIMITED = _$RATE_LIMITED;

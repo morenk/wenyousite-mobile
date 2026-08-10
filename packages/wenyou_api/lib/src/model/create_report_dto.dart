@@ -20,14 +20,14 @@ part 'create_report_dto.g.dart';
 abstract class CreateReportDto implements Built<CreateReportDto, CreateReportDtoBuilder> {
   @BuiltValueField(wireName: r'targetType')
   CreateReportDtoTargetTypeEnum get targetType;
-  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  };
+  // enum targetTypeEnum {  USER,  THREAD,  POST,  MOMENT,  MOMENT_COMMENT,  DIRECT_MESSAGE,  };
 
   @BuiltValueField(wireName: r'targetId')
   String get targetId;
 
   @BuiltValueField(wireName: r'reasonCode')
   CreateReportDtoReasonCodeEnum get reasonCode;
-  // enum reasonCodeEnum {  SPAM,  HARASSMENT,  HATE_OR_THREATS,  SEXUAL_CONTENT,  VIOLENT_CONTENT,  PERSONAL_INFORMATION,  ILLEGAL_CONTENT,  OTHER,  };
+  // enum reasonCodeEnum {  SPAM,  HARASSMENT,  HATE_OR_THREATS,  SEXUAL_CONTENT,  VIOLENT_CONTENT,  PERSONAL_INFORMATION,  IMPERSONATION_OR_FRAUD,  INTELLECTUAL_PROPERTY,  ILLEGAL_CONTENT,  OTHER,  };
 
   /// 选择 OTHER 时必填
   @BuiltValueField(wireName: r'details')
@@ -170,6 +170,8 @@ class CreateReportDtoTargetTypeEnum extends EnumClass {
   static const CreateReportDtoTargetTypeEnum MOMENT = _$createReportDtoTargetTypeEnum_MOMENT;
   @BuiltValueEnumConst(wireName: r'MOMENT_COMMENT')
   static const CreateReportDtoTargetTypeEnum MOMENT_COMMENT = _$createReportDtoTargetTypeEnum_MOMENT_COMMENT;
+  @BuiltValueEnumConst(wireName: r'DIRECT_MESSAGE')
+  static const CreateReportDtoTargetTypeEnum DIRECT_MESSAGE = _$createReportDtoTargetTypeEnum_DIRECT_MESSAGE;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const CreateReportDtoTargetTypeEnum unknownDefaultOpenApi = _$createReportDtoTargetTypeEnum_unknownDefaultOpenApi;
 
@@ -195,6 +197,10 @@ class CreateReportDtoReasonCodeEnum extends EnumClass {
   static const CreateReportDtoReasonCodeEnum VIOLENT_CONTENT = _$createReportDtoReasonCodeEnum_VIOLENT_CONTENT;
   @BuiltValueEnumConst(wireName: r'PERSONAL_INFORMATION')
   static const CreateReportDtoReasonCodeEnum PERSONAL_INFORMATION = _$createReportDtoReasonCodeEnum_PERSONAL_INFORMATION;
+  @BuiltValueEnumConst(wireName: r'IMPERSONATION_OR_FRAUD')
+  static const CreateReportDtoReasonCodeEnum IMPERSONATION_OR_FRAUD = _$createReportDtoReasonCodeEnum_IMPERSONATION_OR_FRAUD;
+  @BuiltValueEnumConst(wireName: r'INTELLECTUAL_PROPERTY')
+  static const CreateReportDtoReasonCodeEnum INTELLECTUAL_PROPERTY = _$createReportDtoReasonCodeEnum_INTELLECTUAL_PROPERTY;
   @BuiltValueEnumConst(wireName: r'ILLEGAL_CONTENT')
   static const CreateReportDtoReasonCodeEnum ILLEGAL_CONTENT = _$createReportDtoReasonCodeEnum_ILLEGAL_CONTENT;
   @BuiltValueEnumConst(wireName: r'OTHER')

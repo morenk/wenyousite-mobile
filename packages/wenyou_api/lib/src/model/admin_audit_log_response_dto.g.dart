@@ -52,6 +52,63 @@ const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_TAG_UPDATED =
     const AdminAuditLogResponseDtoActionEnum._('TAG_UPDATED');
 const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_ADMIN_INVITED =
+    const AdminAuditLogResponseDtoActionEnum._('ADMIN_INVITED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_ACCEPTED =
+    const AdminAuditLogResponseDtoActionEnum._('ADMIN_INVITE_ACCEPTED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_CANCELED =
+    const AdminAuditLogResponseDtoActionEnum._('ADMIN_INVITE_CANCELED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_SUPER_ADMIN_TRANSFERRED =
+    const AdminAuditLogResponseDtoActionEnum._('SUPER_ADMIN_TRANSFERRED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_ADMIN_SESSION_REVOKED =
+    const AdminAuditLogResponseDtoActionEnum._('ADMIN_SESSION_REVOKED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_CASE_RESOLVED =
+    const AdminAuditLogResponseDtoActionEnum._('CASE_RESOLVED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_CASE_DISMISSED =
+    const AdminAuditLogResponseDtoActionEnum._('CASE_DISMISSED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_APPEAL_SUBMITTED =
+    const AdminAuditLogResponseDtoActionEnum._('APPEAL_SUBMITTED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_APPEAL_UPHELD =
+    const AdminAuditLogResponseDtoActionEnum._('APPEAL_UPHELD');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_APPEAL_OVERTURNED =
+    const AdminAuditLogResponseDtoActionEnum._('APPEAL_OVERTURNED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_USER_SESSIONS_REVOKED =
+    const AdminAuditLogResponseDtoActionEnum._('USER_SESSIONS_REVOKED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_PASSWORD_RESET_REQUESTED_BY_ADMIN =
+    const AdminAuditLogResponseDtoActionEnum._(
+      'PASSWORD_RESET_REQUESTED_BY_ADMIN',
+    );
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_SCHEDULED =
+    const AdminAuditLogResponseDtoActionEnum._(
+      'NOTIFICATION_CAMPAIGN_SCHEDULED',
+    );
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_CANCELED =
+    const AdminAuditLogResponseDtoActionEnum._(
+      'NOTIFICATION_CAMPAIGN_CANCELED',
+    );
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_THREAD_CATEGORY_MERGED =
+    const AdminAuditLogResponseDtoActionEnum._('THREAD_CATEGORY_MERGED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_TAG_MERGED =
+    const AdminAuditLogResponseDtoActionEnum._('TAG_MERGED');
+const AdminAuditLogResponseDtoActionEnum
+_$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED =
+    const AdminAuditLogResponseDtoActionEnum._('SITE_SETTINGS_UPDATED');
+const AdminAuditLogResponseDtoActionEnum
 _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi =
     const AdminAuditLogResponseDtoActionEnum._('unknownDefaultOpenApi');
 
@@ -89,6 +146,40 @@ AdminAuditLogResponseDtoActionEnum _$adminAuditLogResponseDtoActionEnumValueOf(
       return _$adminAuditLogResponseDtoActionEnum_TAG_CREATED;
     case 'TAG_UPDATED':
       return _$adminAuditLogResponseDtoActionEnum_TAG_UPDATED;
+    case 'ADMIN_INVITED':
+      return _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITED;
+    case 'ADMIN_INVITE_ACCEPTED':
+      return _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_ACCEPTED;
+    case 'ADMIN_INVITE_CANCELED':
+      return _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_CANCELED;
+    case 'SUPER_ADMIN_TRANSFERRED':
+      return _$adminAuditLogResponseDtoActionEnum_SUPER_ADMIN_TRANSFERRED;
+    case 'ADMIN_SESSION_REVOKED':
+      return _$adminAuditLogResponseDtoActionEnum_ADMIN_SESSION_REVOKED;
+    case 'CASE_RESOLVED':
+      return _$adminAuditLogResponseDtoActionEnum_CASE_RESOLVED;
+    case 'CASE_DISMISSED':
+      return _$adminAuditLogResponseDtoActionEnum_CASE_DISMISSED;
+    case 'APPEAL_SUBMITTED':
+      return _$adminAuditLogResponseDtoActionEnum_APPEAL_SUBMITTED;
+    case 'APPEAL_UPHELD':
+      return _$adminAuditLogResponseDtoActionEnum_APPEAL_UPHELD;
+    case 'APPEAL_OVERTURNED':
+      return _$adminAuditLogResponseDtoActionEnum_APPEAL_OVERTURNED;
+    case 'USER_SESSIONS_REVOKED':
+      return _$adminAuditLogResponseDtoActionEnum_USER_SESSIONS_REVOKED;
+    case 'PASSWORD_RESET_REQUESTED_BY_ADMIN':
+      return _$adminAuditLogResponseDtoActionEnum_PASSWORD_RESET_REQUESTED_BY_ADMIN;
+    case 'NOTIFICATION_CAMPAIGN_SCHEDULED':
+      return _$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_SCHEDULED;
+    case 'NOTIFICATION_CAMPAIGN_CANCELED':
+      return _$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_CANCELED;
+    case 'THREAD_CATEGORY_MERGED':
+      return _$adminAuditLogResponseDtoActionEnum_THREAD_CATEGORY_MERGED;
+    case 'TAG_MERGED':
+      return _$adminAuditLogResponseDtoActionEnum_TAG_MERGED;
+    case 'SITE_SETTINGS_UPDATED':
+      return _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED;
     case 'unknownDefaultOpenApi':
       return _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi;
     default:
@@ -115,6 +206,23 @@ _$adminAuditLogResponseDtoActionEnumValues =
         _$adminAuditLogResponseDtoActionEnum_THREAD_CATEGORY_UPDATED,
         _$adminAuditLogResponseDtoActionEnum_TAG_CREATED,
         _$adminAuditLogResponseDtoActionEnum_TAG_UPDATED,
+        _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITED,
+        _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_ACCEPTED,
+        _$adminAuditLogResponseDtoActionEnum_ADMIN_INVITE_CANCELED,
+        _$adminAuditLogResponseDtoActionEnum_SUPER_ADMIN_TRANSFERRED,
+        _$adminAuditLogResponseDtoActionEnum_ADMIN_SESSION_REVOKED,
+        _$adminAuditLogResponseDtoActionEnum_CASE_RESOLVED,
+        _$adminAuditLogResponseDtoActionEnum_CASE_DISMISSED,
+        _$adminAuditLogResponseDtoActionEnum_APPEAL_SUBMITTED,
+        _$adminAuditLogResponseDtoActionEnum_APPEAL_UPHELD,
+        _$adminAuditLogResponseDtoActionEnum_APPEAL_OVERTURNED,
+        _$adminAuditLogResponseDtoActionEnum_USER_SESSIONS_REVOKED,
+        _$adminAuditLogResponseDtoActionEnum_PASSWORD_RESET_REQUESTED_BY_ADMIN,
+        _$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_SCHEDULED,
+        _$adminAuditLogResponseDtoActionEnum_NOTIFICATION_CAMPAIGN_CANCELED,
+        _$adminAuditLogResponseDtoActionEnum_THREAD_CATEGORY_MERGED,
+        _$adminAuditLogResponseDtoActionEnum_TAG_MERGED,
+        _$adminAuditLogResponseDtoActionEnum_SITE_SETTINGS_UPDATED,
         _$adminAuditLogResponseDtoActionEnum_unknownDefaultOpenApi,
       ],
     );
@@ -147,6 +255,27 @@ const AdminAuditLogResponseDtoTargetTypeEnum
 _$adminAuditLogResponseDtoTargetTypeEnum_TAG =
     const AdminAuditLogResponseDtoTargetTypeEnum._('TAG');
 const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_CASE =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('MODERATION_CASE');
+const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_DECISION =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('MODERATION_DECISION');
+const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_APPEAL =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('MODERATION_APPEAL');
+const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_INVITE =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('ADMIN_INVITE');
+const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_SESSION =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('ADMIN_SESSION');
+const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('NOTIFICATION_CAMPAIGN');
+const AdminAuditLogResponseDtoTargetTypeEnum
+_$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS =
+    const AdminAuditLogResponseDtoTargetTypeEnum._('SITE_SETTINGS');
+const AdminAuditLogResponseDtoTargetTypeEnum
 _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi =
     const AdminAuditLogResponseDtoTargetTypeEnum._('unknownDefaultOpenApi');
 
@@ -171,6 +300,20 @@ _$adminAuditLogResponseDtoTargetTypeEnumValueOf(String name) {
       return _$adminAuditLogResponseDtoTargetTypeEnum_THREAD_CATEGORY;
     case 'TAG':
       return _$adminAuditLogResponseDtoTargetTypeEnum_TAG;
+    case 'MODERATION_CASE':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_CASE;
+    case 'MODERATION_DECISION':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_DECISION;
+    case 'MODERATION_APPEAL':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_APPEAL;
+    case 'ADMIN_INVITE':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_INVITE;
+    case 'ADMIN_SESSION':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_SESSION;
+    case 'NOTIFICATION_CAMPAIGN':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN;
+    case 'SITE_SETTINGS':
+      return _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS;
     case 'unknownDefaultOpenApi':
       return _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi;
     default:
@@ -191,6 +334,13 @@ _$adminAuditLogResponseDtoTargetTypeEnumValues =
         _$adminAuditLogResponseDtoTargetTypeEnum_SYSTEM_NOTIFICATION,
         _$adminAuditLogResponseDtoTargetTypeEnum_THREAD_CATEGORY,
         _$adminAuditLogResponseDtoTargetTypeEnum_TAG,
+        _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_CASE,
+        _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_DECISION,
+        _$adminAuditLogResponseDtoTargetTypeEnum_MODERATION_APPEAL,
+        _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_INVITE,
+        _$adminAuditLogResponseDtoTargetTypeEnum_ADMIN_SESSION,
+        _$adminAuditLogResponseDtoTargetTypeEnum_NOTIFICATION_CAMPAIGN,
+        _$adminAuditLogResponseDtoTargetTypeEnum_SITE_SETTINGS,
         _$adminAuditLogResponseDtoTargetTypeEnum_unknownDefaultOpenApi,
       ],
     );
@@ -220,6 +370,23 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'THREAD_CATEGORY_UPDATED': 'THREAD_CATEGORY_UPDATED',
     'TAG_CREATED': 'TAG_CREATED',
     'TAG_UPDATED': 'TAG_UPDATED',
+    'ADMIN_INVITED': 'ADMIN_INVITED',
+    'ADMIN_INVITE_ACCEPTED': 'ADMIN_INVITE_ACCEPTED',
+    'ADMIN_INVITE_CANCELED': 'ADMIN_INVITE_CANCELED',
+    'SUPER_ADMIN_TRANSFERRED': 'SUPER_ADMIN_TRANSFERRED',
+    'ADMIN_SESSION_REVOKED': 'ADMIN_SESSION_REVOKED',
+    'CASE_RESOLVED': 'CASE_RESOLVED',
+    'CASE_DISMISSED': 'CASE_DISMISSED',
+    'APPEAL_SUBMITTED': 'APPEAL_SUBMITTED',
+    'APPEAL_UPHELD': 'APPEAL_UPHELD',
+    'APPEAL_OVERTURNED': 'APPEAL_OVERTURNED',
+    'USER_SESSIONS_REVOKED': 'USER_SESSIONS_REVOKED',
+    'PASSWORD_RESET_REQUESTED_BY_ADMIN': 'PASSWORD_RESET_REQUESTED_BY_ADMIN',
+    'NOTIFICATION_CAMPAIGN_SCHEDULED': 'NOTIFICATION_CAMPAIGN_SCHEDULED',
+    'NOTIFICATION_CAMPAIGN_CANCELED': 'NOTIFICATION_CAMPAIGN_CANCELED',
+    'THREAD_CATEGORY_MERGED': 'THREAD_CATEGORY_MERGED',
+    'TAG_MERGED': 'TAG_MERGED',
+    'SITE_SETTINGS_UPDATED': 'SITE_SETTINGS_UPDATED',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -238,6 +405,23 @@ class _$AdminAuditLogResponseDtoActionEnumSerializer
     'THREAD_CATEGORY_UPDATED': 'THREAD_CATEGORY_UPDATED',
     'TAG_CREATED': 'TAG_CREATED',
     'TAG_UPDATED': 'TAG_UPDATED',
+    'ADMIN_INVITED': 'ADMIN_INVITED',
+    'ADMIN_INVITE_ACCEPTED': 'ADMIN_INVITE_ACCEPTED',
+    'ADMIN_INVITE_CANCELED': 'ADMIN_INVITE_CANCELED',
+    'SUPER_ADMIN_TRANSFERRED': 'SUPER_ADMIN_TRANSFERRED',
+    'ADMIN_SESSION_REVOKED': 'ADMIN_SESSION_REVOKED',
+    'CASE_RESOLVED': 'CASE_RESOLVED',
+    'CASE_DISMISSED': 'CASE_DISMISSED',
+    'APPEAL_SUBMITTED': 'APPEAL_SUBMITTED',
+    'APPEAL_UPHELD': 'APPEAL_UPHELD',
+    'APPEAL_OVERTURNED': 'APPEAL_OVERTURNED',
+    'USER_SESSIONS_REVOKED': 'USER_SESSIONS_REVOKED',
+    'PASSWORD_RESET_REQUESTED_BY_ADMIN': 'PASSWORD_RESET_REQUESTED_BY_ADMIN',
+    'NOTIFICATION_CAMPAIGN_SCHEDULED': 'NOTIFICATION_CAMPAIGN_SCHEDULED',
+    'NOTIFICATION_CAMPAIGN_CANCELED': 'NOTIFICATION_CAMPAIGN_CANCELED',
+    'THREAD_CATEGORY_MERGED': 'THREAD_CATEGORY_MERGED',
+    'TAG_MERGED': 'TAG_MERGED',
+    'SITE_SETTINGS_UPDATED': 'SITE_SETTINGS_UPDATED',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 
@@ -275,6 +459,13 @@ class _$AdminAuditLogResponseDtoTargetTypeEnumSerializer
     'SYSTEM_NOTIFICATION': 'SYSTEM_NOTIFICATION',
     'THREAD_CATEGORY': 'THREAD_CATEGORY',
     'TAG': 'TAG',
+    'MODERATION_CASE': 'MODERATION_CASE',
+    'MODERATION_DECISION': 'MODERATION_DECISION',
+    'MODERATION_APPEAL': 'MODERATION_APPEAL',
+    'ADMIN_INVITE': 'ADMIN_INVITE',
+    'ADMIN_SESSION': 'ADMIN_SESSION',
+    'NOTIFICATION_CAMPAIGN': 'NOTIFICATION_CAMPAIGN',
+    'SITE_SETTINGS': 'SITE_SETTINGS',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -287,6 +478,13 @@ class _$AdminAuditLogResponseDtoTargetTypeEnumSerializer
     'SYSTEM_NOTIFICATION': 'SYSTEM_NOTIFICATION',
     'THREAD_CATEGORY': 'THREAD_CATEGORY',
     'TAG': 'TAG',
+    'MODERATION_CASE': 'MODERATION_CASE',
+    'MODERATION_DECISION': 'MODERATION_DECISION',
+    'MODERATION_APPEAL': 'MODERATION_APPEAL',
+    'ADMIN_INVITE': 'ADMIN_INVITE',
+    'ADMIN_SESSION': 'ADMIN_SESSION',
+    'NOTIFICATION_CAMPAIGN': 'NOTIFICATION_CAMPAIGN',
+    'SITE_SETTINGS': 'SITE_SETTINGS',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 

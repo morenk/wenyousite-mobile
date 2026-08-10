@@ -14,6 +14,7 @@ part 'bookmark_response_dto.g.dart';
 /// * [id]
 /// * [userId]
 /// * [threadId]
+/// * [folderId] - 所属收藏夹 ID
 /// * [createdAt]
 @BuiltValue()
 abstract class BookmarkResponseDto implements Built<BookmarkResponseDto, BookmarkResponseDtoBuilder> {
@@ -25,6 +26,10 @@ abstract class BookmarkResponseDto implements Built<BookmarkResponseDto, Bookmar
 
   @BuiltValueField(wireName: r'threadId')
   String get threadId;
+
+  /// 所属收藏夹 ID
+  @BuiltValueField(wireName: r'folderId')
+  String get folderId;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -65,6 +70,11 @@ class _$BookmarkResponseDtoSerializer implements PrimitiveSerializer<BookmarkRes
     yield r'threadId';
     yield serializers.serialize(
       object.threadId,
+      specifiedType: const FullType(String),
+    );
+    yield r'folderId';
+    yield serializers.serialize(
+      object.folderId,
       specifiedType: const FullType(String),
     );
     yield r'createdAt';
@@ -115,6 +125,13 @@ class _$BookmarkResponseDtoSerializer implements PrimitiveSerializer<BookmarkRes
             specifiedType: const FullType(String),
           ) as String;
           result.threadId = valueDes;
+          break;
+        case r'folderId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.folderId = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(

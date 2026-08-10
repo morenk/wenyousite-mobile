@@ -20,6 +20,8 @@ class _$TagResponseDto extends TagResponseDto {
   @override
   final bool isActive;
   @override
+  final String? mergedIntoId;
+  @override
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
@@ -34,6 +36,7 @@ class _$TagResponseDto extends TagResponseDto {
     this.description,
     required this.sortOrder,
     required this.isActive,
+    this.mergedIntoId,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -54,6 +57,7 @@ class _$TagResponseDto extends TagResponseDto {
         description == other.description &&
         sortOrder == other.sortOrder &&
         isActive == other.isActive &&
+        mergedIntoId == other.mergedIntoId &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -67,6 +71,7 @@ class _$TagResponseDto extends TagResponseDto {
     _$hash = $jc(_$hash, description.hashCode);
     _$hash = $jc(_$hash, sortOrder.hashCode);
     _$hash = $jc(_$hash, isActive.hashCode);
+    _$hash = $jc(_$hash, mergedIntoId.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -82,6 +87,7 @@ class _$TagResponseDto extends TagResponseDto {
           ..add('description', description)
           ..add('sortOrder', sortOrder)
           ..add('isActive', isActive)
+          ..add('mergedIntoId', mergedIntoId)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -116,6 +122,10 @@ class TagResponseDtoBuilder
   bool? get isActive => _$this._isActive;
   set isActive(bool? isActive) => _$this._isActive = isActive;
 
+  String? _mergedIntoId;
+  String? get mergedIntoId => _$this._mergedIntoId;
+  set mergedIntoId(String? mergedIntoId) => _$this._mergedIntoId = mergedIntoId;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -137,6 +147,7 @@ class TagResponseDtoBuilder
       _description = $v.description;
       _sortOrder = $v.sortOrder;
       _isActive = $v.isActive;
+      _mergedIntoId = $v.mergedIntoId;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -183,6 +194,7 @@ class TagResponseDtoBuilder
             r'TagResponseDto',
             'isActive',
           ),
+          mergedIntoId: mergedIntoId,
           createdAt: BuiltValueNullFieldError.checkNotNull(
             createdAt,
             r'TagResponseDto',

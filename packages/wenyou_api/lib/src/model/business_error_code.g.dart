@@ -85,6 +85,18 @@ const BusinessErrorCode _$SESSION_NOT_FOUND = const BusinessErrorCode._(
 const BusinessErrorCode _$WRONG_OLD_PASSWORD = const BusinessErrorCode._(
   'WRONG_OLD_PASSWORD',
 );
+const BusinessErrorCode _$ADMIN_SESSION_REQUIRED = const BusinessErrorCode._(
+  'ADMIN_SESSION_REQUIRED',
+);
+const BusinessErrorCode _$ADMIN_SESSION_EXPIRED = const BusinessErrorCode._(
+  'ADMIN_SESSION_EXPIRED',
+);
+const BusinessErrorCode _$ADMIN_CHALLENGE_INVALID = const BusinessErrorCode._(
+  'ADMIN_CHALLENGE_INVALID',
+);
+const BusinessErrorCode _$APPEAL_TOKEN_INVALID = const BusinessErrorCode._(
+  'APPEAL_TOKEN_INVALID',
+);
 const BusinessErrorCode _$FORBIDDEN = const BusinessErrorCode._('FORBIDDEN');
 const BusinessErrorCode _$NOT_THREAD_OWNER = const BusinessErrorCode._(
   'NOT_THREAD_OWNER',
@@ -109,6 +121,9 @@ const BusinessErrorCode _$ADMIN_REQUIRED = const BusinessErrorCode._(
 );
 const BusinessErrorCode _$CANNOT_MODERATE_ADMIN = const BusinessErrorCode._(
   'CANNOT_MODERATE_ADMIN',
+);
+const BusinessErrorCode _$ADMIN_STEP_UP_REQUIRED = const BusinessErrorCode._(
+  'ADMIN_STEP_UP_REQUIRED',
 );
 const BusinessErrorCode _$NOT_FOUND = const BusinessErrorCode._('NOT_FOUND');
 const BusinessErrorCode _$USER_NOT_FOUND = const BusinessErrorCode._(
@@ -155,6 +170,13 @@ const BusinessErrorCode _$THREAD_CATEGORY_NOT_FOUND = const BusinessErrorCode._(
 const BusinessErrorCode _$MOMENT_NOT_FOUND = const BusinessErrorCode._(
   'MOMENT_NOT_FOUND',
 );
+const BusinessErrorCode _$MODERATION_CASE_NOT_FOUND = const BusinessErrorCode._(
+  'MODERATION_CASE_NOT_FOUND',
+);
+const BusinessErrorCode _$MODERATION_DECISION_NOT_FOUND =
+    const BusinessErrorCode._('MODERATION_DECISION_NOT_FOUND');
+const BusinessErrorCode _$MODERATION_APPEAL_NOT_FOUND =
+    const BusinessErrorCode._('MODERATION_APPEAL_NOT_FOUND');
 const BusinessErrorCode _$CONFLICT = const BusinessErrorCode._('CONFLICT');
 const BusinessErrorCode _$EMAIL_ALREADY_REGISTERED = const BusinessErrorCode._(
   'EMAIL_ALREADY_REGISTERED',
@@ -206,6 +228,23 @@ const BusinessErrorCode _$THREAD_CATEGORY_ALREADY_EXISTS =
     const BusinessErrorCode._('THREAD_CATEGORY_ALREADY_EXISTS');
 const BusinessErrorCode _$TAXONOMY_STATE_CONFLICT = const BusinessErrorCode._(
   'TAXONOMY_STATE_CONFLICT',
+);
+const BusinessErrorCode _$MODERATION_CASE_ALREADY_CLOSED =
+    const BusinessErrorCode._('MODERATION_CASE_ALREADY_CLOSED');
+const BusinessErrorCode _$APPEAL_ALREADY_SUBMITTED = const BusinessErrorCode._(
+  'APPEAL_ALREADY_SUBMITTED',
+);
+const BusinessErrorCode _$APPEAL_WINDOW_CLOSED = const BusinessErrorCode._(
+  'APPEAL_WINDOW_CLOSED',
+);
+const BusinessErrorCode _$ADMIN_INVITE_CONFLICT = const BusinessErrorCode._(
+  'ADMIN_INVITE_CONFLICT',
+);
+const BusinessErrorCode _$REGISTRATION_PAUSED = const BusinessErrorCode._(
+  'REGISTRATION_PAUSED',
+);
+const BusinessErrorCode _$CONTENT_WRITES_PAUSED = const BusinessErrorCode._(
+  'CONTENT_WRITES_PAUSED',
 );
 const BusinessErrorCode _$RATE_LIMITED = const BusinessErrorCode._(
   'RATE_LIMITED',
@@ -273,6 +312,14 @@ BusinessErrorCode _$valueOf(String name) {
       return _$SESSION_NOT_FOUND;
     case 'WRONG_OLD_PASSWORD':
       return _$WRONG_OLD_PASSWORD;
+    case 'ADMIN_SESSION_REQUIRED':
+      return _$ADMIN_SESSION_REQUIRED;
+    case 'ADMIN_SESSION_EXPIRED':
+      return _$ADMIN_SESSION_EXPIRED;
+    case 'ADMIN_CHALLENGE_INVALID':
+      return _$ADMIN_CHALLENGE_INVALID;
+    case 'APPEAL_TOKEN_INVALID':
+      return _$APPEAL_TOKEN_INVALID;
     case 'FORBIDDEN':
       return _$FORBIDDEN;
     case 'NOT_THREAD_OWNER':
@@ -293,6 +340,8 @@ BusinessErrorCode _$valueOf(String name) {
       return _$ADMIN_REQUIRED;
     case 'CANNOT_MODERATE_ADMIN':
       return _$CANNOT_MODERATE_ADMIN;
+    case 'ADMIN_STEP_UP_REQUIRED':
+      return _$ADMIN_STEP_UP_REQUIRED;
     case 'NOT_FOUND':
       return _$NOT_FOUND;
     case 'USER_NOT_FOUND':
@@ -325,6 +374,12 @@ BusinessErrorCode _$valueOf(String name) {
       return _$THREAD_CATEGORY_NOT_FOUND;
     case 'MOMENT_NOT_FOUND':
       return _$MOMENT_NOT_FOUND;
+    case 'MODERATION_CASE_NOT_FOUND':
+      return _$MODERATION_CASE_NOT_FOUND;
+    case 'MODERATION_DECISION_NOT_FOUND':
+      return _$MODERATION_DECISION_NOT_FOUND;
+    case 'MODERATION_APPEAL_NOT_FOUND':
+      return _$MODERATION_APPEAL_NOT_FOUND;
     case 'CONFLICT':
       return _$CONFLICT;
     case 'EMAIL_ALREADY_REGISTERED':
@@ -365,6 +420,18 @@ BusinessErrorCode _$valueOf(String name) {
       return _$THREAD_CATEGORY_ALREADY_EXISTS;
     case 'TAXONOMY_STATE_CONFLICT':
       return _$TAXONOMY_STATE_CONFLICT;
+    case 'MODERATION_CASE_ALREADY_CLOSED':
+      return _$MODERATION_CASE_ALREADY_CLOSED;
+    case 'APPEAL_ALREADY_SUBMITTED':
+      return _$APPEAL_ALREADY_SUBMITTED;
+    case 'APPEAL_WINDOW_CLOSED':
+      return _$APPEAL_WINDOW_CLOSED;
+    case 'ADMIN_INVITE_CONFLICT':
+      return _$ADMIN_INVITE_CONFLICT;
+    case 'REGISTRATION_PAUSED':
+      return _$REGISTRATION_PAUSED;
+    case 'CONTENT_WRITES_PAUSED':
+      return _$CONTENT_WRITES_PAUSED;
     case 'RATE_LIMITED':
       return _$RATE_LIMITED;
     case 'INTERNAL_ERROR':
@@ -405,6 +472,10 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$NO_CODE_RECORD,
       _$SESSION_NOT_FOUND,
       _$WRONG_OLD_PASSWORD,
+      _$ADMIN_SESSION_REQUIRED,
+      _$ADMIN_SESSION_EXPIRED,
+      _$ADMIN_CHALLENGE_INVALID,
+      _$APPEAL_TOKEN_INVALID,
       _$FORBIDDEN,
       _$NOT_THREAD_OWNER,
       _$NOT_COLLABORATOR,
@@ -415,6 +486,7 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$TIP_NOT_ALLOWED,
       _$ADMIN_REQUIRED,
       _$CANNOT_MODERATE_ADMIN,
+      _$ADMIN_STEP_UP_REQUIRED,
       _$NOT_FOUND,
       _$USER_NOT_FOUND,
       _$THREAD_NOT_FOUND,
@@ -431,6 +503,9 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$STICKER_NOT_FOUND,
       _$THREAD_CATEGORY_NOT_FOUND,
       _$MOMENT_NOT_FOUND,
+      _$MODERATION_CASE_NOT_FOUND,
+      _$MODERATION_DECISION_NOT_FOUND,
+      _$MODERATION_APPEAL_NOT_FOUND,
       _$CONFLICT,
       _$EMAIL_ALREADY_REGISTERED,
       _$USERNAME_TAKEN,
@@ -451,6 +526,12 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$SANCTION_STATE_CONFLICT,
       _$THREAD_CATEGORY_ALREADY_EXISTS,
       _$TAXONOMY_STATE_CONFLICT,
+      _$MODERATION_CASE_ALREADY_CLOSED,
+      _$APPEAL_ALREADY_SUBMITTED,
+      _$APPEAL_WINDOW_CLOSED,
+      _$ADMIN_INVITE_CONFLICT,
+      _$REGISTRATION_PAUSED,
+      _$CONTENT_WRITES_PAUSED,
       _$RATE_LIMITED,
       _$INTERNAL_ERROR,
       _$unknownDefaultOpenApi,
@@ -485,6 +566,10 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get NO_CODE_RECORD => _$NO_CODE_RECORD;
   BusinessErrorCode get SESSION_NOT_FOUND => _$SESSION_NOT_FOUND;
   BusinessErrorCode get WRONG_OLD_PASSWORD => _$WRONG_OLD_PASSWORD;
+  BusinessErrorCode get ADMIN_SESSION_REQUIRED => _$ADMIN_SESSION_REQUIRED;
+  BusinessErrorCode get ADMIN_SESSION_EXPIRED => _$ADMIN_SESSION_EXPIRED;
+  BusinessErrorCode get ADMIN_CHALLENGE_INVALID => _$ADMIN_CHALLENGE_INVALID;
+  BusinessErrorCode get APPEAL_TOKEN_INVALID => _$APPEAL_TOKEN_INVALID;
   BusinessErrorCode get FORBIDDEN => _$FORBIDDEN;
   BusinessErrorCode get NOT_THREAD_OWNER => _$NOT_THREAD_OWNER;
   BusinessErrorCode get NOT_COLLABORATOR => _$NOT_COLLABORATOR;
@@ -496,6 +581,7 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get TIP_NOT_ALLOWED => _$TIP_NOT_ALLOWED;
   BusinessErrorCode get ADMIN_REQUIRED => _$ADMIN_REQUIRED;
   BusinessErrorCode get CANNOT_MODERATE_ADMIN => _$CANNOT_MODERATE_ADMIN;
+  BusinessErrorCode get ADMIN_STEP_UP_REQUIRED => _$ADMIN_STEP_UP_REQUIRED;
   BusinessErrorCode get NOT_FOUND => _$NOT_FOUND;
   BusinessErrorCode get USER_NOT_FOUND => _$USER_NOT_FOUND;
   BusinessErrorCode get THREAD_NOT_FOUND => _$THREAD_NOT_FOUND;
@@ -514,6 +600,12 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get THREAD_CATEGORY_NOT_FOUND =>
       _$THREAD_CATEGORY_NOT_FOUND;
   BusinessErrorCode get MOMENT_NOT_FOUND => _$MOMENT_NOT_FOUND;
+  BusinessErrorCode get MODERATION_CASE_NOT_FOUND =>
+      _$MODERATION_CASE_NOT_FOUND;
+  BusinessErrorCode get MODERATION_DECISION_NOT_FOUND =>
+      _$MODERATION_DECISION_NOT_FOUND;
+  BusinessErrorCode get MODERATION_APPEAL_NOT_FOUND =>
+      _$MODERATION_APPEAL_NOT_FOUND;
   BusinessErrorCode get CONFLICT => _$CONFLICT;
   BusinessErrorCode get EMAIL_ALREADY_REGISTERED => _$EMAIL_ALREADY_REGISTERED;
   BusinessErrorCode get USERNAME_TAKEN => _$USERNAME_TAKEN;
@@ -540,6 +632,13 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get THREAD_CATEGORY_ALREADY_EXISTS =>
       _$THREAD_CATEGORY_ALREADY_EXISTS;
   BusinessErrorCode get TAXONOMY_STATE_CONFLICT => _$TAXONOMY_STATE_CONFLICT;
+  BusinessErrorCode get MODERATION_CASE_ALREADY_CLOSED =>
+      _$MODERATION_CASE_ALREADY_CLOSED;
+  BusinessErrorCode get APPEAL_ALREADY_SUBMITTED => _$APPEAL_ALREADY_SUBMITTED;
+  BusinessErrorCode get APPEAL_WINDOW_CLOSED => _$APPEAL_WINDOW_CLOSED;
+  BusinessErrorCode get ADMIN_INVITE_CONFLICT => _$ADMIN_INVITE_CONFLICT;
+  BusinessErrorCode get REGISTRATION_PAUSED => _$REGISTRATION_PAUSED;
+  BusinessErrorCode get CONTENT_WRITES_PAUSED => _$CONTENT_WRITES_PAUSED;
   BusinessErrorCode get RATE_LIMITED => _$RATE_LIMITED;
   BusinessErrorCode get INTERNAL_ERROR => _$INTERNAL_ERROR;
   BusinessErrorCode get unknownDefaultOpenApi => _$unknownDefaultOpenApi;
@@ -586,6 +685,10 @@ class _$BusinessErrorCodeSerializer
     'NO_CODE_RECORD': 40114,
     'SESSION_NOT_FOUND': 40115,
     'WRONG_OLD_PASSWORD': 40116,
+    'ADMIN_SESSION_REQUIRED': 40117,
+    'ADMIN_SESSION_EXPIRED': 40118,
+    'ADMIN_CHALLENGE_INVALID': 40119,
+    'APPEAL_TOKEN_INVALID': 40120,
     'FORBIDDEN': 40300,
     'NOT_THREAD_OWNER': 40301,
     'NOT_COLLABORATOR': 40302,
@@ -596,6 +699,7 @@ class _$BusinessErrorCodeSerializer
     'TIP_NOT_ALLOWED': 40307,
     'ADMIN_REQUIRED': 40308,
     'CANNOT_MODERATE_ADMIN': 40309,
+    'ADMIN_STEP_UP_REQUIRED': 40310,
     'NOT_FOUND': 40400,
     'USER_NOT_FOUND': 40401,
     'THREAD_NOT_FOUND': 40402,
@@ -612,6 +716,9 @@ class _$BusinessErrorCodeSerializer
     'STICKER_NOT_FOUND': 40413,
     'THREAD_CATEGORY_NOT_FOUND': 40414,
     'MOMENT_NOT_FOUND': 40415,
+    'MODERATION_CASE_NOT_FOUND': 40416,
+    'MODERATION_DECISION_NOT_FOUND': 40417,
+    'MODERATION_APPEAL_NOT_FOUND': 40418,
     'CONFLICT': 40900,
     'EMAIL_ALREADY_REGISTERED': 40901,
     'USERNAME_TAKEN': 40902,
@@ -632,6 +739,12 @@ class _$BusinessErrorCodeSerializer
     'SANCTION_STATE_CONFLICT': 40917,
     'THREAD_CATEGORY_ALREADY_EXISTS': 40918,
     'TAXONOMY_STATE_CONFLICT': 40919,
+    'MODERATION_CASE_ALREADY_CLOSED': 40920,
+    'APPEAL_ALREADY_SUBMITTED': 40921,
+    'APPEAL_WINDOW_CLOSED': 40922,
+    'ADMIN_INVITE_CONFLICT': 40923,
+    'REGISTRATION_PAUSED': 40924,
+    'CONTENT_WRITES_PAUSED': 40925,
     'RATE_LIMITED': 42900,
     'INTERNAL_ERROR': 50000,
     'unknownDefaultOpenApi': 11184809,
@@ -664,6 +777,10 @@ class _$BusinessErrorCodeSerializer
     40114: 'NO_CODE_RECORD',
     40115: 'SESSION_NOT_FOUND',
     40116: 'WRONG_OLD_PASSWORD',
+    40117: 'ADMIN_SESSION_REQUIRED',
+    40118: 'ADMIN_SESSION_EXPIRED',
+    40119: 'ADMIN_CHALLENGE_INVALID',
+    40120: 'APPEAL_TOKEN_INVALID',
     40300: 'FORBIDDEN',
     40301: 'NOT_THREAD_OWNER',
     40302: 'NOT_COLLABORATOR',
@@ -674,6 +791,7 @@ class _$BusinessErrorCodeSerializer
     40307: 'TIP_NOT_ALLOWED',
     40308: 'ADMIN_REQUIRED',
     40309: 'CANNOT_MODERATE_ADMIN',
+    40310: 'ADMIN_STEP_UP_REQUIRED',
     40400: 'NOT_FOUND',
     40401: 'USER_NOT_FOUND',
     40402: 'THREAD_NOT_FOUND',
@@ -690,6 +808,9 @@ class _$BusinessErrorCodeSerializer
     40413: 'STICKER_NOT_FOUND',
     40414: 'THREAD_CATEGORY_NOT_FOUND',
     40415: 'MOMENT_NOT_FOUND',
+    40416: 'MODERATION_CASE_NOT_FOUND',
+    40417: 'MODERATION_DECISION_NOT_FOUND',
+    40418: 'MODERATION_APPEAL_NOT_FOUND',
     40900: 'CONFLICT',
     40901: 'EMAIL_ALREADY_REGISTERED',
     40902: 'USERNAME_TAKEN',
@@ -710,6 +831,12 @@ class _$BusinessErrorCodeSerializer
     40917: 'SANCTION_STATE_CONFLICT',
     40918: 'THREAD_CATEGORY_ALREADY_EXISTS',
     40919: 'TAXONOMY_STATE_CONFLICT',
+    40920: 'MODERATION_CASE_ALREADY_CLOSED',
+    40921: 'APPEAL_ALREADY_SUBMITTED',
+    40922: 'APPEAL_WINDOW_CLOSED',
+    40923: 'ADMIN_INVITE_CONFLICT',
+    40924: 'REGISTRATION_PAUSED',
+    40925: 'CONTENT_WRITES_PAUSED',
     42900: 'RATE_LIMITED',
     50000: 'INTERNAL_ERROR',
     11184809: 'unknownDefaultOpenApi',

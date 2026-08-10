@@ -9,12 +9,14 @@ part of 'create_bookmark_dto.dart';
 class _$CreateBookmarkDto extends CreateBookmarkDto {
   @override
   final String threadId;
+  @override
+  final String? folderId;
 
   factory _$CreateBookmarkDto([
     void Function(CreateBookmarkDtoBuilder)? updates,
   ]) => (CreateBookmarkDtoBuilder()..update(updates))._build();
 
-  _$CreateBookmarkDto._({required this.threadId}) : super._();
+  _$CreateBookmarkDto._({required this.threadId, this.folderId}) : super._();
   @override
   CreateBookmarkDto rebuild(void Function(CreateBookmarkDtoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -26,22 +28,26 @@ class _$CreateBookmarkDto extends CreateBookmarkDto {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is CreateBookmarkDto && threadId == other.threadId;
+    return other is CreateBookmarkDto &&
+        threadId == other.threadId &&
+        folderId == other.folderId;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, threadId.hashCode);
+    _$hash = $jc(_$hash, folderId.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'CreateBookmarkDto',
-    )..add('threadId', threadId)).toString();
+    return (newBuiltValueToStringHelper(r'CreateBookmarkDto')
+          ..add('threadId', threadId)
+          ..add('folderId', folderId))
+        .toString();
   }
 }
 
@@ -53,6 +59,10 @@ class CreateBookmarkDtoBuilder
   String? get threadId => _$this._threadId;
   set threadId(String? threadId) => _$this._threadId = threadId;
 
+  String? _folderId;
+  String? get folderId => _$this._folderId;
+  set folderId(String? folderId) => _$this._folderId = folderId;
+
   CreateBookmarkDtoBuilder() {
     CreateBookmarkDto._defaults(this);
   }
@@ -61,6 +71,7 @@ class CreateBookmarkDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _threadId = $v.threadId;
+      _folderId = $v.folderId;
       _$v = null;
     }
     return this;
@@ -88,6 +99,7 @@ class CreateBookmarkDtoBuilder
             r'CreateBookmarkDto',
             'threadId',
           ),
+          folderId: folderId,
         );
     replace(_$result);
     return _$result;
