@@ -104,7 +104,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
     _revealTargetWhenReady(state, resolvedTarget);
     return Scaffold(
-      appBar: AppBar(title: const Text('主题详情')),
+      appBar: AppBar(
+        title: const Text('主题详情'),
+        actions: [
+          if (state.detail?.canManageThread == true)
+            IconButton(
+              key: const Key('thread-detail-manage'),
+              tooltip: '管理主题',
+              onPressed: _openManagement,
+              icon: const Icon(Icons.tune_rounded),
+            ),
+        ],
+      ),
       body: switch (state.phase) {
         ThreadDetailPhase.loading => const _DetailLoadingState(),
         ThreadDetailPhase.failed => _DetailFatalState(
@@ -130,6 +141,17 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ),
       },
     );
+  }
+
+  Future<void> _openManagement() async {
+    final changed = await context.push<bool>(
+      '/threads/${widget.threadId}/manage',
+    );
+    if (changed == true && mounted) {
+      await ref
+          .read(threadDetailControllerProvider(widget.threadId).notifier)
+          .refresh();
+    }
   }
 
   void _revealTargetWhenReady(

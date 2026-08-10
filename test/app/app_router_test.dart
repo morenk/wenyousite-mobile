@@ -112,4 +112,24 @@ void main() {
       isNull,
     );
   });
+
+  test('主题管理页受会话保护并保留动态主题目标', () {
+    final redirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: '/threads/thread-1/manage',
+      uri: Uri.parse('/threads/thread-1/manage'),
+    );
+    expect(
+      Uri.parse(redirect!).queryParameters['returnTo'],
+      '/threads/thread-1/manage',
+    );
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.authenticated(),
+        matchedLocation: '/threads/thread-1/manage',
+        uri: Uri.parse('/threads/thread-1/manage'),
+      ),
+      isNull,
+    );
+  });
 }

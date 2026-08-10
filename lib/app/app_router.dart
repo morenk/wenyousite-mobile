@@ -22,6 +22,7 @@ import 'package:wenyousite_mobile/features/social/domain/user_relation_list_mode
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 
@@ -87,6 +88,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             threadId: state.pathParameters['threadId']!,
             rootPostId: state.pathParameters['postId']!,
             focusedReplyId: state.uri.queryParameters['post'],
+          );
+        },
+      ),
+      GoRoute(
+        path: '/threads/:threadId/manage',
+        name: 'thread-management',
+        builder: (context, state) {
+          return ThreadManagementPage(
+            threadId: state.pathParameters['threadId']!,
           );
         },
       ),
@@ -266,19 +276,21 @@ String? resolveSessionRedirect({
       queryParameters: {'returnTo': uri.toString()},
     ).toString();
   }
-  final protectedRoute = switch (matchedLocation) {
-    '/compose/thread' ||
-    '/me/following' ||
-    '/me/followers' ||
-    '/me/blocks' ||
-    '/me/bookmarks' ||
-    '/me/security/sessions' ||
-    '/me/security/password' ||
-    '/me/security/email' ||
-    '/me/security/verify-email' ||
-    '/me/security/delete-account' => true,
-    _ => false,
-  };
+  final protectedRoute =
+      switch (matchedLocation) {
+        '/compose/thread' ||
+        '/me/following' ||
+        '/me/followers' ||
+        '/me/blocks' ||
+        '/me/bookmarks' ||
+        '/me/security/sessions' ||
+        '/me/security/password' ||
+        '/me/security/email' ||
+        '/me/security/verify-email' ||
+        '/me/security/delete-account' => true,
+        _ => false,
+      } ||
+      _isThreadManagementLocation(matchedLocation);
   if (!session.isAuthenticated && protectedRoute) {
     return Uri(
       path: '/auth/login',
@@ -289,4 +301,9 @@ String? resolveSessionRedirect({
     return sanitizeReturnLocation(uri.queryParameters['returnTo']);
   }
   return null;
+}
+
+bool _isThreadManagementLocation(String location) {
+  if (location == '/threads/:threadId/manage') return true;
+  return RegExp(r'^/threads/[^/]+/manage$').hasMatch(location);
 }

@@ -314,6 +314,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
     expect(find.byKey(const Key('thread-body-edit')), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-body-edit')));
     await tester.pumpAndSettle();
