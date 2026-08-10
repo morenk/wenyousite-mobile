@@ -1,0 +1,369 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
+
+class NewDirectConversationPage extends ConsumerStatefulWidget {
+  const NewDirectConversationPage({required this.userId, super.key});
+
+  final String userId;
+
+  @override
+  ConsumerState<NewDirectConversationPage> createState() =>
+      _NewDirectConversationPageState();
+}
+
+class _NewDirectConversationPageState
+    extends ConsumerState<NewDirectConversationPage> {
+  var _scheduledConversationId = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(directMessagesEnabledProvider);
+    if (!enabled) return const _NewConversationUnavailablePage();
+    final provider = directConversationTargetControllerProvider(widget.userId);
+    final state = ref.watch(provider);
+    final notifier = ref.read(provider.notifier);
+    _redirectExisting(state);
+    return Scaffold(
+      appBar: AppBar(title: const Text('发起私聊')),
+      body: switch (state.phase) {
+        DirectConversationTargetPhase.loading => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        DirectConversationTargetPhase.failed => _TargetFailure(
+          state: state,
+          onRetry: notifier.load,
+        ),
+        DirectConversationTargetPhase.ready => _TargetReady(
+          state: state,
+          onReturnToUser: () => context.pop(),
+          onVerifyEmail: () => _verifyEmail(context, notifier),
+          onAbandonFailedDraft: notifier.abandonFailedDraft,
+          onSend: ({content, mediaId}) =>
+              _send(context, notifier, content: content, mediaId: mediaId),
+        ),
+      },
+    );
+  }
+
+  void _redirectExisting(DirectConversationTargetState state) {
+    final lookup = state.lookup;
+    final conversation = lookup?.conversation;
+    if (state.phase != DirectConversationTargetPhase.ready ||
+        conversation == null ||
+        (lookup!.contactState != DirectContactState.accepted &&
+            lookup.contactState != DirectContactState.pending) ||
+        conversation.id == _scheduledConversationId) {
+      return;
+    }
+    _scheduledConversationId = conversation.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.replaceNamed(
+        'direct-conversation',
+        pathParameters: {'conversationId': conversation.id},
+      );
+    });
+  }
+
+  Future<bool> _send(
+    BuildContext context,
+    DirectConversationTargetController notifier, {
+    String? content,
+    String? mediaId,
+  }) async {
+    final result = await notifier.start(content: content, mediaId: mediaId);
+    if (!context.mounted || result == null) return false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.conversation.status == DirectConversationStatus.accepted
+              ? '私聊已建立。'
+              : '消息请求已发送。',
+        ),
+      ),
+    );
+    context.replaceNamed(
+      'direct-conversation',
+      pathParameters: {'conversationId': result.conversation.id},
+    );
+    return true;
+  }
+
+  Future<void> _verifyEmail(
+    BuildContext context,
+    DirectConversationTargetController notifier,
+  ) async {
+    final returnTo = '/messages/new/${widget.userId}';
+    final verified = await context.pushNamed<bool>(
+      'verify-email',
+      queryParameters: {'returnTo': returnTo},
+    );
+    if (verified != true || !context.mounted) return;
+    final result = await notifier.retryStart();
+    if (!context.mounted || result == null) return;
+    context.replaceNamed(
+      'direct-conversation',
+      pathParameters: {'conversationId': result.conversation.id},
+    );
+  }
+}
+
+class _TargetReady extends StatelessWidget {
+  const _TargetReady({
+    required this.state,
+    required this.onReturnToUser,
+    required this.onVerifyEmail,
+    required this.onAbandonFailedDraft,
+    required this.onSend,
+  });
+
+  final DirectConversationTargetState state;
+  final VoidCallback onReturnToUser;
+  final VoidCallback onVerifyEmail;
+  final VoidCallback onAbandonFailedDraft;
+  final Future<bool> Function({String? content, String? mediaId}) onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = state.user!;
+    final lookup = state.lookup!;
+    final copy = _entryCopy(lookup, user);
+    if (!copy.canInitiate) {
+      return WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: Icons.comments_disabled_outlined,
+            title: copy.title,
+            message: copy.description,
+            action: OutlinedButton.icon(
+              key: const Key('direct-message-new-return-user'),
+              onPressed: onReturnToUser,
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('返回用户主页'),
+            ),
+          ),
+        ),
+      );
+    }
+    final tokens = context.wenyouTokens;
+    return Column(
+      children: [
+        Material(
+          color: tokens.panel,
+          child: Padding(
+            padding: EdgeInsets.all(tokens.space16),
+            child: Row(
+              children: [
+                DirectMessageAvatar(user: user),
+                SizedBox(width: tokens.space12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '给 ${user.username} 发私聊',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: tokens.space4),
+                      Text(
+                        copy.headerSubtitle!,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (state.failure?.businessCode == 40107)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: WenyouStatusBanner(
+              key: const Key('direct-message-new-verify-banner'),
+              tone: WenyouStatusTone.error,
+              message: state.failure!.userMessage,
+              detail: state.failure!.requestId == null
+                  ? null
+                  : '请求 ID：${state.failure!.requestId}',
+              action: TextButton(
+                key: const Key('direct-message-new-verify-email'),
+                onPressed: onVerifyEmail,
+                child: const Text('先验证邮箱'),
+              ),
+            ),
+          ),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(tokens.space24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: WenyouPanel(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.waving_hand_outlined,
+                        size: 36,
+                        color: tokens.brand,
+                      ),
+                      SizedBox(height: tokens.space12),
+                      Text(
+                        copy.title,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: tokens.space8),
+                      Text(
+                        copy.description,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        DirectMessageComposer(
+          disabled: state.isSending,
+          submitLabel: copy.submitLabel!,
+          placeholder: '礼貌地介绍一下来意…',
+          requestHint: copy.composerHint,
+          failure: state.failure,
+          failedDraft: state.failedDraft,
+          onAbandonFailedDraft: onAbandonFailedDraft,
+          onSend: onSend,
+        ),
+      ],
+    );
+  }
+}
+
+class _TargetFailure extends StatelessWidget {
+  const _TargetFailure({required this.state, required this.onRetry});
+
+  final DirectConversationTargetState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return WenyouPageBody(
+      maxWidth: 600,
+      child: WenyouPanel(
+        child: WenyouEmptyState(
+          icon: state.failure?.httpStatus == 404
+              ? Icons.person_off_outlined
+              : Icons.cloud_off_outlined,
+          title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态没有加载完成',
+          message: state.failure?.userMessage ?? '请稍后重试。',
+          detail: state.failure?.requestId == null
+              ? null
+              : '请求 ID：${state.failure!.requestId}',
+          action: OutlinedButton.icon(
+            key: const Key('direct-message-new-retry'),
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('重新加载'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NewConversationUnavailablePage extends StatelessWidget {
+  const _NewConversationUnavailablePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('发起私聊')),
+      body: const WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: Icons.comments_disabled_outlined,
+            title: '私信功能当前未开放',
+            message: '服务端暂未启用此能力，请稍后再试。',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EntryCopy {
+  const _EntryCopy.disabled({required this.title, required this.description})
+    : canInitiate = false,
+      headerSubtitle = null,
+      composerHint = null,
+      submitLabel = null;
+
+  const _EntryCopy.enabled({
+    required this.title,
+    required this.description,
+    required this.headerSubtitle,
+    required this.composerHint,
+    required this.submitLabel,
+  }) : canInitiate = true;
+
+  final bool canInitiate;
+  final String title;
+  final String description;
+  final String? headerSubtitle;
+  final String? composerHint;
+  final String? submitLabel;
+}
+
+_EntryCopy _entryCopy(DirectConversationLookup lookup, DirectMessageUser user) {
+  if (user.isDeactivated) {
+    return const _EntryCopy.disabled(
+      title: '该用户已注销',
+      description: '注销账号不能接收新的私聊。',
+    );
+  }
+  if (!lookup.canInitiate) {
+    if (lookup.contactState == DirectContactState.declined) {
+      return const _EntryCopy.disabled(
+        title: '消息请求已被拒绝',
+        description: '对方拒绝了此前的消息请求，你不能再次主动发起私聊。',
+      );
+    }
+    return const _EntryCopy.disabled(
+      title: '当前无法发起私聊',
+      description: '对方账号不可用，或你们之间的联系已受限。',
+    );
+  }
+  if (lookup.contactState == DirectContactState.declined) {
+    return const _EntryCopy.enabled(
+      title: '你曾拒绝过对方的消息请求',
+      description: '现在由你主动发送消息，会直接建立私聊。',
+      headerSubtitle: '由你主动重新建立私聊',
+      composerHint: '发送后会直接建立私聊，无需再次处理请求。',
+      submitLabel: '建立私聊',
+    );
+  }
+  return const _EntryCopy.enabled(
+    title: '这会先作为消息请求',
+    description: '若你们尚未互相关注，对方接受前只能发送这一条消息。',
+    headerSubtitle: '发送首条消息或消息请求',
+    composerHint: '服务端会按双方关系决定直接建立会话或等待对方接受。',
+    submitLabel: '发送',
+  );
+}

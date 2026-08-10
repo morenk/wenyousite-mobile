@@ -4,6 +4,7 @@
 
 ### Added
 
+- 新增受保护的站内私聊闭环：会话/请求/归档列表、未读角标、新建与后续消息、历史/增量读取、接受/拒绝、归档、已读和十分钟撤回全部接入；陌生请求图片延迟加载，失败发送保留稳定幂等键，中心/会话/新私聊在 360/400/600dp 形成闭环。
 - 新增公开 `/tags/:tagId` 标签主题页和受保护的主题标签工作台：标签可从首页/详情稳定跳转，楼主/协作者可搜索、创建、添加与移除最多五个标签；防抖竞态、同名 `40905` 恢复、`40107` 验证和 360/400/600dp 布局形成闭环。
 - 主题管理新增受保护的完整子贴工作台：楼主/协作者可创建、读取详情、更新、删除和显式上下排序非默认子贴；默认子贴固定置顶且不可删除，创建幂等重试、更新版本冲突、邮箱验证恢复和 360/400/600dp 布局均形成闭环。
 - 已发布私密主题新增完整邀请闭环：楼主确认旧链接失效后生成并复制 Web 兼容邀请，登录用户从受保护 `/join/:token` 预览、处理已加入状态并在邮箱验证后幂等加入；失效邀请不重复请求，邀请 token 从网络日志脱敏。
@@ -50,6 +51,7 @@
 
 ### Changed
 
+- 开发版本进入 `0.3.0-dev.29+35`；Direct Messages 的 11 个 operationId 完整接入，`meta.capabilities.directMessages` 控制通知页与用户主页入口，前台轮询只保留进程内私聊事实且不记录完整正文。
 - 开发版本进入 `0.3.0-dev.28+34`；`tagsSearch`、`tagsGetById`、`tagsCreate`、`threadTagsFindAll`、`threadTagsAdd` 与 `threadTagsRemove` 完整接入，公开主题流复用 `threadsFindAll(tagId)` 精确聚合。
 - 开发版本进入 `0.3.0-dev.27+33`；`subthreadsFindAll`、`subthreadsFindById`、`subthreadsCreate`、`subthreadsUpdate`、`subthreadsRemove` 与 `subthreadsReorder` 完整接入，子贴正文继续复用 posts 模块的独立乐观锁编辑闭环。
 - 开发版本进入 `0.3.0-dev.26+32`；`threadsCreateInviteLink`、`threadsPreviewInviteLink` 与 `threadsJoinByInviteLink` 完整接入，移动端不持久化邀请凭据，外部分享继续由 Web 链接承接。

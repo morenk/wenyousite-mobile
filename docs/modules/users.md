@@ -12,11 +12,11 @@
 
 ## 3. 页面、入口和导航关系
 
-公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。关注和粉丝统计进入指定用户路径；本人资料使用主导航 `/me`，在总览头像下直接选择、更换或移除，并提供 `/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
+公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。关注和粉丝统计进入指定用户路径；登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人资料使用主导航 `/me`，在总览头像下直接选择、更换或移除，并提供 `/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
 
 ## 4. 用户操作流程
 
-公开页按用户 ID 读取资料，展示头像、用户名、等级、简介、加入日期、统计与关系状态；内容按隐私字段惰性请求并支持游标分页。关注/粉丝统计读取对应关系投影并可继续进入用户资料。登录身份确认后，他人页可关注/取消关注，拉黑需确认，解除拉黑直接执行；关系成功同步按钮、标记和粉丝数。“我的”读取成长与统计，用户名、简介和三项公开范围只发送变化字段，并进入本人关系列表。头像先经 media 完成上传，再用 `mediaId` 设置；已有头像移除前二次确认。注销入口转交 settings/auth 完成不可逆确认和会话清理。
+公开页按用户 ID 读取资料，展示头像、用户名、等级、简介、加入日期、统计与关系状态；内容按隐私字段惰性请求并支持游标分页。关注/粉丝统计读取对应关系投影并可继续进入用户资料。登录身份确认后，他人页可关注/取消关注，拉黑需确认，解除拉黑直接执行；关系成功同步按钮、标记和粉丝数；私聊入口只传稳定用户 ID，联系状态由 direct-messages 页面重读。“我的”读取成长与统计，用户名、简介和三项公开范围只发送变化字段，并进入本人关系列表。头像先经 media 完成上传，再用 `mediaId` 设置；已有头像移除前二次确认。注销入口转交 settings/auth 完成不可逆确认和会话清理。
 
 ## 5. API operationId 与生成类型
 
@@ -29,7 +29,7 @@
 
 ## 7. 鉴权、权限和隐私规则
 
-公开内容和关系列表继续严格按服务端投影请求。关系按钮只在 authenticated 且 `usersGetMe.id != target.id` 时出现；身份加载失败宁可隐藏，不猜测自我关系。拉黑影响由服务端决定，客户端不会据此删除关注。游客、退出或会话失效不读取或保留本人关系、黑名单或头像媒体 ID，也不触发关系/头像写入。头像只接受安全 HTTP(S) 响应，文件字节和预签名 URL 不进入用户资料状态。
+公开内容和关系列表继续严格按服务端投影请求。关系按钮和私聊入口只在 authenticated 且 `usersGetMe.id != target.id` 时出现；私聊入口还要求 `meta.capabilities.directMessages`。身份或 capability 加载失败宁可隐藏，不猜测自我关系。拉黑影响由服务端决定，用户页不会据此删除关注或直接判断私聊历史。游客、退出或会话失效不读取或保留本人关系、黑名单或头像媒体 ID，也不触发关系/头像写入。头像只接受安全 HTTP(S) 响应，文件字节和预签名 URL 不进入用户资料状态。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-关系写操作由 social 管理，users 只负责身份排除和展示同步；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。提及候选虽由 Users API 返回，但由 editor 按真实主题上下文管理输入、防抖、竞态和原子插入，users 页面不缓存或展示该隐私投影。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索与 Markdown 只传 userId，资料页重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
+关系写操作由 social 管理，users 只负责身份排除和展示同步；私聊联系状态、权限和正文由 direct-messages 管理；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。提及候选虽由 Users API 返回，但由 editor 按真实主题上下文管理输入、防抖、竞态和原子插入，users 页面不缓存或展示该隐私投影。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索、Markdown 和私聊入口只传 userId，目标页面重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
 
 ## 11. 测试场景与验收条件
 
@@ -56,6 +56,7 @@
 - [x] 公开与本人关注/粉丝列表入口、稳定用户导航和窄屏布局通过。
 - [x] “我的”注销入口、确认链路、匿名保留说明与本机会话清理闭环通过。
 - [x] 头像选择、上传、设置、二次确认移除、显式 URL 降级、缓存失效及重启后服务端恢复正确。
+- [x] 私聊 capability 开启且目标非本人时展示稳定新私聊入口，关闭时不暴露入口。
 - [ ] 关注、拉黑与隐私变化后的跨页面缓存失效完成验证。
 
 ## 12. 已知限制和后续功能
@@ -68,4 +69,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/`。参见[搜索](search.md)、[社交关系](social.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/`。参见[搜索](search.md)、[社交关系](social.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

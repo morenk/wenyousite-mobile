@@ -129,4 +129,30 @@ void main() {
     expect(messageFor(40303), contains('帖内玩家'));
     expect(messageFor(40302), isNot(contains('server')));
   });
+
+  test('私聊权限、目标、状态和媒体冲突使用稳定提示', () {
+    String messageFor(int code) {
+      final options = RequestOptions(path: '/api/v1/direct-conversations/c1');
+      return ApiFailure.fromDio(
+        DioException(
+          requestOptions: options,
+          response: Response<Object?>(
+            requestOptions: options,
+            data: {'code': code, 'message': 'private server wording'},
+          ),
+        ),
+      ).userMessage;
+    }
+
+    expect(messageFor(40005), contains('内容'));
+    expect(messageFor(40305), contains('拉黑'));
+    expect(messageFor(40306), contains('会话状态'));
+    expect(messageFor(40411), contains('会话'));
+    expect(messageFor(40412), contains('消息'));
+    expect(messageFor(40906), contains('等待'));
+    expect(messageFor(40907), contains('拒绝'));
+    expect(messageFor(40908), contains('十分钟'));
+    expect(messageFor(40909), contains('图片'));
+    expect(messageFor(40305), isNot(contains('private server wording')));
+  });
 }

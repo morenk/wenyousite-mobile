@@ -93,6 +93,29 @@ void main() {
     );
   });
 
+  test('私聊中心、会话与新会话路由均受登录保护', () {
+    for (final location in [
+      '/messages',
+      '/messages/conversation-1',
+      '/messages/new/user-2',
+    ]) {
+      final redirect = resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: location,
+        uri: Uri.parse(location),
+      );
+      expect(Uri.parse(redirect!).queryParameters['returnTo'], location);
+      expect(
+        resolveSessionRedirect(
+          session: const SessionState.authenticated(),
+          matchedLocation: location,
+          uri: Uri.parse(location),
+        ),
+        isNull,
+      );
+    }
+  });
+
   test('账号注销页受会话保护且已登录时保持可达', () {
     final redirect = resolveSessionRedirect(
       session: const SessionState.guest(),

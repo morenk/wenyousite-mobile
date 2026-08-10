@@ -64,6 +64,8 @@ class ApiFailure implements Exception {
         return '列表位置已失效，正在重新加载。';
       case 40002:
         return '内容已在其他位置修改，请读取最新版后再决定是否覆盖。';
+      case 40005:
+        return '私聊消息内容不符合要求。';
       case 40103:
         return '登录已被撤销，请重新登录。';
       case 40104:
@@ -94,10 +96,26 @@ class ApiFailure implements Exception {
         return '这个子贴只允许楼主或协作者发言。';
       case 40303:
         return '这个子贴只允许帖内玩家发言。';
+      case 40305:
+        return '你们之间存在拉黑关系，当前不能发送私聊。';
+      case 40306:
+        return '当前会话状态不允许执行这项操作。';
+      case 40411:
+        return '这个私聊会话不存在或已不可访问。';
+      case 40412:
+        return '这条私聊消息不存在或已不可访问。';
       case 40901:
         return '该邮箱已经注册，请直接登录。';
       case 40902:
         return '该用户名已被使用，请换一个。';
+      case 40906:
+        return '消息请求仍在等待对方处理。';
+      case 40907:
+        return '对方已拒绝此前的消息请求。';
+      case 40908:
+        return '这条消息已超过十分钟撤回时限。';
+      case 40909:
+        return '这张图片已用于其他私聊消息，请重新选择。';
       case 40912:
         return '这次操作与待确认请求冲突，请重新发起。';
       case 42900:

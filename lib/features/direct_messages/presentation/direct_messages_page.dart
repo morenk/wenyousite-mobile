@@ -1,0 +1,417 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
+
+class DirectMessagesPage extends ConsumerStatefulWidget {
+  const DirectMessagesPage({super.key});
+
+  @override
+  ConsumerState<DirectMessagesPage> createState() => _DirectMessagesPageState();
+}
+
+class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
+  var _view = DirectConversationView.inbox;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(directMessagesEnabledProvider);
+    if (!enabled) return const _DirectMessagesUnavailablePage();
+    final provider = directConversationListControllerProvider(_view);
+    final state = ref.watch(provider);
+    final unread = ref.watch(directUnreadControllerProvider).counts;
+    final notifier = ref.read(provider.notifier);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('私信'),
+        actions: [
+          IconButton(
+            key: const Key('direct-messages-refresh'),
+            onPressed: state.isRefreshing ? null : notifier.refresh,
+            tooltip: '刷新私信',
+            icon: state.isRefreshing
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _DirectMessageViewBar(
+            selected: _view,
+            unread: unread,
+            enabled: !state.isLoadingMore && !state.isRefreshing,
+            onSelected: (view) => setState(() => _view = view),
+          ),
+          Expanded(
+            child: switch (state.phase) {
+              DirectConversationListPhase.loading => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              DirectConversationListPhase.failed => _DirectListFailure(
+                state: state,
+                onRetry: notifier.load,
+              ),
+              DirectConversationListPhase.ready => _DirectConversationList(
+                state: state,
+                onRefresh: () async {
+                  await Future.wait([
+                    notifier.refresh(),
+                    ref.read(directUnreadControllerProvider.notifier).refresh(),
+                  ]);
+                },
+                onOpen: (conversation) =>
+                    _openConversation(context, notifier, conversation),
+                onLoadMore: notifier.loadMore,
+              ),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openConversation(
+    BuildContext context,
+    DirectConversationListController notifier,
+    DirectConversation conversation,
+  ) async {
+    await context.pushNamed(
+      'direct-conversation',
+      pathParameters: {'conversationId': conversation.id},
+    );
+    if (!context.mounted) return;
+    await Future.wait([
+      notifier.refresh(),
+      ref.read(directUnreadControllerProvider.notifier).refresh(),
+    ]);
+  }
+}
+
+class _DirectMessageViewBar extends StatelessWidget {
+  const _DirectMessageViewBar({
+    required this.selected,
+    required this.unread,
+    required this.enabled,
+    required this.onSelected,
+  });
+
+  final DirectConversationView selected;
+  final DirectUnreadCounts unread;
+  final bool enabled;
+  final ValueChanged<DirectConversationView> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Material(
+      color: tokens.panel,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          tokens.space12,
+          tokens.space8,
+          tokens.space12,
+          tokens.space12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    unread.total == 0
+                        ? '所有私信均已处理'
+                        : '${unread.unreadMessages} 条未读 · '
+                              '${unread.pendingRequests} 个待处理请求',
+                    key: const Key('direct-messages-unread-summary'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: tokens.space8),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<DirectConversationView>(
+                showSelectedIcon: false,
+                selected: {selected},
+                onSelectionChanged: enabled
+                    ? (values) => onSelected(values.single)
+                    : null,
+                segments: [
+                  for (final view in DirectConversationView.values)
+                    ButtonSegment(
+                      value: view,
+                      label: Text(
+                        view == DirectConversationView.requests &&
+                                unread.pendingRequests > 0
+                            ? '${view.label} ${unread.pendingRequests}'
+                            : view.label,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DirectConversationList extends StatelessWidget {
+  const _DirectConversationList({
+    required this.state,
+    required this.onRefresh,
+    required this.onOpen,
+    required this.onLoadMore,
+  });
+
+  final DirectConversationListState state;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<DirectConversation> onOpen;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.items.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: _pagePadding(context),
+          children: [
+            WenyouPanel(
+              child: WenyouEmptyState(
+                icon: state.view == DirectConversationView.archived
+                    ? Icons.inventory_2_outlined
+                    : state.view == DirectConversationView.requests
+                    ? Icons.mark_email_unread_outlined
+                    : Icons.forum_outlined,
+                title: switch (state.view) {
+                  DirectConversationView.inbox => '暂无私聊会话',
+                  DirectConversationView.requests => '暂无消息请求',
+                  DirectConversationView.archived => '暂无归档会话',
+                },
+                message: state.view == DirectConversationView.inbox
+                    ? '可从其他用户的公开主页发起私聊。'
+                    : '下拉可以重新读取服务端状态。',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final tokens = context.wenyouTokens;
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: _pagePadding(context),
+        itemCount:
+            state.items.length +
+            (state.transientFailure != null || state.hasMore ? 1 : 0),
+        separatorBuilder: (_, _) => SizedBox(height: tokens.space8),
+        itemBuilder: (context, index) {
+          if (index < state.items.length) {
+            final item = state.items[index];
+            return _DirectConversationCard(
+              conversation: item,
+              onTap: () => onOpen(item),
+            );
+          }
+          if (state.transientFailure != null) {
+            return WenyouStatusBanner(
+              tone: WenyouStatusTone.error,
+              message: state.transientFailure!.userMessage,
+              detail: state.transientFailure!.requestId == null
+                  ? null
+                  : '请求 ID：${state.transientFailure!.requestId}',
+              action: TextButton.icon(
+                key: const Key('direct-messages-load-more-retry'),
+                onPressed: onLoadMore,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试'),
+              ),
+            );
+          }
+          return OutlinedButton.icon(
+            key: const Key('direct-messages-load-more'),
+            onPressed: state.isLoadingMore ? null : onLoadMore,
+            icon: state.isLoadingMore
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.expand_more_rounded),
+            label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DirectConversationCard extends StatelessWidget {
+  const _DirectConversationCard({
+    required this.conversation,
+    required this.onTap,
+  });
+
+  final DirectConversation conversation;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final previewPrefix = conversation.isIncomingRequest
+        ? '[消息请求] '
+        : conversation.isOutgoingRequest
+        ? '[等待接受] '
+        : '';
+    return Semantics(
+      button: true,
+      label: '打开与 ${conversation.otherUser.username} 的私聊',
+      child: WenyouPanel(
+        key: ValueKey('direct-conversation-${conversation.id}'),
+        onTap: onTap,
+        padding: EdgeInsets.all(tokens.space12),
+        child: Row(
+          children: [
+            DirectMessageAvatar(user: conversation.otherUser),
+            SizedBox(width: tokens.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          conversation.otherUser.username,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      if (conversation.lastMessageAt != null) ...[
+                        SizedBox(width: tokens.space8),
+                        Text(
+                          DateFormat(
+                            'MM-dd HH:mm',
+                          ).format(conversation.lastMessageAt!.toLocal()),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: tokens.space4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '$previewPrefix${conversation.lastMessage?.displayText ?? '暂无消息'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      if (conversation.unreadCount > 0) ...[
+                        SizedBox(width: tokens.space8),
+                        Badge(
+                          key: ValueKey(
+                            'direct-conversation-unread-${conversation.id}',
+                          ),
+                          label: Text(
+                            conversation.unreadCount > 99
+                                ? '99+'
+                                : '${conversation.unreadCount}',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: tokens.space4),
+            Icon(Icons.chevron_right_rounded, color: tokens.mutedText),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DirectListFailure extends StatelessWidget {
+  const _DirectListFailure({required this.state, required this.onRetry});
+
+  final DirectConversationListState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return WenyouPageBody(
+      maxWidth: 600,
+      child: WenyouPanel(
+        child: WenyouEmptyState(
+          icon: Icons.cloud_off_outlined,
+          title: '私聊会话没有加载完成',
+          message: state.failure?.userMessage ?? '请稍后重试。',
+          detail: state.failure?.requestId == null
+              ? null
+              : '请求 ID：${state.failure!.requestId}',
+          action: OutlinedButton.icon(
+            key: const Key('direct-messages-retry'),
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('重新加载'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DirectMessagesUnavailablePage extends StatelessWidget {
+  const _DirectMessagesUnavailablePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('私信')),
+      body: const WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: Icons.forum_outlined,
+            title: '私信功能当前未开放',
+            message: '服务端暂未启用此能力，请稍后再试。',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+EdgeInsets _pagePadding(BuildContext context) {
+  final tokens = context.wenyouTokens;
+  final horizontal = MediaQuery.sizeOf(context).width <= 400
+      ? tokens.space12
+      : tokens.space24;
+  return EdgeInsets.fromLTRB(
+    horizontal,
+    tokens.space12,
+    horizontal,
+    tokens.space32,
+  );
+}

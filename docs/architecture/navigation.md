@@ -18,6 +18,8 @@ go_router 是唯一导航入口。根级兼容检查先于业务路由；未知�
 
 通知导航只读取服务端 `target.kind` 与对应稳定 ID：post 进入上述精确位置，thread 进入主题详情，user 进入公开用户页，none/unknown 不导航；服务端关联对象已删除时同样不导航。moment 在动态详情模块落地前只显示明确提示，禁止临时猜测路径。
 
+站内私聊使用受保护命名路由 `/messages`、`/messages/new/:userId` 与 `/messages/:conversationId`，游客访问时完整保留原目标进入登录。通知页只导航到中心，用户主页只把稳定 userId 交给新私聊页；新私聊页通过 `directConversationsFindByUser` 决定替换到已有 ACCEPTED/PENDING 会话、允许重建或显示受限状态。会话 ID、消息 ID、cursor 和增量 after 都是不透明服务端标识，页面不从用户名、正文预览或关系标记推导目标。
+
 V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。
 
-参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)、[主题与子贴](../modules/threads.md)、[标签](../modules/tags.md)、[楼层与回复](../modules/posts.md)。
+参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)、[主题与子贴](../modules/threads.md)、[标签](../modules/tags.md)、[楼层与回复](../modules/posts.md)、[站内私聊](../modules/direct-messages.md)。

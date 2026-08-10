@@ -9,6 +9,9 @@ import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_pag
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/reset_password_page.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_page.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
@@ -84,6 +87,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/messages',
+        name: 'direct-messages',
+        builder: (context, state) => const DirectMessagesPage(),
+      ),
+      GoRoute(
+        path: '/messages/new/:userId',
+        name: 'direct-message-new',
+        builder: (context, state) {
+          return NewDirectConversationPage(
+            userId: state.pathParameters['userId']!,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/messages/:conversationId',
+        name: 'direct-conversation',
+        builder: (context, state) {
+          return DirectConversationPage(
+            conversationId: state.pathParameters['conversationId']!,
+          );
+        },
       ),
       GoRoute(
         path: '/join/:token',
@@ -337,6 +363,7 @@ String? resolveSessionRedirect({
         _ => false,
       } ||
       _isThreadManagementLocation(matchedLocation) ||
+      _isDirectMessageLocation(matchedLocation) ||
       _isInvitationLocation(matchedLocation);
   if (!session.isAuthenticated && protectedRoute) {
     return Uri(
@@ -363,4 +390,13 @@ bool _isThreadManagementLocation(String location) {
 bool _isInvitationLocation(String location) {
   if (location == '/join/:token') return true;
   return RegExp(r'^/join/[^/]+$').hasMatch(location);
+}
+
+bool _isDirectMessageLocation(String location) {
+  if (location == '/messages' ||
+      location == '/messages/:conversationId' ||
+      location == '/messages/new/:userId') {
+    return true;
+  }
+  return RegExp(r'^/messages(?:/[^/]+|/new/[^/]+)?$').hasMatch(location);
 }

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_actions.dart';
@@ -121,6 +122,7 @@ class _UserProfileContent extends ConsumerWidget {
     final isFollowing = relationState?.isFollowing ?? profile.isFollowing;
     final isBlocked = relationState?.isBlocked ?? profile.isBlocked;
     final isBlockedBy = relationState?.isBlockedBy ?? profile.isBlockedBy;
+    final directMessagesEnabled = ref.watch(directMessagesEnabledProvider);
     return Column(
       children: [
         WenyouPanel(
@@ -239,7 +241,26 @@ class _UserProfileContent extends ConsumerWidget {
           SizedBox(height: tokens.space12),
           WenyouPanel(
             padding: EdgeInsets.all(tokens.space16),
-            child: UserRelationActions(target: relationTarget!),
+            child: Column(
+              children: [
+                if (directMessagesEnabled) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      key: const Key('public-user-open-direct-message'),
+                      onPressed: () => context.pushNamed(
+                        'direct-message-new',
+                        pathParameters: {'userId': profile.id},
+                      ),
+                      icon: const Icon(Icons.forum_outlined),
+                      label: const Text('发私聊'),
+                    ),
+                  ),
+                  SizedBox(height: tokens.space12),
+                ],
+                UserRelationActions(target: relationTarget!),
+              ],
+            ),
           ),
         ],
       ],

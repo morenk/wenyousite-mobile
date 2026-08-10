@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
@@ -95,6 +96,47 @@ void main() {
 
     expect(find.byKey(const Key('user-relation-follow')), findsNothing);
     expect(find.byKey(const Key('user-relation-block')), findsNothing);
+  });
+
+  testWidgets('能力开启且目标非本人时可从用户主页发起私聊', (tester) async {
+    final container = await _authenticatedContainer(
+      currentUserId: 'me-1',
+      publicRepository: _FakePublicUserRepository(),
+      relationRepository: _FakeUserRelationRepository(),
+      directMessagesEnabled: true,
+    );
+    addTearDown(container.dispose);
+    final router = GoRouter(
+      initialLocation: '/users/user-1',
+      routes: [
+        GoRoute(
+          path: '/users/:userId',
+          builder: (_, state) =>
+              PublicUserPage(userId: state.pathParameters['userId']!),
+        ),
+        GoRoute(
+          path: '/messages/new/:userId',
+          name: 'direct-message-new',
+          builder: (_, state) =>
+              Scaffold(body: Text('私聊对象=${state.pathParameters['userId']}')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('public-user-open-direct-message')),
+    );
+    await tester.tap(find.byKey(const Key('public-user-open-direct-message')));
+    await tester.pumpAndSettle();
+    expect(find.text('私聊对象=user-1'), findsOneWidget);
   });
 
   testWidgets('公开内容按隐私页签惰性加载并展示真实结果', (tester) async {
@@ -186,7 +228,10 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [publicUserRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          directMessagesEnabledProvider.overrideWithValue(false),
+          publicUserRepositoryProvider.overrideWithValue(repository),
+        ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
     );
@@ -237,6 +282,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          directMessagesEnabledProvider.overrideWithValue(false),
           publicUserRepositoryProvider.overrideWithValue(
             _FakePublicUserRepository(),
           ),
@@ -292,7 +338,10 @@ void main() {
 
 Widget _userApp(PublicUserRepository repository) {
   return ProviderScope(
-    overrides: [publicUserRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      directMessagesEnabledProvider.overrideWithValue(false),
+      publicUserRepositoryProvider.overrideWithValue(repository),
+    ],
     child: MaterialApp(
       theme: AppTheme.light,
       home: const PublicUserPage(userId: 'user-1'),
@@ -304,9 +353,11 @@ Future<ProviderContainer> _authenticatedContainer({
   required String currentUserId,
   required PublicUserRepository publicRepository,
   required UserRelationRepository relationRepository,
+  bool directMessagesEnabled = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
+      directMessagesEnabledProvider.overrideWithValue(directMessagesEnabled),
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       meProfileRepositoryProvider.overrideWithValue(

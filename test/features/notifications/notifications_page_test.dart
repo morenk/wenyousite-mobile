@@ -8,6 +8,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
@@ -19,6 +22,7 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [directMessagesEnabledProvider.overrideWithValue(false)],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
     );
@@ -52,6 +56,32 @@ void main() {
 
     expect(find.text('主题=thread-1，帖子=post-7'), findsOneWidget);
     expect(repository.readIds, ['notification-1']);
+  });
+
+  testWidgets('私聊能力开启时展示独立角标并进入私信中心', (tester) async {
+    final repository = _FakeRepository();
+    final router = _router();
+    addTearDown(router.dispose);
+    final container = await _authenticatedContainer(
+      repository,
+      directMessagesEnabled: true,
+      directUnread: 4,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('4'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const Key('notification-open-direct-messages')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('私信中心'), findsOneWidget);
   });
 
   testWidgets('筛选、全部已读、删除和局部错误均可操作', (tester) async {
@@ -195,15 +225,32 @@ GoRouter _router() {
         builder: (_, state) =>
             Scaffold(body: Text('用户=${state.pathParameters['userId']}')),
       ),
+      GoRoute(
+        path: '/messages',
+        name: 'direct-messages',
+        builder: (_, _) => const Scaffold(body: Text('私信中心')),
+      ),
     ],
   );
 }
 
 Future<ProviderContainer> _authenticatedContainer(
-  NotificationRepository repository,
-) async {
+  NotificationRepository repository, {
+  bool directMessagesEnabled = false,
+  int directUnread = 0,
+}) async {
+  final directRepository = _FakeDirectMessageRepository(directUnread);
   final container = ProviderContainer(
     overrides: [
+      directMessagesEnabledProvider.overrideWithValue(directMessagesEnabled),
+      directUnreadControllerProvider.overrideWith((ref) {
+        final controller = DirectUnreadController(
+          directRepository,
+          autoStart: false,
+        );
+        controller.refresh();
+        return controller;
+      }),
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       notificationRepositoryProvider.overrideWithValue(repository),
@@ -221,6 +268,74 @@ Future<ProviderContainer> _authenticatedContainer(
       .read(sessionControllerProvider.notifier)
       .authenticate(_tokens);
   return container;
+}
+
+class _FakeDirectMessageRepository implements DirectMessageRepository {
+  const _FakeDirectMessageRepository(this.unread);
+
+  final int unread;
+
+  @override
+  Future<DirectUnreadCounts> fetchUnreadCounts() async {
+    return DirectUnreadCounts(unreadMessages: unread, pendingRequests: 0);
+  }
+
+  @override
+  Future<DirectConversationStart> createConversation({
+    required String recipientId,
+    required DirectMessageDraft draft,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<CursorPage<DirectConversation>> fetchConversations({
+    required DirectConversationView view,
+    String? cursor,
+    int limit = 20,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<DirectConversation> fetchConversation(String conversationId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<CursorPage<DirectMessage>> fetchMessages({
+    required String conversationId,
+    String? cursor,
+    String? after,
+    int limit = 30,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<DirectConversationLookup> findByUser(String userId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<DirectConversation> handleRequest({
+    required String conversationId,
+    required bool accept,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> markRead({
+    required String conversationId,
+    required String throughMessageId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<DirectRecallResult> recall(String messageId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<DirectMessage> sendMessage({
+    required String conversationId,
+    required DirectMessageDraft draft,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<DirectConversation> setArchived({
+    required String conversationId,
+    required bool archived,
+  }) => throw UnimplementedError();
 }
 
 class _FakeRepository implements NotificationRepository {

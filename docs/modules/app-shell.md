@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-提供启动版本/兼容检查、Android 站内更新、iOS TestFlight 更新、四栏主导航、游客模式、全局网络/错误状态和创建入口。当前不实现 FCM、暗色主题或 App Links。
+提供启动版本/兼容检查、服务端 capability、Android 站内更新、iOS TestFlight 更新、四栏主导航、游客模式、全局网络/错误状态和创建入口。当前不实现 FCM、暗色主题或 App Links。
 
 ## 2. 用户角色与使用场景
 
@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-启动门禁包裹 `/home`、`/search`、`/notifications`、`/me` 四个保状态分支。门禁先处理强制更新，再检查契约，最后处理推荐更新；Android 在页内下载后唤起系统安装器，iOS 外跳 TestFlight。悬浮按钮进入受保护的 `/compose/thread`；游客登录或注册成功后恢复创建目标。登录用户的通知图标展示服务端未读角标，进入分支与回前台时主动刷新。
+启动门禁包裹 `/home`、`/search`、`/notifications`、`/me` 四个保状态分支。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 在页内下载后唤起系统安装器，iOS 外跳 TestFlight。悬浮按钮进入受保护的 `/compose/thread`；游客登录或注册成功后恢复创建目标。登录用户的通知图标展示服务端通知未读角标，进入分支与回前台时主动刷新；私聊 capability 开启时，回前台同时校准私聊合计角标。
 
 ## 4. 用户操作流程
 
@@ -24,7 +24,7 @@
 
 ## 6. 状态模型和数据流
 
-启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。环境、更新服务、忽略记录与会话由 Riverpod 注入。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。元信息同时映射 stickers、directMessages、pushNotifications capability，业务入口默认关闭并只在服务端明确启用后创建。环境、更新服务、忽略记录与会话由 Riverpod 注入。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -50,6 +50,7 @@
 - [x] Android 更新展示进度并处理未知来源权限/安装器反馈；iOS 使用外部 TestFlight URL。
 - [x] 会话失效进入带原因的登录页，并可回到游客首页。
 - [x] 登录用户底栏展示通知未读角标，并可进入 API 驱动通知列表。
+- [x] 私聊 capability 映射到业务入口，登录用户回前台时同步私聊未读与请求角标。
 - [ ] 切换分支保留页面状态，悬浮按钮触发创建入口。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
@@ -65,4 +66,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)和[网络与会话](../architecture/networking.md)。
+代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)和[站内私聊](direct-messages.md)。

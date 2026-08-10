@@ -12,11 +12,11 @@
 
 ## 3. 页面、入口和导航关系
 
-通知是底部主分支；游客留在分支内看到登录引导并携带 `/notifications` 回跳。登录后列表项按 `target.kind` 导航：post 使用 `/threads/:threadId?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`；未知类型、无目标和已删除目标只展示安全正文。动态详情路由尚未实现，moment 目标当前标记已读后给出明确提示，不拼接临时路由。
+通知是底部主分支；游客留在分支内看到登录引导并携带 `/notifications` 回跳。登录后列表项按 `target.kind` 导航：post 使用 `/threads/:threadId?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`；未知类型、无目标和已删除目标只展示安全正文。服务端开启私聊 capability 时，顶栏提供带私聊合计角标的 `/messages` 入口。动态详情路由尚未实现，moment 目标当前标记已读后给出明确提示，不拼接临时路由。
 
 ## 4. 用户操作流程
 
-进入通知分支、回到前台及每 30 秒刷新未读数；列表按六组筛选分页；打开通知后乐观标记已读且不阻塞导航；支持单条删除和全部已读。下拉刷新会并行校准列表与未读数，加载更多失败保留已加载内容。
+进入通知分支、回到前台及每 30 秒刷新通知未读数；列表按六组筛选分页；打开通知后乐观标记已读且不阻塞导航；支持单条删除和全部已读。下拉刷新会并行校准列表与通知未读数，加载更多失败保留已加载内容。私聊角标由 direct-messages 独立读取，不并入通知筛选或“全部已读”。
 
 ## 5. API operationId 与生成类型
 
@@ -25,7 +25,7 @@
 
 ## 6. 状态模型和数据流
 
-未读数是服务端事实；列表与角标共享仓储但独立请求。列表控制器按筛选隔离游标并以加载 epoch 丢弃过期响应；写操作串行化。单条已读和全部已读先乐观更新列表与角标，失败恢复列表并重新请求未读数；删除成功后再移除条目，删除未读项同步递减角标。未知枚举保留通用卡片，不使整个列表反序列化失败。
+通知未读数是服务端事实；列表与角标共享仓储但独立请求。列表控制器按筛选隔离游标并以加载 epoch 丢弃过期响应；写操作串行化。单条已读和全部已读先乐观更新列表与角标，失败恢复列表并重新请求未读数；删除成功后再移除条目，删除未读项同步递减角标。私聊角标只在 capability 开启时消费 direct-messages 状态。未知枚举保留通用卡片，不使整个列表反序列化失败。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-导航遵循[导航](../architecture/navigation.md)，目标 API 才是权威；不依赖推送到达保证。仓库持续固定 mobile push v1 Schema/样例，当前切片不启用 FCM 运行时。
+导航遵循[导航](../architecture/navigation.md)，目标 API 才是权威；不依赖推送到达保证。私聊入口、角标和正文归 [direct-messages](direct-messages.md)，通知模块不读取私聊正文。仓库持续固定 mobile push v1 Schema/样例，当前切片不启用 FCM 运行时。
 
 ## 11. 测试场景与验收条件
 
@@ -49,6 +49,7 @@
 - [x] 未读角标在进入、30 秒轮询、回前台和操作后同步，并有应用壳集成测试。
 - [x] post/thread/user 已知目标精确导航，删除目标和未知枚举安全展示。
 - [x] 退出会销毁私有轮询与列表状态，再次登录重新读取，不复用上一会话数据。
+- [x] 私聊 capability 关闭时不创建入口；开启后入口与独立角标进入稳定 `/messages` 目标。
 
 ## 12. 已知限制和后续功能
 
@@ -60,4 +61,4 @@ V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/notifications/`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)。
+代码入口：`lib/features/notifications/`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内私聊](direct-messages.md)。

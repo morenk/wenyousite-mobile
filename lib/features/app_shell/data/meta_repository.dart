@@ -11,6 +11,9 @@ class ContractInfo {
     this.buildSha,
     this.android = const MobilePlatformPolicy(),
     this.ios = const MobilePlatformPolicy(),
+    this.stickersEnabled = false,
+    this.directMessagesEnabled = false,
+    this.pushNotificationsEnabled = false,
   });
 
   final String contractVersion;
@@ -18,6 +21,9 @@ class ContractInfo {
   final String? buildSha;
   final MobilePlatformPolicy android;
   final MobilePlatformPolicy ios;
+  final bool stickersEnabled;
+  final bool directMessagesEnabled;
+  final bool pushNotificationsEnabled;
 
   MobilePlatformPolicy policyFor(MobileClientPlatform platform) {
     return switch (platform) {
@@ -53,6 +59,9 @@ class ApiMetaRepository implements MetaRepository {
         buildSha: data.buildSha,
         android: _policyFromDto(data.mobileCompatibility.android),
         ios: _policyFromDto(data.mobileCompatibility.ios),
+        stickersEnabled: data.capabilities.stickers,
+        directMessagesEnabled: data.capabilities.directMessages,
+        pushNotificationsEnabled: data.capabilities.pushNotifications,
       );
     } on DioException catch (error) {
       if (kDebugMode) {

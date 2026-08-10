@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
@@ -23,11 +24,26 @@ class NotificationsPage extends ConsumerWidget {
 
     final state = ref.watch(notificationListControllerProvider);
     final unread = ref.watch(notificationUnreadControllerProvider);
+    final messagesEnabled = ref.watch(directMessagesEnabledProvider);
+    final directUnread = messagesEnabled
+        ? ref.watch(directUnreadControllerProvider).counts.total
+        : 0;
     final notifier = ref.read(notificationListControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(
         title: const Text('通知'),
         actions: [
+          if (messagesEnabled)
+            IconButton(
+              key: const Key('notification-open-direct-messages'),
+              onPressed: () => context.pushNamed('direct-messages'),
+              tooltip: '打开私信',
+              icon: Badge(
+                isLabelVisible: directUnread > 0,
+                label: Text(directUnread > 99 ? '99+' : '$directUnread'),
+                child: const Icon(Icons.forum_outlined),
+              ),
+            ),
           if (state.phase == NotificationListPhase.ready && state.hasUnread)
             TextButton.icon(
               key: const Key('notification-mark-all-read'),
