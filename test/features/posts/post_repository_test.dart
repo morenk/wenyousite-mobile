@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
@@ -79,6 +80,7 @@ void main() {
     when(
       () => api.postsCreate(
         subthreadId: 'subthread',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createPostDto: any(named: 'createPostDto'),
       ),
     ).thenAnswer((invocation) async {

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
@@ -96,6 +97,7 @@ class ApiPostRepository implements PostRepository {
       });
       final dto = (await _api.postsCreate(
         subthreadId: input.subthreadId,
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createPostDto: payload,
       )).data?.data;
       if (dto == null) {

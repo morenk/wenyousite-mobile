@@ -4,6 +4,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 
+import 'subthread_management_state.dart';
+export 'subthread_management_state.dart';
+
 class SubthreadManagementController
     extends StateNotifier<SubthreadManagementState> {
   SubthreadManagementController(

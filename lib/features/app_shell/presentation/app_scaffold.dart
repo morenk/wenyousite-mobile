@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -56,12 +57,12 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       body: widget.navigationShell,
       floatingActionButton: switch (widget.navigationShell.currentIndex) {
         0 => FloatingActionButton(
-          onPressed: () => context.push('/compose/thread'),
+          onPressed: () => context.push(AppRouteLocations.composeThread),
           tooltip: '创建主题',
           child: const Icon(Icons.edit_rounded),
         ),
         1 => FloatingActionButton(
-          onPressed: () => context.push('/compose/moment'),
+          onPressed: () => context.push(AppRouteLocations.composeMoment),
           tooltip: '发布动态',
           child: const Icon(Icons.add_rounded),
         ),

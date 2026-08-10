@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -82,7 +83,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           await ref
                               .read(sessionControllerProvider.notifier)
                               .logoutLocally();
-                          if (context.mounted) context.go('/home');
+                          if (context.mounted) {
+                            context.go(AppRouteLocations.home);
+                          }
                         },
                         child: const Text('以游客身份继续'),
                       ),
@@ -185,12 +188,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   onPressed: state.isSubmitting
                       ? null
                       : () => context.push(
-                          Uri(
-                            path: '/auth/register',
-                            queryParameters: widget.returnTo == null
-                                ? null
-                                : {'returnTo': widget.returnTo!},
-                          ).toString(),
+                          AppRouteLocations.register(returnTo: widget.returnTo),
                         ),
                   child: const Text('没有账号？注册'),
                 ),

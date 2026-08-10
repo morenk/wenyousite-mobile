@@ -32,7 +32,7 @@
 
 ## 6. 状态模型和数据流
 
-`MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果。搜索控制器独立保存关键词与搜索 cursor，但通过 `MomentSearchMapper` 输出同一领域卡片。仓储/映射器对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
+`MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果，并拆入独立应用文件但保持 provider 接口；领域校验使用纯领域异常，网络与 feature 错误目录在仓储边界转换。搜索控制器独立保存关键词与搜索 cursor，但通过 `MomentSearchMapper` 输出同一领域卡片。仓储/映射器对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 

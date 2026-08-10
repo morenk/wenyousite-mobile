@@ -57,6 +57,9 @@ jobs:
         working-directory: packages/wenyou_api
         run: dart analyze --fatal-infos --fatal-warnings
 
+      - name: Check architecture boundaries
+        run: npm run architecture:check
+
       - name: Run tests
         run: flutter test
 

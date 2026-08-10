@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 
@@ -90,6 +91,7 @@ void main() {
     when(
       () => api.subthreadsCreate(
         threadId: 'thread-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createSubthreadDto: any(named: 'createSubthreadDto'),
       ),
     ).thenAnswer(
@@ -116,6 +118,7 @@ void main() {
         verify(
               () => api.subthreadsCreate(
                 threadId: 'thread-1',
+                extra: ApiRequestPolicy.idempotentCreate.extra,
                 createSubthreadDto: captureAny(named: 'createSubthreadDto'),
               ),
             ).captured.single

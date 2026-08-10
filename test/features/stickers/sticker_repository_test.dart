@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
@@ -81,11 +82,13 @@ void main() {
     final api = _MockStickersApi();
     when(
       () => api.stickersImportMedia(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         importStickerMediaDto: any(named: 'importStickerMediaDto'),
       ),
     ).thenAnswer((_) async => _mediaImportResponse());
     when(
       () => api.stickersImportDirectMessage(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         importStickerDirectMessageDto: any(
           named: 'importStickerDirectMessageDto',
         ),
@@ -93,6 +96,7 @@ void main() {
     ).thenAnswer((_) async => _directImportResponse());
     when(
       () => api.stickersImportPostImage(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         importStickerPostImageDto: any(named: 'importStickerPostImageDto'),
       ),
     ).thenAnswer((_) async => _postImportResponse());
@@ -117,6 +121,7 @@ void main() {
     final media =
         verify(
               () => api.stickersImportMedia(
+                extra: ApiRequestPolicy.idempotentCreate.extra,
                 importStickerMediaDto: captureAny(
                   named: 'importStickerMediaDto',
                 ),
@@ -126,6 +131,7 @@ void main() {
     final direct =
         verify(
               () => api.stickersImportDirectMessage(
+                extra: ApiRequestPolicy.idempotentCreate.extra,
                 importStickerDirectMessageDto: captureAny(
                   named: 'importStickerDirectMessageDto',
                 ),
@@ -135,6 +141,7 @@ void main() {
     final post =
         verify(
               () => api.stickersImportPostImage(
+                extra: ApiRequestPolicy.idempotentCreate.extra,
                 importStickerPostImageDto: captureAny(
                   named: 'importStickerPostImageDto',
                 ),

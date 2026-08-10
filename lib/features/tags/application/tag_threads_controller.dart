@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/request_epoch.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
@@ -13,14 +15,14 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
 
   final String _tagId;
   final TagRepository _repository;
-  int _requestEpoch = 0;
+  final _requestEpoch = RequestEpoch();
 
   Future<void> loadInitial() async {
-    final epoch = ++_requestEpoch;
+    final epoch = _requestEpoch.begin();
     state = const TagThreadsState.loading();
     try {
       final result = await _repository.loadTagThreads(_tagId);
-      if (epoch != _requestEpoch) return;
+      if (!_requestEpoch.isCurrent(epoch)) return;
       state = TagThreadsState(
         phase: TagThreadsPhase.ready,
         tag: result.tag,
@@ -30,7 +32,7 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
         hasMore: result.page.hasMore,
       );
     } on Object catch (error) {
-      if (epoch != _requestEpoch) return;
+      if (!_requestEpoch.isCurrent(epoch)) return;
       state = TagThreadsState(
         phase: TagThreadsPhase.failed,
         failure: _asFailure(error, '标签主题没有加载完成，请稍后重试。'),
@@ -39,7 +41,7 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
   }
 
   Future<void> refresh() async {
-    final epoch = ++_requestEpoch;
+    final epoch = _requestEpoch.begin();
     state = state.copyWith(
       isRefreshing: true,
       isLoadingMore: false,
@@ -47,7 +49,7 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
     );
     try {
       final result = await _repository.loadTagThreads(_tagId);
-      if (epoch != _requestEpoch) return;
+      if (!_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: TagThreadsPhase.ready,
         tag: result.tag,
@@ -60,7 +62,7 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
         isRefreshing: false,
       );
     } on Object catch (error) {
-      if (epoch != _requestEpoch) return;
+      if (!_requestEpoch.isCurrent(epoch)) return;
       final failure = _asFailure(error, '标签主题刷新失败，请重试。');
       if (state.tag == null) {
         state = TagThreadsState(
@@ -83,26 +85,22 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
         !state.hasMore) {
       return;
     }
-    final epoch = _requestEpoch;
+    final epoch = _requestEpoch.current;
     state = state.copyWith(isLoadingMore: true, transientFailure: null);
     try {
       final page = await _repository.fetchTagThreads(
         tagId: _tagId,
         cursor: state.cursor,
       );
-      if (epoch != _requestEpoch) return;
-      final seen = state.items.map((item) => item.id).toSet();
+      if (!_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
-        items: [
-          ...state.items,
-          ...page.items.where((item) => seen.add(item.id)),
-        ],
+        items: mergeUniqueBy(state.items, page.items, keyOf: (item) => item.id),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingMore: false,
       );
     } on ApiFailure catch (failure) {
-      if (epoch != _requestEpoch) return;
+      if (!_requestEpoch.isCurrent(epoch)) return;
       if (failure.isInvalidCursor) {
         await refresh();
         return;
@@ -113,7 +111,7 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
         transientRetryAction: TagThreadsRetryAction.loadMore,
       );
     } on Object catch (error) {
-      if (epoch != _requestEpoch) return;
+      if (!_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         isLoadingMore: false,
         transientFailure: _asFailure(error, '加载更多标签主题失败，请重试。'),

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 
@@ -88,12 +89,14 @@ void main() {
     final api = _MockDirectMessagesApi();
     when(
       () => api.directConversationsCreate(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createDirectConversationDto: any(named: 'createDirectConversationDto'),
       ),
     ).thenAnswer((_) async => _createResponse());
     when(
       () => api.directConversationsSend(
         id: 'conversation-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createDirectMessageDto: any(named: 'createDirectMessageDto'),
       ),
     ).thenAnswer((_) async => _sendResponse());
@@ -160,6 +163,7 @@ void main() {
     final createPayload =
         verify(
               () => api.directConversationsCreate(
+                extra: ApiRequestPolicy.idempotentCreate.extra,
                 createDirectConversationDto: captureAny(
                   named: 'createDirectConversationDto',
                 ),
@@ -170,6 +174,7 @@ void main() {
         verify(
               () => api.directConversationsSend(
                 id: 'conversation-1',
+                extra: ApiRequestPolicy.idempotentCreate.extra,
                 createDirectMessageDto: captureAny(
                   named: 'createDirectMessageDto',
                 ),
@@ -279,6 +284,7 @@ void main() {
     when(
       () => api.directConversationsSend(
         id: 'conversation-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createDirectMessageDto: any(named: 'createDirectMessageDto'),
       ),
     ).thenAnswer(

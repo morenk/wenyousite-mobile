@@ -8,6 +8,7 @@
 - [网络与会话](architecture/networking.md)
 - [Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)
 - [导航](architecture/navigation.md)
+- [依赖边界与架构门禁](architecture/dependencies.md)
 - [本地持久化](architecture/persistence.md)
 - [API 生成](architecture/api-generation.md)
 - [编辑器 Markdown ↔ Delta Codec](architecture/editor-codec.md)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -44,7 +45,7 @@ class _EmailVerificationPageState extends ConsumerState<EmailVerificationPage> {
       context.pop(true);
       return;
     }
-    context.go(sanitizeReturnLocation(widget.returnTo ?? '/me'));
+    context.go(sanitizeReturnLocation(widget.returnTo ?? AppRouteLocations.me));
   }
 
   @override

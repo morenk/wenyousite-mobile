@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_failure_messages.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 
 abstract interface class DirectMessageRepository {
@@ -80,7 +82,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -102,7 +107,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         pendingRequests: pending,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -138,7 +146,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         conversation: conversation,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -151,6 +162,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     _validateDraft(draft);
     try {
       final dto = (await _api.directConversationsCreate(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createDirectConversationDto: CreateDirectConversationDto((builder) {
           builder
             ..recipientId = targetId
@@ -177,7 +189,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         message: message,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -195,7 +210,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
       }
       return conversation;
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -248,7 +266,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -262,6 +283,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     try {
       final dto = (await _api.directConversationsSend(
         id: id,
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createDirectMessageDto: CreateDirectMessageDto((builder) {
           builder.clientRequestId = draft.clientRequestId;
           if (draft.content != null) builder.content = draft.content;
@@ -280,7 +302,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
       }
       return message;
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -312,7 +337,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
       }
       return result;
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -338,7 +366,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
       }
       return result;
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -360,7 +391,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         throw const ApiFailure(userMessage: '服务端没有确认消息已读，请重新加载。');
       }
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 
@@ -376,7 +410,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         conversationCanceled: result.conversationCanceled,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: directMessageFailureMessages,
+      );
     }
   }
 

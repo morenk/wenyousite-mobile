@@ -2,22 +2,20 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 typedef StickerRequestIdFactory = String Function();
 
-final stickersEnabledProvider = Provider<bool>((ref) {
-  return ref.watch(
-        startupControllerProvider.select(
-          (state) => state.contract?.stickersEnabled,
-        ),
-      ) ??
-      false;
-});
+final stickersEnabledProvider = Provider<bool>(
+  (ref) => ref.watch(
+    appCapabilitiesProvider.select((capabilities) => capabilities.stickers),
+  ),
+  dependencies: [appCapabilitiesProvider],
+);
 
 class StickerCollectionController
     extends StateNotifier<StickerCollectionState> {

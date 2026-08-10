@@ -25,7 +25,7 @@
 
 ## 6. 状态模型和数据流
 
-`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；仓储把生成 DTO 映射为主题卡片模型，控制器以请求世代丢弃过期响应，并在分页合并时按主题 ID 去重。
+`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 threads，home 仓储只编排分类和信息流查询。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-卡片图片走媒体降级规则；标签进入搜索；主题导航遵循[导航](../architecture/navigation.md)。
+主题卡片、标签 chip 与映射复用 threads/core 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
 
 ## 11. 测试场景与验收条件
 

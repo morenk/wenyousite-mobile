@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -128,7 +129,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           TextButton(
             onPressed: state.isBusy
                 ? null
-                : () => context.go(_authLocation('/auth/login')),
+                : () => context.go(
+                    AppRouteLocations.login(returnTo: widget.returnTo),
+                  ),
             child: const Text('已有账号？返回登录'),
           ),
         ],
@@ -286,15 +289,6 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         ),
       ),
     );
-  }
-
-  String _authLocation(String path) {
-    return Uri(
-      path: path,
-      queryParameters: widget.returnTo == null
-          ? null
-          : {'returnTo': widget.returnTo!},
-    ).toString();
   }
 }
 

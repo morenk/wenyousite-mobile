@@ -1,6 +1,6 @@
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
 
 const maxThreadTagCount = 5;
 const maxTagNameLength = 20;

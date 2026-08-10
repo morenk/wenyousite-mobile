@@ -3,6 +3,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
+import 'thread_management_state.dart';
+export 'thread_management_state.dart';
+
 class ThreadManagementController extends StateNotifier<ThreadManagementState> {
   ThreadManagementController(this._threadId, this._repository)
     : super(const ThreadManagementState.loading()) {

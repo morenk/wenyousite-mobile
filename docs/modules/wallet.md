@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-`WalletController` 按当前会话 key 隔离余额、流水、首屏/刷新/分页和三类局部失败；余额与流水并发加载，任一失败不会遮挡另一部分。`DailyCheckInController` 串行执行全局签到，启动组件按登录会话防止重复触发。`TipController` 按目标 family 隔离弹窗写入，保存待确认金额、稳定请求 ID、提交状态和失败详情。仓储把生成 DTO 映射为 feature 模型，并对金额、枚举、计数、目标、分页和安全头像 URL fail-closed。
+`WalletController` 按当前会话 key 隔离余额、流水、首屏/刷新/分页和三类局部失败；余额与流水并发加载，任一失败不会遮挡另一部分。`DailyCheckInController` 串行执行全局签到，启动组件按登录会话防止重复触发。`TipController` 按目标 family 隔离弹窗写入，保存待确认金额、稳定请求 ID、提交状态和失败详情。仓储在 data 边界应用钱包专属错误目录，把生成 DTO 映射为 feature 模型，并对金额、枚举、计数、目标、分页和安全头像 URL fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -44,13 +44,14 @@
 
 ## 10. 跨模块约束
 
-app-shell 只负责会话就绪后的签到触发与非阻断提示；users、threads 和 moments 只挂载目标入口并在成功后重读自身服务端投影。钱包流水目标导航复用这些模块的稳定路由。所有 UI 只消费 Foundation v1.1.0 Token、全局主题和共享面板；精确金额字符串是 Wallet 与动态/主题/用户累计加油的共同约束。
+app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通过 app 组合层的 `ProfileCacheInvalidator` 发布失效意图，不直接导入 users provider。users、threads 和 moments 只挂载目标入口并在成功后重读自身服务端投影。钱包流水目标导航复用这些模块的稳定路由。所有 UI 只消费 Foundation v1.1.0 Token、全局主题和共享面板；精确金额字符串是 Wallet 与动态/主题/用户累计加油的共同约束。
 
 ## 11. 测试场景与验收条件
 
 - [x] 六个 Wallet operationId 的路径、生成 DTO、分页和三类目标载荷有仓储测试。
 - [x] 超过 JavaScript 安全整数的余额仍精确展示，不发生浮点转换或科学计数法。
 - [x] 签到只在本次实际领取时提示，重复 Widget 构建不重复调用。
+- [x] 签到和用户加油通过组合层精确失效本人或收款人的资料缓存。
 - [x] 同金额失败重试复用 UUID，改金额和成功后的下一次操作轮换 UUID。
 - [x] 金额、小数、前导零、bigint 溢出、未知枚举、重复流水和缺失 cursor 均 fail-closed。
 - [x] 余额/流水局部失败、分页、`40007` 恢复、三类业务错误和空响应有自动测试。

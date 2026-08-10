@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/app/app_cache_invalidation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
@@ -14,11 +15,15 @@ import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.da
 void main() {
   testWidgets('登录会话就绪后只签到一次且仅本次领取展示提示', (tester) async {
     final repository = _WidgetWalletRepository();
+    final invalidatedUserIds = <String?>[];
     final container = ProviderContainer(
       overrides: [
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         walletRepositoryProvider.overrideWithValue(repository),
+        profileCacheInvalidatorProvider.overrideWithValue(
+          invalidatedUserIds.add,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -38,6 +43,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.checkInCalls, 1);
+    expect(invalidatedUserIds, ['user-1']);
     expect(find.textContaining('今日签到获得 3 升温油'), findsOneWidget);
     await tester.pump();
     expect(repository.checkInCalls, 1);
@@ -45,11 +51,15 @@ void main() {
 
   testWidgets('加油弹窗校验输入并展示服务端实际到账结果', (tester) async {
     final repository = _WidgetWalletRepository();
+    final invalidatedUserIds = <String?>[];
     final container = ProviderContainer(
       overrides: [
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         walletRepositoryProvider.overrideWithValue(repository),
+        profileCacheInvalidatorProvider.overrideWithValue(
+          invalidatedUserIds.add,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -85,6 +95,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.tipCalls, 1);
     expect(repository.lastAmount, '10');
+    expect(invalidatedUserIds, ['recipient-1']);
     expect(find.textContaining('对方到账 8 升'), findsOneWidget);
   });
 }

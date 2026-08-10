@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/account_deletion_controller.dart';
@@ -64,7 +65,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .submit();
     if (!succeeded) return;
     messenger.showSnackBar(const SnackBar(content: Text('账号已注销。')));
-    router.go('/home');
+    router.go(AppRouteLocations.home);
   }
 
   Future<void> _retryLocalCleanup() async {
@@ -75,7 +76,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .retryLocalCleanup();
     if (!succeeded) return;
     messenger.showSnackBar(const SnackBar(content: Text('本机登录信息已清除。')));
-    router.go('/home');
+    router.go(AppRouteLocations.home);
   }
 
   Future<void> _openEmailVerification() async {

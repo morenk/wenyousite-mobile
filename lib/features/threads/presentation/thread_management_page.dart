@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
@@ -203,8 +204,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               key: const Key('thread-management-open-tags'),
               onPressed: locked
                   ? null
-                  : () =>
-                        context.push('/threads/${widget.threadId}/manage/tags'),
+                  : () => context.push(
+                      AppRouteLocations.threadTagManagement(widget.threadId),
+                    ),
               icon: const Icon(Icons.sell_outlined),
               label: const Text('管理主题标签'),
             ),
@@ -214,7 +216,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               onPressed: locked
                   ? null
                   : () => context.push(
-                      '/threads/${widget.threadId}/manage/subthreads',
+                      AppRouteLocations.subthreadManagement(widget.threadId),
                     ),
               icon: const Icon(Icons.view_list_outlined),
               label: const Text('管理子贴与发帖权限'),
@@ -225,7 +227,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               onPressed: locked
                   ? null
                   : () => context.push(
-                      '/threads/${widget.threadId}/manage/members',
+                      AppRouteLocations.threadMemberManagement(widget.threadId),
                     ),
               icon: const Icon(Icons.groups_2_outlined),
               label: const Text('管理成员与玩家身份'),
@@ -424,7 +426,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     if (!succeeded) return;
     messenger.showSnackBar(const SnackBar(content: Text('主题已删除。')));
     _allowPop = true;
-    router.go('/home');
+    router.go(AppRouteLocations.home);
   }
 
   Future<void> _confirmDiscardChanges() async {

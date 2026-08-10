@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/app_shell/application/startup_control
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';

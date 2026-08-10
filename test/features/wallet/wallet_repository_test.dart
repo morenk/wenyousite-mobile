@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
@@ -102,6 +103,7 @@ void main() {
     when(
       () => api.economyTipThread(
         id: 'thread-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         tipRequestDto: any(named: 'tipRequestDto'),
       ),
     ).thenAnswer((invocation) async {
@@ -119,6 +121,7 @@ void main() {
     when(
       () => api.economyTipUser(
         id: 'user-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         tipRequestDto: any(named: 'tipRequestDto'),
       ),
     ).thenAnswer((invocation) async {
@@ -136,6 +139,7 @@ void main() {
     when(
       () => api.economyTipMoment(
         id: 'moment-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         tipRequestDto: any(named: 'tipRequestDto'),
       ),
     ).thenAnswer((invocation) async {
@@ -202,6 +206,7 @@ void main() {
     when(
       () => api.economyTipUser(
         id: 'user-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         tipRequestDto: any(named: 'tipRequestDto'),
       ),
     ).thenAnswer(

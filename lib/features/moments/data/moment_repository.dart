@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
 abstract interface class MomentRepository {
@@ -101,7 +104,7 @@ class ApiMomentRepository implements MomentRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -125,7 +128,7 @@ class ApiMomentRepository implements MomentRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -152,7 +155,7 @@ class ApiMomentRepository implements MomentRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -166,7 +169,7 @@ class ApiMomentRepository implements MomentRepository {
       }
       return _detail(dto, expectedId: id);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -175,10 +178,11 @@ class ApiMomentRepository implements MomentRepository {
     MomentDraftInput input, {
     required String clientRequestId,
   }) async {
-    final draft = input.normalized();
+    final draft = _validated(input.normalized);
     final requestId = _requiredText(clientRequestId, '发布请求 ID');
     try {
       final dto = (await _api.momentsCreate(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createMomentDto: CreateMomentDto(
           (builder) => builder
             ..title = draft.title
@@ -193,7 +197,7 @@ class ApiMomentRepository implements MomentRepository {
       }
       return _detail(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -204,7 +208,7 @@ class ApiMomentRepository implements MomentRepository {
     required int version,
   }) async {
     final id = _requiredText(momentId, '动态 ID');
-    final draft = input.normalized();
+    final draft = _validated(input.normalized);
     if (version < 1) {
       throw const ApiFailure(userMessage: '动态版本无效，请重新加载后编辑。');
     }
@@ -225,7 +229,7 @@ class ApiMomentRepository implements MomentRepository {
       }
       return _detail(dto, expectedId: id);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -238,7 +242,7 @@ class ApiMomentRepository implements MomentRepository {
         throw const ApiFailure(userMessage: '服务端没有确认动态删除，请重新加载。');
       }
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -257,7 +261,7 @@ class ApiMomentRepository implements MomentRepository {
       }
       return _action(dto, expectedId: id, expectedActive: active);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -276,7 +280,7 @@ class ApiMomentRepository implements MomentRepository {
       }
       return _action(dto, expectedId: id, expectedActive: active);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -311,7 +315,7 @@ class ApiMomentRepository implements MomentRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -352,7 +356,7 @@ class ApiMomentRepository implements MomentRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -368,7 +372,7 @@ class ApiMomentRepository implements MomentRepository {
       _validateUnique(authors.map((item) => item.id), '评论作者列表');
       return List.unmodifiable(authors);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -379,11 +383,12 @@ class ApiMomentRepository implements MomentRepository {
     required String clientRequestId,
   }) async {
     final id = _requiredText(momentId, '动态 ID');
-    final comment = input.normalized();
+    final comment = _validated(input.normalized);
     final requestId = _requiredText(clientRequestId, '评论请求 ID');
     try {
       final dto = (await _api.momentsCreateComment(
         id: id,
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createMomentCommentDto: CreateMomentCommentDto(
           (builder) => builder
             ..content = comment.content
@@ -398,7 +403,7 @@ class ApiMomentRepository implements MomentRepository {
       }
       return _comment(dto, expectedMomentId: id);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -415,7 +420,7 @@ class ApiMomentRepository implements MomentRepository {
         throw const ApiFailure(userMessage: '服务端没有确认评论删除，请重新加载。');
       }
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }
   }
 
@@ -844,3 +849,11 @@ class ApiMomentRepository implements MomentRepository {
 final momentRepositoryProvider = Provider<MomentRepository>((ref) {
   return ApiMomentRepository(ref.watch(wenyouApiProvider).getMomentsApi());
 });
+
+T _validated<T>(T Function() validation) {
+  try {
+    return validation();
+  } on Object catch (error) {
+    throw mapApplicationFailure(error, '提交内容格式无效，请检查后重试。');
+  }
+}

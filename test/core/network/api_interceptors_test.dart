@@ -1,7 +1,12 @@
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/core/network/api_interceptors.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
@@ -14,7 +19,7 @@ void main() {
     );
   });
 
-  test('首次 40101 刷新双 Token 后只重放一次原请求', () async {
+  test('首次 40101 刷新双 Token 后只重放一次并保持业务路由', () async {
     final dio = _MockDio();
     final handler = _MockErrorInterceptorHandler();
     final remote = _FakeSessionRemote();
@@ -28,6 +33,16 @@ void main() {
     when(() => dio.fetch<Object?>(any())).thenAnswer((_) async => replayed);
     final options = RequestOptions(path: '/api/v1/users/me');
     final error = _businessError(options, 40101);
+    const targetLocation = '/compose/thread';
+
+    expect(
+      resolveSessionRedirect(
+        session: session.state,
+        matchedLocation: targetLocation,
+        uri: Uri.parse(targetLocation),
+      ),
+      isNull,
+    );
 
     RequestContextInterceptor(dio, session).onError(error, handler);
     await untilCalled(() => handler.resolve(any()));
@@ -39,6 +54,14 @@ void main() {
             as RequestOptions;
     expect(replayOptions.headers['Authorization'], 'Bearer new-access');
     expect(replayOptions.extra['wenyou.auth.retried'], isTrue);
+    expect(
+      resolveSessionRedirect(
+        session: session.state,
+        matchedLocation: targetLocation,
+        uri: Uri.parse(targetLocation),
+      ),
+      isNull,
+    );
     verify(() => handler.resolve(replayed)).called(1);
   });
 
@@ -95,6 +118,50 @@ void main() {
     expect(sanitized, isNot(contains(token)));
     expect(sanitized, isNot(contains('debug=value')));
   });
+
+  test('携带稳定 clientRequestId 的创建请求由真实 Dio 自动重试且保留请求 ID', () async {
+    final adapter = _TransientThenSuccessAdapter(failures: 2);
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    dio.interceptors.add(
+      SafeRetryInterceptor(dio, random: Random(1), wait: (_) async {}),
+    );
+    addTearDown(dio.close);
+
+    final response = await dio.post<Object?>(
+      '/api/v1/posts',
+      data: const {'clientRequestId': '00000000-0000-4000-8000-000000000001'},
+      options: Options(
+        headers: const {'X-Request-ID': 'transport-request-id'},
+        extra: ApiRequestPolicy.idempotentCreate.extra,
+      ),
+    );
+
+    expect(response.statusCode, 201);
+    expect(adapter.attempts, 3);
+    expect(adapter.requestIds, const [
+      'transport-request-id',
+      'transport-request-id',
+      'transport-request-id',
+    ]);
+  });
+
+  test('普通 POST 即使遇到瞬时错误也不会自动重试', () async {
+    final adapter = _TransientThenSuccessAdapter(failures: 1);
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    dio.interceptors.add(SafeRetryInterceptor(dio, wait: (_) async {}));
+    addTearDown(dio.close);
+
+    await expectLater(
+      dio.post<Object?>(
+        '/api/v1/actions',
+        options: Options(extra: ApiRequestPolicy.standard.extra),
+      ),
+      throwsA(isA<DioException>()),
+    );
+    expect(adapter.attempts, 1);
+  });
 }
 
 DioException _businessError(RequestOptions options, int code) {
@@ -146,4 +213,41 @@ class _MemoryTokenStore implements TokenStore {
 
   @override
   Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _TransientThenSuccessAdapter implements HttpClientAdapter {
+  _TransientThenSuccessAdapter({required this.failures});
+
+  final int failures;
+  int attempts = 0;
+  final List<String?> requestIds = [];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    attempts += 1;
+    requestIds.add(options.headers['X-Request-ID'] as String?);
+    if (attempts <= failures) {
+      return ResponseBody.fromString(
+        '{"code":50300,"message":"temporary"}',
+        503,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      '{"code":0,"data":{"id":"created"}}',
+      201,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

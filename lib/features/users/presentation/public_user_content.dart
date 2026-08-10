@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -245,10 +246,7 @@ class _UserReplyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final location = Uri(
-      path: '/threads/${item.threadId}',
-      queryParameters: {'post': item.id},
-    ).toString();
+    final location = AppRouteLocations.thread(item.threadId, postId: item.id);
     return Semantics(
       button: true,
       label: '打开 ${item.threadTitle} 中的最近回复',

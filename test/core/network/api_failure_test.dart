@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_failure_messages.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.dart';
+import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 
 void main() {
   test('从错误 envelope 提取业务码、请求 ID 和契约版本', () {
@@ -141,6 +144,7 @@ void main() {
             data: {'code': code, 'message': 'private server wording'},
           ),
         ),
+        featureMessages: directMessageFailureMessages,
       ).userMessage;
     }
 
@@ -167,6 +171,7 @@ void main() {
           data: {'code': 40415, 'message': 'private deletion detail'},
         ),
       ),
+      featureMessages: momentFailureMessages,
     );
 
     expect(failure.userMessage, contains('动态或评论'));
@@ -184,6 +189,7 @@ void main() {
             data: {'code': code, 'message': 'private economy wording'},
           ),
         ),
+        featureMessages: walletFailureMessages,
       ).userMessage;
     }
 

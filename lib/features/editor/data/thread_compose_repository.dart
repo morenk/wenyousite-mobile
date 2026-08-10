@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 
@@ -178,6 +179,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
       final category = payload.categorySlug?.trim();
       final body = MarkdownContent.normalize(payload.body);
       final response = await _threadsApi.threadsCreate(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createThreadDto: CreateThreadDto((builder) {
           builder
             ..clientRequestId = payload.clientRequestId

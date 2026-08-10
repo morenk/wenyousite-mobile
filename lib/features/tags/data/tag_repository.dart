@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
-import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_feed_mapper.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
 
 abstract interface class TagRepository {
   Future<TagThreadsBootstrap> loadTagThreads(String tagId);
@@ -48,7 +49,9 @@ class ApiTagRepository implements TagRepository {
     try {
       final responses = await Future.wait<Object>([
         _tagsApi.tagsGetById(id: tagId),
-        _categoriesApi.threadCategoriesList(extra: const {'skipAuth': true}),
+        _categoriesApi.threadCategoriesList(
+          extra: ApiRequestPolicy.public.extra,
+        ),
         _threadsApi.threadsFindAll(tagId: tagId),
       ]);
       final tagEnvelope =

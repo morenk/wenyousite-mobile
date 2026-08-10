@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_controller.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
 class ThreadInvitationPage extends ConsumerWidget {
   const ThreadInvitationPage({required this.token, super.key});
@@ -96,7 +96,8 @@ class _InvitationReady extends ConsumerWidget {
                     '${DateFormat('yyyy-MM-dd').format(preview.createdAt.toLocal())} 创建',
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/users/${preview.ownerId}'),
+                  onTap: () =>
+                      context.push(AppRouteLocations.user(preview.ownerId)),
                 ),
               ],
             ),
@@ -141,7 +142,8 @@ class _InvitationReady extends ConsumerWidget {
               message: '你已经是这个主题的成员，可以直接进入。',
               action: TextButton(
                 key: const Key('thread-invite-open-thread'),
-                onPressed: () => context.go('/threads/${preview.threadId}'),
+                onPressed: () =>
+                    context.go(AppRouteLocations.thread(preview.threadId)),
                 child: const Text('进入主题'),
               ),
             )
@@ -167,7 +169,7 @@ class _InvitationReady extends ConsumerWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('已加入私密主题。')));
-    context.go('/threads/${result.threadId}');
+    context.go(AppRouteLocations.thread(result.threadId));
   }
 
   Future<void> _openVerification(BuildContext context, WidgetRef ref) async {
@@ -246,7 +248,7 @@ class _InvitationFailure extends StatelessWidget {
           action: permanent
               ? OutlinedButton.icon(
                   key: const Key('thread-invite-back-home'),
-                  onPressed: () => context.go('/home'),
+                  onPressed: () => context.go(AppRouteLocations.home),
                   icon: const Icon(Icons.home_outlined),
                   label: const Text('返回首页'),
                 )

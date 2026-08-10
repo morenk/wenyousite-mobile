@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_cache_invalidation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
-import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
@@ -52,11 +51,9 @@ class _DailyCheckInBootstrapState extends ConsumerState<DailyCheckInBootstrap> {
         .read(dailyCheckInControllerProvider.notifier)
         .checkIn();
     if (!mounted || result == null) return;
-    ref
-      ..invalidate(walletControllerProvider(sessionKey))
-      ..invalidate(meProfileControllerProvider);
+    ref.invalidate(walletControllerProvider(sessionKey));
     final userId = ref.read(sessionControllerProvider.notifier).currentUserId;
-    if (userId != null) ref.invalidate(publicUserControllerProvider(userId));
+    ref.read(profileCacheInvalidatorProvider)(userId);
     if (!result.claimedNow) return;
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(
@@ -120,9 +117,8 @@ class WenyouTipButton extends ConsumerWidget {
     );
     if (result == null || !context.mounted) return;
     final sessionKey = walletSessionKey(ref);
-    ref
-      ..invalidate(walletControllerProvider(sessionKey))
-      ..invalidate(publicUserControllerProvider(target.recipientUserId));
+    ref.invalidate(walletControllerProvider(sessionKey));
+    ref.read(profileCacheInvalidatorProvider)(target.recipientUserId);
     await onSuccess?.call(result);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

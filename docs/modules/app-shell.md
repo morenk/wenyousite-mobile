@@ -24,7 +24,7 @@
 
 ## 6. 状态模型和数据流
 
-启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。元信息同时映射 stickers、directMessages、pushNotifications capability，业务入口默认关闭并只在服务端明确启用后创建。环境、更新服务、忽略记录与会话由 Riverpod 注入；签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。环境、更新服务、忽略记录与会话由 Riverpod 注入；签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -40,7 +40,7 @@
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)和[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。更新页复用中央 Token、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。app 组合层只连接 capability 与跨 feature 缓存失效等接口，不持有业务页面状态。更新页复用中央 Token、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 

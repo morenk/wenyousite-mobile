@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
@@ -708,7 +709,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         .publish();
     if (mounted && threadId != null) {
       ref.invalidate(remoteThreadDraftsControllerProvider);
-      context.go('/threads/$threadId');
+      context.go(AppRouteLocations.thread(threadId));
     }
   }
 

@@ -1,4 +1,4 @@
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 
 enum MomentFeedMode { discover, following }
 
@@ -304,21 +304,21 @@ class MomentDraftInput {
     final safeTitle = title.trim();
     final safeContent = content.trim();
     if (safeTitle.length < 2 || safeTitle.length > 40) {
-      throw const ApiFailure(userMessage: '动态标题需要 2～40 个字符。');
+      throw const DomainValidationException('动态标题需要 2～40 个字符。');
     }
     if (safeContent.length > 1000) {
-      throw const ApiFailure(userMessage: '动态正文不能超过 1000 个字符。');
+      throw const DomainValidationException('动态正文不能超过 1000 个字符。');
     }
     final ids = mediaIds.map((id) => id.trim()).toList(growable: false);
     if (ids.length > 9) {
-      throw const ApiFailure(userMessage: '每条动态最多添加 9 张图片。');
+      throw const DomainValidationException('每条动态最多添加 9 张图片。');
     }
     if (ids.any((id) => id.isEmpty) || ids.toSet().length != ids.length) {
-      throw const ApiFailure(userMessage: '动态图片信息无效，请重新选择。');
+      throw const DomainValidationException('动态图片信息无效，请重新选择。');
     }
     final cover = coverMediaId?.trim();
     if (cover != null && cover.isNotEmpty && !ids.contains(cover)) {
-      throw const ApiFailure(userMessage: '封面必须来自当前动态图片。');
+      throw const DomainValidationException('封面必须来自当前动态图片。');
     }
     return MomentDraftInput(
       title: safeTitle,
@@ -348,18 +348,18 @@ class MomentCommentInput {
     final sticker = stickerAssetId?.trim();
     final replyTo = replyToCommentId?.trim();
     if ((text?.length ?? 0) > 500) {
-      throw const ApiFailure(userMessage: '评论不能超过 500 个字符。');
+      throw const DomainValidationException('评论不能超过 500 个字符。');
     }
     if (media != null &&
         media.isNotEmpty &&
         sticker != null &&
         sticker.isNotEmpty) {
-      throw const ApiFailure(userMessage: '评论图片和表情不能同时发送。');
+      throw const DomainValidationException('评论图片和表情不能同时发送。');
     }
     if ((text == null || text.isEmpty) &&
         (media == null || media.isEmpty) &&
         (sticker == null || sticker.isEmpty)) {
-      throw const ApiFailure(userMessage: '请输入评论，或选择一张图片/一个表情。');
+      throw const DomainValidationException('请输入评论，或选择一张图片/一个表情。');
     }
     return MomentCommentInput(
       content: text == null || text.isEmpty ? null : text,

@@ -2,37 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
-
-class ContractInfo {
-  const ContractInfo({
-    required this.contractVersion,
-    required this.markdownContractVersion,
-    this.buildSha,
-    this.android = const MobilePlatformPolicy(),
-    this.ios = const MobilePlatformPolicy(),
-    this.stickersEnabled = false,
-    this.directMessagesEnabled = false,
-    this.pushNotificationsEnabled = false,
-  });
-
-  final String contractVersion;
-  final int markdownContractVersion;
-  final String? buildSha;
-  final MobilePlatformPolicy android;
-  final MobilePlatformPolicy ios;
-  final bool stickersEnabled;
-  final bool directMessagesEnabled;
-  final bool pushNotificationsEnabled;
-
-  MobilePlatformPolicy policyFor(MobileClientPlatform platform) {
-    return switch (platform) {
-      MobileClientPlatform.android => android,
-      MobileClientPlatform.ios => ios,
-      MobileClientPlatform.unsupported => const MobilePlatformPolicy(),
-    };
-  }
-}
 
 abstract interface class MetaRepository {
   Future<ContractInfo> fetch();
@@ -47,7 +19,7 @@ class ApiMetaRepository implements MetaRepository {
   Future<ContractInfo> fetch() async {
     try {
       final response = await _api.getMetaApi().metaGetMeta(
-        extra: const {'skipAuth': true},
+        extra: ApiRequestPolicy.public.extra,
       );
       final data = response.data?.data;
       if (data == null) {

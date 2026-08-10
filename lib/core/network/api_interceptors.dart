@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 
 class RequestContextInterceptor extends Interceptor {
@@ -24,7 +25,8 @@ class RequestContextInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     options.headers.putIfAbsent('X-Request-ID', _uuid.v4);
     final accessToken = _sessionController.tokens?.accessToken;
-    if (accessToken != null && options.extra['skipAuth'] != true) {
+    if (accessToken != null &&
+        options.extra[ApiRequestExtraKeys.skipAuth] != true) {
       options.headers['Authorization'] = 'Bearer $accessToken';
     }
     if (_needsMobileHeader(options.path)) {
@@ -145,12 +147,17 @@ String sanitizeNetworkLogUri(Uri uri) {
 }
 
 class SafeRetryInterceptor extends Interceptor {
-  SafeRetryInterceptor(this._dio, {Random? random})
-    : _random = random ?? Random.secure();
+  SafeRetryInterceptor(
+    this._dio, {
+    Random? random,
+    Future<void> Function(Duration duration)? wait,
+  }) : _random = random ?? Random.secure(),
+       _wait = wait ?? Future<void>.delayed;
 
   static const _attemptKey = 'wenyou.retry.attempt';
   final Dio _dio;
   final Random _random;
+  final Future<void> Function(Duration duration) _wait;
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
@@ -164,7 +171,7 @@ class SafeRetryInterceptor extends Interceptor {
     final delay = Duration(
       milliseconds: 250 * (attempt + 1) + _random.nextInt(150),
     );
-    Future<void>.delayed(delay)
+    _wait(delay)
         .then((_) => _dio.fetch<Object?>(options))
         .then(handler.resolve, onError: (_) => handler.next(err));
   }
@@ -173,7 +180,8 @@ class SafeRetryInterceptor extends Interceptor {
     final method = error.requestOptions.method.toUpperCase();
     final safeMethod = method == 'GET' || method == 'HEAD';
     final idempotentWrite =
-        error.requestOptions.extra['idempotentCreate'] == true;
+        error.requestOptions.extra[ApiRequestExtraKeys.idempotentCreate] ==
+        true;
     final transient =
         error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.sendTimeout ||

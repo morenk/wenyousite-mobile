@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_access.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -43,7 +45,7 @@ import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart'
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
-    initialLocation: '/home',
+    initialLocation: AppRouteLocations.home,
     redirect: (context, state) {
       return resolveSessionRedirect(
         session: ref.read(sessionControllerProvider),
@@ -405,78 +407,16 @@ String? resolveSessionRedirect({
   required String matchedLocation,
   required Uri uri,
 }) {
-  final isGuestOnlyAuth = switch (matchedLocation) {
-    '/auth/login' ||
-    '/auth/register' ||
-    '/auth/forgot-password' ||
-    '/auth/reset-password' => true,
-    _ => false,
-  };
+  final access = AppRouteAccessPolicy.forLocation(matchedLocation);
+  final isGuestOnlyAuth = access == AppRouteAccess.guestOnly;
   if (session.status == SessionStatus.invalidated && !isGuestOnlyAuth) {
-    return Uri(
-      path: '/auth/login',
-      queryParameters: {'returnTo': uri.toString()},
-    ).toString();
+    return AppRouteLocations.login(returnTo: uri.toString());
   }
-  final protectedRoute =
-      switch (matchedLocation) {
-        '/compose/thread' ||
-        '/compose/moment' ||
-        '/moments/bookmarks' ||
-        '/me/following' ||
-        '/me/wallet' ||
-        '/me/followers' ||
-        '/me/blocks' ||
-        '/me/bookmarks' ||
-        '/me/stickers' ||
-        '/me/security/sessions' ||
-        '/me/security/password' ||
-        '/me/security/email' ||
-        '/me/security/verify-email' ||
-        '/me/security/delete-account' => true,
-        _ => false,
-      } ||
-      _isThreadManagementLocation(matchedLocation) ||
-      _isMomentEditLocation(matchedLocation) ||
-      _isDirectMessageLocation(matchedLocation) ||
-      _isInvitationLocation(matchedLocation);
-  if (!session.isAuthenticated && protectedRoute) {
-    return Uri(
-      path: '/auth/login',
-      queryParameters: {'returnTo': uri.toString()},
-    ).toString();
+  if (!session.isAuthenticated && access == AppRouteAccess.authenticated) {
+    return AppRouteLocations.login(returnTo: uri.toString());
   }
   if (session.isAuthenticated && isGuestOnlyAuth) {
     return sanitizeReturnLocation(uri.queryParameters['returnTo']);
   }
   return null;
-}
-
-bool _isMomentEditLocation(String location) {
-  if (location == '/moments/:momentId/edit') return true;
-  return RegExp(r'^/moments/[^/]+/edit$').hasMatch(location);
-}
-
-bool _isThreadManagementLocation(String location) {
-  if (location == '/threads/:threadId/manage') return true;
-  if (location == '/threads/:threadId/manage/members') return true;
-  if (location == '/threads/:threadId/manage/subthreads') return true;
-  if (location == '/threads/:threadId/manage/tags') return true;
-  return RegExp(
-    r'^/threads/[^/]+/manage(?:/(?:members|subthreads|tags))?$',
-  ).hasMatch(location);
-}
-
-bool _isInvitationLocation(String location) {
-  if (location == '/join/:token') return true;
-  return RegExp(r'^/join/[^/]+$').hasMatch(location);
-}
-
-bool _isDirectMessageLocation(String location) {
-  if (location == '/messages' ||
-      location == '/messages/:conversationId' ||
-      location == '/messages/new/:userId') {
-    return true;
-  }
-  return RegExp(r'^/messages(?:/[^/]+|/new/[^/]+)?$').hasMatch(location);
 }

@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
@@ -174,7 +176,10 @@ void main() {
     late UpdateMomentDto updatePayload;
     late CreateMomentCommentDto commentPayload;
     when(
-      () => api.momentsCreate(createMomentDto: any(named: 'createMomentDto')),
+      () => api.momentsCreate(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
+        createMomentDto: any(named: 'createMomentDto'),
+      ),
     ).thenAnswer((invocation) async {
       createPayload =
           invocation.namedArguments[#createMomentDto]! as CreateMomentDto;
@@ -221,6 +226,7 @@ void main() {
     when(
       () => api.momentsCreateComment(
         id: 'moment-1',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
         createMomentCommentDto: any(named: 'createMomentCommentDto'),
       ),
     ).thenAnswer((invocation) async {
@@ -349,7 +355,7 @@ void main() {
         mediaId: 'media-1',
         stickerAssetId: 'sticker-1',
       ).normalized(),
-      throwsA(isA<ApiFailure>()),
+      throwsA(isA<DomainValidationException>()),
     );
   });
 }

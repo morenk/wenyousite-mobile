@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -46,7 +47,7 @@ class ApiSearchRepository implements SearchRepository {
     try {
       final data = (await _api.searchSearch(
         q: _query(query),
-        extra: const {'skipAuth': true},
+        extra: ApiRequestPolicy.public.extra,
       )).data?.data;
       if (data == null) {
         throw const ApiFailure(userMessage: '综合搜索返回不完整，请稍后重试。');
@@ -96,7 +97,7 @@ class ApiSearchRepository implements SearchRepository {
     try {
       final response = await _api.searchSearchThreads(
         q: _query(query),
-        extra: const {'skipAuth': true},
+        extra: ApiRequestPolicy.public.extra,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -113,7 +114,7 @@ class ApiSearchRepository implements SearchRepository {
     try {
       final response = await _api.searchSearchUsers(
         q: _query(query),
-        extra: const {'skipAuth': true},
+        extra: ApiRequestPolicy.public.extra,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -137,7 +138,7 @@ class ApiSearchRepository implements SearchRepository {
         q: _contentQuery(query),
         cursor: _optionalText(cursor),
         limit: limit,
-        extra: const {'skipAuth': true},
+        extra: ApiRequestPolicy.public.extra,
       );
       final envelope = response.data;
       if (envelope == null) {

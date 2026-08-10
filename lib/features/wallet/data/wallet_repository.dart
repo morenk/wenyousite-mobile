@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 abstract interface class WalletRepository {
@@ -41,7 +43,7 @@ class ApiWalletRepository implements WalletRepository {
         receivedTipCount: _nonNegativeInteger(dto.receivedTipCount, '收到加油次数'),
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: walletFailureMessages);
     }
   }
 
@@ -84,7 +86,7 @@ class ApiWalletRepository implements WalletRepository {
         ),
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: walletFailureMessages);
     }
   }
 
@@ -119,7 +121,7 @@ class ApiWalletRepository implements WalletRepository {
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: walletFailureMessages);
     }
   }
 
@@ -141,14 +143,17 @@ class ApiWalletRepository implements WalletRepository {
       final TipResponseDto? dto = switch (target.type) {
         TipTargetType.thread => (await _api.economyTipThread(
           id: targetId,
+          extra: ApiRequestPolicy.idempotentCreate.extra,
           tipRequestDto: request,
         )).data?.data,
         TipTargetType.user => (await _api.economyTipUser(
           id: targetId,
+          extra: ApiRequestPolicy.idempotentCreate.extra,
           tipRequestDto: request,
         )).data?.data,
         TipTargetType.moment => (await _api.economyTipMoment(
           id: targetId,
+          extra: ApiRequestPolicy.idempotentCreate.extra,
           tipRequestDto: request,
         )).data?.data,
       };
@@ -174,7 +179,7 @@ class ApiWalletRepository implements WalletRepository {
         ),
       );
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: walletFailureMessages);
     }
   }
 

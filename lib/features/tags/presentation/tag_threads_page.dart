@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_threads_controller.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
-import 'package:wenyousite_mobile/features/tags/presentation/wenyou_tag_chip.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_feed_card.dart';
 
 class TagThreadsPage extends ConsumerStatefulWidget {
   const TagThreadsPage({required this.tagId, super.key});

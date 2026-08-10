@@ -3,6 +3,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_member_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 
+import 'thread_member_management_state.dart';
+export 'thread_member_management_state.dart';
+
 class ThreadMemberManagementController
     extends StateNotifier<ThreadMemberManagementState> {
   ThreadMemberManagementController(this._threadId, this._repository)

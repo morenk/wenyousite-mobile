@@ -3,6 +3,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
+import 'thread_invitation_state.dart';
+export 'thread_invitation_state.dart';
+
 class ThreadInviteLinkController extends StateNotifier<ThreadInviteLinkState> {
   ThreadInviteLinkController(this._threadId, this._repository)
     : super(const ThreadInviteLinkState());

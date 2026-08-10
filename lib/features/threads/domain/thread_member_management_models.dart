@@ -1,5 +1,3 @@
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
-
 enum ThreadMemberManagementRole {
   owner('楼主'),
   collaborator('协作者'),
@@ -60,61 +58,3 @@ class ThreadMemberManagementBootstrap {
     );
   }
 }
-
-enum ThreadMemberManagementPhase { loading, ready, failed }
-
-enum ThreadMemberManagementAction { player, role }
-
-class ThreadMemberManagementState {
-  const ThreadMemberManagementState({
-    required this.phase,
-    this.bootstrap,
-    this.failure,
-    this.pendingUserId,
-    this.pendingAction,
-  });
-
-  const ThreadMemberManagementState.loading()
-    : this(phase: ThreadMemberManagementPhase.loading);
-
-  final ThreadMemberManagementPhase phase;
-  final ThreadMemberManagementBootstrap? bootstrap;
-  final ApiFailure? failure;
-  final String? pendingUserId;
-  final ThreadMemberManagementAction? pendingAction;
-
-  bool get isUpdating => pendingUserId != null;
-
-  ThreadMemberManagementState copyWith({
-    ThreadMemberManagementPhase? phase,
-    Object? bootstrap = _unset,
-    Object? failure = _unset,
-    Object? pendingUserId = _unset,
-    Object? pendingAction = _unset,
-  }) {
-    return ThreadMemberManagementState(
-      phase: phase ?? this.phase,
-      bootstrap: identical(bootstrap, _unset)
-          ? this.bootstrap
-          : bootstrap as ThreadMemberManagementBootstrap?,
-      failure: identical(failure, _unset)
-          ? this.failure
-          : failure as ApiFailure?,
-      pendingUserId: identical(pendingUserId, _unset)
-          ? this.pendingUserId
-          : pendingUserId as String?,
-      pendingAction: identical(pendingAction, _unset)
-          ? this.pendingAction
-          : pendingAction as ThreadMemberManagementAction?,
-    );
-  }
-}
-
-class ThreadPlayerExitState {
-  const ThreadPlayerExitState({this.isSubmitting = false, this.failure});
-
-  final bool isSubmitting;
-  final ApiFailure? failure;
-}
-
-const _unset = Object();

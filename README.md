@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.3.0-dev.29+35`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.3.0-dev.36+42`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -65,6 +65,7 @@ dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze --fatal-infos --fatal-warnings
 flutter test
 npm run api:check
+npm run architecture:check
 npm run docs:check
 flutter build apk --debug
 ```

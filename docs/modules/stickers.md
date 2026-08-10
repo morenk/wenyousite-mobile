@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-`StickerCollectionController` 保存服务端收藏夹、唯一写动作、动作目标、失败幂等来源和后台处理轮询。仓储把生成 DTO 映射为独立领域模型，校验正整数版本/尺寸、连续位置、唯一 ID、安全 HTTP(S) URL、最近列表属于收藏和 pending 仅含 PROCESSING。导入 POST 成功后立即重读收藏；处理中任务完成后再次校准。
+`StickerCollectionController` 保存服务端收藏夹、唯一写动作、动作目标、失败幂等来源和后台处理轮询。仓储把生成 DTO 映射为独立领域模型，在 data 边界应用贴纸专属错误目录，并校验正整数版本/尺寸、连续位置、唯一 ID、安全 HTTP(S) URL、最近列表属于收藏和 pending 仅含 PROCESSING。导入 POST 成功后立即重读收藏；处理中任务完成后再次校准。
 
 ## 7. 鉴权、权限和隐私规则
 

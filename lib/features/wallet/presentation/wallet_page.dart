@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
@@ -405,9 +406,9 @@ class _TransactionTile extends StatelessWidget {
     final id = target.id;
     if (id == null) return null;
     return switch (target.type) {
-      WalletTargetType.thread => '/threads/$id',
-      WalletTargetType.user => '/users/$id',
-      WalletTargetType.moment => '/moments/$id',
+      WalletTargetType.thread => AppRouteLocations.thread(id),
+      WalletTargetType.user => AppRouteLocations.user(id),
+      WalletTargetType.moment => AppRouteLocations.moment(id),
       WalletTargetType.none => null,
     };
   }

@@ -1,5 +1,3 @@
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
-
 enum SubthreadPostingPolicy {
   participants('所有参与人', '主题参与人都可以在这里发帖'),
   collaborators('仅协作者', '只有楼主和协作者可以发帖'),
@@ -90,60 +88,3 @@ class SubthreadManagementDraft {
     return normalizedTitle != item.title || postingPolicy != item.postingPolicy;
   }
 }
-
-enum SubthreadManagementPhase { loading, ready, failed }
-
-enum SubthreadManagementAction {
-  loadingDetail,
-  creating,
-  updating,
-  deleting,
-  reordering,
-}
-
-class SubthreadManagementState {
-  const SubthreadManagementState({
-    required this.phase,
-    this.bootstrap,
-    this.failure,
-    this.pendingAction,
-    this.pendingItemId,
-  });
-
-  const SubthreadManagementState.loading()
-    : this(phase: SubthreadManagementPhase.loading);
-
-  final SubthreadManagementPhase phase;
-  final SubthreadManagementBootstrap? bootstrap;
-  final ApiFailure? failure;
-  final SubthreadManagementAction? pendingAction;
-  final String? pendingItemId;
-
-  bool get isBusy => pendingAction != null;
-
-  SubthreadManagementState copyWith({
-    SubthreadManagementPhase? phase,
-    Object? bootstrap = _unset,
-    Object? failure = _unset,
-    Object? pendingAction = _unset,
-    Object? pendingItemId = _unset,
-  }) {
-    return SubthreadManagementState(
-      phase: phase ?? this.phase,
-      bootstrap: identical(bootstrap, _unset)
-          ? this.bootstrap
-          : bootstrap as SubthreadManagementBootstrap?,
-      failure: identical(failure, _unset)
-          ? this.failure
-          : failure as ApiFailure?,
-      pendingAction: identical(pendingAction, _unset)
-          ? this.pendingAction
-          : pendingAction as SubthreadManagementAction?,
-      pendingItemId: identical(pendingItemId, _unset)
-          ? this.pendingItemId
-          : pendingItemId as String?,
-    );
-  }
-}
-
-const _unset = Object();

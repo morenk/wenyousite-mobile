@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/stickers/data/sticker_failure_messages.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 abstract interface class StickerRepository {
@@ -37,7 +39,7 @@ class ApiStickerRepository implements StickerRepository {
       }
       return _collection(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: stickerFailureMessages);
     }
   }
 
@@ -55,7 +57,7 @@ class ApiStickerRepository implements StickerRepository {
       }
       return result;
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: stickerFailureMessages);
     }
   }
 
@@ -70,6 +72,7 @@ class ApiStickerRepository implements StickerRepository {
       switch (source) {
         case StickerMediaSource(:final mediaId):
           dto = (await _api.stickersImportMedia(
+            extra: ApiRequestPolicy.idempotentCreate.extra,
             importStickerMediaDto: ImportStickerMediaDto(
               (builder) => builder
                 ..mediaId = _requiredText(mediaId, '媒体 ID')
@@ -78,6 +81,7 @@ class ApiStickerRepository implements StickerRepository {
           )).data?.data;
         case StickerDirectMessageSource(:final directMessageId):
           dto = (await _api.stickersImportDirectMessage(
+            extra: ApiRequestPolicy.idempotentCreate.extra,
             importStickerDirectMessageDto: ImportStickerDirectMessageDto(
               (builder) => builder
                 ..directMessageId = _requiredText(directMessageId, '私聊消息 ID')
@@ -87,6 +91,7 @@ class ApiStickerRepository implements StickerRepository {
         case StickerPostImageSource(:final postId, :final imageUrl):
           final uri = _safeHttpUri(imageUrl, '帖子图片地址');
           dto = (await _api.stickersImportPostImage(
+            extra: ApiRequestPolicy.idempotentCreate.extra,
             importStickerPostImageDto: ImportStickerPostImageDto(
               (builder) => builder
                 ..postId = _requiredText(postId, '帖子 ID')
@@ -100,7 +105,7 @@ class ApiStickerRepository implements StickerRepository {
       }
       return _import(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: stickerFailureMessages);
     }
   }
 
@@ -131,7 +136,7 @@ class ApiStickerRepository implements StickerRepository {
       }
       return _collection(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: stickerFailureMessages);
     }
   }
 
@@ -145,7 +150,7 @@ class ApiStickerRepository implements StickerRepository {
       }
       return _collection(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: stickerFailureMessages);
     }
   }
 
