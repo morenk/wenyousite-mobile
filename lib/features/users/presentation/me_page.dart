@@ -508,6 +508,16 @@ class _AccountContentPanel extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
+            key: const Key('me-open-wallet'),
+            enabled: !disabled,
+            leading: const Icon(Icons.local_gas_station_outlined),
+            title: const Text('我的温油'),
+            subtitle: const Text('查看余额、收到的加油与收支记录'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled ? null : () => context.pushNamed('wallet'),
+          ),
+          const Divider(height: 1),
+          ListTile(
             key: const Key('me-open-bookmarks'),
             enabled: !disabled,
             leading: const Icon(Icons.bookmarks_outlined),

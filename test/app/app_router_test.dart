@@ -136,6 +136,23 @@ void main() {
     );
   });
 
+  test('温油钱包受会话保护并完整保留目标', () {
+    final redirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: '/me/wallet',
+      uri: Uri.parse('/me/wallet'),
+    );
+    expect(Uri.parse(redirect!).queryParameters['returnTo'], '/me/wallet');
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.authenticated(),
+        matchedLocation: '/me/wallet',
+        uri: Uri.parse('/me/wallet'),
+      ),
+      isNull,
+    );
+  });
+
   test('主题管理页受会话保护并保留动态主题目标', () {
     final redirect = resolveSessionRedirect(
       session: const SessionState.guest(),

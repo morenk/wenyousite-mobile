@@ -22,6 +22,8 @@ import 'package:wenyousite_mobile/features/notifications/data/notification_repos
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 void main() {
   testWidgets('兼容契约下游客直接进入五栏首页', (tester) async {
@@ -60,6 +62,7 @@ void main() {
           sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
           notificationRepositoryProvider.overrideWithValue(notifications),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+          walletRepositoryProvider.overrideWithValue(_NoopWalletRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -236,6 +239,7 @@ void main() {
             _EmptyNotificationRepository(),
           ),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+          walletRepositoryProvider.overrideWithValue(_NoopWalletRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -317,6 +321,7 @@ void main() {
             _EmptyNotificationRepository(),
           ),
           homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+          walletRepositoryProvider.overrideWithValue(_NoopWalletRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -376,6 +381,7 @@ void main() {
           meProfileRepositoryProvider.overrideWithValue(
             _FakeMeProfileRepository(),
           ),
+          walletRepositoryProvider.overrideWithValue(_NoopWalletRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -425,6 +431,7 @@ void main() {
           meProfileRepositoryProvider.overrideWithValue(
             _FakeMeProfileRepository(),
           ),
+          walletRepositoryProvider.overrideWithValue(_NoopWalletRepository()),
         ],
         child: const WenyouApp(),
       ),
@@ -460,6 +467,7 @@ void main() {
           _EmptyNotificationRepository(),
         ),
         homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        walletRepositoryProvider.overrideWithValue(_NoopWalletRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -787,4 +795,39 @@ class _EmptyNotificationRepository implements NotificationRepository {
 
   @override
   Future<void> setReadStatus(String id, {required bool isRead}) async {}
+}
+
+class _NoopWalletRepository implements WalletRepository {
+  @override
+  Future<DailyCheckInResult> checkIn() async {
+    return const DailyCheckInResult(
+      claimedNow: false,
+      date: '2026-08-10',
+      rewardAmount: '1',
+      experienceAwarded: 0,
+      balance: '0',
+      progression: WalletProgression(
+        level: 1,
+        experience: 0,
+        currentLevelExperience: 0,
+        nextLevelExperience: 100,
+      ),
+    );
+  }
+
+  @override
+  Future<WalletSummary> fetchWallet() => throw UnimplementedError();
+
+  @override
+  Future<CursorPage<WalletTransaction>> fetchTransactions({
+    String? cursor,
+    int limit = 20,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<TipResult> tip(
+    TipTarget target, {
+    required String amount,
+    required String clientRequestId,
+  }) => throw UnimplementedError();
 }

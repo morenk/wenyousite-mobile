@@ -195,7 +195,7 @@ MomentCard _card() {
     likeCount: 2,
     commentCount: 1,
     bookmarkCount: 0,
-    tipTotal: 0,
+    tipTotal: '0',
     viewerLiked: false,
     viewerBookmarked: false,
     createdAt: now,

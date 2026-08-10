@@ -22,6 +22,8 @@ import 'package:wenyousite_mobile/features/tags/presentation/wenyou_tag_chip.dar
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
@@ -112,6 +114,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       appBar: AppBar(
         title: const Text('主题详情'),
         actions: [
+          if (state.detail case final detail? when !detail.isCurrentUserOwner)
+            WenyouTipButton(
+              key: const Key('thread-detail-tip'),
+              target: TipTarget.thread(
+                id: detail.id,
+                recipientUserId: detail.owner.id,
+              ),
+              recipientName: detail.owner.username,
+              returnTo: _currentThreadLocation(),
+              iconOnly: true,
+              onSuccess: (_) => ref.read(provider.notifier).refresh(),
+            ),
           IconButton(
             key: const Key('thread-detail-search'),
             tooltip: '搜索主题内容',
@@ -741,7 +755,7 @@ class _ThreadOverview extends ConsumerWidget {
               if (detail.tipTotal != '0')
                 _DetailStat(
                   icon: Icons.local_gas_station_outlined,
-                  label: '${detail.tipTotal}L 加油',
+                  label: '${WenyouAmount.format(detail.tipTotal)}L 加油',
                   accent: true,
                 ),
             ],

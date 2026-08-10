@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-冷启动调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v2、恢复会话并进入目标页。回到前台时静默重查，断网不打断正在使用的兼容客户端。
+冷启动调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v2、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。
 
 ## 5. API operationId 与生成类型
 
@@ -24,7 +24,7 @@
 
 ## 6. 状态模型和数据流
 
-启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。元信息同时映射 stickers、directMessages、pushNotifications capability，业务入口默认关闭并只在服务端明确启用后创建。环境、更新服务、忽略记录与会话由 Riverpod 注入。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。元信息同时映射 stickers、directMessages、pushNotifications capability，业务入口默认关闭并只在服务端明确启用后创建。环境、更新服务、忽略记录与会话由 Riverpod 注入；签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -52,6 +52,7 @@
 - [x] 登录用户底栏展示通知未读角标，并可进入 API 驱动通知列表。
 - [x] 私聊 capability 映射到业务入口，登录用户回前台时同步私聊未读与请求角标。
 - [x] 五分支使用 IndexedStack 保留页面状态，首页/动态悬浮按钮进入各自受保护创建入口。
+- [x] 登录会话就绪后自动签到，同一会话重复构建不重复触发且失败不阻断应用壳。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
 - [ ] Android 8+ 模拟器通过启动冒烟。
@@ -66,4 +67,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

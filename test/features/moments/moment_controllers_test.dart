@@ -241,7 +241,7 @@ MomentCard _card({String title = '今日微光'}) {
     likeCount: 2,
     commentCount: 1,
     bookmarkCount: 1,
-    tipTotal: 0,
+    tipTotal: '0',
     viewerLiked: false,
     viewerBookmarked: false,
     createdAt: now,

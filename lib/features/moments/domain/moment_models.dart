@@ -117,7 +117,7 @@ class MomentCard {
   final int likeCount;
   final int commentCount;
   final int bookmarkCount;
-  final num tipTotal;
+  final String tipTotal;
   final bool viewerLiked;
   final bool viewerBookmarked;
   final DateTime createdAt;
@@ -127,6 +127,7 @@ class MomentCard {
     int? likeCount,
     int? commentCount,
     int? bookmarkCount,
+    String? tipTotal,
     bool? viewerLiked,
     bool? viewerBookmarked,
   }) {
@@ -142,7 +143,7 @@ class MomentCard {
       likeCount: likeCount ?? this.likeCount,
       commentCount: commentCount ?? this.commentCount,
       bookmarkCount: bookmarkCount ?? this.bookmarkCount,
-      tipTotal: tipTotal,
+      tipTotal: tipTotal ?? this.tipTotal,
       viewerLiked: viewerLiked ?? this.viewerLiked,
       viewerBookmarked: viewerBookmarked ?? this.viewerBookmarked,
       createdAt: createdAt,

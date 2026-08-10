@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class WenyouApp extends ConsumerWidget {
   const WenyouApp({super.key});
@@ -15,7 +16,9 @@ class WenyouApp extends ConsumerWidget {
       theme: AppTheme.light,
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) {
-        return StartupGate(child: child ?? const SizedBox.shrink());
+        return StartupGate(
+          child: DailyCheckInBootstrap(child: child ?? const SizedBox.shrink()),
+        );
       },
     );
   }

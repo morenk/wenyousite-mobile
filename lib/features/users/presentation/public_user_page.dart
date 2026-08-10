@@ -14,6 +14,8 @@ import 'package:wenyousite_mobile/features/users/application/me_profile_controll
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class PublicUserPage extends ConsumerWidget {
   const PublicUserPage({required this.userId, super.key});
@@ -28,8 +30,27 @@ class PublicUserPage extends ConsumerWidget {
     final meState = session.isAuthenticated
         ? ref.watch(meProfileControllerProvider)
         : null;
+    final canTip =
+        state.phase == PublicUserPhase.ready &&
+        !state.profile!.isDeactivated &&
+        (!session.isAuthenticated ||
+            (meState?.phase == MeProfilePhase.ready &&
+                meState!.profile!.id != state.profile!.id));
     return Scaffold(
-      appBar: AppBar(title: const Text('用户主页')),
+      appBar: AppBar(
+        title: const Text('用户主页'),
+        actions: [
+          if (canTip)
+            WenyouTipButton(
+              key: const Key('public-user-tip'),
+              target: TipTarget.user(id: state.profile!.id),
+              recipientName: state.profile!.username,
+              returnTo: '/users/${state.profile!.id}',
+              iconOnly: true,
+              onSuccess: (_) => ref.read(provider.notifier).load(),
+            ),
+        ],
+      ),
       body: switch (state.phase) {
         PublicUserPhase.loading => const _UserLoadingState(),
         PublicUserPhase.failed => _UserFailureState(
@@ -199,7 +220,7 @@ class _UserProfileContent extends ConsumerWidget {
               Expanded(
                 child: _ProfileStat(
                   label: '收到加油',
-                  value: '${profile.receivedTipTotal}L',
+                  value: '${WenyouAmount.format(profile.receivedTipTotal)}L',
                 ),
               ),
               SizedBox(

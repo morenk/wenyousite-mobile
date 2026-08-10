@@ -15,6 +15,8 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class MomentDetailPage extends ConsumerStatefulWidget {
   const MomentDetailPage({required this.momentId, super.key});
@@ -46,6 +48,18 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       appBar: AppBar(
         title: const Text('动态详情'),
         actions: [
+          if (state.detail case final detail? when !detail.canEdit)
+            WenyouTipButton(
+              key: const Key('moment-detail-tip'),
+              target: TipTarget.moment(
+                id: detail.card.id,
+                recipientUserId: detail.card.author.id,
+              ),
+              recipientName: detail.card.author.username,
+              returnTo: '/moments/${detail.card.id}',
+              iconOnly: true,
+              onSuccess: (_) => ref.read(provider.notifier).load(),
+            ),
           if (state.detail?.canEdit ?? false)
             IconButton(
               key: const Key('moment-detail-edit'),
@@ -308,6 +322,17 @@ class _MomentDetailPanel extends StatelessWidget {
               ),
             ],
           ),
+          if (card.tipTotal != '0') ...[
+            SizedBox(height: tokens.space8),
+            Text(
+              '已获得 ${WenyouAmount.format(card.tipTotal)} 升加油',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens.mutedText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );

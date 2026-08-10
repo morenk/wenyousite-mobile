@@ -62,6 +62,8 @@ class ApiFailure implements Exception {
     switch (businessCode) {
       case 40007:
         return '列表位置已失效，正在重新加载。';
+      case 40008:
+        return '最低投入 2 升，且只能填写可用范围内的整数。';
       case 40002:
         return '内容已在其他位置修改，请读取最新版后再决定是否覆盖。';
       case 40005:
@@ -102,6 +104,8 @@ class ApiFailure implements Exception {
         return '你们之间存在拉黑关系，当前不能发送私聊。';
       case 40306:
         return '当前会话状态不允许执行这项操作。';
+      case 40307:
+        return '当前不能向这个目标加油，请检查是否为本人或互动受限。';
       case 40411:
         return '这个私聊会话不存在或已不可访问。';
       case 40412:
@@ -128,6 +132,8 @@ class ApiFailure implements Exception {
         return '收藏夹已在其他设备修改，请刷新后重试。';
       case 40912:
         return '这次操作与待确认请求冲突，请重新发起。';
+      case 40913:
+        return '温油余额不足，请减少投入升数后重试。';
       case 42900:
         return '操作太频繁，请稍后再试。';
     }

@@ -280,7 +280,7 @@ MomentCard _moment(String id) {
     likeCount: 0,
     commentCount: 0,
     bookmarkCount: 0,
-    tipTotal: 0,
+    tipTotal: '0',
     viewerLiked: false,
     viewerBookmarked: false,
     createdAt: DateTime.utc(2026, 8, 10),

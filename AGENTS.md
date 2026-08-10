@@ -83,6 +83,7 @@ lib/
     direct_messages/
     stickers/
     users/
+    wallet/
     social/
     settings/
 packages/

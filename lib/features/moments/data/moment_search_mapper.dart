@@ -35,8 +35,7 @@ class MomentSearchMapper {
         imageCount > 9) {
       throw const ApiFailure(userMessage: '搜索结果的动态封面信息不完整，请重新搜索。');
     }
-    final total = num.tryParse(dto.tipTotal);
-    if (total == null || !total.isFinite || total < 0) {
+    if (!RegExp(r'^(?:0|[1-9]\d*)$').hasMatch(dto.tipTotal)) {
       throw const ApiFailure(userMessage: '搜索结果的动态加油数值无效，请重新搜索。');
     }
     final title = _requiredText(dto.title, '动态标题');
@@ -55,7 +54,7 @@ class MomentSearchMapper {
       likeCount: _nonNegativeInteger(dto.likeCount, '动态点赞数'),
       commentCount: _nonNegativeInteger(dto.commentCount, '动态评论数'),
       bookmarkCount: _nonNegativeInteger(dto.bookmarkCount, '动态收藏数'),
-      tipTotal: total,
+      tipTotal: dto.tipTotal,
       viewerLiked: dto.viewerLiked,
       viewerBookmarked: dto.viewerBookmarked,
       createdAt: dto.createdAt,

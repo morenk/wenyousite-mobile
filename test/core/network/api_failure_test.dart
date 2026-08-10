@@ -172,4 +172,24 @@ void main() {
     expect(failure.userMessage, contains('动态或评论'));
     expect(failure.userMessage, isNot(contains('private deletion detail')));
   });
+
+  test('温油金额、目标限制和余额不足使用稳定业务提示', () {
+    String messageFor(int code) {
+      final options = RequestOptions(path: '/api/v1/users/user-1/tips');
+      return ApiFailure.fromDio(
+        DioException(
+          requestOptions: options,
+          response: Response<Object?>(
+            requestOptions: options,
+            data: {'code': code, 'message': 'private economy wording'},
+          ),
+        ),
+      ).userMessage;
+    }
+
+    expect(messageFor(40008), contains('最低投入 2 升'));
+    expect(messageFor(40307), contains('当前不能'));
+    expect(messageFor(40913), contains('余额不足'));
+    expect(messageFor(40913), isNot(contains('private economy wording')));
+  });
 }

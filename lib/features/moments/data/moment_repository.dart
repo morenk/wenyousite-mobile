@@ -541,8 +541,7 @@ class ApiMomentRepository implements MomentRepository {
         safeImageCount > 9) {
       throw const ApiFailure(userMessage: '动态封面信息不完整，请重新加载。');
     }
-    final total = num.tryParse(tipTotal);
-    if (total == null || !total.isFinite || total < 0) {
+    if (!RegExp(r'^(?:0|[1-9]\d*)$').hasMatch(tipTotal)) {
       throw const ApiFailure(userMessage: '动态加油数值无效，请重新加载。');
     }
     final safeTitle = _requiredText(title, '动态标题');
@@ -561,7 +560,7 @@ class ApiMomentRepository implements MomentRepository {
       likeCount: _nonNegativeInteger(likeCount, '动态点赞数'),
       commentCount: _nonNegativeInteger(commentCount, '动态评论数'),
       bookmarkCount: _nonNegativeInteger(bookmarkCount, '动态收藏数'),
-      tipTotal: total,
+      tipTotal: tipTotal,
       viewerLiked: viewerLiked,
       viewerBookmarked: viewerBookmarked,
       createdAt: createdAt,

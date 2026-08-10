@@ -39,6 +39,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_managemen
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -269,6 +270,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/me/wallet',
+        name: 'wallet',
+        builder: (context, state) => const WalletPage(),
+      ),
+      GoRoute(
         path: '/me/following',
         name: 'me-following',
         builder: (context, state) => const UserRelationListPage(
@@ -417,6 +423,7 @@ String? resolveSessionRedirect({
         '/compose/moment' ||
         '/moments/bookmarks' ||
         '/me/following' ||
+        '/me/wallet' ||
         '/me/followers' ||
         '/me/blocks' ||
         '/me/bookmarks' ||

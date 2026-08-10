@@ -154,7 +154,7 @@ void main() {
 
     expect(feed.cursor, 'cursor-2');
     expect(feed.items.single.coverMedia?.bestFeedUrl, contains('feed.webp'));
-    expect(feed.items.single.tipTotal, 2.5);
+    expect(feed.items.single.tipTotal, '25');
     expect(bookmarks.items.single.viewerBookmarked, isTrue);
     expect(user.items.single.author.username, '温柔测试员');
     expect(detail.images.single.width, 1200);
@@ -415,7 +415,7 @@ MomentCardResponseDto _cardDto({
       ..likeCount = 2
       ..commentCount = 3
       ..bookmarkCount = 4
-      ..tipTotal = '2.5'
+      ..tipTotal = '25'
       ..viewerLiked = false
       ..viewerBookmarked = true
       ..createdAt = now
