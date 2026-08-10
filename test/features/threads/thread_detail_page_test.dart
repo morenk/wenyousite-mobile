@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
@@ -347,7 +348,10 @@ void main() {
 
 Widget _detailApp(ThreadDetailRepository repository, {String? targetPostId}) {
   return ProviderScope(
-    overrides: [threadDetailRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      stickersEnabledProvider.overrideWithValue(false),
+      threadDetailRepositoryProvider.overrideWithValue(repository),
+    ],
     child: MaterialApp(
       theme: AppTheme.light,
       home: ThreadDetailPage(

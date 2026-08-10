@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。工具栏严格保持 Foundation v1.1.0 的正文/H2/H3、粗体、斜体、图片和更多；更多面板包含安全链接、行内代码、引用、列表、分隔线、骰子、正文草稿和删除线。“正文草稿”打开五槽位纯正文面板，页面底部“保存到服务端草稿”继续保存完整主题实体。
+打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。工具栏严格保持 Foundation v1.1.0 的正文/H2/H3、粗体、斜体、图片和更多；服务端开启表情能力时，宽屏工具栏与更多面板可从本人收藏插入规范 sticker 原子节点；更多面板还包含安全链接、行内代码、引用、列表、分隔线、骰子、正文草稿和删除线。“正文草稿”打开五槽位纯正文面板，页面底部“保存到服务端草稿”继续保存完整主题实体。
 
 在已有主题上下文输入 `@` 会于 180ms 防抖后读取关注用户和帖内标记玩家，继续输入用户名即可筛选；服务端确认楼主或协作者权限时额外展示 `@全体玩家`。选择候选后以原子 Quill embed 替换当前 `@关键词` 并补一个分隔空格，Codec 固定序列化为 `[@用户名](/users/:userId)` 或 `@全体玩家`。全新主题必须先保存为服务端草稿取得真实 `threadId`，否则候选区只说明前置条件且不发请求。
 
@@ -27,6 +27,7 @@
 - 页面引导：`usersGetMe`、`threadCategoriesList`。
 - 当前创建链路：`threadsCreate`、`threadsSaveAggregate`，使用 `CreateThreadDto`、`SaveThreadAggregateDto`、`ThreadDetailResponseDto`。
 - 图片链路：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
+- 收藏表情读取由 stickers 模块的 `stickersGetCollection` 提供，编辑器只消费返回的资产 ID、URL 与标准 Markdown 语义。
 - 正文草稿链路：`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove`。
 - 当前帖子上下文：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`usersMentionCandidates`；主题元数据与子贴目录端点由 threads 模块消费。
 - 提及主要生成类型：`UsersMentionCandidates200Response`、`MentionCandidatesResponseDto`、`MentionCandidateDto`。
@@ -67,7 +68,7 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 12. 已知限制和后续功能
 
-普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。全新主题在首次服务端草稿保存前不能查询提及候选；收藏表情、预览和编辑撤销尚未完成。帖子待确认创建不会在进程终止后自动恢复；不做离线自动发送。
+普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。全新主题在首次服务端草稿保存前不能查询提及候选；正文预览和编辑撤销尚未完成。帖子待确认创建不会在进程终止后自动恢复；不做离线自动发送。
 
 ## 13. 最近审查的契约版本和后端提交
 

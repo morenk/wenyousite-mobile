@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/logout_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -489,7 +490,7 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
   }
 }
 
-class _AccountContentPanel extends StatelessWidget {
+class _AccountContentPanel extends ConsumerWidget {
   const _AccountContentPanel({
     required this.disabled,
     required this.emailVerified,
@@ -499,8 +500,9 @@ class _AccountContentPanel extends StatelessWidget {
   final bool emailVerified;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
     return WenyouPanel(
       padding: EdgeInsets.zero,
       child: Column(
@@ -514,6 +516,18 @@ class _AccountContentPanel extends StatelessWidget {
             onTap: disabled ? null : () => context.pushNamed('me-bookmarks'),
           ),
           const Divider(height: 1),
+          if (stickersEnabled) ...[
+            ListTile(
+              key: const Key('me-open-stickers'),
+              enabled: !disabled,
+              leading: const Icon(Icons.add_reaction_outlined),
+              title: const Text('我的表情'),
+              subtitle: const Text('添加、排序和移除收藏表情'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: disabled ? null : () => context.pushNamed('me-stickers'),
+            ),
+            const Divider(height: 1),
+          ],
           ListTile(
             key: const Key('me-open-following'),
             enabled: !disabled,

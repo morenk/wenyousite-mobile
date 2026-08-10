@@ -4,6 +4,7 @@
 
 ### Added
 
+- 新增 capability 控制的收藏表情闭环：`/me/stickers` 支持相册上传导入、处理状态轮询、完整列表排序和移除；帖子/私聊图片可快速收藏，私信输入器与主题/帖子编辑器可直接使用收藏表情。
 - 新增受保护的站内私聊闭环：会话/请求/归档列表、未读角标、新建与后续消息、历史/增量读取、接受/拒绝、归档、已读和十分钟撤回全部接入；陌生请求图片延迟加载，失败发送保留稳定幂等键，中心/会话/新私聊在 360/400/600dp 形成闭环。
 - 新增公开 `/tags/:tagId` 标签主题页和受保护的主题标签工作台：标签可从首页/详情稳定跳转，楼主/协作者可搜索、创建、添加与移除最多五个标签；防抖竞态、同名 `40905` 恢复、`40107` 验证和 360/400/600dp 布局形成闭环。
 - 主题管理新增受保护的完整子贴工作台：楼主/协作者可创建、读取详情、更新、删除和显式上下排序非默认子贴；默认子贴固定置顶且不可删除，创建幂等重试、更新版本冲突、邮箱验证恢复和 360/400/600dp 布局均形成闭环。
@@ -51,6 +52,7 @@
 
 ### Changed
 
+- 开发版本进入 `0.3.0-dev.30+36`；Stickers 的 7 个 operationId 完整接入，收藏夹版本冲突、200 个容量上限、异步处理失败和不明确导入均保留安全恢复路径，陌生消息请求图片在明确查看前不暴露收藏入口。
 - 开发版本进入 `0.3.0-dev.29+35`；Direct Messages 的 11 个 operationId 完整接入，`meta.capabilities.directMessages` 控制通知页与用户主页入口，前台轮询只保留进程内私聊事实且不记录完整正文。
 - 开发版本进入 `0.3.0-dev.28+34`；`tagsSearch`、`tagsGetById`、`tagsCreate`、`threadTagsFindAll`、`threadTagsAdd` 与 `threadTagsRemove` 完整接入，公开主题流复用 `threadsFindAll(tagId)` 精确聚合。
 - 开发版本进入 `0.3.0-dev.27+33`；`subthreadsFindAll`、`subthreadsFindById`、`subthreadsCreate`、`subthreadsUpdate`、`subthreadsRemove` 与 `subthreadsReorder` 完整接入，子贴正文继续复用 posts 模块的独立乐观锁编辑闭环。

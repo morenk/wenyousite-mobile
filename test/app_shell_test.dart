@@ -265,6 +265,7 @@ void main() {
   for (final protectedLocation in [
     '/me/blocks',
     '/me/bookmarks',
+    '/me/stickers',
     '/me/security/sessions',
     '/me/security/password',
     '/me/security/email',

@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -64,6 +65,25 @@ void main() {
     expect(find.byKey(const Key('me-open-delete-account')), findsOneWidget);
     expect(find.byKey(const Key('me-open-verify-email')), findsNothing);
     expect(repository.fetchCalls, 1);
+  });
+
+  testWidgets('服务端开启表情能力时我的页展示管理入口', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      stickersEnabled: true,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('me-open-stickers')));
+    expect(find.text('我的表情'), findsOneWidget);
   });
 
   testWidgets('未验证邮箱在账号安全区提供验证入口', (tester) async {
@@ -340,11 +360,13 @@ Future<ProviderContainer> _authenticatedContainer(
   AvatarImagePicker? avatarPicker,
   MediaUploadRepository? mediaRepository,
   AvatarRepository? avatarRepository,
+  bool stickersEnabled = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+      stickersEnabledProvider.overrideWithValue(stickersEnabled),
       meProfileRepositoryProvider.overrideWithValue(repository),
       if (avatarPicker != null)
         avatarImagePickerProvider.overrideWithValue(avatarPicker),

@@ -11,6 +11,9 @@ import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
 class DirectMessageAvatar extends StatelessWidget {
   const DirectMessageAvatar({required this.user, this.size = 44, super.key});
@@ -62,7 +65,12 @@ class DirectMessageComposer extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final Future<bool> Function({String? content, String? mediaId}) onSend;
+  final Future<bool> Function({
+    String? content,
+    String? mediaId,
+    String? stickerAssetId,
+  })
+  onSend;
   final bool disabled;
   final String submitLabel;
   final String placeholder;
@@ -211,6 +219,15 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
                     label: const Text('图片'),
                   ),
                   SizedBox(width: tokens.space8),
+                  if (ref.watch(stickersEnabledProvider)) ...[
+                    IconButton.outlined(
+                      key: const Key('direct-message-composer-sticker'),
+                      onPressed: _disabled ? null : _pickSticker,
+                      tooltip: '收藏表情',
+                      icon: const Icon(Icons.add_reaction_outlined),
+                    ),
+                    SizedBox(width: tokens.space8),
+                  ],
                   Expanded(
                     child: Text(
                       _selectedImage == null
@@ -283,6 +300,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     final validation = validateDirectMessagePayload(
       content: normalized,
       mediaId: _selectedImage == null ? null : 'pending-image',
+      stickerAssetId: failedDraft?.stickerAssetId,
     );
     if (failedDraft == null && validation != null) {
       setState(() => _localFailure = ApiFailure(userMessage: validation));
@@ -313,6 +331,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         content:
             failedDraft?.content ?? (normalized.isEmpty ? null : normalized),
         mediaId: mediaId,
+        stickerAssetId: failedDraft?.stickerAssetId,
       );
       if (!mounted) return;
       if (succeeded) {
@@ -331,6 +350,26 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
           _uploadProgress = null;
         });
       }
+    }
+  }
+
+  Future<void> _pickSticker() async {
+    final sticker = await showStickerPicker(context);
+    if (!mounted || sticker == null) return;
+    setState(() {
+      _busy = true;
+      _localFailure = null;
+    });
+    try {
+      final succeeded = await widget.onSend(stickerAssetId: sticker.asset.id);
+      if (succeeded) {
+        await ref.read(stickerCollectionControllerProvider.notifier).load();
+      }
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _localFailure = _asFailure(error, '表情发送失败，请重试。'));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -414,7 +453,7 @@ class _UploadProgress extends StatelessWidget {
   }
 }
 
-class DirectMessageBubble extends StatefulWidget {
+class DirectMessageBubble extends ConsumerStatefulWidget {
   const DirectMessageBubble({
     required this.message,
     required this.mine,
@@ -433,10 +472,11 @@ class DirectMessageBubble extends StatefulWidget {
   final VoidCallback onRecall;
 
   @override
-  State<DirectMessageBubble> createState() => _DirectMessageBubbleState();
+  ConsumerState<DirectMessageBubble> createState() =>
+      _DirectMessageBubbleState();
 }
 
-class _DirectMessageBubbleState extends State<DirectMessageBubble> {
+class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
   late bool _imageRevealed;
 
   @override
@@ -459,6 +499,11 @@ class _DirectMessageBubbleState extends State<DirectMessageBubble> {
     final tokens = context.wenyouTokens;
     final scheme = Theme.of(context).colorScheme;
     final media = widget.message.media;
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
+    final stickerState = ref.watch(stickerCollectionControllerProvider);
+    final savingSticker =
+        stickerState.action == StickerAction.importing &&
+        stickerState.actionTarget == 'direct:${widget.message.id}';
     final pureSticker =
         media?.isSticker == true && widget.message.content == null;
     return Align(
@@ -539,23 +584,79 @@ class _DirectMessageBubbleState extends State<DirectMessageBubble> {
                       ),
               ),
             ),
-            if (widget.canRecall && !widget.message.isRecalled) ...[
+            if (!widget.message.isRecalled &&
+                ((stickersEnabled && media != null && _imageRevealed) ||
+                    widget.canRecall)) ...[
               SizedBox(height: tokens.space4),
-              TextButton(
-                key: ValueKey('direct-message-recall-${widget.message.id}'),
-                onPressed: widget.isRecalling ? null : widget.onRecall,
-                style: TextButton.styleFrom(
-                  foregroundColor: scheme.onSurfaceVariant,
-                  minimumSize: const Size(48, 32),
-                  padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-                ),
-                child: Text(widget.isRecalling ? '撤回中…' : '撤回'),
+              Wrap(
+                alignment: widget.mine
+                    ? WrapAlignment.end
+                    : WrapAlignment.start,
+                spacing: tokens.space4,
+                children: [
+                  if (stickersEnabled && media != null && _imageRevealed)
+                    TextButton.icon(
+                      key: ValueKey(
+                        'direct-message-save-sticker-${widget.message.id}',
+                      ),
+                      onPressed: stickerState.isBusy ? null : _saveSticker,
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.onSurfaceVariant,
+                        minimumSize: const Size(48, 32),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tokens.space8,
+                        ),
+                      ),
+                      icon: savingSticker
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.add_reaction_outlined, size: 18),
+                      label: Text(savingSticker ? '收藏中' : '收藏表情'),
+                    ),
+                  if (widget.canRecall)
+                    TextButton(
+                      key: ValueKey(
+                        'direct-message-recall-${widget.message.id}',
+                      ),
+                      onPressed: widget.isRecalling ? null : widget.onRecall,
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.onSurfaceVariant,
+                        minimumSize: const Size(48, 32),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tokens.space8,
+                        ),
+                      ),
+                      child: Text(widget.isRecalling ? '撤回中…' : '撤回'),
+                    ),
+                ],
               ),
             ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _saveSticker() async {
+    final result = await ref
+        .read(stickerCollectionControllerProvider.notifier)
+        .importDirectMessage(widget.message.id);
+    if (!mounted) return;
+    final state = ref.read(stickerCollectionControllerProvider);
+    final message = result == null
+        ? state.transientFailure?.userMessage ?? '收藏表情失败，请稍后重试。'
+        : switch (result.status) {
+            StickerImportStatus.processing => '图片正在处理，完成后会出现在收藏中。',
+            StickerImportStatus.completed when result.alreadySaved =>
+              '已经收藏过这个表情。',
+            StickerImportStatus.completed => '已添加到表情收藏。',
+            StickerImportStatus.failed => '表情处理失败，请换一张图片。',
+          };
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

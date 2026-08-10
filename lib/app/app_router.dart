@@ -24,6 +24,7 @@ import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 import 'package:wenyousite_mobile/features/tags/presentation/tag_threads_page.dart';
 import 'package:wenyousite_mobile/features/tags/presentation/thread_tag_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
@@ -248,6 +249,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const BookmarkListPage(),
       ),
       GoRoute(
+        path: '/me/stickers',
+        name: 'me-stickers',
+        builder: (context, state) => const StickerCollectionPage(),
+      ),
+      GoRoute(
         path: '/me/security/sessions',
         name: 'login-sessions',
         builder: (context, state) => const LoginSessionsPage(),
@@ -355,6 +361,7 @@ String? resolveSessionRedirect({
         '/me/followers' ||
         '/me/blocks' ||
         '/me/bookmarks' ||
+        '/me/stickers' ||
         '/me/security/sessions' ||
         '/me/security/password' ||
         '/me/security/email' ||

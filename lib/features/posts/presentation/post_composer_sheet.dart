@@ -17,6 +17,8 @@ import 'package:wenyousite_mobile/features/media/data/media_upload_repository.da
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
 Future<PostItem?> showPostComposerSheet({
   required BuildContext context,
@@ -243,6 +245,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                       controller: _editorController,
                       enabled: !locked && _codecFailure == null,
                       onInsertImage: _insertImage,
+                      onInsertSticker: ref.watch(stickersEnabledProvider)
+                          ? _insertSticker
+                          : null,
                       onSaveDraft: _openContentDrafts,
                     ),
                     MentionSuggestions(
@@ -513,6 +518,32 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       0,
       '\n',
       TextSelection.collapsed(offset: selection.start + 2),
+    );
+  }
+
+  Future<void> _insertSticker() async {
+    final sticker = await showStickerPicker(context);
+    if (!mounted || sticker == null) return;
+    var selection = _editorController.selection;
+    if (!selection.isCollapsed) {
+      _editorController.replaceText(
+        selection.start,
+        selection.end - selection.start,
+        '',
+        TextSelection.collapsed(offset: selection.start),
+      );
+      selection = TextSelection.collapsed(offset: selection.start);
+    }
+    _editorController.replaceText(
+      selection.start,
+      0,
+      Embeddable(MarkdownDeltaCodec.stickerEmbed, {
+        'version': 1,
+        'assetId': sticker.asset.id,
+        'url': sticker.asset.url,
+        'alt': '表情',
+      }),
+      TextSelection.collapsed(offset: selection.start + 1),
     );
   }
 }

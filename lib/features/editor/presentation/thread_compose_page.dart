@@ -18,6 +18,8 @@ import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestio
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
 class ThreadComposePage extends ConsumerStatefulWidget {
   const ThreadComposePage({super.key});
@@ -316,6 +318,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                   controller: _editorController,
                   enabled: enabled,
                   onInsertImage: _insertImage,
+                  onInsertSticker: ref.watch(stickersEnabledProvider)
+                      ? _insertSticker
+                      : null,
                   onSaveDraft: _openContentDrafts,
                 ),
                 MentionSuggestions(
@@ -592,6 +597,28 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       0,
       '\n',
       TextSelection.collapsed(offset: selection.start + 2),
+    );
+  }
+
+  Future<void> _insertSticker() async {
+    final sticker = await showStickerPicker(context);
+    if (!mounted || sticker == null) return;
+    var selection = _editorController.selection;
+    final documentLength = _editorController.document.length;
+    final offset = selection.start
+        .clamp(0, documentLength > 0 ? documentLength - 1 : 0)
+        .toInt();
+    selection = TextSelection.collapsed(offset: offset);
+    _editorController.replaceText(
+      selection.start,
+      0,
+      Embeddable(MarkdownDeltaCodec.stickerEmbed, {
+        'version': 1,
+        'assetId': sticker.asset.id,
+        'url': sticker.asset.url,
+        'alt': '表情',
+      }),
+      TextSelection.collapsed(offset: selection.start + 1),
     );
   }
 

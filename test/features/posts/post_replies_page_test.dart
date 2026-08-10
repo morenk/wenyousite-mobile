@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestio
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 void main() {
   testWidgets('360dp 独立楼中楼完成筛选、发表、编辑与删除且权限收敛', (tester) async {
@@ -25,6 +26,7 @@ void main() {
       overrides: [
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
         postRepositoryProvider.overrideWithValue(repository),
       ],
     );

@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
@@ -21,6 +22,7 @@ void main() {
       ProviderScope(
         overrides: [
           directMessagesEnabledProvider.overrideWithValue(false),
+          stickersEnabledProvider.overrideWithValue(false),
           directMessageRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -92,6 +94,7 @@ Widget _app(_FakeDirectMessageRepository repository, GoRouter router) {
   return ProviderScope(
     overrides: [
       directMessagesEnabledProvider.overrideWithValue(true),
+      stickersEnabledProvider.overrideWithValue(false),
       directMessageRepositoryProvider.overrideWithValue(repository),
       publicUserRepositoryProvider.overrideWithValue(
         _FakePublicUserRepository(),

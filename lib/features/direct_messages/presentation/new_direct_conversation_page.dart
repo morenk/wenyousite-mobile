@@ -44,8 +44,13 @@ class _NewDirectConversationPageState
           onReturnToUser: () => context.pop(),
           onVerifyEmail: () => _verifyEmail(context, notifier),
           onAbandonFailedDraft: notifier.abandonFailedDraft,
-          onSend: ({content, mediaId}) =>
-              _send(context, notifier, content: content, mediaId: mediaId),
+          onSend: ({content, mediaId, stickerAssetId}) => _send(
+            context,
+            notifier,
+            content: content,
+            mediaId: mediaId,
+            stickerAssetId: stickerAssetId,
+          ),
         ),
       },
     );
@@ -76,8 +81,13 @@ class _NewDirectConversationPageState
     DirectConversationTargetController notifier, {
     String? content,
     String? mediaId,
+    String? stickerAssetId,
   }) async {
-    final result = await notifier.start(content: content, mediaId: mediaId);
+    final result = await notifier.start(
+      content: content,
+      mediaId: mediaId,
+      stickerAssetId: stickerAssetId,
+    );
     if (!context.mounted || result == null) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -127,7 +137,12 @@ class _TargetReady extends StatelessWidget {
   final VoidCallback onReturnToUser;
   final VoidCallback onVerifyEmail;
   final VoidCallback onAbandonFailedDraft;
-  final Future<bool> Function({String? content, String? mediaId}) onSend;
+  final Future<bool> Function({
+    String? content,
+    String? mediaId,
+    String? stickerAssetId,
+  })
+  onSend;
 
   @override
   Widget build(BuildContext context) {

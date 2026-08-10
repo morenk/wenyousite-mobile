@@ -371,8 +371,11 @@ class _ReadyConversation extends StatelessWidget {
             failure: state.failedDraft == null ? null : state.transientFailure,
             failedDraft: state.failedDraft,
             onAbandonFailedDraft: onAbandonFailedDraft,
-            onSend: ({content, mediaId}) =>
-                onSend(content: content, mediaId: mediaId),
+            onSend: ({content, mediaId, stickerAssetId}) => onSend(
+              content: content,
+              mediaId: mediaId,
+              stickerAssetId: stickerAssetId,
+            ),
           )
         else
           _SendingUnavailable(conversation: conversation),

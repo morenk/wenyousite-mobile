@@ -13,11 +13,13 @@ class WenyouEditorToolbar extends StatefulWidget {
     required this.onInsertImage,
     required this.onSaveDraft,
     required this.enabled,
+    this.onInsertSticker,
     super.key,
   });
 
   final QuillController controller;
   final Future<void> Function() onInsertImage;
+  final Future<void> Function()? onInsertSticker;
   final Future<void> Function() onSaveDraft;
   final bool enabled;
 
@@ -95,6 +97,14 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
             onPressed: () => widget.onInsertImage(),
           ),
           if (wide) ...[
+            if (widget.onInsertSticker != null)
+              _ToolbarButton(
+                key: const Key('editor-sticker'),
+                icon: Icons.add_reaction_outlined,
+                label: '收藏表情',
+                enabled: widget.enabled,
+                onPressed: widget.onInsertSticker!,
+              ),
             _ToolbarButton(
               icon: Icons.strikethrough_s_rounded,
               label: '删除线',
@@ -210,6 +220,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
               '分隔线',
             ),
             _moreTile(context, _MoreAction.dice, Icons.casino_outlined, '骰子'),
+            if (widget.onInsertSticker != null)
+              _moreTile(
+                context,
+                _MoreAction.sticker,
+                Icons.add_reaction_outlined,
+                '收藏表情',
+              ),
             _moreTile(context, _MoreAction.draft, Icons.cloud_outlined, '正文草稿'),
             _moreTile(
               context,
@@ -241,6 +258,8 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         );
       case _MoreAction.dice:
         await _insertDice();
+      case _MoreAction.sticker:
+        await widget.onInsertSticker?.call();
       case _MoreAction.draft:
         await widget.onSaveDraft();
       case _MoreAction.strike:
@@ -445,6 +464,7 @@ enum _MoreAction {
   orderedList,
   horizontalRule,
   dice,
+  sticker,
   draft,
   strike,
 }

@@ -17,6 +17,7 @@ import 'package:wenyousite_mobile/features/social/domain/thread_interaction_mode
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/tags/presentation/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
@@ -874,9 +875,17 @@ class _SubthreadBody extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
             )
-          else
+          else if (body.postId == null)
             WenyouMarkdown(
               key: Key('thread-body-${subthread.id}'),
+              data: body.markdown,
+              diceLabels: _diceLabels(body.diceRolls),
+              onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+            )
+          else
+            StickerPostMarkdown(
+              key: Key('thread-body-${subthread.id}'),
+              postId: body.postId!,
               data: body.markdown,
               diceLabels: _diceLabels(body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
@@ -1046,7 +1055,8 @@ class _FloorCard extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
               )
             else
-              WenyouMarkdown(
+              StickerPostMarkdown(
+                postId: floor.id,
                 data: floor.body.markdown,
                 diceLabels: _diceLabels(floor.body.diceRolls),
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
@@ -1198,7 +1208,8 @@ class _InlineReply extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
           )
         else
-          WenyouMarkdown(
+          StickerPostMarkdown(
+            postId: reply.id,
             data: reply.body.markdown,
             diceLabels: _diceLabels(reply.body.diceRolls),
             bodyFontSize: 16,

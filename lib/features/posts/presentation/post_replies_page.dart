@@ -6,11 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
 class PostRepliesPage extends ConsumerWidget {
   const PostRepliesPage({
@@ -461,7 +461,8 @@ class _PostCard extends StatelessWidget {
               ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
             )
           else
-            WenyouMarkdown(
+            StickerPostMarkdown(
+              postId: post.id,
               data: post.content,
               diceLabels: {
                 for (final roll in post.diceRolls)

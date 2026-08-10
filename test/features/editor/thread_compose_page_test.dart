@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_pa
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 void main() {
   testWidgets('加载态可渲染', (tester) async {
@@ -239,6 +240,7 @@ Future<void> _pumpPage(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        stickersEnabledProvider.overrideWithValue(false),
         threadComposeControllerProvider.overrideWith((ref) => controller),
         if (contentDraftsController != null)
           contentDraftsControllerProvider.overrideWith(

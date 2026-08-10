@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_page.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 void main() {
   testWidgets('已接受会话可发送、撤回并切换归档状态', (tester) async {
@@ -136,6 +137,7 @@ void main() {
 List<Override> _overrides(_FakeRepository repository) {
   return [
     directMessagesEnabledProvider.overrideWithValue(true),
+    stickersEnabledProvider.overrideWithValue(false),
     directMessageRepositoryProvider.overrideWithValue(repository),
     directConversationControllerProvider.overrideWith((ref, conversationId) {
       return DirectConversationController(
