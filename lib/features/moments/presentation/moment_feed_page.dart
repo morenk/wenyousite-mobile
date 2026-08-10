@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -7,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_waterfall_card.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 
 class MomentFeedPage extends ConsumerStatefulWidget {
@@ -167,13 +169,17 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         ).showSnackBar(SnackBar(content: Text(next.userMessage)));
       }
     });
-    return RefreshIndicator(
-      onRefresh: () => ref.read(provider.notifier).refresh(),
-      child: CustomScrollView(
-        key: PageStorageKey('moment-feed-${widget.target.hashCode}'),
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: _slivers(context, state, provider),
+    return Semantics(
+      container: true,
+      label: '动态瀑布流',
+      child: RefreshIndicator(
+        onRefresh: () => ref.read(provider.notifier).refresh(),
+        child: CustomScrollView(
+          key: PageStorageKey('moment-feed-${widget.target.hashCode}'),
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: _slivers(context, state, provider),
+        ),
       ),
     );
   }
@@ -185,10 +191,22 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
     provider,
   ) {
     if (state.phase == MomentLoadPhase.loading) {
-      return const [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(child: CircularProgressIndicator()),
+      return [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            _feedHorizontalPadding(context),
+            context.wenyouTokens.space4,
+            _feedHorizontalPadding(context),
+            context.wenyouTokens.space24,
+          ),
+          sliver: SliverMasonryGrid.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: context.wenyouTokens.space12,
+            crossAxisSpacing: context.wenyouTokens.space12,
+            childCount: 4,
+            itemBuilder: (context, index) =>
+                _MomentWaterfallSkeletonCard(index: index),
+          ),
         ),
       ];
     }
@@ -238,13 +256,21 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       ];
     }
     return [
-      SliverList.builder(
-        itemCount: state.items.length,
-        itemBuilder: (context, index) {
-          final moment = state.items[index];
-          return MomentContentPadding(
-            top: index == 0 ? 4 : 12,
-            child: MomentCardTile(
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(
+          _feedHorizontalPadding(context),
+          context.wenyouTokens.space4,
+          _feedHorizontalPadding(context),
+          0,
+        ),
+        sliver: SliverMasonryGrid.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: context.wenyouTokens.space12,
+          crossAxisSpacing: context.wenyouTokens.space12,
+          childCount: state.items.length,
+          itemBuilder: (context, index) {
+            final moment = state.items[index];
+            return MomentWaterfallCard(
               key: Key('moment-card-${moment.id}'),
               moment: moment,
               busy: state.busyMomentIds.contains(moment.id),
@@ -260,13 +286,9 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
                 context,
                 () => ref.read(provider.notifier).toggleLike(moment),
               ),
-              onBookmark: () => _authenticatedAction(
-                context,
-                () => ref.read(provider.notifier).toggleBookmark(moment),
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
       SliverToBoxAdapter(
         child: MomentContentPadding(
@@ -292,12 +314,98 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
     ];
   }
 
+  double _feedHorizontalPadding(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final basePadding = width <= 400
+        ? context.wenyouTokens.space12
+        : context.wenyouTokens.space24;
+    final availableWidth = width - basePadding * 2;
+    final contentWidth = availableWidth < 600 ? availableWidth : 600.0;
+    return (width - contentWidth) / 2;
+  }
+
   void _authenticatedAction(BuildContext context, VoidCallback action) {
     if (ref.read(sessionControllerProvider).isAuthenticated) {
       action();
       return;
     }
     _openLogin(context, GoRouterState.of(context).uri.toString());
+  }
+}
+
+class _MomentWaterfallSkeletonCard extends StatelessWidget {
+  const _MomentWaterfallSkeletonCard({required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      label: '正在加载动态',
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: tokens.panel,
+            border: Border.all(color: tokens.border),
+            borderRadius: BorderRadius.circular(tokens.radius12),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(tokens.radius12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AspectRatio(
+                  aspectRatio: index.isEven ? 3 / 4 : 1,
+                  child: ColoredBox(color: tokens.softPanel),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(tokens.space8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FractionallySizedBox(
+                        widthFactor: index.isEven ? 0.82 : 0.68,
+                        child: _SkeletonLine(
+                          color: tokens.softPanel,
+                          height: 14,
+                        ),
+                      ),
+                      SizedBox(height: tokens.space12),
+                      FractionallySizedBox(
+                        widthFactor: 0.58,
+                        child: _SkeletonLine(
+                          color: tokens.softPanel,
+                          height: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonLine extends StatelessWidget {
+  const _SkeletonLine({required this.color, required this.height});
+
+  final Color color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(context.wenyouTokens.radiusPill),
+      ),
+    );
   }
 }
 

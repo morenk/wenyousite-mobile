@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +26,81 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('登录后查看关注动态'), findsOneWidget);
     expect(repository.feedModes, [MomentFeedMode.discover]);
+  });
+
+  testWidgets('360dp 动态信息流使用双列瀑布布局并保留 48dp 点赞目标', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(_feedApp(_PageRepository()));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('动态瀑布流'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看动态：今日微光'), findsOneWidget);
+    expect(find.text('动态正文是纯文本'), findsNothing);
+    expect(find.byKey(const Key('moment-bookmark-moment-1')), findsNothing);
+
+    final first = find.byKey(const Key('moment-card-moment-1'));
+    final second = find.byKey(const Key('moment-card-moment-2'));
+    final third = find.byKey(const Key('moment-card-moment-3'));
+    final firstTopLeft = tester.getTopLeft(first);
+    final secondTopLeft = tester.getTopLeft(second);
+    final thirdTopLeft = tester.getTopLeft(third);
+    expect(firstTopLeft.dx, lessThan(secondTopLeft.dx));
+    expect(thirdTopLeft.dx, closeTo(firstTopLeft.dx, 0.1));
+    expect(thirdTopLeft.dy, greaterThan(firstTopLeft.dy));
+    expect(thirdTopLeft.dy, lessThan(tester.getBottomRight(second).dy));
+
+    final likeSize = tester.getSize(
+      find.byKey(const Key('moment-like-moment-1')),
+    );
+    expect(likeSize.width, greaterThanOrEqualTo(48));
+    expect(likeSize.height, greaterThanOrEqualTo(48));
+    semantics.dispose();
+  });
+
+  testWidgets('动态首屏加载态使用双列瀑布骨架', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _PendingPageRepository();
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(_feedApp(repository));
+    await tester.pump();
+
+    expect(find.bySemanticsLabel('正在加载动态'), findsNWidgets(4));
+    final skeletons = find.bySemanticsLabel('正在加载动态');
+    expect(
+      tester.getTopLeft(skeletons.at(0)).dx,
+      lessThan(tester.getTopLeft(skeletons.at(1)).dx),
+    );
+
+    repository.feed.complete(
+      CursorPage(items: [_card()], cursor: null, hasMore: false),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('moment-card-moment-1')), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('360dp 动态瀑布流保持 Foundation 视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(_feedApp(_PageRepository()));
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('moment-feed-visual')),
+      matchesGoldenFile('goldens/moment_waterfall_360.png'),
+    );
   });
 
   testWidgets('动态详情展示纯文本、评论筛选与游客评论登录入口', (tester) async {
@@ -137,7 +214,13 @@ void main() {
 Widget _feedApp(MomentRepository repository) {
   return ProviderScope(
     overrides: [momentRepositoryProvider.overrideWithValue(repository)],
-    child: MaterialApp(theme: AppTheme.light, home: const MomentFeedPage()),
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: const RepaintBoundary(
+        key: Key('moment-feed-visual'),
+        child: MomentFeedPage(),
+      ),
+    ),
   );
 }
 
@@ -152,7 +235,23 @@ class _PageRepository extends Fake implements MomentRepository {
     int limit = 20,
   }) async {
     feedModes.add(mode);
-    return CursorPage(items: [_card()], cursor: null, hasMore: false);
+    return CursorPage(
+      items: [
+        _card(),
+        _card(
+          id: 'moment-2',
+          title: '这是一个足够长并且会占据两行空间的动态标题',
+          theme: MomentTextCoverTheme.rose,
+        ),
+        _card(
+          id: 'moment-3',
+          title: '第三条动态',
+          theme: MomentTextCoverTheme.amber,
+        ),
+      ],
+      cursor: null,
+      hasMore: false,
+    );
   }
 
   @override
@@ -184,18 +283,36 @@ class _PageRepository extends Fake implements MomentRepository {
   }
 }
 
+class _PendingPageRepository extends _PageRepository {
+  final feed = Completer<CursorPage<MomentCard>>();
+
+  @override
+  Future<CursorPage<MomentCard>> fetchFeed({
+    required MomentFeedMode mode,
+    String? cursor,
+    int limit = 20,
+  }) {
+    feedModes.add(mode);
+    return feed.future;
+  }
+}
+
 MomentAuthor _author() =>
     const MomentAuthor(id: 'user-1', username: '温柔测试员', level: 4);
 
-MomentCard _card() {
+MomentCard _card({
+  String id = 'moment-1',
+  String title = '今日微光',
+  MomentTextCoverTheme theme = MomentTextCoverTheme.mint,
+}) {
   final now = DateTime.utc(2026, 8, 10, 12);
   return MomentCard(
-    id: 'moment-1',
+    id: id,
     author: _author(),
-    title: '今日微光',
+    title: title,
     contentExcerpt: '动态正文是纯文本',
     coverType: MomentCoverType.text,
-    textCoverTheme: MomentTextCoverTheme.mint,
+    textCoverTheme: theme,
     imageCount: 0,
     likeCount: 2,
     commentCount: 1,

@@ -78,7 +78,7 @@ class MomentCardTile extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: moment.coverType == MomentCoverType.image
-                        ? _MomentCoverImage(media: moment.coverMedia!)
+                        ? MomentCoverImage(media: moment.coverMedia!)
                         : MomentTextCover(
                             theme: moment.textCoverTheme,
                             title: moment.title,
@@ -527,8 +527,8 @@ class _ZoomableMomentImageState extends State<_ZoomableMomentImage> {
   }
 }
 
-class _MomentCoverImage extends StatelessWidget {
-  const _MomentCoverImage({required this.media});
+class MomentCoverImage extends StatelessWidget {
+  const MomentCoverImage({required this.media, super.key});
 
   final MomentMedia media;
 
