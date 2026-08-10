@@ -53,6 +53,8 @@ void main() {
     expect(find.text('登录终端'), findsOneWidget);
     expect(find.text('修改密码'), findsOneWidget);
     expect(find.text('更换邮箱'), findsOneWidget);
+    expect(find.text('注销账号'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-delete-account')), findsOneWidget);
     expect(find.byKey(const Key('me-open-verify-email')), findsNothing);
     expect(repository.fetchCalls, 1);
   });

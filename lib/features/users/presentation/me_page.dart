@@ -492,6 +492,7 @@ class _AccountContentPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return WenyouPanel(
       padding: EdgeInsets.zero,
       child: Column(
@@ -577,6 +578,16 @@ class _AccountContentPanel extends StatelessWidget {
             subtitle: const Text('使用当前密码和新邮箱验证码确认'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: disabled ? null : () => context.pushNamed('change-email'),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            key: const Key('me-open-delete-account'),
+            enabled: !disabled,
+            leading: Icon(Icons.delete_forever_outlined, color: scheme.error),
+            title: Text('注销账号', style: TextStyle(color: scheme.error)),
+            subtitle: const Text('不可恢复；已发布内容会匿名保留'),
+            trailing: Icon(Icons.chevron_right_rounded, color: scheme.error),
+            onTap: disabled ? null : () => context.pushNamed('delete-account'),
           ),
         ],
       ),

@@ -92,4 +92,24 @@ void main() {
       isNull,
     );
   });
+
+  test('账号注销页受会话保护且已登录时保持可达', () {
+    final redirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: '/me/security/delete-account',
+      uri: Uri.parse('/me/security/delete-account'),
+    );
+    expect(
+      Uri.parse(redirect!).queryParameters['returnTo'],
+      '/me/security/delete-account',
+    );
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.authenticated(),
+        matchedLocation: '/me/security/delete-account',
+        uri: Uri.parse('/me/security/delete-account'),
+      ),
+      isNull,
+    );
+  });
 }

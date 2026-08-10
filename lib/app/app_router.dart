@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
@@ -187,6 +188,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/me/security/delete-account',
+        name: 'delete-account',
+        builder: (context, state) => const DeleteAccountPage(),
+      ),
+      GoRoute(
         path: '/compose/thread',
         name: 'compose-thread',
         builder: (context, state) => const ThreadComposePage(),
@@ -269,7 +275,8 @@ String? resolveSessionRedirect({
     '/me/security/sessions' ||
     '/me/security/password' ||
     '/me/security/email' ||
-    '/me/security/verify-email' => true,
+    '/me/security/verify-email' ||
+    '/me/security/delete-account' => true,
     _ => false,
   };
   if (!session.isAuthenticated && protectedRoute) {
