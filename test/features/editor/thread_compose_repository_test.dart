@@ -124,6 +124,80 @@ void main() {
     expect(published.body, '发布后的正文');
   });
 
+  test('草稿箱列表、详情恢复与删除均使用服务端权威事实', () async {
+    final threadsApi = _MockThreadsApi();
+    final listEnvelope = _MockDraftListEnvelope();
+    final summaryDto = _MockDraftSummary();
+    final count = _MockDraftCount();
+    when(() => summaryDto.id).thenReturn('thread-one');
+    when(() => summaryDto.title).thenReturn('  跨设备草稿  ');
+    when(() => summaryDto.category).thenReturn(' TRPG ');
+    when(
+      () => summaryDto.visibility,
+    ).thenReturn(DraftThreadResponseDtoVisibilityEnum.PRIVATE);
+    when(() => summaryDto.published).thenReturn(false);
+    when(() => summaryDto.deletedAt).thenReturn(null);
+    when(() => summaryDto.createdAt).thenReturn(DateTime.utc(2026, 8, 9));
+    when(() => summaryDto.updatedAt).thenReturn(DateTime.utc(2026, 8, 10));
+    when(() => summaryDto.topicTags).thenReturn(BuiltList());
+    when(() => count.subthreads).thenReturn(1);
+    when(() => count.posts).thenReturn(2);
+    when(() => summaryDto.count).thenReturn(count);
+    when(() => listEnvelope.data).thenReturn(BuiltList([summaryDto]));
+    when(() => threadsApi.threadsFindDrafts()).thenAnswer(
+      (_) async => Response(
+        requestOptions: RequestOptions(path: '/api/v1/threads/draft'),
+        data: listEnvelope,
+      ),
+    );
+
+    final detail = _threadDetail(
+      published: false,
+      version: 7,
+      subthreadVersion: 8,
+      bodyVersion: 9,
+      content: '服务端最新版正文',
+    );
+    final detailEnvelope = _MockFindByIdEnvelope();
+    when(() => detailEnvelope.data).thenReturn(detail);
+    when(() => threadsApi.threadsFindById(id: 'thread-one')).thenAnswer(
+      (_) async => Response(
+        requestOptions: RequestOptions(path: '/api/v1/threads/thread-one'),
+        data: detailEnvelope,
+      ),
+    );
+    final removeEnvelope = _MockRemoveEnvelope();
+    when(() => threadsApi.threadsRemove(id: 'thread-one')).thenAnswer(
+      (_) async => Response(
+        requestOptions: RequestOptions(path: '/api/v1/threads/thread-one'),
+        data: removeEnvelope,
+      ),
+    );
+    final repository = ApiThreadComposeRepository(
+      threadsApi,
+      _MockCategoriesApi(),
+      _MockUsersApi(),
+    );
+
+    final summaries = await repository.fetchDrafts();
+    final restored = await repository.fetchDraft(
+      id: 'thread-one',
+      ownerId: 'user-one',
+    );
+    await repository.removeDraft('thread-one');
+
+    expect(summaries.single.displayTitle, '跨设备草稿');
+    expect(summaries.single.categorySlug, 'TRPG');
+    expect(summaries.single.visibility, ThreadComposeVisibility.private);
+    expect(summaries.single.subthreadCount, 1);
+    expect(summaries.single.postCount, 2);
+    expect(restored.version, 7);
+    expect(restored.body, '服务端最新版正文');
+    verify(() => threadsApi.threadsFindDrafts()).called(1);
+    verify(() => threadsApi.threadsFindById(id: 'thread-one')).called(1);
+    verify(() => threadsApi.threadsRemove(id: 'thread-one')).called(1);
+  });
+
   test('账号和分类并发失败都被消费并统一映射为 API 错误', () async {
     final usersApi = _MockUsersApi();
     final categoriesApi = _MockCategoriesApi();
@@ -156,6 +230,18 @@ class _MockCreateEnvelope extends Mock implements ThreadsCreate201Response {}
 
 class _MockAggregateEnvelope extends Mock
     implements ThreadsSaveAggregate200Response {}
+
+class _MockDraftListEnvelope extends Mock
+    implements ThreadsFindDrafts200Response {}
+
+class _MockFindByIdEnvelope extends Mock
+    implements ThreadsFindById200Response {}
+
+class _MockRemoveEnvelope extends Mock implements ThreadsRemove200Response {}
+
+class _MockDraftSummary extends Mock implements DraftThreadResponseDto {}
+
+class _MockDraftCount extends Mock implements DraftThreadCountResponseDto {}
 
 class _MockThreadDetail extends Mock implements ThreadDetailResponseDto {}
 
@@ -215,6 +301,7 @@ ThreadDetailResponseDto _threadDetail({
   when(() => subthread.bodyPost).thenReturn(body);
   final dto = _MockThreadDetail();
   when(() => dto.id).thenReturn('thread-one');
+  when(() => dto.ownerId).thenReturn('user-one');
   when(() => dto.version).thenReturn(version);
   when(() => dto.title).thenReturn('服务端主题');
   when(() => dto.category).thenReturn('TRPG');
@@ -224,6 +311,7 @@ ThreadDetailResponseDto _threadDetail({
         : ThreadDetailResponseDtoVisibilityEnum.PRIVATE,
   );
   when(() => dto.published).thenReturn(published);
+  when(() => dto.deletedAt).thenReturn(null);
   when(() => dto.defaultSubthreadId).thenReturn('subthread-one');
   when(() => dto.subthreads).thenReturn(BuiltList([subthread]));
   when(() => dto.topicTags).thenReturn(BuiltList());

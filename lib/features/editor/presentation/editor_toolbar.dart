@@ -115,6 +115,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
               onPressed: () => _toggle(Attribute.strikeThrough),
             ),
             _ToolbarButton(
+              key: const Key('editor-content-drafts'),
               icon: Icons.cloud_outlined,
               label: '正文草稿',
               enabled: widget.enabled,

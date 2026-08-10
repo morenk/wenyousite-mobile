@@ -9,6 +9,15 @@ import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.d
 abstract interface class ThreadComposeRepository {
   Future<ThreadComposeBootstrap> fetchBootstrap();
 
+  Future<List<ThreadRemoteDraftSummary>> fetchDrafts();
+
+  Future<ThreadRemoteDraft> fetchDraft({
+    required String id,
+    required String ownerId,
+  });
+
+  Future<void> removeDraft(String id);
+
   Future<ThreadRemoteDraft> createDraft(ThreadCreatePayload payload);
 
   Future<ThreadRemoteDraft> saveAggregate({
@@ -64,6 +73,99 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
         emailVerified: me.emailVerified,
         categories: List.unmodifiable(categories),
       );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<List<ThreadRemoteDraftSummary>> fetchDrafts() async {
+    try {
+      final envelope = (await _threadsApi.threadsFindDrafts()).data;
+      if (envelope == null) {
+        throw const ApiFailure(userMessage: '服务端草稿箱返回不完整，请稍后重试。');
+      }
+      final seenIds = <String>{};
+      final drafts = <ThreadRemoteDraftSummary>[];
+      for (final dto in envelope.data) {
+        final id = dto.id.trim();
+        final subthreadCount = dto.count.subthreads.toInt();
+        final postCount = dto.count.posts.toInt();
+        if (id.isEmpty ||
+            !seenIds.add(id) ||
+            dto.published ||
+            dto.deletedAt != null ||
+            subthreadCount < 0 ||
+            postCount < 0 ||
+            dto.count.subthreads != subthreadCount ||
+            dto.count.posts != postCount) {
+          throw const ApiFailure(userMessage: '服务端草稿箱包含无法安全识别的记录。');
+        }
+        final tags = <String>[];
+        for (final relation in dto.topicTags) {
+          final tag = relation.tag.name.trim();
+          if (relation.threadId != id || tag.isEmpty) {
+            throw const ApiFailure(userMessage: '服务端草稿标签信息不完整。');
+          }
+          if (!tags.contains(tag)) tags.add(tag);
+        }
+        drafts.add(
+          ThreadRemoteDraftSummary(
+            id: id,
+            title: dto.title.trim(),
+            categorySlug: _normalizedOptional(dto.category),
+            visibility: _mapDraftVisibility(dto.visibility),
+            tags: List.unmodifiable(tags),
+            createdAt: dto.createdAt,
+            updatedAt: dto.updatedAt,
+            subthreadCount: subthreadCount,
+            postCount: postCount,
+          ),
+        );
+      }
+      return List.unmodifiable(drafts);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<ThreadRemoteDraft> fetchDraft({
+    required String id,
+    required String ownerId,
+  }) async {
+    final normalizedId = id.trim();
+    final normalizedOwnerId = ownerId.trim();
+    if (normalizedId.isEmpty || normalizedOwnerId.isEmpty) {
+      throw const ApiFailure(userMessage: '草稿目标不完整，无法继续编辑。');
+    }
+    try {
+      final dto = (await _threadsApi.threadsFindById(
+        id: normalizedId,
+      )).data?.data;
+      if (dto == null ||
+          dto.id.trim() != normalizedId ||
+          dto.ownerId.trim() != normalizedOwnerId ||
+          dto.published ||
+          dto.deletedAt != null) {
+        throw const ApiFailure(userMessage: '服务端返回的草稿与当前账号或目标不一致。');
+      }
+      return _mapRemoteDraft(dto);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<void> removeDraft(String id) async {
+    final normalizedId = id.trim();
+    if (normalizedId.isEmpty) {
+      throw const ApiFailure(userMessage: '草稿目标不完整，无法删除。');
+    }
+    try {
+      if ((await _threadsApi.threadsRemove(id: normalizedId)).data == null) {
+        throw const ApiFailure(userMessage: '服务端没有确认草稿已删除，请重新加载。');
+      }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
@@ -171,15 +273,35 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
       bodyVersion: bodyPost?.version.toInt(),
       title: dto.title?.trim() ?? '',
       categorySlug: dto.category,
-      visibility:
-          dto.visibility == ThreadDetailResponseDtoVisibilityEnum.PRIVATE
-          ? ThreadComposeVisibility.private
-          : ThreadComposeVisibility.public,
+      visibility: switch (dto.visibility) {
+        ThreadDetailResponseDtoVisibilityEnum.PUBLIC =>
+          ThreadComposeVisibility.public,
+        ThreadDetailResponseDtoVisibilityEnum.PRIVATE =>
+          ThreadComposeVisibility.private,
+        _ => throw const ApiFailure(userMessage: '当前版本不支持草稿的可见范围。'),
+      },
       tags: dto.topicTags
           .map((relation) => relation.tag.name)
           .toList(growable: false),
       body: bodyPost?.content ?? '',
     );
+  }
+
+  ThreadComposeVisibility _mapDraftVisibility(
+    DraftThreadResponseDtoVisibilityEnum visibility,
+  ) {
+    return switch (visibility) {
+      DraftThreadResponseDtoVisibilityEnum.PUBLIC =>
+        ThreadComposeVisibility.public,
+      DraftThreadResponseDtoVisibilityEnum.PRIVATE =>
+        ThreadComposeVisibility.private,
+      _ => throw const ApiFailure(userMessage: '当前版本不支持草稿的可见范围。'),
+    };
+  }
+
+  String? _normalizedOptional(String? value) {
+    final normalized = value?.trim();
+    return normalized == null || normalized.isEmpty ? null : normalized;
   }
 }
 

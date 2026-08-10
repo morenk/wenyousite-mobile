@@ -177,7 +177,7 @@ void main() {
       controller,
       contentDraftsController: contentDraftsController,
     );
-    final draftsButton = find.byIcon(Icons.cloud_outlined);
+    final draftsButton = find.byKey(const Key('editor-content-drafts'));
     await tester.scrollUntilVisible(
       draftsButton,
       240,
@@ -267,6 +267,31 @@ class _FakeRepository implements ThreadComposeRepository {
 
   final bool emailVerified;
   int createCalls = 0;
+
+  @override
+  Future<List<ThreadRemoteDraftSummary>> fetchDrafts() async => const [];
+
+  @override
+  Future<ThreadRemoteDraft> fetchDraft({
+    required String id,
+    required String ownerId,
+  }) async {
+    return ThreadRemoteDraft(
+      id: id,
+      version: 3,
+      defaultSubthreadId: 'subthread-cloud',
+      defaultSubthreadVersion: 4,
+      bodyVersion: 5,
+      title: '服务端草稿',
+      categorySlug: 'TRPG',
+      visibility: ThreadComposeVisibility.private,
+      tags: const ['云端'],
+      body: '服务端正文',
+    );
+  }
+
+  @override
+  Future<void> removeDraft(String id) async {}
 
   @override
   Future<ThreadComposeBootstrap> fetchBootstrap() async {

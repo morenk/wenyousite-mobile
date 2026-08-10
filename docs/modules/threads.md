@@ -36,7 +36,7 @@
 - 当前主题内搜索：search 模块调用 `threadSearchSearchPosts`，使用 `ThreadSearchSearchPosts200Response` 与 `SearchPostResponseDto`。
 - 当前互动与成员：`threadsLike`、`threadsUnlike`、`bookmarksCreate`、`bookmarksRemove`、`subscriptionsFindAll`、`subscriptionsCreate`、`subscriptionsRemove`、`threadMembersFindAll`、`threadMembersUpdateMember`、`threadMembersExitMember`。
 - 主要生成类型：`ThreadDetailResponseDto`、`ThreadCapabilitiesResponseDto`、`SubscriptionResponseDto`、`CreateSubscriptionDto`、`ThreadMemberResponseDto`、`ThreadLikeResponseDto`、`BookmarkResponseDto`、`ThreadSubthreadResponseDto`。
-- 当前创建写入：`threadsCreate`、`threadsSaveAggregate`，使用 `CreateThreadDto`、`SaveThreadAggregateDto` 和响应中的乐观锁版本。
+- 当前创建与草稿箱：`threadsFindDrafts`、`threadsCreate`、`threadsSaveAggregate`，使用 `DraftThreadResponseDto`、`CreateThreadDto`、`SaveThreadAggregateDto` 和详情响应中的乐观锁版本；继续编辑草稿复用 `threadsFindById`，删除复用 `threadsRemove`。
 - 当前已有主题管理：`threadsUpdate`、`threadsRemove`，使用 `UpdateThreadDto`、`ThreadDetailResponseDto`、`ThreadCapabilitiesResponseDto` 与 `MessageResponseDto`；动态分区继续使用 `threadCategoriesList`。
 - 当前私密邀请：`threadsCreateInviteLink`、`threadsPreviewInviteLink`、`threadsJoinByInviteLink`，使用 `InviteLinkResponseDto`、`InvitePreviewResponseDto`、`InviteThreadPreviewResponseDto` 与 `JoinedThreadMemberResponseDto`。
 - 当前子贴管理：`subthreadsFindAll`、`subthreadsFindById`、`subthreadsCreate`、`subthreadsUpdate`、`subthreadsRemove`、`subthreadsReorder`，使用 `SubthreadResponseDto`、`CreateSubthreadDto`、`UpdateSubthreadDto`、`ReorderSubthreadsDto` 与 `ReorderedSubthreadResponseDto`。

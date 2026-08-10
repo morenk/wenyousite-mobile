@@ -176,6 +176,48 @@ void main() {
     expect(controller.state.documentRevision, greaterThan(1));
     expect(store.snapshot?.body, '云端\n**正文**');
   });
+
+  test('显式打开服务端草稿会先保存本机内容再采用云端完整版本', () async {
+    final store = _MemorySnapshotStore();
+    final repository = _FakeRepository(
+      onFetchDraft: (id, ownerId) async => ThreadRemoteDraft(
+        id: id,
+        version: 7,
+        defaultSubthreadId: 'subthread-cloud',
+        defaultSubthreadVersion: 8,
+        bodyVersion: 9,
+        title: '跨设备草稿',
+        categorySlug: 'TRPG',
+        visibility: ThreadComposeVisibility.private,
+        tags: const ['云端'],
+        body: '服务端最新版正文',
+      ),
+    );
+    final controller = ThreadComposeController(
+      repository,
+      store,
+      knownOwnerId: 'user-one',
+      createRequestId: () => _requestId,
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    await _waitUntil(() => !controller.state.bootstrapLoading);
+    controller
+      ..updateTitle('本机未同步标题')
+      ..updateBody('本机未同步正文');
+
+    expect(await controller.openRemoteDraft('thread-cloud'), isTrue);
+
+    expect(repository.fetchDraftCalls, [('thread-cloud', 'user-one')]);
+    expect(controller.state.remoteDraft?.id, 'thread-cloud');
+    expect(controller.state.title, '跨设备草稿');
+    expect(controller.state.body, '服务端最新版正文');
+    expect(controller.state.visibility, ThreadComposeVisibility.private);
+    expect(controller.state.documentRevision, greaterThan(1));
+    expect(store.snapshot?.contextId, 'thread-cloud');
+    expect(store.snapshot?.body, '服务端最新版正文');
+  });
 }
 
 void _fillPublishable(
@@ -221,12 +263,30 @@ class _AggregateCall {
 }
 
 class _FakeRepository implements ThreadComposeRepository {
-  _FakeRepository({this.onCreate});
+  _FakeRepository({this.onCreate, this.onFetchDraft});
 
   final Future<ThreadRemoteDraft> Function(ThreadCreatePayload payload)?
   onCreate;
+  final Future<ThreadRemoteDraft> Function(String id, String ownerId)?
+  onFetchDraft;
   final List<ThreadCreatePayload> createPayloads = [];
   final List<_AggregateCall> aggregateCalls = [];
+  final List<(String, String)> fetchDraftCalls = [];
+
+  @override
+  Future<List<ThreadRemoteDraftSummary>> fetchDrafts() async => const [];
+
+  @override
+  Future<ThreadRemoteDraft> fetchDraft({
+    required String id,
+    required String ownerId,
+  }) async {
+    fetchDraftCalls.add((id, ownerId));
+    return onFetchDraft?.call(id, ownerId) ?? _remote();
+  }
+
+  @override
+  Future<void> removeDraft(String id) async {}
 
   @override
   Future<ThreadComposeBootstrap> fetchBootstrap() async {

@@ -6,15 +6,18 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
+import 'package:wenyousite_mobile/features/editor/application/remote_thread_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/remote_thread_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -135,6 +138,19 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             subtitle: '内容会先保存在本机；主动保存时才同步为服务端草稿。',
           ),
           SizedBox(height: tokens.space16),
+          OutlinedButton.icon(
+            key: const Key('compose-remote-drafts'),
+            onPressed: locked ? null : _openRemoteDrafts,
+            icon: const Icon(Icons.cloud_outlined),
+            label: Text(
+              state.remoteDraft == null ? '查看服务端主题草稿' : '查看服务端主题草稿 · 当前已同步',
+            ),
+          ),
+          SizedBox(height: tokens.space12),
+          if (state.action == ThreadComposeAction.openRemoteDraft) ...[
+            const WenyouStatusBanner(message: '正在读取服务端草稿最新版…'),
+            SizedBox(height: tokens.space12),
+          ],
           if (state.restoredFromLocal) ...[
             const WenyouStatusBanner(
               message: '已恢复上次未完成的本地内容。',
@@ -628,7 +644,47 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
 
   Future<void> _saveThreadDraft() async {
     if (_codecFailure != null || _uploading) return;
-    await ref.read(threadComposeControllerProvider.notifier).saveDraft();
+    final saved = await ref
+        .read(threadComposeControllerProvider.notifier)
+        .saveDraft();
+    if (saved != null) ref.invalidate(remoteThreadDraftsControllerProvider);
+  }
+
+  Future<void> _openRemoteDrafts() async {
+    if (_codecFailure != null || _uploading) return;
+    final before = ref.read(threadComposeControllerProvider);
+    final selected = await showRemoteThreadDraftsSheet(
+      context: context,
+      currentDraftId: before.remoteDraft?.id,
+    );
+    if (!mounted || selected == null) return;
+    final latest = ref.read(threadComposeControllerProvider);
+    if (latest.remoteDraft?.id != selected.id &&
+        _hasMeaningfulContent(latest)) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('切换服务端草稿？'),
+          content: const Text(
+            '打开后会用所选服务端版本替换当前编辑器内容。若当前修改还需要保留，请先取消并点击“保存到服务端草稿”。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('先不切换'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('确认切换'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+    await ref
+        .read(threadComposeControllerProvider.notifier)
+        .openRemoteDraft(selected.id);
   }
 
   Future<void> _openContentDrafts() async {
@@ -650,7 +706,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final threadId = await ref
         .read(threadComposeControllerProvider.notifier)
         .publish();
-    if (mounted && threadId != null) context.go('/threads/$threadId');
+    if (mounted && threadId != null) {
+      ref.invalidate(remoteThreadDraftsControllerProvider);
+      context.go('/threads/$threadId');
+    }
   }
 
   Future<void> _flushSnapshot() async {
@@ -697,6 +756,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       if (mounted) Navigator.of(context).pop(result);
     });
   }
+}
+
+bool _hasMeaningfulContent(ThreadComposeState state) {
+  return state.title.trim().isNotEmpty ||
+      state.categorySlug != null ||
+      state.tags.isNotEmpty ||
+      MarkdownContent.hasVisibleContent(state.body) ||
+      state.remoteDraft != null;
 }
 
 String? _requestDetail(ApiFailure? failure) {

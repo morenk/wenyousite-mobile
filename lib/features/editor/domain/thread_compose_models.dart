@@ -68,6 +68,32 @@ class ThreadRemoteDraft {
   final String body;
 }
 
+class ThreadRemoteDraftSummary {
+  const ThreadRemoteDraftSummary({
+    required this.id,
+    required this.title,
+    required this.categorySlug,
+    required this.visibility,
+    required this.tags,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.subthreadCount,
+    required this.postCount,
+  });
+
+  final String id;
+  final String title;
+  final String? categorySlug;
+  final ThreadComposeVisibility visibility;
+  final List<String> tags;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int subthreadCount;
+  final int postCount;
+
+  String get displayTitle => title.isEmpty ? '未命名草稿' : title;
+}
+
 class ThreadCreatePayload {
   const ThreadCreatePayload({
     required this.clientRequestId,

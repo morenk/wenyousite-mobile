@@ -12,7 +12,7 @@ import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.d
 
 enum ThreadComposePhase { loading, ready, failed, published }
 
-enum ThreadComposeAction { saveDraft, publish }
+enum ThreadComposeAction { openRemoteDraft, saveDraft, publish }
 
 enum LocalSnapshotStatus { idle, saving, saved, failed }
 
@@ -306,6 +306,76 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   Future<String?> saveDraft() => _submit(publish: false);
 
   Future<String?> publish() => _submit(publish: true);
+
+  Future<bool> openRemoteDraft(String draftId) async {
+    final normalizedId = draftId.trim();
+    if (state.phase != ThreadComposePhase.ready ||
+        state.isSubmitting ||
+        normalizedId.isEmpty) {
+      return false;
+    }
+    if (state.remoteDraft?.id == normalizedId) {
+      state = state.copyWith(
+        actionFailure: null,
+        successMessage: '这个服务端草稿已经在当前编辑器中。',
+      );
+      return true;
+    }
+    if (_pendingCreate != null) {
+      state = state.copyWith(
+        actionFailure: const ApiFailure(
+          userMessage: '当前主题创建结果仍待确认，请先重试保存，不能切换草稿。',
+        ),
+        successMessage: null,
+      );
+      return false;
+    }
+    await flushLocalSnapshot();
+    if (!mounted || state.phase != ThreadComposePhase.ready) return false;
+    if (state.localSnapshotStatus == LocalSnapshotStatus.failed) {
+      state = state.copyWith(
+        actionFailure: const ApiFailure(userMessage: '当前内容未能保存到本机，暂不切换服务端草稿。'),
+        successMessage: null,
+      );
+      return false;
+    }
+    state = state.copyWith(
+      action: ThreadComposeAction.openRemoteDraft,
+      actionFailure: null,
+      successMessage: null,
+    );
+    try {
+      final remote = await _repository.fetchDraft(
+        id: normalizedId,
+        ownerId: state.ownerId!,
+      );
+      if (!mounted || state.phase != ThreadComposePhase.ready) return false;
+      state = state.copyWith(
+        action: null,
+        title: remote.title,
+        categorySlug: remote.categorySlug,
+        visibility: remote.visibility,
+        tags: remote.tags,
+        body: remote.body,
+        clientRequestId: _createRequestId(),
+        remoteDraft: remote,
+        documentRevision: state.documentRevision + 1,
+        restoredFromLocal: false,
+        localSnapshotStatus: LocalSnapshotStatus.idle,
+        lastLocalSaveAt: null,
+        successMessage: '已打开服务端草稿。',
+      );
+      await flushLocalSnapshot();
+      return true;
+    } on Object catch (error) {
+      if (!mounted || state.phase != ThreadComposePhase.ready) return false;
+      state = state.copyWith(
+        action: null,
+        actionFailure: _asFailure(error, '服务端草稿没有打开成功，当前内容仍已保留。'),
+      );
+      return false;
+    }
+  }
 
   Future<String?> _submit({required bool publish}) async {
     if (state.phase != ThreadComposePhase.ready || state.isSubmitting) {

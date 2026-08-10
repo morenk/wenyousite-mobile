@@ -175,6 +175,7 @@ dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze --fatal-infos --fatal-warnings
 flutter test
 dart run tool/check_docs.dart
+dart run tool/audit_api_coverage.dart --require-complete
 npm run api:validate
 ```
 
