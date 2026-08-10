@@ -89,7 +89,7 @@ class RequestContextInterceptor extends Interceptor {
 
   void _logResponse(Response<Object?> response) {
     final options = response.requestOptions;
-    final uri = options.uri.replace(query: null, fragment: null);
+    final uri = sanitizeNetworkLogUri(options.uri);
     developer.log(
       '${options.method} $uri ${response.statusCode} '
       'requestId=${options.headers['X-Request-ID']} '
@@ -100,7 +100,7 @@ class RequestContextInterceptor extends Interceptor {
 
   void _logError(DioException error, ApiFailure failure) {
     final options = error.requestOptions;
-    final uri = options.uri.replace(query: null, fragment: null);
+    final uri = sanitizeNetworkLogUri(options.uri);
     final summary =
         '${options.method} $uri failed '
         'type=${error.type.name} status=${failure.httpStatus ?? '-'} '
@@ -123,6 +123,25 @@ class RequestContextInterceptor extends Interceptor {
       _ => SessionInvalidationReason.refreshFailed,
     };
   }
+}
+
+String sanitizeNetworkLogUri(Uri uri) {
+  final raw = uri.toString();
+  final queryIndex = raw.indexOf('?');
+  final fragmentIndex = raw.indexOf('#');
+  final cutAt =
+      [
+        if (queryIndex >= 0) queryIndex,
+        if (fragmentIndex >= 0) fragmentIndex,
+      ].fold<int>(
+        raw.length,
+        (current, index) => index < current ? index : current,
+      );
+  final withoutQuery = raw.substring(0, cutAt);
+  return withoutQuery.replaceFirstMapped(
+    RegExp(r'(/threads/join-by-link/)[^/?#]+'),
+    (match) => '${match.group(1)}<redacted>',
+  );
 }
 
 class SafeRetryInterceptor extends Interceptor {

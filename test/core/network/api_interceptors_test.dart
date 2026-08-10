@@ -82,6 +82,19 @@ void main() {
     expect(session.state.reason, SessionInvalidationReason.revoked);
     verify(() => handler.next(error)).called(1);
   });
+
+  test('网络日志移除查询参数并脱敏私密邀请 token', () {
+    const token = 'Abcd_1234-efGh56';
+    final sanitized = sanitizeNetworkLogUri(
+      Uri.parse(
+        'https://wenyou.site/api/v1/threads/join-by-link/$token?debug=value',
+      ),
+    );
+
+    expect(sanitized, contains('/threads/join-by-link/<redacted>'));
+    expect(sanitized, isNot(contains(token)));
+    expect(sanitized, isNot(contains('debug=value')));
+  });
 }
 
 DioException _businessError(RequestOptions options, int code) {

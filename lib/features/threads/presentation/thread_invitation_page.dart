@@ -1,0 +1,263 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_invitation_controller.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
+
+class ThreadInvitationPage extends ConsumerWidget {
+  const ThreadInvitationPage({required this.token, super.key});
+
+  final String token;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = threadInvitationAccessControllerProvider(token);
+    final state = ref.watch(provider);
+    return Scaffold(
+      appBar: AppBar(title: const Text('私密主题邀请')),
+      body: switch (state.phase) {
+        ThreadInvitationAccessPhase.loading => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        ThreadInvitationAccessPhase.failed => _InvitationFailure(
+          failure: state.failure,
+          onRetry: () => ref.read(provider.notifier).load(),
+        ),
+        ThreadInvitationAccessPhase.ready => _InvitationReady(
+          token: token,
+          state: state,
+        ),
+      },
+    );
+  }
+}
+
+class _InvitationReady extends ConsumerWidget {
+  const _InvitationReady({required this.token, required this.state});
+
+  final String token;
+  final ThreadInvitationAccessState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preview = state.preview!;
+    final tokens = context.wenyouTokens;
+    return WenyouPageBody(
+      maxWidth: 520,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          WenyouPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const WenyouSectionHeader(
+                  title: '有人邀请你加入私密主题',
+                  subtitle: '加入后才能阅读主题内容；是否标记为玩家仍由主题管理者决定。',
+                ),
+                SizedBox(height: tokens.space20),
+                Text(
+                  preview.title,
+                  key: const Key('thread-invite-preview-title'),
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                SizedBox(height: tokens.space12),
+                Wrap(
+                  spacing: tokens.space8,
+                  runSpacing: tokens.space8,
+                  children: [
+                    _InviteFact(
+                      icon: Icons.folder_open_outlined,
+                      label: preview.categorySlug ?? '未分类',
+                    ),
+                    _InviteFact(
+                      icon: Icons.flag_outlined,
+                      label: preview.status.label,
+                    ),
+                    _InviteFact(
+                      icon: Icons.groups_2_outlined,
+                      label: '${preview.memberCount} 位参与人',
+                    ),
+                  ],
+                ),
+                SizedBox(height: tokens.space16),
+                ListTile(
+                  key: const Key('thread-invite-owner'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.person_outline_rounded),
+                  ),
+                  title: Text('楼主 ${preview.ownerName}'),
+                  subtitle: Text(
+                    '${DateFormat('yyyy-MM-dd').format(preview.createdAt.toLocal())} 创建',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/users/${preview.ownerId}'),
+                ),
+              ],
+            ),
+          ),
+          if (state.joinFailure != null) ...[
+            SizedBox(height: tokens.space12),
+            WenyouStatusBanner(
+              key: const Key('thread-invite-join-failure'),
+              tone: WenyouStatusTone.error,
+              message: state.joinFailure!.userMessage,
+              detail: state.joinFailure!.requestId == null
+                  ? null
+                  : '请求 ID：${state.joinFailure!.requestId}',
+              action: state.joinFailure!.businessCode == 40107
+                  ? TextButton(
+                      key: const Key('thread-invite-verify-email'),
+                      onPressed: state.isJoining
+                          ? null
+                          : () => _openVerification(context, ref),
+                      child: const Text('先验证邮箱'),
+                    )
+                  : TextButton(
+                      key: const Key('thread-invite-dismiss-failure'),
+                      onPressed: state.isJoining
+                          ? null
+                          : () => ref
+                                .read(
+                                  threadInvitationAccessControllerProvider(
+                                    token,
+                                  ).notifier,
+                                )
+                                .clearJoinFailure(),
+                      child: const Text('知道了'),
+                    ),
+            ),
+          ],
+          SizedBox(height: tokens.space16),
+          if (preview.alreadyJoined)
+            WenyouStatusBanner(
+              key: const Key('thread-invite-already-joined'),
+              tone: WenyouStatusTone.accent,
+              message: '你已经是这个主题的成员，可以直接进入。',
+              action: TextButton(
+                key: const Key('thread-invite-open-thread'),
+                onPressed: () => context.go('/threads/${preview.threadId}'),
+                child: const Text('进入主题'),
+              ),
+            )
+          else
+            WenyouAsyncPrimaryButton(
+              key: const Key('thread-invite-join'),
+              label: '接受邀请并加入',
+              loadingLabel: '正在加入私密主题',
+              icon: Icons.group_add_outlined,
+              isLoading: state.isJoining,
+              onPressed: state.isJoining ? null : () => _join(context, ref),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _join(BuildContext context, WidgetRef ref) async {
+    final result = await ref
+        .read(threadInvitationAccessControllerProvider(token).notifier)
+        .join();
+    if (result == null || !context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('已加入私密主题。')));
+    context.go('/threads/${result.threadId}');
+  }
+
+  Future<void> _openVerification(BuildContext context, WidgetRef ref) async {
+    final returnTo = '/join/$token';
+    final verified = await context.push<bool>(
+      Uri(
+        path: '/me/security/verify-email',
+        queryParameters: {'returnTo': returnTo},
+      ).toString(),
+    );
+    if (verified == true && context.mounted) {
+      ref
+          .read(threadInvitationAccessControllerProvider(token).notifier)
+          .clearJoinFailure();
+    }
+  }
+}
+
+class _InviteFact extends StatelessWidget {
+  const _InviteFact({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.softPanel,
+        borderRadius: BorderRadius.circular(tokens.radius12),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.space8,
+          vertical: tokens.space4,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16),
+            SizedBox(width: tokens.space4),
+            Text(label, style: Theme.of(context).textTheme.labelMedium),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InvitationFailure extends StatelessWidget {
+  const _InvitationFailure({required this.failure, required this.onRetry});
+
+  final ApiFailure? failure;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final permanent =
+        failure?.businessCode == 40408 ||
+        failure?.httpStatus == 404 ||
+        failure?.httpStatus == 403;
+    return WenyouPageBody(
+      maxWidth: 520,
+      child: WenyouPanel(
+        child: WenyouEmptyState(
+          icon: permanent ? Icons.link_off_rounded : Icons.cloud_off_outlined,
+          title: permanent ? '邀请链接无效或已失效' : '邀请信息没有加载完成',
+          message: permanent
+              ? '请联系主题楼主获取新的私密邀请。'
+              : failure?.userMessage ?? '请检查网络后重试。',
+          detail: failure?.requestId == null
+              ? null
+              : '请求 ID：${failure!.requestId}',
+          action: permanent
+              ? OutlinedButton.icon(
+                  key: const Key('thread-invite-back-home'),
+                  onPressed: () => context.go('/home'),
+                  icon: const Icon(Icons.home_outlined),
+                  label: const Text('返回首页'),
+                )
+              : OutlinedButton.icon(
+                  key: const Key('thread-invite-load-retry'),
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('重新加载'),
+                ),
+        ),
+      ),
+    );
+  }
+}

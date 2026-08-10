@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 
@@ -65,6 +67,20 @@ void main() {
     expect(visibility.onChanged, isNull);
     expect(find.textContaining('可见范围仅楼主可修改'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
+  });
+
+  testWidgets('只有已发布私密主题楼主看到邀请链接管理', (tester) async {
+    await _pumpPage(
+      tester,
+      _FakeRepository(
+        initial: _bootstrap(visibility: ThreadManagementVisibility.private),
+      ),
+      invitationRepository: _FakeInvitationRepository(),
+    );
+    expect(
+      find.byKey(const Key('thread-invite-link-generate')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('楼主删除经过二次确认后返回首页', (tester) async {
@@ -204,11 +220,16 @@ void main() {
 
 Future<void> _pumpPage(
   WidgetTester tester,
-  ThreadManagementRepository repository,
-) async {
+  ThreadManagementRepository repository, {
+  ThreadInvitationRepository? invitationRepository,
+}) async {
   final container = ProviderContainer(
     overrides: [
       threadManagementRepositoryProvider.overrideWithValue(repository),
+      if (invitationRepository != null)
+        threadInvitationRepositoryProvider.overrideWithValue(
+          invitationRepository,
+        ),
     ],
   );
   final router = GoRouter(
@@ -321,6 +342,7 @@ ThreadManagementBootstrap _bootstrap({
   int version = 1,
   String title = '原主题',
   bool isOwner = true,
+  ThreadManagementVisibility visibility = ThreadManagementVisibility.public,
 }) {
   return ThreadManagementBootstrap(
     thread: ThreadManagementSnapshot(
@@ -328,7 +350,7 @@ ThreadManagementBootstrap _bootstrap({
       title: title,
       categorySlug: 'RPG',
       status: ThreadManagementStatus.recruiting,
-      visibility: ThreadManagementVisibility.public,
+      visibility: visibility,
       version: version,
       published: true,
       canManage: true,
@@ -339,4 +361,21 @@ ThreadManagementBootstrap _bootstrap({
       ThreadManagementCategory(slug: 'BOARD', name: '综合讨论', sortOrder: 2),
     ],
   );
+}
+
+class _FakeInvitationRepository implements ThreadInvitationRepository {
+  @override
+  Future<ThreadInvitationLink> generateLink(String threadId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ThreadInvitationJoinResult> join(String token) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ThreadInvitationPreview> preview(String token) {
+    throw UnimplementedError();
+  }
 }

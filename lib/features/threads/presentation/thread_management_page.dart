@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_controls.dart';
 
 class ThreadManagementPage extends ConsumerStatefulWidget {
   const ThreadManagementPage({required this.threadId, super.key});
@@ -208,6 +209,12 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               icon: const Icon(Icons.groups_2_outlined),
               label: const Text('管理成员与玩家身份'),
             ),
+            if (thread.isOwner &&
+                thread.published &&
+                thread.visibility == ThreadManagementVisibility.private) ...[
+              SizedBox(height: tokens.space12),
+              ThreadInviteLinkPanel(threadId: thread.id, enabled: !locked),
+            ],
             if (failure != null) ...[
               SizedBox(height: tokens.space12),
               WenyouStatusBanner(

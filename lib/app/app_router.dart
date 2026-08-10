@@ -22,6 +22,7 @@ import 'package:wenyousite_mobile/features/social/domain/user_relation_list_mode
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
@@ -80,6 +81,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/join/:token',
+        name: 'thread-invitation',
+        builder: (context, state) {
+          return ThreadInvitationPage(token: state.pathParameters['token']!);
+        },
       ),
       GoRoute(
         path: '/threads/:threadId/posts/:postId/replies',
@@ -300,7 +308,8 @@ String? resolveSessionRedirect({
         '/me/security/delete-account' => true,
         _ => false,
       } ||
-      _isThreadManagementLocation(matchedLocation);
+      _isThreadManagementLocation(matchedLocation) ||
+      _isInvitationLocation(matchedLocation);
   if (!session.isAuthenticated && protectedRoute) {
     return Uri(
       path: '/auth/login',
@@ -317,4 +326,9 @@ bool _isThreadManagementLocation(String location) {
   if (location == '/threads/:threadId/manage') return true;
   if (location == '/threads/:threadId/manage/members') return true;
   return RegExp(r'^/threads/[^/]+/manage(?:/members)?$').hasMatch(location);
+}
+
+bool _isInvitationLocation(String location) {
+  if (location == '/join/:token') return true;
+  return RegExp(r'^/join/[^/]+$').hasMatch(location);
 }

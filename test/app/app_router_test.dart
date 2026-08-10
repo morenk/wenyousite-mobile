@@ -142,4 +142,23 @@ void main() {
       '/threads/thread-1/manage/members',
     );
   });
+
+  test('私密邀请预览要求登录并完整保留不透明 token', () {
+    const location = '/join/Abcd_1234-efGh56';
+    final redirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: location,
+      uri: Uri.parse(location),
+    );
+
+    expect(Uri.parse(redirect!).queryParameters['returnTo'], location);
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.authenticated(),
+        matchedLocation: location,
+        uri: Uri.parse(location),
+      ),
+      isNull,
+    );
+  });
 }
