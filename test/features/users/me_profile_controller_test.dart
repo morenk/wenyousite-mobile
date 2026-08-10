@@ -79,6 +79,29 @@ void main() {
     expect(controller.state.profile?.showBookmarks, isFalse);
     expect(controller.state.submissionFailure, isNull);
   });
+
+  test('头像端点结果只替换头像与更新时间', () async {
+    final controller = MeProfileController(
+      _FakeMeProfileRepository(),
+      autoStart: false,
+    );
+    await controller.load();
+
+    controller.applyAvatarUpdate(
+      AvatarUpdateResult(
+        avatarUrl: 'https://cdn.example.com/avatar.webp',
+        updatedAt: DateTime.utc(2026, 8, 10, 12),
+      ),
+    );
+
+    expect(
+      controller.state.profile?.avatarUrl,
+      'https://cdn.example.com/avatar.webp',
+    );
+    expect(controller.state.profile?.username, _profile.username);
+    expect(controller.state.profile?.followingCount, 7);
+    expect(controller.state.profile?.updatedAt, DateTime.utc(2026, 8, 10, 12));
+  });
 }
 
 class _FakeMeProfileRepository implements MeProfileRepository {

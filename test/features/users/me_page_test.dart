@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +9,10 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
+import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
@@ -91,6 +98,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('me-username-edit')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('me-username-edit')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('me-username-field')), '不 合法');
@@ -136,6 +144,143 @@ void main() {
     expect(repository.lastPatch?.showBookmarks, isFalse);
     expect(repository.lastPatch?.showRecentReplies, isNull);
     expect(find.text('资料与隐私设置已保存。'), findsOneWidget);
+  });
+
+  testWidgets('选择图片后复用媒体上传并立即采用服务端头像', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final picker = _FakeAvatarPicker(_avatarInput);
+    final media = _FakeMediaRepository();
+    final avatar = _FakeAvatarRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      avatarPicker: picker,
+      mediaRepository: media,
+      avatarRepository: avatar,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('选择头像'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
+
+    expect(media.uploadCalls, 1);
+    expect(avatar.setCalls, 1);
+    expect(avatar.lastMediaId, 'media-avatar-1');
+    expect(find.text('头像已更新。'), findsOneWidget);
+    expect(find.text('更换头像'), findsOneWidget);
+    expect(find.byKey(const Key('me-avatar-remove')), findsOneWidget);
+  });
+
+  testWidgets('设置失败保留请求 ID，重试只调用设置端点', (tester) async {
+    var failOnce = true;
+    final repository = _FakeMeProfileRepository();
+    final media = _FakeMediaRepository();
+    final avatar = _FakeAvatarRepository(
+      onSet: (_) async {
+        if (failOnce) {
+          failOnce = false;
+          throw const ApiFailure(
+            userMessage: '头像暂时无法设置。',
+            requestId: 'avatar-widget-request-id',
+          );
+        }
+        return _avatarSetResult;
+      },
+    );
+    final container = await _authenticatedContainer(
+      repository,
+      avatarPicker: _FakeAvatarPicker(_avatarInput),
+      mediaRepository: media,
+      avatarRepository: avatar,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
+    expect(find.text('请求 ID：avatar-widget-request-id'), findsOneWidget);
+    expect(find.text('重试设置'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('me-avatar-retry')));
+    await tester.pumpAndSettle();
+    expect(media.uploadCalls, 1);
+    expect(avatar.setCalls, 2);
+    expect(find.text('头像已更新。'), findsOneWidget);
+  });
+
+  testWidgets('未验证邮箱导致设置失败时提供验证入口', (tester) async {
+    final avatar = _FakeAvatarRepository(
+      onSet: (_) async => throw const ApiFailure(
+        userMessage: '请先验证邮箱。',
+        businessCode: 40107,
+        requestId: 'avatar-verify-request-id',
+      ),
+    );
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(
+        initialProfile: _profileWithEmailVerified(false),
+      ),
+      avatarPicker: _FakeAvatarPicker(_avatarInput),
+      mediaRepository: _FakeMediaRepository(),
+      avatarRepository: avatar,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请求 ID：avatar-verify-request-id'), findsOneWidget);
+    expect(find.byKey(const Key('me-avatar-verify-email')), findsOneWidget);
+  });
+
+  testWidgets('已有头像二次确认后移除并回到默认占位', (tester) async {
+    final repository = _FakeMeProfileRepository(
+      initialProfile: _profileWithAvatar('https://cdn.example.com/old.png'),
+    );
+    final avatar = _FakeAvatarRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      avatarRepository: avatar,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-avatar-remove')));
+    await tester.pumpAndSettle();
+    expect(find.text('移除当前头像？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('me-avatar-remove-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(avatar.removeCalls, 1);
+    expect(find.text('头像已移除。'), findsOneWidget);
+    expect(find.text('选择头像'), findsOneWidget);
+    expect(find.byKey(const Key('me-avatar-remove')), findsNothing);
   });
 
   testWidgets('已有简介不能伪装清空，加载失败可重试且仍可退出', (tester) async {
@@ -191,19 +336,83 @@ void main() {
 }
 
 Future<ProviderContainer> _authenticatedContainer(
-  MeProfileRepository repository,
-) async {
+  MeProfileRepository repository, {
+  AvatarImagePicker? avatarPicker,
+  MediaUploadRepository? mediaRepository,
+  AvatarRepository? avatarRepository,
+}) async {
   final container = ProviderContainer(
     overrides: [
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       meProfileRepositoryProvider.overrideWithValue(repository),
+      if (avatarPicker != null)
+        avatarImagePickerProvider.overrideWithValue(avatarPicker),
+      if (mediaRepository != null)
+        mediaUploadRepositoryProvider.overrideWithValue(mediaRepository),
+      if (avatarRepository != null)
+        avatarRepositoryProvider.overrideWithValue(avatarRepository),
     ],
   );
   await container
       .read(sessionControllerProvider.notifier)
       .authenticate(_tokens);
   return container;
+}
+
+class _FakeAvatarPicker implements AvatarImagePicker {
+  _FakeAvatarPicker(this.input);
+
+  final MediaUploadInput? input;
+
+  @override
+  Future<MediaUploadInput?> pickAvatarFromGallery() async => input;
+}
+
+class _FakeMediaRepository implements MediaUploadRepository {
+  int uploadCalls = 0;
+
+  @override
+  Future<UploadedEditorImage> uploadImage(
+    MediaUploadInput input, {
+    CancelToken? cancelToken,
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) async {
+    uploadCalls += 1;
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return const UploadedEditorImage(
+      mediaId: 'media-avatar-1',
+      url: 'https://cdn.example.com/avatar.webp',
+    );
+  }
+}
+
+class _FakeAvatarRepository implements AvatarRepository {
+  _FakeAvatarRepository({this.onSet});
+
+  final Future<AvatarUpdateResult> Function(String mediaId)? onSet;
+  int setCalls = 0;
+  int removeCalls = 0;
+  String? lastMediaId;
+
+  @override
+  Future<AvatarUpdateResult> setAvatar(String mediaId) async {
+    setCalls += 1;
+    lastMediaId = mediaId;
+    return onSet?.call(mediaId) ?? _avatarSetResult;
+  }
+
+  @override
+  Future<AvatarUpdateResult> removeAvatar() async {
+    removeCalls += 1;
+    return _avatarRemoveResult;
+  }
 }
 
 class _FakeMeProfileRepository implements MeProfileRepository {
@@ -301,6 +510,46 @@ MeProfileModel _profileWithEmailVerified(bool emailVerified) {
     updatedAt: _profile.updatedAt,
   );
 }
+
+MeProfileModel _profileWithAvatar(String avatarUrl) {
+  return MeProfileModel(
+    id: _profile.id,
+    email: _profile.email,
+    username: _profile.username,
+    avatarUrl: avatarUrl,
+    bio: _profile.bio,
+    level: _profile.level,
+    experience: _profile.experience,
+    currentLevelExperience: _profile.currentLevelExperience,
+    nextLevelExperience: _profile.nextLevelExperience,
+    receivedTipTotal: _profile.receivedTipTotal,
+    receivedTipCount: _profile.receivedTipCount,
+    showRecentReplies: _profile.showRecentReplies,
+    showPlayedThreads: _profile.showPlayedThreads,
+    showBookmarks: _profile.showBookmarks,
+    emailVerified: _profile.emailVerified,
+    followingCount: _profile.followingCount,
+    followerCount: _profile.followerCount,
+    createdAt: _profile.createdAt,
+    updatedAt: _profile.updatedAt,
+  );
+}
+
+final _avatarInput = MediaUploadInput(
+  filename: 'avatar.jpg',
+  declaredContentType: 'image/jpeg',
+  bytes: Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0, 0, 1]),
+);
+
+final _avatarSetResult = AvatarUpdateResult(
+  avatarUrl: 'https://cdn.example.com/avatar.webp',
+  updatedAt: DateTime.utc(2026, 8, 10, 11),
+);
+
+final _avatarRemoveResult = AvatarUpdateResult(
+  avatarUrl: null,
+  updatedAt: DateTime.utc(2026, 8, 10, 12),
+);
 
 const _tokens = SessionTokens(
   accessToken: 'access-token',

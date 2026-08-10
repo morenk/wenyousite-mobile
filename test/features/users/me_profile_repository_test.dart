@@ -30,6 +30,17 @@ void main() {
     expect(profile.emailVerified, isTrue);
   });
 
+  test('重新创建仓储后从本人事实恢复安全头像 URL', () async {
+    final api = _MockUsersApi();
+    when(api.usersGetMe).thenAnswer(
+      (_) async => _meResponse(avatar: 'https://cdn.example.com/avatar.webp'),
+    );
+
+    final profile = await ApiMeProfileRepository(api).fetchMe();
+
+    expect(profile.avatarUrl, 'https://cdn.example.com/avatar.webp');
+  });
+
   test('资料更新只发送变更字段并映射服务端最终结果', () async {
     final api = _MockUsersApi();
     when(
@@ -61,7 +72,9 @@ void main() {
 
 class _MockUsersApi extends Mock implements UsersApi {}
 
-Response<UsersGetMe200Response> _meResponse() {
+Response<UsersGetMe200Response> _meResponse({
+  String? avatar = 'javascript:alert(1)',
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/users/me'),
     data: UsersGetMe200Response(
@@ -73,7 +86,7 @@ Response<UsersGetMe200Response> _meResponse() {
             ..id = 'user-1'
             ..email = 'owner@example.com'
             ..username = '温柔测试员'
-            ..avatar = 'javascript:alert(1)'
+            ..avatar = avatar
             ..bio = '  一起写故事。  '
             ..role = CurrentUserResponseDtoRoleEnum.USER
             ..level = 4

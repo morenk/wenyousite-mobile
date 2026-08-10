@@ -72,6 +72,37 @@ class MeProfileModel {
       updatedAt: update.updatedAt,
     );
   }
+
+  MeProfileModel applyAvatar(AvatarUpdateResult update) {
+    return MeProfileModel(
+      id: id,
+      email: email,
+      username: username,
+      avatarUrl: update.avatarUrl,
+      bio: bio,
+      level: level,
+      experience: experience,
+      currentLevelExperience: currentLevelExperience,
+      nextLevelExperience: nextLevelExperience,
+      receivedTipTotal: receivedTipTotal,
+      receivedTipCount: receivedTipCount,
+      showRecentReplies: showRecentReplies,
+      showPlayedThreads: showPlayedThreads,
+      showBookmarks: showBookmarks,
+      emailVerified: emailVerified,
+      followingCount: followingCount,
+      followerCount: followerCount,
+      createdAt: createdAt,
+      updatedAt: update.updatedAt,
+    );
+  }
+}
+
+class AvatarUpdateResult {
+  const AvatarUpdateResult({required this.avatarUrl, required this.updatedAt});
+
+  final String? avatarUrl;
+  final DateTime updatedAt;
 }
 
 class MeProfilePatch {

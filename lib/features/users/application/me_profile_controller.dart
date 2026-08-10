@@ -141,6 +141,15 @@ class MeProfileController extends StateNotifier<MeProfileState> {
     state = state.copyWith(clearFeedback: true);
   }
 
+  void applyAvatarUpdate(AvatarUpdateResult update) {
+    final profile = state.profile;
+    if (profile == null || state.isSubmitting) return;
+    state = MeProfileState(
+      phase: MeProfilePhase.ready,
+      profile: profile.applyAvatar(update),
+    );
+  }
+
   Future<bool> _submit(
     MeProfilePatch patch,
     MeProfileAction action,
