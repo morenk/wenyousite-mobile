@@ -116,6 +116,7 @@ Response<BookmarksCreate201Response> _createBookmarkResponse() {
             ..id = 'bookmark-1'
             ..userId = 'user-1'
             ..threadId = 'thread-1'
+            ..folderId = 'default-folder-1'
             ..createdAt = DateTime.utc(2026, 8, 10),
         ),
     ),

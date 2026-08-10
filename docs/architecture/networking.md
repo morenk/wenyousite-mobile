@@ -12,7 +12,7 @@ Access Token 与 Refresh Token 都保存到安全存储。刷新和退出由无�
 
 退出当前终端时同时提交 bearer 与 refresh token；若 access token 已过期，先共享刷新再重试退出一次。服务端成功或明确判定会话失效后清除本机 Token；网络/5xx 失败保留会话和请求 ID供重试。只有用户在风险提示中再次确认，才允许仅清除本机登录。
 
-Cursor 是不透明字符串。筛选变化清空 cursor；`40007` 清空列表并从第一页重载。请求附加语义只通过 `ApiRequestPolicy` 表达：公开请求使用 `public`，携带稳定 `clientRequestId` 的创建请求显式使用 `idempotentCreate`；业务代码不得直接写 Dio `extra` 键。自动重试只覆盖 GET、明确幂等方法和这类已声明创建请求，并保留原 `X-Request-ID`、请求体与幂等键。温油加油同样是幂等写入：一次弹窗操作以规范化目标、金额和 UUID 固定请求，失败后相同金额重试不得轮换 UUID。社区举报没有客户端幂等键，因此 `reportsCreate` 不自动重放；结果不明确时由用户显式重试，已成功但响应丢失由服务端唯一约束收敛为 `40914`。
+Cursor 是不透明字符串。筛选变化清空 cursor；`40007` 清空列表并从第一页重载。请求附加语义只通过 `ApiRequestPolicy` 表达：公开请求使用 `public`，携带稳定 `clientRequestId` 的创建请求显式使用 `idempotentCreate`；业务代码不得直接写 Dio `extra` 键。自动重试只覆盖 GET/HEAD、语义幂等的 PUT/DELETE 和这类已声明创建请求，并保留原 `X-Request-ID`、请求体与幂等键；PATCH、普通 POST、4xx 与 429 均不自动重放。温油加油同样是幂等写入：一次弹窗操作以规范化目标、金额和 UUID 固定请求，失败后相同金额重试不得轮换 UUID。社区举报没有客户端幂等键，因此 `reportsCreate` 不自动重放；结果不明确时由用户显式重试，已成功但响应丢失由服务端唯一约束收敛为 `40914`。
 
 ## 错误模型
 

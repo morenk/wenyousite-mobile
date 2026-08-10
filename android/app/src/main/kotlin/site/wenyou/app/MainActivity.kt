@@ -1,6 +1,9 @@
 package site.wenyou.app
 
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.content.pm.Signature
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -43,14 +46,23 @@ class MainActivity : FlutterActivity() {
                             result.error("invalid_path", "安装包路径为空。", null)
                             return@setMethodCallHandler
                         }
-                        installApk(filePath, result)
+                        val expectedBuild = call.argument<Number>("expectedBuild")?.toLong()
+                        if (expectedBuild == null || expectedBuild < 1) {
+                            result.error("apk_invalid_build", "安装包目标构建号无效。", null)
+                            return@setMethodCallHandler
+                        }
+                        installApk(filePath, expectedBuild, result)
                     }
                     else -> result.notImplemented()
                 }
             }
     }
 
-    private fun installApk(filePath: String, result: MethodChannel.Result) {
+    private fun installApk(
+        filePath: String,
+        expectedBuild: Long,
+        result: MethodChannel.Result,
+    ) {
         try {
             val allowedDirectory = File(cacheDir, "wenyou_updates").canonicalFile
             val apk = File(filePath).canonicalFile
@@ -58,6 +70,30 @@ class MainActivity : FlutterActivity() {
                 apk.path.startsWith("${allowedDirectory.path}${File.separator}")
             if (!isInsideAllowedDirectory || !apk.isFile || apk.extension.lowercase() != "apk") {
                 result.error("invalid_path", "安装包路径无效。", null)
+                return
+            }
+
+            val signingFlags =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    PackageManager.GET_SIGNING_CERTIFICATES
+                } else {
+                    @Suppress("DEPRECATION")
+                    PackageManager.GET_SIGNATURES
+                }
+            val archiveInfo = packageManager.getPackageArchiveInfo(apk.path, signingFlags)
+            if (archiveInfo == null || archiveInfo.packageName != packageName) {
+                result.error("apk_package_mismatch", "安装包与当前应用不匹配。", null)
+                return
+            }
+            val archiveBuild = versionCodeOf(archiveInfo)
+            val installedInfo = packageManager.getPackageInfo(packageName, signingFlags)
+            val installedBuild = versionCodeOf(installedInfo)
+            if (archiveBuild != expectedBuild || archiveBuild <= installedBuild) {
+                result.error("apk_version_mismatch", "安装包版本与更新目标不一致。", null)
+                return
+            }
+            if (!hasMatchingSigner(installedInfo, archiveInfo)) {
+                result.error("apk_signature_mismatch", "安装包签名验证失败。", null)
                 return
             }
 
@@ -86,6 +122,39 @@ class MainActivity : FlutterActivity() {
             result.success("installerOpened")
         } catch (error: Exception) {
             result.error("installer_failed", "无法打开系统安装器。", error.javaClass.simpleName)
+        }
+    }
+
+    private fun versionCodeOf(packageInfo: PackageInfo): Long {
+        @Suppress("DEPRECATION")
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            packageInfo.versionCode.toLong()
+        }
+    }
+
+    private fun hasMatchingSigner(installed: PackageInfo, archive: PackageInfo): Boolean {
+        val installedSigners = signaturesOf(installed)
+        val archiveSigners = signaturesOf(archive)
+        return installedSigners.isNotEmpty() &&
+            archiveSigners.isNotEmpty() &&
+            installedSigners.any { current ->
+                archiveSigners.any { candidate -> current.toByteArray().contentEquals(candidate.toByteArray()) }
+            }
+    }
+
+    private fun signaturesOf(packageInfo: PackageInfo): Array<Signature> {
+        @Suppress("DEPRECATION")
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val signingInfo = packageInfo.signingInfo ?: return emptyArray()
+            if (signingInfo.hasMultipleSigners()) {
+                signingInfo.apkContentsSigners
+            } else {
+                signingInfo.signingCertificateHistory
+            }
+        } else {
+            packageInfo.signatures ?: emptyArray()
         }
     }
 }

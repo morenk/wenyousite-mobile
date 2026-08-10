@@ -162,6 +162,24 @@ void main() {
     );
     expect(adapter.attempts, 1);
   });
+
+  for (final method in const ['PUT', 'DELETE']) {
+    test('$method 作为幂等写入遇到瞬时错误会由真实 Dio 自动重试', () async {
+      final adapter = _TransientThenSuccessAdapter(failures: 1);
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+        ..httpClientAdapter = adapter;
+      dio.interceptors.add(SafeRetryInterceptor(dio, wait: (_) async {}));
+      addTearDown(dio.close);
+
+      final response = await dio.request<Object?>(
+        '/api/v1/resources/example',
+        options: Options(method: method),
+      );
+
+      expect(response.statusCode, 201);
+      expect(adapter.attempts, 2);
+    });
+  }
 }
 
 DioException _businessError(RequestOptions options, int code) {

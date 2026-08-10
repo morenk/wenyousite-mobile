@@ -178,7 +178,11 @@ class SafeRetryInterceptor extends Interceptor {
 
   bool _isRetryable(DioException error) {
     final method = error.requestOptions.method.toUpperCase();
-    final safeMethod = method == 'GET' || method == 'HEAD';
+    final safeMethod =
+        method == 'GET' ||
+        method == 'HEAD' ||
+        method == 'PUT' ||
+        method == 'DELETE';
     final idempotentWrite =
         error.requestOptions.extra[ApiRequestExtraKeys.idempotentCreate] ==
         true;

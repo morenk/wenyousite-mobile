@@ -5,7 +5,11 @@ import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 enum MobileUpdateActionStatus {
   idle,
+  checking,
   downloading,
+  verifying,
+  installing,
+  openingExternalPage,
   permissionRequired,
   installerOpened,
   externalPageOpened,
@@ -25,7 +29,14 @@ class MobileUpdateActionState {
   final double? progress;
   final String? message;
 
-  bool get isBusy => status == MobileUpdateActionStatus.downloading;
+  bool get isBusy => switch (status) {
+    MobileUpdateActionStatus.checking ||
+    MobileUpdateActionStatus.downloading ||
+    MobileUpdateActionStatus.verifying ||
+    MobileUpdateActionStatus.installing ||
+    MobileUpdateActionStatus.openingExternalPage => true,
+    _ => false,
+  };
 }
 
 class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
@@ -37,16 +48,35 @@ class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
   Future<void> start(MobileUpdateInfo update) async {
     if (state.isBusy) return;
     state = MobileUpdateActionState(
-      status: MobileUpdateActionStatus.downloading,
+      status: update.platform == MobileClientPlatform.android
+          ? MobileUpdateActionStatus.checking
+          : MobileUpdateActionStatus.openingExternalPage,
       targetBuild: update.targetBuild,
-      progress: update.platform == MobileClientPlatform.android ? 0 : null,
     );
     try {
       final result = await _service.launchUpdate(
         update,
-        onProgress: (progress) {
+        onStage: (stage) {
           state = MobileUpdateActionState(
-            status: MobileUpdateActionStatus.downloading,
+            status: switch (stage) {
+              MobileUpdateStage.checking => MobileUpdateActionStatus.checking,
+              MobileUpdateStage.downloading =>
+                MobileUpdateActionStatus.downloading,
+              MobileUpdateStage.verifying => MobileUpdateActionStatus.verifying,
+              MobileUpdateStage.installing =>
+                MobileUpdateActionStatus.installing,
+              MobileUpdateStage.openingExternalPage =>
+                MobileUpdateActionStatus.openingExternalPage,
+            },
+            targetBuild: update.targetBuild,
+            progress: stage == MobileUpdateStage.downloading ? 0 : null,
+          );
+        },
+        onProgress: (progress) {
+          final current = state;
+          if (current.targetBuild != update.targetBuild) return;
+          state = MobileUpdateActionState(
+            status: current.status,
             targetBuild: update.targetBuild,
             progress: progress.clamp(0.0, 1.0).toDouble(),
           );

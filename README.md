@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.3.0-dev.36+42`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.3.0-dev.37+43`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -46,7 +46,7 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 
 ## 契约同步
 
-后端契约只在 API、Markdown 语料、移动推送协议或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。同步脚本会固定 OpenAPI、两层 Markdown v2 语料、mobile push v1 Schema/样例、合同变更记录和接入指南。
+后端契约只在 API、Markdown 语料、移动推送协议或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。同步脚本会固定 OpenAPI、两层 Markdown v2 语料、mobile push v1 Schema/样例、移动 V1 黄金旅程与 operationId 分类、动态分类 fixture、合同变更记录和接入指南。
 
 ```bash
 powershell.exe -NoProfile -File tool/sync_backend_contract.ps1

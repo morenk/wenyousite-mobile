@@ -37,8 +37,8 @@ publicBaseUrl=https://wenyou-apk.cn-nb1.rains3.com
 
 ```bash
 ./tool/release-mobile-from-local.sh \
-  --version 0.3.0-dev.36 \
-  --build 42 \
+  --version 0.3.0-dev.37 \
+  --build 43 \
   --platform android \
   --build-only
 ```
@@ -47,8 +47,8 @@ publicBaseUrl=https://wenyou-apk.cn-nb1.rains3.com
 
 ```bash
 ./tool/release-mobile-from-local.sh \
-  --version 0.3.0-dev.36 \
-  --build 42 \
+  --version 0.3.0-dev.37 \
+  --build 43 \
   --platform android \
   --upload-only
 ```
@@ -75,7 +75,7 @@ Content-Disposition: attachment; filename="wenyou-<version>-<build>.apk"
 ## 客户端行为与故障处理
 
 - 客户端在启动和回到前台时读取 `/meta`；小于推荐构建号显示可关闭提示，小于最低支持构建号才阻断使用。
-- Android 从 RainS3 HTTPS URL 下载到 cache，再由系统包安装器执行同签名覆盖安装。FCM/APNs 不传输安装包。
-- 客户端当前不自行计算 SHA-256；发布工具的对象校验、HTTPS 和 Android 签名校验共同保护发布链路。
+- Android 先用 RainS3 HEAD/GET 响应核对 APK 类型、长度、应用 ID、版本和发布 SHA-256，再以 `.part` 下载到 cache 并计算 SHA-256；只有验证完成的文件才交给原生桥。FCM/APNs 不传输安装包。
+- 原生桥在打开系统安装器前再次解析 APK，要求包名为 `site.wenyou.app`、versionCode 等于 `/meta` 目标且高于当前构建，并与已安装应用具有相容签名；发布工具的对象校验、HTTPS、客户端哈希与 Android 包校验共同保护发布链路。
 - 坏版本先在 VPS 执行撤回，停止新的推荐提示，再发布更高 build 修复；不覆盖对象、不降低 Android versionCode。
 - 旧对象暂不自动删除。需要生命周期策略时，先确认没有仍被 `/meta` 引用的版本。

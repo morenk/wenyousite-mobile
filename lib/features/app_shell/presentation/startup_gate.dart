@@ -228,7 +228,7 @@ class _UpdatePage extends StatelessWidget {
                 key: const Key('mobile-update-start'),
                 label: _buttonLabel(update, action),
                 loadingLabel: update.platform == MobileClientPlatform.android
-                    ? '正在下载安装包'
+                    ? _busyLabel(action)
                     : '正在打开 TestFlight',
                 icon: update.platform == MobileClientPlatform.android
                     ? Icons.download_rounded
@@ -427,12 +427,25 @@ String _buttonLabel(MobileUpdateInfo update, MobileUpdateActionState action) {
 String? _statusMessage(MobileUpdateActionState action) {
   return switch (action.status) {
     MobileUpdateActionStatus.idle => null,
+    MobileUpdateActionStatus.checking => '正在核对安装包发布信息。',
     MobileUpdateActionStatus.downloading => null,
+    MobileUpdateActionStatus.verifying => '正在校验安装包完整性。',
+    MobileUpdateActionStatus.installing => '安装包已验证，正在打开系统安装器。',
+    MobileUpdateActionStatus.openingExternalPage => '正在打开 TestFlight。',
     MobileUpdateActionStatus.permissionRequired =>
       '已打开系统设置。允许温油站“安装未知应用”后，返回此页继续安装。',
     MobileUpdateActionStatus.installerOpened => '系统安装器已打开，请按提示完成更新。',
     MobileUpdateActionStatus.externalPageOpened =>
       'TestFlight 已打开，请在那里完成更新后返回。',
     MobileUpdateActionStatus.failed => action.message ?? '更新没有完成，请重试。',
+  };
+}
+
+String _busyLabel(MobileUpdateActionState action) {
+  return switch (action.status) {
+    MobileUpdateActionStatus.checking => '正在检查更新',
+    MobileUpdateActionStatus.verifying => '正在校验安装包',
+    MobileUpdateActionStatus.installing => '正在打开安装器',
+    _ => '正在下载安装包',
   };
 }

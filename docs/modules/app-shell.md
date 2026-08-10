@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-启动门禁包裹 `/home`、`/moments`、`/search`、`/notifications`、`/me` 五个保状态分支。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 在页内下载后唤起系统安装器，iOS 外跳 TestFlight。首页悬浮按钮进入受保护的 `/compose/thread`，动态分支进入受保护的 `/compose/moment`，其他分支不显示创建按钮；游客登录或注册成功后恢复创建目标。登录用户的通知图标展示服务端通知未读角标，进入分支与回前台时主动刷新；私聊 capability 开启时，回前台同时校准私聊合计角标。
+启动门禁包裹 `/home`、`/moments`、`/search`、`/notifications`、`/me` 五个保状态分支。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 从 `/meta.mobileCompatibility` 的 HTTPS 地址在页内下载 RainS3 APK，验证后唤起系统安装器，iOS 外跳 TestFlight。首页悬浮按钮进入受保护的 `/compose/thread`，动态分支进入受保护的 `/compose/moment`，其他分支不显示创建按钮；游客登录或注册成功后恢复创建目标。登录用户的通知图标展示服务端通知未读角标，进入分支与回前台时主动刷新；私聊 capability 开启时，回前台同时校准私聊合计角标。
 
 ## 4. 用户操作流程
 
@@ -24,19 +24,19 @@
 
 ## 6. 状态模型和数据流
 
-启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；下载动作另有 idle、downloading、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。环境、更新服务、忽略记录与会话由 Riverpod 注入；签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。环境、更新服务、忽略记录与会话由 Riverpod 注入；签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
 ## 7. 鉴权、权限和隐私规则
 
-壳层不假定游客有写权限。升级与错误页不得展示 Token、响应正文或完整下载 URL。更新地址只接受 HTTPS。Android 原生通道只接受应用 cache 的 `wenyou_updates/` 内 `.apk`，通过不可导出的 `FileProvider` 临时授予系统安装器只读权限；安装未知应用权限由系统设置页确认。
+壳层不假定游客有写权限。升级与错误页不得展示 Token、响应正文或完整下载 URL。更新地址及重定向终点只接受 HTTPS。下载前 HEAD 与下载响应都必须具有 Android APK 类型、合理且一致的长度、`.apk` 附件名、`site.wenyou.app` 应用 ID、目标 `versionCode`、非空 `versionName` 和 64 位 SHA-256；文件字节再按声明哈希校验。Android 原生通道只接受应用 cache 的 `wenyou_updates/` 内 `.apk`，并在授权或打开安装器前通过系统 PackageManager 再校验包名、目标构建高于当前构建且签名与已安装应用相容；通过不可导出的 `FileProvider` 临时授予系统安装器只读权限，安装未知应用权限由系统设置页确认。
 
 ## 8. 本地存储、缓存及失效规则
 
-契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐更新仅把“已忽略的目标构建号”写入 SharedPreferences，新目标构建会再次提示。APK 暂存于应用 cache，可由系统清理；Token 仍由认证模块安全存储管理。
+契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐更新仅把“已忽略的目标构建号”写入 SharedPreferences，新目标构建会再次提示。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-检查期间显示明确进度；首次断网可手动重试，前台静默重查失败则 fail-open。Android 展示下载进度，拒绝未知来源权限、下载或安装器唤起失败均可重试；已下载 APK 会复用于权限重试。强制更新和未知主版本不可绕过，推荐更新可跳过。
+检查期间显示明确进度；首次断网可手动重试，前台静默重查失败则 fail-open。Android 分别展示发布信息检查、下载进度、完整性校验和安装器打开状态；元数据缺失/错配、超限、哈希失败、包名/版本/签名失败均 fail-closed，partial 或不可信缓存会删除。拒绝未知来源权限、下载或安装器唤起失败均可重试；授权返回复用本次已验证 APK。强制更新和未知主版本不可绕过，推荐更新可跳过。
 
 ## 10. 跨模块约束
 
@@ -47,7 +47,7 @@
 - [x] 兼容元信息进入五栏应用壳，游客无需登录。
 - [x] 主版本未知时只显示升级页；网络失败可重试且有请求 ID。
 - [x] 低于最低构建时显示不可跳过的强制更新；低于推荐构建时可忽略并记住目标构建。
-- [x] Android 更新展示进度并处理未知来源权限/安装器反馈；iOS 使用外部 TestFlight URL。
+- [x] Android 更新覆盖 RainS3 HEAD/GET 元数据、长度、SHA-256、损坏缓存重下、原子落盘、未知来源权限复用与原生包名/版本/签名校验；iOS 使用外部 TestFlight URL。
 - [x] 会话失效进入带原因的登录页，并可回到游客首页。
 - [x] 登录用户底栏展示通知未读角标，并可进入 API 驱动通知列表。
 - [x] 私聊 capability 映射到业务入口，登录用户回前台时同步私聊未读与请求角标。
@@ -59,7 +59,7 @@
 
 ## 12. 已知限制和后续功能
 
-当前已完成构建策略门禁、推荐更新忽略、Android HTTPS 下载与系统安装器、iOS TestFlight 外跳和本地一键发布入口。Android 仍需用正式签名在真机完成旧版覆盖安装验收；iOS 构建与上传必须在配置签名的 macOS 上执行。V1 不做 App Links、暗色主题与 FCM。
+当前已完成构建策略门禁、推荐更新忽略、Android RainS3 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳和本地一键发布入口。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析和系统覆盖行为仍需用正式签名在 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。V1 不做 App Links、暗色主题与 FCM。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -67,4 +67,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`test/features/app_shell/mobile_update_service_test.dart`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

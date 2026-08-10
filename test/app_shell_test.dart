@@ -644,9 +644,15 @@ class _FakeMobileUpdateService implements MobileUpdateService {
   @override
   Future<UpdateLaunchResult> launchUpdate(
     MobileUpdateInfo update, {
+    required void Function(MobileUpdateStage stage) onStage,
     required void Function(double progress) onProgress,
   }) async {
     launchCalls += 1;
+    onStage(
+      platform == MobileClientPlatform.ios
+          ? MobileUpdateStage.openingExternalPage
+          : MobileUpdateStage.downloading,
+    );
     onProgress(1);
     return platform == MobileClientPlatform.ios
         ? UpdateLaunchResult.externalPageOpened
