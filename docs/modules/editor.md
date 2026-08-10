@@ -4,61 +4,67 @@
 
 ## 1. 模块目标与非目标
 
-基于 Flutter Quill 提供移动端富文本输入、选择、工具栏和预览，并用自研 Markdown v2 ↔ Delta Codec 支持提及、骰子、表情、图片、安全链接和本地防丢。当前已交付扩展节点 Codec 引擎与完整契约黄金测试，编辑页面、普通 Markdown 富文本属性和发布编排继续实现；V1 不离线自动发布。
+基于 Flutter Quill 提供移动端富文本输入与工具栏，以自研 Markdown v2 ↔ Delta Codec 支持安全链接、图片、骰子、协议节点和本地防丢。当前已交付创建主题编辑页及发布主链；编辑已有主题、子贴、楼层、回复、提及候选和预览仍待后续切片，V1 不离线自动发布。
 
 ## 2. 用户角色与使用场景
 
-已登录且有权限的用户创建或编辑主题、子贴、楼层和回复；游客只安全渲染内容。
+已登录用户在 `/compose/thread` 创建公开或私密主题，保存服务端主题草稿或发布。邮箱未验证时仍可本地编辑和保存草稿，但不能发布；游客由路由守卫登录后回到原创建入口。
 
 ## 3. 页面、入口和导航关系
 
-各创建/编辑入口后续复用同一编辑器壳，根据上下文配置字段和发布动作；预览是编辑器内切换页。当前 `/compose/thread` 仍是创建入口占位，尚未接入编辑页面。
+应用壳创建按钮进入 `/compose/thread`。页面加载当前用户的本地快照、账号发布状态和动态分类；发布成功后替换到 `/threads/:threadId`。编辑器正文图片可进入全屏查看页，系统返回、双击缩放、捏合和平移可用，未放大时可下滑关闭。
 
 ## 4. 用户操作流程
 
-打开时先规范化 Markdown v2，再把提及、全体玩家、骰子、表情、图片和独占 `<br />` 解析为仅内存 Delta 协议；普通 Markdown 在首个引擎切片中以源码文本无损保留。序列化会规范骰子 UUID/表达式和表情 alt，未知版本、非法/重复骰子、非法表情及危险图片进入带原始 token 的只读兼容 embed；损坏或未知 Quill embed 直接拒绝保存，禁止静默丢正文。输入期间防抖快照、富文本属性、预览和发布动作后续接入。
+打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。工具栏提供正文/H2/H3、粗体、斜体、图片和更多；更多面板包含安全链接、行内代码、引用、列表、分隔线、骰子、草稿和删除线。
+
+正文变化先把内存 Delta 编码为 Markdown，700ms 防抖写本地。切后台、暂停或离页前强制落盘。首次保存或发布会持久化规范化创建载荷与 `clientRequestId`，调用 `threadsCreate` 获得未发布主题草稿，再调用 `threadsSaveAggregate` 携带主题、默认子贴和正文版本完成保存或发布。创建响应不确定时重试原载荷和原幂等键；即使用户继续编辑，也先确认原创建结果，再聚合当前内容。
 
 ## 5. API operationId 与生成类型
 
-- `usersMentionCandidates`、`postsCreate`、`postsUpdate`、`postsUpsertBody`、`threadsCreate`、`threadsUpdate`、`subthreadsCreate`、`subthreadsUpdate`。
-- 生成类型按编辑上下文使用 `CreatePostDto`、`CreateThreadDto`、`CreateSubthreadDto` 等。
+- 页面引导：`usersGetMe`、`threadCategoriesList`。
+- 当前创建链路：`threadsCreate`、`threadsSaveAggregate`，使用 `CreateThreadDto`、`SaveThreadAggregateDto`、`ThreadDetailResponseDto`。
+- 图片链路：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
+- 后续编辑上下文：`usersMentionCandidates`、`postsCreate`、`postsUpdate`、`postsUpsertBody`、`threadsUpdate`、`subthreadsCreate`、`subthreadsUpdate`。
 
 ## 6. 状态模型和数据流
 
-当前 `MarkdownDeltaDocument` 包含仅内存 `Delta` 与兼容问题列表；`isSourceCompatible` 标记正文存在不能安全编辑但可无损保留的节点。五类可编辑 embed 都使用版本化 Map 载荷，空段与源换行使用私有行属性，`extractExtensionNodes` 为契约测试和后续编辑器工具栏提供稳定投影。完整 `EditorState` 后续再增加上下文、最新 Markdown、可见性、元数据、快照状态和 `clientRequestId`；发布仓储只接收规范化 Markdown 载荷，Delta 不出编辑器边界。
+`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、服务端主题草稿版本、提交动作和失败反馈。`ThreadComposeController` 只接收 Markdown，不持有 Quill Delta；`ThreadRemoteDraft` 保存后续聚合所需的主题、默认子贴与正文版本。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
 
 ## 7. 鉴权、权限和隐私规则
 
-进入和提交都检查会话；草稿不得包含 Token 或预签名查询参数。Codec 只把绝对 HTTP(S) 图片提升为可编辑节点，危险或相对图片地址保留为兼容节点；原始 HTML 默认不渲染，外链按 scheme 白名单并要求用户确认。兼容节点只允许原样序列化，不允许编辑器猜测或重建其内容。
+路由和提交都要求会话，邮箱验证及最终权限由服务端复核。JWT 解码只用于本地快照分区，不能替代授权。草稿不保存 Token 或预签名 URL；图片 PUT 使用与主鉴权 Dio 分离的客户端，日志和错误反馈不暴露预签名查询参数。外链仅允许 HTTP(S)/mailto，图片仅允许安全 HTTP(S)。
 
 ## 8. 本地存储、缓存及失效规则
 
-Codec 本身无持久化；Delta 只存在内存。后续由 Drift 保存完整 Markdown 形式的 `LocalEditorSnapshot` 与 `PendingCreateOperation`，不保存 Delta 作为权威草稿。正文变化防抖保存；应用暂停立即保存；用户确认放弃或服务端确认后删除。
+`LocalEditorSnapshot` 按 `thread:new:<ownerId>` 覆盖保存完整 Markdown、表单元数据、远端版本和稳定创建请求 ID；Delta 不落库。`PendingCreateOperation` 保存规范化创建载荷与 pending/sending/awaiting-confirmation 状态。发布确认后只删除当前账号关联的主题快照；服务端草稿保存后更新本地远端版本。用户切号不会自动展示其他账号快照。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-Codec 解码正文时不因未知协议、非法/重复骰子、非法表情或危险图片丢失原 token，而是返回兼容问题列表；序列化遇到损坏载荷、非 insert Delta 或未知 embed 时抛出明确错误并阻止覆盖快照。空白或不可见正文禁止发布；媒体处理中阻止插入；网络超时保留待确认状态；409 展示本地与服务端版本选择，不覆盖本地。
+本地恢复失败不会覆盖原数据；离页强制落盘失败时必须由用户明确选择留下或仍然退出，不能静默丢失。分类/账号同步失败时本地编辑继续可用并提供重试。标题、正文、分类、标签和邮箱在请求前验证。Codec 遇到不支持属性或冲突格式时阻止保存；图片可取消并区分准备、上传、确认、处理与失败。创建超时或 5xx 保留待确认记录；业务码 `40912` 清理冲突记录并生成新请求 ID。聚合失败保留本地与服务端草稿版本，不显示伪成功。
 
 ## 10. 跨模块约束
 
-严格通过 Markdown v2 规范化/可见性语料与扩展节点往返语料；不依赖 `markdown_quill` 做事实转换；骰子结果只由服务端生成；媒体遵循[媒体](media.md)状态；参见[Codec 架构](../architecture/editor-codec.md)。
+Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 Markdown v2。媒体只有达到 `COMPLETED` 才能插入正文；骰子结果只由服务端生成。五槽位正文草稿属于[草稿](drafts.md)模块，不等同于当前主题实体的未发布草稿。参见[Codec 架构](../architecture/editor-codec.md)和[持久化](../architecture/persistence.md)。
 
 ## 11. 测试场景与验收条件
 
-- [x] Markdown v2 canonical、visible、幂等以及 Markdown ↔ Delta 往返黄金语料逐条通过。
-- [x] mention、全体玩家、dice、sticker、image 与独占 `<br />` 元数据无损，代码和转义边界不误解析。
-- [ ] 退出、崩溃恢复、切后台和弱网不丢编辑内容。
-- [ ] 提及、骰子、图片和安全链接正确渲染与提交。
-- [ ] 超时复用请求 ID，冲突时保留本地版本。
+- [x] 两套 Markdown v2 黄金语料、扩展节点字段与往返幂等全部通过。
+- [x] 新建富文本属性、分隔线、图片与骰子安全编码；未知、危险和冲突内容不静默丢失。
+- [x] 本地恢复、防抖落盘、切后台调用入口、账号隔离和发布后关联清理具备状态/数据库测试。
+- [x] 创建草稿 → 聚合保存/发布传递规范化载荷、幂等键及全部乐观锁版本。
+- [x] 创建结果不确定时保留原载荷，继续编辑后仍先确认原请求再聚合当前正文。
+- [x] 真实页面覆盖本地恢复、空表单拦截、图片插入、离页落盘失败确认和 360dp 布局。
+- [ ] 提及候选、已有内容的完整普通 Markdown 富文本解码、预览和其他发帖上下文完成。
 
 ## 12. 已知限制和后续功能
 
-当前普通 Markdown 仍以源码文本进入 Delta，尚未映射为粗体、标题、列表等 Quill 富文本属性，也没有可操作编辑页、预览、自动快照或发布编排。不做离线自动发送；收藏表情属于 V1 非目标，但 Codec 仍无损保留服务端已有 sticker marker。视觉工具栏精修后置。
+普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。提及插入、收藏表情、预览、撤销冲突 UI、五槽位正文草稿，以及主题/子贴/楼层/回复的编辑复用尚未完成。不做离线自动发送。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.4.0-dev.20260809.1`；Markdown v2；后端 `0fb9d351e4344b0bdb347e5530278f02fd0a7418`。
+契约 `4.4.0-dev.20260809.1`；Markdown v2；后端 `0fb9d351e4344b0bdb347e5530278f02fd0a7418`；Foundation `v1.1.0`（`4974b09a29d5d1c9632f4b2683c8d36c9e3c69bd`）。
 
 ## 14. 相关代码与架构文档
 
-Codec 入口：`lib/core/markdown/markdown_delta_codec.dart`；后续页面入口：`lib/features/editor/`。参见[Codec 架构](../architecture/editor-codec.md)、[草稿](drafts.md)、[媒体](media.md)。
+页面与状态：`lib/features/editor/`；媒体上传：`lib/features/media/`；Codec：`lib/core/markdown/markdown_delta_codec.dart`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[草稿](drafts.md)、[媒体](media.md)。

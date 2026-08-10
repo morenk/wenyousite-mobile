@@ -10,9 +10,9 @@
 | search | in_progress | 0.3.0-dev | [搜索](search.md) |
 | threads | in_progress | 0.3.0-dev / 0.6.0-dev | [主题](threads.md) |
 | posts | in_progress | 0.3.0-dev / 0.4.0-dev | [楼层与回复](posts.md) |
-| editor | planned | 0.5.0-dev | [编辑器](editor.md) |
-| drafts | planned | 0.5.0-dev | [草稿](drafts.md) |
-| media | planned | 0.5.0-dev | [媒体](media.md) |
+| editor | in_progress | 0.5.0-dev | [编辑器](editor.md) |
+| drafts | in_progress | 0.5.0-dev | [草稿](drafts.md) |
+| media | in_progress | 0.5.0-dev | [媒体](media.md) |
 | notifications | in_progress | 0.3.0-dev / 0.4.0-dev | [通知](notifications.md) |
 | users | in_progress | 0.3.0-dev / 0.7.0-dev | [用户](users.md) |
 | social | planned | 0.4.0-dev | [社交关系](social.md) |

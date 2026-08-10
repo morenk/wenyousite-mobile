@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -43,6 +44,28 @@ class SessionController extends StateNotifier<SessionState> {
   Future<SessionTokens>? _refreshInFlight;
 
   SessionTokens? get tokens => _tokens;
+
+  /// 仅用于把本地敏感数据按当前登录用户隔离。
+  ///
+  /// 身份与权限仍由服务端校验；这里不把未验签 JWT 当作授权事实，也不持久化
+  /// payload。若后端未来改用不透明 Token，则安全降级为 null 并由业务请求取得
+  /// 当前用户 ID。
+  String? get currentUserId {
+    final token = _tokens?.accessToken;
+    if (token == null) return null;
+    final segments = token.split('.');
+    if (segments.length != 3) return null;
+    try {
+      final payload = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(segments[1]))),
+      );
+      if (payload is! Map) return null;
+      final subject = payload['sub'];
+      return subject is String && subject.isNotEmpty ? subject : null;
+    } on Object {
+      return null;
+    }
+  }
 
   Future<void> restore() async {
     state = const SessionState.restoring();

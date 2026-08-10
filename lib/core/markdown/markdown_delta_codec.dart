@@ -52,6 +52,7 @@ class MarkdownDeltaCodec {
   static const stickerEmbed = 'wenyou_sticker';
   static const imageEmbed = 'wenyou_image';
   static const compatibilityEmbed = 'wenyou_compatibility';
+  static const horizontalRuleEmbed = 'wenyou_horizontal_rule';
 
   static const emptyParagraphAttribute = 'wenyou_empty_paragraph';
   static const sourceBreakAttribute = 'wenyou_source_break';
@@ -65,6 +66,7 @@ class MarkdownDeltaCodec {
     r'^ {0,3}<br\s*/?>[\t ]*$',
     caseSensitive: false,
   );
+  static final _horizontalRule = RegExp(r'^---$');
   static final _mention = RegExp(
     r'^\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
   );
@@ -111,6 +113,10 @@ class MarkdownDeltaCodec {
       } else if (_emptyParagraph.hasMatch(line)) {
         // 独占 <br /> 是协议空段，不进入可编辑文本。
         isProtocolEmptyParagraph = true;
+      } else if (_horizontalRule.hasMatch(line)) {
+        delta.insert({
+          horizontalRuleEmbed: const {'version': 1},
+        });
       } else {
         _decodeInlineLine(line, delta, issues, diceNodeIds);
       }
@@ -131,20 +137,25 @@ class MarkdownDeltaCodec {
 
   static String encode(Delta delta) {
     final output = StringBuffer();
+    final line = StringBuffer();
     for (final operation in delta.operations) {
       if (!operation.isInsert) {
         throw const MarkdownCodecException('文档 Delta 只能包含 insert 操作');
       }
       final data = operation.data;
       if (data is String) {
-        _encodeText(data, operation.attributes, output);
+        _encodeText(data, operation.attributes, line, output);
         continue;
       }
       if (data is! Map) {
         throw const MarkdownCodecException('遇到无法识别的 Quill embed');
       }
-      _encodeEmbed(Map<String, dynamic>.from(data), output);
+      if (operation.attributes?.isNotEmpty ?? false) {
+        throw const MarkdownCodecException('扩展节点不能携带富文本属性');
+      }
+      _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
+    if (line.isNotEmpty) output.write(line);
     return MarkdownContent.normalize(output.toString());
   }
 
@@ -381,18 +392,155 @@ class MarkdownDeltaCodec {
   static void _encodeText(
     String value,
     Map<String, dynamic>? attributes,
+    StringBuffer line,
     StringBuffer output,
   ) {
-    for (var index = 0; index < value.length; index++) {
-      final character = value[index];
-      if (character != '\n') {
-        output.write(character);
-        continue;
+    var start = 0;
+    for (var index = 0; index <= value.length; index++) {
+      final isLineBreak = index < value.length && value[index] == '\n';
+      if (!isLineBreak && index != value.length) continue;
+      if (index > start) {
+        line.write(
+          _encodeInlineText(value.substring(start, index), attributes),
+        );
       }
-      if (attributes?[emptyParagraphAttribute] == true) {
-        output.write('<br />');
-      }
+      if (!isLineBreak) break;
+      output.write(_encodeLine(line.toString(), attributes));
+      line.clear();
       if (attributes?[sourceBreakAttribute] != false) output.write('\n');
+      start = index + 1;
+    }
+  }
+
+  static String _encodeInlineText(
+    String value,
+    Map<String, dynamic>? attributes,
+  ) {
+    if (attributes == null || attributes.isEmpty) return value;
+    _rejectUnknownAttributes(attributes, const {
+      'bold',
+      'italic',
+      'strike',
+      'code',
+      'link',
+      emptyParagraphAttribute,
+      sourceBreakAttribute,
+      'header',
+      'list',
+      'blockquote',
+      'indent',
+    });
+
+    final inlineCode = attributes['code'] == true;
+    final bold = attributes['bold'] == true;
+    final italic = attributes['italic'] == true;
+    final strike = attributes['strike'] == true;
+    final link = attributes['link'];
+    if (inlineCode && (bold || italic || strike || link != null)) {
+      throw const MarkdownCodecException('行内代码不能与其他行内格式组合');
+    }
+    if (inlineCode) return _inlineCode(value);
+
+    var encoded = value;
+    if (link != null) {
+      if (link is! String || link.isEmpty) {
+        throw const MarkdownCodecException('链接属性不是有效字符串');
+      }
+      final uri = Uri.tryParse(link);
+      if (uri == null ||
+          !uri.hasScheme ||
+          !MarkdownContent.isSafeLink(uri) ||
+          RegExp(r'[\s)]').hasMatch(link) ||
+          value.contains(']')) {
+        throw const MarkdownCodecException('链接属性不符合安全 Markdown 协议');
+      }
+      encoded = '[$encoded]($link)';
+    }
+    if (strike) encoded = '~~$encoded~~';
+    if (italic) encoded = '*$encoded*';
+    if (bold) encoded = '**$encoded**';
+    return encoded;
+  }
+
+  static String _encodeLine(String content, Map<String, dynamic>? attributes) {
+    if (attributes == null || attributes.isEmpty) return content;
+    _rejectUnknownAttributes(attributes, const {
+      'bold',
+      'italic',
+      'strike',
+      'code',
+      'link',
+      emptyParagraphAttribute,
+      sourceBreakAttribute,
+      'header',
+      'list',
+      'blockquote',
+      'indent',
+    });
+    if (attributes[emptyParagraphAttribute] == true) {
+      if (content.isNotEmpty) {
+        throw const MarkdownCodecException('协议空段不能同时包含正文');
+      }
+      return '<br />';
+    }
+
+    final indentValue = attributes['indent'];
+    final indent = switch (indentValue) {
+      null => 0,
+      int value when value >= 0 && value <= 3 => value,
+      _ => throw const MarkdownCodecException('列表缩进只支持 0～3 级'),
+    };
+    final header = attributes['header'];
+    final list = attributes['list'];
+    final quote = attributes['blockquote'] == true;
+    final blockStyleCount =
+        (header == null ? 0 : 1) + (list == null ? 0 : 1) + (quote ? 1 : 0);
+    if (blockStyleCount > 1) {
+      throw const MarkdownCodecException('同一行不能组合标题、列表和引用');
+    }
+    if (header != null) {
+      if (header != 2 && header != 3) {
+        throw const MarkdownCodecException('编辑器只支持二级与三级标题');
+      }
+      return '${'#' * (header as int)} $content';
+    }
+    if (list != null) {
+      if (list != 'bullet' && list != 'ordered') {
+        throw const MarkdownCodecException('编辑器列表类型不受支持');
+      }
+      final prefix = list == 'ordered' ? '1. ' : '- ';
+      return '${'  ' * indent}$prefix$content';
+    }
+    if (quote) return '> $content';
+    if (indent != 0) {
+      throw const MarkdownCodecException('只有列表行可以携带缩进');
+    }
+    return content;
+  }
+
+  static String _inlineCode(String value) {
+    var longestRun = 0;
+    var currentRun = 0;
+    for (final rune in value.runes) {
+      if (rune == 0x60) {
+        currentRun += 1;
+        if (currentRun > longestRun) longestRun = currentRun;
+      } else {
+        currentRun = 0;
+      }
+    }
+    final delimiter = '`' * (longestRun + 1);
+    final needsPadding = value.startsWith('`') || value.endsWith('`');
+    return '$delimiter${needsPadding ? ' ' : ''}$value${needsPadding ? ' ' : ''}$delimiter';
+  }
+
+  static void _rejectUnknownAttributes(
+    Map<String, dynamic> attributes,
+    Set<String> allowed,
+  ) {
+    final unknown = attributes.keys.where((key) => !allowed.contains(key));
+    if (unknown.isNotEmpty) {
+      throw MarkdownCodecException('遇到不支持的富文本属性：${unknown.join(', ')}');
     }
   }
 
@@ -463,6 +611,8 @@ class MarkdownDeltaCodec {
         output.write('![$alt]($url${title == null ? '' : ' "$title"'})');
       case compatibilityEmbed:
         output.write(_requiredString(payload, 'raw', type));
+      case horizontalRuleEmbed:
+        output.write('---');
       default:
         throw MarkdownCodecException('未知 Quill embed：$type');
     }
@@ -512,6 +662,9 @@ class MarkdownDeltaCodec {
   }
 
   static bool _isUuidV4(String value) => _uuidV4.hasMatch(value);
+
+  static String? normalizeDiceNotation(String value) =>
+      _normalizeDiceNotation(value);
 
   static Map<String, dynamic> _payload(Object? value, String type) {
     if (value is! Map) {

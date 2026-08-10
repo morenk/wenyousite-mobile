@@ -4,9 +4,9 @@ import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
-import 'package:wenyousite_mobile/features/app_shell/presentation/baseline_pages.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
@@ -192,7 +192,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/compose/thread',
         name: 'compose-thread',
-        builder: (context, state) => const ComposeBaselinePage(),
+        builder: (context, state) => const ThreadComposePage(),
       ),
       GoRoute(
         path: '/auth/login',

@@ -17,14 +17,15 @@
 | 带 `wenyousite-sticker:v1:` title 的图片 | `sticker` inline embed，保留 alt、URL 与 asset ID |
 | 普通图片 | `wenyou_image` embed，保留 alt、URL 和可选 title |
 | 独占 `<br />` | 空 Quill Paragraph；不得当作 HTML |
+| 独占 `---` | 块级 `wenyou_horizontal_rule` embed；其他 thematic break 写法继续保留源码 |
 
 Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定字段。未知版本在编辑器中显示不可编辑的兼容占位，序列化时保留原始 token，禁止静默丢弃。
 
 ## 当前实现状态
 
-`MarkdownDeltaCodec` 已实现协议引擎第一阶段：普通 Markdown 暂以源码文本留在 Delta，用户提及、全体玩家、骰子、表情、普通图片和独占 `<br />` 提升为稳定 embed 或行属性。解码结果同时返回兼容问题；未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed。序列化遇到未知或损坏 embed、retain/delete 操作时直接失败，避免覆盖原稿。
+`MarkdownDeltaCodec` 已接入真实创建主题页面：普通 Markdown 解码仍以源码文本为主，用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 会提升为稳定 embed 或行属性。工具栏新建的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和列表属性可编码为规范 Markdown。解码结果同时返回兼容问题；未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed。序列化遇到未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作时直接失败，避免覆盖原稿。
 
-源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。普通 Markdown 富文本属性、编辑器 Widget 和 embed builder 属于下一阶段，不能用当前源码兼容模式伪装为已完成的富文本编辑体验。
+源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。编辑页已提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder；但已有普通 Markdown 的富文本反向解析仍未完成，不能把“新格式可编码”表述为“任意既有 Markdown 都已所见即所得”。
 
 ## 往返不变量
 
@@ -34,6 +35,7 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 4. 围栏代码、行内代码和反斜杠转义中的协议样式文字保持普通文本。
 5. Delta 永不作为本地快照的权威格式；每次快照保存完整 Markdown，避免插件升级锁死数据。
 6. 解析失败不得覆盖原草稿；编辑器进入可解释的源码兼容模式并保留完整原文。
+7. 新增的 Quill 属性必须在序列化前通过白名单、组合与 URL 安全检查；无法证明无损时阻止快照和提交。
 
 ## 测试门禁
 

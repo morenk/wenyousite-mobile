@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -5,6 +7,26 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 
 void main() {
+  test('仅从结构完整的 JWT 提取本地数据隔离用户 ID', () async {
+    final controller = SessionController(
+      _MemoryTokenStore(),
+      _FakeSessionRemote(),
+    );
+    final payload = base64Url
+        .encode(utf8.encode('{"sub":"user-one","role":"USER"}'))
+        .replaceAll('=', '');
+    await controller.authenticate(
+      SessionTokens(
+        accessToken: 'header.$payload.signature',
+        refreshToken: 'refresh',
+      ),
+    );
+
+    expect(controller.currentUserId, 'user-one');
+    await controller.authenticate(_oldTokens);
+    expect(controller.currentUserId, isNull);
+  });
+
   test('并发刷新共享一次请求并原子替换双 Token', () async {
     final remote = _FakeSessionRemote(
       onRefresh: (refreshToken) async {

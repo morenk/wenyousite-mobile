@@ -168,4 +168,74 @@ void main() {
     );
     expect(MarkdownDeltaCodec.encode(document.delta), isEmpty);
   });
+
+  test('Quill 行内与块级富文本属性序列化为安全 Markdown', () {
+    final delta = Delta()
+      ..insert('标题')
+      ..insert('\n', {'header': 2})
+      ..insert('粗斜', {'bold': true, 'italic': true})
+      ..insert('链接', {'link': 'https://wenyou.site/help'})
+      ..insert('\n')
+      ..insert('条目')
+      ..insert('\n', {'list': 'bullet', 'indent': 1})
+      ..insert('引用')
+      ..insert('\n', {'blockquote': true})
+      ..insert('a`b', {'code': true})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+
+    expect(
+      MarkdownDeltaCodec.encode(delta),
+      '## 标题\n***粗斜***[链接](https://wenyou.site/help)\n'
+      '  - 条目\n> 引用\n``a`b``',
+    );
+  });
+
+  test('分隔线使用本地原子节点往返且不改变其他主题分隔线写法', () {
+    final document = MarkdownDeltaCodec.decode('---\n* * *\n___');
+
+    expect(
+      document.delta.operations.any(
+        (operation) =>
+            operation.data is Map &&
+            (operation.data as Map).containsKey(
+              MarkdownDeltaCodec.horizontalRuleEmbed,
+            ),
+      ),
+      isTrue,
+    );
+    expect(MarkdownDeltaCodec.encode(document.delta), '---\n* * *\n___');
+    expect(
+      MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(' ---\n--- ').delta),
+      ' ---\n--- ',
+    );
+  });
+
+  test('不安全链接、未知属性和冲突块样式拒绝序列化', () {
+    final unsafeLink = Delta()
+      ..insert('风险', {'link': 'javascript:alert(1)'})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+    final unknownAttribute = Delta()
+      ..insert('颜色', {'color': '#ff0000'})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+    final conflictingBlocks = Delta()
+      ..insert('冲突')
+      ..insert('\n', {
+        'header': 2,
+        'list': 'bullet',
+        MarkdownDeltaCodec.sourceBreakAttribute: false,
+      });
+
+    expect(
+      () => MarkdownDeltaCodec.encode(unsafeLink),
+      throwsA(isA<MarkdownCodecException>()),
+    );
+    expect(
+      () => MarkdownDeltaCodec.encode(unknownAttribute),
+      throwsA(isA<MarkdownCodecException>()),
+    );
+    expect(
+      () => MarkdownDeltaCodec.encode(conflictingBlocks),
+      throwsA(isA<MarkdownCodecException>()),
+    );
+  });
 }
