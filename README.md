@@ -70,3 +70,7 @@ flutter build apk --debug
 ```
 
 GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后默认原子提交并推送 `dev`；`main` 的合并与正式 Tag 只在维护者明确决定时执行。
+
+## Android 私有发布
+
+正式 APK 由 Windows 开发机验签后直接上传独立 RainS3 桶，VPS 只更新 `/meta`，不保存或转发安装包。环境变量、构建/上传分段命令和故障处理见 [`contracts/mobile-release-operations.md`](contracts/mobile-release-operations.md)。

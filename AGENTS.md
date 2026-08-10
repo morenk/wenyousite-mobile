@@ -204,6 +204,7 @@ GitHub Actions 的 Quality 与 Android Debug APK 工作流在第一阶段仅支�
 - 依赖升级、契约同步和生成工具变化使用独立 `chore`。
 - `pubspec.lock`、`package-lock.json` 和生成客户端必须提交。
 - 禁止提交密钥、签名文件、Token、测试账号和私人配置。
+- Android 发布 APK 由开发机直接上传 `wenyou-apk` RainS3 桶，VPS 只晋级 `/meta` 策略；发布 AccessKey 只留在开发机，禁止回退到 SCP/VPS 分发。
 
 提交格式：
 

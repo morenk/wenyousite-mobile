@@ -6,12 +6,15 @@ PROJECT_DIR=$(cd -- "$SCRIPT_DIR/.." && pwd)
 PLATFORM=android
 VERSION_NAME=
 BUILD_NUMBER=
-SSH_TARGET=${WENYOU_RELEASE_SSH_TARGET:-root@wenyou.site}
-REMOTE_BACKEND_DIR=${WENYOU_REMOTE_BACKEND_DIR:-/root/wenyousite/wenyousite-backend}
+SSH_TARGET=${WENYOU_RELEASE_SSH_TARGET:-wenyou-release@wenyou.site}
+REMOTE_PROMOTE_COMMAND=${WENYOU_RELEASE_REMOTE_PROMOTE_COMMAND:-/usr/local/sbin/wenyousite-promote-android}
 TESTFLIGHT_GROUP=${TESTFLIGHT_GROUP:-Wenyou Internal}
 SKIP_CHECKS=false
 BUILD_ONLY=false
+UPLOAD_ONLY=false
 ANDROID_RELEASE_APK=
+ANDROID_RELEASE_SHA256=
+ANDROID_RELEASE_MANIFEST=
 
 usage() {
   cat <<'EOF'
@@ -28,9 +31,23 @@ usage() {
     --platform android \
     --build-only
 
+上传对象存储但不更新服务端推荐版本：
+  bash tool/release-mobile-from-local.sh \
+    --version 1.4.0 \
+    --build 120 \
+    --platform android \
+    --upload-only
+
 Android 可选环境变量：
-  WENYOU_RELEASE_SSH_TARGET   默认 root@wenyou.site
-  WENYOU_REMOTE_BACKEND_DIR  默认 /root/wenyousite/wenyousite-backend
+  WENYOU_RELEASE_S3_ENDPOINT          默认 https://cn-nb1.rains3.com
+  WENYOU_RELEASE_S3_REGION            默认 auto
+  WENYOU_RELEASE_S3_BUCKET            默认 wenyou-apk
+  WENYOU_RELEASE_S3_PREFIX            默认 mobile/android
+  WENYOU_RELEASE_PUBLIC_BASE_URL      默认 https://wenyou-apk.cn-nb1.rains3.com
+  WENYOU_RELEASE_S3_ACCESS_KEY_ID     发布桶专用 AccessKey
+  WENYOU_RELEASE_S3_SECRET_ACCESS_KEY 发布桶专用 SecretKey
+  WENYOU_RELEASE_SSH_TARGET           默认 wenyou-release@wenyou.site
+  WENYOU_RELEASE_REMOTE_PROMOTE_COMMAND  VPS 版本晋级命令
 
 iOS 必需环境变量：
   APP_STORE_CONNECT_API_KEY_JSON  fastlane API Key JSON 的绝对路径
@@ -68,6 +85,10 @@ while (($# > 0)); do
       BUILD_ONLY=true
       shift
       ;;
+    --upload-only)
+      UPLOAD_ONLY=true
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -92,8 +113,16 @@ if [[ ! "$PLATFORM" =~ ^(android|ios|both)$ ]]; then
   echo "--platform 只能是 android、ios 或 both" >&2
   exit 2
 fi
-if [[ ! "$REMOTE_BACKEND_DIR" =~ ^/[0-9A-Za-z._/-]+$ ]]; then
-  echo "WENYOU_REMOTE_BACKEND_DIR 必须是简单的绝对路径" >&2
+if [ "$BUILD_ONLY" = true ] && [ "$UPLOAD_ONLY" = true ]; then
+  echo "--build-only 与 --upload-only 不能同时使用" >&2
+  exit 2
+fi
+if [ "$UPLOAD_ONLY" = true ] && [ "$PLATFORM" != android ]; then
+  echo "--upload-only 仅支持 Android" >&2
+  exit 2
+fi
+if [[ ! "$REMOTE_PROMOTE_COMMAND" =~ ^/[0-9A-Za-z._/-]+$ ]]; then
+  echo "WENYOU_RELEASE_REMOTE_PROMOTE_COMMAND 必须是简单的绝对路径" >&2
   exit 2
 fi
 if [ ! -f "$PROJECT_DIR/pubspec.yaml" ]; then
@@ -171,6 +200,9 @@ build_android() {
   local sha256_file
   local summary_file
   local apk_sha256
+  local apk_size
+  local source_commit
+  local created_at
 
   if [ ! -f "$PROJECT_DIR/android/key.properties" ]; then
     echo "缺少 android/key.properties，不能生成可持续覆盖安装的正式签名 APK" >&2
@@ -234,6 +266,9 @@ build_android() {
   mkdir -p "$release_dir"
   cp -f -- "$apk_path" "$release_apk"
   apk_sha256=$(sha256sum "$release_apk" | awk '{print $1}')
+  apk_size=$(wc -c < "$release_apk" | tr -d '[:space:]')
+  source_commit=$(git -C "$PROJECT_DIR" rev-parse HEAD)
+  created_at=$(date --utc +'%Y-%m-%dT%H:%M:%SZ')
   printf '%s  %s\n' "$apk_sha256" "${release_base}.apk" > "$sha256_file"
   cat > "$summary_file" <<EOF
 {
@@ -242,11 +277,16 @@ build_android() {
   "versionCode": $BUILD_NUMBER,
   "certificateSha256": "$certificate_sha256",
   "apkSha256": "$apk_sha256",
-  "apkFile": "${release_base}.apk"
+  "apkSize": $apk_size,
+  "apkFile": "${release_base}.apk",
+  "sourceCommit": "$source_commit",
+  "createdAt": "$created_at"
 }
 EOF
 
   ANDROID_RELEASE_APK=$release_apk
+  ANDROID_RELEASE_SHA256=$sha256_file
+  ANDROID_RELEASE_MANIFEST=$summary_file
   echo "Android release APK 已构建并验签: $ANDROID_RELEASE_APK"
   echo "签名证书 SHA-256: $certificate_sha256"
   echo "APK SHA-256: $apk_sha256"
@@ -254,7 +294,10 @@ EOF
 
 publish_android() {
   local apk_path
-  local remote_stage
+  local upload_result
+  local update_url
+  local apk_size
+  local apk_sha256
   local remote_command
 
   build_android
@@ -264,17 +307,37 @@ publish_android() {
     return 0
   fi
 
-  remote_stage="/tmp/wenyou-${VERSION_NAME}-${BUILD_NUMBER}-$$.apk"
-  trap 'ssh "$SSH_TARGET" "rm -f -- $remote_stage" >/dev/null 2>&1 || true' RETURN
-  scp -- "$apk_path" "$SSH_TARGET:$remote_stage"
-  printf -v remote_command 'bash %q --source %q --version %q --build %q' \
-    "$REMOTE_BACKEND_DIR/scripts/publish-android-release.sh" \
-    "$remote_stage" \
+  if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+    echo "发布对象存储需要 Node.js 与 npm" >&2
+    return 1
+  fi
+  (cd "$PROJECT_DIR" && npm ci --ignore-scripts)
+  upload_result=$(node "$PROJECT_DIR/tool/upload_android_release.mjs" \
+    --apk "$apk_path" \
+    --sha256-file "$ANDROID_RELEASE_SHA256" \
+    --manifest "$ANDROID_RELEASE_MANIFEST" \
+    --version "$VERSION_NAME" \
+    --build "$BUILD_NUMBER")
+  update_url=$(printf '%s' "$upload_result" | node -e \
+    'let input=""; process.stdin.on("data", chunk => input += chunk).on("end", () => process.stdout.write(JSON.parse(input).url));')
+  apk_size=$(printf '%s' "$upload_result" | node -e \
+    'let input=""; process.stdin.on("data", chunk => input += chunk).on("end", () => process.stdout.write(String(JSON.parse(input).size)));')
+  apk_sha256=$(printf '%s' "$upload_result" | node -e \
+    'let input=""; process.stdin.on("data", chunk => input += chunk).on("end", () => process.stdout.write(JSON.parse(input).sha256));')
+
+  if [ "$UPLOAD_ONLY" = true ]; then
+    echo "--upload-only 已启用，APK 已上传但尚未向用户推荐: $update_url"
+    return 0
+  fi
+
+  printf -v remote_command 'sudo -n %q --version %q --build %q --url %q --size %q --sha256 %q' \
+    "$REMOTE_PROMOTE_COMMAND" \
     "$VERSION_NAME" \
-    "$BUILD_NUMBER"
+    "$BUILD_NUMBER" \
+    "$update_url" \
+    "$apk_size" \
+    "$apk_sha256"
   ssh "$SSH_TARGET" "$remote_command"
-  ssh "$SSH_TARGET" "rm -f -- $remote_stage"
-  trap - RETURN
 }
 
 publish_ios() {
@@ -329,6 +392,8 @@ esac
 
 if [ "$BUILD_ONLY" = true ]; then
   echo "移动端本地构建完成: $VERSION_NAME+$BUILD_NUMBER ($PLATFORM)"
+elif [ "$UPLOAD_ONLY" = true ]; then
+  echo "移动端对象上传完成，尚未晋级: $VERSION_NAME+$BUILD_NUMBER ($PLATFORM)"
 else
   echo "移动端发布流程完成: $VERSION_NAME+$BUILD_NUMBER ($PLATFORM)"
 fi
