@@ -154,6 +154,11 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       bookmarkId: dto.bookmarkId,
       hasAutomaticUpdates: canManageThread,
       canManageThread: canManageThread,
+      isCurrentUserPlayer: dto.currentMembership?.playerMarked ?? false,
+      isCurrentUserOwner:
+          dto.capabilities?.isOwner ??
+          dto.currentMembership?.role ==
+              CurrentThreadMembershipResponseDtoRoleEnum.OWNER,
       currentUserId: dto.currentMembership?.userId,
       tipTotal: dto.tipTotal,
       memberCount: dto.count.members.toInt(),

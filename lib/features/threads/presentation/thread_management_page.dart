@@ -197,6 +197,17 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 ],
               ),
             ),
+            SizedBox(height: tokens.space12),
+            OutlinedButton.icon(
+              key: const Key('thread-management-open-members'),
+              onPressed: locked
+                  ? null
+                  : () => context.push(
+                      '/threads/${widget.threadId}/manage/members',
+                    ),
+              icon: const Icon(Icons.groups_2_outlined),
+              label: const Text('管理成员与玩家身份'),
+            ),
             if (failure != null) ...[
               SizedBox(height: tokens.space12),
               WenyouStatusBanner(

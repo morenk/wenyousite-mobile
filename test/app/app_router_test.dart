@@ -131,5 +131,15 @@ void main() {
       ),
       isNull,
     );
+
+    final membersRedirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: '/threads/thread-1/manage/members',
+      uri: Uri.parse('/threads/thread-1/manage/members'),
+    );
+    expect(
+      Uri.parse(membersRedirect!).queryParameters['returnTo'],
+      '/threads/thread-1/manage/members',
+    );
   });
 }

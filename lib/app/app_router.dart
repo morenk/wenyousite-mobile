@@ -23,6 +23,7 @@ import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_pag
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 
@@ -88,6 +89,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             threadId: state.pathParameters['threadId']!,
             rootPostId: state.pathParameters['postId']!,
             focusedReplyId: state.uri.queryParameters['post'],
+          );
+        },
+      ),
+      GoRoute(
+        path: '/threads/:threadId/manage/members',
+        name: 'thread-member-management',
+        builder: (context, state) {
+          return ThreadMemberManagementPage(
+            threadId: state.pathParameters['threadId']!,
           );
         },
       ),
@@ -305,5 +315,6 @@ String? resolveSessionRedirect({
 
 bool _isThreadManagementLocation(String location) {
   if (location == '/threads/:threadId/manage') return true;
-  return RegExp(r'^/threads/[^/]+/manage$').hasMatch(location);
+  if (location == '/threads/:threadId/manage/members') return true;
+  return RegExp(r'^/threads/[^/]+/manage(?:/members)?$').hasMatch(location);
 }

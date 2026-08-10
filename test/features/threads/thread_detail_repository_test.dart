@@ -36,6 +36,8 @@ void main() {
     expect(detail.bookmarkId, 'bookmark-1');
     expect(detail.hasAutomaticUpdates, isTrue);
     expect(detail.canManageThread, isTrue);
+    expect(detail.isCurrentUserPlayer, isFalse);
+    expect(detail.isCurrentUserOwner, isFalse);
     expect(detail.currentUserId, 'collaborator-1');
     expect(detail.tipTotal, '42');
     expect(detail.memberCount, 8);

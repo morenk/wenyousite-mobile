@@ -12,11 +12,14 @@ import 'package:wenyousite_mobile/features/posts/application/post_controllers.da
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
+import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
 
 class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
@@ -154,6 +157,20 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
   }
 
+  Future<void> _handlePlayerExited(ThreadDetailModel detail) async {
+    ref.invalidate(
+      threadSubscriptionControllerProvider(
+        ThreadSubscriptionTarget(
+          threadId: detail.id,
+          viewerUserId: detail.currentUserId,
+        ),
+      ),
+    );
+    await ref
+        .read(threadDetailControllerProvider(widget.threadId).notifier)
+        .refresh();
+  }
+
   void _revealTargetWhenReady(
     ThreadDetailState state,
     ThreadPostTargetModel? target,
@@ -210,6 +227,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               'login',
               queryParameters: {'returnTo': _currentThreadLocation()},
             ),
+            onPlayerExited: () => _handlePlayerExited(detail),
           ),
         ),
       ),
@@ -605,11 +623,13 @@ class _ThreadOverview extends ConsumerWidget {
     required this.detail,
     required this.categoryName,
     required this.onRequireAuthentication,
+    required this.onPlayerExited,
   });
 
   final ThreadDetailModel detail;
   final String categoryName;
   final VoidCallback onRequireAuthentication;
+  final Future<void> Function() onPlayerExited;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -719,6 +739,12 @@ class _ThreadOverview extends ConsumerWidget {
             threadId: detail.id,
             viewerUserId: detail.currentUserId,
             hasAutomaticUpdates: detail.hasAutomaticUpdates,
+          ),
+          ThreadMembershipControls(
+            threadId: detail.id,
+            canExitPlayer:
+                detail.isCurrentUserPlayer && !detail.isCurrentUserOwner,
+            onExited: onPlayerExited,
           ),
         ],
       ),

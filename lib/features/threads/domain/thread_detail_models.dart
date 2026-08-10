@@ -101,6 +101,8 @@ class ThreadDetailModel {
     this.bookmarkId,
     this.hasAutomaticUpdates = false,
     this.canManageThread = false,
+    this.isCurrentUserPlayer = false,
+    this.isCurrentUserOwner = false,
     this.currentUserId,
     this.categorySlug,
     this.defaultSubthreadId,
@@ -120,6 +122,8 @@ class ThreadDetailModel {
   final String? bookmarkId;
   final bool hasAutomaticUpdates;
   final bool canManageThread;
+  final bool isCurrentUserPlayer;
+  final bool isCurrentUserOwner;
   final String? currentUserId;
   final String tipTotal;
   final int memberCount;
