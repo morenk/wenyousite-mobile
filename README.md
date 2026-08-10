@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.3.0-dev.38+44`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.3.0-dev.39+45`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -74,4 +74,10 @@ GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，�
 
 ## Android 私有发布
 
-正式 APK 由 Windows 开发机验签后直接上传独立 RainS3 桶，VPS 只更新 `/meta`，不保存或转发安装包。环境变量、构建/上传分段命令和故障处理见 [`contracts/mobile-release-operations.md`](contracts/mobile-release-operations.md)。
+正式 APK 由 Windows 开发机验签后直接上传独立 RainS3 桶，VPS 只更新 `/meta`，不保存或转发安装包。首次在 Windows 执行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tool/windows/Install-WenyouReleaseTools.ps1
+```
+
+安装完成后，桌面 `Wenyou-Release-Setup.cmd` 只用于首次核验 VPS 指纹；日常提交、推送并更新 `pubspec.yaml` 后，双击 `Wenyou-Publish-Android.cmd` 即可完成测试、构建、验签、上传、晋级和线上复核。DPAPI 凭据、手工回退和撤回方法见 [`contracts/mobile-release-operations.md`](contracts/mobile-release-operations.md)。

@@ -9,7 +9,7 @@
     "api:check": "npm run api:generate && git diff --exit-code -- packages/wenyou_api",
     "docs:check": "dart run tool/check_docs.dart",
     "architecture:check": "dart run tool/check_architecture.dart",
-    "test:release-tool": "node --test tool/upload_android_release.test.mjs"
+    "test:release-tool": "node --test tool/upload_android_release.test.mjs tool/windows/windows_release_scripts.test.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1106.0",

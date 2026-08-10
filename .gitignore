@@ -37,6 +37,8 @@ migrate_working_dir/
 *.jks
 *.keystore
 key.properties
+rains3-credentials.json
+release-config.json
 
 # Symbolication related
 app.*.symbols
