@@ -38,9 +38,16 @@ class ThreadDiceRollModel {
 }
 
 class ThreadBodyModel {
-  const ThreadBodyModel({required this.markdown, this.diceRolls = const []});
+  const ThreadBodyModel({
+    required this.markdown,
+    this.postId,
+    this.version,
+    this.diceRolls = const [],
+  });
 
   final String markdown;
+  final String? postId;
+  final int? version;
   final List<ThreadDiceRollModel> diceRolls;
 }
 
@@ -93,6 +100,7 @@ class ThreadDetailModel {
     this.isBookmarked = false,
     this.bookmarkId,
     this.hasAutomaticUpdates = false,
+    this.canManageThread = false,
     this.currentUserId,
     this.categorySlug,
     this.defaultSubthreadId,
@@ -111,6 +119,7 @@ class ThreadDetailModel {
   final bool isBookmarked;
   final String? bookmarkId;
   final bool hasAutomaticUpdates;
+  final bool canManageThread;
   final String? currentUserId;
   final String tipTotal;
   final int memberCount;
@@ -144,6 +153,7 @@ class ThreadReplyModel {
     required this.body,
     required this.createdAt,
     required this.isDeleted,
+    this.version = 1,
     this.replyToUsername,
   });
 
@@ -152,6 +162,7 @@ class ThreadReplyModel {
   final ThreadBodyModel body;
   final DateTime createdAt;
   final bool isDeleted;
+  final int version;
   final String? replyToUsername;
 }
 
@@ -165,6 +176,7 @@ class ThreadFloorModel {
     required this.isDeleted,
     required this.replyCount,
     required this.replies,
+    this.version = 1,
   });
 
   final String id;
@@ -175,6 +187,7 @@ class ThreadFloorModel {
   final bool isDeleted;
   final int replyCount;
   final List<ThreadReplyModel> replies;
+  final int version;
 }
 
 class ThreadPostTargetModel {

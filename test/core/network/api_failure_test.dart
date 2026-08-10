@@ -109,4 +109,24 @@ void main() {
     expect(failure.userMessage, contains('最新版'));
     expect(failure.userMessage, isNot(contains('internal')));
   });
+
+  test('子贴发言权限按协作者和玩家业务码提供稳定提示', () {
+    String messageFor(int code) {
+      final options = RequestOptions(path: '/api/v1/subthreads/sub/posts');
+      return ApiFailure.fromDio(
+        DioException(
+          requestOptions: options,
+          response: Response<Object?>(
+            requestOptions: options,
+            statusCode: 403,
+            data: {'code': code, 'message': 'server permission wording'},
+          ),
+        ),
+      ).userMessage;
+    }
+
+    expect(messageFor(40302), contains('楼主或协作者'));
+    expect(messageFor(40303), contains('帖内玩家'));
+    expect(messageFor(40302), isNot(contains('server')));
+  });
 }

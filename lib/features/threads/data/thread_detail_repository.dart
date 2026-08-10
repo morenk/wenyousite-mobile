@@ -108,6 +108,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
   }
 
   ThreadDetailModel _mapThread(ThreadDetailResponseDto dto) {
+    final canManageThread =
+        dto.capabilities?.canManageThread ??
+        (dto.currentMembership?.role ==
+                CurrentThreadMembershipResponseDtoRoleEnum.OWNER ||
+            dto.currentMembership?.role ==
+                CurrentThreadMembershipResponseDtoRoleEnum.COLLABORATOR);
     final subthreads =
         dto.subthreads
             .where((item) => item.deletedAt == null)
@@ -123,6 +129,8 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                     ? null
                     : ThreadBodyModel(
                         markdown: item.bodyPost!.content,
+                        postId: item.bodyPost!.id,
+                        version: item.bodyPost!.version.toInt(),
                         diceRolls: item.bodyPost!.diceRolls
                             .map(_mapDiceRoll)
                             .toList(growable: false),
@@ -144,12 +152,8 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       isLiked: dto.isLiked ?? false,
       isBookmarked: dto.isBookmarked ?? false,
       bookmarkId: dto.bookmarkId,
-      hasAutomaticUpdates:
-          dto.capabilities?.canManageThread ??
-          (dto.currentMembership?.role ==
-                  CurrentThreadMembershipResponseDtoRoleEnum.OWNER ||
-              dto.currentMembership?.role ==
-                  CurrentThreadMembershipResponseDtoRoleEnum.COLLABORATOR),
+      hasAutomaticUpdates: canManageThread,
+      canManageThread: canManageThread,
       currentUserId: dto.currentMembership?.userId,
       tipTotal: dto.tipTotal,
       memberCount: dto.count.members.toInt(),
@@ -179,6 +183,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       ),
       createdAt: dto.createdAt,
       isDeleted: dto.deletedAt != null,
+      version: dto.version.toInt(),
       replyCount: dto.count.replies.toInt(),
       replies: dto.replies
           .map(
@@ -193,6 +198,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
               ),
               createdAt: reply.createdAt,
               isDeleted: reply.deletedAt != null,
+              version: reply.version.toInt(),
               replyToUsername: reply.replyToPost?.author.username,
             ),
           )
@@ -214,6 +220,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       ),
       createdAt: dto.createdAt,
       isDeleted: dto.deletedAt != null,
+      version: dto.version.toInt(),
       replyCount: dto.count.replies.toInt(),
       replies: focusedReply == null ? const [] : [focusedReply],
     );
@@ -229,6 +236,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       ),
       createdAt: dto.createdAt,
       isDeleted: dto.deletedAt != null,
+      version: dto.version.toInt(),
       replyToUsername: null,
     );
   }

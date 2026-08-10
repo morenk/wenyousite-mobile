@@ -4,6 +4,8 @@
 
 ### Added
 
+- 新增 `/threads/:threadId/posts/:postId/replies` 独立楼中楼：公开阅读、最早/最新排序、回复者筛选、目标补齐、cursor 分页、下拉刷新和 360dp 布局形成闭环。
+- 主题详情与楼中楼接入楼层/回复创建、作者编辑删除、管理者楼层删除及子贴正文 upsert；复用 Quill、图片、骰子和五槽位正文草稿，稳定幂等键与乐观锁冲突均要求明确确认。
 - 编辑器工具栏接入后端用户级五槽位正文草稿：并发读取列表/用量、自动或指定空槽保存、恢复前刷新、版本覆盖、删除、满额提示和 360dp 面板均形成闭环；主题实体草稿继续保留独立入口。
 - `/compose/thread` 接入真实主题创作页：Flutter Quill 工具栏、服务端分类/邮箱状态、按账号隔离的本地防丢快照、持久化创建幂等恢复，以及 `threadsCreate` 草稿后再用 `threadsSaveAggregate` 保存或发布的两阶段链路。
 - 编辑器图片接入相册选择、10MB/类型校验、独立无鉴权预签名 PUT、确认与完成态轮询；只有 `COMPLETED` 的安全 HTTP(S) 原图会插入 Markdown，并提供上传取消、状态提示及可缩放全屏查看。
@@ -38,6 +40,7 @@
 
 ### Changed
 
+- 开发版本进入 `0.3.0-dev.18+24`；`postsFindReplies`、`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove` 与既有楼层读取全部闭环，`40302/40303`、`40007`、`40002` 和不明确创建结果有稳定恢复状态。
 - 开发版本进入 `0.3.0-dev.17+23`；`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove` 全部接入，`40002` 冲突保留当前正文并要求基于最新版二次确认。
 - 开发版本进入 `0.3.0-dev.16+22`；主题创建、服务端草稿、聚合发布、媒体上传和本地快照形成首个可真机操作的创作闭环，后端五槽位正文草稿仍作为后续独立切片。
 - 开发版本进入 `0.3.0-dev.15+21`；两套后端 Markdown 黄金语料现同时验证规范化、可见性、扩展节点字段和 Delta 往返幂等，损坏 embed 不再允许静默序列化。

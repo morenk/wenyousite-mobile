@@ -86,6 +86,14 @@ class ApiFailure implements Exception {
         return '请先获取邮箱验证码。';
       case 40116:
         return '当前密码不正确。';
+      case 40300:
+        return '当前账号没有执行这项操作的权限。';
+      case 40301:
+        return '只有主题楼主可以执行这项操作。';
+      case 40302:
+        return '这个子贴只允许楼主或协作者发言。';
+      case 40303:
+        return '这个子贴只允许帖内玩家发言。';
       case 40901:
         return '该邮箱已经注册，请直接登录。';
       case 40902:

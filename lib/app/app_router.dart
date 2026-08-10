@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/features/auth/presentation/registration_page.d
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
@@ -98,6 +99,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/threads/:threadId/posts/:postId/replies',
+        name: 'post-replies',
+        builder: (context, state) {
+          return PostRepliesPage(
+            threadId: state.pathParameters['threadId']!,
+            rootPostId: state.pathParameters['postId']!,
+            focusedReplyId: state.uri.queryParameters['post'],
+          );
+        },
       ),
       GoRoute(
         path: '/threads/:threadId',

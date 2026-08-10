@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +13,8 @@ import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
@@ -278,6 +282,66 @@ void main() {
 
     expect(repository.threadCalls, 2);
   });
+
+  testWidgets('管理者从主题详情编辑正文并按作者与管理权限操作楼层', (tester) async {
+    final detailRepository = _FakeThreadDetailRepository(
+      detail: _managerDetail,
+    );
+    final postRepository = _FakePostRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(detailRepository),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+        postRepositoryProvider.overrideWithValue(postRepository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('thread-body-edit')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-body-edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('编辑子贴正文'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('post-composer-close')));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-edit-floor-1')), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-delete-floor-1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-discussion-floor-1')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('thread-floor-delete-floor-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('删除这个楼层？'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '删除'));
+    await tester.pumpAndSettle();
+
+    expect(postRepository.removedIds, ['floor-1']);
+  });
 }
 
 Widget _detailApp(ThreadDetailRepository repository, {String? targetPostId}) {
@@ -300,12 +364,14 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     this.floorFailure,
     this.loadMoreFailure,
     this.postTarget,
-  });
+    ThreadDetailModel? detail,
+  }) : detail = detail ?? _detail;
 
   final ApiFailure? threadFailure;
   final ApiFailure? floorFailure;
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
+  final ThreadDetailModel detail;
   final List<String> requestedSubthreads = [];
   final List<String> targetPostIds = [];
   int threadCalls = 0;
@@ -314,7 +380,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   Future<ThreadDetailModel> fetchThread(String threadId) async {
     threadCalls += 1;
     if (threadFailure case final failure?) throw failure;
-    return _detail;
+    return detail;
   }
 
   @override
@@ -418,12 +484,53 @@ final _detail = ThreadDetailModel(
   updatedAt: DateTime.utc(2026, 8, 9, 12),
 );
 
+final _managerDetail = ThreadDetailModel(
+  id: 'thread-1',
+  title: '星海旅团',
+  owner: _author,
+  categorySlug: 'RPG',
+  status: ThreadDetailStatus.recruiting,
+  isPrivate: false,
+  isPinned: true,
+  viewCount: 128,
+  likeCount: 12,
+  tipTotal: '8',
+  memberCount: 5,
+  playerCount: 2,
+  postCount: 12,
+  tags: const [],
+  subthreads: const [
+    ThreadSubthreadModel(
+      id: 'subthread-1',
+      title: '主线',
+      sortOrder: 1,
+      postCount: 8,
+      postingPolicyLabel: '参与者发言',
+      body: ThreadBodyModel(markdown: '主线正文', postId: 'body-1', version: 5),
+    ),
+  ],
+  defaultSubthreadId: 'subthread-1',
+  canManageThread: true,
+  hasAutomaticUpdates: true,
+  currentUserId: 'user-1',
+  createdAt: DateTime.utc(2026, 8, 1),
+  updatedAt: DateTime.utc(2026, 8, 9, 12),
+);
+
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);
 
 const _tokens = SessionTokens(
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
 );
+
+SessionTokens _tokensFor(String userId) {
+  final payload = base64Url.encode(utf8.encode(jsonEncode({'sub': userId})));
+  return SessionTokens(
+    accessToken: 'e30.$payload.signature',
+    refreshToken: 'refresh-token',
+  );
+}
 
 class _MemoryTokenStore implements TokenStore {
   SessionTokens? value;
@@ -472,6 +579,43 @@ class _FakeThreadSubscriptionRepository
   Future<void> remove(String subscriptionId) {
     throw UnimplementedError();
   }
+}
+
+class _FakePostRepository implements PostRepository {
+  final List<String> removedIds = [];
+
+  @override
+  Future<void> remove(String postId) async => removedIds.add(postId);
+
+  @override
+  Future<PostItem> fetchPost(String postId) => throw UnsupportedError('unused');
+
+  @override
+  Future<PostReplyPage> fetchReplies({
+    required String rootPostId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  }) => throw UnsupportedError('unused');
+
+  @override
+  Future<PostItem> create(PostCreateInput input) =>
+      throw UnsupportedError('unused');
+
+  @override
+  Future<PostItem> update({
+    required String postId,
+    required String content,
+    required int version,
+  }) => throw UnsupportedError('unused');
+
+  @override
+  Future<PostItem> upsertBody({
+    required String subthreadId,
+    required String content,
+    int? version,
+  }) => throw UnsupportedError('unused');
 }
 
 final _mainFloor = ThreadFloorModel(

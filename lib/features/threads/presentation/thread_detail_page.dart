@@ -8,6 +8,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
@@ -71,14 +74,20 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   @override
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
+    final actionsProvider = postActionControllerProvider(widget.threadId);
     ref.listen(sessionControllerProvider.select((session) => session.status), (
       previous,
       next,
     ) {
       if (previous == null || previous == next) return;
-      ref.invalidate(provider);
+      ref
+        ..invalidate(provider)
+        ..invalidate(actionsProvider);
     });
     final state = ref.watch(provider);
+    final session = ref.watch(sessionControllerProvider);
+    final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
+    final actions = ref.watch(actionsProvider);
     final target = widget.targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(widget.targetPostId!));
@@ -108,7 +117,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             key: PageStorageKey('thread-detail-${widget.threadId}'),
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            slivers: _buildReadySlivers(context, state, provider, target),
+            slivers: _buildReadySlivers(
+              context,
+              state,
+              provider,
+              target,
+              actions: actions,
+              authenticated: session.isAuthenticated,
+              viewerId: viewerId,
+            ),
           ),
         ),
       },
@@ -144,8 +161,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ThreadDetailState state,
     AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
     provider,
-    AsyncValue<ThreadPostTargetModel>? targetState,
-  ) {
+    AsyncValue<ThreadPostTargetModel>? targetState, {
+    required PostActionState actions,
+    required bool authenticated,
+    required String? viewerId,
+  }) {
     final detail = state.detail!;
     final selected = state.selectedSubthread;
     final target = targetState?.valueOrNull;
@@ -212,7 +232,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         SliverToBoxAdapter(
           child: _DetailContent(
             top: 12,
-            child: _SubthreadBody(subthread: selected!),
+            child: _SubthreadBody(
+              subthread: selected!,
+              canEdit: detail.canManageThread,
+              onEdit: () => _compose(_bodyTarget(detail, selected)),
+            ),
           ),
         ),
         SliverToBoxAdapter(
@@ -221,9 +245,32 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             child: WenyouSectionHeader(
               title: '楼层',
               subtitle: '${selected.postCount} 条内容，按发布时间升序阅读',
+              trailing: OutlinedButton.icon(
+                key: const Key('thread-floor-compose'),
+                onPressed: authenticated
+                    ? () => _compose(_floorTarget(detail, selected))
+                    : _requireLogin,
+                icon: Icon(
+                  authenticated ? Icons.add_comment_outlined : Icons.login,
+                ),
+                label: Text(authenticated ? '发表' : '登录'),
+              ),
             ),
           ),
         ),
+        if (actions.failure != null)
+          SliverToBoxAdapter(
+            child: _DetailContent(
+              top: 12,
+              child: WenyouStatusBanner(
+                tone: WenyouStatusTone.error,
+                message: actions.failure!.userMessage,
+                detail: actions.failure!.requestId == null
+                    ? null
+                    : '请求 ID：${actions.failure!.requestId}',
+              ),
+            ),
+          ),
         if (targetState != null)
           SliverToBoxAdapter(
             child: _DetailContent(
@@ -279,6 +326,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                   key: focused ? _targetKey : null,
                   floor: floor,
                   isFocused: focused,
+                  canEdit: floor.author.id == viewerId,
+                  canDelete:
+                      floor.author.id == viewerId || detail.canManageThread,
+                  pending: actions.pendingPostId == floor.id,
+                  onDiscussion: () => _openDiscussion(floor),
+                  showDiscussion: floor.replyCount > 0 || authenticated,
+                  onEdit: () =>
+                      _compose(_editFloorTarget(detail, selected, floor)),
+                  onDelete: () => _deleteFloor(floor),
                 ),
               );
             }, childCount: displayedFloors.length),
@@ -295,6 +351,74 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ),
       ],
     ];
+  }
+
+  Future<void> _compose(PostComposerTarget target) async {
+    final result = await showPostComposerSheet(
+      context: context,
+      target: target,
+    );
+    if (result == null || !mounted) return;
+    await ref
+        .read(threadDetailControllerProvider(widget.threadId).notifier)
+        .refresh();
+  }
+
+  void _requireLogin() {
+    context.pushNamed(
+      'login',
+      queryParameters: {'returnTo': _currentThreadLocation()},
+    );
+  }
+
+  void _openDiscussion(ThreadFloorModel floor) {
+    final focusedReplyId =
+        widget.targetPostId != null &&
+            floor.replies.any((reply) => reply.id == widget.targetPostId)
+        ? widget.targetPostId
+        : null;
+    context.pushNamed(
+      'post-replies',
+      pathParameters: {'threadId': widget.threadId, 'postId': floor.id},
+      queryParameters: focusedReplyId == null
+          ? const {}
+          : {'post': focusedReplyId},
+    );
+  }
+
+  Future<void> _deleteFloor(ThreadFloorModel floor) async {
+    final state = ref.read(threadDetailControllerProvider(widget.threadId));
+    final detail = state.detail;
+    final subthread = state.selectedSubthread;
+    if (detail == null || subthread == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除这个楼层？'),
+        content: const Text('楼层会被标记为已删除，操作无法在移动端撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final removed = await ref
+        .read(postActionControllerProvider(widget.threadId).notifier)
+        .remove(_floorAsPost(detail, subthread, floor));
+    if (!removed || !mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('楼层已删除。')));
+    await ref
+        .read(threadDetailControllerProvider(widget.threadId).notifier)
+        .refresh();
   }
 
   String _currentThreadLocation() {
@@ -329,6 +453,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         isDeleted: focusedFloor.isDeleted,
         replyCount: focusedFloor.replyCount,
         replies: replies,
+        version: focusedFloor.version,
       );
     }
     return [
@@ -648,9 +773,15 @@ class _SubthreadSection extends StatelessWidget {
 }
 
 class _SubthreadBody extends StatelessWidget {
-  const _SubthreadBody({required this.subthread});
+  const _SubthreadBody({
+    required this.subthread,
+    required this.canEdit,
+    required this.onEdit,
+  });
 
   final ThreadSubthreadModel subthread;
+  final bool canEdit;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -666,6 +797,18 @@ class _SubthreadBody extends StatelessWidget {
             subtitle:
                 '${subthread.postingPolicyLabel} · '
                 '${subthread.postCount} 条内容',
+            trailing: canEdit
+                ? TextButton.icon(
+                    key: const Key('thread-body-edit'),
+                    onPressed: onEdit,
+                    icon: Icon(
+                      body == null
+                          ? Icons.note_add_outlined
+                          : Icons.edit_outlined,
+                    ),
+                    label: Text(body == null ? '添加正文' : '编辑正文'),
+                  )
+                : null,
           ),
           SizedBox(height: tokens.space16),
           if (body == null || body.markdown.trim().isEmpty)
@@ -784,10 +927,28 @@ class _FloorsLoadingState extends StatelessWidget {
 }
 
 class _FloorCard extends StatelessWidget {
-  const _FloorCard({required this.floor, this.isFocused = false, super.key});
+  const _FloorCard({
+    required this.floor,
+    required this.canEdit,
+    required this.canDelete,
+    required this.pending,
+    required this.showDiscussion,
+    required this.onDiscussion,
+    required this.onEdit,
+    required this.onDelete,
+    this.isFocused = false,
+    super.key,
+  });
 
   final ThreadFloorModel floor;
   final bool isFocused;
+  final bool canEdit;
+  final bool canDelete;
+  final bool pending;
+  final bool showDiscussion;
+  final VoidCallback onDiscussion;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -842,6 +1003,47 @@ class _FloorCard extends StatelessWidget {
               Text(
                 '共 ${floor.replyCount} 条回复',
                 style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            if (!floor.isDeleted &&
+                (showDiscussion || canEdit || canDelete)) ...[
+              SizedBox(height: tokens.space12),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: tokens.space4,
+                runSpacing: tokens.space4,
+                children: [
+                  if (showDiscussion)
+                    TextButton.icon(
+                      key: Key('thread-floor-discussion-${floor.id}'),
+                      onPressed: pending ? null : onDiscussion,
+                      icon: const Icon(Icons.forum_outlined),
+                      label: Text(
+                        floor.replyCount == 0
+                            ? '回复'
+                            : '查看 ${floor.replyCount} 条回复',
+                      ),
+                    ),
+                  if (canEdit)
+                    TextButton.icon(
+                      key: Key('thread-floor-edit-${floor.id}'),
+                      onPressed: pending ? null : onEdit,
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('编辑'),
+                    ),
+                  if (canDelete)
+                    TextButton.icon(
+                      key: Key('thread-floor-delete-${floor.id}'),
+                      onPressed: pending ? null : onDelete,
+                      icon: pending
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.delete_outline_rounded),
+                      label: const Text('删除'),
+                    ),
+                ],
               ),
             ],
           ],
@@ -1126,6 +1328,97 @@ class _DetailStat extends StatelessWidget {
       ],
     );
   }
+}
+
+PostComposerTarget _bodyTarget(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+) {
+  final body = subthread.body;
+  return (
+    kind: PostComposerKind.upsertBody,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    postId: body?.postId,
+    parentPostId: null,
+    replyToPostId: null,
+    version: body?.version,
+    initialContent: body?.markdown ?? '',
+    label: body == null ? '添加子贴正文' : '编辑子贴正文',
+  );
+}
+
+PostComposerTarget _floorTarget(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+) {
+  return (
+    kind: PostComposerKind.createFloor,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    postId: null,
+    parentPostId: null,
+    replyToPostId: null,
+    version: null,
+    initialContent: '',
+    label: '发表楼层',
+  );
+}
+
+PostComposerTarget _editFloorTarget(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+  ThreadFloorModel floor,
+) {
+  return (
+    kind: PostComposerKind.editPost,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    postId: floor.id,
+    parentPostId: null,
+    replyToPostId: null,
+    version: floor.version,
+    initialContent: floor.body.markdown,
+    label: '编辑 #${floor.floorNumber ?? '-'} 楼',
+  );
+}
+
+PostItem _floorAsPost(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+  ThreadFloorModel floor,
+) {
+  return PostItem(
+    id: floor.id,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    author: PostAuthor(
+      id: floor.author.id,
+      username: floor.author.username,
+      level: floor.author.level,
+      avatarUrl: floor.author.avatarUrl,
+    ),
+    content: floor.body.markdown,
+    version: floor.version,
+    createdAt: floor.createdAt,
+    updatedAt: floor.createdAt,
+    isBody: false,
+    isDeleted: floor.isDeleted,
+    floorNumber: floor.floorNumber,
+    replyCount: floor.replyCount,
+    threadTitle: detail.title,
+    subthreadTitle: subthread.title,
+    diceRolls: floor.body.diceRolls
+        .map(
+          (roll) => PostDiceRoll(
+            nodeId: roll.nodeId,
+            notation: roll.notation,
+            results: roll.results,
+            total: roll.total,
+          ),
+        )
+        .toList(growable: false),
+  );
 }
 
 Map<String, String> _diceLabels(List<ThreadDiceRollModel> rolls) {
