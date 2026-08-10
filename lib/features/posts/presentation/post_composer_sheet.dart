@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -243,6 +244,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                       enabled: !locked && _codecFailure == null,
                       onInsertImage: _insertImage,
                       onSaveDraft: _openContentDrafts,
+                    ),
+                    MentionSuggestions(
+                      controller: _editorController,
+                      focusNode: _focusNode,
+                      threadId: widget.target.threadId,
+                      enabled: !locked && _codecFailure == null,
                     ),
                     Expanded(
                       child: Semantics(

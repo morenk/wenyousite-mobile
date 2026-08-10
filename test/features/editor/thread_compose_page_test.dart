@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/editor/application/thread_compose_con
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
@@ -63,6 +64,13 @@ void main() {
     );
     expect(controller.state.body, '恢复的主题正文');
     expect(find.byKey(const Key('compose-body')), findsOneWidget);
+    expect(find.byType(MentionSuggestions), findsOneWidget);
+    expect(
+      tester
+          .widget<MentionSuggestions>(find.byType(MentionSuggestions))
+          .threadId,
+      isNull,
+    );
     expect(find.text('保存到服务端草稿'), findsOneWidget);
   });
 

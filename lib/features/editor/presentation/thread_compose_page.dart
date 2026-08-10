@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/editor/application/thread_compose_con
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -316,6 +317,12 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                   enabled: enabled,
                   onInsertImage: _insertImage,
                   onSaveDraft: _openContentDrafts,
+                ),
+                MentionSuggestions(
+                  controller: _editorController,
+                  focusNode: _editorFocusNode,
+                  threadId: state.remoteDraft?.id,
+                  enabled: enabled,
                 ),
                 Semantics(
                   textField: true,

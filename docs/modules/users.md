@@ -20,8 +20,8 @@
 
 ## 5. API operationId 与生成类型
 
-- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`，并消费 social 的四个关系写入与五个关系列表端点。
-- 主要生成类型：`PublicUserResponseDto`、`CurrentUserResponseDto`、`PrivateUserResponseDto`、`UpdateUserDto`、`SetAvatarDto`、`ThreadListItemResponseDto`、`RecentReplyResponseDto`、`BookmarkThreadResponseDto`、`UserFollowRecordResponseDto`、`BlockedUserRecordResponseDto` 与 `ApiPaginationMeta`。
+- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`、`usersMentionCandidates`，并消费 social 的四个关系写入与五个关系列表端点。
+- 主要生成类型：`PublicUserResponseDto`、`CurrentUserResponseDto`、`PrivateUserResponseDto`、`UpdateUserDto`、`SetAvatarDto`、`MentionCandidatesResponseDto`、`MentionCandidateDto`、`ThreadListItemResponseDto`、`RecentReplyResponseDto`、`BookmarkThreadResponseDto`、`UserFollowRecordResponseDto`、`BlockedUserRecordResponseDto` 与 `ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
 
@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-关系写操作由 social 管理，users 只负责身份排除和展示同步；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索与 Markdown 只传 userId，资料页重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
+关系写操作由 social 管理，users 只负责身份排除和展示同步；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。提及候选虽由 Users API 返回，但由 editor 按真实主题上下文管理输入、防抖、竞态和原子插入，users 页面不缓存或展示该隐私投影。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索与 Markdown 只传 userId，资料页重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
 
 ## 11. 测试场景与验收条件
 

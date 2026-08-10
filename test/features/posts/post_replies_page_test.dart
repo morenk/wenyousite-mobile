@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
@@ -56,6 +57,12 @@ void main() {
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
     expect(find.text('回复 @楼层作者'), findsWidgets);
+    expect(
+      tester
+          .widget<MentionSuggestions>(find.byType(MentionSuggestions))
+          .threadId,
+      'thread',
+    );
     await _replaceComposerText(tester, '新发表的回复');
     await tester.tap(find.byKey(const Key('post-composer-submit')));
     await tester.pumpAndSettle();
