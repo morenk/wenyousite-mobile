@@ -8,13 +8,13 @@ go_router 是唯一导航入口。根级兼容检查先于业务路由；未知�
 
 动态主分支使用 `/moments`，发现流公开，关注流在分支内为游客显示登录回跳。公开详情 `/moments/:momentId`、公开用户动态 `/users/:userId/moments` 只携带服务端稳定 ID；受保护的 `/compose/moment`、`/moments/:momentId/edit` 与 `/moments/bookmarks` 保留完整登录回跳。动态分支悬浮按钮发布动态，首页分支悬浮按钮创建主题，其他分支不显示全局创建按钮。发布/编辑成功后失效信息流和详情，删除成功回动态分支；筛选、评论作者和 cursor 只存在页面状态。
 
-公开主题详情使用命名路由 `/threads/:threadId`。首页和搜索主题卡片通过主题 ID 进入该路由；系统返回时回到原分支，并保留分支状态。详情页优先选择响应中的 `defaultSubthreadId`，子贴切换只更新正文与楼层数据源，不把子贴 ID 拼入临时页面路径。服务端 capability 允许时，详情进入受保护命名路由 `/threads/:threadId/manage`，标签、子贴目录和成员身份工作台分别使用 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；四条管理路由都保留完整登录回跳。保存、标签、目录或成员变更成功后返回详情并重读权威投影，删除成功进入 `/home`，未保存表单返回前要求明确放弃。
+公开主题详情使用命名路由 `/threads/:threadId`。首页和搜索主题卡片通过主题 ID 进入该路由；系统返回时回到原分支，并保留分支状态。详情工具栏进入公开 `/threads/:threadId/search`，服务端以 OptionalAuth 复核当前主题访问权限，结果仍用稳定 post ID 回详情定位。详情页优先选择响应中的 `defaultSubthreadId`，子贴切换只更新正文与楼层数据源，不把子贴 ID 拼入临时页面路径。服务端 capability 允许时，详情进入受保护命名路由 `/threads/:threadId/manage`，标签、子贴目录和成员身份工作台分别使用 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；四条管理路由都保留完整登录回跳。保存、标签、目录或成员变更成功后返回详情并重读权威投影，删除成功进入 `/home`，未保存表单返回前要求明确放弃。
 
 公开标签使用命名路由 `/tags/:tagId`。首页、主题详情和标签主题卡片只传服务端稳定标签 ID，页面重新读取 `tagsGetById` 事实并通过 `threadsFindAll(tagId)` 精确聚合公开主题；标签不存在、已停用或不可访问时不根据名称猜测替代目标。公开标签页不要求登录，进入其中的主题仍复用 `/threads/:threadId`。
 
 私密邀请使用受保护命名路由 `/join/:token`，token 是 16 位不透明 base64url 值，只用于预览和幂等加入，不解析业务信息。游客进入时完整路径写入安全 `returnTo`，登录后恢复预览；加入要求邮箱已验证，验证页返回后仍由用户显式确认加入。预览确认已加入或加入响应中的主题 ID 与预览一致后，替换到 `/threads/:threadId`。失效邀请回首页，不猜测主题 ID。V1 未配置 Android App Links，楼主复制的是 Web 同形链接，由 Web 负责外部落地；应用内路由先固定兼容边界。
 
-0.3 的全站搜索页使用 `/search`，主题、用户和正文三个 Tab 按需加载。公开用户资料使用命名路由 `/users/:userId`；搜索用户结果和 Markdown `/users/{id}` 站内链接只传稳定用户 ID，由资料页重新读取权限与可见性。公开统计进入 `/users/:userId/following` 与 `/users/:userId/followers`，列表项再以 userId 返回同一资料路由。公开用户内容里的主题卡片继续进入 `/threads/:threadId`，最近回复则使用同一 `post` 查询参数约定，不建立用户页专属临时目标。
+0.3 的全站搜索页使用 `/search`，综合、动态、主题、用户和正文五个横向可滚动 Tab 按需加载。综合结果只作分类摘要；动态进入 `/moments/:momentId`，主题进入 `/threads/:threadId`，正文进入同一主题详情的 `post` 定位。公开用户资料使用命名路由 `/users/:userId`；搜索用户结果和 Markdown `/users/{id}` 站内链接只传稳定用户 ID，由资料页重新读取权限与可见性。公开统计进入 `/users/:userId/following` 与 `/users/:userId/followers`，列表项再以 userId 返回同一资料路由。公开用户内容里的主题卡片继续进入 `/threads/:threadId`，最近回复则使用同一 `post` 查询参数约定，不建立用户页专属临时目标。
 
 正文搜索结果与 post 通知目标使用 `/threads/:threadId?post=:postId`。`post` 是服务端稳定帖子 ID，不是本地页码：主题详情先读取帖子所属子贴；目标为楼中楼时再补取父楼层，然后自动切换子贴、将目标上下文置顶并以强调底色展示，其余已加载楼层保持服务端顺序。目标不存在、无权访问或属于其他主题时显示安全错误，不猜测位置。
 

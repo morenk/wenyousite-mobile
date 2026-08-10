@@ -1,6 +1,9 @@
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
 enum SearchResultTab {
+  overview('综合', '一次查看主题、用户和正文摘要'),
+  moments('动态', '搜索公开动态标题与正文'),
   threads('主题', '搜索公开主题标题'),
   users('用户', '搜索未注销用户名'),
   posts('正文', '搜索公开楼层与楼中楼');
@@ -85,6 +88,20 @@ class SearchPostResult {
   final DateTime createdAt;
 }
 
+class SearchOverviewResult {
+  const SearchOverviewResult({
+    required this.threads,
+    required this.users,
+    required this.posts,
+  });
+
+  final List<SearchThreadResult> threads;
+  final List<SearchUserResult> users;
+  final List<SearchPostResult> posts;
+
+  bool get isEmpty => threads.isEmpty && users.isEmpty && posts.isEmpty;
+}
+
 class SearchSectionState<T> {
   const SearchSectionState({
     this.phase = SearchSectionPhase.idle,
@@ -107,6 +124,8 @@ class SearchState {
   const SearchState({
     this.query = '',
     this.activeTab = SearchResultTab.threads,
+    this.overview = const SearchSectionState(),
+    this.moments = const SearchSectionState(),
     this.threads = const SearchSectionState(),
     this.users = const SearchSectionState(),
     this.posts = const SearchSectionState(),
@@ -114,16 +133,20 @@ class SearchState {
 
   final String query;
   final SearchResultTab activeTab;
+  final SearchSectionState<SearchOverviewResult> overview;
+  final SearchSectionState<MomentCard> moments;
   final SearchSectionState<SearchThreadResult> threads;
   final SearchSectionState<SearchUserResult> users;
   final SearchSectionState<SearchPostResult> posts;
 
   bool get hasQuery => query.isNotEmpty;
-  bool get isPostQueryValid => query.runes.length >= 2;
+  bool get isContentQueryValid => query.runes.length >= 2;
 
   SearchState copyWith({
     String? query,
     SearchResultTab? activeTab,
+    SearchSectionState<SearchOverviewResult>? overview,
+    SearchSectionState<MomentCard>? moments,
     SearchSectionState<SearchThreadResult>? threads,
     SearchSectionState<SearchUserResult>? users,
     SearchSectionState<SearchPostResult>? posts,
@@ -131,9 +154,24 @@ class SearchState {
     return SearchState(
       query: query ?? this.query,
       activeTab: activeTab ?? this.activeTab,
+      overview: overview ?? this.overview,
+      moments: moments ?? this.moments,
       threads: threads ?? this.threads,
       users: users ?? this.users,
       posts: posts ?? this.posts,
     );
   }
+}
+
+class ThreadPostSearchState {
+  const ThreadPostSearchState({
+    this.query = '',
+    this.results = const SearchSectionState(),
+  });
+
+  final String query;
+  final SearchSectionState<SearchPostResult> results;
+
+  bool get hasQuery => query.isNotEmpty;
+  bool get isQueryValid => query.runes.length >= 2;
 }

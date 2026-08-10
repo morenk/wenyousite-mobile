@@ -8,7 +8,7 @@ import 'package:wenyousite_mobile/features/editor/data/mention_candidate_reposit
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
 void main() {
-  test('候选查询传递主题和关键词并映射关系与全体权限', () async {
+  test('候选查询合并主题关系与全站用户并保留关系优先级', () async {
     final api = _MockUsersApi();
     when(
       () => api.usersMentionCandidates(threadId: 'thread-1', q: '温'),
@@ -29,6 +29,12 @@ void main() {
         canMentionAllPlayers: true,
       ),
     );
+    when(() => api.usersSearch(q: '温')).thenAnswer(
+      (_) async => _globalResponse([
+        _author(id: 'user-following', username: '温柔朋友'),
+        _author(id: 'user-global', username: '温柔路人'),
+      ]),
+    );
 
     final result = await ApiMentionCandidateRepository(
       api,
@@ -38,12 +44,15 @@ void main() {
     expect(result.users.map((item) => item.id), [
       'user-following',
       'user-player',
+      'user-global',
     ]);
     expect(result.users.first.relation, MentionCandidateRelation.following);
-    expect(result.users.last.relation, MentionCandidateRelation.player);
+    expect(result.users[1].relation, MentionCandidateRelation.player);
+    expect(result.users.last.relation, MentionCandidateRelation.unknown);
     verify(
       () => api.usersMentionCandidates(threadId: 'thread-1', q: '温'),
     ).called(1);
+    verify(() => api.usersSearch(q: '温')).called(1);
   });
 
   test('空关键词省略 q，重复或不能安全编码的候选被过滤', () async {
@@ -149,6 +158,30 @@ Response<UsersMentionCandidates200Response> _response({
             ..users = ListBuilder(users)
             ..canMentionAllPlayers = canMentionAllPlayers,
         ),
+    ),
+  );
+}
+
+PostAuthorResponseDto _author({required String id, required String username}) {
+  return PostAuthorResponseDto(
+    (builder) => builder
+      ..id = id
+      ..username = username
+      ..avatar = null
+      ..level = 1,
+  );
+}
+
+Response<UsersSearch200Response> _globalResponse(
+  List<PostAuthorResponseDto> users,
+) {
+  return Response(
+    requestOptions: RequestOptions(path: '/api/v1/users/search'),
+    data: UsersSearch200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data = ListBuilder(users),
     ),
   );
 }

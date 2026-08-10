@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-动态是五栏应用壳的 `/moments` 主分支，分为“发现”和“关注”。该分支悬浮按钮进入受保护的 `/compose/moment`；详情使用公开 `/moments/:momentId`，编辑使用受保护的 `/moments/:momentId/edit`，动态收藏使用受保护的 `/moments/bookmarks`，公开用户主页通过 `/users/:userId/moments` 读取该用户动态。通知 moment 目标只用服务端 `momentId` 进入详情。
+动态是五栏应用壳的 `/moments` 主分支，分为“发现”和“关注”。该分支悬浮按钮进入受保护的 `/compose/moment`；详情使用公开 `/moments/:momentId`，编辑使用受保护的 `/moments/:momentId/edit`，动态收藏使用受保护的 `/moments/bookmarks`，公开用户主页通过 `/users/:userId/moments` 读取该用户动态。全站搜索的动态 Tab 以稳定 momentId 进入同一详情；通知 moment 目标也只用服务端 `momentId` 进入详情。
 
 ## 4. 用户操作流程
 
@@ -23,6 +23,7 @@
 ## 5. API operationId 与生成类型
 
 - 信息流与详情：`momentsList`、`momentsBookmarks`、`userMomentsList`、`momentsDetail`。
+- 搜索读模型由 search 模块调用 `searchSearchMoments`，映射为同一 `MomentCard`。
 - 内容写入：`momentsCreate`、`momentsUpdate`、`momentsRemove`。
 - 互动：`momentsLike`、`momentsUnlike`、`momentsBookmark`、`momentsUnbookmark`。
 - 评论：`momentsCommentAuthors`、`momentsCommentsList`、`momentsReplies`、`momentsCreateComment`、`momentsRemoveComment`。
@@ -30,7 +31,7 @@
 
 ## 6. 状态模型和数据流
 
-`MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果。仓储把所有生成 DTO 映射到独立领域模型，并对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
+`MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果。搜索控制器独立保存关键词与搜索 cursor，但通过 `MomentSearchMapper` 输出同一领域卡片。仓储/映射器对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -46,7 +47,7 @@
 
 ## 10. 跨模块约束
 
-media 提供相册选择、预签名上传、确认和完成态轮询；stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。视觉只消费 Foundation v1.1.0 Token 与图片角色：信息流封面可 cover，详情/评论图 contain，所有裁切图必须能进入原图。
+media 提供相册选择、预签名上传、确认和完成态轮询；stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口；search 复用动态卡片但不持有动态详情或写入状态。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。视觉只消费 Foundation v1.1.0 Token 与图片角色：信息流/搜索封面可 cover，详情/评论图 contain，所有裁切图必须能进入原图。
 
 ## 11. 测试场景与验收条件
 
@@ -55,11 +56,12 @@ media 提供相册选择、预签名上传、确认和完成态轮询；stickers
 - [x] 信息流 `40007` 重置、服务端互动计数、评论幂等重试、楼中楼分页/筛选和删除校准有控制器测试。
 - [x] 发现/关注游客边界、纯文字发布、详情/评论和 360/400/600dp 布局有 Widget 测试。
 - [x] 动态通知、用户动态、收藏、创建与编辑路由使用稳定 ID，并有导航/回归测试。
+- [x] 全站动态搜索的短词、分页、失效 cursor、安全 DTO 映射和详情路由有自动测试。
 - [ ] 使用公网专用账号完成发现/关注、九图发布编辑、原图、点赞收藏、图片/表情评论和删除真机联调。
 
 ## 12. 已知限制和后续功能
 
-相册当前一次选择并上传一张，不做并发九图选择；发布中的动态没有本机或云草稿，离页前尚未增加未保存确认。全屏图库具备规范核心手势，但暂不显示下载/分享入口。动态加油由 wallet 后续切片接入；全站动态搜索由 search 后续切片接入。
+相册当前一次选择并上传一张，不做并发九图选择；发布中的动态没有本机或云草稿，离页前尚未增加未保存确认。全屏图库具备规范核心手势，但暂不显示下载/分享入口。动态加油由 wallet 后续切片接入。
 
 ## 13. 最近审查的契约版本和后端提交
 

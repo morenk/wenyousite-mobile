@@ -5,13 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 
 void main() {
-  testWidgets('搜索页按主题、用户和正文三个页签惰性展示结果', (tester) async {
+  testWidgets('搜索页按综合、动态、主题、用户和正文五个页签惰性展示结果', (tester) async {
     final repository = _FakeSearchRepository();
     await tester.pumpWidget(_searchApp(repository));
 
@@ -24,6 +25,16 @@ void main() {
     expect(repository.threadCalls, 1);
     expect(repository.userCalls, 0);
     expect(repository.postCalls, 0);
+
+    await tester.tap(find.text('综合'));
+    await tester.pumpAndSettle();
+    expect(find.text('综合结果共 1 条'), findsNWidgets(3));
+    expect(repository.overviewCalls, 1);
+
+    await tester.tap(find.text('动态'));
+    await tester.pumpAndSettle();
+    expect(find.text('星海动态'), findsNWidgets(2));
+    expect(repository.momentCalls, 1);
 
     await tester.tap(find.text('用户'));
     await tester.pumpAndSettle();
@@ -45,7 +56,7 @@ void main() {
     await tester.tap(find.byKey(const Key('search-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('正文搜索至少需要 2 个字符'), findsOneWidget);
+    expect(find.text('动态和正文搜索至少需要 2 个字符'), findsOneWidget);
     expect(repository.postCalls, 0);
   });
 
@@ -72,6 +83,11 @@ void main() {
       initialLocation: '/search',
       routes: [
         GoRoute(path: '/search', builder: (_, _) => const SearchPage()),
+        GoRoute(
+          path: '/moments/:momentId',
+          name: 'moment-detail',
+          builder: (_, state) => Text('动态=${state.pathParameters['momentId']}'),
+        ),
         GoRoute(
           path: '/threads/:threadId',
           name: 'thread-detail',
@@ -105,6 +121,14 @@ void main() {
     await tester.tap(find.text('星海旅团'));
     await tester.pumpAndSettle();
     expect(find.text('主题=thread-1;帖子=null'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('动态'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-open-moment-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('动态=moment-1'), findsOneWidget);
 
     router.pop();
     await tester.pumpAndSettle();
@@ -160,8 +184,32 @@ class _FakeSearchRepository implements SearchRepository {
 
   final bool failFirstThreadRequest;
   int threadCalls = 0;
+  int overviewCalls = 0;
+  int momentCalls = 0;
   int userCalls = 0;
   int postCalls = 0;
+
+  @override
+  Future<SearchOverviewResult> searchOverview(String query) async {
+    overviewCalls += 1;
+    return SearchOverviewResult(
+      threads: [_threadResult()],
+      users: const [
+        SearchUserResult(id: 'user-1', username: '温柔测试员', bio: '一起写下温柔的故事。'),
+      ],
+      posts: [_postResult()],
+    );
+  }
+
+  @override
+  Future<CursorPage<MomentCard>> searchMoments(
+    String query, {
+    String? cursor,
+    int limit = 20,
+  }) async {
+    momentCalls += 1;
+    return CursorPage(items: [_momentResult()], hasMore: false);
+  }
 
   @override
   Future<List<SearchThreadResult>> searchThreads(String query) async {
@@ -172,20 +220,7 @@ class _FakeSearchRepository implements SearchRepository {
         requestId: 'search-request-id',
       );
     }
-    return [
-      SearchThreadResult(
-        id: 'thread-1',
-        title: '星海旅团',
-        categorySlug: 'RPG',
-        ownerId: 'user-1',
-        ownerName: '温柔测试员',
-        createdAt: DateTime.utc(2026, 8, 10),
-        memberCount: 5,
-        playerCount: 2,
-        postCount: 12,
-        coverImageUrls: const [],
-      ),
-    ];
+    return [_threadResult()];
   }
 
   @override
@@ -203,23 +238,67 @@ class _FakeSearchRepository implements SearchRepository {
     int limit = 20,
   }) async {
     postCalls += 1;
-    return CursorPage(
-      items: [
-        SearchPostResult(
-          id: 'post-1',
-          floorNumber: 7,
-          content: '这是一段星海正文',
-          preview: '这是一段星海正文',
-          authorId: 'user-1',
-          authorName: '温柔测试员',
-          threadId: 'thread-1',
-          threadTitle: '星海旅团',
-          subthreadId: 'subthread-1',
-          subthreadTitle: '主线',
-          createdAt: DateTime.utc(2026, 8, 10),
-        ),
-      ],
-      hasMore: false,
-    );
+    return CursorPage(items: [_postResult()], hasMore: false);
   }
+
+  @override
+  Future<CursorPage<SearchPostResult>> searchThreadPosts(
+    String threadId,
+    String query, {
+    String? cursor,
+    int limit = 20,
+  }) async {
+    return CursorPage(items: [_postResult()], hasMore: false);
+  }
+}
+
+SearchThreadResult _threadResult() {
+  return SearchThreadResult(
+    id: 'thread-1',
+    title: '星海旅团',
+    categorySlug: 'RPG',
+    ownerId: 'user-1',
+    ownerName: '温柔测试员',
+    createdAt: DateTime.utc(2026, 8, 10),
+    memberCount: 5,
+    playerCount: 2,
+    postCount: 12,
+    coverImageUrls: const [],
+  );
+}
+
+SearchPostResult _postResult() {
+  return SearchPostResult(
+    id: 'post-1',
+    floorNumber: 7,
+    content: '这是一段星海正文',
+    preview: '这是一段星海正文',
+    authorId: 'user-1',
+    authorName: '温柔测试员',
+    threadId: 'thread-1',
+    threadTitle: '星海旅团',
+    subthreadId: 'subthread-1',
+    subthreadTitle: '主线',
+    createdAt: DateTime.utc(2026, 8, 10),
+  );
+}
+
+MomentCard _momentResult() {
+  return MomentCard(
+    id: 'moment-1',
+    author: const MomentAuthor(id: 'user-1', username: '温柔测试员', level: 3),
+    title: '星海动态',
+    contentExcerpt: '一起看星海',
+    coverType: MomentCoverType.text,
+    textCoverTheme: MomentTextCoverTheme.rose,
+    imageCount: 0,
+    likeCount: 1,
+    commentCount: 1,
+    bookmarkCount: 0,
+    tipTotal: 0,
+    viewerLiked: false,
+    viewerBookmarked: false,
+    createdAt: DateTime.utc(2026, 8, 10),
+    updatedAt: DateTime.utc(2026, 8, 10),
+  );
 }

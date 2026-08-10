@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 
@@ -78,7 +80,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 child: WenyouEmptyState(
                   icon: Icons.manage_search_rounded,
                   title: '输入关键词开始搜索',
-                  message: '可以查找公开主题、用户和楼层正文。',
+                  message: '可以查找公开动态、主题、用户和楼层正文。',
                 ),
               )
             else
@@ -132,7 +134,7 @@ class _SearchForm extends StatelessWidget {
               maxLength: 100,
               decoration: const InputDecoration(
                 labelText: '关键词',
-                hintText: '主题、用户名或楼层内容',
+                hintText: '动态、主题、用户名或楼层内容',
                 prefixIcon: Icon(Icons.search_rounded),
                 counterText: '',
               ),
@@ -161,24 +163,32 @@ class _SearchTabs extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SegmentedButton<SearchResultTab>(
-      showSelectedIcon: false,
-      selected: {state.activeTab},
-      onSelectionChanged: (selection) {
-        ref.read(searchControllerProvider.notifier).selectTab(selection.single);
-      },
-      segments: [
-        for (final tab in SearchResultTab.values)
-          ButtonSegment(
-            value: tab,
-            label: Text(tab.label),
-            icon: Icon(_tabIcon(tab), size: 18),
-          ),
-      ],
+    return SingleChildScrollView(
+      key: const Key('search-tabs-scroll'),
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<SearchResultTab>(
+        showSelectedIcon: false,
+        selected: {state.activeTab},
+        onSelectionChanged: (selection) {
+          ref
+              .read(searchControllerProvider.notifier)
+              .selectTab(selection.single);
+        },
+        segments: [
+          for (final tab in SearchResultTab.values)
+            ButtonSegment(
+              value: tab,
+              label: Text(tab.label),
+              icon: Icon(_tabIcon(tab), size: 18),
+            ),
+        ],
+      ),
     );
   }
 
   IconData _tabIcon(SearchResultTab tab) => switch (tab) {
+    SearchResultTab.overview => Icons.grid_view_outlined,
+    SearchResultTab.moments => Icons.auto_awesome_outlined,
     SearchResultTab.threads => Icons.forum_outlined,
     SearchResultTab.users => Icons.people_outline_rounded,
     SearchResultTab.posts => Icons.subject_rounded,
@@ -192,16 +202,20 @@ class _ActiveSearchResults extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (state.activeTab == SearchResultTab.posts && !state.isPostQueryValid) {
+    if ((state.activeTab == SearchResultTab.moments ||
+            state.activeTab == SearchResultTab.posts) &&
+        !state.isContentQueryValid) {
       return const WenyouPanel(
         child: WenyouEmptyState(
           icon: Icons.text_fields_rounded,
-          title: '正文搜索至少需要 2 个字符',
+          title: '动态和正文搜索至少需要 2 个字符',
           message: '主题和用户名仍然支持单字符搜索。',
         ),
       );
     }
     return switch (state.activeTab) {
+      SearchResultTab.overview => _OverviewSectionBody(state: state.overview),
+      SearchResultTab.moments => _MomentSectionBody(state: state.moments),
       SearchResultTab.threads => _SectionBody<SearchThreadResult>(
         state: state.threads,
         emptyTitle: '没有匹配的主题',
@@ -216,6 +230,203 @@ class _ActiveSearchResults extends ConsumerWidget {
       ),
       SearchResultTab.posts => _PostSectionBody(state: state.posts),
     };
+  }
+}
+
+class _OverviewSectionBody extends ConsumerWidget {
+  const _OverviewSectionBody({required this.state});
+
+  final SearchSectionState<SearchOverviewResult> state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return switch (state.phase) {
+      SearchSectionPhase.idle ||
+      SearchSectionPhase.loading => const _SearchLoadingState(),
+      SearchSectionPhase.failed => _SearchErrorState(
+        failure: state.failure,
+        onRetry: () =>
+            ref.read(searchControllerProvider.notifier).retryActive(),
+      ),
+      SearchSectionPhase.ready
+          when state.items.isEmpty || state.items.single.isEmpty =>
+        const WenyouPanel(
+          child: WenyouEmptyState(
+            icon: Icons.search_off_rounded,
+            title: '没有综合匹配结果',
+            message: '可以换个关键词，或进入动态分类继续搜索。',
+          ),
+        ),
+      SearchSectionPhase.ready => _OverviewResults(result: state.items.single),
+    };
+  }
+}
+
+class _OverviewResults extends ConsumerWidget {
+  const _OverviewResults({required this.result});
+
+  final SearchOverviewResult result;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.wenyouTokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (result.threads.isNotEmpty)
+          _OverviewGroup(
+            title: '主题',
+            total: result.threads.length,
+            onAll: () => ref
+                .read(searchControllerProvider.notifier)
+                .selectTab(SearchResultTab.threads),
+            children: [
+              for (final item in result.threads.take(2))
+                _ThreadResultCard(item: item),
+            ],
+          ),
+        if (result.threads.isNotEmpty && result.users.isNotEmpty)
+          SizedBox(height: tokens.space20),
+        if (result.users.isNotEmpty)
+          _OverviewGroup(
+            title: '用户',
+            total: result.users.length,
+            onAll: () => ref
+                .read(searchControllerProvider.notifier)
+                .selectTab(SearchResultTab.users),
+            children: [
+              for (final item in result.users.take(2))
+                _UserResultCard(item: item),
+            ],
+          ),
+        if ((result.threads.isNotEmpty || result.users.isNotEmpty) &&
+            result.posts.isNotEmpty)
+          SizedBox(height: tokens.space20),
+        if (result.posts.isNotEmpty)
+          _OverviewGroup(
+            title: '正文',
+            total: result.posts.length,
+            onAll: () => ref
+                .read(searchControllerProvider.notifier)
+                .selectTab(SearchResultTab.posts),
+            children: [
+              for (final item in result.posts.take(2))
+                _PostResultCard(item: item),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _OverviewGroup extends StatelessWidget {
+  const _OverviewGroup({
+    required this.title,
+    required this.total,
+    required this.onAll,
+    required this.children,
+  });
+
+  final String title;
+  final int total;
+  final VoidCallback onAll;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WenyouSectionHeader(
+          title: title,
+          subtitle: '综合结果共 $total 条',
+          trailing: TextButton(onPressed: onAll, child: const Text('查看全部')),
+        ),
+        SizedBox(height: tokens.space8),
+        for (var index = 0; index < children.length; index++) ...[
+          if (index > 0) SizedBox(height: tokens.space12),
+          children[index],
+        ],
+      ],
+    );
+  }
+}
+
+class _MomentSectionBody extends ConsumerWidget {
+  const _MomentSectionBody({required this.state});
+
+  final SearchSectionState<MomentCard> state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.wenyouTokens;
+    if (state.phase != SearchSectionPhase.ready || state.items.isEmpty) {
+      return _SectionBody<MomentCard>(
+        state: state,
+        emptyTitle: '没有匹配的动态',
+        emptyMessage: '动态会同时匹配标题和纯文本正文。',
+        itemBuilder: (context, item) => _MomentResultCard(item: item),
+      );
+    }
+    return Column(
+      children: [
+        for (var index = 0; index < state.items.length; index++) ...[
+          if (index > 0) SizedBox(height: tokens.space12),
+          _MomentResultCard(item: state.items[index]),
+        ],
+        if (state.failure != null) ...[
+          SizedBox(height: tokens.space12),
+          _SearchInlineError(
+            failure: state.failure!,
+            onRetry: () =>
+                ref.read(searchControllerProvider.notifier).loadMoreMoments(),
+          ),
+        ],
+        if (state.hasMore && state.failure == null) ...[
+          SizedBox(height: tokens.space12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const Key('search-moments-load-more'),
+              onPressed: state.isLoadingMore
+                  ? null
+                  : () => ref
+                        .read(searchControllerProvider.notifier)
+                        .loadMoreMoments(),
+              icon: state.isLoadingMore
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.expand_more_rounded),
+              label: Text(state.isLoadingMore ? '正在加载' : '加载更多动态'),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MomentResultCard extends StatelessWidget {
+  const _MomentResultCard({required this.item});
+
+  final MomentCard item;
+
+  @override
+  Widget build(BuildContext context) {
+    return MomentCardTile(
+      moment: item,
+      onTap: () => context.pushNamed(
+        'moment-detail',
+        pathParameters: {'momentId': item.id},
+      ),
+      onAuthorTap: () => context.pushNamed(
+        'user-profile',
+        pathParameters: {'userId': item.author.id},
+      ),
+    );
   }
 }
 

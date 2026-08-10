@@ -21,6 +21,7 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
+import 'package:wenyousite_mobile/features/search/presentation/thread_post_search_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
@@ -217,6 +218,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             threadId: state.pathParameters['threadId']!,
           );
         },
+      ),
+      GoRoute(
+        path: '/threads/:threadId/search',
+        name: 'thread-post-search',
+        builder: (context, state) =>
+            ThreadPostSearchPage(threadId: state.pathParameters['threadId']!),
       ),
       GoRoute(
         path: '/threads/:threadId',

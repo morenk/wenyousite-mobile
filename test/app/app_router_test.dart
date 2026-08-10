@@ -197,6 +197,17 @@ void main() {
     );
   });
 
+  test('公开主题内搜索保留游客可达性', () {
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: '/threads/thread-1/search',
+        uri: Uri.parse('/threads/thread-1/search'),
+      ),
+      isNull,
+    );
+  });
+
   test('动态详情与用户动态公开，发布编辑与收藏受登录保护', () {
     for (final location in ['/moments/moment-1', '/users/user-1/moments']) {
       expect(

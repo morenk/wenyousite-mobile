@@ -12,11 +12,11 @@
 
 ## 3. 页面、入口和导航关系
 
-首页和搜索主题卡片进入命名路由 `/threads/:threadId`，详情标签进入公开 `/tags/:tagId`；正文搜索结果使用 `/threads/:threadId?post=:postId` 复用同一详情页，楼层卡片再进入 `/threads/:threadId/posts/:postId/replies`。详情 capability 对管理者开放受保护的 `/threads/:threadId/manage`，标签、子贴目录和成员身份分别进入 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；已发布私密主题楼主在管理页刷新并复制 Web 兼容邀请。受保护路由 `/join/:token` 登录回跳后预览邀请，加入或已加入时进入稳定主题详情。保存后返回并刷新详情，删除成功清栈回首页。应用壳创建按钮进入受保护路由 `/compose/thread`，发布确认后替换到新主题详情。游客从互动、发帖、创建、管理或邀请入口登录时保留完整目标。子贴切换同时控制正文与楼层数据源。
+首页和搜索主题卡片进入命名路由 `/threads/:threadId`，详情标签进入公开 `/tags/:tagId`；详情工具栏进入公开 `/threads/:threadId/search` 搜索该主题全部子贴，结果使用 `/threads/:threadId?post=:postId` 回到同一详情页定位，楼层卡片再进入 `/threads/:threadId/posts/:postId/replies`。详情 capability 对管理者开放受保护的 `/threads/:threadId/manage`，标签、子贴目录和成员身份分别进入 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；已发布私密主题楼主在管理页刷新并复制 Web 兼容邀请。受保护路由 `/join/:token` 登录回跳后预览邀请，加入或已加入时进入稳定主题详情。保存后返回并刷新详情，删除成功清栈回首页。应用壳创建按钮进入受保护路由 `/compose/thread`，发布确认后替换到新主题详情。游客从互动、发帖、创建、管理或邀请入口登录时保留完整目标。子贴切换同时控制正文与楼层数据源。
 
 ## 4. 用户操作流程
 
-阅读时调用主题详情接口加载元数据、标签、登录态互动与 capability 投影；按 `sortOrder` 排列子贴并加载对应正文/楼层。带 `post` 目标时解析所属子贴并展示上下文。点赞采用服务端计数，收藏按记录 ID 删除。普通登录用户并发读取本人订阅和成员候选；管理 capability 开放正文编辑与楼层管理，普通登录用户可从当前子贴发表楼层。
+阅读时调用主题详情接口加载元数据、标签、登录态互动与 capability 投影；按 `sortOrder` 排列子贴并加载对应正文/楼层。带 `post` 目标时解析所属子贴并展示上下文。主题内搜索要求至少两个 Unicode 字符，按相关度跨全部子贴分页，点击结果仍由详情重新校验帖子归属和上下文。点赞采用服务端计数，收藏按记录 ID 删除。普通登录用户并发读取本人订阅和成员候选；管理 capability 开放正文编辑与楼层管理，普通登录用户可从当前子贴发表楼层。
 
 创建时先恢复按账号隔离的本地 Markdown 快照并加载动态分类；首次保存/发布用稳定 `clientRequestId` 调用 `threadsCreate` 建立未发布主题，再携带主题、默认子贴与正文版本调用 `threadsSaveAggregate`。保存保持 `published=false`，发布必须由响应明确确认 `published=true`。
 
@@ -33,6 +33,7 @@
 ## 5. API operationId 与生成类型
 
 - 当前读取：`threadsFindById`、用于目标定位的 `postsFindById`；普通详情响应已经包含子贴集合、子贴正文 ID/版本、主题标签、统计、互动状态和 capability 等可选登录态投影，不额外请求子贴列表。独立管理工作台使用 `subthreadsFindAll` 取得规范目录，并在编辑前使用 `subthreadsFindById` 取得最新版和所属主题事实。
+- 当前主题内搜索：search 模块调用 `threadSearchSearchPosts`，使用 `ThreadSearchSearchPosts200Response` 与 `SearchPostResponseDto`。
 - 当前互动与成员：`threadsLike`、`threadsUnlike`、`bookmarksCreate`、`bookmarksRemove`、`subscriptionsFindAll`、`subscriptionsCreate`、`subscriptionsRemove`、`threadMembersFindAll`、`threadMembersUpdateMember`、`threadMembersExitMember`。
 - 主要生成类型：`ThreadDetailResponseDto`、`ThreadCapabilitiesResponseDto`、`SubscriptionResponseDto`、`CreateSubscriptionDto`、`ThreadMemberResponseDto`、`ThreadLikeResponseDto`、`BookmarkResponseDto`、`ThreadSubthreadResponseDto`。
 - 当前创建写入：`threadsCreate`、`threadsSaveAggregate`，使用 `CreateThreadDto`、`SaveThreadAggregateDto` 和响应中的乐观锁版本。
@@ -45,7 +46,7 @@
 
 ## 6. 状态模型和数据流
 
-主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离，控制器丢弃过期请求；目标帖子由独立 FutureProvider 读取。点赞/收藏与订阅分别由 social 的 autoDispose family 管理。创建状态由 editor 模块管理表单、本地快照、远端草稿版本、待确认幂等请求和提交动作。已有主题、子贴、标签、成员、邀请生成和邀请访问分别使用独立 autoDispose family。子贴创建键按规范化表单指纹稳定复用，单条编辑先刷新版本，排序写入不乐观覆盖；标签搜索丢弃旧响应，单个标签写入串行；成员写入串行执行并只替换响应确认的目标成员，退出状态与列表状态分离。邀请预览丢弃过期刷新，加入写入串行执行并校验返回主题与预览目标一致。身份变化会释放旧状态并切换本地分区。
+主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离，控制器丢弃过期请求；目标帖子由独立 FutureProvider 读取。主题内搜索由 search 的 autoDispose family 按 threadId 隔离关键词、请求代次、cursor 和局部错误。点赞/收藏与订阅分别由 social 的 autoDispose family 管理。创建状态由 editor 模块管理表单、本地快照、远端草稿版本、待确认幂等请求和提交动作。已有主题、子贴、标签、成员、邀请生成和邀请访问分别使用独立 autoDispose family。子贴创建键按规范化表单指纹稳定复用，单条编辑先刷新版本，排序写入不乐观覆盖；标签搜索丢弃旧响应，单个标签写入串行；成员写入串行执行并只替换响应确认的目标成员，退出状态与列表状态分离。邀请预览丢弃过期刷新，加入写入串行执行并校验返回主题与预览目标一致。身份变化会释放旧状态并切换本地分区。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -57,7 +58,7 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-首次加载、重新加载、主题不可访问、无子贴和正文安全降级分别展示明确状态；目标定位另有完整空错重试。互动、订阅、楼层删除、主题、子贴、成员和邀请写入串行执行，空响应不伪装成功，失败保留旧状态与请求 ID。子贴工作台加载失败可重试；创建不明确时保留表单与原幂等键，更新 `40002`/HTTP 409 时刷新目录并要求重新编辑，排序失败不改变权威顺序，`40107` 在弹窗内验证邮箱后保留输入重试。成员工作台写入失败保留权威旧列表；`40107` 保留页面并可先验证邮箱。邀请 `40408`、HTTP 404 或 403 是确定失效状态，不自动重试；临时预览失败允许重试，加入失败保留预览，生成失败保留上一次新链接。创建主题结果不确定时保留原幂等载荷，聚合失败保留本地内容和远端版本。主题元数据收到 `40002`/HTTP 409 时读取最新版但保留本机表单，由用户选择采用云端或基于新 `version` 覆盖。
+首次加载、重新加载、主题不可访问、无子贴和正文安全降级分别展示明确状态；目标定位和主题内搜索另有完整空错重试。主题内搜索短词不发请求，分页失败保留旧结果，`40007` 从第一页恢复，跨主题 ID 响应直接拒绝。互动、订阅、楼层删除、主题、子贴、成员和邀请写入串行执行，空响应不伪装成功，失败保留旧状态与请求 ID。子贴工作台加载失败可重试；创建不明确时保留表单与原幂等键，更新 `40002`/HTTP 409 时刷新目录并要求重新编辑，排序失败不改变权威顺序，`40107` 在弹窗内验证邮箱后保留输入重试。成员工作台写入失败保留权威旧列表；`40107` 保留页面并可先验证邮箱。邀请 `40408`、HTTP 404 或 403 是确定失效状态，不自动重试；临时预览失败允许重试，加入失败保留预览，生成失败保留上一次新链接。创建主题结果不确定时保留原幂等载荷，聚合失败保留本地内容和远端版本。主题元数据收到 `40002`/HTTP 409 时读取最新版但保留本机表单，由用户选择采用云端或基于新 `version` 覆盖。
 
 ## 10. 跨模块约束
 
@@ -70,6 +71,7 @@
 - [x] 标题、作者、分类、状态、标签、统计与正文可安全展示，Markdown 未知骰子结果可降级。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
 - [x] 正文搜索目标能自动切换所属子贴并展示目标楼层或楼中楼上下文。
+- [x] 详情入口可搜索全部子贴正文；短词、空错重试、分页、失效 cursor、跨主题响应和 360/400/600dp 页面有测试。
 - [x] 点赞/取消点赞使用服务端计数，收藏/取消收藏使用稳定记录 ID，失败保留旧状态。
 - [x] 游客互动登录回跳保留帖子目标，登录身份变化重取投影，登录态操作和 360/400/600dp 布局通过。
 - [x] 两类订阅采用服务端记录 ID，候选/本人/管理者过滤、失败恢复及多宽度玩家面板通过。
@@ -88,7 +90,7 @@
 
 ## 12. 已知限制和后续功能
 
-当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 搜索目标定位 + 点赞收藏订阅 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。V1 不做举报管理、子贴级标签或 Android App Links。
+当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 全站/主题内搜索定位 + 点赞收藏订阅 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。V1 不做举报管理、子贴级标签或 Android App Links。
 
 ## 13. 最近审查的契约版本和后端提交
 

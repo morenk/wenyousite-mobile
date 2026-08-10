@@ -26,13 +26,14 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
     required String query,
   }) async {
     final normalizedThreadId = threadId.trim();
+    final normalizedQuery = query.trim();
     if (normalizedThreadId.isEmpty) {
       throw const ApiFailure(userMessage: '缺少主题上下文，暂时无法加载可提及用户。');
     }
     try {
       final response = await _api.usersMentionCandidates(
         threadId: normalizedThreadId,
-        q: query.isEmpty ? null : query,
+        q: normalizedQuery.isEmpty ? null : normalizedQuery,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -59,9 +60,30 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
               },
             ),
           )
-          .toList(growable: false);
+          .toList(growable: true);
+      if (normalizedQuery.isNotEmpty) {
+        final global = (await _api.usersSearch(q: normalizedQuery)).data?.data;
+        if (global == null) {
+          throw const ApiFailure(userMessage: '全站用户搜索响应不完整，请稍后重试。');
+        }
+        for (final candidate in global) {
+          if (users.length >= 20) break;
+          if (!_stableId.hasMatch(candidate.id) ||
+              !_username.hasMatch(candidate.username) ||
+              !seen.add(candidate.id)) {
+            continue;
+          }
+          users.add(
+            MentionCandidate(
+              id: candidate.id,
+              username: candidate.username,
+              relation: MentionCandidateRelation.unknown,
+            ),
+          );
+        }
+      }
       return MentionCandidatesResult(
-        users: List.unmodifiable(users),
+        users: List.unmodifiable(users.take(20)),
         canMentionAllPlayers: data.canMentionAllPlayers,
       );
     } on DioException catch (error) {

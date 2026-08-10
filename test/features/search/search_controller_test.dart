@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
@@ -20,6 +21,14 @@ void main() {
     expect(repository.userQueries, isEmpty);
     expect(repository.postQueries, isEmpty);
 
+    await controller.selectTab(SearchResultTab.overview);
+    expect(controller.state.overview.phase, SearchSectionPhase.ready);
+    expect(repository.overviewQueries, ['星海']);
+
+    await controller.selectTab(SearchResultTab.moments);
+    expect(controller.state.moments.phase, SearchSectionPhase.ready);
+    expect(repository.momentQueries, ['星海']);
+
     await controller.selectTab(SearchResultTab.users);
     expect(controller.state.users.phase, SearchSectionPhase.ready);
     expect(repository.userQueries, ['星海']);
@@ -36,7 +45,7 @@ void main() {
     await controller.selectTab(SearchResultTab.posts);
     await controller.submit('星');
 
-    expect(controller.state.isPostQueryValid, isFalse);
+    expect(controller.state.isContentQueryValid, isFalse);
     expect(controller.state.posts.phase, SearchSectionPhase.idle);
     expect(repository.postQueries, isEmpty);
   });
@@ -93,10 +102,62 @@ void main() {
     expect(controller.state.posts.failure, isNull);
     expect(controller.state.posts.isLoadingMore, isFalse);
   });
+
+  test('动态分页去重，主题内搜索游标失效后也从第一页恢复', () async {
+    var momentFirstPageCalls = 0;
+    var threadFirstPageCalls = 0;
+    final repository = _FakeSearchRepository(
+      onMoments: (query, cursor) async {
+        if (cursor == 'moment-next') {
+          throw const ApiFailure(
+            userMessage: '列表位置已失效，正在重新加载。',
+            businessCode: 40007,
+          );
+        }
+        momentFirstPageCalls += 1;
+        return CursorPage(
+          items: [_moment('moment-$momentFirstPageCalls')],
+          cursor: 'moment-next',
+          hasMore: true,
+        );
+      },
+      onThreadPosts: (threadId, query, cursor) async {
+        if (cursor == 'thread-next') {
+          throw const ApiFailure(
+            userMessage: '列表位置已失效，正在重新加载。',
+            businessCode: 40007,
+          );
+        }
+        threadFirstPageCalls += 1;
+        return CursorPage(
+          items: [_post('thread-post-$threadFirstPageCalls', '主题内结果')],
+          cursor: 'thread-next',
+          hasMore: true,
+        );
+      },
+    );
+    final search = SearchController(repository);
+    await search.selectTab(SearchResultTab.moments);
+    await search.submit('星海');
+    await search.loadMoreMoments();
+    expect(momentFirstPageCalls, 2);
+    expect(search.state.moments.items.single.id, 'moment-2');
+
+    final threadSearch = ThreadPostSearchController(repository, 'thread-1');
+    await threadSearch.submit('星海');
+    await threadSearch.loadMore();
+    expect(threadFirstPageCalls, 2);
+    expect(threadSearch.state.results.items.single.id, 'thread-post-2');
+  });
 }
 
 class _FakeSearchRepository implements SearchRepository {
-  _FakeSearchRepository({this.onThreads, this.onPosts});
+  _FakeSearchRepository({
+    this.onThreads,
+    this.onPosts,
+    this.onMoments,
+    this.onThreadPosts,
+  });
 
   final Future<List<SearchThreadResult>> Function(String query)? onThreads;
   final Future<CursorPage<SearchPostResult>> Function(
@@ -104,9 +165,40 @@ class _FakeSearchRepository implements SearchRepository {
     String? cursor,
   )?
   onPosts;
+  final Future<CursorPage<MomentCard>> Function(String query, String? cursor)?
+  onMoments;
+  final Future<CursorPage<SearchPostResult>> Function(
+    String threadId,
+    String query,
+    String? cursor,
+  )?
+  onThreadPosts;
+  final overviewQueries = <String>[];
+  final momentQueries = <String>[];
   final threadQueries = <String>[];
   final userQueries = <String>[];
   final postQueries = <String>[];
+
+  @override
+  Future<SearchOverviewResult> searchOverview(String query) async {
+    overviewQueries.add(query);
+    return SearchOverviewResult(
+      threads: [_thread('thread-1', '星海')],
+      users: const [SearchUserResult(id: 'user-1', username: '温柔测试员')],
+      posts: [_post('post-1', '星海正文')],
+    );
+  }
+
+  @override
+  Future<CursorPage<MomentCard>> searchMoments(
+    String query, {
+    String? cursor,
+    int limit = 20,
+  }) {
+    momentQueries.add(query);
+    return onMoments?.call(query, cursor) ??
+        Future.value(CursorPage(items: [_moment('moment-1')], hasMore: false));
+  }
 
   @override
   Future<List<SearchThreadResult>> searchThreads(String query) {
@@ -130,6 +222,19 @@ class _FakeSearchRepository implements SearchRepository {
     return onPosts?.call(query, cursor) ??
         Future.value(
           CursorPage(items: [_post('post-1', '星海正文')], hasMore: false),
+        );
+  }
+
+  @override
+  Future<CursorPage<SearchPostResult>> searchThreadPosts(
+    String threadId,
+    String query, {
+    String? cursor,
+    int limit = 20,
+  }) {
+    return onThreadPosts?.call(threadId, query, cursor) ??
+        Future.value(
+          CursorPage(items: [_post('post-1', '主题内正文')], hasMore: false),
         );
   }
 }
@@ -160,5 +265,25 @@ SearchPostResult _post(String id, String content) {
     subthreadId: 'subthread-1',
     subthreadTitle: '主线',
     createdAt: DateTime.utc(2026, 8, 10),
+  );
+}
+
+MomentCard _moment(String id) {
+  return MomentCard(
+    id: id,
+    author: const MomentAuthor(id: 'user-1', username: '温柔测试员', level: 3),
+    title: '星海动态',
+    contentExcerpt: '一起看星海',
+    coverType: MomentCoverType.text,
+    textCoverTheme: MomentTextCoverTheme.rose,
+    imageCount: 0,
+    likeCount: 0,
+    commentCount: 0,
+    bookmarkCount: 0,
+    tipTotal: 0,
+    viewerLiked: false,
+    viewerBookmarked: false,
+    createdAt: DateTime.utc(2026, 8, 10),
+    updatedAt: DateTime.utc(2026, 8, 10),
   );
 }

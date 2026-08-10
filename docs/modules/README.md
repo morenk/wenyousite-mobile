@@ -9,7 +9,7 @@
 | home | in_progress | 0.3.0-dev | [首页](home.md) |
 | moments | in_progress | 0.3.0-dev / 0.4.0-dev | [动态](moments.md) |
 | tags | in_progress | 0.3.0-dev | [标签](tags.md) |
-| search | in_progress | 0.3.0-dev | [搜索](search.md) |
+| search | complete | 0.3.0-dev | [搜索](search.md) |
 | threads | in_progress | 0.3.0-dev / 0.6.0-dev | [主题](threads.md) |
 | posts | in_progress | 0.3.0-dev / 0.4.0-dev | [楼层与回复](posts.md) |
 | editor | in_progress | 0.5.0-dev | [编辑器](editor.md) |

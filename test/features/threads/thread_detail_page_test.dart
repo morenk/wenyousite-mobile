@@ -28,6 +28,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('星海旅团'), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
     expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('主线正文'), findsOneWidget);
     expect(

@@ -112,6 +112,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       appBar: AppBar(
         title: const Text('主题详情'),
         actions: [
+          IconButton(
+            key: const Key('thread-detail-search'),
+            tooltip: '搜索主题内容',
+            onPressed: () => context.pushNamed(
+              'thread-post-search',
+              pathParameters: {'threadId': widget.threadId},
+            ),
+            icon: const Icon(Icons.search_rounded),
+          ),
           if (state.detail?.canManageThread == true)
             IconButton(
               key: const Key('thread-detail-manage'),
