@@ -4,6 +4,7 @@
 
 ### Added
 
+- 新增受保护的 `/me/security/verify-email` 邮箱验证闭环：读取当前账号事实、显式反枚举重发、60 秒/`Retry-After` 冷却、6 位验证码专用错误、验证后资料重读及原操作恢复均可操作；“我的”和创建主题失败态提供入口。
 - 登录页新增 `/auth/forgot-password` 与 `/auth/reset-password` 账号恢复闭环：反枚举发送提示、60 秒/`Retry-After` 冷却、验证码专用错误、全终端撤销语义和原目标回跳均可操作。
 - 新增 `/threads/:threadId/posts/:postId/replies` 独立楼中楼：公开阅读、最早/最新排序、回复者筛选、目标补齐、cursor 分页、下拉刷新和 360dp 布局形成闭环。
 - 主题详情与楼中楼接入楼层/回复创建、作者编辑删除、管理者楼层删除及子贴正文 upsert；复用 Quill、图片、骰子和五槽位正文草稿，稳定幂等键与乐观锁冲突均要求明确确认。
@@ -41,6 +42,7 @@
 
 ### Changed
 
+- 开发版本进入 `0.3.0-dev.20+26`；`authVerifyEmail` 与 `authResendVerification` 完整接入，`40107` 保留只读会话和编辑草稿，验证成功不换 Token，只在重读本人资料确认后恢复发布资格。
 - 开发版本进入 `0.3.0-dev.19+25`；`authForgotPassword` 与 `authResetPassword` 完整接入，失效会话也可进入公开找回流程，成功后不建立伪会话而是要求使用新密码登录。
 - 开发版本进入 `0.3.0-dev.18+24`；`postsFindReplies`、`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove` 与既有楼层读取全部闭环，`40302/40303`、`40007`、`40002` 和不明确创建结果有稳定恢复状态。
 - 开发版本进入 `0.3.0-dev.17+23`；`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove` 全部接入，`40002` 冲突保留当前正文并要求基于最新版二次确认。

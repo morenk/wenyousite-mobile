@@ -222,7 +222,10 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
           ),
         ),
         SizedBox(height: tokens.space12),
-        _AccountContentPanel(disabled: widget.state.isSubmitting),
+        _AccountContentPanel(
+          disabled: widget.state.isSubmitting,
+          emailVerified: _profile.emailVerified,
+        ),
       ],
     );
   }
@@ -479,9 +482,13 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
 }
 
 class _AccountContentPanel extends StatelessWidget {
-  const _AccountContentPanel({required this.disabled});
+  const _AccountContentPanel({
+    required this.disabled,
+    required this.emailVerified,
+  });
 
   final bool disabled;
+  final bool emailVerified;
 
   @override
   Widget build(BuildContext context) {
@@ -545,6 +552,23 @@ class _AccountContentPanel extends StatelessWidget {
             onTap: disabled ? null : () => context.pushNamed('change-password'),
           ),
           const Divider(height: 1),
+          if (!emailVerified) ...[
+            ListTile(
+              key: const Key('me-open-verify-email'),
+              enabled: !disabled,
+              leading: const Icon(Icons.mark_email_unread_outlined),
+              title: const Text('验证当前邮箱'),
+              subtitle: const Text('验证后可发布主题和参与互动'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: disabled
+                  ? null
+                  : () => context.pushNamed(
+                      'verify-email',
+                      queryParameters: const {'returnTo': '/me'},
+                    ),
+            ),
+            const Divider(height: 1),
+          ],
           ListTile(
             key: const Key('me-open-change-email'),
             enabled: !disabled,

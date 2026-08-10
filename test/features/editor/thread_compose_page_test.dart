@@ -83,6 +83,36 @@ void main() {
     expect(repository.createCalls, 0);
   });
 
+  testWidgets('未验证邮箱保留编辑能力并提供验证恢复入口', (tester) async {
+    final controller = await _readyController(
+      _MemorySnapshotStore(),
+      repository: _FakeRepository(emailVerified: false),
+    );
+    await _pumpPage(tester, controller);
+
+    expect(find.textContaining('仍可编辑和保存草稿'), findsOneWidget);
+    expect(find.byKey(const Key('compose-verify-email')), findsOneWidget);
+    expect(find.byKey(const Key('compose-title')), findsOneWidget);
+  });
+
+  testWidgets('进入邮箱验证前落盘失败会要求明确选择', (tester) async {
+    final controller = await _readyController(
+      _MemorySnapshotStore(failSaves: true),
+      repository: _FakeRepository(emailVerified: false),
+    );
+    await _pumpPage(tester, controller);
+    await tester.enterText(find.byKey(const Key('compose-title')), '尚未保存的标题');
+
+    await tester.tap(find.byKey(const Key('compose-verify-email')));
+    await tester.pump();
+
+    expect(find.text('本地内容尚未保存'), findsOneWidget);
+    expect(find.textContaining('进入邮箱验证可能丢失'), findsOneWidget);
+    await tester.tap(find.text('留下编辑'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ThreadComposePage), findsOneWidget);
+  });
+
   testWidgets('图片上传完成后插入安全 Markdown 图片节点', (tester) async {
     final controller = await _readyController(_MemorySnapshotStore());
     await _pumpPage(
@@ -223,14 +253,17 @@ Future<void> _pumpPage(
 const _requestId = '550e8400-e29b-41d4-a716-446655440000';
 
 class _FakeRepository implements ThreadComposeRepository {
+  _FakeRepository({this.emailVerified = true});
+
+  final bool emailVerified;
   int createCalls = 0;
 
   @override
   Future<ThreadComposeBootstrap> fetchBootstrap() async {
-    return const ThreadComposeBootstrap(
+    return ThreadComposeBootstrap(
       userId: 'user-one',
-      emailVerified: true,
-      categories: [
+      emailVerified: emailVerified,
+      categories: const [
         ThreadComposeCategory(slug: 'TRPG', name: '跑团', sortOrder: 1),
       ],
     );

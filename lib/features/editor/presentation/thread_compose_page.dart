@@ -160,9 +160,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             SizedBox(height: tokens.space12),
           ],
           if (state.emailVerified == false) ...[
-            const WenyouStatusBanner(
+            WenyouStatusBanner(
               message: '邮箱尚未验证，仍可编辑和保存草稿，但暂时不能发布。',
               tone: WenyouStatusTone.error,
+              action: TextButton(
+                key: const Key('compose-verify-email'),
+                onPressed: state.isSubmitting ? null : _openEmailVerification,
+                child: const Text('现在验证'),
+              ),
             ),
             SizedBox(height: tokens.space12),
           ],
@@ -187,6 +192,15 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               message: state.actionFailure!.userMessage,
               detail: _requestDetail(state.actionFailure),
               tone: WenyouStatusTone.error,
+              action: state.actionFailure!.businessCode == 40107
+                  ? TextButton(
+                      key: const Key('compose-action-verify-email'),
+                      onPressed: state.isSubmitting
+                          ? null
+                          : _openEmailVerification,
+                      child: const Text('现在验证'),
+                    )
+                  : null,
             ),
             SizedBox(height: tokens.space12),
           ],
@@ -361,6 +375,41 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         ],
       ),
     );
+  }
+
+  Future<void> _openEmailVerification() async {
+    await _flushSnapshot();
+    if (!mounted) return;
+    final latest = ref.read(threadComposeControllerProvider);
+    if (latest.phase == ThreadComposePhase.ready &&
+        latest.localSnapshotStatus == LocalSnapshotStatus.failed) {
+      final continueAnyway = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('本地内容尚未保存'),
+          content: const Text('现在进入邮箱验证可能丢失刚才的修改。建议留下并检查设备存储后重试。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('留下编辑'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('仍然验证'),
+            ),
+          ],
+        ),
+      );
+      if (continueAnyway != true || !mounted) return;
+    }
+    final verified = await context.push<bool>(
+      Uri(
+        path: '/me/security/verify-email',
+        queryParameters: const {'returnTo': '/compose/thread'},
+      ).toString(),
+    );
+    if (verified != true || !mounted) return;
+    await ref.read(threadComposeControllerProvider.notifier).refreshBootstrap();
   }
 
   void _scheduleDocumentSync(ThreadComposeState state) {

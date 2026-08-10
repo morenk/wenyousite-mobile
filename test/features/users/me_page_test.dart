@@ -53,7 +53,27 @@ void main() {
     expect(find.text('登录终端'), findsOneWidget);
     expect(find.text('修改密码'), findsOneWidget);
     expect(find.text('更换邮箱'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-verify-email')), findsNothing);
     expect(repository.fetchCalls, 1);
+  });
+
+  testWidgets('未验证邮箱在账号安全区提供验证入口', (tester) async {
+    final repository = _FakeMeProfileRepository(
+      initialProfile: _profileWithEmailVerified(false),
+    );
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('邮箱待验证'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('me-open-verify-email')));
+    expect(find.text('验证当前邮箱'), findsOneWidget);
   });
 
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {
@@ -185,13 +205,16 @@ Future<ProviderContainer> _authenticatedContainer(
 }
 
 class _FakeMeProfileRepository implements MeProfileRepository {
-  _FakeMeProfileRepository({this.failFetchOnce = false});
+  _FakeMeProfileRepository({
+    this.failFetchOnce = false,
+    MeProfileModel? initialProfile,
+  }) : profile = initialProfile ?? _profile;
 
   bool failFetchOnce;
   int fetchCalls = 0;
   int updateCalls = 0;
   MeProfilePatch? lastPatch;
-  MeProfileModel profile = _profile;
+  MeProfileModel profile;
 
   @override
   Future<MeProfileModel> fetchMe() async {
@@ -252,6 +275,30 @@ final _profile = MeProfileModel(
   createdAt: DateTime.utc(2026, 8, 1),
   updatedAt: DateTime.utc(2026, 8, 10, 8),
 );
+
+MeProfileModel _profileWithEmailVerified(bool emailVerified) {
+  return MeProfileModel(
+    id: _profile.id,
+    email: _profile.email,
+    username: _profile.username,
+    avatarUrl: _profile.avatarUrl,
+    bio: _profile.bio,
+    level: _profile.level,
+    experience: _profile.experience,
+    currentLevelExperience: _profile.currentLevelExperience,
+    nextLevelExperience: _profile.nextLevelExperience,
+    receivedTipTotal: _profile.receivedTipTotal,
+    receivedTipCount: _profile.receivedTipCount,
+    showRecentReplies: _profile.showRecentReplies,
+    showPlayedThreads: _profile.showPlayedThreads,
+    showBookmarks: _profile.showBookmarks,
+    emailVerified: emailVerified,
+    followingCount: _profile.followingCount,
+    followerCount: _profile.followerCount,
+    createdAt: _profile.createdAt,
+    updatedAt: _profile.updatedAt,
+  );
+}
 
 const _tokens = SessionTokens(
   accessToken: 'access-token',

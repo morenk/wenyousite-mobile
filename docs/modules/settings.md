@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-“我的” `/me` 当前直接展示本人总览、资料和公开范围表单，并可进入自己的公开主页、本人关注/粉丝、`/me/blocks` 黑名单页、`/me/security/sessions` 登录终端页、`/me/security/password` 修改密码页及 `/me/security/email` 更换邮箱页。注销与关于后续拆为二级页面；任何开发信息都不得显示凭据。
+“我的” `/me` 当前直接展示本人总览、资料和公开范围表单，并可进入自己的公开主页、本人关注/粉丝、`/me/blocks` 黑名单页、`/me/security/sessions` 登录终端页、`/me/security/password` 修改密码页及 `/me/security/email` 更换邮箱页；本人邮箱尚未验证时额外显示 `/me/security/verify-email` 入口。注销与关于后续拆为二级页面；任何开发信息都不得显示凭据。
 
 ## 4. 用户操作流程
 
@@ -20,7 +20,7 @@
 
 ## 5. API operationId 与生成类型
 
-- 已接入：`usersGetMe`、`usersUpdateMe`、`usersFollowBlocks`、`usersFollowUnblock`、`authLogout`、`authListSessions`、`authRevokeSession`、`authChangePassword`、`authRequestChangeEmailCode`、`authVerifyChangeEmail`。
+- 已接入：`usersGetMe`、`usersUpdateMe`、`usersFollowBlocks`、`usersFollowUnblock`、`authLogout`、`authListSessions`、`authRevokeSession`、`authChangePassword`、`authRequestChangeEmailCode`、`authVerifyChangeEmail`、`authResendVerification`、`authVerifyEmail`。
 - 后续：`usersDeleteMe`。
 
 ## 6. 状态模型和数据流
@@ -29,7 +29,7 @@
 
 ## 7. 鉴权、权限和隐私规则
 
-`/me` 只在认证状态请求私有资料；`/me/following`、`/me/followers`、`/me/blocks` 与三个 `/me/security/*` 路径都受路由鉴权，游客先登录并保留安全回跳。用户名、邮箱冲突和限流以服务端为准；当前密码错误按业务码 `40116` 显示稳定提示。终端界面只根据 `platform` 映射平台文案，禁止读取或展示已废弃的 `deviceInfo` 原始 UA；其他页面只显示脱敏或用户正在换绑的邮箱，不展示 Token、密码、验证码、敏感凭据或预签名 URL。
+`/me` 只在认证状态请求私有资料；`/me/following`、`/me/followers`、`/me/blocks` 与四个 `/me/security/*` 路径都受路由鉴权，游客先登录并保留安全回跳。用户名、邮箱冲突和限流以服务端为准；当前密码错误按业务码 `40116` 显示稳定提示。终端界面只根据 `platform` 映射平台文案，禁止读取或展示已废弃的 `deviceInfo` 原始 UA；其他页面只显示脱敏或用户正在换绑的邮箱，不展示 Token、密码、验证码、敏感凭据或预签名 URL。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -50,6 +50,7 @@
 - [x] 本人关系与黑名单入口受鉴权，取消拉黑失败保留条目与请求 ID。
 - [x] 登录终端读取、排序、隐私降级、当前终端保护、其他终端撤销及失败恢复正确。
 - [x] 改密与换邮箱两步操作可恢复、限流正确，成功后清除本机双 Token 并要求重新登录。
+- [x] 未验证邮箱在本人页显示入口，验证页受鉴权且成功后刷新本人资料。
 - [x] 退出清本地会话且服务端失败保留安全后备；注销只用一次性账号人工验收。
 - [ ] 开发信息准确且无敏感数据。
 

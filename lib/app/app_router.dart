@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
+import 'package:wenyousite_mobile/features/auth/presentation/email_verification_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
@@ -179,6 +180,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ChangeEmailPage(),
       ),
       GoRoute(
+        path: '/me/security/verify-email',
+        name: 'verify-email',
+        builder: (context, state) => EmailVerificationPage(
+          returnTo: state.uri.queryParameters['returnTo'],
+        ),
+      ),
+      GoRoute(
         path: '/compose/thread',
         name: 'compose-thread',
         builder: (context, state) => const ThreadComposePage(),
@@ -260,7 +268,8 @@ String? resolveSessionRedirect({
     '/me/bookmarks' ||
     '/me/security/sessions' ||
     '/me/security/password' ||
-    '/me/security/email' => true,
+    '/me/security/email' ||
+    '/me/security/verify-email' => true,
     _ => false,
   };
   if (!session.isAuthenticated && protectedRoute) {
