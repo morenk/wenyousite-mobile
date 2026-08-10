@@ -92,4 +92,21 @@ void main() {
     expect(messageFor(40901), contains('邮箱已经注册'));
     expect(messageFor(40902), contains('用户名已被使用'));
   });
+
+  test('乐观锁冲突提示用户先读取最新版且不透传后端文案', () {
+    final options = RequestOptions(path: '/api/v1/drafts/draft-one');
+    final failure = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        response: Response<Object?>(
+          requestOptions: options,
+          statusCode: 409,
+          data: {'code': 40002, 'message': 'internal conflict wording'},
+        ),
+      ),
+    );
+
+    expect(failure.userMessage, contains('最新版'));
+    expect(failure.userMessage, isNot(contains('internal')));
+  });
 }

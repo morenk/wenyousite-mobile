@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -258,6 +259,22 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       _update(state.copyWith(tags: normalizeTagNames(value)));
 
   void updateBody(String value) => _update(state.copyWith(body: value));
+
+  void restoreContentDraft(String content) {
+    if (state.phase != ThreadComposePhase.ready || state.isSubmitting) return;
+    final normalized = MarkdownContent.normalize(content);
+    state = state.copyWith(
+      body: normalized,
+      documentRevision: state.documentRevision + 1,
+      actionFailure: null,
+      successMessage: '已恢复正文草稿；标题、分类和标签保持不变。',
+      localSnapshotStatus: LocalSnapshotStatus.idle,
+    );
+    _snapshotTimer?.cancel();
+    _snapshotTimer = Timer(_snapshotDebounce, () {
+      unawaited(flushLocalSnapshot());
+    });
+  }
 
   void clearFeedback() {
     if (state.actionFailure == null && state.successMessage == null) return;

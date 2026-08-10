@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
@@ -300,7 +301,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                   controller: _editorController,
                   enabled: enabled,
                   onInsertImage: _insertImage,
-                  onSaveDraft: _saveDraft,
+                  onSaveDraft: _openContentDrafts,
                 ),
                 Semantics(
                   textField: true,
@@ -327,7 +328,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           SizedBox(height: tokens.space16),
           OutlinedButton.icon(
             key: const Key('compose-save-draft'),
-            onPressed: enabled ? _saveDraft : null,
+            onPressed: enabled ? _saveThreadDraft : null,
             icon: state.action == ThreadComposeAction.saveDraft
                 ? const SizedBox.square(
                     dimension: 18,
@@ -542,9 +543,23 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     _uploadCancelToken?.cancel('user cancelled image upload');
   }
 
-  Future<void> _saveDraft() async {
+  Future<void> _saveThreadDraft() async {
     if (_codecFailure != null || _uploading) return;
     await ref.read(threadComposeControllerProvider.notifier).saveDraft();
+  }
+
+  Future<void> _openContentDrafts() async {
+    if (_codecFailure != null || _uploading) return;
+    await _flushSnapshot();
+    if (!mounted) return;
+    final currentBody = ref.read(threadComposeControllerProvider).body;
+    await showContentDraftsSheet(
+      context: context,
+      currentContent: currentBody,
+      onRestore: (content) => ref
+          .read(threadComposeControllerProvider.notifier)
+          .restoreContentDraft(content),
+    );
   }
 
   Future<void> _publish() async {

@@ -62,6 +62,8 @@ class ApiFailure implements Exception {
     switch (businessCode) {
       case 40007:
         return '列表位置已失效，正在重新加载。';
+      case 40002:
+        return '内容已在其他位置修改，请读取最新版后再决定是否覆盖。';
       case 40103:
         return '登录已被撤销，请重新登录。';
       case 40104:

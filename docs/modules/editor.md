@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。工具栏提供正文/H2/H3、粗体、斜体、图片和更多；更多面板包含安全链接、行内代码、引用、列表、分隔线、骰子、草稿和删除线。
+打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。工具栏提供正文/H2/H3、粗体、斜体、图片和更多；更多面板包含安全链接、行内代码、引用、列表、分隔线、骰子、正文草稿和删除线。“正文草稿”打开五槽位纯正文面板，页面底部“保存到服务端草稿”继续保存完整主题实体。
 
 正文变化先把内存 Delta 编码为 Markdown，700ms 防抖写本地。切后台、暂停或离页前强制落盘。首次保存或发布会持久化规范化创建载荷与 `clientRequestId`，调用 `threadsCreate` 获得未发布主题草稿，再调用 `threadsSaveAggregate` 携带主题、默认子贴和正文版本完成保存或发布。创建响应不确定时重试原载荷和原幂等键；即使用户继续编辑，也先确认原创建结果，再聚合当前内容。
 
@@ -25,11 +25,12 @@
 - 页面引导：`usersGetMe`、`threadCategoriesList`。
 - 当前创建链路：`threadsCreate`、`threadsSaveAggregate`，使用 `CreateThreadDto`、`SaveThreadAggregateDto`、`ThreadDetailResponseDto`。
 - 图片链路：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
+- 正文草稿链路：`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove`。
 - 后续编辑上下文：`usersMentionCandidates`、`postsCreate`、`postsUpdate`、`postsUpsertBody`、`threadsUpdate`、`subthreadsCreate`、`subthreadsUpdate`。
 
 ## 6. 状态模型和数据流
 
-`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、服务端主题草稿版本、提交动作和失败反馈。`ThreadComposeController` 只接收 Markdown，不持有 Quill Delta；`ThreadRemoteDraft` 保存后续聚合所需的主题、默认子贴与正文版本。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
+`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、服务端主题草稿版本、提交动作和失败反馈。`ThreadComposeController` 只接收 Markdown，不持有 Quill Delta；恢复五槽位正文时只递增文档 revision 并替换正文。`ContentDraftsState` 独立管理五槽列表、版本冲突和逐项动作。`ThreadRemoteDraft` 保存后续聚合所需的主题、默认子贴与正文版本。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -41,7 +42,7 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-本地恢复失败不会覆盖原数据；离页强制落盘失败时必须由用户明确选择留下或仍然退出，不能静默丢失。分类/账号同步失败时本地编辑继续可用并提供重试。标题、正文、分类、标签和邮箱在请求前验证。Codec 遇到不支持属性或冲突格式时阻止保存；图片可取消并区分准备、上传、确认、处理与失败。创建超时或 5xx 保留待确认记录；业务码 `40912` 清理冲突记录并生成新请求 ID。聚合失败保留本地与服务端草稿版本，不显示伪成功。
+本地恢复失败不会覆盖原数据；离页强制落盘失败时必须由用户明确选择留下或仍然退出，不能静默丢失。分类/账号同步失败时本地编辑继续可用并提供重试。标题、正文、分类、标签和邮箱在请求前验证。Codec 遇到不支持属性或冲突格式时阻止保存；图片可取消并区分准备、上传、确认、处理与失败。创建超时或 5xx 保留待确认记录；业务码 `40912` 清理冲突记录并生成新请求 ID。聚合失败保留本地与服务端草稿版本，不显示伪成功。五槽位恢复前读取单条最新版并确认替换；更新收到 `40002` 时保留当前正文，读取最新版后再要求用户确认是否覆盖。
 
 ## 10. 跨模块约束
 
@@ -55,11 +56,12 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 - [x] 创建草稿 → 聚合保存/发布传递规范化载荷、幂等键及全部乐观锁版本。
 - [x] 创建结果不确定时保留原载荷，继续编辑后仍先确认原请求再聚合当前正文。
 - [x] 真实页面覆盖本地恢复、空表单拦截、图片插入、离页落盘失败确认和 360dp 布局。
+- [x] 工具栏打开五槽位正文草稿，恢复只替换正文；创建、更新、删除、满额和冲突均有状态与页面测试。
 - [ ] 提及候选、已有内容的完整普通 Markdown 富文本解码、预览和其他发帖上下文完成。
 
 ## 12. 已知限制和后续功能
 
-普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。提及插入、收藏表情、预览、撤销冲突 UI、五槽位正文草稿，以及主题/子贴/楼层/回复的编辑复用尚未完成。不做离线自动发送。
+普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。提及插入、收藏表情、预览、编辑撤销，以及主题/子贴/楼层/回复的编辑复用尚未完成；五槽位正文草稿尚未复用于楼层和回复。不做离线自动发送。
 
 ## 13. 最近审查的契约版本和后端提交
 

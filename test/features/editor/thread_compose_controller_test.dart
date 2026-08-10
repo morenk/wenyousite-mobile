@@ -146,6 +146,36 @@ void main() {
     expect(controller.state.actionFailure?.userMessage, '请填写主题标题。');
     expect(repository.createPayloads, isEmpty);
   });
+
+  test('恢复正文草稿只替换正文并触发本地 Markdown 快照', () async {
+    final store = _MemorySnapshotStore();
+    final controller = ThreadComposeController(
+      _FakeRepository(),
+      store,
+      knownOwnerId: 'user-one',
+      snapshotDebounce: const Duration(milliseconds: 5),
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+    await _waitUntil(() => !controller.state.bootstrapLoading);
+    controller
+      ..updateTitle('保留标题')
+      ..updateCategory('TRPG')
+      ..updateTags(const ['保留标签'])
+      ..restoreContentDraft('云端\r\n**正文**');
+
+    await _waitUntil(
+      () => controller.state.localSnapshotStatus == LocalSnapshotStatus.saved,
+    );
+
+    expect(controller.state.title, '保留标题');
+    expect(controller.state.categorySlug, 'TRPG');
+    expect(controller.state.tags, ['保留标签']);
+    expect(controller.state.body, '云端\n**正文**');
+    expect(controller.state.documentRevision, greaterThan(1));
+    expect(store.snapshot?.body, '云端\n**正文**');
+  });
 }
 
 void _fillPublishable(

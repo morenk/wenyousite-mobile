@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
+import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
+import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
+import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
@@ -122,6 +125,34 @@ void main() {
     expect(find.byKey(const Key('compose-body')), findsOneWidget);
   });
 
+  testWidgets('工具栏正文草稿打开五槽位面板而页面按钮保留主题实体草稿', (tester) async {
+    final controller = await _readyController(_MemorySnapshotStore());
+    controller.updateBody('当前主题正文');
+    final contentDraftsController = ContentDraftsController(
+      _FakeContentDraftRepository(),
+      autoStart: false,
+    );
+    await contentDraftsController.load();
+    await _pumpPage(
+      tester,
+      controller,
+      contentDraftsController: contentDraftsController,
+    );
+    final draftsButton = find.byIcon(Icons.cloud_outlined);
+    await tester.scrollUntilVisible(
+      draftsButton,
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    await tester.tap(draftsButton);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('content-drafts-list')), findsOneWidget);
+    expect(find.text('只保存当前正文 · 已用 1/5'), findsOneWidget);
+    expect(find.text('保存到服务端草稿'), findsOneWidget);
+  });
+
   testWidgets('离页强制落盘失败时要求用户明确选择而不静默退出', (tester) async {
     final store = _MemorySnapshotStore(failSaves: true);
     final controller = await _readyController(store);
@@ -165,11 +196,16 @@ Future<void> _pumpPage(
   ThreadComposeController controller, {
   EditorImagePicker? picker,
   MediaUploadRepository? mediaRepository,
+  ContentDraftsController? contentDraftsController,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         threadComposeControllerProvider.overrideWith((ref) => controller),
+        if (contentDraftsController != null)
+          contentDraftsControllerProvider.overrideWith(
+            (ref) => contentDraftsController,
+          ),
         if (picker != null) editorImagePickerProvider.overrideWithValue(picker),
         if (mediaRepository != null)
           mediaUploadRepositoryProvider.overrideWithValue(mediaRepository),
@@ -240,6 +276,46 @@ class _FakeRepository implements ThreadComposeRepository {
       bodyVersion: (remoteDraft.bodyVersion ?? 0) + 1,
     );
   }
+}
+
+class _FakeContentDraftRepository implements ContentDraftRepository {
+  final _draft = ContentDraft(
+    id: 'content-draft-one',
+    userId: 'user-one',
+    slot: 1,
+    content: '云端正文',
+    version: 1,
+    createdAt: DateTime.utc(2026, 8, 9),
+    updatedAt: DateTime.utc(2026, 8, 10),
+  );
+
+  @override
+  Future<ContentDraft> create(String content, {int? slot}) async => _draft;
+
+  @override
+  Future<ContentDraftCollection> fetchCollection() async {
+    return ContentDraftCollection(
+      drafts: [_draft],
+      usage: const ContentDraftSlotUsage(
+        usedSlots: 1,
+        maxSlots: 5,
+        occupiedSlots: {1},
+      ),
+    );
+  }
+
+  @override
+  Future<ContentDraft> fetchById(String id) async => _draft;
+
+  @override
+  Future<void> remove(String id) async {}
+
+  @override
+  Future<ContentDraft> update({
+    required String id,
+    required String content,
+    required int version,
+  }) async => _draft;
 }
 
 class _MemorySnapshotStore implements EditorSnapshotStore {
