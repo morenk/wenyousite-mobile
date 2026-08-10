@@ -200,6 +200,17 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             ),
             SizedBox(height: tokens.space12),
             OutlinedButton.icon(
+              key: const Key('thread-management-open-subthreads'),
+              onPressed: locked
+                  ? null
+                  : () => context.push(
+                      '/threads/${widget.threadId}/manage/subthreads',
+                    ),
+              icon: const Icon(Icons.view_list_outlined),
+              label: const Text('管理子贴与发帖权限'),
+            ),
+            SizedBox(height: tokens.space12),
+            OutlinedButton.icon(
               key: const Key('thread-management-open-members'),
               onPressed: locked
                   ? null

@@ -141,6 +141,16 @@ void main() {
       Uri.parse(membersRedirect!).queryParameters['returnTo'],
       '/threads/thread-1/manage/members',
     );
+
+    final subthreadsRedirect = resolveSessionRedirect(
+      session: const SessionState.guest(),
+      matchedLocation: '/threads/thread-1/manage/subthreads',
+      uri: Uri.parse('/threads/thread-1/manage/subthreads'),
+    );
+    expect(
+      Uri.parse(subthreadsRedirect!).queryParameters['returnTo'],
+      '/threads/thread-1/manage/subthreads',
+    );
   });
 
   test('私密邀请预览要求登录并完整保留不透明 token', () {

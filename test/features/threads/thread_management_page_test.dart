@@ -14,6 +14,17 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_management_mode
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 
 void main() {
+  testWidgets('主题管理页进入独立子贴工作台', (tester) async {
+    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+
+    final entry = find.byKey(const Key('thread-management-open-subthreads'));
+    await tester.ensureVisible(entry);
+    await tester.tap(entry);
+    await tester.pumpAndSettle();
+
+    expect(find.text('子贴工作台占位'), findsOneWidget);
+  });
+
   testWidgets('楼主修改标题并保存后返回主题详情调用方', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
@@ -251,6 +262,10 @@ Future<void> _pumpPage(
         path: '/threads/:threadId/manage',
         builder: (_, state) =>
             ThreadManagementPage(threadId: state.pathParameters['threadId']!),
+      ),
+      GoRoute(
+        path: '/threads/:threadId/manage/subthreads',
+        builder: (_, _) => const Scaffold(body: Text('子贴工作台占位')),
       ),
       GoRoute(
         path: '/me/security/verify-email',

@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-基于 Flutter Quill 提供移动端富文本输入与工具栏，以自研 Markdown v2 ↔ Delta Codec 支持安全链接、图片、骰子、提及、协议节点和本地防丢。当前已交付创建主题编辑页、帖子/回复/子贴正文复用编辑器及对应发布主链；主题元数据编辑和预览仍待后续切片，V1 不离线自动发布。
+基于 Flutter Quill 提供移动端富文本输入与工具栏，以自研 Markdown v2 ↔ Delta Codec 支持安全链接、图片、骰子、提及、协议节点和本地防丢。当前已交付创建主题编辑页、帖子/回复/子贴正文复用编辑器及对应发布主链；主题元数据和子贴目录由 threads 模块独立管理，正文预览仍待后续切片，V1 不离线自动发布。
 
 ## 2. 用户角色与使用场景
 
@@ -28,7 +28,7 @@
 - 当前创建链路：`threadsCreate`、`threadsSaveAggregate`，使用 `CreateThreadDto`、`SaveThreadAggregateDto`、`ThreadDetailResponseDto`。
 - 图片链路：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
 - 正文草稿链路：`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove`。
-- 当前帖子上下文：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`usersMentionCandidates`；后续：`threadsUpdate`、`subthreadsCreate`、`subthreadsUpdate`。
+- 当前帖子上下文：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`usersMentionCandidates`；主题元数据与子贴目录端点由 threads 模块消费。
 - 提及主要生成类型：`UsersMentionCandidates200Response`、`MentionCandidatesResponseDto`、`MentionCandidateDto`。
 
 ## 6. 状态模型和数据流
@@ -67,7 +67,7 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 12. 已知限制和后续功能
 
-普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。全新主题在首次服务端草稿保存前不能查询提及候选；收藏表情、预览、编辑撤销和主题元数据编辑尚未完成。帖子待确认创建不会在进程终止后自动恢复；不做离线自动发送。
+普通 Markdown 解码仍以源码文本为主，当前工具栏创建的新格式可安全编码为 Markdown，但打开已有粗体、标题、列表时尚未全部还原成 Quill 属性。全新主题在首次服务端草稿保存前不能查询提及候选；收藏表情、预览和编辑撤销尚未完成。帖子待确认创建不会在进程终止后自动恢复；不做离线自动发送。
 
 ## 13. 最近审查的契约版本和后端提交
 
