@@ -7,6 +7,8 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_actions.dart';
@@ -48,6 +50,14 @@ class PublicUserPage extends ConsumerWidget {
               returnTo: '/users/${state.profile!.id}',
               iconOnly: true,
               onSuccess: (_) => ref.read(provider.notifier).load(),
+            ),
+          if (canTip)
+            WenyouReportButton(
+              key: const Key('public-user-report'),
+              target: ReportTarget.user(state.profile!.id),
+              targetLabel: '这个用户',
+              returnTo: '/users/${state.profile!.id}',
+              iconOnly: true,
             ),
         ],
       ),

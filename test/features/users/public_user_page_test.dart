@@ -66,6 +66,7 @@ void main() {
 
     expect(find.byKey(const Key('user-relation-follow')), findsOneWidget);
     expect(find.byKey(const Key('user-relation-block')), findsOneWidget);
+    expect(find.byKey(const Key('public-user-report')), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('user-relation-follow')));
     await tester.pumpAndSettle();
@@ -96,6 +97,7 @@ void main() {
 
     expect(find.byKey(const Key('user-relation-follow')), findsNothing);
     expect(find.byKey(const Key('user-relation-block')), findsNothing);
+    expect(find.byKey(const Key('public-user-report')), findsNothing);
   });
 
   testWidgets('能力开启且目标非本人时可从用户主页发起私聊', (tester) async {

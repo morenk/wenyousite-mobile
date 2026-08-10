@@ -39,8 +39,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('moment-detail-report')), findsOneWidget);
     expect(find.text('动态正文是纯文本'), findsOneWidget);
     expect(find.text('主评论'), findsOneWidget);
+    expect(
+      find.byKey(const Key('moment-comment-report-comment-root')),
+      findsOneWidget,
+    );
     expect(find.text('最新'), findsOneWidget);
     await tester.ensureVisible(find.text('登录后参与评论'));
     await tester.pumpAndSettle();

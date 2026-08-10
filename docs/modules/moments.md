@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-实现独立于主题帖的短内容动态：发现/关注/用户/收藏信息流、详情、纯文本发布编辑、最多九图、删除、点赞、收藏、两层评论、评论图片与收藏表情。当前不把动态正文解析为 Markdown，不做视频、话题、离线发布或本机草稿。
+实现独立于主题帖的短内容动态：发现/关注/用户/收藏信息流、详情、纯文本发布编辑、最多九图、删除、点赞、收藏、两层评论、评论图片、收藏表情与社区举报。当前不把动态正文解析为 Markdown，不做视频、话题、离线发布或本机草稿。
 
 ## 2. 用户角色与使用场景
 
@@ -18,7 +18,7 @@
 
 发现流按热度读取，关注流按时间读取；下拉刷新回到首屏，接近底部或按钮加载下一游标。发布时输入 2～40 字标题、最多 1000 字纯文本，逐张上传最多九张已完成图片，可排序并选择其中一张作信息流封面；无图时由服务端返回确定性文字封面主题。编辑提交当前 `version`，删除需二次确认。
 
-详情完整展示纯文本、不裁切图库和累计加油；非本人动态在顶栏进入 wallet 加油。缩略图进入可返回/关闭、双击、捏合、平移、未放大下滑关闭的全屏原图路由。评论主列表默认最新，楼中楼默认最早，可按作者筛选。评论最多 500 字，可额外带一张图片，或只带一个收藏表情；图片和表情互斥，回复始终提交真实目标评论 ID。
+详情完整展示纯文本、不裁切图库和累计加油；非本人动态在顶栏进入 wallet 加油和举报。缩略图进入可返回/关闭、双击、捏合、平移、未放大下滑关闭的全屏原图路由。评论主列表默认最新，楼中楼默认最早，可按作者筛选；非本人且未删除的根评论与回复可举报。评论最多 500 字，可额外带一张图片，或只带一个收藏表情；图片和表情互斥，回复始终提交真实目标评论 ID。
 
 ## 5. API operationId 与生成类型
 
@@ -27,6 +27,7 @@
 - 内容写入：`momentsCreate`、`momentsUpdate`、`momentsRemove`。
 - 互动：`momentsLike`、`momentsUnlike`、`momentsBookmark`、`momentsUnbookmark`。
 - 评论：`momentsCommentAuthors`、`momentsCommentsList`、`momentsReplies`、`momentsCreateComment`、`momentsRemoveComment`。
+- 社区举报：reports 模块调用 `reportsCreate`，分别提交 `MOMENT` 或 `MOMENT_COMMENT` 目标。
 - 主要生成类型：`MomentCardResponseDto`、`MomentDetailResponseDto`、`MomentMediaResponseDto`、`MomentRootCommentResponseDto`、`MomentCommentResponseDto`、`MomentStickerResponseDto`、`CreateMomentDto`、`UpdateMomentDto` 与 `CreateMomentCommentDto`。
 
 ## 6. 状态模型和数据流
@@ -35,7 +36,7 @@
 
 ## 7. 鉴权、权限和隐私规则
 
-发现、用户列表、详情与评论读操作允许游客；可选认证请求仍通过普通拦截器发送，以便登录用户取得 viewerLiked/viewerBookmarked 和权限投影。关注、收藏列表及所有写操作要求登录，游客从当前安全路径进入登录回跳。客户端不根据作者 ID 自行授权编辑/删除，也不猜测隐藏动态、评论或被拉黑关系。预签名 URL、图片字节、评论正文和幂等键不落日志或持久化。
+发现、用户列表、详情与评论读操作允许游客；可选认证请求仍通过普通拦截器发送，以便登录用户取得 viewerLiked/viewerBookmarked 和权限投影。关注、收藏列表及所有写操作要求登录，游客从当前安全路径进入登录回跳。动态编辑/删除只消费服务端 capability；举报入口用同一 `canEdit` 排除本人动态，评论则用当前 JWT `sub` 做保守本人隐藏，最终目标可见性和本人关系都由服务端复核。客户端不猜测隐藏动态、评论或被拉黑关系。预签名 URL、图片字节、评论正文和幂等键不落日志或持久化。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -47,7 +48,7 @@
 
 ## 10. 跨模块约束
 
-media 提供相册选择、预签名上传、确认和完成态轮询；stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口；search 复用动态卡片但不持有动态详情或写入状态；wallet 维护动态加油幂等写入，成功后详情重读服务端累计值。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。视觉只消费 Foundation v1.1.0 Token 与图片角色：信息流/搜索封面可 cover，详情/评论图 contain，所有裁切图必须能进入原图。
+media 提供相册选择、预签名上传、确认和完成态轮询；stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口；search 复用动态卡片但不持有动态详情或写入状态；wallet 维护动态加油幂等写入，成功后详情重读服务端累计值；reports 管理动态与评论举报的原因、详情、邮箱验证恢复和重复待处理收敛。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。视觉只消费 Foundation v1.1.0 Token 与图片角色：信息流/搜索封面可 cover，详情/评论图 contain，所有裁切图必须能进入原图。
 
 ## 11. 测试场景与验收条件
 
@@ -58,6 +59,7 @@ media 提供相册选择、预签名上传、确认和完成态轮询；stickers
 - [x] 动态通知、用户动态、收藏、创建与编辑路由使用稳定 ID，并有导航/回归测试。
 - [x] 全站动态搜索的短词、分页、失效 cursor、安全 DTO 映射和详情路由有自动测试。
 - [x] 非本人动态可进入加油，累计金额保持十进制整数字符串且成功后重读详情。
+- [x] 非本人动态、根评论与回复可举报；本人及已删除内容隐藏入口，游客保留完整登录回跳。
 - [ ] 使用公网专用账号完成发现/关注、九图发布编辑、原图、点赞收藏、图片/表情评论和删除真机联调。
 
 ## 12. 已知限制和后续功能
@@ -70,4 +72,4 @@ media 提供相册选择、预签名上传、确认和完成态轮询；stickers
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/moments/`。参见[导航](../architecture/navigation.md)、[API 生成与覆盖审计](../architecture/api-generation.md)、[媒体](media.md)、[收藏表情](stickers.md)、[温油钱包](wallet.md)、[通知](notifications.md)与[用户](users.md)。
+代码入口：`lib/features/moments/`。参见[导航](../architecture/navigation.md)、[API 生成与覆盖审计](../architecture/api-generation.md)、[媒体](media.md)、[收藏表情](stickers.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[通知](notifications.md)与[用户](users.md)。

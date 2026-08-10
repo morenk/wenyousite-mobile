@@ -29,6 +29,7 @@ void main() {
 
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
     expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('主线正文'), findsOneWidget);
     expect(
@@ -45,6 +46,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
     expect(find.text('收到，准备出发。'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-report-floor-1')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('切换子贴同步替换正文与楼层', (tester) async {

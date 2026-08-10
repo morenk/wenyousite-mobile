@@ -10,6 +10,8 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
 class PostRepliesPage extends ConsumerWidget {
@@ -17,12 +19,14 @@ class PostRepliesPage extends ConsumerWidget {
     required this.threadId,
     required this.rootPostId,
     this.focusedReplyId,
+    this.reportsEnabled = false,
     super.key,
   });
 
   final String threadId;
   final String rootPostId;
   final String? focusedReplyId;
+  final bool reportsEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,6 +76,7 @@ class PostRepliesPage extends ConsumerWidget {
                     viewerId: viewerId,
                     authenticated: session.isAuthenticated,
                     focusedReplyId: focusedReplyId,
+                    reportsEnabled: reportsEnabled,
                     onOrder: (order) =>
                         ref.read(provider.notifier).setOrder(order),
                     onAuthor: (authorId) =>
@@ -98,11 +103,13 @@ class PostRepliesPage extends ConsumerWidget {
   }
 
   String _location() {
+    final query = <String, String>{
+      if (reportsEnabled) 'reports': '1',
+      'post': ?focusedReplyId,
+    };
     return Uri(
       pathSegments: ['', 'threads', threadId, 'posts', rootPostId, 'replies'],
-      queryParameters: focusedReplyId == null
-          ? null
-          : {'post': focusedReplyId!},
+      queryParameters: query.isEmpty ? null : query,
     ).toString();
   }
 
@@ -171,6 +178,7 @@ class _DiscussionList extends StatelessWidget {
     required this.viewerId,
     required this.authenticated,
     required this.focusedReplyId,
+    required this.reportsEnabled,
     required this.onOrder,
     required this.onAuthor,
     required this.onLoadMore,
@@ -184,6 +192,7 @@ class _DiscussionList extends StatelessWidget {
   final String? viewerId;
   final bool authenticated;
   final String? focusedReplyId;
+  final bool reportsEnabled;
   final ValueChanged<PostReplyOrder> onOrder;
   final ValueChanged<String?> onAuthor;
   final VoidCallback onLoadMore;
@@ -250,6 +259,9 @@ class _DiscussionList extends StatelessWidget {
                   canEdit: root.isAuthoredBy(viewerId),
                   canDelete: root.isAuthoredBy(viewerId),
                   pending: actions.pendingPostId == root.id,
+                  reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
+                      ? _reportLocation(root, root.id)
+                      : null,
                   onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
                   onDelete: () => onDelete(root, true),
                 ),
@@ -300,6 +312,11 @@ class _DiscussionList extends StatelessWidget {
                       canEdit: state.replies[index].isAuthoredBy(viewerId),
                       canDelete: state.replies[index].isAuthoredBy(viewerId),
                       pending: actions.pendingPostId == state.replies[index].id,
+                      reportReturnTo:
+                          reportsEnabled &&
+                              !state.replies[index].isAuthoredBy(viewerId)
+                          ? _reportLocation(root, state.replies[index].id)
+                          : null,
                       onReply: authenticated
                           ? () => onCompose(
                               _replyTarget(root, state.replies[index]),
@@ -341,6 +358,13 @@ class _DiscussionList extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _reportLocation(PostItem root, String postId) {
+    return Uri(
+      pathSegments: ['', 'threads', root.threadId, 'posts', root.id, 'replies'],
+      queryParameters: {'reports': '1', if (postId != root.id) 'post': postId},
+    ).toString();
   }
 }
 
@@ -420,6 +444,7 @@ class _PostCard extends StatelessWidget {
     this.onReply,
     this.onEdit,
     this.onDelete,
+    this.reportReturnTo,
     super.key,
   });
 
@@ -432,6 +457,7 @@ class _PostCard extends StatelessWidget {
   final VoidCallback? onReply;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final String? reportReturnTo;
 
   @override
   Widget build(BuildContext context) {
@@ -471,7 +497,11 @@ class _PostCard extends StatelessWidget {
               bodyFontSize: root ? 17 : 16,
               bodyHeight: root ? 1.8 : 1.75,
             ),
-          if (!post.isDeleted && (onReply != null || canEdit || canDelete)) ...[
+          if (!post.isDeleted &&
+              (onReply != null ||
+                  canEdit ||
+                  canDelete ||
+                  reportReturnTo != null)) ...[
             SizedBox(height: tokens.space12),
             Wrap(
               alignment: WrapAlignment.end,
@@ -483,6 +513,13 @@ class _PostCard extends StatelessWidget {
                     onPressed: pending ? null : onReply,
                     icon: const Icon(Icons.reply_rounded),
                     label: const Text('回复'),
+                  ),
+                if (reportReturnTo != null)
+                  WenyouReportButton(
+                    key: Key('post-report-${post.id}'),
+                    target: ReportTarget.post(post.id),
+                    targetLabel: root ? '这个楼层' : '这条回复',
+                    returnTo: reportReturnTo!,
                   ),
                 if (canEdit)
                   TextButton.icon(

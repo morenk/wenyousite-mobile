@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-当前实现公开主题详情、子贴选择、Markdown 正文展示、点赞/收藏/订阅互动、新建主题的本地恢复/服务端草稿/聚合发布，并让楼主或协作者添加和编辑子贴正文、完整管理子贴目录、主题标签、已有主题元数据与成员玩家标记。楼主还可任免协作者、管理已发布私密主题邀请并在二次确认后删除主题；V1 不实现举报后台或子贴级标签。
+当前实现公开主题详情、子贴选择、Markdown 正文展示、点赞/收藏/订阅/举报互动、新建主题的本地恢复/服务端草稿/聚合发布，并让楼主或协作者添加和编辑子贴正文、完整管理子贴目录、主题标签、已有主题元数据与成员玩家标记。楼主还可任免协作者、管理已发布私密主题邀请并在二次确认后删除主题；V1 不实现举报审核后台或子贴级标签。
 
 ## 2. 用户角色与使用场景
 
@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-阅读时调用主题详情接口加载元数据、标签、登录态互动与 capability 投影；按 `sortOrder` 排列子贴并加载对应正文/楼层。带 `post` 目标时解析所属子贴并展示上下文。主题内搜索要求至少两个 Unicode 字符，按相关度跨全部子贴分页，点击结果仍由详情重新校验帖子归属和上下文。点赞采用服务端计数，收藏按记录 ID 删除；非楼主可从详情顶栏经 wallet 向楼主加油，成功后重读主题累计值。普通登录用户并发读取本人订阅和成员候选；管理 capability 开放正文编辑与楼层管理，普通登录用户可从当前子贴发表楼层。
+阅读时调用主题详情接口加载元数据、标签、登录态互动与 capability 投影；按 `sortOrder` 排列子贴并加载对应正文/楼层。带 `post` 目标时解析所属子贴并展示上下文。主题内搜索要求至少两个 Unicode 字符，按相关度跨全部子贴分页，点击结果仍由详情重新校验帖子归属和上下文。点赞采用服务端计数，收藏按记录 ID 删除；非楼主可从详情顶栏经 wallet 向楼主加油，成功后重读主题累计值。已确认公开且非本人创建的主题提供举报入口；公开楼层卡片仅对非本人作者显示举报，进入独立讨论时用 `reports=1` 显式传递已确认的公开上下文，直接深链不猜测可举报性。普通登录用户并发读取本人订阅和成员候选；管理 capability 开放正文编辑与楼层管理，普通登录用户可从当前子贴发表楼层。
 
 创建时先恢复按账号隔离的本地 Markdown 快照并加载动态分类；首次保存/发布用稳定 `clientRequestId` 调用 `threadsCreate` 建立未发布主题，再携带主题、默认子贴与正文版本调用 `threadsSaveAggregate`。保存保持 `published=false`，发布必须由响应明确确认 `published=true`。
 
@@ -41,6 +41,7 @@
 - 当前私密邀请：`threadsCreateInviteLink`、`threadsPreviewInviteLink`、`threadsJoinByInviteLink`，使用 `InviteLinkResponseDto`、`InvitePreviewResponseDto`、`InviteThreadPreviewResponseDto` 与 `JoinedThreadMemberResponseDto`。
 - 当前子贴管理：`subthreadsFindAll`、`subthreadsFindById`、`subthreadsCreate`、`subthreadsUpdate`、`subthreadsRemove`、`subthreadsReorder`，使用 `SubthreadResponseDto`、`CreateSubthreadDto`、`UpdateSubthreadDto`、`ReorderSubthreadsDto` 与 `ReorderedSubthreadResponseDto`。
 - 当前主题标签管理：`threadTagsFindAll`、`threadTagsAdd`、`threadTagsRemove`；全局发现与创建由 tags 模块使用 `tagsSearch`、`tagsGetById`、`tagsCreate`。
+- 当前社区举报：reports 模块调用 `reportsCreate` 提交公开非本人主题或楼层目标。
 - 子贴正文与楼层写入由 posts 模块调用 `postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`。
 - 已废弃的 `threadMembersJoin` 不接入；公开主题成员身份由服务端发帖等真实业务行为建立，私密主题只通过邀请加入。
 
@@ -62,7 +63,7 @@
 
 ## 10. 跨模块约束
 
-正文按 Markdown v2 规则渲染，未知扩展节点安全降级；楼层与子贴正文由 posts 模块加载和写入，目录工作台不复制正文编辑器。点赞、收藏和订阅由 social 管理；温油加油由 wallet 管理，threads 只提供稳定目标并在成功后重读详情。创建写入由 editor 编排，threads 仓储只映射后端 DTO、权限和乐观锁版本；图片只有完成态公开 URL 能进入正文。对外邀请使用当前 API origin 对应的 Web `/join/{token}`，应用内使用同形 `/join/:token`；V1 未配置 Android App Links，因此外部链接仍由 Web 接收。
+正文按 Markdown v2 规则渲染，未知扩展节点安全降级；楼层与子贴正文由 posts 模块加载和写入，目录工作台不复制正文编辑器。点赞、收藏和订阅由 social 管理；温油加油由 wallet 管理，threads 只提供稳定目标并在成功后重读详情；社区举报由 reports 管理，threads 仅提供已确认公开且非本人的目标和稳定回跳。创建写入由 editor 编排，threads 仓储只映射后端 DTO、权限和乐观锁版本；图片只有完成态公开 URL 能进入正文。对外邀请使用当前 API origin 对应的 Web `/join/{token}`，应用内使用同形 `/join/:token`；V1 未配置 Android App Links，因此外部链接仍由 Web 接收。
 
 ## 11. 测试场景与验收条件
 
@@ -88,10 +89,11 @@
 - [x] 受保护邀请路由完整保留 token 登录回跳；预览、已加入直达、幂等加入、失效终态、竞态与 360/400/600dp 布局通过。
 - [x] 子贴目录覆盖列表/单条读取、稳定幂等创建、带版本更新、二次确认删除和完整集合重排；默认子贴保护、冲突刷新、`40107` 恢复及 360/400/600dp 布局通过。
 - [x] 主题标签覆盖全局搜索/创建、单条校验、关联列表/添加/移除、五标签上限、同名竞态与 `40107` 恢复；公开标签页和 360/400/600dp 布局通过。
+- [x] 公开非本人主题与楼层可举报；私密主题、本人内容和没有公开上下文的帖子深链不暴露入口。
 
 ## 12. 已知限制和后续功能
 
-当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 全站/主题内搜索定位 + 点赞收藏订阅 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。V1 不做举报管理、子贴级标签或 Android App Links。
+当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 全站/主题内搜索定位 + 点赞收藏订阅举报 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。V1 不做举报审核管理、子贴级标签或 Android App Links。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -99,4 +101,4 @@
 
 ## 14. 相关代码与架构文档
 
-阅读与已有主题管理代码入口：`lib/features/threads/`；标签代码入口：`lib/features/tags/`；创建代码入口：`lib/features/editor/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[导航](../architecture/navigation.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+阅读与已有主题管理代码入口：`lib/features/threads/`；标签代码入口：`lib/features/tags/`；创建代码入口：`lib/features/editor/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-逐步实现用户主页、个人资料、头像、隐私字段、创建/参与主题、公开动态、最近回复、收藏、关注与粉丝列表。当前已提供公开资料与内容分区、用户动态入口、公开及本人关注/粉丝列表、登录用户对他人的关注/拉黑和加油入口，以及“我的”本人资料、头像、公开范围编辑、温油钱包、本人收藏管理和账号注销入口；账号安全写操作归 settings/auth。
+逐步实现用户主页、个人资料、头像、隐私字段、创建/参与主题、公开动态、最近回复、收藏、关注与粉丝列表。当前已提供公开资料与内容分区、用户动态入口、公开及本人关注/粉丝列表、登录用户对他人的关注/拉黑、加油和社区举报入口，以及“我的”本人资料、头像、公开范围编辑、温油钱包、本人收藏管理和账号注销入口；账号安全写操作归 settings/auth。
 
 ## 2. 用户角色与使用场景
 
@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。统计区的“动态”进入 `/users/:userId/moments`；关注和粉丝统计进入指定用户路径；非本人页顶栏提供加油入口，登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人资料使用主导航 `/me`，在总览头像下直接选择、更换或移除，并提供 `/me/wallet`、`/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
+公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。统计区的“动态”进入 `/users/:userId/moments`；关注和粉丝统计进入指定用户路径；非本人页顶栏提供加油与举报入口，登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人资料使用主导航 `/me`，在总览头像下直接选择、更换或移除，并提供 `/me/wallet`、`/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
 
 ## 4. 用户操作流程
 
@@ -20,7 +20,7 @@
 
 ## 5. API operationId 与生成类型
 
-- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`、`usersMentionCandidates`，并消费 moments 的 `userMomentsList` 以及 social 的四个关系写入与五个关系列表端点。
+- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`、`usersMentionCandidates`，并消费 moments 的 `userMomentsList`、reports 的 `reportsCreate` 以及 social 的四个关系写入与五个关系列表端点。
 - 主要生成类型：`PublicUserResponseDto`、`CurrentUserResponseDto`、`PrivateUserResponseDto`、`UpdateUserDto`、`SetAvatarDto`、`MentionCandidatesResponseDto`、`MentionCandidateDto`、`ThreadListItemResponseDto`、`RecentReplyResponseDto`、`BookmarkThreadResponseDto`、`UserFollowRecordResponseDto`、`BlockedUserRecordResponseDto` 与 `ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-关系写操作由 social 管理，users 只负责身份排除和展示同步；温油余额、流水与用户加油由 wallet 管理，成功后 users 重读公开收款统计；私聊联系状态、权限和正文由 direct-messages 管理；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。提及候选虽由 Users API 返回，但由 editor 按真实主题上下文管理输入、防抖、竞态和原子插入，users 页面不缓存或展示该隐私投影。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索、Markdown 和私聊入口只传 userId，目标页面重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
+关系写操作由 social 管理，users 只负责身份排除和展示同步；温油余额、流水与用户加油由 wallet 管理，成功后 users 重读公开收款统计；社区举报由 reports 提交，users 只提供稳定公开 userId 并排除本人；私聊联系状态、权限和正文由 direct-messages 管理；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。提及候选虽由 Users API 返回，但由 editor 按真实主题上下文管理输入、防抖、竞态和原子插入，users 页面不缓存或展示该隐私投影。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索、Markdown 和私聊入口只传 userId，目标页面重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
 
 ## 11. 测试场景与验收条件
 
@@ -59,6 +59,7 @@
 - [x] 私聊 capability 开启且目标非本人时展示稳定新私聊入口，关闭时不暴露入口。
 - [x] 所有公开用户均可从稳定 userId 进入独立用户动态列表，不复制动态列表状态到用户资料控制器。
 - [x] 非本人公开页进入用户加油，本人“我的”进入受保护钱包；成功后累计收到加油采用服务端投影。
+- [x] 非本人、未注销的公开用户展示举报入口；游客保留完整登录回跳，本人页不暴露入口。
 - [ ] 关注、拉黑与隐私变化后的跨页面缓存失效完成验证。
 
 ## 12. 已知限制和后续功能
@@ -71,4 +72,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

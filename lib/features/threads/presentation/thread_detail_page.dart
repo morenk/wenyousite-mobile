@@ -11,6 +11,8 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
@@ -125,6 +127,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               returnTo: _currentThreadLocation(),
               iconOnly: true,
               onSuccess: (_) => ref.read(provider.notifier).refresh(),
+            ),
+          if (state.detail case final detail?
+              when !detail.isPrivate && !detail.isCurrentUserOwner)
+            WenyouReportButton(
+              key: const Key('thread-detail-report'),
+              target: ReportTarget.thread(detail.id),
+              targetLabel: '这个主题',
+              returnTo: _currentThreadLocation(),
+              iconOnly: true,
             ),
           IconButton(
             key: const Key('thread-detail-search'),
@@ -395,8 +406,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                   canDelete:
                       floor.author.id == viewerId || detail.canManageThread,
                   pending: actions.pendingPostId == floor.id,
-                  onDiscussion: () => _openDiscussion(floor),
+                  onDiscussion: () =>
+                      _openDiscussion(floor, reportsEnabled: !detail.isPrivate),
                   showDiscussion: floor.replyCount > 0 || authenticated,
+                  reportReturnTo:
+                      !detail.isPrivate && floor.author.id != viewerId
+                      ? _postLocation(floor.id)
+                      : null,
                   onEdit: () =>
                       _compose(_editFloorTarget(detail, selected, floor)),
                   onDelete: () => _deleteFloor(floor),
@@ -436,7 +452,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
-  void _openDiscussion(ThreadFloorModel floor) {
+  void _openDiscussion(ThreadFloorModel floor, {required bool reportsEnabled}) {
     final focusedReplyId =
         widget.targetPostId != null &&
             floor.replies.any((reply) => reply.id == widget.targetPostId)
@@ -445,9 +461,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     context.pushNamed(
       'post-replies',
       pathParameters: {'threadId': widget.threadId, 'postId': floor.id},
-      queryParameters: focusedReplyId == null
-          ? const {}
-          : {'post': focusedReplyId},
+      queryParameters: {
+        if (reportsEnabled) 'reports': '1',
+        'post': ?focusedReplyId,
+      },
     );
   }
 
@@ -492,6 +509,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       queryParameters: widget.targetPostId == null
           ? null
           : {'post': widget.targetPostId!},
+    ).toString();
+  }
+
+  String _postLocation(String postId) {
+    return Uri(
+      pathSegments: ['', 'threads', widget.threadId],
+      queryParameters: {'post': postId},
     ).toString();
   }
 
@@ -1024,6 +1048,7 @@ class _FloorCard extends StatelessWidget {
     required this.onDiscussion,
     required this.onEdit,
     required this.onDelete,
+    this.reportReturnTo,
     this.isFocused = false,
     super.key,
   });
@@ -1037,6 +1062,7 @@ class _FloorCard extends StatelessWidget {
   final VoidCallback onDiscussion;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final String? reportReturnTo;
 
   @override
   Widget build(BuildContext context) {
@@ -1095,7 +1121,10 @@ class _FloorCard extends StatelessWidget {
               ),
             ],
             if (!floor.isDeleted &&
-                (showDiscussion || canEdit || canDelete)) ...[
+                (showDiscussion ||
+                    canEdit ||
+                    canDelete ||
+                    reportReturnTo != null)) ...[
               SizedBox(height: tokens.space12),
               Wrap(
                 alignment: WrapAlignment.end,
@@ -1112,6 +1141,13 @@ class _FloorCard extends StatelessWidget {
                             ? '回复'
                             : '查看 ${floor.replyCount} 条回复',
                       ),
+                    ),
+                  if (reportReturnTo != null)
+                    WenyouReportButton(
+                      key: Key('thread-floor-report-${floor.id}'),
+                      target: ReportTarget.post(floor.id),
+                      targetLabel: '这个楼层',
+                      returnTo: reportReturnTo!,
                     ),
                   if (canEdit)
                     TextButton.icon(

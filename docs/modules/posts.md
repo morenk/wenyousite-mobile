@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-当前完成子贴楼层阅读、独立楼中楼分页，以及楼层、回复和子贴正文的创建、编辑、软删除主链。V1 不记录阅读进度，不离线自动发帖，也不在移动端提供已删除内容恢复。
+当前完成子贴楼层阅读、独立楼中楼分页，以及楼层、回复和子贴正文的创建、编辑、软删除与社区举报主链。V1 不记录阅读进度，不离线自动发帖，也不在移动端提供已删除内容恢复。
 
 ## 2. 用户角色与使用场景
 
@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-主题详情在当前子贴正文下展示升序楼层和最多五条内嵌回复。每个可讨论楼层进入 `/threads/:threadId/posts/:postId/replies` 独立页；可选 `?post=:replyId` 强调目标回复。搜索、公开用户最近回复和通知仍可先用 `/threads/:threadId?post=:postId` 定位主题上下文，再进入独立讨论。
+主题详情在当前子贴正文下展示升序楼层和最多五条内嵌回复。每个可讨论楼层进入 `/threads/:threadId/posts/:postId/replies` 独立页；可选 `?post=:replyId` 强调目标回复。由公开主题详情进入时追加 `reports=1`，允许对非本人且未删除的主楼层或回复举报；直接深链不把缺失的主题可见性当作公开事实。搜索、公开用户最近回复和通知仍可先用 `/threads/:threadId?post=:postId` 定位主题上下文，再进入独立讨论。
 
 ## 4. 用户操作流程
 
@@ -21,7 +21,7 @@
 ## 5. API operationId 与生成类型
 
 - 阅读：`postsFindFloors`、`postsFindById`、`postsFindReplies`。
-- 写入：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`；提及候选复用 editor 的 `usersMentionCandidates`。
+- 写入：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`；提及候选复用 editor 的 `usersMentionCandidates`；社区举报复用 reports 的 `reportsCreate`。
 - 主要生成类型：`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto`、`PostResponseDto`、`CreatePostDto`、`UpdatePostDto`、`UpsertBodyDto`、`ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
@@ -30,7 +30,7 @@
 
 ## 7. 鉴权、权限和隐私规则
 
-游客写入口进入登录并保留当前主题目标，不发送受保护请求。作者身份由当前会话 JWT `sub` 仅用于显示按钮，服务端仍复核作者、主题管理能力、访问权限和 postingPolicy；`40302`、`40303` 分别稳定提示协作者或玩家限制。独立页只向作者展示编辑/删除，主题管理者的额外删除能力只在已取得 capability 的主题详情开放。BODY 帖不能走普通删除。
+游客写入口进入登录并保留当前主题目标，不发送受保护请求。作者身份由当前会话 JWT `sub` 仅用于显示编辑、删除和排除本人举报按钮，服务端仍复核作者、主题管理能力、访问权限和 postingPolicy；`40302`、`40303` 分别稳定提示协作者或玩家限制。独立页只向作者展示编辑/删除，主题管理者的额外删除能力只在已取得 capability 的主题详情开放。举报入口还要求来自已确认公开的主题详情且目标未删除，最终目标可见性与本人关系仍由服务端复核。BODY 帖不能走普通删除。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -42,7 +42,7 @@
 
 ## 10. 跨模块约束
 
-帖子输入复用 editor 的 Markdown ↔ Delta Codec、图片上传、协议 embed 和五槽位正文草稿；服务端生成骰子结果。主题详情提供子贴、capability 和楼层上下文，posts 不直接读取 threads 页面状态。视觉只使用 Foundation v1.1.0 Token 与共享组件。
+帖子输入复用 editor 的 Markdown ↔ Delta Codec、图片上传、协议 embed 和五槽位正文草稿；服务端生成骰子结果。主题详情提供子贴、capability、楼层和公开举报上下文，posts 不直接读取 threads 页面状态；社区举报的原因、详情、邮箱验证恢复与重复待处理收敛由 reports 管理。视觉只使用 Foundation v1.1.0 Token 与共享组件。
 
 ## 11. 测试场景与验收条件
 
@@ -54,6 +54,7 @@
 - [x] 作者编辑/删除、管理者删除楼层、BODY 禁止普通删除和游客登录门槛均有状态或页面测试。
 - [x] 生成 API 仓储测试覆盖全部七个帖子 operationId 的筛选、版本和写入载荷。
 - [x] 楼层、回复、正文创建和编辑器均传递真实主题上下文，提及候选失败可恢复且原子节点可安全提交。
+- [x] 已确认公开上下文中的非本人楼层与回复展示举报入口；本人、已删除内容和直接深链安全隐藏。
 
 ## 12. 已知限制和后续功能
 
@@ -65,4 +66,4 @@
 
 ## 14. 相关代码与架构文档
 
-独立帖子代码：`lib/features/posts/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+独立帖子代码：`lib/features/posts/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

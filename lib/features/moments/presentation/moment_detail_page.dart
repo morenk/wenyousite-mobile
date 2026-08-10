@@ -13,6 +13,8 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -34,6 +36,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
   Widget build(BuildContext context) {
     final provider = momentDetailControllerProvider(widget.momentId);
     final state = ref.watch(provider);
+    final session = ref.watch(sessionControllerProvider);
+    final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
     ref.listen(provider.select((value) => value.transientFailure), (
       previous,
       next,
@@ -59,6 +63,14 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
               returnTo: '/moments/${detail.card.id}',
               iconOnly: true,
               onSuccess: (_) => ref.read(provider.notifier).load(),
+            ),
+          if (state.detail case final detail? when !detail.canEdit)
+            WenyouReportButton(
+              key: const Key('moment-detail-report'),
+              target: ReportTarget.moment(detail.card.id),
+              targetLabel: '这条动态',
+              returnTo: '/moments/${detail.card.id}',
+              iconOnly: true,
             ),
           if (state.detail?.canEdit ?? false)
             IconButton(
@@ -134,6 +146,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                       root: root,
                       replyPage: state.replyPages[root.id],
                       busyCommentIds: state.busyCommentIds,
+                      viewerId: viewerId,
+                      returnTo: '/moments/${widget.momentId}',
                       onReply: (comment) => _authenticated(
                         () => setState(() => _replyTo = comment),
                       ),
@@ -160,7 +174,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                 ),
               MomentContentPadding(
                 top: context.wenyouTokens.space12,
-                child: ref.watch(sessionControllerProvider).isAuthenticated
+                child: session.isAuthenticated
                     ? _MomentCommentComposer(
                         replyTo: _replyTo,
                         isSending: state.isSendingComment,
@@ -430,6 +444,8 @@ class _MomentRootCommentPanel extends StatelessWidget {
     required this.root,
     required this.replyPage,
     required this.busyCommentIds,
+    required this.viewerId,
+    required this.returnTo,
     required this.onReply,
     required this.onDelete,
     required this.onLoadReplies,
@@ -438,6 +454,8 @@ class _MomentRootCommentPanel extends StatelessWidget {
   final MomentRootComment root;
   final MomentReplyPageState? replyPage;
   final Set<String> busyCommentIds;
+  final String? viewerId;
+  final String returnTo;
   final ValueChanged<MomentComment> onReply;
   final ValueChanged<MomentComment> onDelete;
   final VoidCallback onLoadReplies;
@@ -455,6 +473,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
             busy: busyCommentIds.contains(root.id),
             onReply: () => onReply(root),
             onDelete: root.canDelete ? () => onDelete(root) : null,
+            reportReturnTo: root.author.id == viewerId ? null : returnTo,
           ),
           if (replies.isNotEmpty) ...[
             SizedBox(height: tokens.space12),
@@ -475,6 +494,9 @@ class _MomentRootCommentPanel extends StatelessWidget {
                       onDelete: replies[index].canDelete
                           ? () => onDelete(replies[index])
                           : null,
+                      reportReturnTo: replies[index].author.id == viewerId
+                          ? null
+                          : returnTo,
                     ),
                     if (index + 1 < replies.length) const Divider(),
                   ],
@@ -522,6 +544,7 @@ class _MomentCommentBody extends StatelessWidget {
     required this.busy,
     required this.onReply,
     this.onDelete,
+    this.reportReturnTo,
     this.compact = false,
   });
 
@@ -529,6 +552,7 @@ class _MomentCommentBody extends StatelessWidget {
   final bool busy;
   final VoidCallback onReply;
   final VoidCallback? onDelete;
+  final String? reportReturnTo;
   final bool compact;
 
   @override
@@ -613,6 +637,13 @@ class _MomentCommentBody extends StatelessWidget {
               onPressed: comment.deleted ? null : onReply,
               child: const Text('回复'),
             ),
+            if (!comment.deleted && reportReturnTo != null)
+              WenyouReportButton(
+                key: Key('moment-comment-report-${comment.id}'),
+                target: ReportTarget.momentComment(comment.id),
+                targetLabel: '这条评论',
+                returnTo: reportReturnTo!,
+              ),
             if (onDelete != null)
               TextButton(
                 onPressed: busy ? null : onDelete,

@@ -40,7 +40,11 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+          home: const PostRepliesPage(
+            threadId: 'thread',
+            rootPostId: 'root',
+            reportsEnabled: true,
+          ),
         ),
       ),
     );
@@ -53,6 +57,9 @@ void main() {
     expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
     expect(find.byKey(const Key('post-edit-reply-own')), findsOneWidget);
     expect(find.byKey(const Key('post-edit-reply-other')), findsNothing);
+    expect(find.byKey(const Key('post-report-root')), findsOneWidget);
+    expect(find.byKey(const Key('post-report-reply-own')), findsNothing);
+    expect(find.byKey(const Key('post-report-reply-other')), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-compose')));

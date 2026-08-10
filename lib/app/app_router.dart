@@ -181,6 +181,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             threadId: state.pathParameters['threadId']!,
             rootPostId: state.pathParameters['postId']!,
             focusedReplyId: state.uri.queryParameters['post'],
+            reportsEnabled: state.uri.queryParameters['reports'] == '1',
           );
         },
       ),

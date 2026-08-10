@@ -192,4 +192,21 @@ void main() {
     expect(messageFor(40913), contains('余额不足'));
     expect(messageFor(40913), isNot(contains('private economy wording')));
   });
+
+  test('重复待处理举报使用稳定冲突提示', () {
+    final options = RequestOptions(path: '/api/v1/reports');
+    final failure = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        response: Response<Object?>(
+          requestOptions: options,
+          statusCode: 409,
+          data: {'code': 40914, 'message': 'private report wording'},
+        ),
+      ),
+    );
+
+    expect(failure.userMessage, contains('无需重复提交'));
+    expect(failure.userMessage, isNot(contains('private report wording')));
+  });
 }

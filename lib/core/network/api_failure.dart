@@ -134,6 +134,8 @@ class ApiFailure implements Exception {
         return '这次操作与待确认请求冲突，请重新发起。';
       case 40913:
         return '温油余额不足，请减少投入升数后重试。';
+      case 40914:
+        return '你已提交过相同的待处理举报，无需重复提交。';
       case 42900:
         return '操作太频繁，请稍后再试。';
     }
