@@ -123,7 +123,7 @@ void main() {
     expect(find.text('这个分类暂无通知'), findsOneWidget);
   });
 
-  testWidgets('删除目标与动态目标不会猜测不存在的路由', (tester) async {
+  testWidgets('删除目标安全提示，动态目标进入稳定详情路径', (tester) async {
     final repository = _FakeRepository(
       items: [
         _item(
@@ -165,8 +165,8 @@ void main() {
       find.byKey(const ValueKey('notification-moment')),
     );
     await tester.tap(find.byKey(const ValueKey('notification-moment')));
-    await tester.pump();
-    expect(find.text('动态详情将在动态模块开放后接入。'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('动态=moment-1'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -224,6 +224,12 @@ GoRouter _router() {
         name: 'user-profile',
         builder: (_, state) =>
             Scaffold(body: Text('用户=${state.pathParameters['userId']}')),
+      ),
+      GoRoute(
+        path: '/moments/:momentId',
+        name: 'moment-detail',
+        builder: (_, state) =>
+            Scaffold(body: Text('动态=${state.pathParameters['momentId']}')),
       ),
       GoRoute(
         path: '/messages',

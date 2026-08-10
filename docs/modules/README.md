@@ -7,6 +7,7 @@
 | app-shell | in_progress | 0.1.0-dev / 0.2.0-dev | [应用壳](app-shell.md) |
 | auth | in_progress | 0.2.0-dev / 0.7.0-dev | [认证](auth.md) |
 | home | in_progress | 0.3.0-dev | [首页](home.md) |
+| moments | in_progress | 0.3.0-dev / 0.4.0-dev | [动态](moments.md) |
 | tags | in_progress | 0.3.0-dev | [标签](tags.md) |
 | search | in_progress | 0.3.0-dev | [搜索](search.md) |
 | threads | in_progress | 0.3.0-dev / 0.6.0-dev | [主题](threads.md) |

@@ -108,6 +108,8 @@ class ApiFailure implements Exception {
         return '这条私聊消息不存在或已不可访问。';
       case 40413:
         return '这个表情或导入任务已不存在，请重新加载。';
+      case 40415:
+        return '这条动态或评论不存在，可能已经被删除。';
       case 40901:
         return '该邮箱已经注册，请直接登录。';
       case 40902:

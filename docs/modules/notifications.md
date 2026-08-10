@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-通知是底部主分支；游客留在分支内看到登录引导并携带 `/notifications` 回跳。登录后列表项按 `target.kind` 导航：post 使用 `/threads/:threadId?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`；未知类型、无目标和已删除目标只展示安全正文。服务端开启私聊 capability 时，顶栏提供带私聊合计角标的 `/messages` 入口。动态详情路由尚未实现，moment 目标当前标记已读后给出明确提示，不拼接临时路由。
+通知是底部主分支；游客留在分支内看到登录引导并携带 `/notifications` 回跳。登录后列表项按 `target.kind` 导航：post 使用 `/threads/:threadId?post=:postId`，thread 使用 `/threads/:threadId`，user 使用 `/users/:userId`，moment 使用 `/moments/:momentId`；未知类型、无目标和已删除目标只展示安全正文。服务端开启私聊 capability 时，顶栏提供带私聊合计角标的 `/messages` 入口。
 
 ## 4. 用户操作流程
 
@@ -47,13 +47,13 @@
 
 - [x] 列表、筛选、分页、单条/全部已读和删除通过仓储、控制器和页面测试。
 - [x] 未读角标在进入、30 秒轮询、回前台和操作后同步，并有应用壳集成测试。
-- [x] post/thread/user 已知目标精确导航，删除目标和未知枚举安全展示。
+- [x] post/thread/user/moment 已知目标精确导航，删除目标和未知枚举安全展示。
 - [x] 退出会销毁私有轮询与列表状态，再次登录重新读取，不复用上一会话数据。
 - [x] 私聊 capability 关闭时不创建入口；开启后入口与独立角标进入稳定 `/messages` 目标。
 
 ## 12. 已知限制和后续功能
 
-V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保留同步的推送协议产物供后续里程碑实现，不据此提前注册设备。移动端动态详情尚未实现，因此 moment 目标暂不导航；动态模块接入后必须复用服务端稳定 ID 补齐。
+V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保留同步的推送协议产物供后续里程碑实现，不据此提前注册设备。动态通知只定位到动态详情，当前不把 `momentCommentId` 写入临时滚动路径；评论精确定位待后端与跨端路径形成稳定契约后独立接入。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -61,4 +61,4 @@ V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/notifications/`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内私聊](direct-messages.md)。
+代码入口：`lib/features/notifications/`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[动态](moments.md)、[站内私聊](direct-messages.md)。

@@ -155,4 +155,21 @@ void main() {
     expect(messageFor(40909), contains('图片'));
     expect(messageFor(40305), isNot(contains('private server wording')));
   });
+
+  test('动态或评论不存在使用 40415 稳定提示', () {
+    final options = RequestOptions(path: '/api/v1/moments/moment-1');
+    final failure = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        response: Response<Object?>(
+          requestOptions: options,
+          statusCode: 404,
+          data: {'code': 40415, 'message': 'private deletion detail'},
+        ),
+      ),
+    );
+
+    expect(failure.userMessage, contains('动态或评论'));
+    expect(failure.userMessage, isNot(contains('private deletion detail')));
+  });
 }

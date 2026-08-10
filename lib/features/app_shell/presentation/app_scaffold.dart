@@ -39,7 +39,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     if (ref.read(directMessagesEnabledProvider)) {
       ref.read(directUnreadControllerProvider.notifier).refresh();
     }
-    if (widget.navigationShell.currentIndex == 2 &&
+    if (widget.navigationShell.currentIndex == 3 &&
         ref.exists(notificationListControllerProvider)) {
       ref.read(notificationListControllerProvider.notifier).load();
     }
@@ -54,11 +54,19 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         : 0;
     return Scaffold(
       body: widget.navigationShell,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/compose/thread'),
-        tooltip: '创建主题',
-        child: const Icon(Icons.edit_rounded),
-      ),
+      floatingActionButton: switch (widget.navigationShell.currentIndex) {
+        0 => FloatingActionButton(
+          onPressed: () => context.push('/compose/thread'),
+          tooltip: '创建主题',
+          child: const Icon(Icons.edit_rounded),
+        ),
+        1 => FloatingActionButton(
+          onPressed: () => context.push('/compose/moment'),
+          tooltip: '发布动态',
+          child: const Icon(Icons.add_rounded),
+        ),
+        _ => null,
+      },
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
@@ -71,7 +79,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               index,
               initialLocation: index == widget.navigationShell.currentIndex,
             );
-            if (index == 2 && session.isAuthenticated) {
+            if (index == 3 && session.isAuthenticated) {
               ref.read(notificationUnreadControllerProvider.notifier).refresh();
               if (ref.exists(notificationListControllerProvider)) {
                 ref.read(notificationListControllerProvider.notifier).load();
@@ -83,6 +91,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home_rounded),
               label: '首页',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.auto_awesome_outlined),
+              selectedIcon: Icon(Icons.auto_awesome_rounded),
+              label: '动态',
             ),
             const NavigationDestination(
               icon: Icon(Icons.search_rounded),

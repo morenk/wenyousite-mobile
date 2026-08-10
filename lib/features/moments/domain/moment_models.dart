@@ -1,0 +1,377 @@
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+
+enum MomentFeedMode { discover, following }
+
+enum MomentFeedKind { main, bookmarks, user }
+
+enum MomentCoverType { image, text }
+
+enum MomentTextCoverTheme { rose, lilac, mint, amber }
+
+enum MomentCommentOrder { newest, oldest }
+
+class MomentFeedTarget {
+  const MomentFeedTarget.main(this.mode)
+    : kind = MomentFeedKind.main,
+      userId = null;
+
+  const MomentFeedTarget.bookmarks()
+    : kind = MomentFeedKind.bookmarks,
+      mode = MomentFeedMode.discover,
+      userId = null;
+
+  const MomentFeedTarget.user(String id)
+    : kind = MomentFeedKind.user,
+      mode = MomentFeedMode.discover,
+      userId = id;
+
+  final MomentFeedKind kind;
+  final MomentFeedMode mode;
+  final String? userId;
+
+  @override
+  bool operator ==(Object other) {
+    return other is MomentFeedTarget &&
+        other.kind == kind &&
+        other.mode == mode &&
+        other.userId == userId;
+  }
+
+  @override
+  int get hashCode => Object.hash(kind, mode, userId);
+}
+
+class MomentAuthor {
+  const MomentAuthor({
+    required this.id,
+    required this.username,
+    required this.level,
+    this.avatarUrl,
+  });
+
+  final String id;
+  final String username;
+  final String? avatarUrl;
+  final int level;
+}
+
+class MomentMedia {
+  const MomentMedia({
+    required this.id,
+    required this.url,
+    this.thumbnailUrl,
+    this.feedUrl,
+    this.mediumUrl,
+    this.width,
+    this.height,
+  });
+
+  final String id;
+  final String url;
+  final String? thumbnailUrl;
+  final String? feedUrl;
+  final String? mediumUrl;
+  final int? width;
+  final int? height;
+
+  String get bestFeedUrl => feedUrl ?? mediumUrl ?? thumbnailUrl ?? url;
+
+  String get bestContentUrl => mediumUrl ?? url;
+
+  double? get aspectRatio {
+    final safeWidth = width;
+    final safeHeight = height;
+    if (safeWidth == null || safeHeight == null || safeHeight <= 0) return null;
+    return safeWidth / safeHeight;
+  }
+}
+
+class MomentCard {
+  const MomentCard({
+    required this.id,
+    required this.author,
+    required this.title,
+    required this.contentExcerpt,
+    required this.coverType,
+    required this.textCoverTheme,
+    required this.imageCount,
+    required this.likeCount,
+    required this.commentCount,
+    required this.bookmarkCount,
+    required this.tipTotal,
+    required this.viewerLiked,
+    required this.viewerBookmarked,
+    required this.createdAt,
+    required this.updatedAt,
+    this.coverMedia,
+  });
+
+  final String id;
+  final MomentAuthor author;
+  final String title;
+  final String contentExcerpt;
+  final MomentCoverType coverType;
+  final MomentTextCoverTheme textCoverTheme;
+  final MomentMedia? coverMedia;
+  final int imageCount;
+  final int likeCount;
+  final int commentCount;
+  final int bookmarkCount;
+  final num tipTotal;
+  final bool viewerLiked;
+  final bool viewerBookmarked;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  MomentCard copyWith({
+    int? likeCount,
+    int? commentCount,
+    int? bookmarkCount,
+    bool? viewerLiked,
+    bool? viewerBookmarked,
+  }) {
+    return MomentCard(
+      id: id,
+      author: author,
+      title: title,
+      contentExcerpt: contentExcerpt,
+      coverType: coverType,
+      textCoverTheme: textCoverTheme,
+      coverMedia: coverMedia,
+      imageCount: imageCount,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      bookmarkCount: bookmarkCount ?? this.bookmarkCount,
+      tipTotal: tipTotal,
+      viewerLiked: viewerLiked ?? this.viewerLiked,
+      viewerBookmarked: viewerBookmarked ?? this.viewerBookmarked,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+}
+
+class MomentDetail {
+  const MomentDetail({
+    required this.card,
+    required this.content,
+    required this.images,
+    required this.version,
+    required this.canEdit,
+    required this.canDelete,
+  });
+
+  final MomentCard card;
+  final String content;
+  final List<MomentMedia> images;
+  final int version;
+  final bool canEdit;
+  final bool canDelete;
+
+  MomentDetail copyWith({MomentCard? card}) {
+    return MomentDetail(
+      card: card ?? this.card,
+      content: content,
+      images: images,
+      version: version,
+      canEdit: canEdit,
+      canDelete: canDelete,
+    );
+  }
+}
+
+class MomentSticker {
+  const MomentSticker({
+    required this.id,
+    required this.url,
+    required this.thumbnailUrl,
+    required this.mediumUrl,
+    required this.animated,
+    required this.frameCount,
+    required this.durationMs,
+    this.width,
+    this.height,
+  });
+
+  final String id;
+  final String url;
+  final String thumbnailUrl;
+  final String mediumUrl;
+  final int? width;
+  final int? height;
+  final bool animated;
+  final int frameCount;
+  final int durationMs;
+}
+
+class MomentReplyTarget {
+  const MomentReplyTarget({required this.id, required this.author});
+
+  final String id;
+  final MomentAuthor author;
+}
+
+class MomentComment {
+  const MomentComment({
+    required this.id,
+    required this.momentId,
+    required this.author,
+    required this.deleted,
+    required this.canDelete,
+    required this.createdAt,
+    this.content,
+    this.media,
+    this.sticker,
+    this.parentCommentId,
+    this.replyToComment,
+  });
+
+  final String id;
+  final String momentId;
+  final MomentAuthor author;
+  final String? content;
+  final MomentMedia? media;
+  final MomentSticker? sticker;
+  final String? parentCommentId;
+  final MomentReplyTarget? replyToComment;
+  final bool deleted;
+  final bool canDelete;
+  final DateTime createdAt;
+}
+
+class MomentRootComment extends MomentComment {
+  const MomentRootComment({
+    required super.id,
+    required super.momentId,
+    required super.author,
+    required super.deleted,
+    required super.canDelete,
+    required super.createdAt,
+    required this.replyCount,
+    required this.replies,
+    super.content,
+    super.media,
+    super.sticker,
+  });
+
+  final int replyCount;
+  final List<MomentComment> replies;
+
+  MomentRootComment copyWith({int? replyCount, List<MomentComment>? replies}) {
+    return MomentRootComment(
+      id: id,
+      momentId: momentId,
+      author: author,
+      deleted: deleted,
+      canDelete: canDelete,
+      createdAt: createdAt,
+      content: content,
+      media: media,
+      sticker: sticker,
+      replyCount: replyCount ?? this.replyCount,
+      replies: replies ?? this.replies,
+    );
+  }
+}
+
+class MomentActionResult {
+  const MomentActionResult({
+    required this.momentId,
+    required this.count,
+    required this.active,
+  });
+
+  final String momentId;
+  final int count;
+  final bool active;
+}
+
+class MomentDraftInput {
+  const MomentDraftInput({
+    required this.title,
+    required this.content,
+    required this.mediaIds,
+    this.coverMediaId,
+  });
+
+  final String title;
+  final String content;
+  final List<String> mediaIds;
+  final String? coverMediaId;
+
+  MomentDraftInput normalized() {
+    final safeTitle = title.trim();
+    final safeContent = content.trim();
+    if (safeTitle.length < 2 || safeTitle.length > 40) {
+      throw const ApiFailure(userMessage: '动态标题需要 2～40 个字符。');
+    }
+    if (safeContent.length > 1000) {
+      throw const ApiFailure(userMessage: '动态正文不能超过 1000 个字符。');
+    }
+    final ids = mediaIds.map((id) => id.trim()).toList(growable: false);
+    if (ids.length > 9) {
+      throw const ApiFailure(userMessage: '每条动态最多添加 9 张图片。');
+    }
+    if (ids.any((id) => id.isEmpty) || ids.toSet().length != ids.length) {
+      throw const ApiFailure(userMessage: '动态图片信息无效，请重新选择。');
+    }
+    final cover = coverMediaId?.trim();
+    if (cover != null && cover.isNotEmpty && !ids.contains(cover)) {
+      throw const ApiFailure(userMessage: '封面必须来自当前动态图片。');
+    }
+    return MomentDraftInput(
+      title: safeTitle,
+      content: safeContent,
+      mediaIds: List.unmodifiable(ids),
+      coverMediaId: cover == null || cover.isEmpty ? null : cover,
+    );
+  }
+}
+
+class MomentCommentInput {
+  const MomentCommentInput({
+    this.content,
+    this.mediaId,
+    this.stickerAssetId,
+    this.replyToCommentId,
+  });
+
+  final String? content;
+  final String? mediaId;
+  final String? stickerAssetId;
+  final String? replyToCommentId;
+
+  MomentCommentInput normalized() {
+    final text = content?.trim();
+    final media = mediaId?.trim();
+    final sticker = stickerAssetId?.trim();
+    final replyTo = replyToCommentId?.trim();
+    if ((text?.length ?? 0) > 500) {
+      throw const ApiFailure(userMessage: '评论不能超过 500 个字符。');
+    }
+    if (media != null &&
+        media.isNotEmpty &&
+        sticker != null &&
+        sticker.isNotEmpty) {
+      throw const ApiFailure(userMessage: '评论图片和表情不能同时发送。');
+    }
+    if ((text == null || text.isEmpty) &&
+        (media == null || media.isEmpty) &&
+        (sticker == null || sticker.isEmpty)) {
+      throw const ApiFailure(userMessage: '请输入评论，或选择一张图片/一个表情。');
+    }
+    return MomentCommentInput(
+      content: text == null || text.isEmpty ? null : text,
+      mediaId: media == null || media.isEmpty ? null : media,
+      stickerAssetId: sticker == null || sticker.isEmpty ? null : sticker,
+      replyToCommentId: replyTo == null || replyTo.isEmpty ? null : replyTo,
+    );
+  }
+
+  String get requestKey => [
+    content?.trim() ?? '',
+    mediaId?.trim() ?? '',
+    stickerAssetId?.trim() ?? '',
+    replyToCommentId?.trim() ?? '',
+  ].join('|');
+}

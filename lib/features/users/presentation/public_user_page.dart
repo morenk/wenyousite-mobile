@@ -202,6 +202,21 @@ class _UserProfileContent extends ConsumerWidget {
                   value: '${profile.receivedTipTotal}L',
                 ),
               ),
+              SizedBox(
+                height: tokens.minimumTouchTarget,
+                child: const VerticalDivider(),
+              ),
+              Expanded(
+                child: _ProfileStat(
+                  key: const Key('public-user-open-moments'),
+                  label: '动态',
+                  value: '查看',
+                  onTap: () => context.pushNamed(
+                    'user-moments',
+                    pathParameters: {'userId': profile.id},
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -301,7 +316,12 @@ class _ProfileAvatar extends StatelessWidget {
 }
 
 class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({required this.label, required this.value, this.onTap});
+  const _ProfileStat({
+    required this.label,
+    required this.value,
+    this.onTap,
+    super.key,
+  });
 
   final String label;
   final String value;

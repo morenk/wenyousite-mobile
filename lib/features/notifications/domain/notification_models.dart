@@ -90,6 +90,7 @@ class NotificationTarget {
         NotificationTargetKind.post => threadId != null && postId != null,
         NotificationTargetKind.thread => threadId != null,
         NotificationTargetKind.user => userId != null,
+        NotificationTargetKind.moment => momentId != null,
         _ => false,
       };
 }

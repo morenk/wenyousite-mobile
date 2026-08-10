@@ -14,6 +14,10 @@ import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_m
 import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
@@ -63,6 +67,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/moments',
+                name: 'moments',
+                builder: (context, state) => const MomentFeedPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/search',
                 name: 'search',
                 builder: (context, state) => const SearchPage(),
@@ -88,6 +101,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/moments/bookmarks',
+        name: 'moment-bookmarks',
+        builder: (context, state) => const MomentCollectionPage(
+          target: MomentFeedTarget.bookmarks(),
+          title: '动态收藏',
+          emptyTitle: '还没有收藏动态',
+          emptyMessage: '在动态列表或详情点击收藏后，会集中显示在这里。',
+        ),
+      ),
+      GoRoute(
+        path: '/moments/:momentId/edit',
+        name: 'moment-edit',
+        builder: (context, state) =>
+            MomentComposePage(momentId: state.pathParameters['momentId']!),
+      ),
+      GoRoute(
+        path: '/moments/:momentId',
+        name: 'moment-detail',
+        builder: (context, state) =>
+            MomentDetailPage(momentId: state.pathParameters['momentId']!),
+      ),
+      GoRoute(
+        path: '/users/:userId/moments',
+        name: 'user-moments',
+        builder: (context, state) => MomentCollectionPage(
+          target: MomentFeedTarget.user(state.pathParameters['userId']!),
+          title: '用户动态',
+          emptyTitle: '还没有公开动态',
+          emptyMessage: '这位用户暂时没有发布公开动态。',
+        ),
       ),
       GoRoute(
         path: '/messages',
@@ -281,6 +326,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DeleteAccountPage(),
       ),
       GoRoute(
+        path: '/compose/moment',
+        name: 'compose-moment',
+        builder: (context, state) => const MomentComposePage(),
+      ),
+      GoRoute(
         path: '/compose/thread',
         name: 'compose-thread',
         builder: (context, state) => const ThreadComposePage(),
@@ -357,6 +407,8 @@ String? resolveSessionRedirect({
   final protectedRoute =
       switch (matchedLocation) {
         '/compose/thread' ||
+        '/compose/moment' ||
+        '/moments/bookmarks' ||
         '/me/following' ||
         '/me/followers' ||
         '/me/blocks' ||
@@ -370,6 +422,7 @@ String? resolveSessionRedirect({
         _ => false,
       } ||
       _isThreadManagementLocation(matchedLocation) ||
+      _isMomentEditLocation(matchedLocation) ||
       _isDirectMessageLocation(matchedLocation) ||
       _isInvitationLocation(matchedLocation);
   if (!session.isAuthenticated && protectedRoute) {
@@ -382,6 +435,11 @@ String? resolveSessionRedirect({
     return sanitizeReturnLocation(uri.queryParameters['returnTo']);
   }
   return null;
+}
+
+bool _isMomentEditLocation(String location) {
+  if (location == '/moments/:momentId/edit') return true;
+  return RegExp(r'^/moments/[^/]+/edit$').hasMatch(location);
 }
 
 bool _isThreadManagementLocation(String location) {

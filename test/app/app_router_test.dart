@@ -197,6 +197,39 @@ void main() {
     );
   });
 
+  test('动态详情与用户动态公开，发布编辑与收藏受登录保护', () {
+    for (final location in ['/moments/moment-1', '/users/user-1/moments']) {
+      expect(
+        resolveSessionRedirect(
+          session: const SessionState.guest(),
+          matchedLocation: location,
+          uri: Uri.parse(location),
+        ),
+        isNull,
+      );
+    }
+    for (final location in [
+      '/compose/moment',
+      '/moments/moment-1/edit',
+      '/moments/bookmarks',
+    ]) {
+      final redirect = resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: location,
+        uri: Uri.parse(location),
+      );
+      expect(Uri.parse(redirect!).queryParameters['returnTo'], location);
+      expect(
+        resolveSessionRedirect(
+          session: const SessionState.authenticated(),
+          matchedLocation: location,
+          uri: Uri.parse(location),
+        ),
+        isNull,
+      );
+    }
+  });
+
   test('私密邀请预览要求登录并完整保留不透明 token', () {
     const location = '/join/Abcd_1234-efGh56';
     final redirect = resolveSessionRedirect(

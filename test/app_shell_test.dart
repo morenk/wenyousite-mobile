@@ -24,7 +24,7 @@ import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
 void main() {
-  testWidgets('兼容契约下游客直接进入四栏首页', (tester) async {
+  testWidgets('兼容契约下游客直接进入五栏首页', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -39,6 +39,7 @@ void main() {
 
     expect(find.text('发现主题'), findsOneWidget);
     expect(find.text('首页'), findsOneWidget);
+    expect(find.text('动态'), findsOneWidget);
     expect(find.text('搜索'), findsOneWidget);
     expect(find.text('通知'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);

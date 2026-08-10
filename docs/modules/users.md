@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-逐步实现用户主页、个人资料、头像、隐私字段、创建/参与主题、最近回复、收藏、关注与粉丝列表。当前已提供公开资料与内容分区、公开及本人关注/粉丝列表、登录用户对他人的关注/拉黑操作，以及“我的”本人资料、头像、公开范围编辑、本人收藏管理和账号注销入口；账号安全写操作归 settings/auth。
+逐步实现用户主页、个人资料、头像、隐私字段、创建/参与主题、公开动态、最近回复、收藏、关注与粉丝列表。当前已提供公开资料与内容分区、用户动态入口、公开及本人关注/粉丝列表、登录用户对他人的关注/拉黑操作，以及“我的”本人资料、头像、公开范围编辑、本人收藏管理和账号注销入口；账号安全写操作归 settings/auth。
 
 ## 2. 用户角色与使用场景
 
@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。关注和粉丝统计进入指定用户路径；登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人资料使用主导航 `/me`，在总览头像下直接选择、更换或移除，并提供 `/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
+公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。统计区的“动态”进入 `/users/:userId/moments`；关注和粉丝统计进入指定用户路径；登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人资料使用主导航 `/me`，在总览头像下直接选择、更换或移除，并提供 `/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
 
 ## 4. 用户操作流程
 
@@ -20,7 +20,7 @@
 
 ## 5. API operationId 与生成类型
 
-- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`、`usersMentionCandidates`，并消费 social 的四个关系写入与五个关系列表端点。
+- 当前已接入 `usersGetUser`、`usersGetUserCreatedThreads`、`usersGetUserPlayedThreads`、`usersGetUserRecentReplies`、`usersGetUserBookmarks`、`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`、`usersMentionCandidates`，并消费 moments 的 `userMomentsList` 以及 social 的四个关系写入与五个关系列表端点。
 - 主要生成类型：`PublicUserResponseDto`、`CurrentUserResponseDto`、`PrivateUserResponseDto`、`UpdateUserDto`、`SetAvatarDto`、`MentionCandidatesResponseDto`、`MentionCandidateDto`、`ThreadListItemResponseDto`、`RecentReplyResponseDto`、`BookmarkThreadResponseDto`、`UserFollowRecordResponseDto`、`BlockedUserRecordResponseDto` 与 `ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
@@ -57,11 +57,12 @@
 - [x] “我的”注销入口、确认链路、匿名保留说明与本机会话清理闭环通过。
 - [x] 头像选择、上传、设置、二次确认移除、显式 URL 降级、缓存失效及重启后服务端恢复正确。
 - [x] 私聊 capability 开启且目标非本人时展示稳定新私聊入口，关闭时不暴露入口。
+- [x] 所有公开用户均可从稳定 userId 进入独立用户动态列表，不复制动态列表状态到用户资料控制器。
 - [ ] 关注、拉黑与隐私变化后的跨页面缓存失效完成验证。
 
 ## 12. 已知限制和后续功能
 
-不做资料离线缓存、复杂勋章系统或后台用户管理。头像当前不提供手动裁剪，密码、邮箱、终端与注销已交由 settings/auth 的独立页面管理。用户动态、勋章、跨页面关系同步和本人私密内容筛选后续接入；公开路由不会绕过关闭的隐私字段。
+不做资料离线缓存、复杂勋章系统或后台用户管理。头像当前不提供手动裁剪，密码、邮箱、终端与注销已交由 settings/auth 的独立页面管理。用户动态已由 moments 独立列表接入；勋章、跨页面关系同步和本人私密内容筛选后续接入，公开路由不会绕过关闭的隐私字段。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -69,4 +70,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/`。参见[搜索](search.md)、[社交关系](social.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。

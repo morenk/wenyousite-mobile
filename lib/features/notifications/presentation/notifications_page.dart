@@ -166,9 +166,13 @@ class NotificationsPage extends ConsumerWidget {
         }
         return;
       case NotificationTargetKind.moment:
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('动态详情将在动态模块开放后接入。')));
+        final momentId = item.target.momentId;
+        if (momentId != null) {
+          context.pushNamed(
+            'moment-detail',
+            pathParameters: {'momentId': momentId},
+          );
+        }
         return;
       case NotificationTargetKind.none:
       case NotificationTargetKind.unknown:
