@@ -67,16 +67,24 @@ class DirectUnreadController extends StateNotifier<DirectUnreadState> {
 }
 
 final directUnreadControllerProvider =
-    StateNotifierProvider<DirectUnreadController, DirectUnreadState>((ref) {
-      final authenticated = ref.watch(
-        sessionControllerProvider.select((session) => session.isAuthenticated),
-      );
-      final enabled = ref.watch(directMessagesEnabledProvider);
-      return DirectUnreadController(
-        ref.watch(directMessageRepositoryProvider),
-        autoStart: authenticated && enabled,
-      );
-    });
+    StateNotifierProvider<DirectUnreadController, DirectUnreadState>(
+      (ref) {
+        final authenticated = ref.watch(
+          sessionControllerProvider.select(
+            (session) => session.isAuthenticated,
+          ),
+        );
+        final enabled = ref.watch(directMessagesEnabledProvider);
+        return DirectUnreadController(
+          ref.watch(directMessageRepositoryProvider),
+          autoStart: authenticated && enabled,
+        );
+      },
+      // This provider is read from the app shell while the server-advertised
+      // capability is scoped by WenyouApp (and overridden by feature tests).
+      // Declaring the dependency keeps Riverpod in the same override scope.
+      dependencies: [directMessagesEnabledProvider],
+    );
 
 class DirectConversationListController
     extends StateNotifier<DirectConversationListState> {

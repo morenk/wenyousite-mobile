@@ -83,6 +83,24 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('未覆盖未读控制器时能力覆盖仍使用同一 Riverpod 容器', (tester) async {
+    final repository = _FakeRepository();
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          directMessagesEnabledProvider.overrideWithValue(true),
+          directMessageRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
 }
 
 List<Override> _overrides(_FakeRepository repository) {
