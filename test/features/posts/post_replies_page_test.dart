@@ -19,7 +19,7 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('360dp 独立楼中楼常驻发表入口并完成编辑删除与权限收敛', (tester) async {
+  testWidgets('360dp 独立楼中楼悬浮发表入口并完成编辑删除与权限收敛', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
     addTearDown(tester.view.resetDevicePixelRatio);

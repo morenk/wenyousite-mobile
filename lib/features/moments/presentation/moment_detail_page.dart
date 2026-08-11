@@ -104,7 +104,12 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           child: ListView(
             key: const PageStorageKey('moment-detail-scroll'),
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.only(bottom: context.wenyouTokens.space32),
+            padding: EdgeInsets.only(
+              bottom:
+                  context.wenyouTokens.minimumTouchTarget +
+                  context.wenyouTokens.space32 +
+                  context.wenyouTokens.space16,
+            ),
             children: [
               MomentContentPadding(
                 top: context.wenyouTokens.space16,
@@ -183,8 +188,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           ),
         ),
       },
-      bottomNavigationBar: state.phase == MomentLoadPhase.ready
-          ? WenyouComposerDock(
+      floatingActionButton: state.phase == MomentLoadPhase.ready
+          ? WenyouComposerAction(
               key: const Key('moment-comment-dock'),
               label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
               icon: session.isAuthenticated

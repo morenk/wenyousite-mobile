@@ -111,7 +111,7 @@ void main() {
     );
   });
 
-  testWidgets('动态详情展示纯文本、评论筛选与游客常驻评论入口', (tester) async {
+  testWidgets('动态详情展示纯文本、评论筛选与游客悬浮评论入口', (tester) async {
     final repository = _PageRepository();
     await tester.pumpWidget(
       ProviderScope(
@@ -138,7 +138,7 @@ void main() {
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
   });
 
-  testWidgets('动态评论入口常驻首屏并从评论动作带入回复对象', (tester) async {
+  testWidgets('动态评论入口悬浮首屏并从评论动作带入回复对象', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -177,13 +177,13 @@ void main() {
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('moment-comment-input')),
-      '从常驻入口发表',
+      '从悬浮入口发表',
     );
     await tester.tap(find.byKey(const Key('moment-comment-send')));
     await tester.pumpAndSettle();
 
     expect(repository.commentInputs, hasLength(1));
-    expect(repository.commentInputs.single.content, '从常驻入口发表');
+    expect(repository.commentInputs.single.content, '从悬浮入口发表');
     expect(repository.commentInputs.single.replyToCommentId, isNull);
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
 

@@ -105,9 +105,9 @@ class PostRepliesPage extends ConsumerWidget {
                   ),
                 ),
       },
-      bottomNavigationBar: readyRoot == null
+      floatingActionButton: readyRoot == null
           ? null
-          : WenyouComposerDock(
+          : WenyouComposerAction(
               key: const Key('post-reply-compose'),
               label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
               icon: session.isAuthenticated
@@ -243,7 +243,7 @@ class _DiscussionList extends StatelessWidget {
         MediaQuery.sizeOf(context).width <= 400
             ? tokens.space12
             : tokens.space24,
-        tokens.space32,
+        tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
       ),
       children: [
         WenyouConstrainedWidth(

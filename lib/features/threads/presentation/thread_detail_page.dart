@@ -186,9 +186,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         ),
       },
-      bottomNavigationBar: selectedSubthread == null
+      floatingActionButton: selectedSubthread == null
           ? null
-          : WenyouComposerDock(
+          : WenyouComposerAction(
               key: const Key('thread-floor-compose'),
               label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
               icon: session.isAuthenticated
@@ -523,7 +523,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         SliverToBoxAdapter(
           child: _DetailContent(
             top: 12,
-            bottom: 40,
+            bottom:
+                context.wenyouTokens.minimumTouchTarget +
+                context.wenyouTokens.space32 +
+                context.wenyouTokens.space16,
             child: _FloorsFooter(
               state: state,
               onLoadMore: () => ref.read(provider.notifier).loadMore(),

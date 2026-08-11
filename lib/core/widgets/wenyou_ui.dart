@@ -58,8 +58,8 @@ class WenyouPageBody extends StatelessWidget {
   }
 }
 
-class WenyouComposerDock extends StatelessWidget {
-  const WenyouComposerDock({
+class WenyouComposerAction extends StatelessWidget {
+  const WenyouComposerAction({
     required this.label,
     required this.icon,
     required this.onPressed,
@@ -73,41 +73,23 @@ class WenyouComposerDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
-    return Material(
-      color: tokens.panel,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: tokens.border)),
-        ),
-        child: SafeArea(
-          top: false,
-          minimum: EdgeInsets.fromLTRB(
-            horizontal,
-            tokens.space8,
-            horizontal,
-            tokens.space12,
+    return Tooltip(
+      message: label,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+        child: FilledButton.tonalIcon(
+          onPressed: onPressed,
+          style: FilledButton.styleFrom(
+            minimumSize: Size(0, tokens.minimumTouchTarget),
+            padding: EdgeInsets.symmetric(horizontal: tokens.space16),
+            foregroundColor: tokens.text,
+            backgroundColor: tokens.accentedBackground,
+            disabledBackgroundColor: tokens.softPanel,
+            disabledForegroundColor: tokens.mutedText,
+            elevation: 0,
           ),
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: SizedBox(
-                width: double.infinity,
-                height: tokens.minimumTouchTarget,
-                child: OutlinedButton.icon(
-                  onPressed: onPressed,
-                  icon: Icon(icon, size: 20),
-                  label: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(label),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          icon: Icon(icon, size: 20),
+          label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ),
     );

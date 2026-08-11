@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import '../../support/foundation_test_fonts.dart';
 
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('纵向内容宽度只由可用空间和最大宽度决定', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 240);
@@ -41,7 +44,7 @@ void main() {
     );
   });
 
-  testWidgets('常驻输入入口在 360dp 下保留页面边距与 48dp 命中区', (tester) async {
+  testWidgets('悬浮输入入口不压缩正文并保留 48dp 命中区', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 240);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -52,7 +55,9 @@ void main() {
       MaterialApp(
         theme: AppTheme.light,
         home: Scaffold(
-          bottomNavigationBar: WenyouComposerDock(
+          key: const Key('composer-action-visual'),
+          body: const SizedBox.expand(key: Key('reading-body')),
+          floatingActionButton: WenyouComposerAction(
             key: const Key('composer-dock'),
             label: '发表评论…',
             icon: Icons.chat_bubble_outline_rounded,
@@ -65,11 +70,17 @@ void main() {
     final dock = find.byKey(const Key('composer-dock'));
     final button = find.descendant(
       of: dock,
-      matching: find.byType(OutlinedButton),
+      matching: find.byType(FilledButton),
     );
     expect(tester.getSize(button).height, 48);
-    expect(tester.getTopLeft(button).dx, 12);
-    expect(tester.getBottomRight(button).dx, 348);
+    expect(tester.getSize(button).width, lessThan(200));
+    expect(tester.getBottomRight(button).dx, 344);
+    expect(tester.getSize(find.byKey(const Key('reading-body'))).height, 240);
+
+    await expectLater(
+      find.byKey(const Key('composer-action-visual')),
+      matchesGoldenFile('goldens/composer_action_360.png'),
+    );
 
     await tester.tap(find.text('发表评论…'));
     expect(pressed, isTrue);
