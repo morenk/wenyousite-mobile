@@ -572,47 +572,53 @@ class _SubthreadBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final body = subthread.body;
-    return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (canEdit)
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                key: const Key('thread-body-edit'),
-                onPressed: onEdit,
-                tooltip: body == null ? '添加正文' : '编辑正文',
-                icon: Icon(
-                  body == null ? Icons.note_add_outlined : Icons.edit_outlined,
+    return Semantics(
+      container: true,
+      label: '当前子贴正文',
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (canEdit)
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  key: const Key('thread-body-edit'),
+                  onPressed: onEdit,
+                  tooltip: body == null ? '添加正文' : '编辑正文',
+                  icon: Icon(
+                    body == null
+                        ? Icons.note_add_outlined
+                        : Icons.edit_outlined,
+                  ),
                 ),
               ),
-            ),
-          if (canEdit) SizedBox(height: tokens.space4),
-          if (body == null || body.markdown.trim().isEmpty)
-            Text(
-              '这个子贴还没有正文。',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-            )
-          else if (body.postId == null)
-            WenyouMarkdown(
-              key: Key('thread-body-${subthread.id}'),
-              data: body.markdown,
-              diceLabels: _diceLabels(body.diceRolls),
-              onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
-            )
-          else
-            StickerPostMarkdown(
-              key: Key('thread-body-${subthread.id}'),
-              postId: body.postId!,
-              data: body.markdown,
-              diceLabels: _diceLabels(body.diceRolls),
-              onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
-            ),
-        ],
+            if (canEdit) SizedBox(height: tokens.space4),
+            if (body == null || body.markdown.trim().isEmpty)
+              Text(
+                '这个子贴还没有正文。',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+              )
+            else if (body.postId == null)
+              WenyouMarkdown(
+                key: Key('thread-body-${subthread.id}'),
+                data: body.markdown,
+                diceLabels: _diceLabels(body.diceRolls),
+                onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+              )
+            else
+              StickerPostMarkdown(
+                key: Key('thread-body-${subthread.id}'),
+                postId: body.postId!,
+                data: body.markdown,
+                diceLabels: _diceLabels(body.diceRolls),
+                onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -783,21 +789,44 @@ class _FloorCard extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _AuthorLine(
+                      key: Key('thread-floor-author-${floor.id}'),
                       author: floor.author,
                       time: floor.createdAt,
                       compact: true,
                     ),
                   ),
                   SizedBox(width: tokens.space8),
-                  Text(
-                    floor.floorNumber == null ? '楼层' : '#${floor.floorNumber}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  Tooltip(
+                    message: '楼层操作',
+                    child: TextButton(
+                      key: Key('thread-floor-actions-${floor.id}'),
+                      onPressed: pending
+                          ? null
+                          : () => _showActions(context, ref),
+                      style: TextButton.styleFrom(
+                        foregroundColor: tokens.mutedText,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tokens.space4,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            floor.floorNumber == null
+                                ? '楼层'
+                                : '#${floor.floorNumber}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          SizedBox(width: tokens.space4),
+                          const Icon(Icons.more_horiz_rounded, size: 18),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: tokens.space12),
+              SizedBox(height: tokens.space8),
               if (floor.isDeleted)
                 Text(
                   '该楼层已删除。',
@@ -814,7 +843,7 @@ class _FloorCard extends ConsumerWidget {
                       _showInternalLinkNotice(context, uri),
                 ),
               if (floor.replies.isNotEmpty) ...[
-                SizedBox(height: tokens.space16),
+                SizedBox(height: tokens.space12),
                 _InlineReplies(
                   threadId: threadId,
                   floor: floor,
@@ -828,35 +857,38 @@ class _FloorCard extends ConsumerWidget {
                   onDelete: onDeleteReply,
                 ),
               ],
-              if (floor.replyCount > 0) ...[
-                SizedBox(height: tokens.space8),
+              if (showDiscussion) ...[
+                SizedBox(height: tokens.space4),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: InkWell(
+                  child: TextButton(
                     key: Key('thread-floor-discussion-${floor.id}'),
-                    borderRadius: BorderRadius.circular(tokens.radius12),
-                    onTap: pending ? null : onDiscussion,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tokens.space4,
-                        vertical: tokens.space4,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${floor.replyCount} 条回复',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: tokens.mutedText),
-                          ),
+                    onPressed: pending ? null : onDiscussion,
+                    style: TextButton.styleFrom(
+                      foregroundColor: tokens.mutedText,
+                      padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          floor.replyCount == 0
+                              ? Icons.reply_rounded
+                              : Icons.chat_bubble_outline_rounded,
+                          size: 16,
+                        ),
+                        SizedBox(width: tokens.space4),
+                        Text(
+                          floor.replyCount == 0
+                              ? '回复'
+                              : '${floor.replyCount} 条回复',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (floor.replyCount > 0) ...[
                           SizedBox(width: tokens.space4),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 16,
-                            color: tokens.mutedText,
-                          ),
+                          const Icon(Icons.chevron_right_rounded, size: 16),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -947,17 +979,9 @@ class _InlineReplies extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${floor.replyCount} 条回复',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-            ),
             for (var index = 0; index < floor.replies.length; index++) ...[
-              SizedBox(height: tokens.space12),
               if (index > 0) ...[
-                Divider(color: tokens.border),
-                SizedBox(height: tokens.space12),
+                Divider(height: tokens.space24, color: tokens.border),
               ],
               _InlineReply(
                 threadId: threadId,
@@ -1071,7 +1095,7 @@ class _InlineReply extends ConsumerWidget {
                 data: reply.body.markdown,
                 diceLabels: _diceLabels(reply.body.diceRolls),
                 bodyFontSize: 16,
-                bodyHeight: 1.7,
+                bodyHeight: 1.6,
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               ),
           ],
@@ -1172,6 +1196,7 @@ class _AuthorLine extends StatelessWidget {
     required this.author,
     required this.time,
     this.compact = false,
+    super.key,
   });
 
   final ThreadAuthorModel author;
@@ -1181,7 +1206,7 @@ class _AuthorLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final size = compact ? 36.0 : 44.0;
+    final size = compact ? 32.0 : 36.0;
     final fallback = ColoredBox(
       color: tokens.softPanel,
       child: Icon(Icons.person_rounded, color: tokens.mutedText),
@@ -1205,28 +1230,24 @@ class _AuthorLine extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: tokens.space12),
+        SizedBox(width: tokens.space8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      author.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space4),
-                  WenyouLevelBadge(level: author.level),
-                ],
+              Flexible(
+                child: Text(
+                  author.username,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
               ),
-              SizedBox(height: tokens.space4),
+              SizedBox(width: tokens.space4),
+              WenyouLevelBadge(level: author.level),
+              SizedBox(width: tokens.space8),
               Text(
                 formatWenyouRelativeTime(time),
+                maxLines: 1,
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
@@ -96,6 +97,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
     expect(find.text('收到，准备出发。'), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byKey(const Key('thread-body-subthread-1')),
+        matching: find.byType(WenyouPanel),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const Key('thread-floor-author-floor-1')))
+          .height,
+      lessThanOrEqualTo(36),
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const Key('thread-floor-actions-floor-1')))
+          .height,
+      greaterThanOrEqualTo(48),
+    );
     expect(find.byKey(const Key('thread-floor-report-floor-1')), findsNothing);
     expect(find.byType(AnimatedContainer), findsNothing);
     expect(find.byKey(const Key('thread-reply-level-reply-1')), findsOneWidget);
@@ -104,7 +124,7 @@ void main() {
       lessThan(64),
     );
 
-    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
     await tester.pumpAndSettle();
     expect(find.text('楼层操作'), findsOneWidget);
     expect(find.text('复制楼层链接'), findsOneWidget);
@@ -508,6 +528,45 @@ void main() {
     expect(repository.threadCalls, 2);
   });
 
+  testWidgets('登录用户在零回复楼层仍看到可发现的回复入口', (tester) async {
+    final repository = _FakeThreadDetailRepository(mainFloor: _sideFloor);
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(repository),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('viewer-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final discussion = find.byKey(const Key('thread-floor-discussion-floor-2'));
+    await tester.scrollUntilVisible(
+      discussion,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.descendant(of: discussion, matching: find.text('回复')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('管理者从主题详情编辑正文并按作者与管理权限操作楼层', (tester) async {
     final detailRepository = _FakeThreadDetailRepository(
       detail: _managerDetail,
@@ -570,7 +629,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
     await tester.pumpAndSettle();
     expect(find.text('楼层操作'), findsOneWidget);
     await tester.ensureVisible(find.text('删除'));
@@ -614,13 +673,16 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     this.loadMoreFailure,
     this.postTarget,
     ThreadDetailModel? detail,
-  }) : detail = detail ?? _detail;
+    ThreadFloorModel? mainFloor,
+  }) : detail = detail ?? _detail,
+       mainFloor = mainFloor ?? _mainFloor;
 
   final ApiFailure? threadFailure;
   final ApiFailure? floorFailure;
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
   final ThreadDetailModel detail;
+  final ThreadFloorModel mainFloor;
   final List<String> requestedSubthreads = [];
   final List<String> targetPostIds = [];
   int threadCalls = 0;
@@ -653,13 +715,13 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     }
     if (cursor == null && loadMoreFailure != null) {
       return CursorPage(
-        items: [subthreadId == 'subthread-1' ? _mainFloor : _sideFloor],
+        items: [subthreadId == 'subthread-1' ? mainFloor : _sideFloor],
         cursor: 'next-cursor',
         hasMore: true,
       );
     }
     return CursorPage(
-      items: [subthreadId == 'subthread-1' ? _mainFloor : _sideFloor],
+      items: [subthreadId == 'subthread-1' ? mainFloor : _sideFloor],
       hasMore: false,
     );
   }

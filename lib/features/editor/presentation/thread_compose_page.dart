@@ -105,7 +105,24 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         if (!didPop) unawaited(_saveBeforePop(result));
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('创建主题')),
+        appBar: AppBar(
+          title: const Text('写主题'),
+          actions: [
+            if (state.phase == ThreadComposePhase.ready ||
+                state.phase == ThreadComposePhase.published)
+              IconButton(
+                key: const Key('compose-remote-drafts'),
+                tooltip: state.remoteDraft == null
+                    ? '服务端主题草稿'
+                    : '服务端主题草稿 · 当前已同步',
+                onPressed: locked ? null : _openRemoteDrafts,
+                icon: Badge(
+                  isLabelVisible: state.remoteDraft != null,
+                  child: const Icon(Icons.cloud_outlined),
+                ),
+              ),
+          ],
+        ),
         body: switch (state.phase) {
           ThreadComposePhase.loading => const Center(
             child: CircularProgressIndicator(),
@@ -129,25 +146,19 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   ) {
     final tokens = context.wenyouTokens;
     final enabled = !locked && _codecFailure == null;
+    final selectedCategory = state.categories
+        .where((category) => category.slug == state.categorySlug)
+        .firstOrNull;
+    final settingsSummary = [
+      selectedCategory?.name ?? '未选分类',
+      state.visibility.label,
+      if (state.tags.isNotEmpty) '${state.tags.length} 个标签',
+    ].join(' · ');
     return WenyouPageBody(
       maxWidth: 800,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(
-            title: '写下这次想聊的事',
-            subtitle: '内容会先保存在本机；主动保存时才同步为服务端草稿。',
-          ),
-          SizedBox(height: tokens.space16),
-          OutlinedButton.icon(
-            key: const Key('compose-remote-drafts'),
-            onPressed: locked ? null : _openRemoteDrafts,
-            icon: const Icon(Icons.cloud_outlined),
-            label: Text(
-              state.remoteDraft == null ? '查看服务端主题草稿' : '查看服务端主题草稿 · 当前已同步',
-            ),
-          ),
-          SizedBox(height: tokens.space12),
           if (state.action == ThreadComposeAction.openRemoteDraft) ...[
             const WenyouStatusBanner(message: '正在读取服务端草稿最新版…'),
             SizedBox(height: tokens.space12),
@@ -243,22 +254,100 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             _UploadStatus(progress: _uploadProgress, onCancel: _cancelUpload),
             SizedBox(height: tokens.space12),
           ],
-          WenyouPanel(
+          TextField(
+            key: const Key('compose-title'),
+            controller: _titleController,
+            enabled: !locked,
+            maxLength: 100,
+            maxLines: 3,
+            minLines: 1,
+            textInputAction: TextInputAction.next,
+            style: Theme.of(context).textTheme.headlineSmall,
+            decoration: const InputDecoration(
+              hintText: '主题标题',
+              counterText: '',
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(vertical: 8),
+            ),
+          ),
+          Divider(height: tokens.space16, color: tokens.border),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: tokens.border),
+                bottom: BorderSide(color: tokens.border),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextField(
-                  key: const Key('compose-title'),
-                  controller: _titleController,
-                  enabled: !locked,
-                  maxLength: 100,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: '标题',
-                    hintText: '一句话说明你想聊什么',
+                WenyouEditorToolbar(
+                  controller: _editorController,
+                  enabled: enabled,
+                  onInsertImage: _insertImage,
+                  onInsertSticker: ref.watch(stickersEnabledProvider)
+                      ? _insertSticker
+                      : null,
+                  onSaveDraft: _openContentDrafts,
+                ),
+                MentionSuggestions(
+                  controller: _editorController,
+                  focusNode: _editorFocusNode,
+                  threadId: state.remoteDraft?.id,
+                  enabled: enabled,
+                ),
+                Semantics(
+                  textField: true,
+                  label: '主题正文编辑器',
+                  child: QuillEditor(
+                    key: const Key('compose-body'),
+                    controller: _editorController,
+                    focusNode: _editorFocusNode,
+                    scrollController: _editorScrollController,
+                    config: QuillEditorConfig(
+                      scrollable: false,
+                      minHeight: 340,
+                      padding: EdgeInsets.fromLTRB(
+                        tokens.space4,
+                        tokens.space16,
+                        tokens.space4,
+                        tokens.space24,
+                      ),
+                      placeholder: '从这里开始写正文…',
+                      embedBuilders: wenyouEditorEmbedBuilders(),
+                    ),
                   ),
                 ),
-                SizedBox(height: tokens.space12),
+              ],
+            ),
+          ),
+          SizedBox(height: tokens.space8),
+          _LocalSaveStatus(state: state),
+          SizedBox(height: tokens.space12),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.symmetric(
+                horizontal: BorderSide(color: tokens.border),
+              ),
+            ),
+            child: ExpansionTile(
+              key: const Key('compose-publish-settings'),
+              leading: const Icon(Icons.tune_rounded, size: 20),
+              title: const Text('发布设置'),
+              subtitle: Text(
+                settingsSummary,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.only(bottom: tokens.space12),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
                 DropdownButtonFormField<String>(
                   key: const Key('compose-category'),
                   initialValue:
@@ -320,55 +409,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ],
             ),
           ),
-          SizedBox(height: tokens.space16),
-          Material(
-            color: tokens.panel,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(tokens.radius20),
-              side: BorderSide(color: tokens.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                WenyouEditorToolbar(
-                  controller: _editorController,
-                  enabled: enabled,
-                  onInsertImage: _insertImage,
-                  onInsertSticker: ref.watch(stickersEnabledProvider)
-                      ? _insertSticker
-                      : null,
-                  onSaveDraft: _openContentDrafts,
-                ),
-                MentionSuggestions(
-                  controller: _editorController,
-                  focusNode: _editorFocusNode,
-                  threadId: state.remoteDraft?.id,
-                  enabled: enabled,
-                ),
-                Semantics(
-                  textField: true,
-                  label: '主题正文编辑器',
-                  child: QuillEditor(
-                    key: const Key('compose-body'),
-                    controller: _editorController,
-                    focusNode: _editorFocusNode,
-                    scrollController: _editorScrollController,
-                    config: QuillEditorConfig(
-                      scrollable: false,
-                      minHeight: 260,
-                      padding: EdgeInsets.all(tokens.space16),
-                      placeholder: '写下正文…',
-                      embedBuilders: wenyouEditorEmbedBuilders(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           SizedBox(height: tokens.space12),
-          _LocalSaveStatus(state: state),
-          SizedBox(height: tokens.space16),
           OutlinedButton.icon(
             key: const Key('compose-save-draft'),
             onPressed: enabled ? _saveThreadDraft : null,

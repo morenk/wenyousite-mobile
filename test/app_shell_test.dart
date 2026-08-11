@@ -265,7 +265,7 @@ void main() {
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('创建主题'), findsOneWidget);
+    expect(find.text('写主题'), findsOneWidget);
     expect(authRepository.lastAccount, 'user@example.com');
     expect(tokenStore.value?.accessToken, 'access-token');
     expect(tokenStore.value?.refreshToken, 'refresh-token');
@@ -366,7 +366,7 @@ void main() {
     await tester.tap(completeButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('创建主题'), findsOneWidget);
+    expect(find.text('写主题'), findsOneWidget);
     expect(authRepository.lastRegistrationEmail, 'new-user@example.com');
     expect(authRepository.lastCode, '123456');
     expect(authRepository.lastUsername, '新用户2');

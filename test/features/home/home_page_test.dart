@@ -7,8 +7,11 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import '../../support/foundation_test_fonts.dart';
 
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('首页展示分类快捷项与紧凑主题卡片并可切换分类', (tester) async {
     final repository = _FakeHomeRepository();
     await tester.pumpWidget(_homeApp(repository));
@@ -27,6 +30,14 @@ void main() {
     );
     expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
     expect(find.text('8L 加油'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('星海旅团')).dy,
+      lessThan(tester.getTopLeft(find.text('温柔测试员')).dy),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('home-thread-thread-1'))).height,
+      lessThan(260),
+    );
 
     await tester.tap(find.byKey(const Key('home-category-menu')));
     await tester.pumpAndSettle();
@@ -97,12 +108,33 @@ void main() {
       );
     });
   }
+
+  testWidgets('360dp 首页保持标题与摘要优先的视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(_homeApp(_FakeHomeRepository()));
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('home-text-first-visual')),
+      matchesGoldenFile('goldens/home_text_first_360.png'),
+    );
+  });
 }
 
 Widget _homeApp(HomeRepository repository) {
   return ProviderScope(
     overrides: [homeRepositoryProvider.overrideWithValue(repository)],
-    child: MaterialApp(theme: AppTheme.light, home: const HomePage()),
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: const RepaintBoundary(
+        key: Key('home-text-first-visual'),
+        child: HomePage(),
+      ),
+    ),
   );
 }
 

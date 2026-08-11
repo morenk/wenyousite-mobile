@@ -19,8 +19,11 @@ import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import '../../support/foundation_test_fonts.dart';
 
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('加载态可渲染', (tester) async {
     final controller = ThreadComposeController(
       _FakeRepository(),
@@ -164,6 +167,49 @@ void main() {
     expect(find.byKey(const Key('compose-body')), findsOneWidget);
   });
 
+  testWidgets('创作首屏先呈现标题和正文，发布设置默认收起', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = await _readyController(_MemorySnapshotStore());
+
+    await _pumpPage(tester, controller);
+
+    final title = find.byKey(const Key('compose-title'));
+    final body = find.byKey(const Key('compose-body'));
+    final settings = find.byKey(const Key('compose-publish-settings'));
+    expect(tester.getTopLeft(title).dy, lessThan(tester.getTopLeft(body).dy));
+    expect(tester.getSize(body).height, greaterThanOrEqualTo(340));
+    expect(find.byKey(const Key('compose-category')), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('compose-remote-drafts'))).height,
+      greaterThanOrEqualTo(48),
+    );
+
+    await tester.ensureVisible(settings);
+    await tester.tap(settings);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('compose-category')), findsOneWidget);
+    expect(find.byKey(const Key('compose-visibility')), findsOneWidget);
+    expect(find.byKey(const Key('compose-tags')), findsOneWidget);
+  });
+
+  testWidgets('360dp 创作首屏保持标题与正文优先的视觉基线', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = await _readyController(_MemorySnapshotStore());
+
+    await _pumpPage(tester, controller);
+
+    await expectLater(
+      find.byKey(const Key('compose-text-first-visual')),
+      matchesGoldenFile('goldens/thread_compose_text_first_360.png'),
+    );
+  });
+
   testWidgets('工具栏正文草稿打开五槽位面板而页面按钮保留主题实体草稿', (tester) async {
     final controller = await _readyController(_MemorySnapshotStore());
     controller.updateBody('当前主题正文');
@@ -252,7 +298,10 @@ Future<void> _pumpPage(
       ],
       child: MaterialApp(
         theme: AppTheme.light,
-        home: const ThreadComposePage(),
+        home: const RepaintBoundary(
+          key: Key('compose-text-first-visual'),
+          child: ThreadComposePage(),
+        ),
       ),
     ),
   );

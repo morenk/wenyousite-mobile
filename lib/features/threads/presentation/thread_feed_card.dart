@@ -24,35 +24,26 @@ class HomeThreadCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final compact = MediaQuery.sizeOf(context).width <= 400;
     return Semantics(
       container: true,
       button: true,
       label: '打开主题：${thread.title}，作者 ${thread.ownerName}',
       child: WenyouPanel(
         onTap: onTap,
-        padding: EdgeInsets.all(tokens.space16),
+        padding: EdgeInsets.all(compact ? tokens.space12 : tokens.space16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ThreadAuthor(thread: thread),
-            SizedBox(height: tokens.space12),
             Wrap(
               spacing: tokens.space8,
               runSpacing: tokens.space4,
               children: [
                 if (thread.isPinned)
-                  const _ThreadPill(
-                    icon: Icons.push_pin_rounded,
-                    label: '置顶',
-                    accent: true,
-                  ),
+                  const _ThreadPill(label: '置顶', accent: true),
                 if (categoryName != null)
-                  _ThreadPill(
-                    icon: Icons.folder_open_rounded,
-                    label: categoryName!,
-                  ),
+                  _ThreadPill(label: categoryName!, outlined: true),
                 _ThreadPill(
-                  icon: _statusIcon(thread.status),
                   label: thread.status.label,
                   accent: thread.status == HomeThreadStatus.recruiting,
                 ),
@@ -60,13 +51,15 @@ class HomeThreadCard extends StatelessWidget {
             ),
             SizedBox(height: tokens.space8),
             Text(thread.title, style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: tokens.space8),
+            _ThreadAuthor(thread: thread),
             if (thread.preview != null) ...[
-              SizedBox(height: tokens.space8),
+              SizedBox(height: tokens.space12),
               Text(
                 thread.preview!,
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
             ],
             if (thread.coverImageUrls.isNotEmpty) ...[
@@ -88,12 +81,10 @@ class HomeThreadCard extends StatelessWidget {
                 ],
               ),
             ],
-            SizedBox(height: tokens.space12),
-            Divider(color: tokens.border),
-            SizedBox(height: tokens.space12),
+            SizedBox(height: tokens.space8),
             Wrap(
-              spacing: tokens.space16,
-              runSpacing: tokens.space8,
+              spacing: tokens.space12,
+              runSpacing: tokens.space4,
               children: [
                 _ThreadStat(
                   icon: Icons.people_outline_rounded,
@@ -120,15 +111,6 @@ class HomeThreadCard extends StatelessWidget {
       ),
     );
   }
-
-  static IconData _statusIcon(HomeThreadStatus status) {
-    return switch (status) {
-      HomeThreadStatus.recruiting => Icons.group_add_outlined,
-      HomeThreadStatus.closed => Icons.lock_outline_rounded,
-      HomeThreadStatus.finished => Icons.check_circle_outline_rounded,
-      HomeThreadStatus.unknown => Icons.help_outline_rounded,
-    };
-  }
 }
 
 class _ThreadAuthor extends StatelessWidget {
@@ -139,72 +121,20 @@ class _ThreadAuthor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Row(
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: tokens.space4,
+      runSpacing: tokens.space4,
       children: [
-        _ThreadAvatar(url: thread.ownerAvatarUrl, username: thread.ownerName),
-        SizedBox(width: tokens.space12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      thread.ownerName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space4),
-                  WenyouLevelBadge(level: thread.ownerLevel),
-                ],
-              ),
-              SizedBox(height: tokens.space4),
-              Text(
-                '${formatWenyouRelativeTime(thread.lastActivityAt)}活跃',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-              ),
-            ],
-          ),
+        Text(thread.ownerName, style: Theme.of(context).textTheme.labelLarge),
+        WenyouLevelBadge(level: thread.ownerLevel),
+        Text(
+          '${formatWenyouRelativeTime(thread.lastActivityAt)}活跃',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
         ),
       ],
-    );
-  }
-}
-
-class _ThreadAvatar extends StatelessWidget {
-  const _ThreadAvatar({required this.url, required this.username});
-
-  final String? url;
-  final String username;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, color: tokens.mutedText),
-    );
-    return Semantics(
-      image: true,
-      label: '$username 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: 44,
-          child: url == null
-              ? fallback
-              : CachedNetworkImage(
-                  imageUrl: url!,
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
     );
   }
 }
@@ -249,40 +179,35 @@ class _ThreadCover extends StatelessWidget {
 
 class _ThreadPill extends StatelessWidget {
   const _ThreadPill({
-    required this.icon,
     required this.label,
     this.accent = false,
+    this.outlined = false,
   });
 
-  final IconData icon;
   final String label;
   final bool accent;
+  final bool outlined;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: accent ? tokens.accentedBackground : tokens.softPanel,
+        color: accent ? tokens.accentedBackground : Colors.transparent,
         borderRadius: BorderRadius.circular(tokens.radiusPill),
-        border: Border.all(color: tokens.border),
+        border: outlined ? Border.all(color: tokens.border) : null,
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: tokens.space8,
           vertical: tokens.space4,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: accent ? tokens.brand : tokens.mutedText,
-            ),
-            SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ],
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: accent ? tokens.brand : tokens.mutedText,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
