@@ -66,10 +66,19 @@ class _AuthenticatedMePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(meProfileControllerProvider);
-    final avatarState = ref.watch(avatarControllerProvider);
     final notifier = ref.read(meProfileControllerProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(
+        title: const Text('我的'),
+        actions: [
+          IconButton(
+            key: const Key('me-open-settings'),
+            tooltip: '账号设置',
+            onPressed: () => context.pushNamed('me-settings'),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: switch (state.phase) {
         MeProfilePhase.loading => _MePageList(
           children: const [
@@ -106,12 +115,120 @@ class _AuthenticatedMePage extends ConsumerWidget {
           ],
         ),
         MeProfilePhase.ready => RefreshIndicator(
+          onRefresh: state.isSubmitting ? () async {} : notifier.load,
+          child: _MePageList(children: [_MeDashboard(profile: state.profile!)]),
+        ),
+      },
+    );
+  }
+}
+
+class MeEditPage extends ConsumerWidget {
+  const MeEditPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(meProfileControllerProvider);
+    final avatarState = ref.watch(avatarControllerProvider);
+    final notifier = ref.read(meProfileControllerProvider.notifier);
+    return Scaffold(
+      appBar: AppBar(title: const Text('编辑资料')),
+      body: switch (state.phase) {
+        MeProfilePhase.loading => const _MePageList(
+          children: [
+            WenyouPanel(
+              child: WenyouEmptyState(
+                icon: Icons.person_outline_rounded,
+                title: '正在读取资料',
+                message: '头像、简介与公开范围马上就好。',
+                action: CircularProgressIndicator(),
+              ),
+            ),
+          ],
+        ),
+        MeProfilePhase.failed => _MePageList(
+          children: [
+            WenyouPanel(
+              child: WenyouEmptyState(
+                icon: Icons.cloud_off_outlined,
+                title: '资料没有加载完成',
+                message: state.failure?.userMessage ?? '请稍后重试。',
+                detail: state.failure?.requestId == null
+                    ? null
+                    : '请求 ID：${state.failure!.requestId}',
+                action: OutlinedButton.icon(
+                  key: const Key('me-edit-retry'),
+                  onPressed: notifier.load,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('重新加载'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        MeProfilePhase.ready => RefreshIndicator(
           onRefresh: state.isSubmitting || avatarState.isBusy
               ? () async {}
               : notifier.load,
+          child: _MePageList(children: [_MeProfileContent(state: state)]),
+        ),
+      },
+    );
+  }
+}
+
+class MeSettingsPage extends ConsumerWidget {
+  const MeSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(meProfileControllerProvider);
+    final notifier = ref.read(meProfileControllerProvider.notifier);
+    return Scaffold(
+      appBar: AppBar(title: const Text('账号设置')),
+      body: switch (state.phase) {
+        MeProfilePhase.loading => const _MePageList(
+          children: [
+            WenyouPanel(
+              child: WenyouEmptyState(
+                icon: Icons.settings_outlined,
+                title: '正在读取账号状态',
+                message: '正在确认邮箱和安全设置…',
+                action: CircularProgressIndicator(),
+              ),
+            ),
+            _LogoutPanel(),
+          ],
+        ),
+        MeProfilePhase.failed => _MePageList(
+          children: [
+            WenyouPanel(
+              child: WenyouEmptyState(
+                icon: Icons.cloud_off_outlined,
+                title: '账号状态没有加载完成',
+                message: state.failure?.userMessage ?? '请稍后重试。',
+                detail: state.failure?.requestId == null
+                    ? null
+                    : '请求 ID：${state.failure!.requestId}',
+                action: OutlinedButton.icon(
+                  key: const Key('me-settings-retry'),
+                  onPressed: notifier.load,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('重新加载'),
+                ),
+              ),
+            ),
+            const _LogoutPanel(),
+          ],
+        ),
+        MeProfilePhase.ready => RefreshIndicator(
+          onRefresh: state.isSubmitting ? () async {} : notifier.load,
           child: _MePageList(
             children: [
-              _MeProfileContent(state: state),
+              _AccountSecurityPanel(
+                disabled: state.isSubmitting,
+                emailVerified: state.profile!.emailVerified,
+              ),
               const _LogoutPanel(),
             ],
           ),
@@ -215,34 +332,26 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
         widget.state.isSubmitting || avatarState.isBusy;
     return Column(
       children: [
-        _ProfileOverview(
-          profile: _profile,
-          profileWriteDisabled: widget.state.isSubmitting,
+        WenyouPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const WenyouSectionHeader(
+                title: '头像',
+                subtitle: '用于主题、动态、评论和私聊中的身份识别。',
+              ),
+              SizedBox(height: tokens.space16),
+              _AvatarEditor(
+                profile: _profile,
+                profileWriteDisabled: widget.state.isSubmitting,
+              ),
+            ],
+          ),
         ),
         SizedBox(height: tokens.space12),
         _buildUsernamePanel(context, profileWriteDisabled),
         SizedBox(height: tokens.space12),
         _buildSettingsPanel(context, profileWriteDisabled),
-        SizedBox(height: tokens.space12),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            key: const Key('me-open-public-profile'),
-            onPressed: profileWriteDisabled
-                ? null
-                : () => context.pushNamed(
-                    'user-profile',
-                    pathParameters: {'userId': _profile.id},
-                  ),
-            icon: const Icon(Icons.visibility_outlined),
-            label: const Text('查看我的公开主页'),
-          ),
-        ),
-        SizedBox(height: tokens.space12),
-        _AccountContentPanel(
-          disabled: profileWriteDisabled,
-          emailVerified: _profile.emailVerified,
-        ),
       ],
     );
   }
@@ -493,8 +602,98 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
   }
 }
 
-class _AccountContentPanel extends ConsumerWidget {
-  const _AccountContentPanel({
+class _MeDashboard extends ConsumerWidget {
+  const _MeDashboard({required this.profile});
+
+  final MeProfileModel profile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.wenyouTokens;
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
+    return Column(
+      children: [
+        _ProfileOverview(profile: profile),
+        SizedBox(height: tokens.space12),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                key: const Key('me-open-edit-profile'),
+                onPressed: () => context.pushNamed('me-edit'),
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('编辑资料'),
+              ),
+            ),
+            SizedBox(width: tokens.space12),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('me-open-public-profile'),
+                onPressed: () => context.pushNamed(
+                  'user-profile',
+                  pathParameters: {'userId': profile.id},
+                ),
+                icon: const Icon(Icons.visibility_outlined),
+                label: const Text('公开主页'),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: tokens.space12),
+        WenyouPanel(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              ListTile(
+                key: const Key('me-open-moments'),
+                leading: const Icon(Icons.auto_awesome_outlined),
+                title: const Text('我的动态'),
+                subtitle: const Text('查看已发布的公开动态'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.pushNamed(
+                  'user-moments',
+                  pathParameters: {'userId': profile.id},
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                key: const Key('me-open-bookmarks'),
+                leading: const Icon(Icons.bookmarks_outlined),
+                title: const Text('我的收藏'),
+                subtitle: const Text('主题帖与动态收藏'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.pushNamed('me-bookmarks'),
+              ),
+              if (stickersEnabled) ...[
+                const Divider(height: 1),
+                ListTile(
+                  key: const Key('me-open-stickers'),
+                  leading: const Icon(Icons.add_reaction_outlined),
+                  title: const Text('我的表情'),
+                  subtitle: const Text('添加、排序和移除收藏表情'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.pushNamed('me-stickers'),
+                ),
+              ],
+              const Divider(height: 1),
+              ListTile(
+                key: const Key('me-open-settings-tile'),
+                leading: const Icon(Icons.settings_outlined),
+                title: const Text('账号设置'),
+                subtitle: const Text('邮箱、密码、终端、黑名单与退出'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.pushNamed('me-settings'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AccountSecurityPanel extends StatelessWidget {
+  const _AccountSecurityPanel({
     required this.disabled,
     required this.emailVerified,
   });
@@ -503,62 +702,12 @@ class _AccountContentPanel extends ConsumerWidget {
   final bool emailVerified;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final stickersEnabled = ref.watch(stickersEnabledProvider);
     return WenyouPanel(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          ListTile(
-            key: const Key('me-open-wallet'),
-            enabled: !disabled,
-            leading: const Icon(Icons.local_gas_station_outlined),
-            title: const Text('我的温油'),
-            subtitle: const Text('查看余额、收到的加油与收支记录'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: disabled ? null : () => context.pushNamed('wallet'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-bookmarks'),
-            enabled: !disabled,
-            leading: const Icon(Icons.bookmarks_outlined),
-            title: const Text('我的收藏'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: disabled ? null : () => context.pushNamed('me-bookmarks'),
-          ),
-          const Divider(height: 1),
-          if (stickersEnabled) ...[
-            ListTile(
-              key: const Key('me-open-stickers'),
-              enabled: !disabled,
-              leading: const Icon(Icons.add_reaction_outlined),
-              title: const Text('我的表情'),
-              subtitle: const Text('添加、排序和移除收藏表情'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: disabled ? null : () => context.pushNamed('me-stickers'),
-            ),
-            const Divider(height: 1),
-          ],
-          ListTile(
-            key: const Key('me-open-following'),
-            enabled: !disabled,
-            leading: const Icon(Icons.person_add_alt_1_outlined),
-            title: const Text('我关注的人'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: disabled ? null : () => context.pushNamed('me-following'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('me-open-followers'),
-            enabled: !disabled,
-            leading: const Icon(Icons.people_outline_rounded),
-            title: const Text('我的粉丝'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: disabled ? null : () => context.pushNamed('me-followers'),
-          ),
-          const Divider(height: 1),
           ListTile(
             key: const Key('me-open-blocks'),
             enabled: !disabled,
@@ -631,85 +780,129 @@ class _AccountContentPanel extends ConsumerWidget {
 }
 
 class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({
-    required this.profile,
-    required this.profileWriteDisabled,
-  });
+  const _ProfileOverview({required this.profile});
 
   final MeProfileModel profile;
-  final bool profileWriteDisabled;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Column(
-      children: [
-        WenyouPanel(
-          child: Column(
-            children: [
-              _AvatarEditor(
-                profile: profile,
-                profileWriteDisabled: profileWriteDisabled,
-              ),
-              SizedBox(height: tokens.space12),
-              Text(
-                profile.username,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              SizedBox(height: tokens.space4),
-              Text(
-                _maskEmail(profile.email),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              SizedBox(height: tokens.space8),
-              _InfoPill(
-                icon: profile.emailVerified
-                    ? Icons.verified_outlined
-                    : Icons.warning_amber_rounded,
-                label: profile.emailVerified ? '邮箱已验证' : '邮箱待验证',
-              ),
-              SizedBox(height: tokens.space12),
-              Text(
-                '${DateFormat('yyyy-MM-dd').format(profile.createdAt)} 加入温油站',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: tokens.space12),
-        WenyouPanel(
-          padding: EdgeInsets.all(tokens.space16),
-          child: Column(
+    return WenyouPanel(
+      padding: EdgeInsets.all(tokens.space16),
+      child: Column(
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              WenyouSectionHeader(
-                title: 'Lv.${profile.level} 成长进度',
-                subtitle: profile.nextLevelExperience == null
-                    ? '已达到当前最高等级'
-                    : '${profile.experience} / ${profile.nextLevelExperience} 经验',
-              ),
-              SizedBox(height: tokens.space12),
-              Semantics(
-                label: '等级进度 ${(profile.levelProgress * 100).round()}%',
-                child: LinearProgressIndicator(value: profile.levelProgress),
-              ),
-              SizedBox(height: tokens.space16),
-              Wrap(
-                spacing: tokens.space16,
-                runSpacing: tokens.space8,
-                children: [
-                  Text('关注 ${profile.followingCount}'),
-                  Text('粉丝 ${profile.followerCount}'),
-                  Text(
-                    '收到 ${profile.receivedTipTotal}L · ${profile.receivedTipCount} 次',
-                  ),
-                ],
+              _MeAvatar(profile: profile),
+              SizedBox(width: tokens.space16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.username,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    SizedBox(height: tokens.space4),
+                    Text(
+                      profile.bio?.trim().isNotEmpty == true
+                          ? profile.bio!
+                          : '还没有填写个人简介',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    SizedBox(height: tokens.space8),
+                    _InfoPill(
+                      icon: profile.emailVerified
+                          ? Icons.verified_outlined
+                          : Icons.warning_amber_rounded,
+                      label: profile.emailVerified ? '邮箱已验证' : '邮箱待验证',
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          SizedBox(height: tokens.space16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Lv.${profile.level} · ${profile.nextLevelExperience == null ? '已达到当前最高等级' : '${profile.experience} / ${profile.nextLevelExperience} 经验'}',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          SizedBox(height: tokens.space8),
+          Semantics(
+            label: '等级进度 ${(profile.levelProgress * 100).round()}%',
+            child: LinearProgressIndicator(value: profile.levelProgress),
+          ),
+          SizedBox(height: tokens.space8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${DateFormat('yyyy-MM-dd').format(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          SizedBox(height: tokens.space12),
+          const Divider(height: 1),
+          SizedBox(height: tokens.space4),
+          Row(
+            children: [
+              Expanded(
+                child: _ProfileStatButton(
+                  key: const Key('me-open-following'),
+                  label: '关注',
+                  value: '${profile.followingCount}',
+                  onPressed: () => context.pushNamed('me-following'),
+                ),
+              ),
+              Expanded(
+                child: _ProfileStatButton(
+                  key: const Key('me-open-followers'),
+                  label: '粉丝',
+                  value: '${profile.followerCount}',
+                  onPressed: () => context.pushNamed('me-followers'),
+                ),
+              ),
+              Expanded(
+                child: _ProfileStatButton(
+                  key: const Key('me-open-wallet'),
+                  label: '温油',
+                  value: '${profile.receivedTipTotal}L',
+                  onPressed: () => context.pushNamed('wallet'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileStatButton extends StatelessWidget {
+  const _ProfileStatButton({
+    required this.label,
+    required this.value,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      child: Column(
+        children: [
+          Text(value, style: Theme.of(context).textTheme.titleMedium),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
     );
   }
 }
@@ -1107,6 +1300,7 @@ class _LogoutAction extends ConsumerWidget {
         .read(logoutControllerProvider.notifier)
         .submit();
     if (succeeded && context.mounted) {
+      context.go(AppRouteLocations.me);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('已安全退出当前账号。')));
@@ -1135,6 +1329,7 @@ class _LogoutAction extends ConsumerWidget {
     if (confirmed != true) return;
     await ref.read(logoutControllerProvider.notifier).forceLocalLogout();
     if (context.mounted) {
+      context.go(AppRouteLocations.me);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('本机登录信息已清除。')));

@@ -4,9 +4,9 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 enum SearchResultTab {
   overview('综合', '一次查看主题、用户和正文摘要'),
   moments('动态', '搜索公开动态标题与正文'),
-  threads('主题', '搜索公开主题标题'),
+  threads('主题帖', '搜索公开主题标题'),
   users('用户', '搜索未注销用户名'),
-  posts('正文', '搜索公开楼层与楼中楼');
+  posts('楼层内容', '搜索公开楼层与楼中楼');
 
   const SearchResultTab(this.label, this.description);
 

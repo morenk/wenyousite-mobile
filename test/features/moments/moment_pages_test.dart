@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
@@ -104,7 +110,7 @@ void main() {
     );
   });
 
-  testWidgets('动态详情展示纯文本、评论筛选与游客评论登录入口', (tester) async {
+  testWidgets('动态详情展示纯文本、评论筛选与游客常驻评论入口', (tester) async {
     final repository = _PageRepository();
     await tester.pumpWidget(
       ProviderScope(
@@ -124,10 +130,87 @@ void main() {
       find.byKey(const Key('moment-comment-report-comment-root')),
       findsOneWidget,
     );
-    expect(find.text('最新'), findsOneWidget);
-    await tester.ensureVisible(find.text('登录后参与评论'));
+    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.byType(DropdownButton<String?>), findsNothing);
+    expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
+    expect(find.text('登录后发表评论'), findsOneWidget);
+    expect(find.byKey(const Key('moment-detail-login')), findsNothing);
+  });
+
+  testWidgets('动态评论入口常驻首屏并从评论动作带入回复对象', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _PageRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        momentRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('moment-detail-login')), findsOneWidget);
+
+    final dock = find.byKey(const Key('moment-comment-dock'));
+    expect(dock, findsOneWidget);
+    expect(find.text('发表评论…'), findsOneWidget);
+    expect(tester.getBottomRight(dock).dy, lessThanOrEqualTo(760));
+
+    await tester.tap(dock);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('moment-comment-input')),
+      '从常驻入口发表',
+    );
+    await tester.tap(find.byKey(const Key('moment-comment-send')));
+    await tester.pumpAndSettle();
+
+    expect(repository.commentInputs, hasLength(1));
+    expect(repository.commentInputs.single.content, '从常驻入口发表');
+    expect(repository.commentInputs.single.replyToCommentId, isNull);
+    expect(find.byKey(const Key('moment-comment-input')), findsNothing);
+
+    final replyAction = find.widgetWithText(
+      TextButton,
+      '回复',
+      skipOffstage: false,
+    );
+    await tester.ensureVisible(replyAction);
+    await tester.tap(replyAction);
+    await tester.pumpAndSettle();
+    expect(find.text('回复 @温柔测试员'), findsOneWidget);
+    expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('moment-comment-input')),
+      '暂时不发送的草稿',
+    );
+    await tester.tap(find.byKey(const Key('moment-comment-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('放弃这条评论？'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, '继续编辑'));
+    await tester.pumpAndSettle();
+    expect(find.text('暂时不发送的草稿'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('moment-comment-close')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '放弃评论'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('moment-comment-input')), findsNothing);
   });
 
   testWidgets('动态详情多图使用固定舞台横滑并从当前图片进入原图', (tester) async {
@@ -180,6 +263,7 @@ void main() {
       greaterThan(tester.getBottomRight(gallery).dy),
     );
     final initialStageSize = tester.getSize(gallery);
+    expect(initialStageSize.width, 336);
     expect(initialStageSize.aspectRatio, closeTo(1, 0.01));
 
     await tester.drag(carousel, const Offset(-320, 0));
@@ -204,6 +288,7 @@ void main() {
 
   testWidgets('纯文字动态可完成发布且保留稳定详情目标', (tester) async {
     final repository = _PageRepository();
+    final draftStore = _MemoryMomentDraftStore();
     final router = GoRouter(
       initialLocation: '/compose/moment',
       routes: [
@@ -222,7 +307,10 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(repository),
+          momentDraftStoreProvider.overrideWithValue(draftStore),
+        ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
     );
@@ -242,7 +330,80 @@ void main() {
 
     expect(repository.createdInputs.single.mediaIds, isEmpty);
     expect(repository.createdInputs.single.title, '新的动态');
+    expect(draftStore.draft, isNull);
     expect(find.text('动态=moment-1'), findsOneWidget);
+  });
+
+  testWidgets('动态草稿恢复文字与图片顺序并在离开前确认', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final draftStore = _MemoryMomentDraftStore()
+      ..draft = MomentLocalDraft(
+        title: '未完成的标题',
+        content: '未完成的正文',
+        images: const [
+          UploadedEditorImage(
+            mediaId: 'media-2',
+            url: 'https://cdn.example.com/2.webp',
+          ),
+          UploadedEditorImage(
+            mediaId: 'media-1',
+            url: 'https://cdn.example.com/1.webp',
+          ),
+        ],
+        coverMediaId: 'media-2',
+        updatedAt: DateTime.utc(2026, 8, 11, 8),
+      );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(draftStore),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('恢复未完成的动态？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('moment-draft-restore')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('moment-compose-title')))
+          .controller!
+          .text,
+      '未完成的标题',
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('media-2'))).dy,
+      lessThan(tester.getTopLeft(find.byKey(const ValueKey('media-1'))).dy),
+    );
+    final publish = find.byKey(const Key('moment-compose-submit'));
+    expect(publish, findsOneWidget);
+    expect(tester.getBottomRight(publish).dy, lessThanOrEqualTo(752));
+
+    await tester.enterText(
+      find.byKey(const Key('moment-compose-title')),
+      '自动保存后的标题',
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(draftStore.draft?.title, '自动保存后的标题');
+    expect(draftStore.draft?.images.map((image) => image.mediaId), [
+      'media-2',
+      'media-1',
+    ]);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('离开动态编辑？'), findsOneWidget);
+    expect(find.byKey(const Key('moment-leave-save')), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -259,7 +420,12 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+          overrides: [
+            momentRepositoryProvider.overrideWithValue(repository),
+            momentDraftStoreProvider.overrideWithValue(
+              _MemoryMomentDraftStore(),
+            ),
+          ],
           child: MaterialApp(
             theme: AppTheme.light,
             home: const MomentDetailPage(momentId: 'moment-1'),
@@ -271,7 +437,12 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+          overrides: [
+            momentRepositoryProvider.overrideWithValue(repository),
+            momentDraftStoreProvider.overrideWithValue(
+              _MemoryMomentDraftStore(),
+            ),
+          ],
           child: MaterialApp(
             theme: AppTheme.light,
             home: const MomentComposePage(),
@@ -286,7 +457,10 @@ void main() {
 
 Widget _feedApp(MomentRepository repository) {
   return ProviderScope(
-    overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      momentRepositoryProvider.overrideWithValue(repository),
+      momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+    ],
     child: MaterialApp(
       theme: AppTheme.light,
       home: const RepaintBoundary(
@@ -302,6 +476,7 @@ class _PageRepository extends Fake implements MomentRepository {
 
   final feedModes = <MomentFeedMode>[];
   final createdInputs = <MomentDraftInput>[];
+  final commentInputs = <MomentCommentInput>[];
   final MomentDetail _detailValue;
 
   @override
@@ -350,6 +525,25 @@ class _PageRepository extends Fake implements MomentRepository {
   }
 
   @override
+  Future<MomentComment> createComment(
+    String momentId,
+    MomentCommentInput input, {
+    required String clientRequestId,
+  }) async {
+    commentInputs.add(input);
+    return MomentComment(
+      id: 'comment-created',
+      momentId: momentId,
+      author: _author(),
+      content: input.content,
+      parentCommentId: input.replyToCommentId == null ? null : 'comment-root',
+      deleted: false,
+      canDelete: true,
+      createdAt: DateTime.utc(2026, 8, 10, 14),
+    );
+  }
+
+  @override
   Future<MomentDetail> create(
     MomentDraftInput input, {
     required String clientRequestId,
@@ -370,6 +564,21 @@ class _PendingPageRepository extends _PageRepository {
   }) {
     feedModes.add(mode);
     return feed.future;
+  }
+}
+
+class _MemoryMomentDraftStore implements MomentDraftStore {
+  MomentLocalDraft? draft;
+
+  @override
+  Future<void> delete(String? momentId) async => draft = null;
+
+  @override
+  Future<MomentLocalDraft?> read(String? momentId) async => draft;
+
+  @override
+  Future<void> write(String? momentId, MomentLocalDraft value) async {
+    draft = value;
   }
 }
 
@@ -460,3 +669,33 @@ MomentRootComment _rootComment() => MomentRootComment(
   replyCount: 0,
   replies: const [],
 );
+
+SessionTokens _tokensFor(String userId) {
+  final payload = base64Url.encode(utf8.encode(jsonEncode({'sub': userId})));
+  return SessionTokens(
+    accessToken: 'e30.$payload.signature',
+    refreshToken: 'refresh-token',
+  );
+}
+
+class _MemoryTokenStore implements TokenStore {
+  SessionTokens? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<SessionTokens?> read() async => value;
+
+  @override
+  Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _FakeSessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) async =>
+      _tokensFor('user-1');
+}

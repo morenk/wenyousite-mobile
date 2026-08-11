@@ -30,17 +30,24 @@ void main() {
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
+    expect(find.text('登录后发表楼层'), findsOneWidget);
     expect(find.text('角色扮演'), findsOneWidget);
-    expect(find.text('主线正文'), findsOneWidget);
-    expect(
-      find.textContaining('🎲 1d20 = 16', findRichText: true),
-      findsOneWidget,
-    );
     expect(
       tester
           .getSize(find.byKey(const Key('thread-subthread-subthread-1')))
           .height,
       greaterThanOrEqualTo(48),
+    );
+    await tester.scrollUntilVisible(
+      find.text('主线正文'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('主线正文'), findsOneWidget);
+    expect(
+      find.textContaining('🎲 1d20 = 16', findRichText: true),
+      findsOneWidget,
     );
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));
     await tester.pumpAndSettle();
@@ -57,7 +64,10 @@ void main() {
     await tester.pumpWidget(_detailApp(repository));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('thread-subthread-subthread-2')));
+    final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
+    await tester.ensureVisible(subthread);
+    await tester.pumpAndSettle();
+    await tester.tap(subthread);
     await tester.pumpAndSettle();
 
     expect(find.text('支线正文'), findsOneWidget);
@@ -211,7 +221,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('发现主题'), findsOneWidget);
+    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
     expect(homeRepository.threadCalls, 1);
   });
 
@@ -322,6 +332,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
+    expect(find.text('发表楼层…'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-floor-compose')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('post-composer-close')));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('thread-body-edit')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.byKey(const Key('thread-body-edit')), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-body-edit')));
     await tester.pumpAndSettle();

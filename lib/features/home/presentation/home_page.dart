@@ -309,74 +309,97 @@ class _HomeFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const WenyouSectionHeader(
-            title: '发现主题',
-            subtitle: '按分类、状态和活跃度找到想加入的故事。',
-          ),
-          SizedBox(height: tokens.space16),
-          Semantics(
-            label: '主题分类筛选',
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ChoiceChip(
-                    key: const Key('home-category-all'),
-                    label: const Text('全部'),
-                    selected: state.query.categorySlug == null,
-                    onSelected: (_) => onCategorySelected(null),
-                  ),
-                  for (final category in state.categories) ...[
-                    SizedBox(width: tokens.space8),
-                    Tooltip(
-                      message: category.description ?? category.name,
-                      child: ChoiceChip(
-                        key: Key('home-category-${category.slug}'),
-                        label: Text(category.name),
-                        selected: state.query.categorySlug == category.slug,
-                        onSelected: (_) => onCategorySelected(category.slug),
-                      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: '主题分类筛选',
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ChoiceChip(
+                  key: const Key('home-category-all'),
+                  label: const Text('全部'),
+                  selected: state.query.categorySlug == null,
+                  onSelected: (_) => onCategorySelected(null),
+                ),
+                for (final category in state.categories) ...[
+                  SizedBox(width: tokens.space8),
+                  Tooltip(
+                    message: category.description ?? category.name,
+                    child: ChoiceChip(
+                      key: Key('home-category-${category.slug}'),
+                      label: Text(category.name),
+                      selected: state.query.categorySlug == category.slug,
+                      onSelected: (_) => onCategorySelected(category.slug),
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
-          SizedBox(height: tokens.space12),
-          Wrap(
-            spacing: tokens.space8,
-            runSpacing: tokens.space8,
-            children: [
-              _HomeFilterMenu<HomeFeedSort>(
-                key: const Key('home-sort-menu'),
-                icon: Icons.swap_vert_rounded,
-                label: state.query.sort.label,
-                tooltip: '选择主题排序',
-                values: HomeFeedSort.values,
-                selected: state.query.sort,
-                labelFor: (value) => value.label,
-                onSelected: onSortSelected,
+        ),
+        SizedBox(height: tokens.space8),
+        Row(
+          children: [
+            _HomeFilterMenu<HomeFeedSort>(
+              key: const Key('home-sort-menu'),
+              icon: Icons.swap_vert_rounded,
+              label: state.query.sort.label,
+              tooltip: '选择主题排序',
+              values: HomeFeedSort.values,
+              selected: state.query.sort,
+              labelFor: (value) => value.label,
+              onSelected: onSortSelected,
+            ),
+            const Spacer(),
+            TextButton.icon(
+              key: const Key('home-status-menu'),
+              onPressed: () => _showStatusFilter(context),
+              icon: Icon(
+                Icons.tune_rounded,
+                size: 20,
+                color: state.query.status == HomeThreadStatusFilter.all
+                    ? tokens.mutedText
+                    : tokens.brand,
               ),
-              _HomeFilterMenu<HomeThreadStatusFilter>(
-                key: const Key('home-status-menu'),
-                icon: Icons.tune_rounded,
-                label: state.query.status.label,
-                tooltip: '选择主题状态',
-                values: HomeThreadStatusFilter.values,
-                selected: state.query.status,
-                labelFor: (value) => value.label,
-                onSelected: onStatusSelected,
+              label: Text(
+                state.query.status == HomeThreadStatusFilter.all
+                    ? '筛选'
+                    : state.query.status.label,
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showStatusFilter(BuildContext context) async {
+    final selected = await showModalBottomSheet<HomeThreadStatusFilter>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => RadioGroup<HomeThreadStatusFilter>(
+        groupValue: state.query.status,
+        onChanged: (value) => Navigator.pop(context, value),
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('主题状态')),
+            for (final status in HomeThreadStatusFilter.values)
+              RadioListTile<HomeThreadStatusFilter>(
+                value: status,
+                title: Text(status.label),
+              ),
+          ],
+        ),
       ),
     );
+    if (selected != null && selected != state.query.status) {
+      onStatusSelected(selected);
+    }
   }
 }
 

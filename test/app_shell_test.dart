@@ -40,13 +40,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('发现主题'), findsOneWidget);
+    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
     expect(find.text('首页'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
     expect(find.text('搜索'), findsOneWidget);
-    expect(find.text('通知'), findsOneWidget);
+    expect(find.text('消息'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);
-    expect(find.byIcon(Icons.edit_rounded), findsOneWidget);
+    expect(find.byKey(const Key('global-publish')), findsOneWidget);
 
     await tester.tap(find.text('搜索'));
     await tester.pumpAndSettle();
@@ -71,7 +71,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('7'), findsWidgets);
-    await tester.tap(find.text('通知'));
+    await tester.tap(find.text('消息'));
     await tester.pumpAndSettle();
     expect(find.text('暂无通知'), findsOneWidget);
     expect(notifications.fetchCalls, greaterThanOrEqualTo(1));
@@ -116,7 +116,7 @@ void main() {
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
-    expect(find.text('发现主题'), findsOneWidget);
+    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
     expect(repository.calls, 2);
   });
 
@@ -188,7 +188,7 @@ void main() {
     await tester.tap(find.byKey(const Key('mobile-update-dismiss')));
     await tester.pumpAndSettle();
 
-    expect(find.text('发现主题'), findsOneWidget);
+    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
     expect(dismissStore.dismissedBuild, 10);
   });
 
@@ -247,7 +247,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.edit_rounded));
+    await tester.tap(find.byKey(const Key('global-publish')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('global-publish-thread')));
     await tester.pumpAndSettle();
     expect(find.text('欢迎回到温油站'), findsOneWidget);
 
@@ -269,6 +271,8 @@ void main() {
   });
 
   for (final protectedLocation in [
+    '/me/edit',
+    '/me/settings',
     '/me/blocks',
     '/me/bookmarks',
     '/me/stickers',
@@ -329,7 +333,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.edit_rounded));
+    await tester.tap(find.byKey(const Key('global-publish')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('global-publish-thread')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('login-register')));
     await tester.pumpAndSettle();
@@ -392,6 +398,8 @@ void main() {
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
     expect(find.text('温柔测试员'), findsWidgets);
+    await tester.tap(find.byKey(const Key('me-open-settings')));
+    await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('logout-submit')),
@@ -440,6 +448,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('me-open-settings')));
+    await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('logout-submit')),
@@ -486,7 +496,7 @@ void main() {
     expect(find.text('当前登录已被撤销，请重新登录。'), findsOneWidget);
     await tester.tap(find.byKey(const Key('continue-as-guest')));
     await tester.pumpAndSettle();
-    expect(find.text('发现主题'), findsOneWidget);
+    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -528,7 +538,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byIcon(Icons.edit_rounded));
+      await tester.tap(find.byKey(const Key('global-publish')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(const Key('global-publish-thread')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(

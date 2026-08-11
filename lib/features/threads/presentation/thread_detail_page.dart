@@ -100,6 +100,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final session = ref.watch(sessionControllerProvider);
     final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
     final actions = ref.watch(actionsProvider);
+    final selectedSubthread = state.phase == ThreadDetailPhase.ready
+        ? state.selectedSubthread
+        : null;
     final target = widget.targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(widget.targetPostId!));
@@ -182,6 +185,19 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         ),
       },
+      bottomNavigationBar: selectedSubthread == null
+          ? null
+          : WenyouComposerDock(
+              key: const Key('thread-floor-compose'),
+              label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
+              icon: session.isAuthenticated
+                  ? Icons.add_comment_outlined
+                  : Icons.login_rounded,
+              onPressed: session.isAuthenticated
+                  ? () =>
+                        _compose(_floorTarget(state.detail!, selectedSubthread))
+                  : _requireLogin,
+            ),
     );
   }
 
@@ -324,16 +340,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             child: WenyouSectionHeader(
               title: '楼层',
               subtitle: '${selected.postCount} 条内容，按发布时间升序阅读',
-              trailing: OutlinedButton.icon(
-                key: const Key('thread-floor-compose'),
-                onPressed: authenticated
-                    ? () => _compose(_floorTarget(detail, selected))
-                    : _requireLogin,
-                icon: Icon(
-                  authenticated ? Icons.add_comment_outlined : Icons.login,
-                ),
-                label: Text(authenticated ? '发表' : '登录'),
-              ),
             ),
           ),
         ),
@@ -400,25 +406,32 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               final floor = displayedFloors[index];
               final focused = usableTarget?.floor.id == floor.id;
               return _DetailContent(
-                top: 12,
-                child: _FloorCard(
-                  key: focused ? _targetKey : null,
-                  floor: floor,
-                  isFocused: focused,
-                  canEdit: floor.author.id == viewerId,
-                  canDelete:
-                      floor.author.id == viewerId || detail.canManageThread,
-                  pending: actions.pendingPostId == floor.id,
-                  onDiscussion: () =>
-                      _openDiscussion(floor, reportsEnabled: !detail.isPrivate),
-                  showDiscussion: floor.replyCount > 0 || authenticated,
-                  reportReturnTo:
-                      !detail.isPrivate && floor.author.id != viewerId
-                      ? _postLocation(floor.id)
-                      : null,
-                  onEdit: () =>
-                      _compose(_editFloorTarget(detail, selected, floor)),
-                  onDelete: () => _deleteFloor(floor),
+                top: index == 0 ? 12 : 0,
+                child: Column(
+                  children: [
+                    if (index > 0) const Divider(height: 24),
+                    _FloorCard(
+                      key: focused ? _targetKey : null,
+                      floor: floor,
+                      isFocused: focused,
+                      canEdit: floor.author.id == viewerId,
+                      canDelete:
+                          floor.author.id == viewerId || detail.canManageThread,
+                      pending: actions.pendingPostId == floor.id,
+                      onDiscussion: () => _openDiscussion(
+                        floor,
+                        reportsEnabled: !detail.isPrivate,
+                      ),
+                      showDiscussion: floor.replyCount > 0 || authenticated,
+                      reportReturnTo:
+                          !detail.isPrivate && floor.author.id != viewerId
+                          ? _postLocation(floor.id)
+                          : null,
+                      onEdit: () =>
+                          _compose(_editFloorTarget(detail, selected, floor)),
+                      onDelete: () => _deleteFloor(floor),
+                    ),
+                  ],
                 ),
               );
             }, childCount: displayedFloors.length),

@@ -26,6 +26,8 @@ abstract final class AppRouteAccessPolicy {
     '/compose/thread',
     '/compose/moment',
     '/moments/bookmarks',
+    '/me/edit',
+    '/me/settings',
     '/me/following',
     '/me/wallet',
     '/me/followers',

@@ -161,39 +161,55 @@ class _SearchTabs extends ConsumerWidget {
   const _SearchTabs({required this.state});
 
   final SearchState state;
+  static const _visibleTabs = [
+    SearchResultTab.moments,
+    SearchResultTab.threads,
+    SearchResultTab.posts,
+    SearchResultTab.users,
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      key: const Key('search-tabs-scroll'),
-      scrollDirection: Axis.horizontal,
-      child: SegmentedButton<SearchResultTab>(
-        showSelectedIcon: false,
-        selected: {state.activeTab},
-        onSelectionChanged: (selection) {
-          ref
-              .read(searchControllerProvider.notifier)
-              .selectTab(selection.single);
-        },
-        segments: [
-          for (final tab in SearchResultTab.values)
-            ButtonSegment(
-              value: tab,
-              label: Text(tab.label),
-              icon: Icon(_tabIcon(tab), size: 18),
+    final tokens = context.wenyouTokens;
+    return Row(
+      key: const Key('search-tabs'),
+      children: [
+        for (final tab in _visibleTabs)
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: state.activeTab == tab
+                        ? tokens.brand
+                        : tokens.border,
+                    width: state.activeTab == tab ? 2 : 1,
+                  ),
+                ),
+              ),
+              child: TextButton(
+                key: Key('search-tab-${tab.name}'),
+                onPressed: () =>
+                    ref.read(searchControllerProvider.notifier).selectTab(tab),
+                style: TextButton.styleFrom(
+                  minimumSize: Size(0, tokens.minimumTouchTarget),
+                  padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+                  foregroundColor: state.activeTab == tab
+                      ? tokens.brand
+                      : tokens.mutedText,
+                ),
+                child: Text(
+                  tab.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                ),
+              ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
-
-  IconData _tabIcon(SearchResultTab tab) => switch (tab) {
-    SearchResultTab.overview => Icons.grid_view_outlined,
-    SearchResultTab.moments => Icons.auto_awesome_outlined,
-    SearchResultTab.threads => Icons.forum_outlined,
-    SearchResultTab.users => Icons.people_outline_rounded,
-    SearchResultTab.posts => Icons.subject_rounded,
-  };
 }
 
 class _ActiveSearchResults extends ConsumerWidget {
@@ -209,7 +225,7 @@ class _ActiveSearchResults extends ConsumerWidget {
       return const WenyouPanel(
         child: WenyouEmptyState(
           icon: Icons.text_fields_rounded,
-          title: '动态和正文搜索至少需要 2 个字符',
+          title: '动态和楼层内容搜索至少需要 2 个字符',
           message: '主题和用户名仍然支持单字符搜索。',
         ),
       );

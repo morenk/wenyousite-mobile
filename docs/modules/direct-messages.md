@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-私信中心使用受保护路径 `/messages`，新私聊使用 `/messages/new/:userId`，会话使用 `/messages/:conversationId`。通知页右上角展示私信入口与合计角标，其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。
+私信中心使用受保护路径 `/messages`，也可作为底部“消息”分支内“私信”页签的嵌入内容；新私聊使用 `/messages/new/:userId`，会话使用 `/messages/:conversationId`。其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。
 
 ## 4. 用户操作流程
 
@@ -43,7 +43,7 @@
 
 ## 10. 跨模块约束
 
-capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传由 media 完成，收藏选择与快速收藏由 stickers 提供，邮箱验证由 auth/settings 恢复。私聊 feature 不导入 app-shell 的具体 provider。视觉只复用 Foundation v1.1.0 的 Token、面板、状态横幅、按钮和最小触控目标，不维护移动端平行审美规范。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
+capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传由 media 完成，收藏选择与快速收藏由 stickers 提供，邮箱验证由 auth/settings 恢复。私聊 feature 不导入 app-shell 的具体 provider。视觉只复用 Foundation v1.1.0 的 Token、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
 
 ## 11. 测试场景与验收条件
 

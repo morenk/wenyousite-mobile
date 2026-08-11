@@ -16,7 +16,7 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 void main() {
-  testWidgets('360dp 独立楼中楼完成筛选、发表、编辑与删除且权限收敛', (tester) async {
+  testWidgets('360dp 独立楼中楼常驻发表入口并完成编辑删除与权限收敛', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -60,9 +60,10 @@ void main() {
     expect(find.byKey(const Key('post-report-root')), findsOneWidget);
     expect(find.byKey(const Key('post-report-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-report-reply-other')), findsOneWidget);
+    expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
+    expect(find.text('发表回复…'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.ensureVisible(find.byKey(const Key('post-reply-compose')));
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
     expect(find.text('回复 @楼层作者'), findsWidgets);

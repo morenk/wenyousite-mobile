@@ -9,12 +9,12 @@ import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 
 void main() {
-  testWidgets('首页展示动态分类与紧凑主题卡片并可切换分类', (tester) async {
+  testWidgets('首页展示分类快捷项与紧凑主题卡片并可切换分类', (tester) async {
     final repository = _FakeHomeRepository();
     await tester.pumpWidget(_homeApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('发现主题'), findsOneWidget);
+    expect(find.text('发现主题'), findsNothing);
     expect(find.text('角色扮演'), findsNWidgets(2));
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('向星海出发'), findsOneWidget);
@@ -24,6 +24,15 @@ void main() {
     await tester.tap(find.byKey(const Key('home-category-RPG')));
     await tester.pumpAndSettle();
     expect(repository.lastQuery?.categorySlug, 'RPG');
+
+    await tester.tap(find.byKey(const Key('home-status-menu')));
+    await tester.pumpAndSettle();
+    expect(find.text('主题状态'), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(RadioListTile<HomeThreadStatusFilter>, '招募中'),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.lastQuery?.status, HomeThreadStatusFilter.recruiting);
   });
 
   testWidgets('首屏失败展示请求 ID 并可重试恢复', (tester) async {

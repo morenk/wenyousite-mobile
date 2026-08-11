@@ -9,7 +9,9 @@ import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 
 class DirectMessagesPage extends ConsumerStatefulWidget {
-  const DirectMessagesPage({super.key});
+  const DirectMessagesPage({this.embedded = false, super.key});
+
+  final bool embedded;
 
   @override
   ConsumerState<DirectMessagesPage> createState() => _DirectMessagesPageState();
@@ -26,6 +28,40 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
     final state = ref.watch(provider);
     final unread = ref.watch(directUnreadControllerProvider).counts;
     final notifier = ref.read(provider.notifier);
+    final body = Column(
+      children: [
+        _DirectMessageViewBar(
+          selected: _view,
+          unread: unread,
+          enabled: !state.isLoadingMore && !state.isRefreshing,
+          onSelected: (view) => setState(() => _view = view),
+        ),
+        Expanded(
+          child: switch (state.phase) {
+            DirectConversationListPhase.loading => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            DirectConversationListPhase.failed => _DirectListFailure(
+              state: state,
+              onRetry: notifier.load,
+            ),
+            DirectConversationListPhase.ready => _DirectConversationList(
+              state: state,
+              onRefresh: () async {
+                await Future.wait([
+                  notifier.refresh(),
+                  ref.read(directUnreadControllerProvider.notifier).refresh(),
+                ]);
+              },
+              onOpen: (conversation) =>
+                  _openConversation(context, notifier, conversation),
+              onLoadMore: notifier.loadMore,
+            ),
+          },
+        ),
+      ],
+    );
+    if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(
         title: const Text('私信'),
@@ -43,39 +79,7 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _DirectMessageViewBar(
-            selected: _view,
-            unread: unread,
-            enabled: !state.isLoadingMore && !state.isRefreshing,
-            onSelected: (view) => setState(() => _view = view),
-          ),
-          Expanded(
-            child: switch (state.phase) {
-              DirectConversationListPhase.loading => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              DirectConversationListPhase.failed => _DirectListFailure(
-                state: state,
-                onRetry: notifier.load,
-              ),
-              DirectConversationListPhase.ready => _DirectConversationList(
-                state: state,
-                onRefresh: () async {
-                  await Future.wait([
-                    notifier.refresh(),
-                    ref.read(directUnreadControllerProvider.notifier).refresh(),
-                  ]);
-                },
-                onOpen: (conversation) =>
-                    _openConversation(context, notifier, conversation),
-                onLoadMore: notifier.loadMore,
-              ),
-            },
-          ),
-        ],
-      ),
+      body: body,
     );
   }
 
@@ -190,28 +194,25 @@ class _DirectConversationList extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: _pagePadding(context),
           children: [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: state.view == DirectConversationView.archived
-                    ? Icons.inventory_2_outlined
-                    : state.view == DirectConversationView.requests
-                    ? Icons.mark_email_unread_outlined
-                    : Icons.forum_outlined,
-                title: switch (state.view) {
-                  DirectConversationView.inbox => '暂无私聊会话',
-                  DirectConversationView.requests => '暂无消息请求',
-                  DirectConversationView.archived => '暂无归档会话',
-                },
-                message: state.view == DirectConversationView.inbox
-                    ? '可从其他用户的公开主页发起私聊。'
-                    : '下拉可以重新读取服务端状态。',
-              ),
+            WenyouEmptyState(
+              icon: state.view == DirectConversationView.archived
+                  ? Icons.inventory_2_outlined
+                  : state.view == DirectConversationView.requests
+                  ? Icons.mark_email_unread_outlined
+                  : Icons.forum_outlined,
+              title: switch (state.view) {
+                DirectConversationView.inbox => '暂无私聊会话',
+                DirectConversationView.requests => '暂无消息请求',
+                DirectConversationView.archived => '暂无归档会话',
+              },
+              message: state.view == DirectConversationView.inbox
+                  ? '可从其他用户的公开主页发起私聊。'
+                  : '下拉可以重新读取服务端状态。',
             ),
           ],
         ),
       );
     }
-    final tokens = context.wenyouTokens;
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.separated(
@@ -220,7 +221,7 @@ class _DirectConversationList extends StatelessWidget {
         itemCount:
             state.items.length +
             (state.transientFailure != null || state.hasMore ? 1 : 0),
-        separatorBuilder: (_, _) => SizedBox(height: tokens.space8),
+        separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, index) {
           if (index < state.items.length) {
             final item = state.items[index];
@@ -281,71 +282,76 @@ class _DirectConversationCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: '打开与 ${conversation.otherUser.username} 的私聊',
-      child: WenyouPanel(
+      child: Material(
         key: ValueKey('direct-conversation-${conversation.id}'),
-        onTap: onTap,
-        padding: EdgeInsets.all(tokens.space12),
-        child: Row(
-          children: [
-            DirectMessageAvatar(user: conversation.otherUser),
-            SizedBox(width: tokens.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        color: tokens.background,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: tokens.space12),
+            child: Row(
+              children: [
+                DirectMessageAvatar(user: conversation.otherUser),
+                SizedBox(width: tokens.space12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          conversation.otherUser.username,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              conversation.otherUser.username,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ),
+                          if (conversation.lastMessageAt != null) ...[
+                            SizedBox(width: tokens.space8),
+                            Text(
+                              DateFormat(
+                                'MM-dd HH:mm',
+                              ).format(conversation.lastMessageAt!.toLocal()),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ],
                       ),
-                      if (conversation.lastMessageAt != null) ...[
-                        SizedBox(width: tokens.space8),
-                        Text(
-                          DateFormat(
-                            'MM-dd HH:mm',
-                          ).format(conversation.lastMessageAt!.toLocal()),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                      SizedBox(height: tokens.space4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '$previewPrefix${conversation.lastMessage?.displayText ?? '暂无消息'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          if (conversation.unreadCount > 0) ...[
+                            SizedBox(width: tokens.space8),
+                            Badge(
+                              key: ValueKey(
+                                'direct-conversation-unread-${conversation.id}',
+                              ),
+                              label: Text(
+                                conversation.unreadCount > 99
+                                    ? '99+'
+                                    : '${conversation.unreadCount}',
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
-                  SizedBox(height: tokens.space4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '$previewPrefix${conversation.lastMessage?.displayText ?? '暂无消息'}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      if (conversation.unreadCount > 0) ...[
-                        SizedBox(width: tokens.space8),
-                        Badge(
-                          key: ValueKey(
-                            'direct-conversation-unread-${conversation.id}',
-                          ),
-                          label: Text(
-                            conversation.unreadCount > 99
-                                ? '99+'
-                                : '${conversation.unreadCount}',
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                SizedBox(width: tokens.space4),
+                Icon(Icons.chevron_right_rounded, color: tokens.mutedText),
+              ],
             ),
-            SizedBox(width: tokens.space4),
-            Icon(Icons.chevron_right_rounded, color: tokens.mutedText),
-          ],
+          ),
         ),
       ),
     );

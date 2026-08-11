@@ -9,14 +9,24 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
-class NotificationsPage extends ConsumerWidget {
+enum _MessageSection { notifications, directMessages }
+
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+  var _section = _MessageSection.notifications;
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(sessionControllerProvider);
     if (!session.isAuthenticated) {
       return const _NotificationLoginPrompt();
@@ -31,20 +41,11 @@ class NotificationsPage extends ConsumerWidget {
     final notifier = ref.read(notificationListControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('通知'),
+        title: const Text('消息'),
         actions: [
-          if (messagesEnabled)
-            IconButton(
-              key: const Key('notification-open-direct-messages'),
-              onPressed: () => context.pushNamed('direct-messages'),
-              tooltip: '打开私信',
-              icon: Badge(
-                isLabelVisible: directUnread > 0,
-                label: Text(directUnread > 99 ? '99+' : '$directUnread'),
-                child: const Icon(Icons.forum_outlined),
-              ),
-            ),
-          if (state.phase == NotificationListPhase.ready && state.hasUnread)
+          if (_section == _MessageSection.notifications &&
+              state.phase == NotificationListPhase.ready &&
+              state.hasUnread)
             TextButton.icon(
               key: const Key('notification-mark-all-read'),
               onPressed: state.isMutating
@@ -68,53 +69,24 @@ class NotificationsPage extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          _NotificationFilterBar(
-            selected: state.filter,
-            unreadCount: unread.count,
-            isEnabled: !state.isBusy,
-            onSelected: notifier.selectFilter,
-          ),
+          if (messagesEnabled)
+            _MessageSectionBar(
+              selected: _section,
+              notificationUnread: unread.count,
+              directUnread: directUnread,
+              onSelected: (section) => setState(() => _section = section),
+            ),
           Expanded(
-            child: switch (state.phase) {
-              NotificationListPhase.loading => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              NotificationListPhase.failed => WenyouPageBody(
-                maxWidth: 600,
-                child: WenyouPanel(
-                  child: WenyouEmptyState(
-                    icon: Icons.cloud_off_outlined,
-                    title: '通知列表没有加载完成',
-                    message: state.failure?.userMessage ?? '请稍后重试。',
-                    detail: state.failure?.requestId == null
-                        ? null
-                        : '请求 ID：${state.failure!.requestId}',
-                    action: OutlinedButton.icon(
-                      key: const Key('notification-list-retry'),
-                      onPressed: notifier.load,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('重新加载'),
-                    ),
+            child: _section == _MessageSection.directMessages && messagesEnabled
+                ? const DirectMessagesPage(embedded: true)
+                : _NotificationSection(
+                    state: state,
+                    unreadCount: unread.count,
+                    notifier: notifier,
+                    onRefreshUnread: () => unreadRefresh(ref),
+                    onOpen: (item) =>
+                        _openNotification(context, notifier, item),
                   ),
-                ),
-              ),
-              NotificationListPhase.ready => _ReadyNotificationList(
-                state: state,
-                onRefresh: () async {
-                  await Future.wait([notifier.load(), unreadRefresh(ref)]);
-                },
-                onLoadMore: notifier.loadMore,
-                onOpen: (item) => _openNotification(context, notifier, item),
-                onRemove: (id) async {
-                  final succeeded = await notifier.remove(id);
-                  if (!context.mounted || !succeeded) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('通知已删除。')));
-                },
-                onDismissFailure: notifier.clearActionFailure,
-              ),
-            },
           ),
         ],
       ),
@@ -181,20 +153,147 @@ class NotificationsPage extends ConsumerWidget {
   }
 }
 
+class _MessageSectionBar extends StatelessWidget {
+  const _MessageSectionBar({
+    required this.selected,
+    required this.notificationUnread,
+    required this.directUnread,
+    required this.onSelected,
+  });
+
+  final _MessageSection selected;
+  final int notificationUnread;
+  final int directUnread;
+  final ValueChanged<_MessageSection> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Material(
+      color: tokens.panel,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          tokens.space12,
+          tokens.space8,
+          tokens.space12,
+          tokens.space8,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<_MessageSection>(
+            showSelectedIcon: false,
+            selected: {selected},
+            onSelectionChanged: (values) => onSelected(values.single),
+            segments: [
+              ButtonSegment(
+                value: _MessageSection.notifications,
+                icon: const Icon(Icons.notifications_none_rounded),
+                label: Text(
+                  notificationUnread == 0 ? '通知' : '通知 $notificationUnread',
+                ),
+              ),
+              ButtonSegment(
+                value: _MessageSection.directMessages,
+                icon: const Icon(Icons.forum_outlined),
+                label: Text(
+                  directUnread == 0 ? '私信' : '私信 $directUnread',
+                  key: const Key('notification-open-direct-messages'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationSection extends StatelessWidget {
+  const _NotificationSection({
+    required this.state,
+    required this.unreadCount,
+    required this.notifier,
+    required this.onRefreshUnread,
+    required this.onOpen,
+  });
+
+  final NotificationListState state;
+  final int unreadCount;
+  final NotificationListController notifier;
+  final Future<void> Function() onRefreshUnread;
+  final ValueChanged<NotificationListItem> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _NotificationFilterBar(
+          selected: state.filter,
+          unreadCount: unreadCount,
+          isEnabled: !state.isBusy,
+          onSelected: notifier.selectFilter,
+        ),
+        Expanded(
+          child: switch (state.phase) {
+            NotificationListPhase.loading => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            NotificationListPhase.failed => WenyouPageBody(
+              maxWidth: 600,
+              child: WenyouPanel(
+                child: WenyouEmptyState(
+                  icon: Icons.cloud_off_outlined,
+                  title: '通知列表没有加载完成',
+                  message: state.failure?.userMessage ?? '请稍后重试。',
+                  detail: state.failure?.requestId == null
+                      ? null
+                      : '请求 ID：${state.failure!.requestId}',
+                  action: OutlinedButton.icon(
+                    key: const Key('notification-list-retry'),
+                    onPressed: notifier.load,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('重新加载'),
+                  ),
+                ),
+              ),
+            ),
+            NotificationListPhase.ready => _ReadyNotificationList(
+              state: state,
+              onRefresh: () async {
+                await Future.wait([notifier.load(), onRefreshUnread()]);
+              },
+              onLoadMore: notifier.loadMore,
+              onOpen: onOpen,
+              onRemove: (id) async {
+                final succeeded = await notifier.remove(id);
+                if (!context.mounted || !succeeded) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('通知已删除。')));
+              },
+              onDismissFailure: notifier.clearActionFailure,
+            ),
+          },
+        ),
+      ],
+    );
+  }
+}
+
 class _NotificationLoginPrompt extends StatelessWidget {
   const _NotificationLoginPrompt();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('通知')),
+      appBar: AppBar(title: const Text('消息')),
       body: WenyouPageBody(
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.notifications_none_rounded,
-            title: '登录后查看通知',
-            message: '回复、提及、关注和账号消息会集中显示在这里。',
+            icon: Icons.chat_bubble_outline_rounded,
+            title: '登录后查看消息',
+            message: '通知、私信请求和未读会话会集中显示在这里。',
             action: FilledButton.icon(
               key: const Key('notification-login'),
               onPressed: () => context.pushNamed(
@@ -328,21 +427,19 @@ class _ReadyNotificationList extends StatelessWidget {
           ],
           if (state.items.isEmpty)
             _Centered(
-              child: WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: Icons.notifications_none_rounded,
-                  title: state.filter == NotificationFilter.all
-                      ? '暂无通知'
-                      : '这个分类暂无通知',
-                  message: state.filter == NotificationFilter.all
-                      ? '新的回复、提及、关注等会出现在这里。'
-                      : '可以切换其他分类继续查看。',
-                ),
+              child: WenyouEmptyState(
+                icon: Icons.notifications_none_rounded,
+                title: state.filter == NotificationFilter.all
+                    ? '暂无通知'
+                    : '这个分类暂无通知',
+                message: state.filter == NotificationFilter.all
+                    ? '新的回复、提及、关注等会出现在这里。'
+                    : '可以切换其他分类继续查看。',
               ),
             )
           else
             for (var index = 0; index < state.items.length; index++) ...[
-              if (index > 0) SizedBox(height: tokens.space12),
+              if (index > 0) const Divider(height: 1),
               _Centered(
                 child: _NotificationCard(
                   item: state.items[index],
@@ -418,80 +515,82 @@ class _NotificationCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${item.isRead ? '已读' : '未读'}通知：${item.displayText}',
-      child: WenyouPanel(
+      child: Material(
         key: ValueKey('notification-${item.id}'),
-        color: item.isRead ? tokens.panel : tokens.accentedBackground,
-        padding: EdgeInsets.zero,
-        onTap: actionsDisabled ? null : onOpen,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space16,
-            tokens.space16,
-            tokens.space8,
-            tokens.space12,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _NotificationLeading(item: item),
-              SizedBox(width: tokens.space12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.displayText,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: item.isRead
-                            ? FontWeight.w400
-                            : FontWeight.w600,
+        color: item.isRead ? tokens.background : tokens.accentedBackground,
+        child: InkWell(
+          onTap: actionsDisabled ? null : onOpen,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space4,
+              tokens.space12,
+              0,
+              tokens.space12,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _NotificationLeading(item: item),
+                SizedBox(width: tokens.space12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.displayText,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: item.isRead
+                              ? FontWeight.w400
+                              : FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    if (item.target.deletedHint != null) ...[
+                      if (item.target.deletedHint != null) ...[
+                        SizedBox(height: tokens.space4),
+                        Text(
+                          item.target.deletedHint!,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
                       SizedBox(height: tokens.space4),
                       Text(
-                        item.target.deletedHint!,
+                        _relativeTime(item.createdAt),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w600,
+                          color: tokens.mutedText,
                         ),
                       ),
                     ],
-                    SizedBox(height: tokens.space4),
-                    Text(
-                      _relativeTime(item.createdAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                    ),
-                  ],
-                ),
-              ),
-              if (!item.isRead)
-                Padding(
-                  padding: EdgeInsets.only(top: tokens.space8),
-                  child: Container(
-                    key: ValueKey('notification-unread-${item.id}'),
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: tokens.brand,
-                      shape: BoxShape.circle,
-                    ),
                   ),
                 ),
-              IconButton(
-                key: ValueKey('notification-remove-${item.id}'),
-                tooltip: '删除通知',
-                onPressed: isPending || actionsDisabled ? null : onRemove,
-                icon: isPending
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.close_rounded, size: 20),
-              ),
-            ],
+                if (!item.isRead)
+                  Padding(
+                    padding: EdgeInsets.only(top: tokens.space8),
+                    child: Container(
+                      key: ValueKey('notification-unread-${item.id}'),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: tokens.brand,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                IconButton(
+                  key: ValueKey('notification-remove-${item.id}'),
+                  tooltip: '删除通知',
+                  onPressed: isPending || actionsDisabled ? null : onRemove,
+                  icon: isPending
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.close_rounded, size: 20),
+                ),
+              ],
+            ),
           ),
         ),
       ),

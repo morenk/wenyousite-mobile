@@ -28,7 +28,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('登录后查看通知'), findsOneWidget);
+    expect(find.text('登录后查看消息'), findsOneWidget);
     await tester.tap(find.byKey(const Key('notification-login')));
     await tester.pumpAndSettle();
     expect(find.text('登录回跳=/notifications'), findsOneWidget);
@@ -58,7 +58,7 @@ void main() {
     expect(repository.readIds, ['notification-1']);
   });
 
-  testWidgets('私聊能力开启时展示独立角标并进入私信中心', (tester) async {
+  testWidgets('私聊能力开启时与通知同级展示并保留独立未读数', (tester) async {
     final repository = _FakeRepository();
     final router = _router();
     addTearDown(router.dispose);
@@ -76,12 +76,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('4'), findsOneWidget);
+    expect(find.text('私信 4'), findsOneWidget);
     await tester.tap(
       find.byKey(const Key('notification-open-direct-messages')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('私信中心'), findsOneWidget);
+    expect(find.text('4 条未读 · 0 个待处理请求'), findsOneWidget);
+    expect(find.text('暂无私聊会话'), findsOneWidget);
   });
 
   testWidgets('筛选、全部已读、删除和局部错误均可操作', (tester) async {
@@ -249,6 +250,7 @@ Future<ProviderContainer> _authenticatedContainer(
   final container = ProviderContainer(
     overrides: [
       directMessagesEnabledProvider.overrideWithValue(directMessagesEnabled),
+      directMessageRepositoryProvider.overrideWithValue(directRepository),
       directUnreadControllerProvider.overrideWith((ref) {
         final controller = DirectUnreadController(
           directRepository,
@@ -297,7 +299,7 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
     required DirectConversationView view,
     String? cursor,
     int limit = 20,
-  }) => throw UnimplementedError();
+  }) async => const CursorPage(items: [], cursor: null, hasMore: false);
 
   @override
   Future<DirectConversation> fetchConversation(String conversationId) =>

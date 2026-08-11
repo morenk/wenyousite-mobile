@@ -34,7 +34,7 @@ void main() {
     expect(repository.fetchCalls, 0);
   });
 
-  testWidgets('本人资料展示真实成长、邮箱和隐私设置', (tester) async {
+  testWidgets('本人中心展示身份摘要、内容入口并下沉编辑与设置', (tester) async {
     final repository = _FakeMeProfileRepository();
     final container = await _authenticatedContainer(repository);
     addTearDown(container.dispose);
@@ -47,23 +47,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('温柔测试员'), findsWidgets);
-    expect(find.text('o***@example.com'), findsOneWidget);
-    expect(find.text('Lv.4 成长进度'), findsOneWidget);
-    expect(find.text('150 / 200 经验'), findsOneWidget);
-    expect(find.text('关注 7'), findsOneWidget);
-    expect(find.text('公开最近回复'), findsOneWidget);
-    expect(find.text('公开参与主题'), findsOneWidget);
-    expect(find.text('公开收藏'), findsOneWidget);
+    expect(find.textContaining('o***@example.com'), findsOneWidget);
+    expect(find.text('Lv.4 · 150 / 200 经验'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-following')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-followers')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
+    expect(find.text('我的动态'), findsOneWidget);
     expect(find.text('我的收藏'), findsOneWidget);
-    expect(find.text('我关注的人'), findsOneWidget);
-    expect(find.text('我的粉丝'), findsOneWidget);
-    expect(find.text('管理黑名单'), findsOneWidget);
-    expect(find.text('登录终端'), findsOneWidget);
-    expect(find.text('修改密码'), findsOneWidget);
-    expect(find.text('更换邮箱'), findsOneWidget);
-    expect(find.text('注销账号'), findsOneWidget);
-    expect(find.byKey(const Key('me-open-delete-account')), findsOneWidget);
-    expect(find.byKey(const Key('me-open-verify-email')), findsNothing);
+    expect(find.text('账号设置'), findsWidgets);
+    expect(find.text('注销账号'), findsNothing);
+    expect(find.text('公开最近回复'), findsNothing);
     expect(repository.fetchCalls, 1);
   });
 
@@ -95,14 +89,14 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeSettingsPage()),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('邮箱待验证'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('me-open-verify-email')));
     expect(find.text('验证当前邮箱'), findsOneWidget);
+    expect(find.byKey(const Key('logout-submit')), findsOneWidget);
   });
 
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {
@@ -112,7 +106,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -144,7 +138,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -181,7 +175,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -224,7 +218,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -261,7 +255,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -286,7 +280,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -303,21 +297,21 @@ void main() {
     expect(find.byKey(const Key('me-avatar-remove')), findsNothing);
   });
 
-  testWidgets('已有简介不能伪装清空，加载失败可重试且仍可退出', (tester) async {
+  testWidgets('编辑资料加载失败可重试且已有简介不能伪装清空', (tester) async {
     final repository = _FakeMeProfileRepository(failFetchOnce: true);
     final container = await _authenticatedContainer(repository);
     addTearDown(container.dispose);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('本人资料没有加载完成'), findsOneWidget);
-    expect(find.byKey(const Key('logout-submit')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('me-profile-retry')));
+    expect(find.text('资料没有加载完成'), findsOneWidget);
+    expect(find.byKey(const Key('logout-submit')), findsNothing);
+    await tester.tap(find.byKey(const Key('me-edit-retry')));
     await tester.pumpAndSettle();
     expect(find.text('温柔测试员'), findsWidgets);
 
@@ -331,7 +325,7 @@ void main() {
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 本人资料和设置无布局溢出', (tester) async {
+    testWidgets('$width dp 个人中心、资料编辑和账号设置无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 900);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -346,9 +340,32 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       await tester.ensureVisible(find.byKey(const Key('me-settings-save')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const MeSettingsPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('logout-submit')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });

@@ -47,6 +47,11 @@ class PostRepliesPage extends ConsumerWidget {
     final actions = ref.watch(actionsProvider);
     final session = ref.watch(sessionControllerProvider);
     final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
+    final readyRoot =
+        state.phase == PostDiscussionPhase.ready &&
+            state.root?.threadId == threadId
+        ? state.root
+        : null;
     return Scaffold(
       appBar: AppBar(
         title: const Text('楼中楼讨论'),
@@ -95,13 +100,29 @@ class PostRepliesPage extends ConsumerWidget {
                       post,
                       root: root,
                     ),
-                    onLogin: () => context.pushNamed(
-                      'login',
-                      queryParameters: {'returnTo': _location()},
-                    ),
                   ),
                 ),
       },
+      bottomNavigationBar: readyRoot == null
+          ? null
+          : WenyouComposerDock(
+              key: const Key('post-reply-compose'),
+              label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
+              icon: session.isAuthenticated
+                  ? Icons.reply_rounded
+                  : Icons.login_rounded,
+              onPressed: session.isAuthenticated
+                  ? () => _compose(
+                      context,
+                      ref,
+                      provider,
+                      _replyTarget(readyRoot, readyRoot),
+                    )
+                  : () => context.pushNamed(
+                      'login',
+                      queryParameters: {'returnTo': _location()},
+                    ),
+            ),
     );
   }
 
@@ -187,7 +208,6 @@ class _DiscussionList extends StatelessWidget {
     required this.onLoadMore,
     required this.onCompose,
     required this.onDelete,
-    required this.onLogin,
   });
 
   final PostDiscussionState state;
@@ -201,7 +221,6 @@ class _DiscussionList extends StatelessWidget {
   final VoidCallback onLoadMore;
   final ValueChanged<PostComposerTarget> onCompose;
   final void Function(PostItem post, bool root) onDelete;
-  final VoidCallback onLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -294,12 +313,10 @@ class _DiscussionList extends StatelessWidget {
                   SizedBox(height: tokens.space12),
                 ],
                 if (state.replies.isEmpty)
-                  const WenyouPanel(
-                    child: WenyouEmptyState(
-                      icon: Icons.forum_outlined,
-                      title: '还没有回复',
-                      message: '成为这段讨论的第一位回复者。',
-                    ),
+                  const WenyouEmptyState(
+                    icon: Icons.forum_outlined,
+                    title: '还没有回复',
+                    message: '成为这段讨论的第一位回复者。',
                   )
                 else
                   for (
@@ -307,7 +324,7 @@ class _DiscussionList extends StatelessWidget {
                     index < state.replies.length;
                     index++
                   ) ...[
-                    if (index > 0) SizedBox(height: tokens.space8),
+                    if (index > 0) Divider(height: tokens.space24),
                     _PostCard(
                       key: Key('post-reply-${state.replies[index].id}'),
                       post: state.replies[index],
@@ -344,17 +361,6 @@ class _DiscussionList extends StatelessWidget {
                     label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
                   ),
                 ],
-                SizedBox(height: tokens.space16),
-                WenyouAsyncPrimaryButton(
-                  key: const Key('post-reply-compose'),
-                  label: authenticated ? '发表回复' : '登录后发表回复',
-                  icon: authenticated
-                      ? Icons.reply_rounded
-                      : Icons.login_rounded,
-                  onPressed: authenticated
-                      ? () => onCompose(_replyTarget(root, root))
-                      : onLogin,
-                ),
               ],
             ),
           ),
@@ -387,52 +393,77 @@ class _ReplyFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 460;
-        final order = DropdownButtonFormField<PostReplyOrder>(
+    final selectedAuthor = authors
+        .where((author) => author.id == state.authorId)
+        .firstOrNull;
+    return Row(
+      children: [
+        PopupMenuButton<PostReplyOrder>(
           key: const Key('post-replies-order'),
           initialValue: state.order,
-          decoration: const InputDecoration(labelText: '回复排序'),
-          items: PostReplyOrder.values
-              .map(
-                (value) =>
-                    DropdownMenuItem(value: value, child: Text(value.label)),
-              )
-              .toList(growable: false),
-          onChanged: (value) {
-            if (value != null) onOrder(value);
-          },
-        );
-        final author = DropdownButtonFormField<String>(
+          tooltip: '回复排序',
+          onSelected: onOrder,
+          itemBuilder: (context) => [
+            for (final order in PostReplyOrder.values)
+              PopupMenuItem(value: order, child: Text(order.label)),
+          ],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.swap_vert_rounded, size: 20),
+                  SizedBox(width: tokens.space4),
+                  Text(state.order.label),
+                  const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const Spacer(),
+        TextButton.icon(
           key: const Key('post-replies-author'),
-          initialValue: state.authorId ?? '',
-          decoration: const InputDecoration(labelText: '只看回复者'),
-          items: [
-            const DropdownMenuItem(value: '', child: Text('全部回复者')),
-            for (final item in authors)
-              DropdownMenuItem(value: item.id, child: Text(item.username)),
-          ],
-          onChanged: onAuthor,
-        );
-        if (narrow) {
-          return Column(
-            children: [
-              order,
-              SizedBox(height: tokens.space8),
-              author,
-            ],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: order),
-            SizedBox(width: tokens.space8),
-            Expanded(child: author),
-          ],
-        );
-      },
+          onPressed: () => _showAuthorFilter(context),
+          icon: Icon(
+            Icons.tune_rounded,
+            size: 20,
+            color: selectedAuthor == null ? tokens.mutedText : tokens.brand,
+          ),
+          label: Text(selectedAuthor?.username ?? '筛选'),
+        ),
+      ],
     );
+  }
+
+  Future<void> _showAuthorFilter(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => RadioGroup<String>(
+        groupValue: state.authorId ?? '',
+        onChanged: (value) => Navigator.pop(context, value),
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('只看回复者')),
+            const RadioListTile<String>(value: '', title: Text('全部回复者')),
+            for (final author in authors)
+              RadioListTile<String>(
+                value: author.id,
+                title: Text(author.username),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (context.mounted && selected != null) {
+      final authorId = selected.isEmpty ? null : selected;
+      if (authorId != state.authorId) onAuthor(authorId);
+    }
   }
 }
 
@@ -465,9 +496,15 @@ class _PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      color: focused ? tokens.accentedBackground : null,
-      padding: EdgeInsets.all(tokens.space16),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.space4,
+        vertical: tokens.space12,
+      ),
+      decoration: BoxDecoration(
+        color: focused ? tokens.accentedBackground : null,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -518,9 +518,15 @@ class _FloorCard extends StatelessWidget {
     return Semantics(
       container: true,
       label: floor.floorNumber == null ? '楼层' : '第 ${floor.floorNumber} 楼',
-      child: WenyouPanel(
-        color: isFocused ? tokens.accentedBackground : null,
-        padding: EdgeInsets.all(tokens.space16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.space4,
+          vertical: tokens.space12,
+        ),
+        decoration: BoxDecoration(
+          color: isFocused ? tokens.accentedBackground : null,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

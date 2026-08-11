@@ -273,6 +273,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/me/edit',
+        name: 'me-edit',
+        builder: (context, state) => const MeEditPage(),
+      ),
+      GoRoute(
+        path: '/me/settings',
+        name: 'me-settings',
+        builder: (context, state) => const MeSettingsPage(),
+      ),
+      GoRoute(
         path: '/me/wallet',
         name: 'wallet',
         builder: (context, state) => const WalletPage(),

@@ -50,24 +50,23 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final session = ref.watch(sessionControllerProvider);
-    final unreadCount = session.isAuthenticated
+    final notificationUnread = session.isAuthenticated
         ? ref.watch(notificationUnreadControllerProvider).count
         : 0;
+    final messagesEnabled = ref.watch(directMessagesEnabledProvider);
+    final directUnread = session.isAuthenticated && messagesEnabled
+        ? ref.watch(directUnreadControllerProvider).counts.total
+        : 0;
+    final unreadCount = notificationUnread + directUnread;
     return Scaffold(
       body: widget.navigationShell,
-      floatingActionButton: switch (widget.navigationShell.currentIndex) {
-        0 => FloatingActionButton(
-          onPressed: () => context.push(AppRouteLocations.composeThread),
-          tooltip: '创建主题',
-          child: const Icon(Icons.edit_rounded),
-        ),
-        1 => FloatingActionButton(
-          onPressed: () => context.push(AppRouteLocations.composeMoment),
-          tooltip: '发布动态',
-          child: const Icon(Icons.add_rounded),
-        ),
-        _ => null,
-      },
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('global-publish'),
+        onPressed: () => _openPublishMenu(context),
+        tooltip: '发布内容',
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('发布'),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
@@ -82,6 +81,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
             );
             if (index == 3 && session.isAuthenticated) {
               ref.read(notificationUnreadControllerProvider.notifier).refresh();
+              if (messagesEnabled) {
+                ref.read(directUnreadControllerProvider.notifier).refresh();
+              }
               if (ref.exists(notificationListControllerProvider)) {
                 ref.read(notificationListControllerProvider.notifier).load();
               }
@@ -111,7 +113,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                 count: unreadCount,
                 selected: true,
               ),
-              label: '通知',
+              label: '消息',
             ),
             const NavigationDestination(
               icon: Icon(Icons.person_outline_rounded),
@@ -122,6 +124,55 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         ),
       ),
     );
+  }
+
+  Future<void> _openPublishMenu(BuildContext context) async {
+    final currentIndex = widget.navigationShell.currentIndex;
+    final location = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        final tokens = context.wenyouTokens;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            tokens.space12,
+            0,
+            tokens.space12,
+            tokens.space16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('发布内容', style: Theme.of(context).textTheme.titleLarge),
+              SizedBox(height: tokens.space8),
+              ListTile(
+                key: const Key('global-publish-thread'),
+                minTileHeight: tokens.minimumTouchTarget,
+                leading: const Icon(Icons.article_outlined),
+                title: const Text('发布主题帖'),
+                subtitle: Text(currentIndex == 0 ? '当前频道推荐' : '创建可持续讨论的共同创作主题'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () =>
+                    Navigator.pop(context, AppRouteLocations.composeThread),
+              ),
+              ListTile(
+                key: const Key('global-publish-moment'),
+                minTileHeight: tokens.minimumTouchTarget,
+                leading: const Icon(Icons.auto_awesome_outlined),
+                title: const Text('发布动态'),
+                subtitle: Text(currentIndex == 1 ? '当前频道推荐' : '分享短文字或最多九张图片'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () =>
+                    Navigator.pop(context, AppRouteLocations.composeMoment),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (location != null && context.mounted) await context.push(location);
   }
 }
 
@@ -142,8 +193,8 @@ class _NotificationNavigationIcon extends StatelessWidget {
       label: Text(count > 99 ? '99+' : '$count'),
       child: Icon(
         selected
-            ? Icons.notifications_rounded
-            : Icons.notifications_none_rounded,
+            ? Icons.chat_bubble_rounded
+            : Icons.chat_bubble_outline_rounded,
       ),
     );
   }

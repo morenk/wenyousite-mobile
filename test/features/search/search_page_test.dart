@@ -12,7 +12,7 @@ import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 
 void main() {
-  testWidgets('搜索页按综合、动态、主题、用户和正文五个页签惰性展示结果', (tester) async {
+  testWidgets('搜索页按动态、主题帖、楼层内容和用户四个页签惰性展示结果', (tester) async {
     final repository = _FakeSearchRepository();
     await tester.pumpWidget(_searchApp(repository));
 
@@ -26,10 +26,11 @@ void main() {
     expect(repository.userCalls, 0);
     expect(repository.postCalls, 0);
 
-    await tester.tap(find.text('综合'));
-    await tester.pumpAndSettle();
-    expect(find.text('综合结果共 1 条'), findsNWidgets(3));
-    expect(repository.overviewCalls, 1);
+    expect(find.text('综合'), findsNothing);
+    expect(find.byKey(const Key('search-tabs-scroll')), findsNothing);
+    expect(find.byKey(const Key('search-tabs')), findsOneWidget);
+    expect(find.byType(SegmentedButton<SearchResultTab>), findsNothing);
+    expect(repository.overviewCalls, 0);
 
     await tester.tap(find.text('动态'));
     await tester.pumpAndSettle();
@@ -41,22 +42,22 @@ void main() {
     expect(find.text('温柔测试员'), findsOneWidget);
     expect(repository.userCalls, 1);
 
-    await tester.tap(find.text('正文'));
+    await tester.tap(find.byKey(const Key('search-tab-posts')));
     await tester.pumpAndSettle();
     expect(find.text('这是一段星海正文'), findsOneWidget);
     expect(repository.postCalls, 1);
   });
 
-  testWidgets('正文单字符提示最小长度且不发请求', (tester) async {
+  testWidgets('楼层内容单字符提示最小长度且不发请求', (tester) async {
     final repository = _FakeSearchRepository();
     await tester.pumpWidget(_searchApp(repository));
 
-    await tester.tap(find.text('正文'));
+    await tester.tap(find.byKey(const Key('search-tab-posts')));
     await tester.enterText(find.byKey(const Key('search-query-input')), '星');
     await tester.tap(find.byKey(const Key('search-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('动态和正文搜索至少需要 2 个字符'), findsOneWidget);
+    expect(find.text('动态和楼层内容搜索至少需要 2 个字符'), findsOneWidget);
     expect(repository.postCalls, 0);
   });
 
@@ -140,7 +141,7 @@ void main() {
 
     router.pop();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('正文'));
+    await tester.tap(find.byKey(const Key('search-tab-posts')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('这是一段星海正文'));
     await tester.pumpAndSettle();
@@ -164,6 +165,12 @@ void main() {
         tester.getSize(find.byKey(const Key('search-submit'))).height,
         greaterThanOrEqualTo(48),
       );
+      for (final tab in ['moments', 'threads', 'posts', 'users']) {
+        expect(
+          tester.getSize(find.byKey(Key('search-tab-$tab'))).height,
+          greaterThanOrEqualTo(48),
+        );
+      }
     });
   }
 }
