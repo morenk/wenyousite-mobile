@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 void main() {
-  test('移动主题完整映射 Foundation v1.1.0 核心 Token', () {
+  test('移动主题完整映射 Foundation v1.2.0 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
     expect(WenyouFoundationVersion.value, '1.1.0');

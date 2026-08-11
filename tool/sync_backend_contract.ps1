@@ -16,6 +16,7 @@ Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1.schema.json
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-v1-golden-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-v1-operation-coverage.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\thread-category-v1-fixtures.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\internal-reference-v1-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\CHANGELOG.md") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "docs\mobile-client-guide.md") -Destination (Join-Path $contractDir "mobile-client-guide.md") -Force
 
@@ -36,6 +37,7 @@ $metadata = @(
   "backendRevision=$revision"
   "contractVersion=$contractVersion"
   "markdownContractVersion=2"
+  "internalReferenceContractVersion=1"
 ) -join "`n"
 [System.IO.File]::WriteAllText((Join-Path $contractDir "backend-contract.properties"), "$metadata`n", [System.Text.UTF8Encoding]::new($false))
 
