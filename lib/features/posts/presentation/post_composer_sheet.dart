@@ -31,7 +31,7 @@ Future<PostItem?> showPostComposerSheet({
     enableDrag: false,
     useSafeArea: true,
     builder: (context) => FractionallySizedBox(
-      heightFactor: 0.94,
+      heightFactor: 1,
       child: PostComposerSheet(target: target),
     ),
   );
@@ -66,9 +66,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     super.initState();
     final decoded = MarkdownDeltaCodec.decode(widget.target.initialContent);
     _issues = decoded.issues;
+    final document = Document.fromDelta(decoded.delta);
     _editorController = QuillController(
-      document: Document.fromDelta(decoded.delta),
-      selection: const TextSelection.collapsed(offset: 0),
+      document: document,
+      selection: TextSelection.collapsed(offset: document.length - 1),
     )..addListener(_onDocumentChanged);
   }
 
@@ -97,40 +98,41 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         if (!didPop) unawaited(_requestClose());
       },
       child: Column(
+        key: const Key('post-composer-sheet'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
+          Container(
+            key: const Key('post-composer-header'),
+            constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
             padding: EdgeInsets.fromLTRB(
-              tokens.space16,
-              tokens.space12,
+              tokens.space4,
+              tokens.space4,
               tokens.space8,
-              tokens.space12,
+              tokens.space4,
             ),
             child: Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.target.label,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      SizedBox(height: tokens.space4),
-                      Text(
-                        _subtitle(widget.target.kind),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 IconButton(
                   key: const Key('post-composer-close'),
                   tooltip: '关闭编辑器',
                   onPressed: locked ? null : _requestClose,
                   icon: const Icon(Icons.close_rounded),
+                ),
+                SizedBox(width: tokens.space4),
+                Expanded(
+                  child: Text(
+                    widget.target.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                SizedBox(width: tokens.space8),
+                _ComposerSubmitButton(
+                  key: const Key('post-composer-submit'),
+                  label: _submitLabel(widget.target.kind),
+                  isLoading: state.isSubmitting,
+                  onPressed: locked || _codecFailure != null ? null : _submit,
                 ),
               ],
             ),
@@ -227,72 +229,56 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                     _uploadCancelToken?.cancel('user cancelled image upload'),
               ),
             ),
-          SizedBox(height: tokens.space12),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-              child: Material(
-                color: tokens.panel,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(tokens.radius20),
-                  side: BorderSide(color: tokens.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    WenyouEditorToolbar(
-                      controller: _editorController,
-                      enabled: !locked && _codecFailure == null,
-                      onInsertImage: _insertImage,
-                      onInsertSticker: ref.watch(stickersEnabledProvider)
-                          ? _insertSticker
-                          : null,
-                      onSaveDraft: _openContentDrafts,
-                    ),
-                    MentionSuggestions(
-                      controller: _editorController,
-                      focusNode: _focusNode,
-                      threadId: widget.target.threadId,
-                      enabled: !locked && _codecFailure == null,
-                    ),
-                    Expanded(
-                      child: Semantics(
-                        textField: true,
-                        label: widget.target.label,
-                        child: QuillEditor(
-                          key: const Key('post-composer-body'),
-                          controller: _editorController,
-                          focusNode: _focusNode,
-                          scrollController: _scrollController,
-                          config: QuillEditorConfig(
-                            scrollable: true,
-                            expands: true,
-                            padding: EdgeInsets.all(tokens.space16),
-                            placeholder: _placeholder(widget.target.kind),
-                            embedBuilders: wenyouEditorEmbedBuilders(),
+            child: ColoredBox(
+              key: const Key('post-composer-canvas'),
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  WenyouEditorToolbar(
+                    controller: _editorController,
+                    enabled: !locked && _codecFailure == null,
+                    onInsertImage: _insertImage,
+                    onInsertSticker: ref.watch(stickersEnabledProvider)
+                        ? _insertSticker
+                        : null,
+                    onSaveDraft: _openContentDrafts,
+                  ),
+                  MentionSuggestions(
+                    controller: _editorController,
+                    focusNode: _focusNode,
+                    threadId: widget.target.threadId,
+                    enabled: !locked && _codecFailure == null,
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Semantics(
+                      textField: true,
+                      label: widget.target.label,
+                      child: QuillEditor(
+                        key: const Key('post-composer-body'),
+                        controller: _editorController,
+                        focusNode: _focusNode,
+                        scrollController: _scrollController,
+                        config: QuillEditorConfig(
+                          scrollable: true,
+                          expands: true,
+                          autoFocus: true,
+                          padding: EdgeInsets.fromLTRB(
+                            tokens.space16,
+                            tokens.space16,
+                            tokens.space16,
+                            tokens.space32,
                           ),
+                          placeholder: _placeholder(widget.target.kind),
+                          embedBuilders: wenyouEditorEmbedBuilders(),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(tokens.space12),
-            child: WenyouAsyncPrimaryButton(
-              key: const Key('post-composer-submit'),
-              label: _submitLabel(widget.target.kind),
-              loadingLabel: '正在提交',
-              icon:
-                  widget.target.kind == PostComposerKind.editPost ||
-                      widget.target.kind == PostComposerKind.upsertBody
-                  ? Icons.check_rounded
-                  : Icons.send_rounded,
-              isLoading: state.isSubmitting,
-              onPressed: locked || _codecFailure != null ? null : _submit,
             ),
           ),
         ],
@@ -309,7 +295,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       try {
         final decoded = MarkdownDeltaCodec.decode(state.content);
         _issues = decoded.issues;
-        _editorController.document = Document.fromDelta(decoded.delta);
+        final document = Document.fromDelta(decoded.delta);
+        _editorController.document = document;
+        _editorController.updateSelection(
+          TextSelection.collapsed(offset: document.length - 1),
+          ChangeSource.local,
+        );
         _codecFailure = null;
       } on Object catch (error) {
         _codecFailure = '恢复正文时发生错误：$error';
@@ -548,6 +539,44 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 }
 
+class _ComposerSubmitButton extends StatelessWidget {
+  const _ComposerSubmitButton({
+    required this.label,
+    required this.isLoading,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return SizedBox(
+      height: tokens.minimumTouchTarget,
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        style: FilledButton.styleFrom(
+          minimumSize: Size(0, tokens.minimumTouchTarget),
+          padding: EdgeInsets.symmetric(horizontal: tokens.space16),
+        ),
+        child: Semantics(
+          label: isLoading ? '正在提交' : label,
+          excludeSemantics: true,
+          child: isLoading
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(label),
+        ),
+      ),
+    );
+  }
+}
+
 class _UploadStatus extends StatelessWidget {
   const _UploadStatus({required this.progress, required this.onCancel});
 
@@ -578,13 +607,6 @@ class _UploadStatus extends StatelessWidget {
     );
   }
 }
-
-String _subtitle(PostComposerKind kind) => switch (kind) {
-  PostComposerKind.createFloor => '发表到当前子贴，成功后成为新楼层。',
-  PostComposerKind.createReply => '回复会平级挂在当前主楼层下。',
-  PostComposerKind.editPost => '保存时携带当前版本，冲突不会静默覆盖。',
-  PostComposerKind.upsertBody => '只有楼主和协作者可以修改子贴正文。',
-};
 
 String _placeholder(PostComposerKind kind) => switch (kind) {
   PostComposerKind.createFloor => '输入楼层正文…',

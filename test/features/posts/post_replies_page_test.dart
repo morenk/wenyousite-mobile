@@ -14,8 +14,11 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import '../../support/foundation_test_fonts.dart';
 
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('360dp 独立楼中楼常驻发表入口并完成编辑删除与权限收敛', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
@@ -55,6 +58,19 @@ void main() {
     expect(find.text('他人的回复'), findsOneWidget);
     expect(find.byKey(const Key('post-replies-order')), findsOneWidget);
     expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-count')), findsOneWidget);
+    expect(find.text('楼中楼讨论'), findsOneWidget);
+    final countCenter = tester.getCenter(
+      find.byKey(const Key('post-replies-count')),
+    );
+    final orderCenter = tester.getCenter(
+      find.byKey(const Key('post-replies-order')),
+    );
+    final authorCenter = tester.getCenter(
+      find.byKey(const Key('post-replies-author')),
+    );
+    expect((countCenter.dy - orderCenter.dy).abs(), lessThan(2));
+    expect((orderCenter.dy - authorCenter.dy).abs(), lessThan(2));
     expect(find.byKey(const Key('post-edit-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-edit-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-report-root')), findsNothing);
@@ -85,6 +101,38 @@ void main() {
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
     expect(find.text('回复 @楼层作者'), findsWidgets);
+    expect(find.text('回复会平级挂在当前主楼层下。'), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-sheet'))).height,
+      greaterThanOrEqualTo(900),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-canvas'))).height,
+      greaterThan(780),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-close'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-submit'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      find.ancestor(
+        of: find.byKey(const Key('post-composer-body')),
+        matching: find.byType(Card),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .focusNode
+          .hasFocus,
+      isTrue,
+    );
     expect(
       tester
           .widget<MentionSuggestions>(find.byType(MentionSuggestions))
@@ -106,6 +154,14 @@ void main() {
     expect(find.text('回复操作'), findsOneWidget);
     await tester.tap(find.text('编辑'));
     await tester.pumpAndSettle();
+    final editController = tester
+        .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+        .widget
+        .controller;
+    expect(
+      editController.selection.baseOffset,
+      editController.document.length - 1,
+    );
     await _replaceComposerText(tester, '编辑后的新回复');
     await tester.tap(find.byKey(const Key('post-composer-submit')));
     await tester.pumpAndSettle();
@@ -125,6 +181,51 @@ void main() {
     expect(repository.removedIds, ['created']);
     expect(find.text('编辑后的新回复'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('360dp 回复编辑器保持纯正文画布的视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const RepaintBoundary(
+            key: Key('post-composer-text-first-visual'),
+            child: PostRepliesPage(
+              threadId: 'thread',
+              rootPostId: 'root',
+              reportsEnabled: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byKey(const Key('post-composer-sheet')),
+      matchesGoldenFile('goldens/post_composer_text_first_360.png'),
+    );
   });
 }
 

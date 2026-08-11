@@ -287,14 +287,10 @@ class _DiscussionList extends StatelessWidget {
                 onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
                 onDelete: () => onDelete(root, true),
               ),
-              SizedBox(height: tokens.space20),
-              WenyouSectionHeader(
-                title: '楼中楼讨论',
-                subtitle: '共 ${root.replyCount} 条回复',
-              ),
               SizedBox(height: tokens.space12),
               _ReplyFilters(
                 state: state,
+                replyCount: root.replyCount,
                 authors: authors.values.toList(growable: false),
                 onOrder: onOrder,
                 onAuthor: onAuthor,
@@ -375,12 +371,14 @@ class _DiscussionList extends StatelessWidget {
 class _ReplyFilters extends StatelessWidget {
   const _ReplyFilters({
     required this.state,
+    required this.replyCount,
     required this.authors,
     required this.onOrder,
     required this.onAuthor,
   });
 
   final PostDiscussionState state;
+  final int replyCount;
   final List<PostAuthor> authors;
   final ValueChanged<PostReplyOrder> onOrder;
   final ValueChanged<String?> onAuthor;
@@ -393,6 +391,16 @@ class _ReplyFilters extends StatelessWidget {
         .firstOrNull;
     return Row(
       children: [
+        Expanded(
+          child: Text(
+            '$replyCount 条回复',
+            key: const Key('post-replies-count'),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: tokens.mutedText,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
         PopupMenuButton<PostReplyOrder>(
           key: const Key('post-replies-order'),
           initialValue: state.order,
@@ -418,7 +426,6 @@ class _ReplyFilters extends StatelessWidget {
             ),
           ),
         ),
-        const Spacer(),
         TextButton.icon(
           key: const Key('post-replies-author'),
           onPressed: () => _showAuthorFilter(context),
@@ -427,7 +434,14 @@ class _ReplyFilters extends StatelessWidget {
             size: 20,
             color: selectedAuthor == null ? tokens.mutedText : tokens.brand,
           ),
-          label: Text(selectedAuthor?.username ?? '筛选'),
+          label: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 88),
+            child: Text(
+              selectedAuthor?.username ?? '筛选',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ),
       ],
     );

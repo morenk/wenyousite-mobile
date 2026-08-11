@@ -20,7 +20,7 @@ V1 包含认证、公开浏览、搜索、动态、主题/子贴/楼层、创作
 
 V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、离线自动发帖、暗色主题、阅读进度、子贴标签和 Android App Links。
 
-共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的已发布版本；当前由 `pubspec.yaml` 锁定 Foundation v1.1.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的已发布版本；当前由 `pubspec.yaml` 锁定 Foundation v1.2.1。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 
