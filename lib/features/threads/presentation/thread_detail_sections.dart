@@ -216,7 +216,7 @@ class _ThreadOverview extends StatelessWidget {
   }
 }
 
-class _SubthreadNavigator extends StatelessWidget {
+class _SubthreadNavigator extends StatefulWidget {
   const _SubthreadNavigator({
     required this.subthreads,
     required this.selectedSubthreadId,
@@ -228,21 +228,34 @@ class _SubthreadNavigator extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   @override
+  State<_SubthreadNavigator> createState() => _SubthreadNavigatorState();
+}
+
+class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
+  var _menuOpen = false;
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final selectedIndex = subthreads.indexWhere(
-      (subthread) => subthread.id == selectedSubthreadId,
+    final selectedIndex = widget.subthreads.indexWhere(
+      (subthread) => subthread.id == widget.selectedSubthreadId,
     );
     final safeIndex = selectedIndex < 0 ? 0 : selectedIndex;
-    final selected = subthreads[safeIndex];
+    final selected = widget.subthreads[safeIndex];
+    final canCycle = widget.subthreads.length > 1;
+    final previousIndex =
+        (safeIndex - 1 + widget.subthreads.length) % widget.subthreads.length;
+    final nextIndex = (safeIndex + 1) % widget.subthreads.length;
     return Row(
       children: [
-        IconButton(
+        IconButton.outlined(
           key: const Key('thread-subthread-previous'),
-          onPressed: safeIndex == 0
-              ? null
-              : () => onSelected(subthreads[safeIndex - 1].id),
-          tooltip: '上一个子贴',
+          onPressed: canCycle
+              ? () => widget.onSelected(widget.subthreads[previousIndex].id)
+              : null,
+          tooltip: canCycle
+              ? '上一个子贴：${widget.subthreads[previousIndex].title}'
+              : '没有其他子贴',
           icon: const Icon(Icons.chevron_left_rounded),
         ),
         SizedBox(width: tokens.space4),
@@ -255,9 +268,10 @@ class _SubthreadNavigator extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: tokens.space12),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Flexible(
+                const Icon(Icons.format_list_bulleted_rounded, size: 18),
+                SizedBox(width: tokens.space8),
+                Expanded(
                   child: Text(
                     selected.title,
                     maxLines: 1,
@@ -265,18 +279,32 @@ class _SubthreadNavigator extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: tokens.space4),
-                const Icon(Icons.expand_more_rounded, size: 18),
+                Text(
+                  '${selected.postCount} 楼',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ),
+                SizedBox(width: tokens.space4),
+                Icon(
+                  _menuOpen
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  size: 18,
+                ),
               ],
             ),
           ),
         ),
         SizedBox(width: tokens.space4),
-        IconButton(
+        IconButton.outlined(
           key: const Key('thread-subthread-next'),
-          onPressed: safeIndex >= subthreads.length - 1
-              ? null
-              : () => onSelected(subthreads[safeIndex + 1].id),
-          tooltip: '下一个子贴',
+          onPressed: canCycle
+              ? () => widget.onSelected(widget.subthreads[nextIndex].id)
+              : null,
+          tooltip: canCycle
+              ? '下一个子贴：${widget.subthreads[nextIndex].title}'
+              : '没有其他子贴',
           icon: const Icon(Icons.chevron_right_rounded),
         ),
       ],
@@ -284,33 +312,102 @@ class _SubthreadNavigator extends StatelessWidget {
   }
 
   Future<void> _showSubthreads(BuildContext context) async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: subthreads.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final subthread = subthreads[index];
-            final isSelected = subthread.id == selectedSubthreadId;
-            return ListTile(
-              key: Key('thread-subthread-${subthread.id}'),
-              minTileHeight: context.wenyouTokens.minimumTouchTarget,
-              title: Text(subthread.title),
-              trailing: isSelected
-                  ? Icon(Icons.check_rounded, color: context.wenyouTokens.brand)
-                  : null,
-              onTap: () => Navigator.pop(context, subthread.id),
-            );
-          },
-        ),
-      ),
-    );
-    if (selected != null && selected != selectedSubthreadId) {
-      onSelected(selected);
+    setState(() => _menuOpen = true);
+    String? selected;
+    try {
+      selected = await showModalBottomSheet<String>(
+        context: context,
+        useSafeArea: true,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (sheetContext) {
+          final tokens = sheetContext.wenyouTokens;
+          return SafeArea(
+            top: false,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.72,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      tokens.space16,
+                      0,
+                      tokens.space16,
+                      tokens.space12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '主题目录',
+                            style: Theme.of(sheetContext).textTheme.titleMedium,
+                          ),
+                        ),
+                        Text(
+                          '共 ${widget.subthreads.length} 个子贴',
+                          style: Theme.of(sheetContext).textTheme.bodySmall
+                              ?.copyWith(color: tokens.mutedText),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: tokens.border),
+                  Flexible(
+                    child: ListView.separated(
+                      key: const Key('thread-subthread-directory'),
+                      shrinkWrap: true,
+                      scrollDirection: Axis.vertical,
+                      padding: EdgeInsets.all(tokens.space12),
+                      itemCount: widget.subthreads.length,
+                      separatorBuilder: (_, _) =>
+                          SizedBox(height: tokens.space4),
+                      itemBuilder: (context, index) {
+                        final subthread = widget.subthreads[index];
+                        final isSelected =
+                            subthread.id == widget.selectedSubthreadId;
+                        return ListTile(
+                          key: Key('thread-subthread-${subthread.id}'),
+                          minTileHeight: tokens.minimumTouchTarget,
+                          selected: isSelected,
+                          selectedColor: tokens.brand,
+                          selectedTileColor: tokens.accentedBackground,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              tokens.radius12,
+                            ),
+                          ),
+                          leading: SizedBox.square(
+                            dimension: 24,
+                            child: isSelected
+                                ? const Icon(Icons.check_rounded, size: 20)
+                                : null,
+                          ),
+                          title: Text(subthread.title),
+                          trailing: Text(
+                            '${subthread.postCount} 楼',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: tokens.mutedText),
+                          ),
+                          onTap: () => Navigator.pop(context, subthread.id),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } finally {
+      if (mounted) setState(() => _menuOpen = false);
+    }
+    if (!mounted) return;
+    if (selected != null && selected != widget.selectedSubthreadId) {
+      widget.onSelected(selected);
     }
   }
 }

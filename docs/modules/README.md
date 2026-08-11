@@ -17,7 +17,7 @@
 | media | in_progress | 0.5.0-dev | [媒体](media.md) |
 | notifications | in_progress | 0.3.0-dev / 0.4.0-dev | [通知](notifications.md) |
 | direct-messages | in_progress | 0.4.0-dev | [站内私聊](direct-messages.md) |
-| stickers | in_progress | 0.5.0-dev | [收藏表情](stickers.md) |
+| stickers | in_progress | 0.5.0-dev | [表情包](stickers.md) |
 | users | in_progress | 0.3.0-dev / 0.7.0-dev | [用户](users.md) |
 | reports | in_progress | 0.3.0-dev | [社区举报](reports.md) |
 | wallet | in_progress | 0.3.0-dev / 0.4.0-dev | [温油钱包](wallet.md) |

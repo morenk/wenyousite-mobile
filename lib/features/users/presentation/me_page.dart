@@ -664,8 +664,8 @@ class _MeDashboard extends ConsumerWidget {
                 ListTile(
                   key: const Key('me-open-stickers'),
                   leading: const Icon(Icons.add_reaction_outlined),
-                  title: const Text('我的表情'),
-                  subtitle: const Text('添加、排序和移除收藏表情'),
+                  title: const Text('表情包'),
+                  subtitle: const Text('添加、排序和移除表情'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => context.pushNamed('me-stickers'),
                 ),

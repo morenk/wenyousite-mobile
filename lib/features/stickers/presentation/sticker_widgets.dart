@@ -155,7 +155,7 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
             ? Icons.history_toggle_off_rounded
             : Icons.add_reaction_outlined,
         title: _recent ? '还没有最近使用' : '还没有收藏表情',
-        message: _recent ? '发送过的收藏表情会显示在这里。' : '可在“我的表情”从相册添加，或收藏站内图片。',
+        message: _recent ? '发送过的收藏表情会显示在这里。' : '可在“表情包”从相册添加，或收藏站内图片。',
       );
     }
     final width = MediaQuery.sizeOf(context).width;

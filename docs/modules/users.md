@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。统计区的“动态”进入 `/users/:userId/moments`；关注和粉丝统计进入指定用户路径；非本人页顶栏提供加油与举报入口，登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人中心使用主导航 `/me`，展示头像、简介、等级进度、统计和“我的动态 / 收藏 / 收藏表情 / 账号设置”等捷径；`/me/edit` 单独编辑头像、用户名、简介和公开范围，`/me/settings` 汇总黑名单、登录终端、密码、邮箱、验证、注销与退出。钱包、收藏和关系列表继续使用 `/me/wallet`、`/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
+公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。统计区的“动态”进入 `/users/:userId/moments`；关注和粉丝统计进入指定用户路径；非本人页顶栏提供加油与举报入口，登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人中心使用主导航 `/me`，展示头像、简介、等级进度、统计和“我的动态 / 收藏 / 表情包 / 账号设置”等捷径；`/me/edit` 单独编辑头像、用户名、简介和公开范围，`/me/settings` 汇总黑名单、登录终端、密码、邮箱、验证、注销与退出。钱包、收藏和关系列表继续使用 `/me/wallet`、`/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
 
 ## 4. 用户操作流程
 

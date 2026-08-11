@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
@@ -14,6 +15,30 @@ import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 
 void main() {
+  testWidgets('应用内 capability 覆盖作用域中打开表情包不会触发 Provider 断言', (tester) async {
+    final repository = _FakeStickerRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [stickerRepositoryProvider.overrideWithValue(repository)],
+        child: ProviderScope(
+          overrides: [
+            appCapabilitiesProvider.overrideWithValue(
+              const AppCapabilities(stickers: true),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const StickerCollectionPage(),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('表情包'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('能力关闭时展示收敛状态且不读取收藏', (tester) async {
     final repository = _FakeStickerRepository();
     await tester.pumpWidget(
@@ -30,7 +55,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('表情收藏当前未开放'), findsOneWidget);
+    expect(find.text('表情包功能当前未开放'), findsOneWidget);
     expect(repository.fetchCalls, 0);
   });
 

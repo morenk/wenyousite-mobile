@@ -77,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('me-open-stickers')));
-    expect(find.text('我的表情'), findsOneWidget);
+    expect(find.text('表情包'), findsOneWidget);
   });
 
   testWidgets('未验证邮箱在账号安全区提供验证入口', (tester) async {

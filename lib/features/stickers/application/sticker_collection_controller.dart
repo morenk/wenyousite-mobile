@@ -317,15 +317,20 @@ class StickerCollectionController
 }
 
 final stickerCollectionControllerProvider =
-    StateNotifierProvider<StickerCollectionController, StickerCollectionState>((
-      ref,
-    ) {
-      final authenticated = ref.watch(
-        sessionControllerProvider.select((session) => session.isAuthenticated),
-      );
-      final enabled = ref.watch(stickersEnabledProvider);
-      return StickerCollectionController(
-        ref.watch(stickerRepositoryProvider),
-        autoStart: authenticated && enabled,
-      );
-    });
+    StateNotifierProvider<StickerCollectionController, StickerCollectionState>(
+      (ref) {
+        final authenticated = ref.watch(
+          sessionControllerProvider.select(
+            (session) => session.isAuthenticated,
+          ),
+        );
+        final enabled = ref.watch(stickersEnabledProvider);
+        return StickerCollectionController(
+          ref.watch(stickerRepositoryProvider),
+          autoStart: authenticated && enabled,
+        );
+      },
+      // The capability is scoped by WenyouApp, so this controller must be
+      // recreated inside the same override scope.
+      dependencies: [stickersEnabledProvider],
+    );

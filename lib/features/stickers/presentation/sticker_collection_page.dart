@@ -39,7 +39,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     final state = ref.watch(stickerCollectionControllerProvider);
     final notifier = ref.read(stickerCollectionControllerProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: const Text('我的表情')),
+      appBar: AppBar(title: const Text('表情包')),
       body: switch (state.phase) {
         StickerCollectionPhase.loading => const Center(
           child: CircularProgressIndicator(),
@@ -92,7 +92,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const WenyouSectionHeader(
-                  title: '收藏表情',
+                  title: '我的表情包',
                   subtitle: '可从相册添加，也可在帖子图片或私聊图片旁收藏。长按拖动即可排序。',
                 ),
                 SizedBox(height: tokens.space12),
@@ -402,13 +402,13 @@ class _StickersUnavailablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('我的表情')),
+      appBar: AppBar(title: const Text('表情包')),
       body: const WenyouPageBody(
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
             icon: Icons.add_reaction_outlined,
-            title: '表情收藏当前未开放',
+            title: '表情包功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),
         ),

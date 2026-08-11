@@ -223,7 +223,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
                     IconButton.outlined(
                       key: const Key('direct-message-composer-sticker'),
                       onPressed: _disabled ? null : _pickSticker,
-                      tooltip: '收藏表情',
+                      tooltip: '表情包',
                       icon: const Icon(Icons.add_reaction_outlined),
                     ),
                     SizedBox(width: tokens.space8),

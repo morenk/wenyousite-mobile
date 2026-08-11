@@ -50,7 +50,7 @@ void main() {
             find.byKey(const Key('thread-subthread-previous')),
           )
           .onPressed,
-      isNull,
+      isNotNull,
     );
     expect(
       tester
@@ -106,6 +106,16 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(menu);
     await tester.pumpAndSettle();
+    expect(find.text('主题目录'), findsOneWidget);
+    expect(find.text('共 2 个子贴'), findsOneWidget);
+    expect(find.text('8 楼'), findsWidgets);
+    expect(find.text('4 楼'), findsOneWidget);
+    expect(
+      tester
+          .widget<ListView>(find.byKey(const Key('thread-subthread-directory')))
+          .scrollDirection,
+      Axis.vertical,
+    );
     expect(
       find.byKey(const Key('thread-subthread-subthread-1')),
       findsOneWidget,
@@ -119,6 +129,16 @@ void main() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
 
     await tester.tap(find.byKey(const Key('thread-subthread-previous')));
+    await tester.pumpAndSettle();
+    expect(find.text('主线正文'), findsOneWidget);
+    expect(repository.requestedSubthreads.last, 'subthread-1');
+
+    await tester.tap(find.byKey(const Key('thread-subthread-previous')));
+    await tester.pumpAndSettle();
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
     await tester.pumpAndSettle();
     expect(find.text('主线正文'), findsOneWidget);
     expect(repository.requestedSubthreads.last, 'subthread-1');
@@ -274,10 +294,51 @@ void main() {
     expect(find.text('主题详情'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Back'));
+    final handled = await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
+    expect(handled, isTrue);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
     expect(homeRepository.threadCalls, 1);
+  });
+
+  testWidgets('直接进入主题详情时系统返回回首页而不是退出应用', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/threads/thread-1',
+      routes: [
+        GoRoute(
+          path: '/home',
+          name: 'home',
+          builder: (_, _) => const Scaffold(
+            body: Text('首页回退目标', key: Key('thread-back-home')),
+          ),
+        ),
+        GoRoute(
+          path: '/threads/:threadId',
+          name: 'thread-detail',
+          builder: (_, state) =>
+              ThreadDetailPage(threadId: state.pathParameters['threadId']!),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          threadDetailRepositoryProvider.overrideWithValue(
+            _FakeThreadDetailRepository(),
+          ),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('主题详情'), findsOneWidget);
+    final handled = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(handled, isTrue);
+    expect(find.byKey(const Key('thread-back-home')), findsOneWidget);
   });
 
   testWidgets('游客点赞先登录并保留主题帖子目标', (tester) async {

@@ -101,7 +101,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
               _ToolbarButton(
                 key: const Key('editor-sticker'),
                 icon: Icons.add_reaction_outlined,
-                label: '收藏表情',
+                label: '表情包',
                 enabled: widget.enabled,
                 onPressed: widget.onInsertSticker!,
               ),
@@ -226,7 +226,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                 context,
                 _MoreAction.sticker,
                 Icons.add_reaction_outlined,
-                '收藏表情',
+                '表情包',
               ),
             _moreTile(context, _MoreAction.draft, Icons.cloud_outlined, '正文草稿'),
             _moreTile(

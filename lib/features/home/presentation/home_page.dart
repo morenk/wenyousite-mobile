@@ -313,120 +313,80 @@ class _HomeFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const allCategories = '__all_categories__';
     final tokens = context.wenyouTokens;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final categoryLabels = <String, String>{
+      allCategories: '全部分类',
+      for (final category in state.categories) category.slug: category.name,
+    };
+    final selectedCategory = state.query.categorySlug ?? allCategories;
+    return Row(
       children: [
-        Semantics(
-          label: '主题分类筛选',
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ChoiceChip(
-                  key: const Key('home-category-all'),
-                  label: const Text('全部'),
-                  selected: state.query.categorySlug == null,
-                  onSelected: (_) => onCategorySelected(null),
-                ),
-                for (final category in state.categories) ...[
-                  SizedBox(width: tokens.space8),
-                  Tooltip(
-                    message: category.description ?? category.name,
-                    child: ChoiceChip(
-                      key: Key('home-category-${category.slug}'),
-                      label: Text(category.name),
-                      selected: state.query.categorySlug == category.slug,
-                      onSelected: (_) => onCategorySelected(category.slug),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+        Expanded(
+          flex: 12,
+          child: _HomeFilterMenu<String>(
+            key: const Key('home-category-menu'),
+            label: categoryLabels[selectedCategory] ?? selectedCategory,
+            tooltip: '选择主题分类',
+            values: categoryLabels.keys.toList(growable: false),
+            selected: selectedCategory,
+            labelFor: (value) => categoryLabels[value] ?? value,
+            active: selectedCategory != allCategories,
+            onSelected: (value) =>
+                onCategorySelected(value == allCategories ? null : value),
           ),
         ),
-        SizedBox(height: tokens.space8),
-        Row(
-          children: [
-            _HomeFilterMenu<HomeFeedSort>(
-              key: const Key('home-sort-menu'),
-              icon: Icons.swap_vert_rounded,
-              label: state.query.sort.label,
-              tooltip: '选择主题排序',
-              values: HomeFeedSort.values,
-              selected: state.query.sort,
-              labelFor: (value) => value.label,
-              onSelected: onSortSelected,
-            ),
-            const Spacer(),
-            TextButton.icon(
-              key: const Key('home-status-menu'),
-              onPressed: () => _showStatusFilter(context),
-              icon: Icon(
-                Icons.tune_rounded,
-                size: 20,
-                color: state.query.status == HomeThreadStatusFilter.all
-                    ? tokens.mutedText
-                    : tokens.brand,
-              ),
-              label: Text(
-                state.query.status == HomeThreadStatusFilter.all
-                    ? '筛选'
-                    : state.query.status.label,
-              ),
-            ),
-          ],
+        SizedBox(width: tokens.space8),
+        Expanded(
+          flex: 10,
+          child: _HomeFilterMenu<HomeFeedSort>(
+            key: const Key('home-sort-menu'),
+            label: state.query.sort.label,
+            tooltip: '选择主题排序',
+            values: HomeFeedSort.values,
+            selected: state.query.sort,
+            labelFor: (value) => value.label,
+            onSelected: onSortSelected,
+          ),
+        ),
+        SizedBox(width: tokens.space8),
+        Expanded(
+          flex: 11,
+          child: _HomeFilterMenu<HomeThreadStatusFilter>(
+            key: const Key('home-status-menu'),
+            label: state.query.status.label,
+            tooltip: '选择主题状态',
+            values: HomeThreadStatusFilter.values,
+            selected: state.query.status,
+            labelFor: (value) => value.label,
+            active: state.query.status != HomeThreadStatusFilter.all,
+            onSelected: onStatusSelected,
+          ),
         ),
       ],
     );
-  }
-
-  Future<void> _showStatusFilter(BuildContext context) async {
-    final selected = await showModalBottomSheet<HomeThreadStatusFilter>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => RadioGroup<HomeThreadStatusFilter>(
-        groupValue: state.query.status,
-        onChanged: (value) => Navigator.pop(context, value),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            const ListTile(title: Text('主题状态')),
-            for (final status in HomeThreadStatusFilter.values)
-              RadioListTile<HomeThreadStatusFilter>(
-                value: status,
-                title: Text(status.label),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (selected != null && selected != state.query.status) {
-      onStatusSelected(selected);
-    }
   }
 }
 
 class _HomeFilterMenu<T> extends StatelessWidget {
   const _HomeFilterMenu({
-    required this.icon,
     required this.label,
     required this.tooltip,
     required this.values,
     required this.selected,
     required this.labelFor,
     required this.onSelected,
+    this.active = false,
     super.key,
   });
 
-  final IconData icon;
   final String label;
   final String tooltip;
   final List<T> values;
   final T selected;
   final String Function(T value) labelFor;
   final ValueChanged<T> onSelected;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -435,6 +395,14 @@ class _HomeFilterMenu<T> extends StatelessWidget {
       initialValue: selected,
       tooltip: tooltip,
       onSelected: onSelected,
+      position: PopupMenuPosition.under,
+      offset: Offset(0, tokens.space4),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radius16),
+        side: BorderSide(color: tokens.border),
+      ),
+      constraints: const BoxConstraints(minWidth: 152, maxWidth: 260),
       itemBuilder: (context) => [
         for (final value in values)
           PopupMenuItem(
@@ -455,22 +423,36 @@ class _HomeFilterMenu<T> extends StatelessWidget {
       ],
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: tokens.softPanel,
-          border: Border.all(color: tokens.border),
-          borderRadius: BorderRadius.circular(tokens.radius16),
+          color: active ? tokens.accentedBackground : tokens.softPanel,
+          border: Border.all(
+            color: active
+                ? tokens.brand.withValues(alpha: 0.42)
+                : tokens.border,
+          ),
+          borderRadius: BorderRadius.circular(tokens.radius12),
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: tokens.space12),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 20),
-                SizedBox(width: tokens.space8),
-                Text(label, style: Theme.of(context).textTheme.labelLarge),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: active ? tokens.brand : null,
+                    ),
+                  ),
+                ),
                 SizedBox(width: tokens.space4),
-                const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: active ? tokens.brand : tokens.mutedText,
+                ),
               ],
             ),
           ),

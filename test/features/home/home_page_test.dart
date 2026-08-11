@@ -15,10 +15,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('发现主题'), findsNothing);
-    expect(find.text('角色扮演'), findsNWidgets(2));
+    expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('向星海出发'), findsOneWidget);
     expect(find.text('#太空歌剧'), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
     final tag = find.byKey(const Key('home-thread-tag-thread-1-tag-1'));
     expect(
       find.descendant(of: tag, matching: find.byType(InputChip)),
@@ -27,15 +28,17 @@ void main() {
     expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
     expect(find.text('8L 加油'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('home-category-RPG')));
+    await tester.tap(find.byKey(const Key('home-category-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PopupMenuItem<String>, '角色扮演'));
     await tester.pumpAndSettle();
     expect(repository.lastQuery?.categorySlug, 'RPG');
 
     await tester.tap(find.byKey(const Key('home-status-menu')));
     await tester.pumpAndSettle();
-    expect(find.text('主题状态'), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
     await tester.tap(
-      find.widgetWithText(RadioListTile<HomeThreadStatusFilter>, '招募中'),
+      find.widgetWithText(PopupMenuItem<HomeThreadStatusFilter>, '招募中'),
     );
     await tester.pumpAndSettle();
     expect(repository.lastQuery?.status, HomeThreadStatusFilter.recruiting);
@@ -81,11 +84,15 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(
-        tester.getSize(find.byKey(const Key('home-category-all'))).height,
+        tester.getSize(find.byKey(const Key('home-category-menu'))).height,
         greaterThanOrEqualTo(48),
       );
       expect(
         tester.getSize(find.byKey(const Key('home-sort-menu'))).height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('home-status-menu'))).height,
         greaterThanOrEqualTo(48),
       );
     });

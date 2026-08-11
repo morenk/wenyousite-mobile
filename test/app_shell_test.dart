@@ -40,7 +40,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
     expect(find.text('首页'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
     expect(find.text('搜索'), findsNothing);
@@ -117,7 +117,7 @@ void main() {
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
     expect(repository.calls, 2);
   });
 
@@ -189,7 +189,7 @@ void main() {
     await tester.tap(find.byKey(const Key('mobile-update-dismiss')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
     expect(dismissStore.dismissedBuild, 10);
   });
 
@@ -497,7 +497,7 @@ void main() {
     expect(find.text('当前登录已被撤销，请重新登录。'), findsOneWidget);
     await tester.tap(find.byKey(const Key('continue-as-guest')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('home-category-all')), findsOneWidget);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

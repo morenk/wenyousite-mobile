@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
@@ -119,8 +120,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       });
     }
     _revealTargetWhenReady(state, resolvedTarget);
-    return Scaffold(
+    final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
+    final scaffold = Scaffold(
       appBar: AppBar(
+        leading: BackButton(
+          key: const Key('thread-detail-back'),
+          onPressed: _leaveDetail,
+        ),
         title: const Text('主题详情'),
         actions: [
           if (state.detail case final detail? when !detail.isCurrentUserOwner)
@@ -200,6 +206,22 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                   : _requireLogin,
             ),
     );
+    return PopScope<Object?>(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && mounted) context.go(AppRouteLocations.home);
+      },
+      child: scaffold,
+    );
+  }
+
+  void _leaveDetail() {
+    final navigator = Navigator.maybeOf(context);
+    if (navigator?.canPop() ?? false) {
+      navigator!.pop();
+    } else {
+      context.go(AppRouteLocations.home);
+    }
   }
 
   Future<void> _openManagement() async {
