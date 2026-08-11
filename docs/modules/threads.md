@@ -12,6 +12,8 @@
 
 ## 3. 页面、入口和导航关系
 
+首页、标签与搜索的主题卡片都只展示默认主贴首图。首页与标签发现不展示已注销楼主的主题，显式搜索仍可进入这些公开历史内容。
+
 首页和搜索主题卡片进入命名路由 `/threads/:threadId`，详情标签进入公开 `/tags/:tagId`；详情工具栏进入公开 `/threads/:threadId/search` 搜索该主题全部子贴，结果使用 `/threads/:threadId?post=:postId` 回到同一详情页定位，楼层卡片再进入 `/threads/:threadId/posts/:postId/replies`。详情和独立讨论使用无入场过渡页面，避免阅读正文出现淡入。详情 capability 对管理者开放受保护的 `/threads/:threadId/manage`，标签、子贴目录和成员身份分别进入 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；已发布私密主题楼主在管理页刷新并复制 Web 兼容邀请。受保护路由 `/join/:token` 登录回跳后预览邀请，加入或已加入时进入稳定主题详情。保存后返回并刷新详情，删除成功清栈回首页。应用壳创建按钮进入受保护路由 `/compose/thread`，发布确认后替换到新主题详情。游客从互动、发帖、创建、管理或邀请入口登录时保留完整目标。当前子贴入口位于主题排头卡片，点击打开只允许纵向滚动的完整“主题目录”，选中项和各子贴楼层数同屏展示；左右按钮按 `sortOrder` 快速切换并首尾循环。任一方式都同时控制正文与楼层数据源，不提供横向滑动子贴列表。
 
 ## 4. 用户操作流程
@@ -99,7 +101,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.5.0-dev.20260809.1`；Markdown v2；后端 `437e76049a371ff8b6aee1b8a613dc864aa30f11`。
+契约 `4.5.2-dev.20260811.1`；Markdown v2；后端 `f99d59d832bb6136d6ff88f5142d1c5b6f9239d2`。
 
 ## 14. 相关代码与架构文档
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "4.5.0-dev.20260809.1",
+  "contractVersion": "4.5.2-dev.20260811.1",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },

@@ -20,7 +20,7 @@ part 'search_thread_response_dto.g.dart';
 /// * [createdAt] - 创建时间
 /// * [owner] - 楼主信息
 /// * [count] - 主题帖统计
-/// * [coverImages] - 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
+/// * [coverImages] - 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
 @BuiltValue()
 abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto, SearchThreadResponseDtoBuilder> {
   /// 主题帖 ID
@@ -47,7 +47,7 @@ abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto,
   @BuiltValueField(wireName: r'_count')
   SearchThreadCountResponseDto get count;
 
-  /// 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
+  /// 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
   @BuiltValueField(wireName: r'coverImages')
   BuiltList<String> get coverImages;
 

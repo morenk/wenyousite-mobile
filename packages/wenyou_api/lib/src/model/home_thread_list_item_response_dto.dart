@@ -32,7 +32,7 @@ part 'home_thread_list_item_response_dto.g.dart';
 /// * [topicTags]
 /// * [count]
 /// * [preview] - 首页列表正文预览
-/// * [coverImages] - 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
+/// * [coverImages] - 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
 @BuiltValue()
 abstract class HomeThreadListItemResponseDto implements Built<HomeThreadListItemResponseDto, HomeThreadListItemResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -88,7 +88,7 @@ abstract class HomeThreadListItemResponseDto implements Built<HomeThreadListItem
   @BuiltValueField(wireName: r'preview')
   String? get preview;
 
-  /// 默认主贴正文中的普通图片 URL，按出现顺序返回，最多 3 张
+  /// 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
   @BuiltValueField(wireName: r'coverImages')
   BuiltList<String> get coverImages;
 

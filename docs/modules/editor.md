@@ -73,7 +73,7 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.5.0-dev.20260809.1`；Markdown v2；后端 `437e76049a371ff8b6aee1b8a613dc864aa30f11`；Foundation `v1.1.0`（`4974b09a29d5d1c9632f4b2683c8d36c9e3c69bd`）。
+契约 `4.5.2-dev.20260811.1`；Markdown v2；后端 `f99d59d832bb6136d6ff88f5142d1c5b6f9239d2`；Foundation `v1.1.0`（`4974b09a29d5d1c9632f4b2683c8d36c9e3c69bd`）。
 
 ## 14. 相关代码与架构文档
 
