@@ -638,12 +638,7 @@ class _Centered extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: child,
-      ),
-    );
+    return WenyouConstrainedWidth(child: child);
   }
 }
 

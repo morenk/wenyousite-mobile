@@ -17,7 +17,6 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_card_action_s
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
-import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
@@ -245,8 +244,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (!mounted || targetContext == null) return;
       Scrollable.ensureVisible(
         targetContext,
-        duration: context.wenyouTokens.feedbackDuration,
-        curve: Curves.easeOut,
+        duration: Duration.zero,
         alignment: 0.12,
       );
     });
@@ -280,6 +278,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             detail: detail,
             categoryName:
                 widget.categoryNameHint ?? detail.categorySlug ?? '未分类',
+            selectedSubthreadId: state.selectedSubthreadId,
+            onSubthreadSelected: (id) =>
+                ref.read(provider.notifier).selectSubthread(id),
             onRequireAuthentication: () => context.pushNamed(
               'login',
               queryParameters: {'returnTo': _currentThreadLocation()},
@@ -318,30 +319,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         SliverToBoxAdapter(
           child: _DetailContent(
             top: 12,
-            child: _SubthreadSection(
-              detail: detail,
-              selectedSubthreadId: state.selectedSubthreadId!,
-              onSelected: (id) =>
-                  ref.read(provider.notifier).selectSubthread(id),
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: _DetailContent(
-            top: 12,
             child: _SubthreadBody(
               subthread: selected!,
               canEdit: detail.canManageThread,
               onEdit: () => _compose(_bodyTarget(detail, selected)),
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: _DetailContent(
-            top: 20,
-            child: WenyouSectionHeader(
-              title: '楼层',
-              subtitle: '${selected.postCount} 条内容，按发布时间升序阅读',
             ),
           ),
         ),

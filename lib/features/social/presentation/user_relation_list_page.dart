@@ -92,54 +92,45 @@ class _ReadyRelationList extends StatelessWidget {
         ),
         children: [
           if (state.actionFailure != null) ...[
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: WenyouStatusBanner(
-                  message: state.actionFailure!.userMessage,
-                  detail: state.actionFailure!.requestId == null
-                      ? null
-                      : '请求 ID：${state.actionFailure!.requestId}',
-                  tone: WenyouStatusTone.error,
-                  action: TextButton(
-                    key: const Key('user-relation-action-error-dismiss'),
-                    onPressed: onDismissFailure,
-                    child: const Text('知道了'),
-                  ),
+            WenyouConstrainedWidth(
+              child: WenyouStatusBanner(
+                message: state.actionFailure!.userMessage,
+                detail: state.actionFailure!.requestId == null
+                    ? null
+                    : '请求 ID：${state.actionFailure!.requestId}',
+                tone: WenyouStatusTone.error,
+                action: TextButton(
+                  key: const Key('user-relation-action-error-dismiss'),
+                  onPressed: onDismissFailure,
+                  child: const Text('知道了'),
                 ),
               ),
             ),
             SizedBox(height: tokens.space12),
           ],
           if (state.items.isEmpty)
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: WenyouPanel(
-                  child: WenyouEmptyState(
-                    icon: _emptyIcon(target.kind),
-                    title: _emptyTitle(target.kind),
-                    message: _emptyMessage(target.kind),
-                  ),
+            WenyouConstrainedWidth(
+              child: WenyouPanel(
+                child: WenyouEmptyState(
+                  icon: _emptyIcon(target.kind),
+                  title: _emptyTitle(target.kind),
+                  message: _emptyMessage(target.kind),
                 ),
               ),
             )
           else
             for (var index = 0; index < state.items.length; index++) ...[
               if (index > 0) SizedBox(height: tokens.space8),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: _RelationUserCard(
-                    item: state.items[index],
-                    showUnblock: target.kind == UserRelationListKind.blocks,
-                    isPending:
-                        state.pendingUnblockUserId == state.items[index].userId,
-                    disableUnblock:
-                        state.isMutating &&
-                        state.pendingUnblockUserId != state.items[index].userId,
-                    onUnblock: () => onUnblock(state.items[index].userId),
-                  ),
+              WenyouConstrainedWidth(
+                child: _RelationUserCard(
+                  item: state.items[index],
+                  showUnblock: target.kind == UserRelationListKind.blocks,
+                  isPending:
+                      state.pendingUnblockUserId == state.items[index].userId,
+                  disableUnblock:
+                      state.isMutating &&
+                      state.pendingUnblockUserId != state.items[index].userId,
+                  onUnblock: () => onUnblock(state.items[index].userId),
                 ),
               ),
             ],

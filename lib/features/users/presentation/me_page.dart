@@ -254,12 +254,7 @@ class _MePageList extends StatelessWidget {
       children: [
         for (var index = 0; index < children.length; index++) ...[
           if (index > 0) SizedBox(height: tokens.space12),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: children[index],
-            ),
-          ),
+          WenyouConstrainedWidth(child: children[index]),
         ],
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 
@@ -37,12 +38,17 @@ void main() {
 
     await tester.pumpWidget(app(const {}));
     expect(find.text('1d20 = ?'), findsOneWidget);
+    final markdownElement = tester.element(find.byType(MarkdownBody));
 
     await tester.pumpWidget(app(const {nodeId: '1d20 = 16'}));
     await tester.pump();
 
     expect(find.text('1d20 = ?'), findsNothing);
     expect(find.text('1d20 = 16'), findsOneWidget);
+    expect(
+      identical(markdownElement, tester.element(find.byType(MarkdownBody))),
+      isTrue,
+    );
   });
 
   testWidgets('代码与转义内容中的骰子表达式保持原文', (tester) async {

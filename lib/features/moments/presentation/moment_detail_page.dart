@@ -244,22 +244,19 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   horizontal,
                   tokens.space16,
                 ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600),
-                    child: _MomentCommentComposer(
-                      replyTo: currentReplyTo,
-                      isSending: state.isSendingComment,
-                      onCancelReply: () =>
-                          setSheetState(() => currentReplyTo = null),
-                      onClose: () => Navigator.of(sheetContext).pop(),
-                      onSend: (input) async {
-                        final created = await sheetRef
-                            .read(provider.notifier)
-                            .sendComment(input);
-                        return created != null;
-                      },
-                    ),
+                child: WenyouConstrainedWidth(
+                  child: _MomentCommentComposer(
+                    replyTo: currentReplyTo,
+                    isSending: state.isSendingComment,
+                    onCancelReply: () =>
+                        setSheetState(() => currentReplyTo = null),
+                    onClose: () => Navigator.of(sheetContext).pop(),
+                    onSend: (input) async {
+                      final created = await sheetRef
+                          .read(provider.notifier)
+                          .sendComment(input);
+                      return created != null;
+                    },
                   ),
                 ),
               ),

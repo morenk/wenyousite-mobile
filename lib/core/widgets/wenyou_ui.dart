@@ -1,6 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
+class WenyouConstrainedWidth extends StatelessWidget {
+  const WenyouConstrainedWidth({
+    required this.child,
+    this.maxWidth = 600,
+    super.key,
+  });
+
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    );
+  }
+}
+
 class WenyouPageBody extends StatelessWidget {
   const WenyouPageBody({
     required this.child,
@@ -29,12 +50,7 @@ class WenyouPageBody extends StatelessWidget {
               horizontalPadding,
               bottomPadding,
             ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: child,
-              ),
-            ),
+            child: WenyouConstrainedWidth(maxWidth: maxWidth, child: child),
           );
         },
       ),

@@ -4,6 +4,43 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 void main() {
+  testWidgets('纵向内容宽度只由可用空间和最大宽度决定', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 240);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: WenyouConstrainedWidth(
+              child: ColoredBox(
+                key: Key('full-width-content'),
+                color: Colors.pink,
+                child: Text('短'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byKey(const Key('full-width-content'))).width,
+      336,
+    );
+
+    tester.view.physicalSize = const Size(900, 240);
+    await tester.pump();
+    expect(
+      tester.getSize(find.byKey(const Key('full-width-content'))).width,
+      600,
+    );
+  });
+
   testWidgets('常驻输入入口在 360dp 下保留页面边距与 48dp 命中区', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 240);

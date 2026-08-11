@@ -204,12 +204,7 @@ class _HomeContent extends StatelessWidget {
         : tokens.space24;
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: child,
-        ),
-      ),
+      child: WenyouConstrainedWidth(child: child),
     );
   }
 }

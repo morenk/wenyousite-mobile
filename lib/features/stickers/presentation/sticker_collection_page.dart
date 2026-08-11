@@ -86,163 +86,159 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
           tokens.space24,
         ),
         children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 680),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const WenyouSectionHeader(
-                    title: '收藏表情',
-                    subtitle: '可从相册添加，也可在帖子图片或私聊图片旁收藏。长按拖动即可排序。',
+          WenyouConstrainedWidth(
+            maxWidth: 680,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const WenyouSectionHeader(
+                  title: '收藏表情',
+                  subtitle: '可从相册添加，也可在帖子图片或私聊图片旁收藏。长按拖动即可排序。',
+                ),
+                SizedBox(height: tokens.space12),
+                if (state.transientFailure != null) ...[
+                  WenyouStatusBanner(
+                    key: const Key('stickers-action-failure'),
+                    tone: WenyouStatusTone.error,
+                    message: state.transientFailure!.userMessage,
+                    detail: state.transientFailure!.requestId == null
+                        ? null
+                        : '请求 ID：${state.transientFailure!.requestId}',
+                    action: state.retrySource == null
+                        ? TextButton(
+                            onPressed: state.isBusy ? null : notifier.load,
+                            child: const Text('刷新'),
+                          )
+                        : TextButton(
+                            key: const Key('stickers-retry-import'),
+                            onPressed: state.isBusy
+                                ? null
+                                : notifier.retryImport,
+                            child: const Text('使用原请求重试'),
+                          ),
                   ),
                   SizedBox(height: tokens.space12),
-                  if (state.transientFailure != null) ...[
-                    WenyouStatusBanner(
-                      key: const Key('stickers-action-failure'),
-                      tone: WenyouStatusTone.error,
-                      message: state.transientFailure!.userMessage,
-                      detail: state.transientFailure!.requestId == null
-                          ? null
-                          : '请求 ID：${state.transientFailure!.requestId}',
-                      action: state.retrySource == null
-                          ? TextButton(
-                              onPressed: state.isBusy ? null : notifier.load,
-                              child: const Text('刷新'),
-                            )
-                          : TextButton(
-                              key: const Key('stickers-retry-import'),
-                              onPressed: state.isBusy
-                                  ? null
-                                  : notifier.retryImport,
-                              child: const Text('使用原请求重试'),
+                ],
+                if (_uploadFailure != null) ...[
+                  WenyouStatusBanner(
+                    tone: WenyouStatusTone.error,
+                    message: _uploadFailure!.userMessage,
+                    detail: _uploadFailure!.requestId == null
+                        ? null
+                        : '请求 ID：${_uploadFailure!.requestId}',
+                  ),
+                  SizedBox(height: tokens.space12),
+                ],
+                if (state.successMessage != null) ...[
+                  WenyouStatusBanner(
+                    tone: WenyouStatusTone.accent,
+                    message: state.successMessage!,
+                  ),
+                  SizedBox(height: tokens.space12),
+                ],
+                WenyouPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${collection.items.length}/${collection.limit} 个收藏',
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                    ),
-                    SizedBox(height: tokens.space12),
-                  ],
-                  if (_uploadFailure != null) ...[
-                    WenyouStatusBanner(
-                      tone: WenyouStatusTone.error,
-                      message: _uploadFailure!.userMessage,
-                      detail: _uploadFailure!.requestId == null
-                          ? null
-                          : '请求 ID：${_uploadFailure!.requestId}',
-                    ),
-                    SizedBox(height: tokens.space12),
-                  ],
-                  if (state.successMessage != null) ...[
-                    WenyouStatusBanner(
-                      tone: WenyouStatusTone.accent,
-                      message: state.successMessage!,
-                    ),
-                    SizedBox(height: tokens.space12),
-                  ],
-                  WenyouPanel(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                          ),
+                          FilledButton.icon(
+                            key: const Key('stickers-add-gallery'),
+                            onPressed:
+                                state.isBusy || _uploading || collection.isFull
+                                ? null
+                                : _addFromGallery,
+                            icon: _uploading
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                  ),
+                            label: Text(_uploading ? '处理中' : '从相册添加'),
+                          ),
+                        ],
+                      ),
+                      if (_uploadProgress != null) ...[
+                        SizedBox(height: tokens.space12),
                         Row(
                           children: [
                             Expanded(
                               child: Text(
-                                '${collection.items.length}/${collection.limit} 个收藏',
-                                style: Theme.of(context).textTheme.titleMedium,
+                                _uploadProgressLabel(_uploadProgress!),
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
-                            FilledButton.icon(
-                              key: const Key('stickers-add-gallery'),
-                              onPressed:
-                                  state.isBusy ||
-                                      _uploading ||
-                                      collection.isFull
-                                  ? null
-                                  : _addFromGallery,
-                              icon: _uploading
-                                  ? const SizedBox.square(
-                                      dimension: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.add_photo_alternate_outlined,
-                                    ),
-                              label: Text(_uploading ? '处理中' : '从相册添加'),
+                            TextButton(
+                              onPressed: () =>
+                                  _uploadCancelToken?.cancel('user canceled'),
+                              child: const Text('取消'),
                             ),
                           ],
                         ),
-                        if (_uploadProgress != null) ...[
-                          SizedBox(height: tokens.space12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _uploadProgressLabel(_uploadProgress!),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    _uploadCancelToken?.cancel('user canceled'),
-                                child: const Text('取消'),
-                              ),
-                            ],
-                          ),
-                          LinearProgressIndicator(
-                            value: _uploadProgress!.fraction,
-                          ),
-                        ],
-                        if (collection.pendingImports.isNotEmpty) ...[
-                          SizedBox(height: tokens.space12),
-                          Text(
-                            '正在处理 ${collection.pendingImports.length} 个表情，页面会自动刷新。',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                        LinearProgressIndicator(
+                          value: _uploadProgress!.fraction,
+                        ),
                       ],
+                      if (collection.pendingImports.isNotEmpty) ...[
+                        SizedBox(height: tokens.space12),
+                        Text(
+                          '正在处理 ${collection.pendingImports.length} 个表情，页面会自动刷新。',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(height: tokens.space12),
+                if (collection.items.isEmpty)
+                  const WenyouPanel(
+                    child: WenyouEmptyState(
+                      icon: Icons.add_reaction_outlined,
+                      title: '还没有收藏表情',
+                      message: '从相册添加一张图片，或在帖子与私聊图片旁点按收藏。',
+                    ),
+                  )
+                else
+                  WenyouPanel(
+                    padding: EdgeInsets.zero,
+                    child: ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      itemCount: collection.items.length,
+                      onReorderItem: (oldIndex, newIndex) {
+                        if (state.isBusy) return;
+                        final items = [...collection.items];
+                        final item = items.removeAt(oldIndex);
+                        items.insert(newIndex, item);
+                        notifier.reorder(items);
+                      },
+                      itemBuilder: (context, index) {
+                        final sticker = collection.items[index];
+                        return _StickerListTile(
+                          key: ValueKey(sticker.id),
+                          sticker: sticker,
+                          index: index,
+                          removing:
+                              state.action == StickerAction.removing &&
+                              state.actionTarget == sticker.id,
+                          disabled: state.isBusy || _uploading,
+                          onRemove: () => _confirmRemove(sticker),
+                        );
+                      },
                     ),
                   ),
-                  SizedBox(height: tokens.space12),
-                  if (collection.items.isEmpty)
-                    const WenyouPanel(
-                      child: WenyouEmptyState(
-                        icon: Icons.add_reaction_outlined,
-                        title: '还没有收藏表情',
-                        message: '从相册添加一张图片，或在帖子与私聊图片旁点按收藏。',
-                      ),
-                    )
-                  else
-                    WenyouPanel(
-                      padding: EdgeInsets.zero,
-                      child: ReorderableListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        buildDefaultDragHandles: false,
-                        itemCount: collection.items.length,
-                        onReorderItem: (oldIndex, newIndex) {
-                          if (state.isBusy) return;
-                          final items = [...collection.items];
-                          final item = items.removeAt(oldIndex);
-                          items.insert(newIndex, item);
-                          notifier.reorder(items);
-                        },
-                        itemBuilder: (context, index) {
-                          final sticker = collection.items[index];
-                          return _StickerListTile(
-                            key: ValueKey(sticker.id),
-                            sticker: sticker,
-                            index: index,
-                            removing:
-                                state.action == StickerAction.removing &&
-                                state.actionTarget == sticker.id,
-                            disabled: state.isBusy || _uploading,
-                            onRemove: () => _confirmRemove(sticker),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
         ],

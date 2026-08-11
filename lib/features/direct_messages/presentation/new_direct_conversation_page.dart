@@ -226,8 +226,8 @@ class _TargetReady extends StatelessWidget {
           child: Center(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(tokens.space24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
+              child: WenyouConstrainedWidth(
+                maxWidth: 520,
                 child: WenyouPanel(
                   child: Column(
                     children: [

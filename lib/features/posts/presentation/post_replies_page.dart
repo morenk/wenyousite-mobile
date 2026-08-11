@@ -246,125 +246,118 @@ class _DiscussionList extends StatelessWidget {
         tokens.space32,
       ),
       children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  root.threadTitle ?? '主题',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                ),
-                SizedBox(height: tokens.space4),
-                Text(
-                  root.subthreadTitle ?? '子贴',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                SizedBox(height: tokens.space12),
-                if (actions.failure != null) ...[
-                  WenyouStatusBanner(
-                    message: actions.failure!.userMessage,
-                    detail: _failureDetail(actions.failure),
-                    tone: WenyouStatusTone.error,
-                  ),
-                  SizedBox(height: tokens.space12),
-                ],
-                _PostCard(
-                  key: const Key('post-discussion-root'),
-                  post: root,
-                  root: true,
-                  canEdit: root.isAuthoredBy(viewerId),
-                  canDelete: root.isAuthoredBy(viewerId),
-                  pending: actions.pendingPostId == root.id,
-                  reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
-                      ? _reportLocation(root, root.id)
-                      : null,
-                  onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
-                  onDelete: () => onDelete(root, true),
-                ),
-                SizedBox(height: tokens.space20),
-                WenyouSectionHeader(
-                  title: '楼中楼讨论',
-                  subtitle: '共 ${root.replyCount} 条回复',
+        WenyouConstrainedWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                root.threadTitle ?? '主题',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ),
+              SizedBox(height: tokens.space4),
+              Text(
+                root.subthreadTitle ?? '子贴',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              SizedBox(height: tokens.space12),
+              if (actions.failure != null) ...[
+                WenyouStatusBanner(
+                  message: actions.failure!.userMessage,
+                  detail: _failureDetail(actions.failure),
+                  tone: WenyouStatusTone.error,
                 ),
                 SizedBox(height: tokens.space12),
-                _ReplyFilters(
-                  state: state,
-                  authors: authors.values.toList(growable: false),
-                  onOrder: onOrder,
-                  onAuthor: onAuthor,
-                ),
-                SizedBox(height: tokens.space12),
-                if (state.transientFailure != null) ...[
-                  WenyouStatusBanner(
-                    message: state.transientFailure!.userMessage,
-                    detail: _failureDetail(state.transientFailure),
-                    tone: WenyouStatusTone.error,
-                    action: TextButton(
-                      onPressed: onLoadMore,
-                      child: const Text('重试'),
-                    ),
-                  ),
-                  SizedBox(height: tokens.space12),
-                ],
-                if (state.replies.isEmpty)
-                  const WenyouEmptyState(
-                    icon: Icons.forum_outlined,
-                    title: '还没有回复',
-                    message: '成为这段讨论的第一位回复者。',
-                  )
-                else
-                  for (
-                    var index = 0;
-                    index < state.replies.length;
-                    index++
-                  ) ...[
-                    if (index > 0) Divider(height: tokens.space24),
-                    _PostCard(
-                      key: Key('post-reply-${state.replies[index].id}'),
-                      post: state.replies[index],
-                      focused: state.replies[index].id == focusedReplyId,
-                      canEdit: state.replies[index].isAuthoredBy(viewerId),
-                      canDelete: state.replies[index].isAuthoredBy(viewerId),
-                      pending: actions.pendingPostId == state.replies[index].id,
-                      reportReturnTo:
-                          reportsEnabled &&
-                              !state.replies[index].isAuthoredBy(viewerId)
-                          ? _reportLocation(root, state.replies[index].id)
-                          : null,
-                      onReply: authenticated
-                          ? () => onCompose(
-                              _replyTarget(root, state.replies[index]),
-                            )
-                          : null,
-                      onEdit: () =>
-                          onCompose(_editTarget(state.replies[index], '编辑回复')),
-                      onDelete: () => onDelete(state.replies[index], false),
-                    ),
-                  ],
-                if (state.hasMore) ...[
-                  SizedBox(height: tokens.space12),
-                  OutlinedButton.icon(
-                    key: const Key('post-replies-load-more'),
-                    onPressed: state.isLoadingMore ? null : onLoadMore,
-                    icon: state.isLoadingMore
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.expand_more_rounded),
-                    label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
-                  ),
-                ],
               ],
-            ),
+              _PostCard(
+                key: const Key('post-discussion-root'),
+                post: root,
+                root: true,
+                canEdit: root.isAuthoredBy(viewerId),
+                canDelete: root.isAuthoredBy(viewerId),
+                pending: actions.pendingPostId == root.id,
+                reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
+                    ? _reportLocation(root, root.id)
+                    : null,
+                onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
+                onDelete: () => onDelete(root, true),
+              ),
+              SizedBox(height: tokens.space20),
+              WenyouSectionHeader(
+                title: '楼中楼讨论',
+                subtitle: '共 ${root.replyCount} 条回复',
+              ),
+              SizedBox(height: tokens.space12),
+              _ReplyFilters(
+                state: state,
+                authors: authors.values.toList(growable: false),
+                onOrder: onOrder,
+                onAuthor: onAuthor,
+              ),
+              SizedBox(height: tokens.space12),
+              if (state.transientFailure != null) ...[
+                WenyouStatusBanner(
+                  message: state.transientFailure!.userMessage,
+                  detail: _failureDetail(state.transientFailure),
+                  tone: WenyouStatusTone.error,
+                  action: TextButton(
+                    onPressed: onLoadMore,
+                    child: const Text('重试'),
+                  ),
+                ),
+                SizedBox(height: tokens.space12),
+              ],
+              if (state.replies.isEmpty)
+                const WenyouEmptyState(
+                  icon: Icons.forum_outlined,
+                  title: '还没有回复',
+                  message: '成为这段讨论的第一位回复者。',
+                )
+              else
+                for (var index = 0; index < state.replies.length; index++) ...[
+                  if (index > 0) Divider(height: tokens.space24),
+                  _PostCard(
+                    key: Key('post-reply-${state.replies[index].id}'),
+                    post: state.replies[index],
+                    focused: state.replies[index].id == focusedReplyId,
+                    canEdit: state.replies[index].isAuthoredBy(viewerId),
+                    canDelete: state.replies[index].isAuthoredBy(viewerId),
+                    pending: actions.pendingPostId == state.replies[index].id,
+                    reportReturnTo:
+                        reportsEnabled &&
+                            !state.replies[index].isAuthoredBy(viewerId)
+                        ? _reportLocation(root, state.replies[index].id)
+                        : null,
+                    onReply: authenticated
+                        ? () => onCompose(
+                            _replyTarget(root, state.replies[index]),
+                          )
+                        : null,
+                    onEdit: () =>
+                        onCompose(_editTarget(state.replies[index], '编辑回复')),
+                    onDelete: () => onDelete(state.replies[index], false),
+                  ),
+                ],
+              if (state.hasMore) ...[
+                SizedBox(height: tokens.space12),
+                OutlinedButton.icon(
+                  key: const Key('post-replies-load-more'),
+                  onPressed: state.isLoadingMore ? null : onLoadMore,
+                  icon: state.isLoadingMore
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.expand_more_rounded),
+                  label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
+                ),
+              ],
+            ],
           ),
         ),
       ],

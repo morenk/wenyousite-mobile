@@ -174,12 +174,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/threads/:threadId/posts/:postId/replies',
         name: 'post-replies',
-        builder: (context, state) {
-          return PostRepliesPage(
-            threadId: state.pathParameters['threadId']!,
-            rootPostId: state.pathParameters['postId']!,
-            focusedReplyId: state.uri.queryParameters['post'],
-            reportsEnabled: state.uri.queryParameters['reports'] == '1',
+        pageBuilder: (context, state) {
+          return NoTransitionPage<void>(
+            key: state.pageKey,
+            child: PostRepliesPage(
+              threadId: state.pathParameters['threadId']!,
+              rootPostId: state.pathParameters['postId']!,
+              focusedReplyId: state.uri.queryParameters['post'],
+              reportsEnabled: state.uri.queryParameters['reports'] == '1',
+            ),
           );
         },
       ),
@@ -228,12 +231,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/threads/:threadId',
         name: 'thread-detail',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra;
-          return ThreadDetailPage(
-            threadId: state.pathParameters['threadId']!,
-            categoryNameHint: extra is String ? extra : null,
-            targetPostId: state.uri.queryParameters['post'],
+          return NoTransitionPage<void>(
+            key: state.pageKey,
+            child: ThreadDetailPage(
+              threadId: state.pathParameters['threadId']!,
+              categoryNameHint: extra is String ? extra : null,
+              targetPostId: state.uri.queryParameters['post'],
+            ),
           );
         },
       ),

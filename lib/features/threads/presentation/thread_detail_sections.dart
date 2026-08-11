@@ -15,12 +15,7 @@ class _DetailContent extends StatelessWidget {
         : tokens.space24;
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: child,
-        ),
-      ),
+      child: WenyouConstrainedWidth(child: child),
     );
   }
 }
@@ -115,21 +110,25 @@ class _DetailTransientFailure extends StatelessWidget {
   }
 }
 
-class _ThreadOverview extends ConsumerWidget {
+class _ThreadOverview extends StatelessWidget {
   const _ThreadOverview({
     required this.detail,
     required this.categoryName,
+    required this.selectedSubthreadId,
+    required this.onSubthreadSelected,
     required this.onRequireAuthentication,
     required this.onPlayerExited,
   });
 
   final ThreadDetailModel detail;
   final String categoryName;
+  final String? selectedSubthreadId;
+  final ValueChanged<String> onSubthreadSelected;
   final VoidCallback onRequireAuthentication;
   final Future<void> Function() onPlayerExited;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final interactionTarget = ThreadInteractionTarget(
       threadId: detail.id,
@@ -138,46 +137,36 @@ class _ThreadOverview extends ConsumerWidget {
       isBookmarked: detail.isBookmarked,
       bookmarkId: detail.bookmarkId,
     );
-    final interactionState = ref.watch(
-      threadInteractionControllerProvider(interactionTarget),
-    );
+    final contextLabels = <String>[
+      if (detail.isPinned) '置顶',
+      categoryName,
+      detail.status.label,
+      if (detail.isPrivate) '私密',
+    ];
     return WenyouPanel(
       padding: EdgeInsets.all(tokens.space16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _AuthorLine(author: detail.owner, time: detail.updatedAt),
-          SizedBox(height: tokens.space12),
-          Wrap(
-            spacing: tokens.space8,
-            runSpacing: tokens.space4,
-            children: [
-              if (detail.isPinned)
-                const _DetailPill(
-                  icon: Icons.push_pin_rounded,
-                  label: '置顶',
-                  accent: true,
-                ),
-              _DetailPill(icon: Icons.folder_open_rounded, label: categoryName),
-              _DetailPill(
-                icon: _statusIcon(detail.status),
-                label: detail.status.label,
-                accent: detail.status == ThreadDetailStatus.recruiting,
-              ),
-              if (detail.isPrivate)
-                const _DetailPill(
-                  icon: Icons.lock_outline_rounded,
-                  label: '私密',
-                ),
-            ],
-          ),
-          SizedBox(height: tokens.space12),
           Semantics(
             header: true,
             child: Text(
               detail.title,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
+          ),
+          SizedBox(height: tokens.space8),
+          Text(
+            contextLabels.join(' · '),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ),
+          SizedBox(height: tokens.space12),
+          _AuthorLine(
+            author: detail.owner,
+            time: detail.updatedAt,
+            compact: true,
           ),
           if (detail.tags.isNotEmpty) ...[
             SizedBox(height: tokens.space12),
@@ -197,43 +186,14 @@ class _ThreadOverview extends ConsumerWidget {
               ],
             ),
           ],
-          SizedBox(height: tokens.space16),
-          Divider(color: tokens.border),
-          SizedBox(height: tokens.space12),
-          Wrap(
-            spacing: tokens.space16,
-            runSpacing: tokens.space8,
-            children: [
-              _DetailStat(
-                icon: Icons.people_outline_rounded,
-                label: '${detail.memberCount} 成员',
-              ),
-              _DetailStat(
-                icon: Icons.theater_comedy_outlined,
-                label: '${detail.playerCount} 玩家',
-              ),
-              _DetailStat(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: '${detail.postCount} 楼层',
-              ),
-              _DetailStat(
-                icon: Icons.visibility_outlined,
-                label: '${detail.viewCount} 浏览',
-              ),
-              _DetailStat(
-                icon: Icons.favorite_border_rounded,
-                label: '${interactionState.likeCount} 喜欢',
-              ),
-              if (detail.tipTotal != '0')
-                _DetailStat(
-                  icon: Icons.local_gas_station_outlined,
-                  label: '${WenyouAmount.format(detail.tipTotal)}L 加油',
-                  accent: true,
-                ),
-            ],
-          ),
-          SizedBox(height: tokens.space12),
-          Divider(color: tokens.border),
+          if (detail.subthreads.isNotEmpty && selectedSubthreadId != null) ...[
+            SizedBox(height: tokens.space12),
+            _SubthreadNavigator(
+              subthreads: detail.subthreads,
+              selectedSubthreadId: selectedSubthreadId!,
+              onSelected: onSubthreadSelected,
+            ),
+          ],
           SizedBox(height: tokens.space12),
           ThreadInteractionActions(
             target: interactionTarget,
@@ -254,73 +214,104 @@ class _ThreadOverview extends ConsumerWidget {
       ),
     );
   }
-
-  static IconData _statusIcon(ThreadDetailStatus status) {
-    return switch (status) {
-      ThreadDetailStatus.recruiting => Icons.group_add_outlined,
-      ThreadDetailStatus.closed => Icons.lock_outline_rounded,
-      ThreadDetailStatus.finished => Icons.check_circle_outline_rounded,
-      ThreadDetailStatus.unknown => Icons.help_outline_rounded,
-    };
-  }
 }
 
-class _SubthreadSection extends StatelessWidget {
-  const _SubthreadSection({
-    required this.detail,
+class _SubthreadNavigator extends StatelessWidget {
+  const _SubthreadNavigator({
+    required this.subthreads,
     required this.selectedSubthreadId,
     required this.onSelected,
   });
 
-  final ThreadDetailModel detail;
+  final List<ThreadSubthreadModel> subthreads;
   final String selectedSubthreadId;
   final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const WenyouSectionHeader(title: '子贴', subtitle: '切换不同章节，正文与楼层会同步更新'),
-          SizedBox(height: tokens.space12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+    final selectedIndex = subthreads.indexWhere(
+      (subthread) => subthread.id == selectedSubthreadId,
+    );
+    final safeIndex = selectedIndex < 0 ? 0 : selectedIndex;
+    final selected = subthreads[safeIndex];
+    return Row(
+      children: [
+        IconButton(
+          key: const Key('thread-subthread-previous'),
+          onPressed: safeIndex == 0
+              ? null
+              : () => onSelected(subthreads[safeIndex - 1].id),
+          tooltip: '上一个子贴',
+          icon: const Icon(Icons.chevron_left_rounded),
+        ),
+        SizedBox(width: tokens.space4),
+        Expanded(
+          child: OutlinedButton(
+            key: const Key('thread-subthread-menu'),
+            onPressed: () => _showSubthreads(context),
+            style: OutlinedButton.styleFrom(
+              minimumSize: Size(0, tokens.minimumTouchTarget),
+              padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+            ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (
-                  var index = 0;
-                  index < detail.subthreads.length;
-                  index++
-                ) ...[
-                  if (index > 0) SizedBox(width: tokens.space8),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: tokens.minimumTouchTarget,
-                    ),
-                    child: ChoiceChip(
-                      key: Key(
-                        'thread-subthread-${detail.subthreads[index].id}',
-                      ),
-                      selected:
-                          detail.subthreads[index].id == selectedSubthreadId,
-                      onSelected: (_) =>
-                          onSelected(detail.subthreads[index].id),
-                      label: Text(
-                        '${detail.subthreads[index].title} · '
-                        '${detail.subthreads[index].postCount}',
-                      ),
-                    ),
+                Flexible(
+                  child: Text(
+                    selected.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                ),
+                SizedBox(width: tokens.space4),
+                const Icon(Icons.expand_more_rounded, size: 18),
               ],
             ),
           ),
-        ],
+        ),
+        SizedBox(width: tokens.space4),
+        IconButton(
+          key: const Key('thread-subthread-next'),
+          onPressed: safeIndex >= subthreads.length - 1
+              ? null
+              : () => onSelected(subthreads[safeIndex + 1].id),
+          tooltip: '下一个子贴',
+          icon: const Icon(Icons.chevron_right_rounded),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showSubthreads(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: subthreads.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final subthread = subthreads[index];
+            final isSelected = subthread.id == selectedSubthreadId;
+            return ListTile(
+              key: Key('thread-subthread-${subthread.id}'),
+              minTileHeight: context.wenyouTokens.minimumTouchTarget,
+              title: Text(subthread.title),
+              trailing: isSelected
+                  ? Icon(Icons.check_rounded, color: context.wenyouTokens.brand)
+                  : null,
+              onTap: () => Navigator.pop(context, subthread.id),
+            );
+          },
+        ),
       ),
     );
+    if (selected != null && selected != selectedSubthreadId) {
+      onSelected(selected);
+    }
   }
 }
 
@@ -344,25 +335,19 @@ class _SubthreadBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          WenyouSectionHeader(
-            title: subthread.title,
-            subtitle:
-                '${subthread.postingPolicyLabel} · '
-                '${subthread.postCount} 条内容',
-            trailing: canEdit
-                ? TextButton.icon(
-                    key: const Key('thread-body-edit'),
-                    onPressed: onEdit,
-                    icon: Icon(
-                      body == null
-                          ? Icons.note_add_outlined
-                          : Icons.edit_outlined,
-                    ),
-                    label: Text(body == null ? '添加正文' : '编辑正文'),
-                  )
-                : null,
-          ),
-          SizedBox(height: tokens.space16),
+          if (canEdit)
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                key: const Key('thread-body-edit'),
+                onPressed: onEdit,
+                tooltip: body == null ? '添加正文' : '编辑正文',
+                icon: Icon(
+                  body == null ? Icons.note_add_outlined : Icons.edit_outlined,
+                ),
+              ),
+            ),
+          if (canEdit) SizedBox(height: tokens.space4),
           if (body == null || body.markdown.trim().isEmpty)
             Text(
               '这个子贴还没有正文。',
@@ -1006,77 +991,6 @@ class _AuthorLine extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailPill extends StatelessWidget {
-  const _DetailPill({
-    required this.icon,
-    required this.label,
-    this.accent = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: accent ? tokens.accentedBackground : tokens.softPanel,
-        border: Border.all(color: tokens.border),
-        borderRadius: BorderRadius.circular(tokens.radiusPill),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.space8,
-          vertical: tokens.space4,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: accent ? tokens.brand : tokens.mutedText,
-            ),
-            SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailStat extends StatelessWidget {
-  const _DetailStat({
-    required this.icon,
-    required this.label,
-    this.accent = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final color = accent ? tokens.brand : tokens.mutedText;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        SizedBox(width: tokens.space4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
         ),
       ],
     );

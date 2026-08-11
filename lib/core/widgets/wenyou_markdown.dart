@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -10,7 +11,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
-class WenyouMarkdown extends StatelessWidget {
+class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
     required this.data,
     this.diceLabels = const {},
@@ -29,60 +30,96 @@ class WenyouMarkdown extends StatelessWidget {
   final double bodyHeight;
 
   @override
+  State<WenyouMarkdown> createState() => _WenyouMarkdownState();
+}
+
+class _WenyouMarkdownState extends State<WenyouMarkdown> {
+  late final ValueNotifier<Map<String, String>> _diceLabels;
+  MarkdownStyleSheet? _styleSheet;
+
+  @override
+  void initState() {
+    super.initState();
+    _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _styleSheet = _createStyleSheet(context);
+  }
+
+  @override
+  void didUpdateWidget(covariant WenyouMarkdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!mapEquals(oldWidget.diceLabels, widget.diceLabels)) {
+      _diceLabels.value = Map.unmodifiable(widget.diceLabels);
+    }
+    if (oldWidget.bodyFontSize != widget.bodyFontSize ||
+        oldWidget.bodyHeight != widget.bodyHeight) {
+      _styleSheet = _createStyleSheet(context);
+    }
+  }
+
+  @override
+  void dispose() {
+    _diceLabels.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return MarkdownBody(
+      data: MarkdownContent.normalize(widget.data),
+      selectable: true,
+      softLineBreak: true,
+      styleSheet: _styleSheet,
+      inlineSyntaxes: [_DiceInlineSyntax()],
+      builders: {'wenyou-dice': _DiceMarkdownBuilder(_diceLabels)},
+      onTapLink: (_, href, _) => _openLink(context, href),
+      imageBuilder: (uri, title, alt) => _MarkdownImage(
+        uri: uri,
+        title: title,
+        alt: alt,
+        onSave: widget.onSaveImage,
+      ),
+    );
+  }
+
+  MarkdownStyleSheet _createStyleSheet(BuildContext context) {
     final tokens = context.wenyouTokens;
     final theme = Theme.of(context);
     final baseStyle = MarkdownStyleSheet.fromTheme(theme);
     final bodyStyle = theme.textTheme.bodyLarge?.copyWith(
-      fontSize: bodyFontSize,
-      height: bodyHeight,
+      fontSize: widget.bodyFontSize,
+      height: widget.bodyHeight,
     );
-    return MarkdownBody(
-      key: ValueKey<Object>(
-        Object.hash(
-          data,
-          Object.hashAllUnordered(
-            diceLabels.entries.map(
-              (entry) => Object.hash(entry.key, entry.value),
-            ),
-          ),
-        ),
+    return baseStyle.copyWith(
+      p: bodyStyle,
+      a: bodyStyle?.copyWith(
+        color: tokens.brand,
+        decoration: TextDecoration.underline,
+        decorationColor: tokens.brand,
       ),
-      data: MarkdownContent.normalize(data),
-      selectable: true,
-      softLineBreak: true,
-      styleSheet: baseStyle.copyWith(
-        p: bodyStyle,
-        a: bodyStyle?.copyWith(
-          color: tokens.brand,
-          decoration: TextDecoration.underline,
-          decorationColor: tokens.brand,
-        ),
-        blockSpacing: tokens.space12,
-        code: theme.textTheme.bodyMedium?.copyWith(
-          color: tokens.text,
-          backgroundColor: tokens.softPanel,
-        ),
-        codeblockPadding: EdgeInsets.all(tokens.space12),
-        codeblockDecoration: BoxDecoration(
-          color: tokens.softPanel,
-          border: Border.all(color: tokens.border),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        blockquotePadding: EdgeInsets.all(tokens.space12),
-        blockquoteDecoration: BoxDecoration(
-          color: tokens.softPanel,
-          border: Border(left: BorderSide(color: tokens.brand, width: 3)),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        tableBorder: TableBorder.all(color: tokens.border),
-        tableCellsPadding: EdgeInsets.all(tokens.space8),
+      blockSpacing: tokens.space12,
+      code: theme.textTheme.bodyMedium?.copyWith(
+        color: tokens.text,
+        backgroundColor: tokens.softPanel,
       ),
-      inlineSyntaxes: [_DiceInlineSyntax()],
-      builders: {'wenyou-dice': _DiceMarkdownBuilder(diceLabels)},
-      onTapLink: (_, href, _) => _openLink(context, href),
-      imageBuilder: (uri, title, alt) =>
-          _MarkdownImage(uri: uri, title: title, alt: alt, onSave: onSaveImage),
+      codeblockPadding: EdgeInsets.all(tokens.space12),
+      codeblockDecoration: BoxDecoration(
+        color: tokens.softPanel,
+        border: Border.all(color: tokens.border),
+        borderRadius: BorderRadius.circular(tokens.radius12),
+      ),
+      blockquotePadding: EdgeInsets.all(tokens.space12),
+      blockquoteDecoration: BoxDecoration(
+        color: tokens.softPanel,
+        border: Border(left: BorderSide(color: tokens.brand, width: 3)),
+        borderRadius: BorderRadius.circular(tokens.radius12),
+      ),
+      tableBorder: TableBorder.all(color: tokens.border),
+      tableCellsPadding: EdgeInsets.all(tokens.space8),
     );
   }
 
@@ -91,8 +128,8 @@ class WenyouMarkdown extends StatelessWidget {
     if (uri == null) return;
     final internal = internalWenyouLocation(uri);
     if (internal != null) {
-      if (onInternalLink != null) {
-        onInternalLink!(internal);
+      if (widget.onInternalLink != null) {
+        widget.onInternalLink!(internal);
       } else {
         openInternalWenyouLink(context, internal);
       }
@@ -127,7 +164,7 @@ class _DiceInlineSyntax extends md.InlineSyntax {
 class _DiceMarkdownBuilder extends MarkdownElementBuilder {
   _DiceMarkdownBuilder(this.labelsByNodeId);
 
-  final Map<String, String> labelsByNodeId;
+  final ValueListenable<Map<String, String>> labelsByNodeId;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -139,24 +176,29 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     final tokens = context.wenyouTokens;
     final nodeId = element.attributes['node-id']!;
     final notation = element.textContent;
-    final label = labelsByNodeId[nodeId] ?? '$notation = ?';
-    final isResult = labelsByNodeId.containsKey(nodeId);
     final style =
         (preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style)
             .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-      child: DecoratedBox(
-        key: ValueKey('wenyou-dice-$nodeId'),
-        decoration: BoxDecoration(
-          color: (isResult ? tokens.accentedBackground : tokens.softPanel)
-              .withValues(alpha: isResult ? 0.3 : 0.7),
-          borderRadius: BorderRadius.circular(tokens.radius12 / 2),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          child: Text(label, style: style),
-        ),
+      child: ValueListenableBuilder<Map<String, String>>(
+        valueListenable: labelsByNodeId,
+        builder: (context, labels, _) {
+          final label = labels[nodeId] ?? '$notation = ?';
+          final isResult = labels.containsKey(nodeId);
+          return DecoratedBox(
+            key: ValueKey('wenyou-dice-$nodeId'),
+            decoration: BoxDecoration(
+              color: (isResult ? tokens.accentedBackground : tokens.softPanel)
+                  .withValues(alpha: isResult ? 0.3 : 0.7),
+              borderRadius: BorderRadius.circular(tokens.radius12 / 2),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              child: Text(label, style: style),
+            ),
+          );
+        },
       ),
     );
   }

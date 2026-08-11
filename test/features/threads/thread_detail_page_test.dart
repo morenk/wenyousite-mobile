@@ -32,13 +32,29 @@ void main() {
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     expect(find.text('登录后发表楼层'), findsOneWidget);
-    expect(find.text('角色扮演'), findsOneWidget);
+    expect(find.textContaining('角色扮演 · 招募中'), findsOneWidget);
     expect(
-      tester
-          .getSize(find.byKey(const Key('thread-subthread-subthread-1')))
-          .height,
+      tester.getSize(find.byKey(const Key('thread-subthread-menu'))).height,
       greaterThanOrEqualTo(48),
     );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('thread-subthread-previous')),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('thread-subthread-next')))
+          .onPressed,
+      isNotNull,
+    );
+    expect(find.text('参与者发言'), findsNothing);
+    expect(find.text('8 条内容'), findsNothing);
+    expect(find.text('12 楼层'), findsNothing);
+    expect(find.text('128 浏览'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('主线正文'),
       180,
@@ -78,12 +94,30 @@ void main() {
     await tester.pumpWidget(_detailApp(repository));
     await tester.pumpAndSettle();
 
-    final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
-    await tester.ensureVisible(subthread);
+    final menu = find.byKey(const Key('thread-subthread-menu'));
+    await tester.ensureVisible(menu);
     await tester.pumpAndSettle();
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-subthread-subthread-1')),
+      findsOneWidget,
+    );
+    final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
+    expect(subthread, findsOneWidget);
     await tester.tap(subthread);
     await tester.pumpAndSettle();
 
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
+
+    await tester.tap(find.byKey(const Key('thread-subthread-previous')));
+    await tester.pumpAndSettle();
+    expect(find.text('主线正文'), findsOneWidget);
+    expect(repository.requestedSubthreads.last, 'subthread-1');
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
+    await tester.pumpAndSettle();
     expect(find.text('支线正文'), findsOneWidget);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));
     await tester.pumpAndSettle();
