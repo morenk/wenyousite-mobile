@@ -88,48 +88,69 @@ class WenyouTipButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (iconOnly) {
       return IconButton(
-        onPressed: () => _open(context, ref),
+        onPressed: () => showWenyouTipFlow(
+          context: context,
+          ref: ref,
+          target: target,
+          recipientName: recipientName,
+          returnTo: returnTo,
+          onSuccess: onSuccess,
+        ),
         tooltip: '加油',
         icon: const Icon(Icons.local_gas_station_outlined),
       );
     }
     final button = OutlinedButton.icon(
-      onPressed: () => _open(context, ref),
+      onPressed: () => showWenyouTipFlow(
+        context: context,
+        ref: ref,
+        target: target,
+        recipientName: recipientName,
+        returnTo: returnTo,
+        onSuccess: onSuccess,
+      ),
       icon: const Icon(Icons.local_gas_station_outlined),
       label: const Text('加油'),
     );
     return expanded ? SizedBox(width: double.infinity, child: button) : button;
   }
+}
 
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
-    if (!ref.read(sessionControllerProvider).isAuthenticated) {
-      await context.pushNamed<Object?>(
-        'login',
-        queryParameters: {'returnTo': returnTo},
-      );
-      return;
-    }
-    final result = await showDialog<TipResult>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) =>
-          _TipDialog(target: target, recipientName: recipientName),
+Future<void> showWenyouTipFlow({
+  required BuildContext context,
+  required WidgetRef ref,
+  required TipTarget target,
+  required String recipientName,
+  required String returnTo,
+  FutureOr<void> Function(TipResult result)? onSuccess,
+}) async {
+  if (!ref.read(sessionControllerProvider).isAuthenticated) {
+    await context.pushNamed<Object?>(
+      'login',
+      queryParameters: {'returnTo': returnTo},
     );
-    if (result == null || !context.mounted) return;
-    final sessionKey = walletSessionKey(ref);
-    ref.invalidate(walletControllerProvider(sessionKey));
-    ref.read(profileCacheInvalidatorProvider)(target.recipientUserId);
-    await onSuccess?.call(result);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '已投入 ${WenyouAmount.format(result.grossAmount)} 升温油，'
-          '对方到账 ${WenyouAmount.format(result.recipientAmount)} 升。',
-        ),
-      ),
-    );
+    return;
   }
+  final result = await showDialog<TipResult>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) =>
+        _TipDialog(target: target, recipientName: recipientName),
+  );
+  if (result == null || !context.mounted) return;
+  final sessionKey = walletSessionKey(ref);
+  ref.invalidate(walletControllerProvider(sessionKey));
+  ref.read(profileCacheInvalidatorProvider)(target.recipientUserId);
+  await onSuccess?.call(result);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        '已投入 ${WenyouAmount.format(result.grossAmount)} 升温油，'
+        '对方到账 ${WenyouAmount.format(result.recipientAmount)} 升。',
+      ),
+    ),
+  );
 }
 
 class _TipDialog extends ConsumerStatefulWidget {

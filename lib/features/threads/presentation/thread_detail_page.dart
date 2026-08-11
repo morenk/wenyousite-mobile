@@ -143,27 +143,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ),
         title: const Text('主题详情'),
         actions: [
-          if (state.detail case final detail? when !detail.isCurrentUserOwner)
-            WenyouTipButton(
-              key: const Key('thread-detail-tip'),
-              target: TipTarget.thread(
-                id: detail.id,
-                recipientUserId: detail.owner.id,
-              ),
-              recipientName: detail.owner.username,
-              returnTo: _currentThreadLocation(),
-              iconOnly: true,
-              onSuccess: (_) => ref.read(provider.notifier).refresh(),
-            ),
-          if (state.detail case final detail?
-              when !detail.isPrivate && !detail.isCurrentUserOwner)
-            WenyouReportButton(
-              key: const Key('thread-detail-report'),
-              target: ReportTarget.thread(detail.id),
-              targetLabel: '这个主题',
-              returnTo: _currentThreadLocation(),
-              iconOnly: true,
-            ),
           IconButton(
             key: const Key('thread-detail-search'),
             tooltip: '搜索主题内容',
@@ -173,12 +152,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             ),
             icon: const Icon(Icons.search_rounded),
           ),
-          if (state.detail?.canManageThread == true)
+          if (state.detail case final detail?
+              when !detail.isCurrentUserOwner || detail.canManageThread)
             IconButton(
-              key: const Key('thread-detail-manage'),
-              tooltip: '管理主题',
-              onPressed: _openManagement,
-              icon: const Icon(Icons.tune_rounded),
+              key: const Key('thread-detail-more'),
+              tooltip: '更多主题操作',
+              onPressed: () => _openThreadActions(detail, provider),
+              icon: const Icon(Icons.more_horiz_rounded),
             ),
         ],
       ),
@@ -246,6 +226,77 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       await ref
           .read(threadDetailControllerProvider(widget.threadId).notifier)
           .refresh();
+    }
+  }
+
+  Future<void> _openThreadActions(
+    ThreadDetailModel detail,
+    AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
+    provider,
+  ) async {
+    final action = await showModalBottomSheet<_ThreadDetailAction>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: 8),
+        children: [
+          const ListTile(
+            title: Text('主题操作'),
+            subtitle: Text('低频操作集中在这里，阅读时不占用顶栏。'),
+          ),
+          if (detail.canManageThread)
+            ListTile(
+              key: const Key('thread-detail-manage'),
+              leading: const Icon(Icons.tune_rounded),
+              title: const Text('管理主题'),
+              subtitle: const Text('维护主题信息、子贴、标签与成员'),
+              onTap: () => Navigator.pop(context, _ThreadDetailAction.manage),
+            ),
+          if (!detail.isCurrentUserOwner)
+            ListTile(
+              key: const Key('thread-detail-tip'),
+              leading: const Icon(Icons.local_gas_station_outlined),
+              title: const Text('为创作者加油'),
+              subtitle: Text('支持 ${detail.owner.username} 的创作'),
+              onTap: () => Navigator.pop(context, _ThreadDetailAction.tip),
+            ),
+          if (!detail.isPrivate && !detail.isCurrentUserOwner)
+            ListTile(
+              key: const Key('thread-detail-report'),
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('举报主题'),
+              subtitle: const Text('向站务提交人工审核'),
+              onTap: () => Navigator.pop(context, _ThreadDetailAction.report),
+            ),
+        ],
+      ),
+    );
+    if (action == null || !mounted) return;
+    switch (action) {
+      case _ThreadDetailAction.manage:
+        await _openManagement();
+      case _ThreadDetailAction.tip:
+        await showWenyouTipFlow(
+          context: context,
+          ref: ref,
+          target: TipTarget.thread(
+            id: detail.id,
+            recipientUserId: detail.owner.id,
+          ),
+          recipientName: detail.owner.username,
+          returnTo: _currentThreadLocation(),
+          onSuccess: (_) => ref.read(provider.notifier).refresh(),
+        );
+      case _ThreadDetailAction.report:
+        await showWenyouReportFlow(
+          context: context,
+          ref: ref,
+          target: ReportTarget.thread(detail.id),
+          targetLabel: '这个主题',
+          returnTo: _currentThreadLocation(),
+        );
     }
   }
 
@@ -636,3 +687,5 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ];
   }
 }
+
+enum _ThreadDetailAction { manage, tip, report }

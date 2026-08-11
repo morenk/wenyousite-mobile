@@ -93,18 +93,61 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     final bodyStyle = theme.textTheme.bodyLarge?.copyWith(
       fontSize: widget.bodyFontSize,
       height: widget.bodyHeight,
+      fontWeight: FontWeight.w400,
+      letterSpacing: widget.bodyFontSize * 0.008,
+    );
+    final h1 = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 1.65,
+      height: 1.4,
+      fontWeight: FontWeight.w700,
+      letterSpacing: widget.bodyFontSize * 0.015,
+    );
+    final h2 = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 1.35,
+      height: 1.45,
+      fontWeight: FontWeight.w700,
+      letterSpacing: widget.bodyFontSize * 0.015,
+    );
+    final h3 = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 1.12,
+      height: 1.55,
+      fontWeight: FontWeight.w700,
+      letterSpacing: widget.bodyFontSize * 0.015,
+    );
+    final compactBody = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 0.88,
+      height: 1.7,
     );
     return baseStyle.copyWith(
       p: bodyStyle,
       a: bodyStyle?.copyWith(
         color: tokens.brand,
+        fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
         decorationColor: tokens.brand,
       ),
+      h1: h1,
+      h1Padding: EdgeInsets.only(top: tokens.space16, bottom: tokens.space8),
+      h2: h2,
+      h2Padding: EdgeInsets.only(top: tokens.space16, bottom: tokens.space4),
+      h3: h3,
+      h3Padding: EdgeInsets.only(top: tokens.space12, bottom: tokens.space4),
+      h4: h3,
+      h4Padding: EdgeInsets.only(top: tokens.space12, bottom: tokens.space4),
+      h5: bodyStyle?.copyWith(fontWeight: FontWeight.w700),
+      h6: bodyStyle?.copyWith(fontWeight: FontWeight.w700),
+      strong: TextStyle(
+        fontWeight: FontWeight.w700,
+        letterSpacing: widget.bodyFontSize * 0.018,
+      ),
+      em: const TextStyle(fontStyle: FontStyle.italic),
       blockSpacing: tokens.space12,
-      code: theme.textTheme.bodyMedium?.copyWith(
+      listBullet: bodyStyle?.copyWith(color: tokens.brand),
+      code: compactBody?.copyWith(
         color: tokens.text,
         backgroundColor: tokens.softPanel,
+        fontFamily: 'monospace',
+        fontWeight: FontWeight.w500,
       ),
       codeblockPadding: EdgeInsets.all(tokens.space12),
       codeblockDecoration: BoxDecoration(
@@ -112,14 +155,22 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         border: Border.all(color: tokens.border),
         borderRadius: BorderRadius.circular(tokens.radius12),
       ),
+      blockquote: bodyStyle?.copyWith(fontStyle: FontStyle.italic),
       blockquotePadding: EdgeInsets.all(tokens.space12),
       blockquoteDecoration: BoxDecoration(
         color: tokens.softPanel,
         border: Border(left: BorderSide(color: tokens.brand, width: 3)),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.horizontal(
+          right: Radius.circular(tokens.radius12),
+        ),
       ),
+      tableHead: compactBody?.copyWith(fontWeight: FontWeight.w700),
+      tableBody: compactBody,
       tableBorder: TableBorder.all(color: tokens.border),
       tableCellsPadding: EdgeInsets.all(tokens.space8),
+      horizontalRuleDecoration: BoxDecoration(
+        border: Border(top: BorderSide(color: tokens.border)),
+      ),
     );
   }
 

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -38,7 +39,16 @@ void main() {
     );
     expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-tip')), findsNothing);
+    expect(find.byKey(const Key('thread-detail-report')), findsNothing);
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-detail-tip')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     expect(find.text('登录后发表楼层'), findsOneWidget);
     expect(find.text('角色扮演'), findsOneWidget);
@@ -123,6 +133,14 @@ void main() {
       tester.getSize(find.byKey(const Key('thread-reply-level-reply-1'))).width,
       lessThan(64),
     );
+    final inlineReplyMarkdown = tester.widget<WenyouMarkdown>(
+      find.descendant(
+        of: find.byKey(const Key('thread-inline-reply-reply-1')),
+        matching: find.byType(WenyouMarkdown),
+      ),
+    );
+    expect(inlineReplyMarkdown.bodyFontSize, 16);
+    expect(inlineReplyMarkdown.bodyHeight, 1.75);
 
     await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
     await tester.pumpAndSettle();
@@ -598,7 +616,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-tip')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     expect(find.text('发表楼层…'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-floor-compose')));

@@ -1095,7 +1095,7 @@ class _InlineReply extends ConsumerWidget {
                 data: reply.body.markdown,
                 diceLabels: _diceLabels(reply.body.diceRolls),
                 bodyFontSize: 16,
-                bodyHeight: 1.6,
+                bodyHeight: 1.75,
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               ),
           ],
