@@ -55,14 +55,23 @@ void main() {
     expect(find.text('他人的回复'), findsOneWidget);
     expect(find.byKey(const Key('post-replies-order')), findsOneWidget);
     expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
-    expect(find.byKey(const Key('post-edit-reply-own')), findsOneWidget);
+    expect(find.byKey(const Key('post-edit-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-edit-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-report-root')), findsOneWidget);
     expect(find.byKey(const Key('post-report-reply-own')), findsNothing);
-    expect(find.byKey(const Key('post-report-reply-other')), findsOneWidget);
+    expect(find.byKey(const Key('post-report-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
     expect(find.text('发表回复…'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
+    await tester.pumpAndSettle();
+    expect(find.text('回复操作'), findsOneWidget);
+    expect(find.text('复制'), findsOneWidget);
+    expect(find.text('复制楼层链接'), findsOneWidget);
+    expect(find.text('举报'), findsAtLeastNWidgets(1));
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
@@ -82,8 +91,11 @@ void main() {
     expect(repository.createInputs.single.replyToPostId, 'root');
     expect(find.text('新发表的回复'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('post-edit-created')));
-    await tester.tap(find.byKey(const Key('post-edit-created')));
+    await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
+    await tester.longPress(find.byKey(const Key('post-reply-created')));
+    await tester.pumpAndSettle();
+    expect(find.text('回复操作'), findsOneWidget);
+    await tester.tap(find.text('编辑'));
     await tester.pumpAndSettle();
     await _replaceComposerText(tester, '编辑后的新回复');
     await tester.tap(find.byKey(const Key('post-composer-submit')));
@@ -92,8 +104,10 @@ void main() {
     expect(repository.updateRequests.single.version, 1);
     expect(find.text('编辑后的新回复'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('post-delete-created')));
-    await tester.tap(find.byKey(const Key('post-delete-created')));
+    await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
+    await tester.longPress(find.byKey(const Key('post-reply-created')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除'));
     await tester.pumpAndSettle();
     expect(find.text('删除这条回复？'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, '删除'));

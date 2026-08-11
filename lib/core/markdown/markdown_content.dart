@@ -145,6 +145,23 @@ class MarkdownContent {
     String markdown,
     Map<String, String> labelsByNodeId,
   ) {
+    return _renderDice(markdown, labelsByNodeId, markup: false);
+  }
+
+  /// Renders dice as inline elements so the reader can match Web's compact
+  /// result/pending chips instead of seeing a standalone dice emoji.
+  static String renderDiceMarkupForDisplay(
+    String markdown,
+    Map<String, String> labelsByNodeId,
+  ) {
+    return _renderDice(markdown, labelsByNodeId, markup: true);
+  }
+
+  static String _renderDice(
+    String markdown,
+    Map<String, String> labelsByNodeId, {
+    required bool markup,
+  }) {
     final lines = normalize(markdown).split('\n');
     _Fence? fence;
     for (var index = 0; index < lines.length; index++) {
@@ -163,15 +180,16 @@ class MarkdownContent {
         fence = opening;
         continue;
       }
-      lines[index] = _renderLineDice(line, labelsByNodeId);
+      lines[index] = _renderLineDice(line, labelsByNodeId, markup: markup);
     }
     return lines.join('\n');
   }
 
   static String _renderLineDice(
     String line,
-    Map<String, String> labelsByNodeId,
-  ) {
+    Map<String, String> labelsByNodeId, {
+    required bool markup,
+  }) {
     final output = StringBuffer();
     var index = 0;
     while (index < line.length) {
@@ -200,7 +218,20 @@ class MarkdownContent {
       if (match != null) {
         final nodeId = match.group(1)!.toLowerCase();
         final notation = match.group(2)!.trim();
-        output.write(labelsByNodeId[nodeId] ?? '🎲 $notation（结果不可用）');
+        final label = labelsByNodeId[nodeId] ?? '$notation = ?';
+        if (markup) {
+          final state = labelsByNodeId.containsKey(nodeId)
+              ? 'result'
+              : 'pending';
+          output
+            ..write('<wenyou-dice data-state="')
+            ..write(state)
+            ..write('">')
+            ..write(_escapeHtml(label))
+            ..write('</wenyou-dice>');
+        } else {
+          output.write(label);
+        }
         index += match.group(0)!.length;
         continue;
       }
@@ -208,6 +239,14 @@ class MarkdownContent {
       index += 1;
     }
     return output.toString();
+  }
+
+  static String _escapeHtml(String value) {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
   }
 
   static bool _hasNonIgnorableText(String value) {

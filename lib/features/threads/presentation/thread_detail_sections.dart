@@ -1004,20 +1004,12 @@ PostItem _floorAsPost(
 Map<String, String> _diceLabels(List<ThreadDiceRollModel> rolls) {
   return {
     for (final roll in rolls)
-      roll.nodeId.toLowerCase(): '🎲 ${roll.notation} = ${roll.total}',
+      roll.nodeId.toLowerCase(): '${roll.notation} = ${roll.total}',
   };
 }
 
 void _showInternalLinkNotice(BuildContext context, Uri uri) {
-  final isUser =
-      uri.pathSegments.length == 2 && uri.pathSegments.first == 'users';
-  if (isUser) {
-    context.push(AppRouteLocations.user(uri.pathSegments[1]));
-    return;
-  }
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(const SnackBar(content: Text('这个站内目标暂未开放。')));
+  openInternalWenyouLink(context, uri);
 }
 
 String _formatTime(DateTime value) {

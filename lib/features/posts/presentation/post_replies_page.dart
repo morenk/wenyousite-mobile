@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -467,7 +468,9 @@ class _ReplyFilters extends StatelessWidget {
   }
 }
 
-class _PostCard extends StatelessWidget {
+enum _PostAction { copyText, copyLink, reply, edit, delete, report }
+
+class _PostCard extends ConsumerWidget {
   const _PostCard({
     required this.post,
     this.root = false,
@@ -494,9 +497,9 @@ class _PostCard extends StatelessWidget {
   final String? reportReturnTo;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
-    return AnimatedContainer(
+    final card = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       padding: EdgeInsets.symmetric(
         horizontal: tokens.space4,
@@ -537,7 +540,8 @@ class _PostCard extends StatelessWidget {
               bodyFontSize: root ? 17 : 16,
               bodyHeight: root ? 1.8 : 1.75,
             ),
-          if (!post.isDeleted &&
+          if (root &&
+              !post.isDeleted &&
               (onReply != null ||
                   canEdit ||
                   canDelete ||
@@ -586,6 +590,137 @@ class _PostCard extends StatelessWidget {
         ],
       ),
     );
+    if (root) return card;
+    return Semantics(
+      container: true,
+      hint: '长按打开回复操作',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: () => _showActions(context, ref),
+        child: card,
+      ),
+    );
+  }
+
+  Future<void> _showActions(BuildContext context, WidgetRef ref) async {
+    final action = await showModalBottomSheet<_PostAction>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              title: Text(root ? '楼层操作' : '回复操作'),
+              subtitle: Text(post.author.username),
+            ),
+            if (!post.isDeleted)
+              ListTile(
+                leading: const Icon(Icons.copy_outlined),
+                title: const Text('复制'),
+                onTap: () => Navigator.pop(context, _PostAction.copyText),
+              ),
+            ListTile(
+              leading: const Icon(Icons.link_outlined),
+              title: const Text('复制楼层链接'),
+              onTap: () => Navigator.pop(context, _PostAction.copyLink),
+            ),
+            if (onReply != null)
+              ListTile(
+                enabled: !pending,
+                leading: const Icon(Icons.reply_rounded),
+                title: const Text('回复'),
+                onTap: pending
+                    ? null
+                    : () => Navigator.pop(context, _PostAction.reply),
+              ),
+            if (canEdit)
+              ListTile(
+                enabled: !pending,
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('编辑'),
+                onTap: pending
+                    ? null
+                    : () => Navigator.pop(context, _PostAction.edit),
+              ),
+            if (canDelete)
+              ListTile(
+                enabled: !pending,
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('删除'),
+                onTap: pending
+                    ? null
+                    : () => Navigator.pop(context, _PostAction.delete),
+              ),
+            if (reportReturnTo != null)
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('举报'),
+                onTap: () => Navigator.pop(context, _PostAction.report),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case _PostAction.copyText:
+        await _copy(context, post.content, '内容已复制');
+      case _PostAction.copyLink:
+        await _copy(context, _publicLink(), '楼层链接已复制');
+      case _PostAction.reply:
+        onReply?.call();
+      case _PostAction.edit:
+        onEdit?.call();
+      case _PostAction.delete:
+        onDelete?.call();
+      case _PostAction.report:
+        if (reportReturnTo == null) return;
+        await showWenyouReportFlow(
+          context: context,
+          ref: ref,
+          target: ReportTarget.post(post.id),
+          targetLabel: root ? '这个楼层' : '这条回复',
+          returnTo: reportReturnTo!,
+        );
+    }
+  }
+
+  String _publicLink() {
+    final location = root
+        ? AppRouteLocations.thread(post.threadId, postId: post.id)
+        : Uri(
+            pathSegments: [
+              '',
+              'threads',
+              post.threadId,
+              'posts',
+              post.parentPostId ?? post.id,
+              'replies',
+            ],
+            queryParameters: {'post': post.id},
+          ).toString();
+    return Uri.parse('https://wenyou.site').resolve(location).toString();
+  }
+
+  Future<void> _copy(
+    BuildContext context,
+    String value,
+    String successMessage,
+  ) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: value));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
+    } on Object {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('复制失败，请稍后重试。')));
+    }
   }
 }
 

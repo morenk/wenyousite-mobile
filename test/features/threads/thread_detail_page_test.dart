@@ -46,7 +46,7 @@ void main() {
     );
     expect(find.text('主线正文'), findsOneWidget);
     expect(
-      find.textContaining('🎲 1d20 = 16', findRichText: true),
+      find.textContaining('1d20 = 16', findRichText: true),
       findsOneWidget,
     );
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));

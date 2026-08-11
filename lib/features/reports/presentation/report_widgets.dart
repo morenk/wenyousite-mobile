@@ -40,35 +40,59 @@ class WenyouReportButton extends ConsumerWidget {
   }
 
   Future<void> _open(BuildContext context, WidgetRef ref) async {
-    if (!ref.read(sessionControllerProvider).isAuthenticated) {
-      await context.pushNamed<Object?>(
-        'login',
-        queryParameters: {'returnTo': returnTo},
-      );
-      return;
-    }
-    final outcome = await showDialog<Object?>(
+    await showWenyouReportFlow(
       context: context,
-      barrierDismissible: false,
-      builder: (context) =>
-          _ReportDialog(target: target, targetLabel: targetLabel),
+      ref: ref,
+      target: target,
+      targetLabel: targetLabel,
+      returnTo: returnTo,
     );
-    if (!context.mounted) return;
-    if (outcome == _ReportDialogOutcome.verifyEmail) {
-      final verified = await context.push<bool>(
-        Uri(
-          path: '/me/security/verify-email',
-          queryParameters: {'returnTo': returnTo},
-        ).toString(),
-      );
-      if (verified == true && context.mounted) await _open(context, ref);
-      return;
-    }
-    if (outcome is! ReportResult) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('举报已提交，管理员会根据站点规范进行审核。')));
   }
+}
+
+Future<void> showWenyouReportFlow({
+  required BuildContext context,
+  required WidgetRef ref,
+  required ReportTarget target,
+  required String targetLabel,
+  required String returnTo,
+}) async {
+  if (!ref.read(sessionControllerProvider).isAuthenticated) {
+    await context.pushNamed<Object?>(
+      'login',
+      queryParameters: {'returnTo': returnTo},
+    );
+    return;
+  }
+  final outcome = await showDialog<Object?>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) =>
+        _ReportDialog(target: target, targetLabel: targetLabel),
+  );
+  if (!context.mounted) return;
+  if (outcome == _ReportDialogOutcome.verifyEmail) {
+    final verified = await context.push<bool>(
+      Uri(
+        path: '/me/security/verify-email',
+        queryParameters: {'returnTo': returnTo},
+      ).toString(),
+    );
+    if (verified == true && context.mounted) {
+      await showWenyouReportFlow(
+        context: context,
+        ref: ref,
+        target: target,
+        targetLabel: targetLabel,
+        returnTo: returnTo,
+      );
+    }
+    return;
+  }
+  if (outcome is! ReportResult) return;
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(const SnackBar(content: Text('举报已提交，管理员会根据站点规范进行审核。')));
 }
 
 class _ReportDialog extends ConsumerStatefulWidget {
