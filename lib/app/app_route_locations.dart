@@ -5,6 +5,7 @@ abstract final class AppRouteLocations {
   static const meSettings = '/me/settings';
   static const moments = '/moments';
   static const search = '/search';
+  static const moderationAppeals = '/appeals';
   static const composeThread = '/compose/thread';
   static const composeMoment = '/compose/moment';
 

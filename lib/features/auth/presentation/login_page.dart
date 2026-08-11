@@ -192,6 +192,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                   child: const Text('没有账号？注册'),
                 ),
+                TextButton.icon(
+                  key: const Key('login-open-appeals'),
+                  onPressed: state.isSubmitting
+                      ? null
+                      : () => context.push(AppRouteLocations.moderationAppeals),
+                  icon: const Icon(Icons.gavel_outlined),
+                  label: const Text('账号被暂停或封禁？查看决定并申诉'),
+                ),
               ],
             ),
           ),

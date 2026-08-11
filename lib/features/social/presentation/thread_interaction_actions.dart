@@ -10,11 +10,13 @@ class ThreadInteractionActions extends ConsumerWidget {
   const ThreadInteractionActions({
     required this.target,
     required this.onRequireAuthentication,
+    this.compact = false,
     super.key,
   });
 
   final ThreadInteractionTarget target;
   final VoidCallback onRequireAuthentication;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,6 +27,73 @@ class ThreadInteractionActions extends ConsumerWidget {
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
+    if (compact) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            button: true,
+            label: state.isLiked
+                ? '取消喜欢，当前 ${state.likeCount} 个喜欢'
+                : '喜欢，当前 ${state.likeCount} 个喜欢',
+            excludeSemantics: true,
+            child: TextButton(
+              key: const Key('thread-interaction-like'),
+              onPressed: state.isPending
+                  ? null
+                  : authenticated
+                  ? () => _toggleLike(context, notifier, compact: true)
+                  : onRequireAuthentication,
+              style: TextButton.styleFrom(
+                minimumSize: Size(
+                  tokens.minimumTouchTarget,
+                  tokens.minimumTouchTarget,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+                foregroundColor: state.isLiked
+                    ? tokens.brand
+                    : tokens.mutedText,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _actionIcon(
+                    pending:
+                        state.pendingAction == ThreadInteractionAction.like,
+                    fallback: state.isLiked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                  ),
+                  SizedBox(width: tokens.space4),
+                  Text(
+                    '${state.likeCount}',
+                    style: const TextStyle(
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (authenticated)
+            IconButton(
+              key: const Key('thread-interaction-bookmark'),
+              onPressed: state.isPending
+                  ? null
+                  : () => _toggleBookmark(context, notifier, compact: true),
+              tooltip: state.isBookmarked ? '取消收藏' : '收藏主题',
+              color: state.isBookmarked ? tokens.brand : tokens.mutedText,
+              icon: _actionIcon(
+                pending:
+                    state.pendingAction == ThreadInteractionAction.bookmark,
+                fallback: state.isBookmarked
+                    ? Icons.bookmark_rounded
+                    : Icons.bookmark_border_rounded,
+              ),
+            ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -93,20 +162,45 @@ class ThreadInteractionActions extends ConsumerWidget {
 
   Future<void> _toggleLike(
     BuildContext context,
-    ThreadInteractionController notifier,
-  ) async {
+    ThreadInteractionController notifier, {
+    bool compact = false,
+  }) async {
     final succeeded = await notifier.toggleLike();
-    if (!context.mounted || !succeeded) return;
+    if (!context.mounted) return;
+    if (!succeeded) {
+      if (compact) _showFailure(context, notifier);
+      return;
+    }
     _showSuccess(context, notifier);
   }
 
   Future<void> _toggleBookmark(
     BuildContext context,
-    ThreadInteractionController notifier,
-  ) async {
+    ThreadInteractionController notifier, {
+    bool compact = false,
+  }) async {
     final succeeded = await notifier.toggleBookmark();
-    if (!context.mounted || !succeeded) return;
+    if (!context.mounted) return;
+    if (!succeeded) {
+      if (compact) _showFailure(context, notifier);
+      return;
+    }
     _showSuccess(context, notifier);
+  }
+
+  void _showFailure(
+    BuildContext context,
+    ThreadInteractionController notifier,
+  ) {
+    final failure = notifier.takeFailure();
+    if (failure == null) return;
+    final requestId = failure.requestId;
+    final message = requestId == null
+        ? failure.userMessage
+        : '${failure.userMessage}（请求 ID：$requestId）';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showSuccess(

@@ -51,6 +51,27 @@ void main() {
     expect(failure.userMessage, isNot(contains('server wording')));
   });
 
+  test('受处罚账号与申诉凭据错误按业务码展示稳定提示', () {
+    String messageFor(int code) {
+      final options = RequestOptions(path: '/api/v1/user-moderation/appeals');
+      return ApiFailure.fromDio(
+        DioException(
+          requestOptions: options,
+          response: Response<Object?>(
+            requestOptions: options,
+            statusCode: 401,
+            data: {'code': code, 'message': 'private moderation wording'},
+          ),
+        ),
+      ).userMessage;
+    }
+
+    expect(messageFor(40108), contains('暂停'));
+    expect(messageFor(40109), contains('封禁'));
+    expect(messageFor(40120), contains('申诉凭据'));
+    expect(messageFor(40120), isNot(contains('private moderation wording')));
+  });
+
   test('注册限流提取 Retry-After 并使用稳定提示', () {
     final options = RequestOptions(path: '/api/v1/auth/register/request-code');
     final failure = ApiFailure.fromDio(

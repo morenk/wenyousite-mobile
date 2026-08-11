@@ -78,6 +78,10 @@ class ApiFailure implements Exception {
         return '账号已注销。';
       case 40107:
         return '请先完成邮箱验证。';
+      case 40108:
+        return '账号已被暂停，可在“治理决定与申诉”中申请复核。';
+      case 40109:
+        return '账号已被封禁，可在“治理决定与申诉”中申请复核。';
       case 40110:
         return '账号或密码错误。';
       case 40111:
@@ -90,6 +94,8 @@ class ApiFailure implements Exception {
         return '请先获取邮箱验证码。';
       case 40116:
         return '当前密码不正确。';
+      case 40120:
+        return '申诉凭据已过期，请重新验证账号密码。';
       case 40300:
         return '当前账号没有执行这项操作的权限。';
       case 40301:

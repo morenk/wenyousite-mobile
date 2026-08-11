@@ -11,12 +11,14 @@ class ThreadSubscriptionControls extends ConsumerWidget {
     required this.threadId,
     required this.hasAutomaticUpdates,
     this.viewerUserId,
+    this.compact = false,
     super.key,
   });
 
   final String threadId;
   final bool hasAutomaticUpdates;
   final String? viewerUserId;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,6 +35,47 @@ class ThreadSubscriptionControls extends ConsumerWidget {
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
+
+    if (compact) {
+      return switch (state.phase) {
+        ThreadSubscriptionPhase.loading => const SizedBox.square(
+          key: Key('thread-subscription-loading'),
+          dimension: 48,
+          child: Center(
+            child: SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+        ThreadSubscriptionPhase.failed => IconButton(
+          key: const Key('thread-subscription-retry'),
+          onPressed: notifier.load,
+          tooltip: '订阅状态加载失败，点击重试',
+          icon: const Icon(Icons.notifications_off_outlined),
+          color: Theme.of(context).colorScheme.error,
+        ),
+        ThreadSubscriptionPhase.ready => IconButton(
+          key: const Key('thread-subscription-menu'),
+          onPressed: state.isPending
+              ? null
+              : () => _showPlayerSheet(
+                  context,
+                  target,
+                  includeThreadToggle: true,
+                ),
+          tooltip: state.threadSubscription == null ? '管理更新订阅' : '已订阅官方更新，管理订阅',
+          icon: Icon(
+            state.threadSubscription == null
+                ? Icons.notifications_none_rounded
+                : Icons.notifications_active_rounded,
+          ),
+          color: state.threadSubscription == null
+              ? tokens.mutedText
+              : tokens.brand,
+        ),
+      };
+    }
 
     return Padding(
       padding: EdgeInsets.only(top: tokens.space12),
@@ -121,24 +164,32 @@ class ThreadSubscriptionControls extends ConsumerWidget {
 
   Future<void> _showPlayerSheet(
     BuildContext context,
-    ThreadSubscriptionTarget target,
-  ) {
+    ThreadSubscriptionTarget target, {
+    bool includeThreadToggle = false,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: 0.72,
-        child: _PlayerSubscriptionSheet(target: target),
+        child: _PlayerSubscriptionSheet(
+          target: target,
+          includeThreadToggle: includeThreadToggle,
+        ),
       ),
     );
   }
 }
 
 class _PlayerSubscriptionSheet extends ConsumerWidget {
-  const _PlayerSubscriptionSheet({required this.target});
+  const _PlayerSubscriptionSheet({
+    required this.target,
+    this.includeThreadToggle = false,
+  });
 
   final ThreadSubscriptionTarget target;
+  final bool includeThreadToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -158,10 +209,15 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('订阅玩家发言', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              includeThreadToggle ? '管理更新订阅' : '订阅玩家发言',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             SizedBox(height: tokens.space4),
             Text(
-              '只列出本帖中已标记的普通玩家；可同时订阅多人。',
+              includeThreadToggle
+                  ? '选择要接收的官方更新或玩家发言提醒。'
+                  : '只列出本帖中已标记的普通玩家；可同时订阅多人。',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
@@ -175,53 +231,95 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               ),
             ],
             SizedBox(height: tokens.space12),
-            Expanded(
-              child: ListView.separated(
-                itemCount: state.candidates.length,
-                separatorBuilder: (_, _) => Divider(color: tokens.border),
-                itemBuilder: (context, index) {
-                  final candidate = state.candidates[index];
-                  final subscribed =
-                      state.userSubscriptionFor(candidate.userId) != null;
-                  final pending =
-                      state.pendingType == ThreadSubscriptionType.user &&
-                      state.pendingTargetUserId == candidate.userId;
-                  return ListTile(
-                    key: ValueKey(
-                      'thread-subscription-candidate-${candidate.userId}',
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: tokens.softPanel,
-                      child: Text(
-                        candidate.username.isEmpty
-                            ? '?'
-                            : candidate.username.characters.first,
+            if (includeThreadToggle) ...[
+              ListTile(
+                key: const Key('thread-subscription-official'),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  state.threadSubscription == null
+                      ? Icons.notifications_none_rounded
+                      : Icons.notifications_active_rounded,
+                ),
+                title: const Text('官方更新'),
+                subtitle: Text(
+                  state.threadSubscription == null ? '尚未订阅' : '已订阅',
+                ),
+                trailing: state.pendingType == ThreadSubscriptionType.thread
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Switch(
+                        value: state.threadSubscription != null,
+                        onChanged: state.isPending
+                            ? null
+                            : (_) => _toggleThread(context, notifier),
                       ),
-                    ),
-                    title: Text(candidate.username),
-                    subtitle: Text('Lv.${candidate.level}'),
-                    trailing: OutlinedButton(
-                      key: ValueKey(
-                        'thread-subscription-user-${candidate.userId}',
-                      ),
-                      onPressed: state.isPending
-                          ? null
-                          : () => _toggleUser(
-                              context,
-                              notifier,
-                              candidate.userId,
-                            ),
-                      child: pending
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(subscribed ? '取消订阅' : '订阅发言'),
-                    ),
-                  );
-                },
+                onTap: state.isPending
+                    ? null
+                    : () => _toggleThread(context, notifier),
               ),
+              Divider(height: 1, color: tokens.border),
+              SizedBox(height: tokens.space12),
+              Text('玩家发言', style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(height: tokens.space4),
+            ],
+            Expanded(
+              child: state.candidates.isEmpty
+                  ? Center(
+                      child: Text(
+                        '暂无可订阅的玩家',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: state.candidates.length,
+                      separatorBuilder: (_, _) => Divider(color: tokens.border),
+                      itemBuilder: (context, index) {
+                        final candidate = state.candidates[index];
+                        final subscribed =
+                            state.userSubscriptionFor(candidate.userId) != null;
+                        final pending =
+                            state.pendingType == ThreadSubscriptionType.user &&
+                            state.pendingTargetUserId == candidate.userId;
+                        return ListTile(
+                          key: ValueKey(
+                            'thread-subscription-candidate-${candidate.userId}',
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: tokens.softPanel,
+                            child: Text(
+                              candidate.username.isEmpty
+                                  ? '?'
+                                  : candidate.username.characters.first,
+                            ),
+                          ),
+                          title: Text(candidate.username),
+                          subtitle: Text('Lv.${candidate.level}'),
+                          trailing: OutlinedButton(
+                            key: ValueKey(
+                              'thread-subscription-user-${candidate.userId}',
+                            ),
+                            onPressed: state.isPending
+                                ? null
+                                : () => _toggleUser(
+                                    context,
+                                    notifier,
+                                    candidate.userId,
+                                  ),
+                            child: pending
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(subscribed ? '取消订阅' : '订阅发言'),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -235,6 +333,15 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
     String userId,
   ) async {
     final succeeded = await notifier.toggleUser(userId);
+    if (!context.mounted || !succeeded) return;
+    _showSuccess(context, notifier);
+  }
+
+  Future<void> _toggleThread(
+    BuildContext context,
+    ThreadSubscriptionController notifier,
+  ) async {
+    final succeeded = await notifier.toggleThread();
     if (!context.mounted || !succeeded) return;
     _showSuccess(context, notifier);
   }

@@ -100,6 +100,12 @@ class ThreadInteractionController
     return message;
   }
 
+  ApiFailure? takeFailure() {
+    final failure = state.failure;
+    if (failure != null) clearFeedback();
+    return failure;
+  }
+
   ApiFailure _asFailure(Object error, String fallback) {
     return error is ApiFailure
         ? error

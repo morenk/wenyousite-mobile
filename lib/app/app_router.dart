@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_m
 import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
@@ -101,6 +102,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRouteLocations.search,
         name: 'search',
         builder: (context, state) => const SearchPage(),
+      ),
+      GoRoute(
+        path: AppRouteLocations.moderationAppeals,
+        name: 'moderation-appeals',
+        builder: (context, state) => const ModerationAppealPage(),
       ),
       GoRoute(
         path: '/moments/bookmarks',
@@ -239,6 +245,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               threadId: state.pathParameters['threadId']!,
               categoryNameHint: extra is String ? extra : null,
               targetPostId: state.uri.queryParameters['post'],
+              subthreadIdHint: state.uri.queryParameters['subthread'],
             ),
           );
         },

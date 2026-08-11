@@ -137,81 +137,212 @@ class _ThreadOverview extends StatelessWidget {
       isBookmarked: detail.isBookmarked,
       bookmarkId: detail.bookmarkId,
     );
-    final contextLabels = <String>[
-      if (detail.isPinned) '置顶',
-      categoryName,
-      detail.status.label,
-      if (detail.isPrivate) '私密',
-    ];
-    return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space16),
+    return Card(
+      key: const Key('thread-detail-overview'),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Semantics(
-            header: true,
-            child: Text(
-              detail.title,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-          ),
-          SizedBox(height: tokens.space8),
-          Text(
-            contextLabels.join(' · '),
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-          ),
-          SizedBox(height: tokens.space12),
-          _AuthorLine(
-            author: detail.owner,
-            time: detail.updatedAt,
-            compact: true,
-          ),
-          if (detail.tags.isNotEmpty) ...[
-            SizedBox(height: tokens.space4),
-            Wrap(
-              spacing: tokens.space4,
-              runSpacing: 0,
+          Padding(
+            padding: EdgeInsets.all(tokens.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final tag in detail.tags)
-                  WenyouTagLink(
-                    key: Key('thread-detail-tag-${tag.id}'),
-                    name: tag.name,
-                    onPressed: () => context.pushNamed(
-                      'tag-threads',
-                      pathParameters: {'tagId': tag.id},
-                    ),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: tokens.space8,
+                  runSpacing: tokens.space4,
+                  children: [
+                    if (detail.isPinned) const _ThreadContextBadge(label: '置顶'),
+                    _ThreadContextBadge(label: categoryName, outlined: true),
+                    _ThreadContextBadge(label: detail.status.label),
+                    if (detail.isPrivate)
+                      const _ThreadContextBadge(label: '私密'),
+                    for (final tag in detail.tags)
+                      WenyouTagLink(
+                        key: Key('thread-detail-tag-${tag.id}'),
+                        name: tag.name,
+                        onPressed: () => context.pushNamed(
+                          'tag-threads',
+                          pathParameters: {'tagId': tag.id},
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: tokens.space12),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    detail.title,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
+                ),
+                SizedBox(height: tokens.space8),
+                _ThreadMetadata(detail: detail),
+                ThreadMembershipControls(
+                  threadId: detail.id,
+                  canExitPlayer:
+                      detail.isCurrentUserPlayer && !detail.isCurrentUserOwner,
+                  onExited: onPlayerExited,
+                ),
               ],
             ),
-          ],
-          if (detail.subthreads.isNotEmpty && selectedSubthreadId != null) ...[
-            SizedBox(height: tokens.space12),
-            _SubthreadNavigator(
-              subthreads: detail.subthreads,
-              selectedSubthreadId: selectedSubthreadId!,
-              onSelected: onSubthreadSelected,
+          ),
+          Divider(height: 1, color: tokens.border),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space8,
+              vertical: tokens.space4,
             ),
-          ],
-          SizedBox(height: tokens.space12),
-          ThreadInteractionActions(
-            target: interactionTarget,
-            onRequireAuthentication: onRequireAuthentication,
-          ),
-          ThreadSubscriptionControls(
-            threadId: detail.id,
-            viewerUserId: detail.currentUserId,
-            hasAutomaticUpdates: detail.hasAutomaticUpdates,
-          ),
-          ThreadMembershipControls(
-            threadId: detail.id,
-            canExitPlayer:
-                detail.isCurrentUserPlayer && !detail.isCurrentUserOwner,
-            onExited: onPlayerExited,
+            child: detail.subthreads.isNotEmpty && selectedSubthreadId != null
+                ? _SubthreadNavigator(
+                    subthreads: detail.subthreads,
+                    selectedSubthreadId: selectedSubthreadId!,
+                    onSelected: onSubthreadSelected,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ThreadInteractionActions(
+                          target: interactionTarget,
+                          onRequireAuthentication: onRequireAuthentication,
+                          compact: true,
+                        ),
+                        ThreadSubscriptionControls(
+                          threadId: detail.id,
+                          viewerUserId: detail.currentUserId,
+                          hasAutomaticUpdates: detail.hasAutomaticUpdates,
+                          compact: true,
+                        ),
+                      ],
+                    ),
+                  )
+                : Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ThreadInteractionActions(
+                          target: interactionTarget,
+                          onRequireAuthentication: onRequireAuthentication,
+                          compact: true,
+                        ),
+                        ThreadSubscriptionControls(
+                          threadId: detail.id,
+                          viewerUserId: detail.currentUserId,
+                          hasAutomaticUpdates: detail.hasAutomaticUpdates,
+                          compact: true,
+                        ),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ThreadContextBadge extends StatelessWidget {
+  const _ThreadContextBadge({required this.label, this.outlined = false});
+
+  final String label;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      label: label,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: outlined ? Colors.transparent : tokens.accentedBackground,
+          border: outlined ? Border.all(color: tokens.border) : null,
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.space12,
+            vertical: tokens.space4,
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: outlined ? tokens.text : tokens.brand,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThreadMetadata extends StatelessWidget {
+  const _ThreadMetadata({required this.detail});
+
+  final ThreadDetailModel detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: tokens.space12,
+      runSpacing: tokens.space4,
+      children: [
+        Text(
+          detail.owner.username,
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        WenyouLevelBadge(level: detail.owner.level),
+        Text(
+          formatWenyouRelativeTime(detail.updatedAt),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+        ),
+        _ThreadMetric(
+          icon: Icons.visibility_outlined,
+          label: '${detail.viewCount} 浏览',
+        ),
+        _ThreadMetric(
+          icon: Icons.group_outlined,
+          label: '${detail.playerCount} 位玩家',
+        ),
+        _ThreadMetric(
+          icon: Icons.layers_outlined,
+          label: '${detail.postCount} 楼',
+        ),
+        if (detail.tipTotal != '0')
+          _ThreadMetric(
+            icon: Icons.local_gas_station_outlined,
+            label: '${detail.tipTotal} 升温油',
+          ),
+      ],
+    );
+  }
+}
+
+class _ThreadMetric extends StatelessWidget {
+  const _ThreadMetric({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: tokens.mutedText),
+        SizedBox(width: tokens.space4),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+        ),
+      ],
     );
   }
 }
@@ -221,11 +352,13 @@ class _SubthreadNavigator extends StatefulWidget {
     required this.subthreads,
     required this.selectedSubthreadId,
     required this.onSelected,
+    required this.trailing,
   });
 
   final List<ThreadSubthreadModel> subthreads;
   final String selectedSubthreadId;
   final ValueChanged<String> onSelected;
+  final Widget trailing;
 
   @override
   State<_SubthreadNavigator> createState() => _SubthreadNavigatorState();
@@ -248,7 +381,7 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
     final nextIndex = (safeIndex + 1) % widget.subthreads.length;
     return Row(
       children: [
-        IconButton.outlined(
+        IconButton(
           key: const Key('thread-subthread-previous'),
           onPressed: canCycle
               ? () => widget.onSelected(widget.subthreads[previousIndex].id)
@@ -265,39 +398,49 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
             onPressed: () => _showSubthreads(context),
             style: OutlinedButton.styleFrom(
               minimumSize: Size(0, tokens.minimumTouchTarget),
-              padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.format_list_bulleted_rounded, size: 18),
-                SizedBox(width: tokens.space8),
-                Expanded(
-                  child: Text(
-                    selected.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: tokens.space4),
-                Text(
-                  '${selected.postCount} 楼',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                ),
-                SizedBox(width: tokens.space4),
-                Icon(
-                  _menuOpen
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
-                  size: 18,
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final showDirectoryIcon = constraints.maxWidth >= 128;
+                final showPostCount = constraints.maxWidth >= 176;
+                return Row(
+                  children: [
+                    if (showDirectoryIcon) ...[
+                      const Icon(Icons.format_list_bulleted_rounded, size: 18),
+                      SizedBox(width: tokens.space8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        selected.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (showPostCount) ...[
+                      SizedBox(width: tokens.space4),
+                      Text(
+                        '${selected.postCount} 楼',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens.mutedText,
+                        ),
+                      ),
+                    ],
+                    SizedBox(width: tokens.space4),
+                    Icon(
+                      _menuOpen
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      size: 18,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
         SizedBox(width: tokens.space4),
-        IconButton.outlined(
+        IconButton(
           key: const Key('thread-subthread-next'),
           onPressed: canCycle
               ? () => widget.onSelected(widget.subthreads[nextIndex].id)
@@ -307,6 +450,8 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
               : '没有其他子贴',
           icon: const Icon(Icons.chevron_right_rounded),
         ),
+        SizedBox(width: tokens.space4),
+        widget.trailing,
       ],
     );
   }

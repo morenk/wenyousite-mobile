@@ -20,6 +20,7 @@
 | stickers | in_progress | 0.5.0-dev | [表情包](stickers.md) |
 | users | in_progress | 0.3.0-dev / 0.7.0-dev | [用户](users.md) |
 | reports | in_progress | 0.3.0-dev | [社区举报](reports.md) |
+| moderation | in_progress | 0.7.0-dev | [治理决定与申诉](moderation.md) |
 | wallet | in_progress | 0.3.0-dev / 0.4.0-dev | [温油钱包](wallet.md) |
 | social | planned | 0.4.0-dev | [社交关系](social.md) |
 | settings | in_progress | 0.2.0-dev / 0.7.0-dev | [设置](settings.md) |

@@ -24,6 +24,6 @@ go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `return
 
 站内私聊使用受保护命名路由 `/messages`、`/messages/new/:userId` 与 `/messages/:conversationId`，游客访问时完整保留原目标进入登录。通知页只导航到中心，用户主页只把稳定 userId 交给新私聊页；新私聊页通过 `directConversationsFindByUser` 决定替换到已有 ACCEPTED/PENDING 会话、允许重建或显示受限状态。会话 ID、消息 ID、cursor 和增量 after 都是不透明服务端标识，页面不从用户名、正文预览或关系标记推导目标。
 
-V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。Markdown 中的相对站内路径以及 `wenyou.site`、`www.wenyou.site` 绝对链接由移动端自动识别并交给应用路由；其他 HTTP(S) 链接才交由系统浏览器打开。站内目标如果当前移动端没有对应页面，会保留在应用内并提示暂不支持。
+V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。Markdown 中的相对站内路径以及 `wenyou.site`、`www.wenyou.site` 绝对链接由移动端自动识别并交给应用路由；动态纯文本则严格按 `wenyousite-internal-reference` v1 只识别生产域主题、子贴、楼层和讨论坐标，普通 Markdown 与外链保持字面文本。公开 `/appeals` 不要求普通会话，避免受处罚账号被守卫循环拦截；其专用凭据不进入其他路由。站内目标如果当前移动端没有对应页面，会保留在应用内并提示暂不支持。
 
 参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)、[动态](../modules/moments.md)、[主题与子贴](../modules/threads.md)、[标签](../modules/tags.md)、[楼层与回复](../modules/posts.md)、[站内私聊](../modules/direct-messages.md)。

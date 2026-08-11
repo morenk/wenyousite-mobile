@@ -27,6 +27,10 @@ void main() {
       AppRouteAccessPolicy.forLocation('/threads/thread-1'),
       AppRouteAccess.public,
     );
+    expect(
+      AppRouteAccessPolicy.forLocation(AppRouteLocations.moderationAppeals),
+      AppRouteAccess.public,
+    );
   });
 
   test('位置构造器编码路径段和 returnTo 查询参数', () {

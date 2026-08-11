@@ -760,6 +760,18 @@ class _AccountSecurityPanel extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            key: const Key('me-open-moderation-appeals'),
+            enabled: !disabled,
+            leading: const Icon(Icons.gavel_outlined),
+            title: const Text('治理决定与申诉'),
+            subtitle: const Text('查看近 30 天决定与申诉进度'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: disabled
+                ? null
+                : () => context.pushNamed('moderation-appeals'),
+          ),
+          const Divider(height: 1),
+          ListTile(
             key: const Key('me-open-delete-account'),
             enabled: !disabled,
             leading: Icon(Icons.delete_forever_outlined, color: scheme.error),

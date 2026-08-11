@@ -14,6 +14,8 @@
 
 公开用户主页使用稳定路径 `/users/:userId`，可从搜索结果和 Markdown 用户站内链接进入。统计区的“动态”进入 `/users/:userId/moments`；关注和粉丝统计进入指定用户路径；非本人页顶栏提供加油与举报入口，登录身份确认目标非本人且服务端 capability 开启时，“发私聊”进入 `/messages/new/:userId`。本人中心使用主导航 `/me`，展示头像、简介、等级进度、统计和“我的动态 / 收藏 / 表情包 / 账号设置”等捷径；`/me/edit` 单独编辑头像、用户名、简介和公开范围，`/me/settings` 汇总黑名单、登录终端、密码、邮箱、验证、注销与退出。钱包、收藏和关系列表继续使用 `/me/wallet`、`/me/bookmarks`、`/me/following`、`/me/followers` 与 `/me/blocks`。创建、参与和收藏主题卡片进入 `/threads/:threadId`；最近回复进入带 `post` 查询的主题目标。
 
+账号设置新增“治理决定与申诉”入口进入公开 `/appeals`；users 只负责可发现入口，列表、申诉正文与专用凭据均由 moderation 独立管理。
+
 ## 4. 用户操作流程
 
 公开页按用户 ID 读取资料，展示头像、用户名、等级、简介、加入日期、统计与关系状态；内容按隐私字段惰性请求并支持游标分页。关注/粉丝统计读取对应关系投影并可继续进入用户资料。登录身份确认后，他人页可关注/取消关注，拉黑需确认，解除拉黑直接执行；关系成功同步按钮、标记和粉丝数；私聊入口只传稳定用户 ID，联系状态由 direct-messages 页面重读。“我的”先帮助用户判断“我是谁、我的内容在哪里”，编辑资料与高风险账号动作不与总览混排。用户名、简介和三项公开范围只发送变化字段；头像先经 media 完成上传，再用 `mediaId` 设置；已有头像移除前二次确认。注销入口转交 settings/auth 完成不可逆确认和会话清理。
@@ -73,4 +75,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)。

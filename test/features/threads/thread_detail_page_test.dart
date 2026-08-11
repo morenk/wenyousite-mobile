@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -39,7 +40,8 @@ void main() {
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     expect(find.text('登录后发表楼层'), findsOneWidget);
-    expect(find.textContaining('角色扮演 · 招募中'), findsOneWidget);
+    expect(find.text('角色扮演'), findsOneWidget);
+    expect(find.text('招募中'), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const Key('thread-subthread-menu'))).height,
       greaterThanOrEqualTo(48),
@@ -58,10 +60,28 @@ void main() {
           .onPressed,
       isNotNull,
     );
+    final toolbarCenters = [
+      const Key('thread-subthread-previous'),
+      const Key('thread-subthread-menu'),
+      const Key('thread-subthread-next'),
+      const Key('thread-interaction-like'),
+    ].map((key) => tester.getCenter(find.byKey(key)).dy).toList();
+    expect(
+      toolbarCenters.every(
+        (center) => (center - toolbarCenters.first).abs() < 1,
+      ),
+      isTrue,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
+      lessThan(230),
+    );
     expect(find.text('参与者发言'), findsNothing);
     expect(find.text('8 条内容'), findsNothing);
     expect(find.text('12 楼层'), findsNothing);
-    expect(find.text('128 浏览'), findsNothing);
+    expect(find.text('128 浏览'), findsOneWidget);
+    expect(find.text('2 位玩家'), findsOneWidget);
+    expect(find.text('12 楼'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('主线正文'),
       180,
@@ -79,6 +99,10 @@ void main() {
     expect(find.byKey(const Key('thread-floor-report-floor-1')), findsNothing);
     expect(find.byType(AnimatedContainer), findsNothing);
     expect(find.byKey(const Key('thread-reply-level-reply-1')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('thread-reply-level-reply-1'))).width,
+      lessThan(64),
+    );
 
     await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
     await tester.pumpAndSettle();
@@ -151,6 +175,16 @@ void main() {
     expect(find.text('支线楼层'), findsOneWidget);
     expect(find.text('第一层内容'), findsNothing);
     expect(repository.requestedSubthreads.last, 'subthread-2');
+  });
+
+  testWidgets('站内传送门的 subthread 坐标直接打开指定子贴', (tester) async {
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(), subthreadIdHint: 'subthread-2'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(find.text('主线正文'), findsNothing);
   });
 
   testWidgets('搜索结果中的帖子会切换所属子贴并展示目标上下文', (tester) async {
@@ -255,6 +289,64 @@ void main() {
       expect(find.text('星海旅团'), findsOneWidget);
     });
   }
+
+  testWidgets('360 dp 登录态子贴切换、喜欢、收藏和订阅保持同一工具栏', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        stickersEnabledProvider.overrideWithValue(false),
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(
+          _FakeThreadDetailRepository(),
+        ),
+        threadInteractionRepositoryProvider.overrideWithValue(
+          _FakeThreadInteractionRepository(),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('viewer-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(
+            threadId: 'thread-1',
+            categoryNameHint: '角色扮演',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final keys = [
+      const Key('thread-subthread-previous'),
+      const Key('thread-subthread-menu'),
+      const Key('thread-subthread-next'),
+      const Key('thread-interaction-like'),
+      const Key('thread-interaction-bookmark'),
+      const Key('thread-subscription-menu'),
+    ];
+    final centers = keys
+        .map((key) => tester.getCenter(find.byKey(key)).dy)
+        .toList();
+    expect(
+      centers.every((center) => (center - centers.first).abs() < 1),
+      isTrue,
+    );
+  });
 
   testWidgets('首页整卡进入详情，返回后保留已加载首页', (tester) async {
     final homeRepository = _FakeHomeRepository();
@@ -493,7 +585,11 @@ void main() {
   });
 }
 
-Widget _detailApp(ThreadDetailRepository repository, {String? targetPostId}) {
+Widget _detailApp(
+  ThreadDetailRepository repository, {
+  String? targetPostId,
+  String? subthreadIdHint,
+}) {
   return ProviderScope(
     overrides: [
       stickersEnabledProvider.overrideWithValue(false),
@@ -505,6 +601,7 @@ Widget _detailApp(ThreadDetailRepository repository, {String? targetPostId}) {
         threadId: 'thread-1',
         categoryNameHint: '角色扮演',
         targetPostId: targetPostId,
+        subthreadIdHint: subthreadIdHint,
       ),
     ),
   );
@@ -731,6 +828,20 @@ class _FakeThreadSubscriptionRepository
   Future<void> remove(String subscriptionId) {
     throw UnimplementedError();
   }
+}
+
+class _FakeThreadInteractionRepository implements ThreadInteractionRepository {
+  @override
+  Future<String> createBookmark(String threadId) async => 'bookmark-1';
+
+  @override
+  Future<int> like(String threadId) async => 13;
+
+  @override
+  Future<void> removeBookmark(String bookmarkId) async {}
+
+  @override
+  Future<int> unlike(String threadId) async => 12;
 }
 
 class _FakePostRepository implements PostRepository {

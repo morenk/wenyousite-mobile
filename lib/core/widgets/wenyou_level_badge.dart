@@ -14,19 +14,22 @@ class WenyouLevelBadge extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 20),
         padding: const EdgeInsets.symmetric(horizontal: 6),
-        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: tokens.accentedBackground.withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text(
-          'Lv.$level',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: tokens.brand,
-            fontSize: 11,
-            height: 1,
-            fontWeight: FontWeight.w700,
-            fontFeatures: const [FontFeature.tabularFigures()],
+        child: Align(
+          widthFactor: 1,
+          alignment: Alignment.center,
+          child: Text(
+            'Lv.$level',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: tokens.brand,
+              fontSize: 11,
+              height: 1,
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ),
       ),

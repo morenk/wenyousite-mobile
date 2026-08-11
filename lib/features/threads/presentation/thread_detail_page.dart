@@ -37,12 +37,14 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
     required this.threadId,
     this.categoryNameHint,
     this.targetPostId,
+    this.subthreadIdHint,
     super.key,
   });
 
   final String threadId;
   final String? categoryNameHint;
   final String? targetPostId;
+  final String? subthreadIdHint;
 
   @override
   ConsumerState<ThreadDetailPage> createState() => _ThreadDetailPageState();
@@ -109,6 +111,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ? null
         : ref.watch(threadPostTargetProvider(widget.targetPostId!));
     final resolvedTarget = target?.valueOrNull;
+    final hintedSubthreadId = resolvedTarget == null
+        ? widget.subthreadIdHint
+        : null;
+    if (state.phase == ThreadDetailPhase.ready &&
+        hintedSubthreadId != null &&
+        state.detail?.subthreadById(hintedSubthreadId) != null &&
+        state.selectedSubthreadId != hintedSubthreadId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(provider.notifier).selectSubthread(hintedSubthreadId);
+      });
+    }
     if (state.phase == ThreadDetailPhase.ready &&
         resolvedTarget != null &&
         resolvedTarget.threadId == widget.threadId &&

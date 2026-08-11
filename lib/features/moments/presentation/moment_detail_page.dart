@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
@@ -349,8 +350,9 @@ class _MomentDetailPanel extends StatelessWidget {
           SizedBox(height: tokens.space12),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-            child: SelectableText(
-              detail.content,
+            child: WenyouInternalReferenceText(
+              content: detail.content,
+              selectable: true,
               style: Theme.of(
                 context,
               ).textTheme.bodyLarge?.copyWith(height: 1.7),
@@ -693,8 +695,8 @@ class _MomentCommentBody extends StatelessWidget {
               ).textTheme.bodySmall?.copyWith(color: tokens.focus),
             ),
           if (comment.content != null)
-            Text(
-              comment.content!,
+            WenyouInternalReferenceText(
+              content: comment.content!,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           if (comment.media != null) ...[
