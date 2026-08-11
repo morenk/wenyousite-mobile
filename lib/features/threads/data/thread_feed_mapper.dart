@@ -27,7 +27,7 @@ HomeThreadCardModel mapHomeThreadCardResponse(
           final uri = Uri.tryParse(url);
           return uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
         })
-        .take(3)
+        .take(1)
         .toList(growable: false),
     memberCount: item.count.members.toInt(),
     playerCount: item.count.players.toInt(),

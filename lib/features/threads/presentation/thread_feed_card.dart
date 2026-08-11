@@ -71,7 +71,7 @@ class HomeThreadCard extends StatelessWidget {
             ],
             if (thread.coverImageUrls.isNotEmpty) ...[
               SizedBox(height: tokens.space12),
-              _ThreadCoverGrid(urls: thread.coverImageUrls),
+              _ThreadCover(url: thread.coverImageUrls.first),
             ],
             if (thread.tags.isNotEmpty) ...[
               SizedBox(height: tokens.space4),
@@ -209,31 +209,6 @@ class _ThreadAvatar extends StatelessWidget {
   }
 }
 
-class _ThreadCoverGrid extends StatelessWidget {
-  const _ThreadCoverGrid({required this.urls});
-
-  final List<String> urls;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: AspectRatio(
-        aspectRatio: urls.length == 1 ? 16 / 9 : 2.2,
-        child: Row(
-          children: [
-            for (var index = 0; index < urls.length; index++) ...[
-              if (index > 0) SizedBox(width: tokens.space4),
-              Expanded(child: _ThreadCover(url: urls[index])),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ThreadCover extends StatelessWidget {
   const _ThreadCover({required this.url});
 
@@ -246,16 +221,25 @@ class _ThreadCover extends StatelessWidget {
       color: tokens.softPanel,
       child: Center(child: Icon(Icons.image_outlined, color: tokens.mutedText)),
     );
-    return CachedNetworkImage(
-      imageUrl: url,
-      fit: BoxFit.cover,
-      placeholder: (_, _) => placeholder,
-      errorWidget: (_, _, _) => Semantics(
-        label: '图片加载失败',
-        child: ColoredBox(
-          color: tokens.softPanel,
-          child: Center(
-            child: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radius12),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          placeholder: (_, _) => placeholder,
+          errorWidget: (_, _, _) => Semantics(
+            label: '图片加载失败',
+            child: ColoredBox(
+              color: tokens.softPanel,
+              child: Center(
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: tokens.mutedText,
+                ),
+              ),
+            ),
           ),
         ),
       ),

@@ -1,6 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/home/application/home_feed_controller.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -105,6 +109,34 @@ void main() {
     expect(controller.state.phase, HomeFeedPhase.ready);
     expect(controller.state.transientFailure?.requestId, 'home-request-id');
   });
+
+  test('会话结束后用发现列表权威结果替换长驻缓存', () async {
+    var serverItems = [_firstThread];
+    final repository = _FakeHomeRepository(
+      onThreads: (_, _) async => CursorPage(items: serverItems, hasMore: false),
+    );
+    final tokenStore = _MemoryTokenStore();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(tokenStore),
+        sessionRemoteProvider.overrideWithValue(_UnusedSessionRemote()),
+        homeRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    final session = container.read(sessionControllerProvider.notifier);
+    await session.authenticate(_tokens);
+    final controller = container.read(homeFeedControllerProvider.notifier);
+    await controller.loadInitial();
+    expect(controller.state.items.single.id, 'thread-1');
+
+    serverItems = [_secondThread];
+    await session.logoutLocally();
+    await pumpEventQueue();
+
+    expect(controller.state.items.single.id, 'thread-2');
+    expect(controller.state.phase, HomeFeedPhase.ready);
+  });
 }
 
 class _FakeHomeRepository implements HomeRepository {
@@ -172,3 +204,29 @@ final _secondThread = HomeThreadCardModel(
 );
 
 final _activityAt = DateTime.utc(2026, 8, 9);
+
+class _MemoryTokenStore implements TokenStore {
+  SessionTokens? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<SessionTokens?> read() async => value;
+
+  @override
+  Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _UnusedSessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}
+
+const _tokens = SessionTokens(
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+);

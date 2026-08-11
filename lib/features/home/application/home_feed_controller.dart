@@ -5,6 +5,8 @@ import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 
@@ -275,5 +277,17 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
 
 final homeFeedControllerProvider =
     StateNotifierProvider<HomeFeedController, HomeFeedState>((ref) {
-      return HomeFeedController(ref.watch(homeRepositoryProvider));
+      final controller = HomeFeedController(ref.watch(homeRepositoryProvider));
+      ref.listen(
+        sessionControllerProvider.select((session) => session.status),
+        (previous, next) {
+          if (previous == null ||
+              previous == next ||
+              next == SessionStatus.restoring) {
+            return;
+          }
+          unawaited(controller.refresh());
+        },
+      );
+      return controller;
     });

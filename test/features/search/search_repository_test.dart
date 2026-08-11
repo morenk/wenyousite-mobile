@@ -66,7 +66,7 @@ void main() {
     expect(moments.items.single.author.level, 3);
     expect(moments.cursor, 'moment-cursor-2');
     expect(threads.single.title, '星海旅团');
-    expect(threads.single.ownerName, '温柔测试员');
+    expect(threads.single.ownerName, '已注销用户');
     expect(threads.single.coverImageUrls, [
       'https://cdn.example.com/cover.jpg',
     ]);
@@ -259,7 +259,7 @@ SearchThreadResponseDto _threadDto() {
       ..owner.update(
         (owner) => owner
           ..id = 'user-1'
-          ..username = '温柔测试员'
+          ..username = '已注销用户'
           ..avatar = 'javascript:alert(1)',
       )
       ..count.update(
@@ -270,7 +270,7 @@ SearchThreadResponseDto _threadDto() {
       )
       ..coverImages.addAll([
         'https://cdn.example.com/cover.jpg',
-        'data:image/png;base64,YQ==',
+        'https://cdn.example.com/ignored-second-cover.jpg',
       ]),
   );
 }

@@ -176,7 +176,7 @@ Response<ThreadsFindAll200Response> _threadsResponse() {
               ..preview = '  向星海出发  '
               ..coverImages.addAll([
                 'https://cdn.example.com/cover.jpg',
-                'javascript:alert(1)',
+                'https://cdn.example.com/ignored-second-cover.jpg',
               ]),
           ),
         ),

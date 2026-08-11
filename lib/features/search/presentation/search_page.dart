@@ -570,10 +570,7 @@ class _ThreadResultCard extends StatelessWidget {
             Text(item.title, style: Theme.of(context).textTheme.titleLarge),
             if (item.coverImageUrls.isNotEmpty) ...[
               SizedBox(height: tokens.space12),
-              _SearchCover(
-                url: item.coverImageUrls.first,
-                extraCount: item.coverImageUrls.length - 1,
-              ),
+              _SearchCover(url: item.coverImageUrls.first),
             ],
             SizedBox(height: tokens.space12),
             Text(
@@ -594,10 +591,9 @@ class _ThreadResultCard extends StatelessWidget {
 }
 
 class _SearchCover extends StatelessWidget {
-  const _SearchCover({required this.url, required this.extraCount});
+  const _SearchCover({required this.url});
 
   final String url;
-  final int extraCount;
 
   @override
   Widget build(BuildContext context) {
@@ -610,41 +606,11 @@ class _SearchCover extends StatelessWidget {
       borderRadius: BorderRadius.circular(tokens.radius12),
       child: AspectRatio(
         aspectRatio: 16 / 9,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => fallback,
-              errorWidget: (_, _, _) => fallback,
-            ),
-            if (extraCount > 0)
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: EdgeInsets.all(tokens.space8),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: tokens.text.withValues(alpha: 0.78),
-                      borderRadius: BorderRadius.circular(tokens.radiusPill),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tokens.space8,
-                        vertical: tokens.space4,
-                      ),
-                      child: Text(
-                        '+$extraCount',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: tokens.panel),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          placeholder: (_, _) => fallback,
+          errorWidget: (_, _, _) => fallback,
         ),
       ),
     );

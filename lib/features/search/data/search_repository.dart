@@ -205,7 +205,7 @@ class ApiSearchRepository implements SearchRepository {
       coverImageUrls: dto.coverImages
           .map(_safeHttpUrl)
           .whereType<String>()
-          .take(3)
+          .take(1)
           .toList(growable: false),
     );
   }
