@@ -13,7 +13,7 @@ part 'update_moment_dto.g.dart';
 ///
 /// Properties:
 /// * [title]
-/// * [content]
+/// * [content] - 动态正文字串；站内传送门语法见 internal-reference v1，其他 Markdown 按普通文本处理
 /// * [mediaIds]
 /// * [coverMediaId]
 /// * [version] - 乐观锁版本
@@ -22,6 +22,7 @@ abstract class UpdateMomentDto implements Built<UpdateMomentDto, UpdateMomentDto
   @BuiltValueField(wireName: r'title')
   String? get title;
 
+  /// 动态正文字串；站内传送门语法见 internal-reference v1，其他 Markdown 按普通文本处理
   @BuiltValueField(wireName: r'content')
   String? get content;
 

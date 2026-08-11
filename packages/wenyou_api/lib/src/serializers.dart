@@ -90,6 +90,7 @@ import 'package:wenyou_api/src/model/api_meta_response_dto.dart';
 import 'package:wenyou_api/src/model/api_paginated_success_envelope.dart';
 import 'package:wenyou_api/src/model/api_pagination_meta.dart';
 import 'package:wenyou_api/src/model/api_success_envelope.dart';
+import 'package:wenyou_api/src/model/appeal_access_token_response_dto.dart';
 import 'package:wenyou_api/src/model/auth_change_password200_response.dart';
 import 'package:wenyou_api/src/model/auth_forgot_password200_response.dart';
 import 'package:wenyou_api/src/model/auth_list_sessions200_response.dart';
@@ -197,6 +198,7 @@ import 'package:wenyou_api/src/model/invite_link_response_dto.dart';
 import 'package:wenyou_api/src/model/invite_owner_response_dto.dart';
 import 'package:wenyou_api/src/model/invite_preview_response_dto.dart';
 import 'package:wenyou_api/src/model/invite_thread_preview_response_dto.dart';
+import 'package:wenyou_api/src/model/issue_appeal_token_dto.dart';
 import 'package:wenyou_api/src/model/joined_thread_member_response_dto.dart';
 import 'package:wenyou_api/src/model/joined_thread_reference_response_dto.dart';
 import 'package:wenyou_api/src/model/login_dto.dart';
@@ -216,6 +218,8 @@ import 'package:wenyou_api/src/model/mobile_device_response_dto.dart';
 import 'package:wenyou_api/src/model/mobile_device_unregister200_response.dart';
 import 'package:wenyou_api/src/model/mobile_platform_compatibility_dto.dart';
 import 'package:wenyou_api/src/model/moderate_content_dto.dart';
+import 'package:wenyou_api/src/model/moderation_appeal_appellant_response_dto.dart';
+import 'package:wenyou_api/src/model/moderation_appeal_decision_response_dto.dart';
 import 'package:wenyou_api/src/model/moderation_appeal_response_dto.dart';
 import 'package:wenyou_api/src/model/moderation_case_response_dto.dart';
 import 'package:wenyou_api/src/model/moderation_cases_get200_response.dart';
@@ -416,6 +420,7 @@ import 'package:wenyou_api/src/model/upsert_body_dto.dart';
 import 'package:wenyou_api/src/model/user_condition_dto.dart';
 import 'package:wenyou_api/src/model/user_follow_record_response_dto.dart';
 import 'package:wenyou_api/src/model/user_moderation_appeals_appeal201_response.dart';
+import 'package:wenyou_api/src/model/user_moderation_appeals_issue_token200_response.dart';
 import 'package:wenyou_api/src/model/user_moderation_appeals_mine200_response.dart';
 import 'package:wenyou_api/src/model/user_moments_list200_response.dart';
 import 'package:wenyou_api/src/model/user_profile.dart';
@@ -527,6 +532,7 @@ part 'serializers.g.dart';
   ApiPaginatedSuccessEnvelope,$ApiPaginatedSuccessEnvelope,
   ApiPaginationMeta,
   ApiSuccessEnvelope,$ApiSuccessEnvelope,
+  AppealAccessTokenResponseDto,
   AuthChangePassword200Response,
   AuthForgotPassword200Response,
   AuthListSessions200Response,
@@ -634,6 +640,7 @@ part 'serializers.g.dart';
   InviteOwnerResponseDto,
   InvitePreviewResponseDto,
   InviteThreadPreviewResponseDto,
+  IssueAppealTokenDto,
   JoinedThreadMemberResponseDto,
   JoinedThreadReferenceResponseDto,
   LoginDto,
@@ -653,6 +660,8 @@ part 'serializers.g.dart';
   MobileDeviceUnregister200Response,
   MobilePlatformCompatibilityDto,
   ModerateContentDto,
+  ModerationAppealAppellantResponseDto,
+  ModerationAppealDecisionResponseDto,
   ModerationAppealResponseDto,
   ModerationCaseResponseDto,
   ModerationCasesGet200Response,
@@ -853,6 +862,7 @@ part 'serializers.g.dart';
   UserConditionDto,
   UserFollowRecordResponseDto,
   UserModerationAppealsAppeal201Response,
+  UserModerationAppealsIssueToken200Response,
   UserModerationAppealsMine200Response,
   UserMomentsList200Response,
   UserProfile,

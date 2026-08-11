@@ -6,7 +6,7 @@
 
 - [模块状态与文档索引](modules/README.md)
 - [网络与会话](architecture/networking.md)
-- [Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)
+- [Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)
 - [移动端视觉基线](architecture/visual-baseline.md)
 - [导航](architecture/navigation.md)
 - [依赖边界与架构门禁](architecture/dependencies.md)

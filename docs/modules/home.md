@@ -58,8 +58,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.5.2-dev.20260811.1`；Markdown v2；后端 `f99d59d832bb6136d6ff88f5142d1c5b6f9239d2`。
+契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)、[主题](threads.md)、[标签](tags.md)。

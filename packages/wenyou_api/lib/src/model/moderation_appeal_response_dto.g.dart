@@ -97,9 +97,9 @@ class _$ModerationAppealResponseDto extends ModerationAppealResponseDto {
   @override
   final ModerationAppealResponseDtoStatusEnum status;
   @override
-  final BuiltMap<String, JsonObject?> decision;
+  final ModerationAppealDecisionResponseDto decision;
   @override
-  final BuiltMap<String, JsonObject?> appellant;
+  final ModerationAppealAppellantResponseDto appellant;
   @override
   final DateTime createdAt;
 
@@ -183,16 +183,16 @@ class ModerationAppealResponseDtoBuilder
   set status(ModerationAppealResponseDtoStatusEnum? status) =>
       _$this._status = status;
 
-  MapBuilder<String, JsonObject?>? _decision;
-  MapBuilder<String, JsonObject?> get decision =>
-      _$this._decision ??= MapBuilder<String, JsonObject?>();
-  set decision(MapBuilder<String, JsonObject?>? decision) =>
+  ModerationAppealDecisionResponseDtoBuilder? _decision;
+  ModerationAppealDecisionResponseDtoBuilder get decision =>
+      _$this._decision ??= ModerationAppealDecisionResponseDtoBuilder();
+  set decision(ModerationAppealDecisionResponseDtoBuilder? decision) =>
       _$this._decision = decision;
 
-  MapBuilder<String, JsonObject?>? _appellant;
-  MapBuilder<String, JsonObject?> get appellant =>
-      _$this._appellant ??= MapBuilder<String, JsonObject?>();
-  set appellant(MapBuilder<String, JsonObject?>? appellant) =>
+  ModerationAppealAppellantResponseDtoBuilder? _appellant;
+  ModerationAppealAppellantResponseDtoBuilder get appellant =>
+      _$this._appellant ??= ModerationAppealAppellantResponseDtoBuilder();
+  set appellant(ModerationAppealAppellantResponseDtoBuilder? appellant) =>
       _$this._appellant = appellant;
 
   DateTime? _createdAt;

@@ -42,7 +42,7 @@
 
 ## 10. 跨模块约束
 
-帖子输入复用 editor 的 Markdown ↔ Delta Codec、图片上传、协议 embed 和五槽位正文草稿；服务端生成骰子结果。主题详情提供子贴、capability、楼层和公开举报上下文，posts 不直接读取 threads 页面状态；社区举报的原因、详情、邮箱验证恢复与重复待处理收敛由 reports 管理。视觉只使用 Foundation v1.1.0 Token 与共享组件，连续楼层/回复不使用逐条装饰面板。
+帖子输入复用 editor 的 Markdown ↔ Delta Codec、图片上传、协议 embed 和五槽位正文草稿；服务端生成骰子结果。主题详情提供子贴、capability、楼层和公开举报上下文，posts 不直接读取 threads 页面状态；社区举报的原因、详情、邮箱验证恢复与重复待处理收敛由 reports 管理。视觉只使用 Foundation v1.2.1 Token 与共享组件，连续楼层/回复不使用逐条装饰面板。
 
 ## 11. 测试场景与验收条件
 
@@ -64,8 +64,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.5.2-dev.20260811.1`；Markdown v2；后端 `f99d59d832bb6136d6ff88f5142d1c5b6f9239d2`；Foundation `v1.1.0`。
+契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`；Foundation `v1.2.1`。
 
 ## 14. 相关代码与架构文档
 
-独立帖子代码：`lib/features/posts/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+独立帖子代码：`lib/features/posts/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)。

@@ -3,8 +3,9 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/moderation_appeal_appellant_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:built_value/json_object.dart';
+import 'package:wenyou_api/src/model/moderation_appeal_decision_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -32,10 +33,10 @@ abstract class ModerationAppealResponseDto implements Built<ModerationAppealResp
   // enum statusEnum {  PENDING,  UPHELD,  OVERTURNED,  };
 
   @BuiltValueField(wireName: r'decision')
-  BuiltMap<String, JsonObject?> get decision;
+  ModerationAppealDecisionResponseDto get decision;
 
   @BuiltValueField(wireName: r'appellant')
-  BuiltMap<String, JsonObject?> get appellant;
+  ModerationAppealAppellantResponseDto get appellant;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -81,12 +82,12 @@ class _$ModerationAppealResponseDtoSerializer implements PrimitiveSerializer<Mod
     yield r'decision';
     yield serializers.serialize(
       object.decision,
-      specifiedType: const FullType(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+      specifiedType: const FullType(ModerationAppealDecisionResponseDto),
     );
     yield r'appellant';
     yield serializers.serialize(
       object.appellant,
-      specifiedType: const FullType(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+      specifiedType: const FullType(ModerationAppealAppellantResponseDto),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -140,15 +141,15 @@ class _$ModerationAppealResponseDtoSerializer implements PrimitiveSerializer<Mod
         case r'decision':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
-          ) as BuiltMap<String, JsonObject?>;
+            specifiedType: const FullType(ModerationAppealDecisionResponseDto),
+          ) as ModerationAppealDecisionResponseDto;
           result.decision.replace(valueDes);
           break;
         case r'appellant':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
-          ) as BuiltMap<String, JsonObject?>;
+            specifiedType: const FullType(ModerationAppealAppellantResponseDto),
+          ) as ModerationAppealAppellantResponseDto;
           result.appellant.replace(valueDes);
           break;
         case r'createdAt':

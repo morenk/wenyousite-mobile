@@ -11,14 +11,14 @@ part 'create_moment_comment_dto.g.dart';
 /// CreateMomentCommentDto
 ///
 /// Properties:
-/// * [content] - 评论纯文本；与图片或表情至少提供一项
+/// * [content] - 评论字串；可按 internal-reference v1 嵌入命名站内传送门；与图片或表情至少提供一项
 /// * [mediaId] - 已完成处理且属于评论者的图片 ID；与 stickerAssetId 互斥
 /// * [stickerAssetId] - 当前收藏夹中的表情资产 ID；与 mediaId 互斥
 /// * [replyToCommentId] - 被回复评论 ID；服务端自动归并到所属主评论
 /// * [clientRequestId] - 评论幂等键
 @BuiltValue()
 abstract class CreateMomentCommentDto implements Built<CreateMomentCommentDto, CreateMomentCommentDtoBuilder> {
-  /// 评论纯文本；与图片或表情至少提供一项
+  /// 评论字串；可按 internal-reference v1 嵌入命名站内传送门；与图片或表情至少提供一项
   @BuiltValueField(wireName: r'content')
   String? get content;
 

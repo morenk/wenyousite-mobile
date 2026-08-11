@@ -18,7 +18,7 @@ part 'moment_detail_response_dto.g.dart';
 /// * [authorId]
 /// * [author]
 /// * [title]
-/// * [contentExcerpt] - 纯文本正文摘要
+/// * [contentExcerpt] - 正文纯文本摘要；传送门降级为自定义名称或默认名称“传送门”
 /// * [coverType]
 /// * [textCoverTheme]
 /// * [coverMedia]
@@ -31,7 +31,7 @@ part 'moment_detail_response_dto.g.dart';
 /// * [viewerBookmarked]
 /// * [createdAt]
 /// * [updatedAt]
-/// * [content] - 完整纯文本正文
+/// * [content] - 完整正文字串；可包含 internal-reference v1 站内传送门语法
 /// * [images]
 /// * [version]
 /// * [canEdit]
@@ -50,7 +50,7 @@ abstract class MomentDetailResponseDto implements Built<MomentDetailResponseDto,
   @BuiltValueField(wireName: r'title')
   String get title;
 
-  /// 纯文本正文摘要
+  /// 正文纯文本摘要；传送门降级为自定义名称或默认名称“传送门”
   @BuiltValueField(wireName: r'contentExcerpt')
   String get contentExcerpt;
 
@@ -92,7 +92,7 @@ abstract class MomentDetailResponseDto implements Built<MomentDetailResponseDto,
   @BuiltValueField(wireName: r'updatedAt')
   DateTime get updatedAt;
 
-  /// 完整纯文本正文
+  /// 完整正文字串；可包含 internal-reference v1 站内传送门语法
   @BuiltValueField(wireName: r'content')
   String get content;
 

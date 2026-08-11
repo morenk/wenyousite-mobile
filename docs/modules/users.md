@@ -69,8 +69,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.5.2-dev.20260811.1`；Markdown v2；后端 `f99d59d832bb6136d6ff88f5142d1c5b6f9239d2`。
+契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.1.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)。

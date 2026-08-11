@@ -13,7 +13,7 @@ part 'create_moment_dto.g.dart';
 ///
 /// Properties:
 /// * [title] - 动态标题，纯文本
-/// * [content] - 动态正文，纯文本
+/// * [content] - 动态正文字串；可按 internal-reference v1 嵌入命名站内传送门，其他 Markdown 按普通文本处理
 /// * [mediaIds] - 已完成处理的图片 ID，顺序即展示顺序
 /// * [coverMediaId] - 必须属于 mediaIds；无图时为 null
 /// * [clientRequestId] - 发布幂等键，同时决定无图文字封面配色
@@ -23,7 +23,7 @@ abstract class CreateMomentDto implements Built<CreateMomentDto, CreateMomentDto
   @BuiltValueField(wireName: r'title')
   String get title;
 
-  /// 动态正文，纯文本
+  /// 动态正文字串；可按 internal-reference v1 嵌入命名站内传送门，其他 Markdown 按普通文本处理
   @BuiltValueField(wireName: r'content')
   String? get content;
 

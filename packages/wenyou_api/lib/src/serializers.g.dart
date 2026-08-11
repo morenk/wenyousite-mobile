@@ -97,6 +97,7 @@ Serializers _$serializers =
           ..add(ApiMetaResponseDto.serializer)
           ..add(ApiPaginationMeta.serializer)
           ..add(ApiSuccessEnvelopeCodeEnum.serializer)
+          ..add(AppealAccessTokenResponseDto.serializer)
           ..add(AuthChangePassword200Response.serializer)
           ..add(AuthForgotPassword200Response.serializer)
           ..add(AuthListSessions200Response.serializer)
@@ -226,6 +227,7 @@ Serializers _$serializers =
           ..add(InvitePreviewResponseDto.serializer)
           ..add(InviteThreadPreviewResponseDto.serializer)
           ..add(InviteThreadPreviewResponseDtoStatusEnum.serializer)
+          ..add(IssueAppealTokenDto.serializer)
           ..add(JoinedThreadMemberResponseDto.serializer)
           ..add(JoinedThreadMemberResponseDtoRoleEnum.serializer)
           ..add(JoinedThreadReferenceResponseDto.serializer)
@@ -249,6 +251,11 @@ Serializers _$serializers =
           ..add(MobileDeviceUnregister200Response.serializer)
           ..add(MobilePlatformCompatibilityDto.serializer)
           ..add(ModerateContentDto.serializer)
+          ..add(ModerationAppealAppellantResponseDto.serializer)
+          ..add(ModerationAppealDecisionResponseDto.serializer)
+          ..add(ModerationAppealDecisionResponseDtoActionEnum.serializer)
+          ..add(ModerationAppealDecisionResponseDtoPolicyCodeEnum.serializer)
+          ..add(ModerationAppealDecisionResponseDtoTargetTypeEnum.serializer)
           ..add(ModerationAppealResponseDto.serializer)
           ..add(ModerationAppealResponseDtoStatusEnum.serializer)
           ..add(ModerationCaseResponseDto.serializer)
@@ -506,6 +513,7 @@ Serializers _$serializers =
           ..add(UserConditionDtoRoleEnum.serializer)
           ..add(UserFollowRecordResponseDto.serializer)
           ..add(UserModerationAppealsAppeal201Response.serializer)
+          ..add(UserModerationAppealsIssueToken200Response.serializer)
           ..add(UserModerationAppealsMine200Response.serializer)
           ..add(UserMomentsList200Response.serializer)
           ..add(UserProfile.serializer)
@@ -1127,20 +1135,6 @@ Serializers _$serializers =
               ]),
             ]),
             () => MapBuilder<String, BuiltMap<String, JsonObject?>>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltMap, const [
-              const FullType(String),
-              const FullType.nullable(JsonObject),
-            ]),
-            () => MapBuilder<String, JsonObject?>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltMap, const [
-              const FullType(String),
-              const FullType.nullable(JsonObject),
-            ]),
-            () => MapBuilder<String, JsonObject?>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

@@ -18,7 +18,7 @@ part 'moment_card_response_dto.g.dart';
 /// * [authorId]
 /// * [author]
 /// * [title]
-/// * [contentExcerpt] - 纯文本正文摘要
+/// * [contentExcerpt] - 正文纯文本摘要；传送门降级为自定义名称或默认名称“传送门”
 /// * [coverType]
 /// * [textCoverTheme]
 /// * [coverMedia]
@@ -45,7 +45,7 @@ abstract class MomentCardResponseDto implements Built<MomentCardResponseDto, Mom
   @BuiltValueField(wireName: r'title')
   String get title;
 
-  /// 纯文本正文摘要
+  /// 正文纯文本摘要；传送门降级为自定义名称或默认名称“传送门”
   @BuiltValueField(wireName: r'contentExcerpt')
   String get contentExcerpt;
 
