@@ -112,14 +112,26 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 state.phase == ThreadComposePhase.published)
               IconButton(
                 key: const Key('compose-remote-drafts'),
-                tooltip: state.remoteDraft == null
-                    ? '服务端主题草稿'
-                    : '服务端主题草稿 · 当前已同步',
-                onPressed: locked ? null : _openRemoteDrafts,
+                tooltip: state.remoteDraft == null ? '云端草稿' : '云端草稿 · 当前已同步',
+                onPressed: locked ? null : _openRemoteDraftActions,
                 icon: Badge(
                   isLabelVisible: state.remoteDraft != null,
                   child: const Icon(Icons.cloud_outlined),
                 ),
+              ),
+            if (state.phase == ThreadComposePhase.ready ||
+                state.phase == ThreadComposePhase.published)
+              TextButton(
+                key: const Key('compose-publish'),
+                onPressed: !locked && _codecFailure == null && state.canPublish
+                    ? _publish
+                    : null,
+                child: state.action == ThreadComposeAction.publish
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('发布'),
               ),
           ],
         ),
@@ -154,6 +166,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       state.visibility.label,
       if (state.tags.isNotEmpty) '${state.tags.length} 个标签',
     ].join(' · ');
+    final editorMinHeight = (MediaQuery.sizeOf(context).height - 360)
+        .clamp(340.0, 560.0)
+        .toDouble();
     return WenyouPageBody(
       maxWidth: 800,
       child: Column(
@@ -310,7 +325,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     scrollController: _editorScrollController,
                     config: QuillEditorConfig(
                       scrollable: false,
-                      minHeight: 340,
+                      minHeight: editorMinHeight,
                       padding: EdgeInsets.fromLTRB(
                         tokens.space4,
                         tokens.space16,
@@ -408,39 +423,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 ),
               ],
             ),
-          ),
-          SizedBox(height: tokens.space12),
-          OutlinedButton.icon(
-            key: const Key('compose-save-draft'),
-            onPressed: enabled ? _saveThreadDraft : null,
-            icon: state.action == ThreadComposeAction.saveDraft
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.cloud_upload_outlined),
-            label: Text(
-              state.action == ThreadComposeAction.saveDraft
-                  ? '正在保存…'
-                  : '保存到服务端草稿',
-            ),
-          ),
-          SizedBox(height: tokens.space12),
-          WenyouAsyncPrimaryButton(
-            key: const Key('compose-publish'),
-            label: '发布主题',
-            loadingLabel: '正在发布主题',
-            icon: Icons.send_rounded,
-            isLoading: state.action == ThreadComposeAction.publish,
-            onPressed: enabled && state.canPublish ? _publish : null,
-          ),
-          SizedBox(height: tokens.space8),
-          Text(
-            '发布前会再次保存本地快照；若网络结果不确定，重试会沿用同一创建请求。',
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
           ),
         ],
       ),
@@ -689,7 +671,51 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final saved = await ref
         .read(threadComposeControllerProvider.notifier)
         .saveDraft();
-    if (saved != null) ref.invalidate(remoteThreadDraftsControllerProvider);
+    if (saved == null) return;
+    ref.invalidate(remoteThreadDraftsControllerProvider);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('已保存到云端草稿')));
+  }
+
+  Future<void> _openRemoteDraftActions() async {
+    final action = await showModalBottomSheet<_RemoteDraftAction>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: 8),
+        children: [
+          const ListTile(
+            title: Text('云端草稿'),
+            subtitle: Text('只在需要时保存或切换，不占用正文编辑空间。'),
+          ),
+          ListTile(
+            key: const Key('compose-save-draft'),
+            leading: const Icon(Icons.cloud_upload_outlined),
+            title: const Text('保存当前主题'),
+            subtitle: const Text('保存标题、正文和发布设置'),
+            onTap: () => Navigator.pop(context, _RemoteDraftAction.save),
+          ),
+          ListTile(
+            key: const Key('compose-open-remote-drafts'),
+            leading: const Icon(Icons.folder_open_outlined),
+            title: const Text('打开云端草稿'),
+            subtitle: const Text('浏览并切换本人未发布的主题'),
+            onTap: () => Navigator.pop(context, _RemoteDraftAction.open),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case _RemoteDraftAction.save:
+        await _saveThreadDraft();
+      case _RemoteDraftAction.open:
+        await _openRemoteDrafts();
+    }
   }
 
   Future<void> _openRemoteDrafts() async {
@@ -708,7 +734,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         builder: (context) => AlertDialog(
           title: const Text('切换服务端草稿？'),
           content: const Text(
-            '打开后会用所选服务端版本替换当前编辑器内容。若当前修改还需要保留，请先取消并点击“保存到服务端草稿”。',
+            '打开后会用所选服务端版本替换当前编辑器内容。若当前修改还需要保留，请先取消，再从顶栏云端草稿入口选择“保存当前主题”。',
           ),
           actions: [
             TextButton(
@@ -799,6 +825,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     });
   }
 }
+
+enum _RemoteDraftAction { save, open }
 
 bool _hasMeaningfulContent(ThreadComposeState state) {
   return state.title.trim().isNotEmpty ||

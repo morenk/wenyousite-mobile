@@ -97,7 +97,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         const WenyouEmptyState(
           icon: Icons.cloud_done_outlined,
           title: '还没有服务端主题草稿',
-          message: '在创作页点击“保存到服务端草稿”后，会出现在这里。',
+          message: '在创作页顶栏的云端草稿入口选择“保存当前主题”后，会出现在这里。',
         ),
       RemoteThreadDraftsPhase.ready => ListView.separated(
         key: const Key('remote-drafts-list'),

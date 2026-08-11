@@ -202,7 +202,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
         onDismiss: _dismiss,
         child: const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
-          child: Text('请先保存到服务端草稿，再继续输入 @ 选择可提及用户。'),
+          child: Text('请先保存到云端草稿，再继续输入 @ 选择可提及用户。'),
         ),
       );
     }

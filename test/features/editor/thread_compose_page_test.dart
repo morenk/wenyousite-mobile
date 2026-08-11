@@ -75,7 +75,18 @@ void main() {
           .threadId,
       isNull,
     );
-    expect(find.text('保存到服务端草稿'), findsOneWidget);
+    expect(find.byKey(const Key('compose-remote-drafts')), findsOneWidget);
+    expect(find.byKey(const Key('compose-save-draft')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('compose-remote-drafts')));
+    await tester.pumpAndSettle();
+    expect(find.text('保存当前主题'), findsOneWidget);
+    expect(find.text('打开云端草稿'), findsOneWidget);
+    expect(find.byKey(const Key('compose-save-draft')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('compose-save-draft')));
+    await tester.pumpAndSettle();
+    expect(find.text('已保存到云端草稿'), findsOneWidget);
   });
 
   testWidgets('发布前在页面内显示验证错误且不调用后端创建', (tester) async {
@@ -149,23 +160,29 @@ void main() {
     );
   });
 
-  testWidgets('360dp 窄屏表单和编辑器无横向溢出', (tester) async {
-    tester.view.physicalSize = const Size(360, 800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final controller = await _readyController(_MemorySnapshotStore());
+  for (final size in const [Size(360, 600), Size(400, 800), Size(600, 900)]) {
+    testWidgets('${size.width}dp 创作页和紧凑顶栏无布局溢出', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final controller = await _readyController(_MemorySnapshotStore());
 
-    await _pumpPage(tester, controller);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('compose-body')),
-      240,
-      scrollable: find.byType(Scrollable).first,
-    );
+      await _pumpPage(tester, controller);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('compose-body')),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
 
-    expect(tester.takeException(), isNull);
-    expect(find.byKey(const Key('compose-body')), findsOneWidget);
-  });
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('compose-body')), findsOneWidget);
+      expect(
+        tester.getTopRight(find.byKey(const Key('compose-publish'))).dx,
+        lessThanOrEqualTo(size.width),
+      );
+    });
+  }
 
   testWidgets('创作首屏先呈现标题和正文，发布设置默认收起', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -180,12 +197,32 @@ void main() {
     final body = find.byKey(const Key('compose-body'));
     final settings = find.byKey(const Key('compose-publish-settings'));
     expect(tester.getTopLeft(title).dy, lessThan(tester.getTopLeft(body).dy));
-    expect(tester.getSize(body).height, greaterThanOrEqualTo(340));
+    expect(tester.getSize(body).height, greaterThanOrEqualTo(440));
     expect(find.byKey(const Key('compose-category')), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('compose-remote-drafts'))).height,
       greaterThanOrEqualTo(48),
     );
+    expect(
+      tester.getSize(find.byKey(const Key('compose-publish'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(find.byKey(const Key('compose-save-draft')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('compose-remote-drafts')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const Key('compose-save-draft'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const Key('compose-open-remote-drafts')))
+          .height,
+      greaterThanOrEqualTo(48),
+    );
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
 
     await tester.ensureVisible(settings);
     await tester.tap(settings);
@@ -210,7 +247,7 @@ void main() {
     );
   });
 
-  testWidgets('工具栏正文草稿打开五槽位面板而页面按钮保留主题实体草稿', (tester) async {
+  testWidgets('工具栏正文草稿与顶栏云端主题草稿保持独立入口', (tester) async {
     final controller = await _readyController(_MemorySnapshotStore());
     controller.updateBody('当前主题正文');
     final contentDraftsController = ContentDraftsController(
@@ -235,7 +272,15 @@ void main() {
 
     expect(find.byKey(const Key('content-drafts-list')), findsOneWidget);
     expect(find.text('只保存当前正文 · 已用 1/5'), findsOneWidget);
-    expect(find.text('保存到服务端草稿'), findsOneWidget);
+
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('compose-remote-drafts')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('compose-save-draft')), findsOneWidget);
+    expect(find.byKey(const Key('compose-open-remote-drafts')), findsOneWidget);
+    expect(find.text('保存标题、正文和发布设置'), findsOneWidget);
   });
 
   testWidgets('离页强制落盘失败时要求用户明确选择而不静默退出', (tester) async {

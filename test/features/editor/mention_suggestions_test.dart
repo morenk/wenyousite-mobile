@@ -94,7 +94,7 @@ void main() {
     );
 
     expect(find.byKey(const Key('mention-context-required')), findsOneWidget);
-    expect(find.textContaining('先保存到服务端草稿'), findsOneWidget);
+    expect(find.textContaining('先保存到云端草稿'), findsOneWidget);
     expect(repository.queries, isEmpty);
   });
 
