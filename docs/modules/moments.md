@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-动态是五栏应用壳的 `/moments` 主分支，分为“发现”和“关注”。全局发布按钮的底部类型面板进入受保护的 `/compose/moment`，在动态分支中将该类型标为推荐；详情使用公开 `/moments/:momentId`，编辑使用受保护的 `/moments/:momentId/edit`，动态收藏使用受保护的 `/moments/bookmarks`，公开用户主页通过 `/users/:userId/moments` 读取该用户动态。全站搜索的动态 Tab 以稳定 momentId 进入同一详情；通知 moment 目标也只用服务端 `momentId` 进入详情。
+动态是四分支应用壳的 `/moments` 主分支，分为“发现”和“关注”；顶栏提供全站搜索入口。底栏中央发布动作的类型面板进入受保护的 `/compose/moment`，在动态分支中将该类型标为推荐；详情使用公开 `/moments/:momentId`，编辑使用受保护的 `/moments/:momentId/edit`，动态收藏使用受保护的 `/moments/bookmarks`，公开用户主页通过 `/users/:userId/moments` 读取该用户动态。全站搜索的动态 Tab 以稳定 momentId 进入同一详情；通知 moment 目标也只用服务端 `momentId` 进入详情。
 
 ## 4. 用户操作流程
 

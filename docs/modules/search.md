@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-底部搜索分支 `/search` 包含输入框和“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab，360dp 起全部可见且不横向滚动。动态结果进入 `/moments/:momentId`，主题帖结果进入 `/threads/:threadId`，用户结果进入 `/users/:userId`，楼层内容结果进入 `/threads/:threadId?post=:postId`。主题详情工具栏进入公开 `/threads/:threadId/search`，结果继续用稳定帖子 ID 回到同一详情定位目标上下文。
+首页和动态顶栏的搜索按钮进入独立 `/search` 页面；它不占用底部导航分支。页面包含输入框和“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab，360dp 起全部可见且不横向滚动。动态结果进入 `/moments/:momentId`，主题帖结果进入 `/threads/:threadId`，用户结果进入 `/users/:userId`，楼层内容结果进入 `/threads/:threadId?post=:postId`。主题详情工具栏进入公开 `/threads/:threadId/search`，结果继续用稳定帖子 ID 回到同一详情定位目标上下文。
 
 ## 4. 用户操作流程
 

@@ -27,7 +27,7 @@ import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 void main() {
-  testWidgets('兼容契约下游客直接进入五栏首页', (tester) async {
+  testWidgets('兼容契约下游客进入四分支首页并从顶部搜索', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -43,12 +43,13 @@ void main() {
     expect(find.byKey(const Key('home-category-all')), findsOneWidget);
     expect(find.text('首页'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
-    expect(find.text('搜索'), findsOneWidget);
+    expect(find.text('搜索'), findsNothing);
+    expect(find.text('发布'), findsOneWidget);
     expect(find.text('消息'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);
     expect(find.byKey(const Key('global-publish')), findsOneWidget);
 
-    await tester.tap(find.text('搜索'));
+    await tester.tap(find.byKey(const Key('home-open-search')));
     await tester.pumpAndSettle();
     expect(find.text('输入关键词开始搜索'), findsOneWidget);
   });

@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
@@ -145,15 +147,23 @@ class _ThreadAuthor extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                thread.ownerName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      thread.ownerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  SizedBox(width: tokens.space4),
+                  WenyouLevelBadge(level: thread.ownerLevel),
+                ],
               ),
               SizedBox(height: tokens.space4),
               Text(
-                'Lv.${thread.ownerLevel} · ${_relativeTime(thread.lastActivityAt)}',
+                '${formatWenyouRelativeTime(thread.lastActivityAt)}活跃',
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
@@ -322,13 +332,4 @@ class _ThreadStat extends StatelessWidget {
       ],
     );
   }
-}
-
-String _relativeTime(DateTime value) {
-  final difference = DateTime.now().difference(value.toLocal());
-  if (difference.isNegative || difference.inMinutes < 1) return '刚刚活跃';
-  if (difference.inHours < 1) return '${difference.inMinutes} 分钟前活跃';
-  if (difference.inDays < 1) return '${difference.inHours} 小时前活跃';
-  if (difference.inDays < 30) return '${difference.inDays} 天前活跃';
-  return '${value.toLocal().month} 月 ${value.toLocal().day} 日活跃';
 }

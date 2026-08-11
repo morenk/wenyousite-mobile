@@ -53,10 +53,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
     expect(find.text('收到，准备出发。'), findsOneWidget);
-    expect(
-      find.byKey(const Key('thread-floor-report-floor-1')),
-      findsOneWidget,
+    expect(find.byKey(const Key('thread-floor-report-floor-1')), findsNothing);
+    expect(find.byType(AnimatedContainer), findsNothing);
+    expect(find.byKey(const Key('thread-reply-level-reply-1')), findsOneWidget);
+
+    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('楼层操作'), findsOneWidget);
+    expect(find.text('复制楼层链接'), findsOneWidget);
+    expect(find.text('举报'), findsAtLeastNWidgets(1));
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(
+      find.byKey(const Key('thread-inline-reply-reply-1')),
     );
+    await tester.pumpAndSettle();
+    expect(find.text('回复操作'), findsOneWidget);
+    expect(find.text('举报'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('切换子贴同步替换正文与楼层', (tester) async {
@@ -355,17 +369,19 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
-    expect(find.byKey(const Key('thread-floor-edit-floor-1')), findsOneWidget);
-    expect(
-      find.byKey(const Key('thread-floor-delete-floor-1')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('thread-floor-edit-floor-1')), findsNothing);
+    expect(find.byKey(const Key('thread-floor-delete-floor-1')), findsNothing);
     expect(
       find.byKey(const Key('thread-floor-discussion-floor-1')),
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const Key('thread-floor-delete-floor-1')));
+    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('楼层操作'), findsOneWidget);
+    await tester.ensureVisible(find.text('删除'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除'));
     await tester.pumpAndSettle();
     expect(find.text('删除这个楼层？'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, '删除'));

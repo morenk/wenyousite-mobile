@@ -44,7 +44,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(homeFeedControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('温油站')),
+      appBar: AppBar(
+        title: const Text('温油站'),
+        actions: [
+          IconButton(
+            key: const Key('home-open-search'),
+            onPressed: () => context.pushNamed('search'),
+            tooltip: '搜索',
+            icon: const Icon(Icons.search_rounded),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () =>
             ref.read(homeFeedControllerProvider.notifier).refresh(),

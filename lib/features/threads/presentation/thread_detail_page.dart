@@ -2,16 +2,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_card_action_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -412,8 +414,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                     if (index > 0) const Divider(height: 24),
                     _FloorCard(
                       key: focused ? _targetKey : null,
+                      threadId: widget.threadId,
                       floor: floor,
                       isFocused: focused,
+                      authenticated: authenticated,
+                      viewerId: viewerId,
+                      canManageThread: detail.canManageThread,
+                      reportsEnabled: !detail.isPrivate,
+                      pendingPostId: actions.pendingPostId,
                       canEdit: floor.author.id == viewerId,
                       canDelete:
                           floor.author.id == viewerId || detail.canManageThread,
@@ -430,6 +438,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                       onEdit: () =>
                           _compose(_editFloorTarget(detail, selected, floor)),
                       onDelete: () => _deleteFloor(floor),
+                      onReplyToReply: (reply) => _compose(
+                        _replyTarget(detail, selected, floor, reply),
+                      ),
+                      onEditReply: (reply) => _compose(
+                        _editReplyTarget(detail, selected, floor, reply),
+                      ),
+                      onDeleteReply: (reply) =>
+                          _deleteReply(detail, selected, floor, reply),
                     ),
                   ],
                 ),
@@ -514,6 +530,42 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('楼层已删除。')));
+    await ref
+        .read(threadDetailControllerProvider(widget.threadId).notifier)
+        .refresh();
+  }
+
+  Future<void> _deleteReply(
+    ThreadDetailModel detail,
+    ThreadSubthreadModel subthread,
+    ThreadFloorModel floor,
+    ThreadReplyModel reply,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除这条回复？'),
+        content: const Text('回复会被标记为已删除，操作无法在移动端撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final removed = await ref
+        .read(postActionControllerProvider(widget.threadId).notifier)
+        .remove(_replyAsPost(detail, subthread, floor, reply));
+    if (!removed || !mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('回复已删除。')));
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refresh();

@@ -1,16 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_card_action_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -468,8 +469,6 @@ class _ReplyFilters extends StatelessWidget {
   }
 }
 
-enum _PostAction { copyText, copyLink, reply, edit, delete, report }
-
 class _PostCard extends ConsumerWidget {
   const _PostCard({
     required this.post,
@@ -499,8 +498,7 @@ class _PostCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
-    final card = AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+    final card = Container(
       padding: EdgeInsets.symmetric(
         horizontal: tokens.space4,
         vertical: tokens.space12,
@@ -512,16 +510,7 @@ class _PostCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PostAuthorLine(post: post, root: root),
-          if (post.replyToAuthor != null) ...[
-            SizedBox(height: tokens.space8),
-            Text(
-              '回复 @${post.replyToAuthor!.username}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.brand),
-            ),
-          ],
-          SizedBox(height: tokens.space12),
+          SizedBox(height: root ? tokens.space12 : tokens.space8),
           if (post.isDeleted)
             Text(
               root ? '该楼层已删除。' : '该回复已删除。',
@@ -540,61 +529,14 @@ class _PostCard extends ConsumerWidget {
               bodyFontSize: root ? 17 : 16,
               bodyHeight: root ? 1.8 : 1.75,
             ),
-          if (root &&
-              !post.isDeleted &&
-              (onReply != null ||
-                  canEdit ||
-                  canDelete ||
-                  reportReturnTo != null)) ...[
-            SizedBox(height: tokens.space12),
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: tokens.space4,
-              runSpacing: tokens.space4,
-              children: [
-                if (onReply != null)
-                  TextButton.icon(
-                    onPressed: pending ? null : onReply,
-                    icon: const Icon(Icons.reply_rounded),
-                    label: const Text('回复'),
-                  ),
-                if (reportReturnTo != null)
-                  WenyouReportButton(
-                    key: Key('post-report-${post.id}'),
-                    target: ReportTarget.post(post.id),
-                    targetLabel: root ? '这个楼层' : '这条回复',
-                    returnTo: reportReturnTo!,
-                  ),
-                if (canEdit)
-                  TextButton.icon(
-                    key: Key('post-edit-${post.id}'),
-                    onPressed: pending ? null : onEdit,
-                    icon: const Icon(Icons.edit_outlined),
-                    label: const Text('编辑'),
-                  ),
-                if (canDelete)
-                  TextButton.icon(
-                    key: Key('post-delete-${post.id}'),
-                    onPressed: pending ? null : onDelete,
-                    icon: pending
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.delete_outline_rounded),
-                    label: const Text('删除'),
-                  ),
-              ],
-            ),
-          ],
         ],
       ),
     );
-    if (root) return card;
     return Semantics(
       container: true,
-      hint: '长按打开回复操作',
+      hint: root ? '长按打开楼层操作' : '长按打开回复操作',
       child: GestureDetector(
+        key: Key('post-card-${post.id}'),
         behavior: HitTestBehavior.opaque,
         onLongPress: () => _showActions(context, ref),
         child: card,
@@ -603,79 +545,30 @@ class _PostCard extends ConsumerWidget {
   }
 
   Future<void> _showActions(BuildContext context, WidgetRef ref) async {
-    final action = await showModalBottomSheet<_PostAction>(
+    final action = await showPostCardActionSheet(
       context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              title: Text(root ? '楼层操作' : '回复操作'),
-              subtitle: Text(post.author.username),
-            ),
-            if (!post.isDeleted)
-              ListTile(
-                leading: const Icon(Icons.copy_outlined),
-                title: const Text('复制'),
-                onTap: () => Navigator.pop(context, _PostAction.copyText),
-              ),
-            ListTile(
-              leading: const Icon(Icons.link_outlined),
-              title: const Text('复制楼层链接'),
-              onTap: () => Navigator.pop(context, _PostAction.copyLink),
-            ),
-            if (onReply != null)
-              ListTile(
-                enabled: !pending,
-                leading: const Icon(Icons.reply_rounded),
-                title: const Text('回复'),
-                onTap: pending
-                    ? null
-                    : () => Navigator.pop(context, _PostAction.reply),
-              ),
-            if (canEdit)
-              ListTile(
-                enabled: !pending,
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('编辑'),
-                onTap: pending
-                    ? null
-                    : () => Navigator.pop(context, _PostAction.edit),
-              ),
-            if (canDelete)
-              ListTile(
-                enabled: !pending,
-                leading: const Icon(Icons.delete_outline_rounded),
-                title: const Text('删除'),
-                onTap: pending
-                    ? null
-                    : () => Navigator.pop(context, _PostAction.delete),
-              ),
-            if (reportReturnTo != null)
-              ListTile(
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('举报'),
-                onTap: () => Navigator.pop(context, _PostAction.report),
-              ),
-          ],
-        ),
-      ),
+      title: root ? '楼层操作' : '回复操作',
+      authorName: post.author.username,
+      canCopyText: !post.isDeleted,
+      canReply: onReply != null,
+      canEdit: canEdit,
+      canDelete: canDelete,
+      canReport: reportReturnTo != null,
+      pending: pending,
     );
     if (action == null || !context.mounted) return;
     switch (action) {
-      case _PostAction.copyText:
-        await _copy(context, post.content, '内容已复制');
-      case _PostAction.copyLink:
-        await _copy(context, _publicLink(), '楼层链接已复制');
-      case _PostAction.reply:
+      case PostCardAction.copyText:
+        await copyPostCardValue(context, post.content, '内容已复制');
+      case PostCardAction.copyLink:
+        await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+      case PostCardAction.reply:
         onReply?.call();
-      case _PostAction.edit:
+      case PostCardAction.edit:
         onEdit?.call();
-      case _PostAction.delete:
+      case PostCardAction.delete:
         onDelete?.call();
-      case _PostAction.report:
+      case PostCardAction.report:
         if (reportReturnTo == null) return;
         await showWenyouReportFlow(
           context: context,
@@ -703,25 +596,6 @@ class _PostCard extends ConsumerWidget {
           ).toString();
     return Uri.parse('https://wenyou.site').resolve(location).toString();
   }
-
-  Future<void> _copy(
-    BuildContext context,
-    String value,
-    String successMessage,
-  ) async {
-    try {
-      await Clipboard.setData(ClipboardData(text: value));
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(successMessage)));
-    } on Object {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('复制失败，请稍后重试。')));
-    }
-  }
 }
 
 class _PostAuthorLine extends StatelessWidget {
@@ -733,6 +607,7 @@ class _PostAuthorLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final avatarSize = root ? 36.0 : 28.0;
     final fallback = ColoredBox(
       color: tokens.softPanel,
       child: Icon(Icons.person_rounded, color: tokens.mutedText),
@@ -741,7 +616,7 @@ class _PostAuthorLine extends StatelessWidget {
       children: [
         ClipOval(
           child: SizedBox.square(
-            dimension: 40,
+            dimension: avatarSize,
             child: post.author.avatarUrl == null
                 ? fallback
                 : CachedNetworkImage(
@@ -752,20 +627,43 @@ class _PostAuthorLine extends StatelessWidget {
                   ),
           ),
         ),
-        SizedBox(width: tokens.space12),
+        SizedBox(width: tokens.space8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${post.author.username} · Lv.${post.author.level}',
-                style: Theme.of(context).textTheme.titleMedium,
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      post.author.username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: root
+                          ? Theme.of(context).textTheme.titleMedium
+                          : Theme.of(context).textTheme.labelLarge,
+                    ),
+                  ),
+                  SizedBox(width: tokens.space4),
+                  WenyouLevelBadge(
+                    key: Key('post-level-${post.id}'),
+                    level: post.author.level,
+                  ),
+                ],
               ),
-              SizedBox(height: tokens.space4),
+              SizedBox(height: tokens.space4 / 2),
               Text(
-                '${root ? '原楼层 #${post.floorNumber ?? '-'}' : '回复'} · '
-                '${DateFormat('MM-dd HH:mm').format(post.createdAt.toLocal())}',
-                style: Theme.of(context).textTheme.bodySmall,
+                [
+                  if (root) '#${post.floorNumber ?? '-'}',
+                  if (!root && post.replyToAuthor != null)
+                    '回复 @${post.replyToAuthor!.username}'
+                  else if (!root)
+                    '回复',
+                  formatWenyouRelativeTime(post.createdAt),
+                ].join(' · '),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
               ),
             ],
           ),

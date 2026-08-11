@@ -57,12 +57,21 @@ void main() {
     expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
     expect(find.byKey(const Key('post-edit-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-edit-reply-other')), findsNothing);
-    expect(find.byKey(const Key('post-report-root')), findsOneWidget);
+    expect(find.byKey(const Key('post-report-root')), findsNothing);
     expect(find.byKey(const Key('post-report-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-report-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
     expect(find.text('发表回复…'), findsOneWidget);
+    expect(find.byType(AnimatedContainer), findsNothing);
     expect(tester.takeException(), isNull);
+
+    await tester.longPress(find.byKey(const Key('post-card-root')));
+    await tester.pumpAndSettle();
+    expect(find.text('楼层操作'), findsOneWidget);
+    expect(find.text('复制楼层链接'), findsOneWidget);
+    expect(find.text('举报'), findsAtLeastNWidgets(1));
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
 
     await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
     await tester.pumpAndSettle();

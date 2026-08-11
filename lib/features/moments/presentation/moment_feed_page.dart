@@ -29,6 +29,12 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
         title: const Text('动态'),
         actions: [
           IconButton(
+            key: const Key('moment-open-search'),
+            onPressed: () => context.pushNamed('search'),
+            tooltip: '搜索',
+            icon: const Icon(Icons.search_rounded),
+          ),
+          IconButton(
             key: const Key('moment-open-bookmarks'),
             onPressed: () => session.isAuthenticated
                 ? context.pushNamed('moment-bookmarks')

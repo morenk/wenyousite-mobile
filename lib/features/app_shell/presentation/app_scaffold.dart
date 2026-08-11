@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,7 +42,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     if (ref.read(directMessagesEnabledProvider)) {
       ref.read(directUnreadControllerProvider.notifier).refresh();
     }
-    if (widget.navigationShell.currentIndex == 3 &&
+    if (widget.navigationShell.currentIndex == 2 &&
         ref.exists(notificationListControllerProvider)) {
       ref.read(notificationListControllerProvider.notifier).load();
     }
@@ -58,28 +60,28 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         ? ref.watch(directUnreadControllerProvider).counts.total
         : 0;
     final unreadCount = notificationUnread + directUnread;
+    final shellIndex = widget.navigationShell.currentIndex;
+    final navigationIndex = shellIndex < 2 ? shellIndex : shellIndex + 1;
     return Scaffold(
       body: widget.navigationShell,
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('global-publish'),
-        onPressed: () => _openPublishMenu(context),
-        tooltip: '发布内容',
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('发布'),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: tokens.border)),
         ),
         child: NavigationBar(
-          selectedIndex: widget.navigationShell.currentIndex,
+          selectedIndex: navigationIndex,
           onDestinationSelected: (index) {
+            if (index == 2) {
+              unawaited(_openPublishMenu(context));
+              return;
+            }
+            final targetShellIndex = index > 2 ? index - 1 : index;
             widget.navigationShell.goBranch(
-              index,
-              initialLocation: index == widget.navigationShell.currentIndex,
+              targetShellIndex,
+              initialLocation:
+                  targetShellIndex == widget.navigationShell.currentIndex,
             );
-            if (index == 3 && session.isAuthenticated) {
+            if (targetShellIndex == 2 && session.isAuthenticated) {
               ref.read(notificationUnreadControllerProvider.notifier).refresh();
               if (messagesEnabled) {
                 ref.read(directUnreadControllerProvider.notifier).refresh();
@@ -101,8 +103,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               label: '动态',
             ),
             const NavigationDestination(
-              icon: Icon(Icons.search_rounded),
-              label: '搜索',
+              icon: _PublishNavigationIcon(),
+              selectedIcon: _PublishNavigationIcon(),
+              label: '发布',
             ),
             NavigationDestination(
               icon: _NotificationNavigationIcon(
@@ -173,6 +176,29 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       },
     );
     if (location != null && context.mounted) await context.push(location);
+  }
+}
+
+class _PublishNavigationIcon extends StatelessWidget {
+  const _PublishNavigationIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      button: true,
+      label: '发布内容',
+      child: Container(
+        key: const Key('global-publish'),
+        width: 42,
+        height: 36,
+        decoration: BoxDecoration(
+          color: tokens.brand,
+          borderRadius: BorderRadius.circular(tokens.radius12),
+        ),
+        child: Icon(Icons.add_rounded, color: tokens.onBrand, size: 26),
+      ),
+    );
   }
 }
 

@@ -4,6 +4,7 @@ abstract final class AppRouteLocations {
   static const meEdit = '/me/edit';
   static const meSettings = '/me/settings';
   static const moments = '/moments';
+  static const search = '/search';
   static const composeThread = '/compose/thread';
   static const composeMoment = '/compose/moment';
 

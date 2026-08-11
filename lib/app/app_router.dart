@@ -80,15 +80,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/search',
-                name: 'search',
-                builder: (context, state) => const SearchPage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
                 path: '/notifications',
                 name: 'notifications',
                 builder: (context, state) => const NotificationsPage(),
@@ -105,6 +96,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRouteLocations.search,
+        name: 'search',
+        builder: (context, state) => const SearchPage(),
       ),
       GoRoute(
         path: '/moments/bookmarks',
