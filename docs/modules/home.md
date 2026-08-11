@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-主题卡片、标签 chip 与映射复用 threads/core 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
+主题卡片、行内 `#标签` 链接与映射复用 threads/core 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
 
 ## 11. 测试场景与验收条件
 

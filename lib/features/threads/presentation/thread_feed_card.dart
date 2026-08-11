@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
 
@@ -74,13 +74,13 @@ class HomeThreadCard extends StatelessWidget {
               _ThreadCoverGrid(urls: thread.coverImageUrls),
             ],
             if (thread.tags.isNotEmpty) ...[
-              SizedBox(height: tokens.space12),
+              SizedBox(height: tokens.space4),
               Wrap(
-                spacing: tokens.space8,
-                runSpacing: tokens.space4,
+                spacing: tokens.space4,
+                runSpacing: 0,
                 children: [
                   for (final tag in thread.tags.take(4))
-                    WenyouTagChip(
+                    WenyouTagLink(
                       key: Key('home-thread-tag-${thread.id}-${tag.id}'),
                       name: tag.name,
                       onPressed: onTagTap == null ? null : () => onTagTap!(tag),

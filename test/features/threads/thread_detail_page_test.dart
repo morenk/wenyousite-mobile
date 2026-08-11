@@ -28,6 +28,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('星海旅团'), findsOneWidget);
+    expect(find.text('#太空歌剧'), findsOneWidget);
+    final tag = find.byKey(const Key('thread-detail-tag-tag-1'));
+    expect(
+      find.descendant(of: tag, matching: find.byType(InputChip)),
+      findsNothing,
+    );
+    expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);

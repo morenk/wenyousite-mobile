@@ -18,7 +18,13 @@ void main() {
     expect(find.text('角色扮演'), findsNWidgets(2));
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('向星海出发'), findsOneWidget);
-    expect(find.text('太空歌剧'), findsOneWidget);
+    expect(find.text('#太空歌剧'), findsOneWidget);
+    final tag = find.byKey(const Key('home-thread-tag-thread-1-tag-1'));
+    expect(
+      find.descendant(of: tag, matching: find.byType(InputChip)),
+      findsNothing,
+    );
+    expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
     expect(find.text('8L 加油'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('home-category-RPG')));

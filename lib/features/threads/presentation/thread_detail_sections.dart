@@ -169,13 +169,13 @@ class _ThreadOverview extends StatelessWidget {
             compact: true,
           ),
           if (detail.tags.isNotEmpty) ...[
-            SizedBox(height: tokens.space12),
+            SizedBox(height: tokens.space4),
             Wrap(
-              spacing: tokens.space8,
-              runSpacing: tokens.space4,
+              spacing: tokens.space4,
+              runSpacing: 0,
               children: [
                 for (final tag in detail.tags)
-                  WenyouTagChip(
+                  WenyouTagLink(
                     key: Key('thread-detail-tag-${tag.id}'),
                     name: tag.name,
                     onPressed: () => context.pushNamed(
