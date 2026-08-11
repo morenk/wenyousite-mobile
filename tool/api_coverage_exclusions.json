@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "4.7.0-dev.20260811.1",
+  "contractVersion": "4.5.2-dev.20260811.1",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
@@ -31,7 +31,6 @@
     { "operationId": "mobileDeviceRegister", "category": "future_fcm", "reason": "移动端 V1 明确不启用 FCM，不能提前维护推送设备注册生命周期。" },
     { "operationId": "mobileDeviceUnregister", "category": "future_fcm", "reason": "移动端 V1 明确不启用 FCM，不能提前维护推送设备注册生命周期。" },
     { "operationId": "threadMembersJoin", "category": "deprecated", "reason": "该端点已废弃；公开成员由真实发帖行为建立，私密成员只通过邀请加入。" },
-    { "operationId": "userModerationAppealsIssueToken", "category": "deferred_mobile", "reason": "受处罚账号申诉凭据需要独立的隐私说明、凭据隔离与恢复页面，本轮仅同步可靠契约，不提前暴露入口。" },
     { "operationId": "userModerationAppealsMine", "category": "deferred_mobile", "reason": "用户处罚决定与申诉需要独立的产品、隐私与恢复流程，不在在线更新切片中提前接入。" },
     { "operationId": "userModerationAppealsAppeal", "category": "deferred_mobile", "reason": "用户处罚决定与申诉需要独立的产品、隐私与恢复流程，不在在线更新切片中提前接入。" },
     { "operationId": "adminAuthChallenge", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },

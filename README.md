@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v2
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v1.2.0：跨端语义 Token、三角色自托管字体、移动 profile 与图片体验契约
+- wenyousite-foundation v1.1.0：跨端语义 Token、三角色自托管字体、移动 profile 与图片体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v1.2.0) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v1.1.0) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
