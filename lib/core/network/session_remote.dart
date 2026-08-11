@@ -23,7 +23,11 @@ class ApiSessionRemote implements SessionRemote {
         refreshDto: RefreshDto(
           (builder) => builder.refreshToken = refreshToken,
         ),
-        headers: {'X-Request-ID': _uuid.v4()},
+        // Refreshing a native session must keep the mobile platform marker.
+        // Without it the backend treats the request as Web and omits the
+        // rotated refresh token from the response, which makes the client
+        // clear an otherwise valid session after the access token expires.
+        headers: {'X-Request-ID': _uuid.v4(), 'X-Client-Platform': 'mobile'},
       );
       final data = response.data?.data;
       final nextRefreshToken = data?.refreshToken;

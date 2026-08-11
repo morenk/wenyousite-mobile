@@ -105,11 +105,12 @@ class SessionController extends StateNotifier<SessionState> {
       await authenticate(next);
       return next;
     } on ApiFailure catch (failure) {
-      await invalidate(
-        failure.invalidatesSession
-            ? _reasonFor(failure.businessCode)
-            : SessionInvalidationReason.refreshFailed,
-      );
+      // A refresh can fail because the device is temporarily offline or the
+      // service is unavailable. Keep durable tokens in those cases so a
+      // later request can retry instead of forcing a needless login.
+      if (_refreshFailureInvalidatesSession(failure)) {
+        await invalidate(_reasonFor(failure.businessCode));
+      }
       rethrow;
     } on Object catch (error) {
       await invalidate(SessionInvalidationReason.refreshFailed);
@@ -169,5 +170,15 @@ class SessionController extends StateNotifier<SessionState> {
       40106 => SessionInvalidationReason.deactivated,
       _ => SessionInvalidationReason.refreshFailed,
     };
+  }
+
+  bool _refreshFailureInvalidatesSession(ApiFailure failure) {
+    // Refresh responses use HTTP 401 for an invalid/expired/revoked session.
+    // 40107 is deliberately excluded: the account is still authenticated but
+    // has to complete email verification before restricted actions.
+    final code = failure.businessCode;
+    if (code == 40107) return false;
+    if (code != null && code >= 40100 && code <= 40115) return true;
+    return failure.httpStatus == 401;
   }
 }

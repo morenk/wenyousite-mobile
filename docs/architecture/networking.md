@@ -1,5 +1,7 @@
 # 网络与会话
 
+移动端调用 `authRefresh` 时必须携带 `X-Client-Platform: mobile`，以确保服务端返回轮换后的 refresh token。刷新遇到网络或 5xx 瞬时失败时保留本地会话，只有明确的 401 会话失效响应才清除 Token。
+
 ## 环境
 
 `AppEnvironment` 从 `--dart-define=API_BASE_URL=...` 读取地址。Debug 默认值为 `https://wenyou.site/api/v1`；Android 模拟器连接本地后端时使用 `http://10.0.2.2:3000/api/v1`。生成客户端的 endpoint 已包含 `/api/v1`，因此底层 Dio 只使用配置地址的 origin，避免版本路径重复拼接。业务代码只依赖注入后的 Dio 和仓储，不读取全局常量。

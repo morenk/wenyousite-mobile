@@ -75,6 +75,22 @@ void main() {
     expect(controller.state.reason, SessionInvalidationReason.revoked);
   });
 
+  test('transient refresh failures preserve the local session', () async {
+    final remote = _FakeSessionRemote(
+      onRefresh: (_) =>
+          throw const ApiFailure(userMessage: 'temporary network failure'),
+    );
+    final store = _MemoryTokenStore();
+    final controller = SessionController(store, remote);
+    await controller.authenticate(_oldTokens);
+
+    await expectLater(controller.refresh(), throwsA(isA<ApiFailure>()));
+
+    expect(store.value, same(_oldTokens));
+    expect(controller.tokens, same(_oldTokens));
+    expect(controller.state.isAuthenticated, isTrue);
+  });
+
   test('服务端退出成功后清除双 Token 并进入游客状态', () async {
     final remote = _FakeSessionRemote();
     final store = _MemoryTokenStore();

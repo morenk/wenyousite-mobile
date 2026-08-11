@@ -35,7 +35,10 @@ void main() {
       ),
     ).captured;
     expect((captured[0] as RefreshDto).refreshToken, 'old-refresh');
-    expect(captured[1], {'X-Request-ID': 'refresh-request-id'});
+    expect(captured[1], {
+      'X-Request-ID': 'refresh-request-id',
+      'X-Client-Platform': 'mobile',
+    });
   });
 
   test('刷新响应缺少移动端 refresh token 时拒绝继续会话', () async {
