@@ -38,7 +38,17 @@ class WenyouMarkdown extends StatelessWidget {
       height: bodyHeight,
     );
     return MarkdownBody(
-      data: MarkdownContent.renderDiceMarkupForDisplay(data, diceLabels),
+      key: ValueKey<Object>(
+        Object.hash(
+          data,
+          Object.hashAllUnordered(
+            diceLabels.entries.map(
+              (entry) => Object.hash(entry.key, entry.value),
+            ),
+          ),
+        ),
+      ),
+      data: MarkdownContent.normalize(data),
       selectable: true,
       softLineBreak: true,
       styleSheet: baseStyle.copyWith(
@@ -68,7 +78,8 @@ class WenyouMarkdown extends StatelessWidget {
         tableBorder: TableBorder.all(color: tokens.border),
         tableCellsPadding: EdgeInsets.all(tokens.space8),
       ),
-      builders: {'wenyou-dice': _DiceMarkdownBuilder()},
+      inlineSyntaxes: [_DiceInlineSyntax()],
+      builders: {'wenyou-dice': _DiceMarkdownBuilder(diceLabels)},
       onTapLink: (_, href, _) => _openLink(context, href),
       imageBuilder: (uri, title, alt) =>
           _MarkdownImage(uri: uri, title: title, alt: alt, onSave: onSaveImage),
@@ -94,8 +105,29 @@ class WenyouMarkdown extends StatelessWidget {
   }
 }
 
+class _DiceInlineSyntax extends md.InlineSyntax {
+  _DiceInlineSyntax()
+    : super(
+        r'\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([^\]\r\n]{1,32})\]\]',
+        startCharacter: 0x5b,
+        caseSensitive: false,
+      );
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final nodeId = match.group(1)!.toLowerCase();
+    final notation = match.group(2)!.trim();
+    parser.addNode(
+      md.Element.text('wenyou-dice', notation)..attributes['node-id'] = nodeId,
+    );
+    return true;
+  }
+}
+
 class _DiceMarkdownBuilder extends MarkdownElementBuilder {
-  _DiceMarkdownBuilder();
+  _DiceMarkdownBuilder(this.labelsByNodeId);
+
+  final Map<String, String> labelsByNodeId;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -105,13 +137,17 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     TextStyle? parentStyle,
   ) {
     final tokens = context.wenyouTokens;
-    final isResult = element.attributes['data-state'] == 'result';
+    final nodeId = element.attributes['node-id']!;
+    final notation = element.textContent;
+    final label = labelsByNodeId[nodeId] ?? '$notation = ?';
+    final isResult = labelsByNodeId.containsKey(nodeId);
     final style =
         (preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style)
             .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
       child: DecoratedBox(
+        key: ValueKey('wenyou-dice-$nodeId'),
         decoration: BoxDecoration(
           color: (isResult ? tokens.accentedBackground : tokens.softPanel)
               .withValues(alpha: isResult ? 0.3 : 0.7),
@@ -119,7 +155,7 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          child: Text(element.textContent, style: style),
+          child: Text(label, style: style),
         ),
       ),
     );

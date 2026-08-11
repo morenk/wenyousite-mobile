@@ -77,19 +77,6 @@ void main() {
     );
   });
 
-  test('阅读态骰子输出 Web 同款无图标内联节点', () {
-    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
-    final rendered = MarkdownContent.renderDiceMarkupForDisplay(
-      '结果 [[dice:v1:$nodeId:1d20]]',
-      const {nodeId: '1d20 = 16'},
-    );
-    expect(
-      rendered,
-      '结果 <wenyou-dice data-state="result">1d20 = 16</wenyou-dice>',
-    );
-    expect(rendered, isNot(contains('🎲')));
-  });
-
   test('搜索预览移除 Markdown 语法并保留图片与骰子语义', () {
     const nodeId = '550e8400-e29b-41d4-a716-446655440000';
     expect(
