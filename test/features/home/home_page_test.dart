@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +13,7 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('首页展示分类快捷项与紧凑主题卡片并可切换分类', (tester) async {
+  testWidgets('首页展示独立主题卡片并可切换分类', (tester) async {
     final repository = _FakeHomeRepository();
     await tester.pumpWidget(_homeApp(repository));
     await tester.pumpAndSettle();
@@ -36,15 +37,16 @@ void main() {
     );
     expect(
       tester.getSize(find.byKey(const Key('home-thread-thread-1'))).height,
-      lessThan(190),
+      lessThan(220),
     );
     expect(
       find.ancestor(
-        of: find.byKey(const Key('home-thread-thread-1')),
+        of: find.byKey(const Key('home-thread-card-thread-1')),
         matching: find.byType(Card),
       ),
-      findsNothing,
+      findsOneWidget,
     );
+    expect(find.byKey(const Key('home-thread-cover-thread-1')), findsNothing);
 
     await tester.tap(find.byKey(const Key('home-category-menu')));
     await tester.pumpAndSettle();
@@ -90,34 +92,39 @@ void main() {
     expect(repository.threadCalls, callsBeforeRefresh + 1);
   });
 
-  testWidgets('多主题以分隔线形成连续文章索引而不是逐张卡片', (tester) async {
+  testWidgets('多主题使用独立卡片和卡片间留白', (tester) async {
     await tester.pumpWidget(
       _homeApp(_FakeHomeRepository(items: [_thread, _secondThread])),
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('home-thread-divider-thread-2')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('home-thread-divider-thread-2')), findsNothing);
     expect(
       find.ancestor(
-        of: find.byKey(const Key('home-thread-thread-2')),
+        of: find.byKey(const Key('home-thread-card-thread-2')),
         matching: find.byType(Card),
       ),
-      findsNothing,
+      findsOneWidget,
+    );
+    final firstCard = find.byKey(const Key('home-thread-card-thread-1'));
+    final secondCard = find.byKey(const Key('home-thread-card-thread-2'));
+    expect(
+      tester.getTopLeft(secondCard).dy - tester.getBottomLeft(firstCard).dy,
+      greaterThanOrEqualTo(12),
     );
     expect(find.text('第二段接力'), findsOneWidget);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 首页筛选与主题卡片无布局溢出', (tester) async {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 首页筛选与独立主题卡片无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 900);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(_homeApp(_FakeHomeRepository()));
+      await tester.pumpWidget(
+        _homeApp(_FakeHomeRepository(items: [_threadWithCover, _secondThread])),
+      );
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -136,7 +143,7 @@ void main() {
     });
   }
 
-  testWidgets('360dp 有封面主题使用右侧缩略图而不压过标题', (tester) async {
+  testWidgets('360dp 有封面主题使用卡片内整宽 16:9 单封面', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -148,15 +155,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    final cover = find.byKey(const Key('home-thread-cover-thumbnail'));
+    final cover = find.byKey(const Key('home-thread-cover-thread-cover'));
+    final card = find.byKey(const Key('home-thread-card-thread-cover'));
     expect(cover, findsOneWidget);
-    expect(tester.getSize(cover), const Size(104, 88));
-    expect(
-      tester.getSize(find.byKey(const Key('home-thread-thread-cover'))).height,
-      lessThan(190),
-    );
+    final coverSize = tester.getSize(cover);
+    final cardSize = tester.getSize(card);
+    expect((coverSize.width - cardSize.width).abs(), lessThanOrEqualTo(2));
+    expect(coverSize.width / coverSize.height, closeTo(16 / 9, 0.01));
+    expect(tester.getTopLeft(cover).dx, closeTo(tester.getTopLeft(card).dx, 1));
     expect(find.text('带封面的长篇主题'), findsOneWidget);
-    expect(find.text('正文摘要仍然先于图片建立阅读线索'), findsOneWidget);
+    expect(find.text('正文摘要在封面之后延续阅读线索'), findsOneWidget);
+    expect(find.byType(CachedNetworkImage), findsOneWidget);
+    expect(
+      tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).fit,
+      BoxFit.cover,
+    );
   });
 
   testWidgets('360dp 首页保持标题与摘要优先的视觉基线', (tester) async {
@@ -171,6 +184,23 @@ void main() {
     await expectLater(
       find.byKey(const Key('home-text-first-visual')),
       matchesGoldenFile('goldens/home_text_first_360.png'),
+    );
+  });
+
+  testWidgets('360dp 首页卡片与整宽封面视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      _homeApp(_FakeHomeRepository(items: [_threadWithCover])),
+    );
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('home-text-first-visual')),
+      matchesGoldenFile('goldens/home_card_cover_360.png'),
     );
   });
 }
@@ -253,14 +283,17 @@ final _threadWithCover = HomeThreadCardModel(
   ownerId: 'user-1',
   ownerName: '温柔测试员',
   ownerLevel: 3,
-  preview: '正文摘要仍然先于图片建立阅读线索',
+  preview: '正文摘要在封面之后延续阅读线索',
   tags: const [],
-  coverImageUrls: const ['https://example.com/cover.jpg'],
+  coverImageUrls: const [
+    'https://example.com/cover.jpg',
+    'https://example.com/ignored-second-cover.jpg',
+  ],
   memberCount: 5,
   playerCount: 2,
   postCount: 12,
   tipTotal: '0',
-  lastActivityAt: DateTime(2026, 8, 12),
+  lastActivityAt: DateTime.now().subtract(const Duration(hours: 10)),
 );
 
 final _secondThread = HomeThreadCardModel(

@@ -6,6 +6,8 @@
 
 `AppEnvironment` 从 `--dart-define=API_BASE_URL=...` 读取地址。Debug 默认值为 `https://wenyou.site/api/v1`；Android 模拟器连接本地后端时使用 `http://10.0.2.2:3000/api/v1`。生成客户端的 endpoint 已包含 `/api/v1`，因此底层 Dio 只使用配置地址的 origin，避免版本路径重复拼接。业务代码只依赖注入后的 Dio 和仓储，不读取全局常量。
 
+契约同步与生产部署是两个独立事实。`npm run api:check` 会从仓库快照重新生成 Dart 客户端并要求生成目录零差异；准备声明“生产 API 已同步”前，还必须运行 `npm run api:verify:production`，由它比较本地 `backendRevision`、`contractVersion` 与公网 `/meta`，并冒烟校验 `/threads` 的必需字段和单封面数组。生产 `/meta` 中推荐的 Android build 属于移动端发布面，不会因后端部署或 Debug APK 构建自动更新；只有完成签名、上传和晋级后才能声明移动端生产版本已发布。
+
 ## 请求链
 
 每个请求生成 UUID v4 `X-Request-ID`。登录和完成注册额外发送 `X-Client-Platform: mobile`。日志只记录方法、脱敏路径、请求 ID、HTTP 状态、业务码和响应契约版本；所有查询参数与 fragment 都在格式化前截断，`/threads/join-by-link/{token}` 的私密邀请 token 固定替换为 `<redacted>`。Debug 包额外记录传输或序列化异常原因，不记录认证头、密码、验证码、正文、预签名 URL 查询参数、邀请凭据或隐私资料。

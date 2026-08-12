@@ -29,94 +29,115 @@ class HomeThreadCard extends StatelessWidget {
       explicitChildNodes: true,
       button: true,
       label: '打开主题：${thread.title}，作者 ${thread.ownerName}',
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: tokens.space4,
-            vertical: compact ? tokens.space8 : tokens.space12,
-          ),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
           child: Column(
+            key: Key('home-thread-card-${thread.id}'),
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SingleChildScrollView(
-                key: Key('home-thread-context-${thread.id}'),
-                scrollDirection: Axis.horizontal,
-                child: Row(
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? tokens.space12 : tokens.space16,
+                  compact ? tokens.space12 : tokens.space16,
+                  compact ? tokens.space12 : tokens.space16,
+                  tokens.space12,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (categoryName != null)
-                      _ThreadContextLabel(label: categoryName!),
-                    if (thread.status case final status) ...[
-                      SizedBox(width: tokens.space12),
-                      _ThreadContextLabel(
-                        label: status.label,
-                        accent: status == HomeThreadStatus.recruiting,
+                    SingleChildScrollView(
+                      key: Key('home-thread-context-${thread.id}'),
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          if (categoryName != null)
+                            _ThreadContextLabel(label: categoryName!),
+                          if (thread.status case final status) ...[
+                            SizedBox(width: tokens.space12),
+                            _ThreadContextLabel(
+                              label: status.label,
+                              accent: status == HomeThreadStatus.recruiting,
+                            ),
+                          ],
+                          if (thread.isPinned) ...[
+                            SizedBox(width: tokens.space12),
+                            const _ThreadContextLabel(label: '置顶'),
+                          ],
+                        ],
                       ),
-                    ],
-                    if (thread.isPinned) ...[
-                      SizedBox(width: tokens.space12),
-                      const _ThreadContextLabel(label: '置顶'),
-                    ],
-                    for (final tag in thread.tags.take(4)) ...[
-                      SizedBox(width: tokens.space12),
-                      WenyouTagLink(
-                        key: Key('home-thread-tag-${thread.id}-${tag.id}'),
-                        name: tag.name,
-                        onPressed: onTagTap == null
-                            ? null
-                            : () => onTagTap!(tag),
-                      ),
-                    ],
+                    ),
+                    SizedBox(height: tokens.space4),
+                    Text(
+                      thread.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    SizedBox(height: tokens.space4),
+                    _ThreadAuthor(thread: thread),
                   ],
                 ),
               ),
-              SizedBox(height: tokens.space4),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          thread.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        SizedBox(height: tokens.space4),
-                        _ThreadAuthor(thread: thread),
-                        if (thread.preview != null) ...[
-                          SizedBox(height: tokens.space8),
-                          Text(
-                            thread.preview!,
-                            maxLines: thread.coverImageUrls.isEmpty ? 3 : 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
+              if (thread.coverImageUrls.isNotEmpty)
+                _ThreadCover(
+                  key: Key('home-thread-cover-${thread.id}'),
+                  url: thread.coverImageUrls.first,
+                ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? tokens.space12 : tokens.space16,
+                  thread.coverImageUrls.isEmpty ? 0 : tokens.space12,
+                  compact ? tokens.space12 : tokens.space16,
+                  compact ? tokens.space12 : tokens.space16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (thread.preview != null)
+                      Text(
+                        thread.preview!,
+                        maxLines: thread.coverImageUrls.isEmpty ? 3 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    if (thread.tags.isNotEmpty) ...[
+                      SizedBox(height: tokens.space4),
+                      Wrap(
+                        spacing: tokens.space4,
+                        runSpacing: 0,
+                        children: [
+                          for (final tag in thread.tags.take(4))
+                            WenyouTagLink(
+                              key: Key(
+                                'home-thread-tag-${thread.id}-${tag.id}',
+                              ),
+                              name: tag.name,
+                              onPressed: onTagTap == null
+                                  ? null
+                                  : () => onTagTap!(tag),
+                            ),
                         ],
-                      ],
+                      ),
+                    ],
+                    if (thread.preview != null || thread.tags.isNotEmpty)
+                      SizedBox(height: tokens.space8),
+                    Text(
+                      [
+                        '${thread.memberCount} 成员',
+                        '${thread.playerCount} 玩家',
+                        '${thread.postCount} 回复',
+                        if (thread.tipTotal != '0') '${thread.tipTotal}L 加油',
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
                     ),
-                  ),
-                  if (thread.coverImageUrls.isNotEmpty) ...[
-                    SizedBox(width: tokens.space12),
-                    _ThreadCover(url: thread.coverImageUrls.first),
                   ],
-                ],
-              ),
-              SizedBox(height: tokens.space8),
-              Text(
-                [
-                  '${thread.memberCount} 成员',
-                  '${thread.playerCount} 玩家',
-                  '${thread.postCount} 回复',
-                  if (thread.tipTotal != '0') '${thread.tipTotal}L 加油',
-                ].join(' · '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ),
               ),
             ],
           ),
@@ -134,19 +155,18 @@ class _ThreadAuthor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Row(
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: tokens.space4,
+      runSpacing: tokens.space4,
       children: [
-        Flexible(
-          child: Text(
-            thread.ownerName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+        Text(
+          thread.ownerName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelLarge,
         ),
-        SizedBox(width: tokens.space4),
         WenyouLevelBadge(level: thread.ownerLevel),
-        SizedBox(width: tokens.space8),
         Text(
           '${formatWenyouRelativeTime(thread.lastActivityAt)}活跃',
           style: Theme.of(
@@ -159,7 +179,7 @@ class _ThreadAuthor extends StatelessWidget {
 }
 
 class _ThreadCover extends StatelessWidget {
-  const _ThreadCover({required this.url});
+  const _ThreadCover({required this.url, super.key});
 
   final String url;
 
@@ -170,12 +190,10 @@ class _ThreadCover extends StatelessWidget {
       color: tokens.softPanel,
       child: Center(child: Icon(Icons.image_outlined, color: tokens.mutedText)),
     );
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: SizedBox(
-        key: const Key('home-thread-cover-thumbnail'),
-        width: 104,
-        height: 88,
+    return SizedBox(
+      width: double.infinity,
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
         child: CachedNetworkImage(
           imageUrl: url,
           fit: BoxFit.cover,
