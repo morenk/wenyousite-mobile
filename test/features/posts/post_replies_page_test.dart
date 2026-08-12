@@ -56,21 +56,25 @@ void main() {
     expect(find.text('原楼层内容'), findsOneWidget);
     expect(find.text('自己的回复'), findsOneWidget);
     expect(find.text('他人的回复'), findsOneWidget);
-    expect(find.byKey(const Key('post-replies-order')), findsOneWidget);
-    expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-order')), findsNothing);
+    expect(find.byKey(const Key('post-replies-author')), findsNothing);
+    expect(find.byKey(const Key('post-replies-settings')), findsOneWidget);
     expect(find.byKey(const Key('post-replies-count')), findsOneWidget);
-    expect(find.text('楼中楼讨论'), findsOneWidget);
+    expect(find.text('远行主题'), findsOneWidget);
+    expect(find.text('主线 · #8楼'), findsOneWidget);
+    expect(find.text('楼中楼讨论'), findsNothing);
     final countCenter = tester.getCenter(
       find.byKey(const Key('post-replies-count')),
     );
-    final orderCenter = tester.getCenter(
-      find.byKey(const Key('post-replies-order')),
+    final settingsCenter = tester.getCenter(
+      find.byKey(const Key('post-replies-settings')),
     );
-    final authorCenter = tester.getCenter(
-      find.byKey(const Key('post-replies-author')),
+    expect((countCenter.dy - settingsCenter.dy).abs(), lessThan(2));
+    expect(
+      tester.getSize(find.byKey(const Key('post-replies-settings'))).height,
+      greaterThanOrEqualTo(48),
     );
-    expect((countCenter.dy - orderCenter.dy).abs(), lessThan(2));
-    expect((orderCenter.dy - authorCenter.dy).abs(), lessThan(2));
+    expect(tester.getTopLeft(find.text('原楼层内容')).dy, lessThan(150));
     expect(find.byKey(const Key('post-edit-reply-own')), findsNothing);
     expect(find.byKey(const Key('post-edit-reply-other')), findsNothing);
     expect(find.byKey(const Key('post-report-root')), findsNothing);
@@ -286,6 +290,136 @@ void main() {
     );
   });
 
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 独立讨论压缩重复语境并按需展开设置', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            stickersEnabledProvider.overrideWithValue(false),
+            postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('远行主题'), findsOneWidget);
+      expect(find.text('主线 · #8楼'), findsOneWidget);
+      expect(find.text('楼中楼讨论'), findsNothing);
+      expect(find.text('原楼层内容'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('原楼层内容')).dy, lessThan(150));
+      expect(find.byKey(const Key('post-replies-settings')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('post-replies-settings'))).height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('320dp 与 2 倍系统字号仍保留正文和讨论设置', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('原楼层内容'), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-settings')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('post-replies-settings'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    await tester.tap(find.byKey(const Key('post-replies-settings')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('post-replies-settings-sheet')),
+      findsOneWidget,
+    );
+    expect(find.text('回复顺序'), findsOneWidget);
+    expect(find.text('只看回复者'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('讨论设置从单一入口切换顺序和回复者', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('最早在前'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('post-replies-settings')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('post-replies-settings-sheet')),
+      findsOneWidget,
+    );
+    expect(find.text('讨论设置'), findsOneWidget);
+    expect(find.text('回复顺序'), findsOneWidget);
+    expect(find.text('只看回复者'), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(RadioListTile<PostReplyOrder>, '最新回复在前'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('最新在前'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('他人的回复')).dy,
+      lessThan(tester.getTopLeft(find.text('自己的回复')).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('post-replies-settings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(RadioListTile<String>, '自己'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('最新在前 · 自己'), findsOneWidget);
+    expect(find.text('自己的回复'), findsOneWidget);
+    expect(find.text('他人的回复'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('楼中楼阅读顶栏随正文滚动收起并可立即唤回', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
@@ -312,13 +446,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('楼中楼讨论').hitTestable(), findsOneWidget);
+    expect(find.text('远行主题').hitTestable(), findsOneWidget);
     await tester.drag(
       find.byKey(const Key('post-replies-list')),
       const Offset(0, -500),
     );
     await tester.pumpAndSettle();
-    expect(find.text('楼中楼讨论').hitTestable(), findsNothing);
+    expect(find.text('远行主题').hitTestable(), findsNothing);
     expect(find.byKey(const Key('post-reply-compose')), findsNothing);
 
     await tester.drag(
@@ -326,7 +460,7 @@ void main() {
       const Offset(0, 120),
     );
     await tester.pumpAndSettle();
-    expect(find.text('楼中楼讨论').hitTestable(), findsOneWidget);
+    expect(find.text('远行主题').hitTestable(), findsOneWidget);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
   });
 }

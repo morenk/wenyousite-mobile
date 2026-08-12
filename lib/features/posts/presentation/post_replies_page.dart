@@ -81,7 +81,7 @@ class PostRepliesPage extends ConsumerWidget {
                         key: const Key('post-replies-reading-app-bar'),
                         floating: true,
                         snap: true,
-                        title: const Text('楼中楼讨论'),
+                        title: _DiscussionTitle(root: state.root!),
                         actions: [_returnToRootAction(context)],
                       ),
                     ],
@@ -258,7 +258,7 @@ class _DiscussionList extends StatelessWidget {
         MediaQuery.sizeOf(context).width <= 400
             ? tokens.space12
             : tokens.space24,
-        tokens.space16,
+        tokens.space8,
         MediaQuery.sizeOf(context).width <= 400
             ? tokens.space12
             : tokens.space24,
@@ -269,22 +269,6 @@ class _DiscussionList extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                root.threadTitle ?? '主题',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-              ),
-              SizedBox(height: tokens.space4),
-              Text(
-                root.subthreadTitle ?? '子贴',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              SizedBox(height: tokens.space12),
               if (actions.failure != null) ...[
                 WenyouStatusBanner(
                   message: actions.failure!.userMessage,
@@ -408,6 +392,9 @@ class _ReplyFilters extends StatelessWidget {
     final selectedAuthor = authors
         .where((author) => author.id == state.authorId)
         .firstOrNull;
+    final settingsLabel = selectedAuthor == null
+        ? _shortOrderLabel(state.order)
+        : '${_shortOrderLabel(state.order)} · ${selectedAuthor.username}';
     return Row(
       children: [
         Expanded(
@@ -420,45 +407,28 @@ class _ReplyFilters extends StatelessWidget {
             ),
           ),
         ),
-        PopupMenuButton<PostReplyOrder>(
-          key: const Key('post-replies-order'),
-          initialValue: state.order,
-          tooltip: '回复排序',
-          onSelected: onOrder,
-          itemBuilder: (context) => [
-            for (final order in PostReplyOrder.values)
-              PopupMenuItem(value: order, child: Text(order.label)),
-          ],
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.swap_vert_rounded, size: 20),
-                  SizedBox(width: tokens.space4),
-                  Text(state.order.label),
-                  const Icon(Icons.arrow_drop_down_rounded, size: 20),
-                ],
-              ),
-            ),
-          ),
-        ),
         TextButton.icon(
-          key: const Key('post-replies-author'),
-          onPressed: () => _showAuthorFilter(context),
+          key: const Key('post-replies-settings'),
+          onPressed: () => _showSettings(context),
+          style: TextButton.styleFrom(
+            foregroundColor: tokens.mutedText,
+            padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+          ),
           icon: Icon(
             Icons.tune_rounded,
             size: 20,
-            color: selectedAuthor == null ? tokens.mutedText : tokens.brand,
+            color:
+                selectedAuthor == null && state.order == PostReplyOrder.oldest
+                ? tokens.mutedText
+                : tokens.brand,
           ),
           label: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 88),
+            constraints: const BoxConstraints(maxWidth: 128),
             child: Text(
-              selectedAuthor?.username ?? '筛选',
+              settingsLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
         ),
@@ -466,32 +436,186 @@ class _ReplyFilters extends StatelessWidget {
     );
   }
 
-  Future<void> _showAuthorFilter(BuildContext context) async {
-    final selected = await showModalBottomSheet<String>(
+  String _shortOrderLabel(PostReplyOrder order) =>
+      order == PostReplyOrder.oldest ? '最早在前' : '最新在前';
+
+  Future<void> _showSettings(BuildContext context) async {
+    final selected = await showModalBottomSheet<_ReplySettingsSelection>(
       context: context,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => RadioGroup<String>(
-        groupValue: state.authorId ?? '',
-        onChanged: (value) => Navigator.pop(context, value),
+      builder: (context) => _ReplySettingsSheet(
+        order: state.order,
+        authorId: state.authorId,
+        authors: authors,
+      ),
+    );
+    if (!context.mounted || selected == null) return;
+    switch (selected.kind) {
+      case _ReplySettingsKind.order:
+        final order = selected.order;
+        if (order != null && order != state.order) onOrder(order);
+      case _ReplySettingsKind.author:
+        if (selected.authorId != state.authorId) onAuthor(selected.authorId);
+    }
+  }
+}
+
+class _DiscussionTitle extends StatelessWidget {
+  const _DiscussionTitle({required this.root});
+
+  final PostItem root;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final floorLabel = root.floorNumber == null
+        ? null
+        : '#${root.floorNumber}楼';
+    final contextLabel = [
+      root.subthreadTitle ?? '楼中楼讨论',
+      ?floorLabel,
+    ].join(' · ');
+    return Column(
+      key: const Key('post-replies-reading-title'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          root.threadTitle ?? '楼中楼讨论',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text(
+          contextLabel,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+        ),
+      ],
+    );
+  }
+}
+
+enum _ReplySettingsKind { order, author }
+
+class _ReplySettingsSelection {
+  const _ReplySettingsSelection.order(this.order)
+    : kind = _ReplySettingsKind.order,
+      authorId = null;
+
+  const _ReplySettingsSelection.author(this.authorId)
+    : kind = _ReplySettingsKind.author,
+      order = null;
+
+  final _ReplySettingsKind kind;
+  final PostReplyOrder? order;
+  final String? authorId;
+}
+
+class _ReplySettingsSheet extends StatelessWidget {
+  const _ReplySettingsSheet({
+    required this.order,
+    required this.authorId,
+    required this.authors,
+  });
+
+  final PostReplyOrder order;
+  final String? authorId;
+  final List<PostAuthor> authors;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.72,
+        ),
         child: ListView(
+          key: const Key('post-replies-settings-sheet'),
           shrinkWrap: true,
+          padding: EdgeInsets.only(bottom: tokens.space12),
           children: [
-            const ListTile(title: Text('只看回复者')),
-            const RadioListTile<String>(value: '', title: Text('全部回复者')),
-            for (final author in authors)
-              RadioListTile<String>(
-                value: author.id,
-                title: Text(author.username),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.space24,
+                0,
+                tokens.space24,
+                tokens.space8,
               ),
+              child: Text(
+                '讨论设置',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: tokens.space24),
+              child: Text(
+                '回复顺序',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: tokens.mutedText),
+              ),
+            ),
+            RadioGroup<PostReplyOrder>(
+              groupValue: order,
+              onChanged: (value) {
+                if (value != null) {
+                  Navigator.pop(context, _ReplySettingsSelection.order(value));
+                }
+              },
+              child: Column(
+                children: [
+                  for (final value in PostReplyOrder.values)
+                    RadioListTile<PostReplyOrder>(
+                      value: value,
+                      title: Text(value.label),
+                    ),
+                ],
+              ),
+            ),
+            Divider(height: tokens.space16),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: tokens.space24),
+              child: Text(
+                '只看回复者',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: tokens.mutedText),
+              ),
+            ),
+            RadioGroup<String>(
+              groupValue: authorId ?? '',
+              onChanged: (value) {
+                if (value != null) {
+                  Navigator.pop(
+                    context,
+                    _ReplySettingsSelection.author(
+                      value.isEmpty ? null : value,
+                    ),
+                  );
+                }
+              },
+              child: Column(
+                children: [
+                  const RadioListTile<String>(value: '', title: Text('全部回复者')),
+                  for (final author in authors)
+                    RadioListTile<String>(
+                      value: author.id,
+                      title: Text(author.username),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
-    if (context.mounted && selected != null) {
-      final authorId = selected.isEmpty ? null : selected;
-      if (authorId != state.authorId) onAuthor(authorId);
-    }
   }
 }
 
