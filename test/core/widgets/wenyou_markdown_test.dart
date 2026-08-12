@@ -140,4 +140,117 @@ $diceNode
       matchesGoldenFile('goldens/markdown_reading_360.png'),
     );
   });
+
+  testWidgets('正文图片保持纯净并从原图页按需收藏表情', (tester) async {
+    const url = 'https://cdn.example.com/story.png';
+    var saveCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: '![雾港地图]($url)',
+            onSaveImage: (uri) async {
+              expect(uri.toString(), url);
+              saveCalls += 1;
+              return '已添加到表情收藏。';
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final image = find.byKey(const ValueKey('markdown-image-$url'));
+    expect(image, findsOneWidget);
+    expect(find.byTooltip('添加到表情收藏'), findsNothing);
+    expect(find.byKey(const Key('content-image-actions')), findsNothing);
+    expect(
+      find.ancestor(of: image, matching: find.byType(Stack)),
+      findsNothing,
+    );
+
+    await tester.tap(image);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('content-image-viewer')), findsOneWidget);
+    expect(find.text('雾港地图'), findsOneWidget);
+    expect(find.byKey(const Key('content-image-actions')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('content-image-actions')));
+    await tester.pumpAndSettle();
+    expect(find.text('添加到表情收藏'), findsOneWidget);
+
+    await tester.tap(find.text('添加到表情收藏'));
+    await tester.pumpAndSettle();
+
+    expect(saveCalls, 1);
+    expect(find.text('已添加到表情收藏。'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('游客正文图片仍可查看原图且没有收藏入口', (tester) async {
+    const url = 'https://cdn.example.com/story.png';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: WenyouMarkdown(data: '![雾港地图]($url)')),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('markdown-image-$url')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('content-image-viewer')), findsOneWidget);
+    expect(find.byKey(const Key('content-image-actions')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('正文图片语义只暴露查看原图且 320 至 600dp 无常驻操作', (tester) async {
+    final semantics = tester.ensureSemantics();
+    for (final width in const [320.0, 360.0, 400.0, 600.0]) {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 640);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: WenyouMarkdown(
+              data: '![雾港地图](https://cdn.example.com/story-$width.png)',
+              onSaveImage: (_) async => '已添加到表情收藏。',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.bySemanticsLabel('查看正文图片原图：雾港地图'), findsOneWidget);
+      expect(find.byTooltip('添加到表情收藏'), findsNothing);
+      expect(find.byTooltip('图片操作'), findsNothing);
+      expect(tester.takeException(), isNull);
+    }
+    semantics.dispose();
+    tester.view.resetDevicePixelRatio();
+    tester.view.resetPhysicalSize();
+  });
+
+  testWidgets('正文内的收藏表情保持原子展示且不伪装成普通插图', (tester) async {
+    const url = 'https://cdn.example.com/sticker.gif';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouMarkdown(
+            data: '![挥手]($url "wenyousite-sticker:asset-1")',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('markdown-image-$url')), findsNothing);
+    expect(find.byKey(const Key('content-image-viewer')), findsNothing);
+    expect(find.bySemanticsLabel('挥手'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

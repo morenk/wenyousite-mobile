@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 
 class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
@@ -255,7 +255,7 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
   }
 }
 
-class _MarkdownImage extends StatefulWidget {
+class _MarkdownImage extends StatelessWidget {
   const _MarkdownImage({required this.uri, this.title, this.alt, this.onSave});
 
   final Uri uri;
@@ -264,36 +264,29 @@ class _MarkdownImage extends StatefulWidget {
   final Future<String> Function(Uri uri)? onSave;
 
   @override
-  State<_MarkdownImage> createState() => _MarkdownImageState();
-}
-
-class _MarkdownImageState extends State<_MarkdownImage> {
-  var _saving = false;
-
-  @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    if (!MarkdownContent.isSafeImage(widget.uri)) {
+    if (!MarkdownContent.isSafeImage(uri)) {
       return Semantics(
-        label: '已阻止不安全图片${widget.alt == null ? '' : '：${widget.alt}'}',
+        label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
         child: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
       );
     }
-    final isSticker = widget.title?.startsWith('wenyousite-sticker:') == true;
+    final isSticker = title?.startsWith('wenyousite-sticker:') == true;
     final fallback = ColoredBox(
       color: tokens.softPanel,
       child: Center(child: Icon(Icons.image_outlined, color: tokens.mutedText)),
     );
     final image = CachedNetworkImage(
-      imageUrl: widget.uri.toString(),
+      imageUrl: uri.toString(),
       fit: BoxFit.contain,
       placeholder: (_, _) => fallback,
       errorWidget: (_, _, _) => Semantics(
-        label: '图片加载失败${widget.alt == null ? '' : '：${widget.alt}'}',
+        label: '图片加载失败${alt == null ? '' : '：$alt'}',
         child: fallback,
       ),
     );
-    final content = ClipRRect(
+    final imageContent = ClipRRect(
       borderRadius: BorderRadius.circular(tokens.radius12),
       child: isSticker
           ? SizedBox.square(dimension: 96, child: image)
@@ -302,55 +295,33 @@ class _MarkdownImageState extends State<_MarkdownImage> {
               child: image,
             ),
     );
-    return Semantics(
-      image: true,
-      label: widget.alt?.isNotEmpty == true ? widget.alt : '正文图片',
-      child: widget.onSave == null
-          ? content
-          : Stack(
-              clipBehavior: Clip.none,
-              children: [
-                content,
-                Positioned(
-                  right: tokens.space4,
-                  top: tokens.space4,
-                  child: IconButton.filledTonal(
-                    key: ValueKey('markdown-save-image-${widget.uri}'),
-                    onPressed: _saving ? null : _save,
-                    tooltip: '添加到表情收藏',
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
-                    ),
-                    icon: _saving
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.add_reaction_outlined, size: 20),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Future<void> _save() async {
-    setState(() => _saving = true);
-    try {
-      final message = await widget.onSave!(widget.uri);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } on Object catch (error) {
-      if (!mounted) return;
-      final message = error is ApiFailure ? error.userMessage : '收藏表情失败，请稍后重试。';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      if (mounted) setState(() => _saving = false);
+    if (isSticker) {
+      return Semantics(
+        image: true,
+        label: alt?.trim().isNotEmpty == true ? alt!.trim() : '收藏表情',
+        child: imageContent,
+      );
     }
+    final imageAlt = alt?.trim() ?? '';
+    return Semantics(
+      button: true,
+      image: true,
+      label: imageAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$imageAlt',
+      child: InkWell(
+        key: ValueKey('markdown-image-$uri'),
+        borderRadius: BorderRadius.circular(tokens.radius12),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            fullscreenDialog: true,
+            builder: (_) => ContentImageViewerPage(
+              url: uri.toString(),
+              alt: imageAlt,
+              onSaveImage: onSave == null ? null : () => onSave!(uri),
+            ),
+          ),
+        ),
+        child: imageContent,
+      ),
+    );
   }
 }

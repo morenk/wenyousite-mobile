@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 
 List<EmbedBuilder> wenyouEditorEmbedBuilders() => const [
   _MentionEmbedBuilder(),
@@ -136,6 +137,7 @@ class _ImageEmbedBuilder extends EmbedBuilder {
         borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
+            fullscreenDialog: true,
             builder: (_) => ContentImageViewerPage(url: url, alt: alt ?? ''),
           ),
         ),
@@ -279,79 +281,6 @@ class _UnavailableImage extends StatelessWidget {
           SizedBox(height: context.wenyouTokens.space8),
           Text(message, textAlign: TextAlign.center),
         ],
-      ),
-    );
-  }
-}
-
-class ContentImageViewerPage extends StatefulWidget {
-  const ContentImageViewerPage({
-    required this.url,
-    required this.alt,
-    super.key,
-  });
-
-  final String url;
-  final String alt;
-
-  @override
-  State<ContentImageViewerPage> createState() => _ContentImageViewerPageState();
-}
-
-class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
-  final TransformationController _transformationController =
-      TransformationController();
-  double _verticalDrag = 0;
-
-  @override
-  void dispose() {
-    _transformationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final alt = widget.alt.trim();
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(alt.isEmpty ? '正文插图' : alt),
-      ),
-      body: GestureDetector(
-        onDoubleTap: () {
-          final zoomed =
-              _transformationController.value.getMaxScaleOnAxis() > 1.01;
-          _transformationController.value = zoomed
-              ? Matrix4.identity()
-              : Matrix4.diagonal3Values(2, 2, 1);
-        },
-        onVerticalDragUpdate: (details) {
-          if (_transformationController.value.getMaxScaleOnAxis() <= 1.01) {
-            _verticalDrag += details.delta.dy;
-          }
-        },
-        onVerticalDragEnd: (_) {
-          if (_verticalDrag > 80 && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
-          _verticalDrag = 0;
-        },
-        child: InteractiveViewer(
-          transformationController: _transformationController,
-          minScale: 1,
-          maxScale: 5,
-          child: Center(
-            child: Image.network(
-              widget.url,
-              fit: BoxFit.contain,
-              semanticLabel: alt.isEmpty ? '正文插图原图' : alt,
-              errorBuilder: (_, _, _) =>
-                  const _UnavailableImage(message: '原图加载失败，请检查网络后返回重试'),
-            ),
-          ),
-        ),
       ),
     );
   }
