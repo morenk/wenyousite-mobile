@@ -54,77 +54,96 @@ class PostRepliesPage extends ConsumerWidget {
             state.root?.threadId == threadId
         ? state.root
         : null;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('楼中楼讨论'),
-        actions: [
-          IconButton(
-            tooltip: '返回原楼层',
-            onPressed: () => context.go(
-              AppRouteLocations.thread(threadId, postId: rootPostId),
-            ),
-            icon: const Icon(Icons.layers_outlined),
+    return WenyouReadingChrome(
+      builder: (context, actionsVisible) => Scaffold(
+        appBar: readyRoot == null
+            ? AppBar(
+                title: const Text('楼中楼讨论'),
+                actions: [_returnToRootAction(context)],
+              )
+            : null,
+        body: switch (state.phase) {
+          PostDiscussionPhase.loading => const Center(
+            child: CircularProgressIndicator(),
           ),
-        ],
-      ),
-      body: switch (state.phase) {
-        PostDiscussionPhase.loading => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        PostDiscussionPhase.failed => _DiscussionFailure(
-          failure: state.failure,
-          onRetry: () => ref.read(provider.notifier).load(),
-        ),
-        PostDiscussionPhase.ready =>
-          state.root?.threadId != threadId
-              ? const _RouteMismatch()
-              : RefreshIndicator(
-                  onRefresh: () => ref.read(provider.notifier).refresh(),
-                  child: _DiscussionList(
-                    state: state,
-                    actions: actions,
-                    viewerId: viewerId,
-                    authenticated: session.isAuthenticated,
-                    focusedReplyId: focusedReplyId,
-                    reportsEnabled: reportsEnabled,
-                    onOrder: (order) =>
-                        ref.read(provider.notifier).setOrder(order),
-                    onAuthor: (authorId) =>
-                        ref.read(provider.notifier).setAuthor(authorId),
-                    onLoadMore: () => ref.read(provider.notifier).loadMore(),
-                    onCompose: (target) =>
-                        _compose(context, ref, provider, target),
-                    onDelete: (post, root) => _delete(
-                      context,
-                      ref,
-                      provider,
-                      actionsProvider,
-                      post,
-                      root: root,
+          PostDiscussionPhase.failed => _DiscussionFailure(
+            failure: state.failure,
+            onRetry: () => ref.read(provider.notifier).load(),
+          ),
+          PostDiscussionPhase.ready =>
+            state.root?.threadId != threadId
+                ? const _RouteMismatch()
+                : NestedScrollView(
+                    key: const Key('post-replies-reading-scroll'),
+                    floatHeaderSlivers: true,
+                    headerSliverBuilder: (context, _) => [
+                      SliverAppBar(
+                        key: const Key('post-replies-reading-app-bar'),
+                        floating: true,
+                        snap: true,
+                        title: const Text('楼中楼讨论'),
+                        actions: [_returnToRootAction(context)],
+                      ),
+                    ],
+                    body: RefreshIndicator(
+                      onRefresh: () => ref.read(provider.notifier).refresh(),
+                      child: _DiscussionList(
+                        state: state,
+                        actions: actions,
+                        viewerId: viewerId,
+                        authenticated: session.isAuthenticated,
+                        focusedReplyId: focusedReplyId,
+                        reportsEnabled: reportsEnabled,
+                        onOrder: (order) =>
+                            ref.read(provider.notifier).setOrder(order),
+                        onAuthor: (authorId) =>
+                            ref.read(provider.notifier).setAuthor(authorId),
+                        onLoadMore: () =>
+                            ref.read(provider.notifier).loadMore(),
+                        onCompose: (target) =>
+                            _compose(context, ref, provider, target),
+                        onDelete: (post, root) => _delete(
+                          context,
+                          ref,
+                          provider,
+                          actionsProvider,
+                          post,
+                          root: root,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-      },
-      floatingActionButton: readyRoot == null
-          ? null
-          : WenyouComposerAction(
-              key: const Key('post-reply-compose'),
-              label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
-              icon: session.isAuthenticated
-                  ? Icons.reply_rounded
-                  : Icons.login_rounded,
-              onPressed: session.isAuthenticated
-                  ? () => _compose(
-                      context,
-                      ref,
-                      provider,
-                      _replyTarget(readyRoot, readyRoot),
-                    )
-                  : () => context.pushNamed(
-                      'login',
-                      queryParameters: {'returnTo': _location()},
-                    ),
-            ),
+        },
+        floatingActionButton: readyRoot == null || !actionsVisible
+            ? null
+            : WenyouComposerAction(
+                key: const Key('post-reply-compose'),
+                label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
+                icon: session.isAuthenticated
+                    ? Icons.reply_rounded
+                    : Icons.login_rounded,
+                onPressed: session.isAuthenticated
+                    ? () => _compose(
+                        context,
+                        ref,
+                        provider,
+                        _replyTarget(readyRoot, readyRoot),
+                      )
+                    : () => context.pushNamed(
+                        'login',
+                        queryParameters: {'returnTo': _location()},
+                      ),
+              ),
+      ),
+    );
+  }
+
+  Widget _returnToRootAction(BuildContext context) {
+    return IconButton(
+      tooltip: '返回原楼层',
+      onPressed: () =>
+          context.go(AppRouteLocations.thread(threadId, postId: rootPostId)),
+      icon: const Icon(Icons.layers_outlined),
     );
   }
 

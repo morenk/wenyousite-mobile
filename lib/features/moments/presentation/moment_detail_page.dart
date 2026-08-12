@@ -50,155 +50,184 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
         ).showSnackBar(SnackBar(content: Text(next.userMessage)));
       }
     });
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('动态详情'),
-        actions: [
-          if (state.detail case final detail? when !detail.canEdit)
-            WenyouTipButton(
-              key: const Key('moment-detail-tip'),
-              target: TipTarget.moment(
-                id: detail.card.id,
-                recipientUserId: detail.card.author.id,
+    return WenyouReadingChrome(
+      builder: (context, actionsVisible) => Scaffold(
+        appBar: state.phase == MomentLoadPhase.ready
+            ? null
+            : AppBar(
+                title: const Text('动态详情'),
+                actions: _momentAppBarActions(state, provider),
               ),
-              recipientName: detail.card.author.username,
-              returnTo: '/moments/${detail.card.id}',
-              iconOnly: true,
-              onSuccess: (_) => ref.read(provider.notifier).load(),
-            ),
-          if (state.detail case final detail? when !detail.canEdit)
-            WenyouReportButton(
-              key: const Key('moment-detail-report'),
-              target: ReportTarget.moment(detail.card.id),
-              targetLabel: '这条动态',
-              returnTo: '/moments/${detail.card.id}',
-              iconOnly: true,
-            ),
-          if (state.detail?.canEdit ?? false)
-            IconButton(
-              key: const Key('moment-detail-edit'),
-              onPressed: () async {
-                final result = await context.pushNamed<MomentDetail>(
-                  'moment-edit',
-                  pathParameters: {'momentId': widget.momentId},
-                );
-                if (result != null && mounted) {
-                  await ref.read(provider.notifier).load();
-                }
-              },
-              tooltip: '编辑动态',
-              icon: const Icon(Icons.edit_outlined),
-            ),
-        ],
-      ),
-      body: switch (state.phase) {
-        MomentLoadPhase.loading => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        MomentLoadPhase.failed => _MomentDetailFailure(
-          failure: state.failure,
-          onRetry: () => ref.read(provider.notifier).load(),
-        ),
-        MomentLoadPhase.ready => RefreshIndicator(
-          onRefresh: () => ref.read(provider.notifier).load(),
-          child: ListView(
-            key: const PageStorageKey('moment-detail-scroll'),
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.only(
-              bottom:
-                  context.wenyouTokens.minimumTouchTarget +
-                  context.wenyouTokens.space32 +
-                  context.wenyouTokens.space16,
-            ),
-            children: [
-              MomentContentPadding(
-                top: context.wenyouTokens.space16,
-                child: _MomentDetailPanel(
-                  detail: state.detail!,
-                  busy: state.busyMomentAction,
-                  onLike: () => _authenticated(
-                    () => ref.read(provider.notifier).toggleLike(),
-                  ),
-                  onBookmark: () => _authenticated(
-                    () => ref.read(provider.notifier).toggleBookmark(),
-                  ),
+        body: switch (state.phase) {
+          MomentLoadPhase.loading => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          MomentLoadPhase.failed => _MomentDetailFailure(
+            failure: state.failure,
+            onRetry: () => ref.read(provider.notifier).load(),
+          ),
+          MomentLoadPhase.ready => NestedScrollView(
+            key: const Key('moment-detail-reading-scroll'),
+            floatHeaderSlivers: true,
+            headerSliverBuilder: (context, _) => [
+              SliverAppBar(
+                key: const Key('moment-detail-reading-app-bar'),
+                floating: true,
+                snap: true,
+                title: const Text('动态详情'),
+                actions: _momentAppBarActions(state, provider),
+              ),
+            ],
+            body: RefreshIndicator(
+              onRefresh: () => ref.read(provider.notifier).load(),
+              child: ListView(
+                key: const PageStorageKey('moment-detail-scroll'),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(
+                  bottom:
+                      context.wenyouTokens.minimumTouchTarget +
+                      context.wenyouTokens.space32 +
+                      context.wenyouTokens.space16,
                 ),
-              ),
-              MomentContentPadding(
-                top: context.wenyouTokens.space12,
-                child: _CommentFilters(
-                  state: state,
-                  onOrder: (order) =>
-                      ref.read(provider.notifier).selectCommentOrder(order),
-                  onAuthor: (authorId) =>
-                      ref.read(provider.notifier).selectCommentAuthor(authorId),
-                ),
-              ),
-              if (state.comments.isEmpty)
-                MomentContentPadding(
-                  top: context.wenyouTokens.space12,
-                  child: const WenyouEmptyState(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    title: '还没有评论',
-                    message: '可以留下第一条评论。',
-                  ),
-                )
-              else
-                for (var index = 0; index < state.comments.length; index++)
+                children: [
                   MomentContentPadding(
-                    top: index == 0 ? context.wenyouTokens.space12 : 0,
-                    child: Column(
-                      children: [
-                        if (index > 0)
-                          Divider(height: context.wenyouTokens.space24),
-                        _MomentRootCommentPanel(
-                          root: state.comments[index],
-                          replyPage: state.replyPages[state.comments[index].id],
-                          busyCommentIds: state.busyCommentIds,
-                          viewerId: viewerId,
-                          returnTo: '/moments/${widget.momentId}',
-                          onReply: (comment) => _authenticated(
-                            () => _openCommentComposer(comment),
-                          ),
-                          onDelete: (comment) =>
-                              _deleteComment(context, provider, comment),
-                          onLoadReplies: () => ref
-                              .read(provider.notifier)
-                              .loadReplies(state.comments[index].id),
-                        ),
-                      ],
+                    top: context.wenyouTokens.space16,
+                    child: _MomentDetailPanel(
+                      detail: state.detail!,
+                      busy: state.busyMomentAction,
+                      onLike: () => _authenticated(
+                        () => ref.read(provider.notifier).toggleLike(),
+                      ),
+                      onBookmark: () => _authenticated(
+                        () => ref.read(provider.notifier).toggleBookmark(),
+                      ),
                     ),
                   ),
-              if (state.hasMoreComments || state.isLoadingMoreComments)
-                MomentContentPadding(
-                  top: context.wenyouTokens.space12,
-                  child: Center(
-                    child: state.isLoadingMoreComments
-                        ? const CircularProgressIndicator()
-                        : OutlinedButton.icon(
-                            key: const Key('moment-comments-load-more'),
-                            onPressed: () =>
-                                ref.read(provider.notifier).loadMoreComments(),
-                            icon: const Icon(Icons.expand_more_rounded),
-                            label: const Text('加载更多评论'),
-                          ),
+                  MomentContentPadding(
+                    top: context.wenyouTokens.space12,
+                    child: _CommentFilters(
+                      state: state,
+                      onOrder: (order) =>
+                          ref.read(provider.notifier).selectCommentOrder(order),
+                      onAuthor: (authorId) => ref
+                          .read(provider.notifier)
+                          .selectCommentAuthor(authorId),
+                    ),
                   ),
-                ),
-            ],
+                  if (state.comments.isEmpty)
+                    MomentContentPadding(
+                      top: context.wenyouTokens.space12,
+                      child: const WenyouEmptyState(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        title: '还没有评论',
+                        message: '可以留下第一条评论。',
+                      ),
+                    )
+                  else
+                    for (var index = 0; index < state.comments.length; index++)
+                      MomentContentPadding(
+                        top: index == 0 ? context.wenyouTokens.space12 : 0,
+                        child: Column(
+                          children: [
+                            if (index > 0)
+                              Divider(height: context.wenyouTokens.space24),
+                            _MomentRootCommentPanel(
+                              root: state.comments[index],
+                              replyPage:
+                                  state.replyPages[state.comments[index].id],
+                              busyCommentIds: state.busyCommentIds,
+                              viewerId: viewerId,
+                              returnTo: '/moments/${widget.momentId}',
+                              onReply: (comment) => _authenticated(
+                                () => _openCommentComposer(comment),
+                              ),
+                              onDelete: (comment) =>
+                                  _deleteComment(context, provider, comment),
+                              onLoadReplies: () => ref
+                                  .read(provider.notifier)
+                                  .loadReplies(state.comments[index].id),
+                            ),
+                          ],
+                        ),
+                      ),
+                  if (state.hasMoreComments || state.isLoadingMoreComments)
+                    MomentContentPadding(
+                      top: context.wenyouTokens.space12,
+                      child: Center(
+                        child: state.isLoadingMoreComments
+                            ? const CircularProgressIndicator()
+                            : OutlinedButton.icon(
+                                key: const Key('moment-comments-load-more'),
+                                onPressed: () => ref
+                                    .read(provider.notifier)
+                                    .loadMoreComments(),
+                                icon: const Icon(Icons.expand_more_rounded),
+                                label: const Text('加载更多评论'),
+                              ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      },
-      floatingActionButton: state.phase == MomentLoadPhase.ready
-          ? WenyouComposerAction(
-              key: const Key('moment-comment-dock'),
-              label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
-              icon: session.isAuthenticated
-                  ? Icons.chat_bubble_outline_rounded
-                  : Icons.login_rounded,
-              onPressed: () => _authenticated(() => _openCommentComposer()),
-            )
-          : null,
+        },
+        floatingActionButton:
+            state.phase == MomentLoadPhase.ready && actionsVisible
+            ? WenyouComposerAction(
+                key: const Key('moment-comment-dock'),
+                label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
+                icon: session.isAuthenticated
+                    ? Icons.chat_bubble_outline_rounded
+                    : Icons.login_rounded,
+                onPressed: () => _authenticated(() => _openCommentComposer()),
+              )
+            : null,
+      ),
     );
+  }
+
+  List<Widget> _momentAppBarActions(
+    MomentDetailState state,
+    AutoDisposeStateNotifierProvider<MomentDetailController, MomentDetailState>
+    provider,
+  ) {
+    return [
+      if (state.detail case final detail? when !detail.canEdit)
+        WenyouTipButton(
+          key: const Key('moment-detail-tip'),
+          target: TipTarget.moment(
+            id: detail.card.id,
+            recipientUserId: detail.card.author.id,
+          ),
+          recipientName: detail.card.author.username,
+          returnTo: '/moments/${detail.card.id}',
+          iconOnly: true,
+          onSuccess: (_) => ref.read(provider.notifier).load(),
+        ),
+      if (state.detail case final detail? when !detail.canEdit)
+        WenyouReportButton(
+          key: const Key('moment-detail-report'),
+          target: ReportTarget.moment(detail.card.id),
+          targetLabel: '这条动态',
+          returnTo: '/moments/${detail.card.id}',
+          iconOnly: true,
+        ),
+      if (state.detail?.canEdit ?? false)
+        IconButton(
+          key: const Key('moment-detail-edit'),
+          onPressed: () async {
+            final result = await context.pushNamed<MomentDetail>(
+              'moment-edit',
+              pathParameters: {'momentId': widget.momentId},
+            );
+            if (result != null && mounted) {
+              await ref.read(provider.notifier).load();
+            }
+          },
+          tooltip: '编辑动态',
+          icon: const Icon(Icons.edit_outlined),
+        ),
+    ];
   }
 
   void _authenticated(VoidCallback action) {

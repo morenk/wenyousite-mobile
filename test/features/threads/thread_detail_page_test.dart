@@ -24,8 +24,11 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import '../../support/foundation_test_fonts.dart';
 
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('公开主题详情展示默认子贴、Markdown、楼层与内嵌回复', (tester) async {
     await tester.pumpWidget(_detailApp(_FakeThreadDetailRepository()));
     await tester.pumpAndSettle();
@@ -150,12 +153,50 @@ void main() {
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
 
-    await tester.longPress(
-      find.byKey(const Key('thread-inline-reply-reply-1')),
+    final inlineReply = find.byKey(const Key('thread-inline-reply-reply-1'));
+    await tester.ensureVisible(inlineReply);
+    await tester.pumpAndSettle();
+    await tester.longPressAt(
+      tester.getTopLeft(inlineReply) + const Offset(20, 20),
     );
     await tester.pumpAndSettle();
     expect(find.text('回复操作'), findsOneWidget);
     expect(find.text('举报'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('360dp 长文阅读向下收起顶栏并向上恢复', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const visualKey = Key('thread-detail-text-first-visual');
+
+    await tester.pumpWidget(
+      _detailApp(
+        _FakeThreadDetailRepository(mainFloor: _longMainFloor),
+        visualKey: visualKey,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('thread-detail-reading-app-bar')),
+      findsOneWidget,
+    );
+    expect(find.text('主题详情').hitTestable(), findsOneWidget);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(find.text('主题详情').hitTestable(), findsNothing);
+    expect(find.byKey(const Key('thread-floor-compose')), findsNothing);
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/thread_detail_text_first_360.png'),
+    );
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 120));
+    await tester.pumpAndSettle();
+    expect(find.text('主题详情').hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
   });
 
   testWidgets('切换子贴同步替换正文与楼层', (tester) async {
@@ -647,7 +688,7 @@ void main() {
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-compose')), findsNothing);
     expect(find.byKey(const Key('thread-floor-edit-floor-1')), findsNothing);
     expect(find.byKey(const Key('thread-floor-delete-floor-1')), findsNothing);
     expect(
@@ -674,7 +715,14 @@ Widget _detailApp(
   ThreadDetailRepository repository, {
   String? targetPostId,
   String? subthreadIdHint,
+  Key? visualKey,
 }) {
+  final page = ThreadDetailPage(
+    threadId: 'thread-1',
+    categoryNameHint: '角色扮演',
+    targetPostId: targetPostId,
+    subthreadIdHint: subthreadIdHint,
+  );
   return ProviderScope(
     overrides: [
       stickersEnabledProvider.overrideWithValue(false),
@@ -682,12 +730,9 @@ Widget _detailApp(
     ],
     child: MaterialApp(
       theme: AppTheme.light,
-      home: ThreadDetailPage(
-        threadId: 'thread-1',
-        categoryNameHint: '角色扮演',
-        targetPostId: targetPostId,
-        subthreadIdHint: subthreadIdHint,
-      ),
+      home: visualKey == null
+          ? page
+          : RepaintBoundary(key: visualKey, child: page),
     ),
   );
 }
@@ -980,6 +1025,34 @@ final _mainFloor = ThreadFloorModel(
   replies: [
     ThreadReplyModel(
       id: 'reply-1',
+      author: _author,
+      body: const ThreadBodyModel(markdown: '收到，准备出发。'),
+      createdAt: DateTime.utc(2026, 8, 9, 12, 20),
+      isDeleted: false,
+      replyToUsername: '温柔测试员',
+    ),
+  ],
+);
+
+final _longMainFloor = ThreadFloorModel(
+  id: 'floor-long',
+  floorNumber: 1,
+  author: _author,
+  body: const ThreadBodyModel(
+    markdown: '''第一层内容
+
+舷窗外的群星缓慢后退。温柔测试员把航线重新标在纸图上，让后来者不必猜测故事从哪里继续。
+
+引擎发出低沉而均匀的嗡鸣，甲板上的每个人都在等待下一位接力者写下选择。
+
+远处的信标终于亮起，新的章节也在这一刻展开。''',
+  ),
+  createdAt: DateTime.utc(2026, 8, 9, 12, 10),
+  isDeleted: false,
+  replyCount: 1,
+  replies: [
+    ThreadReplyModel(
+      id: 'reply-long',
       author: _author,
       body: const ThreadBodyModel(markdown: '收到，准备出发。'),
       createdAt: DateTime.utc(2026, 8, 9, 12, 20),

@@ -227,6 +227,50 @@ void main() {
       matchesGoldenFile('goldens/post_composer_text_first_360.png'),
     );
   });
+
+  testWidgets('楼中楼阅读顶栏随正文滚动收起并可立即唤回', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('楼中楼讨论').hitTestable(), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('post-replies-list')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('楼中楼讨论').hitTestable(), findsNothing);
+    expect(find.byKey(const Key('post-reply-compose')), findsNothing);
+
+    await tester.drag(
+      find.byKey(const Key('post-replies-list')),
+      const Offset(0, 120),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('楼中楼讨论').hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
+  });
 }
 
 Future<void> _replaceComposerText(WidgetTester tester, String text) async {

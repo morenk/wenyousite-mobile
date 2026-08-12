@@ -138,6 +138,43 @@ void main() {
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
   });
 
+  testWidgets('动态详情阅读顶栏随内容滚动收起并向上恢复', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 600);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('动态详情').hitTestable(), findsOneWidget);
+    await tester.drag(
+      find.byKey(const PageStorageKey('moment-detail-scroll')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('动态详情').hitTestable(), findsNothing);
+    expect(find.byKey(const Key('moment-comment-dock')), findsNothing);
+
+    await tester.drag(
+      find.byKey(const PageStorageKey('moment-detail-scroll')),
+      const Offset(0, 120),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('动态详情').hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
+  });
+
   testWidgets('动态评论入口悬浮首屏并从评论动作带入回复对象', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);

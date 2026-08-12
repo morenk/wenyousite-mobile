@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class WenyouConstrainedWidth extends StatelessWidget {
@@ -54,6 +55,41 @@ class WenyouPageBody extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+typedef WenyouReadingChromeBuilder =
+    Widget Function(BuildContext context, bool actionsVisible);
+
+class WenyouReadingChrome extends StatefulWidget {
+  const WenyouReadingChrome({required this.builder, super.key});
+
+  final WenyouReadingChromeBuilder builder;
+
+  @override
+  State<WenyouReadingChrome> createState() => _WenyouReadingChromeState();
+}
+
+class _WenyouReadingChromeState extends State<WenyouReadingChrome> {
+  var _actionsVisible = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
+    return NotificationListener<UserScrollNotification>(
+      onNotification: (notification) {
+        if (accessibleNavigation ||
+            notification.direction == ScrollDirection.idle) {
+          return false;
+        }
+        final nextVisible = notification.direction == ScrollDirection.forward;
+        if (nextVisible != _actionsVisible) {
+          setState(() => _actionsVisible = nextVisible);
+        }
+        return false;
+      },
+      child: widget.builder(context, accessibleNavigation || _actionsVisible),
     );
   }
 }

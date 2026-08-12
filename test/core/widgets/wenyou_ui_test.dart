@@ -86,6 +86,35 @@ void main() {
     expect(pressed, isTrue);
   });
 
+  testWidgets('无障碍导航开启时阅读操作不会随滚动隐藏', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: MediaQuery(
+          data: const MediaQueryData(accessibleNavigation: true),
+          child: WenyouReadingChrome(
+            builder: (context, actionsVisible) => Scaffold(
+              floatingActionButton: actionsVisible
+                  ? const Icon(Icons.edit_rounded, key: Key('reading-action'))
+                  : null,
+              body: ListView(
+                key: const Key('reading-list'),
+                children: const [SizedBox(height: 1600)],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(
+      find.byKey(const Key('reading-list')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('reading-action')), findsOneWidget);
+  });
+
   testWidgets('异步主按钮在默认和加载状态都保持 48dp', (tester) async {
     Widget buildButton({required bool isLoading}) {
       return MaterialApp(

@@ -135,70 +135,70 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
     _revealTargetWhenReady(state, resolvedTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
-    final scaffold = Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          key: const Key('thread-detail-back'),
-          onPressed: _leaveDetail,
-        ),
-        title: const Text('主题详情'),
-        actions: [
-          IconButton(
-            key: const Key('thread-detail-search'),
-            tooltip: '搜索主题内容',
-            onPressed: () => context.pushNamed(
-              'thread-post-search',
-              pathParameters: {'threadId': widget.threadId},
-            ),
-            icon: const Icon(Icons.search_rounded),
+    final scaffold = WenyouReadingChrome(
+      builder: (context, actionsVisible) => Scaffold(
+        appBar: state.phase == ThreadDetailPhase.ready
+            ? null
+            : AppBar(
+                leading: BackButton(
+                  key: const Key('thread-detail-back'),
+                  onPressed: _leaveDetail,
+                ),
+                title: const Text('主题详情'),
+                actions: _threadAppBarActions(state, provider),
+              ),
+        body: switch (state.phase) {
+          ThreadDetailPhase.loading => const _DetailLoadingState(),
+          ThreadDetailPhase.failed => _DetailFatalState(
+            failure: state.failure,
+            onRetry: () => ref.read(provider.notifier).loadInitial(),
           ),
-          if (state.detail case final detail?
-              when !detail.isCurrentUserOwner || detail.canManageThread)
-            IconButton(
-              key: const Key('thread-detail-more'),
-              tooltip: '更多主题操作',
-              onPressed: () => _openThreadActions(detail, provider),
-              icon: const Icon(Icons.more_horiz_rounded),
+          ThreadDetailPhase.ready => RefreshIndicator(
+            onRefresh: () => ref.read(provider.notifier).refresh(),
+            child: CustomScrollView(
+              key: PageStorageKey('thread-detail-${widget.threadId}'),
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  key: const Key('thread-detail-reading-app-bar'),
+                  floating: true,
+                  snap: true,
+                  leading: BackButton(
+                    key: const Key('thread-detail-back'),
+                    onPressed: _leaveDetail,
+                  ),
+                  title: const Text('主题详情'),
+                  actions: _threadAppBarActions(state, provider),
+                ),
+                ..._buildReadySlivers(
+                  context,
+                  state,
+                  provider,
+                  target,
+                  actions: actions,
+                  authenticated: session.isAuthenticated,
+                  viewerId: viewerId,
+                ),
+              ],
             ),
-        ],
+          ),
+        },
+        floatingActionButton: selectedSubthread == null || !actionsVisible
+            ? null
+            : WenyouComposerAction(
+                key: const Key('thread-floor-compose'),
+                label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
+                icon: session.isAuthenticated
+                    ? Icons.add_comment_outlined
+                    : Icons.login_rounded,
+                onPressed: session.isAuthenticated
+                    ? () => _compose(
+                        _floorTarget(state.detail!, selectedSubthread),
+                      )
+                    : _requireLogin,
+              ),
       ),
-      body: switch (state.phase) {
-        ThreadDetailPhase.loading => const _DetailLoadingState(),
-        ThreadDetailPhase.failed => _DetailFatalState(
-          failure: state.failure,
-          onRetry: () => ref.read(provider.notifier).loadInitial(),
-        ),
-        ThreadDetailPhase.ready => RefreshIndicator(
-          onRefresh: () => ref.read(provider.notifier).refresh(),
-          child: CustomScrollView(
-            key: PageStorageKey('thread-detail-${widget.threadId}'),
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: _buildReadySlivers(
-              context,
-              state,
-              provider,
-              target,
-              actions: actions,
-              authenticated: session.isAuthenticated,
-              viewerId: viewerId,
-            ),
-          ),
-        ),
-      },
-      floatingActionButton: selectedSubthread == null
-          ? null
-          : WenyouComposerAction(
-              key: const Key('thread-floor-compose'),
-              label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
-              icon: session.isAuthenticated
-                  ? Icons.add_comment_outlined
-                  : Icons.login_rounded,
-              onPressed: session.isAuthenticated
-                  ? () =>
-                        _compose(_floorTarget(state.detail!, selectedSubthread))
-                  : _requireLogin,
-            ),
     );
     return PopScope<Object?>(
       canPop: canPop,
@@ -207,6 +207,32 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       },
       child: scaffold,
     );
+  }
+
+  List<Widget> _threadAppBarActions(
+    ThreadDetailState state,
+    AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
+    provider,
+  ) {
+    return [
+      IconButton(
+        key: const Key('thread-detail-search'),
+        tooltip: '搜索主题内容',
+        onPressed: () => context.pushNamed(
+          'thread-post-search',
+          pathParameters: {'threadId': widget.threadId},
+        ),
+        icon: const Icon(Icons.search_rounded),
+      ),
+      if (state.detail case final detail?
+          when !detail.isCurrentUserOwner || detail.canManageThread)
+        IconButton(
+          key: const Key('thread-detail-more'),
+          tooltip: '更多主题操作',
+          onPressed: () => _openThreadActions(detail, provider),
+          icon: const Icon(Icons.more_horiz_rounded),
+        ),
+    ];
   }
 
   void _leaveDetail() {
