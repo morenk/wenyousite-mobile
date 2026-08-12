@@ -54,6 +54,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _scrollController = ScrollController();
   final _targetKey = GlobalKey();
   String? _lastRevealedTargetId;
+  String? _lastOpenedReplyTargetId;
 
   @override
   void initState() {
@@ -74,6 +75,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.targetPostId != widget.targetPostId) {
       _lastRevealedTargetId = null;
+      _lastOpenedReplyTargetId = null;
     }
   }
 
@@ -134,6 +136,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       });
     }
     _revealTargetWhenReady(state, resolvedTarget);
+    _openReplyTargetWhenReady(state, resolvedTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = WenyouReadingChrome(
       builder: (context, actionsVisible) => Scaffold(
@@ -345,6 +348,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ThreadPostTargetModel? target,
   ) {
     if (target == null ||
+        target.focusedReplyId != null ||
         target.threadId != widget.threadId ||
         state.selectedSubthreadId != target.subthreadId ||
         state.isLoadingFloors ||
@@ -359,6 +363,30 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         targetContext,
         duration: Duration.zero,
         alignment: 0.12,
+      );
+    });
+  }
+
+  void _openReplyTargetWhenReady(
+    ThreadDetailState state,
+    ThreadPostTargetModel? target,
+  ) {
+    final focusedReplyId = target?.focusedReplyId;
+    if (target == null ||
+        focusedReplyId == null ||
+        target.threadId != widget.threadId ||
+        state.phase != ThreadDetailPhase.ready ||
+        state.selectedSubthreadId != target.subthreadId ||
+        _lastOpenedReplyTargetId == target.requestedPostId) {
+      return;
+    }
+    _lastOpenedReplyTargetId = target.requestedPostId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openDiscussion(
+        target.floor,
+        reportsEnabled: !(state.detail?.isPrivate ?? true),
+        focusedReplyId: focusedReplyId,
       );
     });
   }
@@ -511,11 +539,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                       threadId: widget.threadId,
                       floor: floor,
                       isFocused: focused,
-                      authenticated: authenticated,
-                      viewerId: viewerId,
-                      canManageThread: detail.canManageThread,
-                      reportsEnabled: !detail.isPrivate,
-                      pendingPostId: actions.pendingPostId,
                       canEdit: floor.author.id == viewerId,
                       canDelete:
                           floor.author.id == viewerId || detail.canManageThread,
@@ -523,6 +546,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                       onDiscussion: () => _openDiscussion(
                         floor,
                         reportsEnabled: !detail.isPrivate,
+                        focusedReplyId: usableTarget?.floor.id == floor.id
+                            ? usableTarget?.focusedReplyId
+                            : null,
                       ),
                       showDiscussion: floor.replyCount > 0 || authenticated,
                       reportReturnTo:
@@ -532,14 +558,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                       onEdit: () =>
                           _compose(_editFloorTarget(detail, selected, floor)),
                       onDelete: () => _deleteFloor(floor),
-                      onReplyToReply: (reply) => _compose(
-                        _replyTarget(detail, selected, floor, reply),
-                      ),
-                      onEditReply: (reply) => _compose(
-                        _editReplyTarget(detail, selected, floor, reply),
-                      ),
-                      onDeleteReply: (reply) =>
-                          _deleteReply(detail, selected, floor, reply),
                     ),
                   ],
                 ),
@@ -581,12 +599,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
-  void _openDiscussion(ThreadFloorModel floor, {required bool reportsEnabled}) {
-    final focusedReplyId =
-        widget.targetPostId != null &&
-            floor.replies.any((reply) => reply.id == widget.targetPostId)
-        ? widget.targetPostId
-        : null;
+  void _openDiscussion(
+    ThreadFloorModel floor, {
+    required bool reportsEnabled,
+    String? focusedReplyId,
+  }) {
     context.pushNamed(
       'post-replies',
       pathParameters: {'threadId': widget.threadId, 'postId': floor.id},
@@ -632,42 +649,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .refresh();
   }
 
-  Future<void> _deleteReply(
-    ThreadDetailModel detail,
-    ThreadSubthreadModel subthread,
-    ThreadFloorModel floor,
-    ThreadReplyModel reply,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除这条回复？'),
-        content: const Text('回复会被标记为已删除，操作无法在移动端撤销。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    final removed = await ref
-        .read(postActionControllerProvider(widget.threadId).notifier)
-        .remove(_replyAsPost(detail, subthread, floor, reply));
-    if (!removed || !mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('回复已删除。')));
-    await ref
-        .read(threadDetailControllerProvider(widget.threadId).notifier)
-        .refresh();
-  }
-
   String _currentThreadLocation() {
     return Uri(
       pathSegments: ['', 'threads', widget.threadId],
@@ -690,26 +671,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   ) {
     if (target == null) return floors;
     final index = floors.indexWhere((floor) => floor.id == target.floor.id);
-    var focusedFloor = index == -1 ? target.floor : floors[index];
-    if (target.focusedReplyId != null &&
-        !focusedFloor.replies.any(
-          (reply) => reply.id == target.focusedReplyId,
-        )) {
-      final focusedReply = target.floor.replies.single;
-      final replies = [...focusedFloor.replies, focusedReply]
-        ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
-      focusedFloor = ThreadFloorModel(
-        id: focusedFloor.id,
-        floorNumber: focusedFloor.floorNumber,
-        author: focusedFloor.author,
-        body: focusedFloor.body,
-        createdAt: focusedFloor.createdAt,
-        isDeleted: focusedFloor.isDeleted,
-        replyCount: focusedFloor.replyCount,
-        replies: replies,
-        version: focusedFloor.version,
-      );
-    }
+    final focusedFloor = index == -1 ? target.floor : floors[index];
     return [
       focusedFloor,
       ...floors.where((floor) => floor.id != focusedFloor.id),

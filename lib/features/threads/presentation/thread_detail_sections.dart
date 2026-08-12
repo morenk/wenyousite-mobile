@@ -723,11 +723,6 @@ class _FloorCard extends ConsumerWidget {
   const _FloorCard({
     required this.threadId,
     required this.floor,
-    required this.authenticated,
-    required this.viewerId,
-    required this.canManageThread,
-    required this.reportsEnabled,
-    required this.pendingPostId,
     required this.canEdit,
     required this.canDelete,
     required this.pending,
@@ -735,9 +730,6 @@ class _FloorCard extends ConsumerWidget {
     required this.onDiscussion,
     required this.onEdit,
     required this.onDelete,
-    required this.onReplyToReply,
-    required this.onEditReply,
-    required this.onDeleteReply,
     this.reportReturnTo,
     this.isFocused = false,
     super.key,
@@ -745,11 +737,6 @@ class _FloorCard extends ConsumerWidget {
 
   final String threadId;
   final ThreadFloorModel floor;
-  final bool authenticated;
-  final String? viewerId;
-  final bool canManageThread;
-  final bool reportsEnabled;
-  final String? pendingPostId;
   final bool isFocused;
   final bool canEdit;
   final bool canDelete;
@@ -758,9 +745,6 @@ class _FloorCard extends ConsumerWidget {
   final VoidCallback onDiscussion;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final ValueChanged<ThreadReplyModel> onReplyToReply;
-  final ValueChanged<ThreadReplyModel> onEditReply;
-  final ValueChanged<ThreadReplyModel> onDeleteReply;
   final String? reportReturnTo;
 
   @override
@@ -842,21 +826,6 @@ class _FloorCard extends ConsumerWidget {
                   onInternalLink: (uri) =>
                       _showInternalLinkNotice(context, uri),
                 ),
-              if (floor.replies.isNotEmpty) ...[
-                SizedBox(height: tokens.space12),
-                _InlineReplies(
-                  threadId: threadId,
-                  floor: floor,
-                  authenticated: authenticated,
-                  viewerId: viewerId,
-                  canManageThread: canManageThread,
-                  reportsEnabled: reportsEnabled,
-                  pendingPostId: pendingPostId,
-                  onReply: onReplyToReply,
-                  onEdit: onEditReply,
-                  onDelete: onDeleteReply,
-                ),
-              ],
               if (showDiscussion) ...[
                 SizedBox(height: tokens.space4),
                 Align(
@@ -940,212 +909,6 @@ class _FloorCard extends ConsumerWidget {
   String _publicLink() => Uri.parse(
     'https://wenyou.site',
   ).resolve('/threads/$threadId?post=${floor.id}').toString();
-}
-
-class _InlineReplies extends StatelessWidget {
-  const _InlineReplies({
-    required this.threadId,
-    required this.floor,
-    required this.authenticated,
-    required this.viewerId,
-    required this.canManageThread,
-    required this.reportsEnabled,
-    required this.pendingPostId,
-    required this.onReply,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final String threadId;
-  final ThreadFloorModel floor;
-  final bool authenticated;
-  final String? viewerId;
-  final bool canManageThread;
-  final bool reportsEnabled;
-  final String? pendingPostId;
-  final ValueChanged<ThreadReplyModel> onReply;
-  final ValueChanged<ThreadReplyModel> onEdit;
-  final ValueChanged<ThreadReplyModel> onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: tokens.border, width: 2)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(left: tokens.space12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var index = 0; index < floor.replies.length; index++) ...[
-              if (index > 0) ...[
-                Divider(height: tokens.space24, color: tokens.border),
-              ],
-              _InlineReply(
-                threadId: threadId,
-                floorId: floor.id,
-                reply: floor.replies[index],
-                authenticated: authenticated,
-                viewerId: viewerId,
-                canManageThread: canManageThread,
-                reportsEnabled: reportsEnabled,
-                pending: pendingPostId == floor.replies[index].id,
-                onReply: () => onReply(floor.replies[index]),
-                onEdit: () => onEdit(floor.replies[index]),
-                onDelete: () => onDelete(floor.replies[index]),
-              ),
-            ],
-            if (floor.replyCount > floor.replies.length) ...[
-              SizedBox(height: tokens.space12),
-              Text(
-                '本页展示前 ${floor.replies.length} 条，'
-                '共 ${floor.replyCount} 条回复。',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InlineReply extends ConsumerWidget {
-  const _InlineReply({
-    required this.threadId,
-    required this.floorId,
-    required this.reply,
-    required this.authenticated,
-    required this.viewerId,
-    required this.canManageThread,
-    required this.reportsEnabled,
-    required this.pending,
-    required this.onReply,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final String threadId;
-  final String floorId;
-  final ThreadReplyModel reply;
-  final bool authenticated;
-  final String? viewerId;
-  final bool canManageThread;
-  final bool reportsEnabled;
-  final bool pending;
-  final VoidCallback onReply;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.wenyouTokens;
-    final ownReply = reply.author.id == viewerId;
-    return Semantics(
-      container: true,
-      hint: '长按打开回复操作',
-      child: GestureDetector(
-        key: Key('thread-inline-reply-${reply.id}'),
-        behavior: HitTestBehavior.opaque,
-        onLongPress: () => _showActions(context, ref, ownReply: ownReply),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: tokens.space4,
-              runSpacing: tokens.space4 / 2,
-              children: [
-                Text(
-                  reply.author.username,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                WenyouLevelBadge(
-                  key: Key('thread-reply-level-${reply.id}'),
-                  level: reply.author.level,
-                ),
-                if (reply.replyToUsername != null)
-                  Text(
-                    '回复 @${reply.replyToUsername}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                  ),
-                Text(
-                  formatWenyouRelativeTime(reply.createdAt),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                ),
-              ],
-            ),
-            SizedBox(height: tokens.space8),
-            if (reply.isDeleted)
-              Text(
-                '该回复已删除。',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-              )
-            else
-              StickerPostMarkdown(
-                postId: reply.id,
-                data: reply.body.markdown,
-                diceLabels: _diceLabels(reply.body.diceRolls),
-                bodyFontSize: 16,
-                bodyHeight: 1.75,
-                onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showActions(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool ownReply,
-  }) async {
-    final action = await showPostCardActionSheet(
-      context: context,
-      title: '回复操作',
-      authorName: reply.author.username,
-      canCopyText: !reply.isDeleted,
-      canReply: !reply.isDeleted && authenticated,
-      canEdit: !reply.isDeleted && ownReply,
-      canDelete: !reply.isDeleted && (ownReply || canManageThread),
-      canReport: !reply.isDeleted && reportsEnabled && !ownReply,
-      pending: pending,
-    );
-    if (action == null || !context.mounted) return;
-    switch (action) {
-      case PostCardAction.copyText:
-        await copyPostCardValue(context, reply.body.markdown, '内容已复制');
-      case PostCardAction.copyLink:
-        await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
-      case PostCardAction.reply:
-        onReply();
-      case PostCardAction.edit:
-        onEdit();
-      case PostCardAction.delete:
-        onDelete();
-      case PostCardAction.report:
-        await showWenyouReportFlow(
-          context: context,
-          ref: ref,
-          target: ReportTarget.post(reply.id),
-          targetLabel: '这条回复',
-          returnTo: '/threads/$threadId?post=${reply.id}',
-        );
-    }
-  }
-
-  String _publicLink() => Uri.parse('https://wenyou.site')
-      .resolve('/threads/$threadId/posts/$floorId/replies?post=${reply.id}')
-      .toString();
 }
 
 class _FloorsFooter extends StatelessWidget {
@@ -1313,44 +1076,6 @@ PostComposerTarget _editFloorTarget(
   );
 }
 
-PostComposerTarget _replyTarget(
-  ThreadDetailModel detail,
-  ThreadSubthreadModel subthread,
-  ThreadFloorModel floor,
-  ThreadReplyModel reply,
-) {
-  return (
-    kind: PostComposerKind.createReply,
-    threadId: detail.id,
-    subthreadId: subthread.id,
-    postId: null,
-    parentPostId: floor.id,
-    replyToPostId: reply.id,
-    version: null,
-    initialContent: '',
-    label: '回复 @${reply.author.username}',
-  );
-}
-
-PostComposerTarget _editReplyTarget(
-  ThreadDetailModel detail,
-  ThreadSubthreadModel subthread,
-  ThreadFloorModel floor,
-  ThreadReplyModel reply,
-) {
-  return (
-    kind: PostComposerKind.editPost,
-    threadId: detail.id,
-    subthreadId: subthread.id,
-    postId: reply.id,
-    parentPostId: floor.id,
-    replyToPostId: null,
-    version: reply.version,
-    initialContent: reply.body.markdown,
-    label: '编辑回复',
-  );
-}
-
 PostItem _floorAsPost(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
@@ -1377,44 +1102,6 @@ PostItem _floorAsPost(
     threadTitle: detail.title,
     subthreadTitle: subthread.title,
     diceRolls: floor.body.diceRolls
-        .map(
-          (roll) => PostDiceRoll(
-            nodeId: roll.nodeId,
-            notation: roll.notation,
-            results: roll.results,
-            total: roll.total,
-          ),
-        )
-        .toList(growable: false),
-  );
-}
-
-PostItem _replyAsPost(
-  ThreadDetailModel detail,
-  ThreadSubthreadModel subthread,
-  ThreadFloorModel floor,
-  ThreadReplyModel reply,
-) {
-  return PostItem(
-    id: reply.id,
-    threadId: detail.id,
-    subthreadId: subthread.id,
-    author: PostAuthor(
-      id: reply.author.id,
-      username: reply.author.username,
-      level: reply.author.level,
-      avatarUrl: reply.author.avatarUrl,
-    ),
-    content: reply.body.markdown,
-    version: reply.version,
-    createdAt: reply.createdAt,
-    updatedAt: reply.createdAt,
-    isBody: false,
-    isDeleted: reply.isDeleted,
-    parentPostId: floor.id,
-    threadTitle: detail.title,
-    subthreadTitle: subthread.title,
-    diceRolls: reply.body.diceRolls
         .map(
           (roll) => PostDiceRoll(
             nodeId: roll.nodeId,

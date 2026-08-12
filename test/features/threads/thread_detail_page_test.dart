@@ -10,7 +10,6 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -29,8 +28,8 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('公开主题详情展示默认子贴、Markdown、楼层与内嵌回复', (tester) async {
-    await tester.pumpWidget(_detailApp(_FakeThreadDetailRepository()));
+  testWidgets('公开主题详情连续展示正文，并由克制入口进入楼中楼', (tester) async {
+    await tester.pumpWidget(_detailRouterApp(_FakeThreadDetailRepository()));
     await tester.pumpAndSettle();
 
     expect(find.text('星海旅团'), findsOneWidget);
@@ -109,7 +108,7 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
-    expect(find.text('收到，准备出发。'), findsOneWidget);
+    expect(find.text('收到，准备出发。'), findsNothing);
     expect(
       find.ancestor(
         of: find.byKey(const Key('thread-body-subthread-1')),
@@ -131,19 +130,14 @@ void main() {
     );
     expect(find.byKey(const Key('thread-floor-report-floor-1')), findsNothing);
     expect(find.byType(AnimatedContainer), findsNothing);
-    expect(find.byKey(const Key('thread-reply-level-reply-1')), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const Key('thread-reply-level-reply-1'))).width,
-      lessThan(64),
-    );
-    final inlineReplyMarkdown = tester.widget<WenyouMarkdown>(
-      find.descendant(
-        of: find.byKey(const Key('thread-inline-reply-reply-1')),
-        matching: find.byType(WenyouMarkdown),
-      ),
-    );
-    expect(inlineReplyMarkdown.bodyFontSize, 16);
-    expect(inlineReplyMarkdown.bodyHeight, 1.75);
+    expect(find.byKey(const Key('thread-inline-reply-reply-1')), findsNothing);
+    expect(find.byKey(const Key('thread-reply-level-reply-1')), findsNothing);
+    final discussion = find.byKey(const Key('thread-floor-discussion-floor-1'));
+    expect(discussion, findsOneWidget);
+    expect(tester.getSize(discussion).height, greaterThanOrEqualTo(48));
+    final discussionSemantics = tester.getSemantics(discussion);
+    expect(discussionSemantics.label, contains('1 条回复'));
+    expect(tester.widget<TextButton>(discussion).onPressed, isNotNull);
 
     await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
     await tester.pumpAndSettle();
@@ -153,15 +147,48 @@ void main() {
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
 
-    final inlineReply = find.byKey(const Key('thread-inline-reply-reply-1'));
-    await tester.ensureVisible(inlineReply);
+    await tester.ensureVisible(discussion);
     await tester.pumpAndSettle();
-    await tester.longPressAt(
-      tester.getTopLeft(inlineReply) + const Offset(20, 20),
+    await tester.tap(discussion);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('test-post-replies-destination')),
+      findsOneWidget,
+    );
+    expect(find.text('thread-1/floor-1'), findsOneWidget);
+  });
+
+  testWidgets('楼中楼回复深链直接定位独立讨论，返回后不重复打开', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'reply-1',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: _mainFloor,
+        focusedReplyId: 'reply-1',
+      ),
+    );
+    await tester.pumpWidget(
+      _detailRouterApp(
+        repository,
+        initialLocation: '/threads/thread-1?post=reply-1',
+      ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('回复操作'), findsOneWidget);
-    expect(find.text('举报'), findsAtLeastNWidgets(1));
+
+    expect(
+      find.byKey(const Key('test-post-replies-destination')),
+      findsOneWidget,
+    );
+    expect(find.text('thread-1/floor-1/reply-1'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('test-post-replies-back')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('test-post-replies-destination')),
+      findsNothing,
+    );
+    expect(find.text('主题详情'), findsOneWidget);
   });
 
   testWidgets('360dp 长文阅读向下收起顶栏并向上恢复', (tester) async {
@@ -173,7 +200,9 @@ void main() {
 
     await tester.pumpWidget(
       _detailApp(
-        _FakeThreadDetailRepository(mainFloor: _longMainFloor),
+        _FakeThreadDetailRepository(
+          mainFloors: [_longMainFloor, _longSecondFloor],
+        ),
         visualKey: visualKey,
       ),
     );
@@ -737,6 +766,53 @@ Widget _detailApp(
   );
 }
 
+Widget _detailRouterApp(
+  ThreadDetailRepository repository, {
+  String initialLocation = '/threads/thread-1',
+}) {
+  final router = GoRouter(
+    initialLocation: initialLocation,
+    routes: [
+      GoRoute(
+        path: '/threads/:threadId',
+        builder: (context, state) => ThreadDetailPage(
+          threadId: state.pathParameters['threadId']!,
+          categoryNameHint: '角色扮演',
+          targetPostId: state.uri.queryParameters['post'],
+        ),
+      ),
+      GoRoute(
+        path: '/threads/:threadId/posts/:postId/replies',
+        name: 'post-replies',
+        builder: (context, state) {
+          final threadId = state.pathParameters['threadId']!;
+          final postId = state.pathParameters['postId']!;
+          final replyId = state.uri.queryParameters['post'];
+          return Scaffold(
+            appBar: AppBar(
+              leading: const BackButton(key: Key('test-post-replies-back')),
+              title: const Text('楼中楼讨论'),
+            ),
+            body: Center(
+              child: Text(
+                [threadId, postId, ?replyId].join('/'),
+                key: const Key('test-post-replies-destination'),
+              ),
+            ),
+          );
+        },
+      ),
+    ],
+  );
+  return ProviderScope(
+    overrides: [
+      stickersEnabledProvider.overrideWithValue(false),
+      threadDetailRepositoryProvider.overrideWithValue(repository),
+    ],
+    child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+  );
+}
+
 class _FakeThreadDetailRepository implements ThreadDetailRepository {
   _FakeThreadDetailRepository({
     this.threadFailure,
@@ -745,15 +821,16 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     this.postTarget,
     ThreadDetailModel? detail,
     ThreadFloorModel? mainFloor,
+    List<ThreadFloorModel>? mainFloors,
   }) : detail = detail ?? _detail,
-       mainFloor = mainFloor ?? _mainFloor;
+       mainFloors = mainFloors ?? [mainFloor ?? _mainFloor];
 
   final ApiFailure? threadFailure;
   final ApiFailure? floorFailure;
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
   final ThreadDetailModel detail;
-  final ThreadFloorModel mainFloor;
+  final List<ThreadFloorModel> mainFloors;
   final List<String> requestedSubthreads = [];
   final List<String> targetPostIds = [];
   int threadCalls = 0;
@@ -786,13 +863,13 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     }
     if (cursor == null && loadMoreFailure != null) {
       return CursorPage(
-        items: [subthreadId == 'subthread-1' ? mainFloor : _sideFloor],
+        items: subthreadId == 'subthread-1' ? mainFloors : [_sideFloor],
         cursor: 'next-cursor',
         hasMore: true,
       );
     }
     return CursorPage(
-      items: [subthreadId == 'subthread-1' ? mainFloor : _sideFloor],
+      items: subthreadId == 'subthread-1' ? mainFloors : [_sideFloor],
       hasMore: false,
     );
   }
@@ -1058,6 +1135,30 @@ final _longMainFloor = ThreadFloorModel(
       createdAt: DateTime.utc(2026, 8, 9, 12, 20),
       isDeleted: false,
       replyToUsername: '温柔测试员',
+    ),
+  ],
+);
+
+final _longSecondFloor = ThreadFloorModel(
+  id: 'floor-long-2',
+  floorNumber: 2,
+  author: const ThreadAuthorModel(id: 'user-2', username: '下一位接力者', level: 5),
+  body: const ThreadBodyModel(
+    markdown: '''第二层内容
+
+舱门在身后合拢。下一位接力者没有解释来意，只把一页写满坐标的纸放在桌上。''',
+  ),
+  createdAt: DateTime.utc(2026, 8, 9, 12, 30),
+  isDeleted: false,
+  replyCount: 2,
+  replies: [
+    ThreadReplyModel(
+      id: 'reply-long-2',
+      author: _author,
+      body: const ThreadBodyModel(markdown: '这条讨论不应插进接力正文。'),
+      createdAt: DateTime.utc(2026, 8, 9, 12, 40),
+      isDeleted: false,
+      replyToUsername: '下一位接力者',
     ),
   ],
 );
