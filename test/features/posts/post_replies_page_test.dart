@@ -188,6 +188,7 @@ void main() {
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetViewInsets);
     final container = ProviderContainer(
       overrides: [
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
@@ -226,6 +227,32 @@ void main() {
       find.byKey(const Key('post-composer-sheet')),
       matchesGoldenFile('goldens/post_composer_text_first_360.png'),
     );
+
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('post-composer-body')),
+    );
+    expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
+    expect(editor.config.customStyles?.paragraph?.style.height, 1.75);
+    expect(editor.focusNode.hasFocus, isTrue);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('post-composer-floating-toolbar')),
+      findsOneWidget,
+    );
+    final formatTools = find.byKey(const Key('editor-format-tools'));
+    expect(formatTools, findsOneWidget);
+    expect(find.byKey(const Key('editor-heading')), findsNothing);
+    expect(editor.focusNode.hasFocus, isTrue);
+    final selection = editor.controller.selection;
+
+    await tester.tap(formatTools);
+    await tester.pump();
+
+    expect(find.byKey(const Key('editor-heading')), findsOneWidget);
+    expect(editor.controller.selection, selection);
+    expect(editor.focusNode.hasFocus, isTrue);
   });
 
   testWidgets('楼中楼阅读顶栏随正文滚动收起并可立即唤回', (tester) async {

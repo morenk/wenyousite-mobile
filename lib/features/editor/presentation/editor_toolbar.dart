@@ -14,6 +14,9 @@ class WenyouEditorToolbar extends StatefulWidget {
     required this.onSaveDraft,
     required this.enabled,
     this.onInsertSticker,
+    this.editorFocusNode,
+    this.onInteractionChanged,
+    this.floating = false,
     super.key,
   });
 
@@ -22,12 +25,17 @@ class WenyouEditorToolbar extends StatefulWidget {
   final Future<void> Function()? onInsertSticker;
   final Future<void> Function() onSaveDraft;
   final bool enabled;
+  final FocusNode? editorFocusNode;
+  final ValueChanged<bool>? onInteractionChanged;
+  final bool floating;
 
   @override
   State<WenyouEditorToolbar> createState() => _WenyouEditorToolbarState();
 }
 
 class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
+  bool _floatingExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +64,9 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final style = widget.controller.getSelectionStyle();
+    if (widget.floating) {
+      return _buildFloating(context, tokens, style);
+    }
     final wide = MediaQuery.sizeOf(context).width >= 600;
     return Container(
       decoration: BoxDecoration(
@@ -65,37 +76,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       padding: EdgeInsets.symmetric(horizontal: tokens.space4),
       child: Row(
         children: [
-          _ToolbarButton(
-            key: const Key('editor-heading'),
-            icon: Icons.title_rounded,
-            label: '正文样式',
-            enabled: widget.enabled,
-            selected: style.attributes.containsKey(Attribute.header.key),
-            onPressed: _chooseHeading,
-          ),
-          _ToolbarButton(
-            key: const Key('editor-bold'),
-            icon: Icons.format_bold_rounded,
-            label: '粗体',
-            enabled: widget.enabled,
-            selected: style.attributes.containsKey(Attribute.bold.key),
-            onPressed: () => _toggle(Attribute.bold),
-          ),
-          _ToolbarButton(
-            key: const Key('editor-italic'),
-            icon: Icons.format_italic_rounded,
-            label: '斜体',
-            enabled: widget.enabled,
-            selected: style.attributes.containsKey(Attribute.italic.key),
-            onPressed: () => _toggle(Attribute.italic),
-          ),
-          _ToolbarButton(
-            key: const Key('editor-image'),
-            icon: Icons.image_outlined,
-            label: '图片',
-            enabled: widget.enabled,
-            onPressed: () => widget.onInsertImage(),
-          ),
+          ..._primaryActions(style),
           if (wide) ...[
             if (widget.onInsertSticker != null)
               _ToolbarButton(
@@ -135,41 +116,152 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     );
   }
 
-  Future<void> _chooseHeading() async {
-    final selected = await showModalBottomSheet<int?>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
+  Widget _buildFloating(
+    BuildContext context,
+    WenyouThemeTokens tokens,
+    Style style,
+  ) {
+    if (!_floatingExpanded) {
+      return Semantics(
+        button: true,
+        label: '格式工具',
+        expanded: false,
+        enabled: widget.enabled,
+        excludeSemantics: true,
+        onTap: widget.enabled ? _expandFloatingToolbar : null,
+        child: ExcludeSemantics(
+          child: Material(
+            color: tokens.accentedBackground,
+            shape: CircleBorder(side: BorderSide(color: tokens.border)),
+            child: IconButton(
+              key: const Key('editor-format-tools'),
+              tooltip: '展开格式工具',
+              onPressed: widget.enabled ? _expandFloatingToolbar : null,
+              icon: const Icon(Icons.text_format_rounded),
+            ),
+          ),
+        ),
+      );
+    }
+    return Semantics(
+      container: true,
+      label: '格式工具',
+      expanded: true,
+      child: Material(
+        color: tokens.softPanel,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: tokens.border),
+          borderRadius: BorderRadius.circular(tokens.radius12),
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.text_fields_rounded),
-              title: const Text('正文'),
-              onTap: () => Navigator.pop(context, 0),
+            ..._primaryActions(style),
+            _ToolbarButton(
+              key: const Key('editor-more'),
+              icon: Icons.more_horiz_rounded,
+              label: '更多',
+              enabled: widget.enabled,
+              onPressed: _showMoreSheet,
             ),
-            ListTile(
-              leading: const Icon(Icons.looks_two_rounded),
-              title: const Text('二级标题'),
-              onTap: () => Navigator.pop(context, 2),
-            ),
-            ListTile(
-              leading: const Icon(Icons.looks_3_rounded),
-              title: const Text('三级标题'),
-              onTap: () => Navigator.pop(context, 3),
+            IconButton(
+              key: const Key('editor-format-tools-close'),
+              tooltip: '收起格式工具',
+              onPressed: () {
+                setState(() => _floatingExpanded = false);
+                widget.editorFocusNode?.requestFocus();
+              },
+              icon: const Icon(Icons.close_rounded),
             ),
           ],
         ),
       ),
     );
-    if (selected == null || !mounted) return;
-    widget.controller.formatSelection(
-      selected == 2
-          ? Attribute.h2
-          : selected == 3
-          ? Attribute.h3
-          : Attribute.clone(Attribute.header, null),
-    );
+  }
+
+  void _expandFloatingToolbar() {
+    setState(() => _floatingExpanded = true);
+    widget.editorFocusNode?.requestFocus();
+  }
+
+  List<Widget> _primaryActions(Style style) {
+    return [
+      _ToolbarButton(
+        key: const Key('editor-heading'),
+        icon: Icons.title_rounded,
+        label: '正文样式',
+        enabled: widget.enabled,
+        selected: style.attributes.containsKey(Attribute.header.key),
+        onPressed: _chooseHeading,
+      ),
+      _ToolbarButton(
+        key: const Key('editor-bold'),
+        icon: Icons.format_bold_rounded,
+        label: '粗体',
+        enabled: widget.enabled,
+        selected: style.attributes.containsKey(Attribute.bold.key),
+        onPressed: () => _toggle(Attribute.bold),
+      ),
+      _ToolbarButton(
+        key: const Key('editor-italic'),
+        icon: Icons.format_italic_rounded,
+        label: '斜体',
+        enabled: widget.enabled,
+        selected: style.attributes.containsKey(Attribute.italic.key),
+        onPressed: () => _toggle(Attribute.italic),
+      ),
+      _ToolbarButton(
+        key: const Key('editor-image'),
+        icon: Icons.image_outlined,
+        label: '图片',
+        enabled: widget.enabled,
+        onPressed: () => widget.onInsertImage(),
+      ),
+    ];
+  }
+
+  Future<void> _chooseHeading() async {
+    widget.onInteractionChanged?.call(true);
+    try {
+      final selected = await showModalBottomSheet<int?>(
+        context: context,
+        showDragHandle: true,
+        requestFocus: false,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.text_fields_rounded),
+                title: const Text('正文'),
+                onTap: () => Navigator.pop(context, 0),
+              ),
+              ListTile(
+                leading: const Icon(Icons.looks_two_rounded),
+                title: const Text('二级标题'),
+                onTap: () => Navigator.pop(context, 2),
+              ),
+              ListTile(
+                leading: const Icon(Icons.looks_3_rounded),
+                title: const Text('三级标题'),
+                onTap: () => Navigator.pop(context, 3),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (!mounted || selected == null) return;
+      widget.controller.formatSelection(
+        selected == 2
+            ? Attribute.h2
+            : selected == 3
+            ? Attribute.h3
+            : Attribute.clone(Attribute.header, null),
+      );
+    } finally {
+      if (mounted) widget.editorFocusNode?.requestFocus();
+      widget.onInteractionChanged?.call(false);
+    }
   }
 
   void _toggle(Attribute attribute) {
@@ -182,89 +274,101 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Future<void> _showMoreSheet() async {
-    final action = await showModalBottomSheet<_MoreAction>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            _moreTile(context, _MoreAction.link, Icons.link_rounded, '链接'),
-            _moreTile(
-              context,
-              _MoreAction.inlineCode,
-              Icons.code_rounded,
-              '行内代码',
-            ),
-            _moreTile(
-              context,
-              _MoreAction.quote,
-              Icons.format_quote_rounded,
-              '引用',
-            ),
-            _moreTile(
-              context,
-              _MoreAction.bulletList,
-              Icons.format_list_bulleted_rounded,
-              '无序列表',
-            ),
-            _moreTile(
-              context,
-              _MoreAction.orderedList,
-              Icons.format_list_numbered_rounded,
-              '有序列表',
-            ),
-            _moreTile(
-              context,
-              _MoreAction.horizontalRule,
-              Icons.horizontal_rule_rounded,
-              '分隔线',
-            ),
-            _moreTile(context, _MoreAction.dice, Icons.casino_outlined, '骰子'),
-            if (widget.onInsertSticker != null)
+    widget.onInteractionChanged?.call(true);
+    try {
+      final action = await showModalBottomSheet<_MoreAction>(
+        context: context,
+        showDragHandle: true,
+        requestFocus: false,
+        builder: (context) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              _moreTile(context, _MoreAction.link, Icons.link_rounded, '链接'),
               _moreTile(
                 context,
-                _MoreAction.sticker,
-                Icons.add_reaction_outlined,
-                '表情包',
+                _MoreAction.inlineCode,
+                Icons.code_rounded,
+                '行内代码',
               ),
-            _moreTile(context, _MoreAction.draft, Icons.cloud_outlined, '正文草稿'),
-            _moreTile(
-              context,
-              _MoreAction.strike,
-              Icons.strikethrough_s_rounded,
-              '删除线',
-            ),
-          ],
+              _moreTile(
+                context,
+                _MoreAction.quote,
+                Icons.format_quote_rounded,
+                '引用',
+              ),
+              _moreTile(
+                context,
+                _MoreAction.bulletList,
+                Icons.format_list_bulleted_rounded,
+                '无序列表',
+              ),
+              _moreTile(
+                context,
+                _MoreAction.orderedList,
+                Icons.format_list_numbered_rounded,
+                '有序列表',
+              ),
+              _moreTile(
+                context,
+                _MoreAction.horizontalRule,
+                Icons.horizontal_rule_rounded,
+                '分隔线',
+              ),
+              _moreTile(context, _MoreAction.dice, Icons.casino_outlined, '骰子'),
+              if (widget.onInsertSticker != null)
+                _moreTile(
+                  context,
+                  _MoreAction.sticker,
+                  Icons.add_reaction_outlined,
+                  '表情包',
+                ),
+              _moreTile(
+                context,
+                _MoreAction.draft,
+                Icons.cloud_outlined,
+                '正文草稿',
+              ),
+              _moreTile(
+                context,
+                _MoreAction.strike,
+                Icons.strikethrough_s_rounded,
+                '删除线',
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-    if (action == null || !mounted) return;
-    switch (action) {
-      case _MoreAction.link:
-        await _editLink();
-      case _MoreAction.inlineCode:
-        _toggle(Attribute.inlineCode);
-      case _MoreAction.quote:
-        _toggle(Attribute.blockQuote);
-      case _MoreAction.bulletList:
-        _toggle(Attribute.ul);
-      case _MoreAction.orderedList:
-        _toggle(Attribute.ol);
-      case _MoreAction.horizontalRule:
-        _insertBlockEmbed(
-          const Embeddable(MarkdownDeltaCodec.horizontalRuleEmbed, {
-            'version': 1,
-          }),
-        );
-      case _MoreAction.dice:
-        await _insertDice();
-      case _MoreAction.sticker:
-        await widget.onInsertSticker?.call();
-      case _MoreAction.draft:
-        await widget.onSaveDraft();
-      case _MoreAction.strike:
-        _toggle(Attribute.strikeThrough);
+      );
+      if (!mounted || action == null) return;
+      switch (action) {
+        case _MoreAction.link:
+          await _editLink();
+        case _MoreAction.inlineCode:
+          _toggle(Attribute.inlineCode);
+        case _MoreAction.quote:
+          _toggle(Attribute.blockQuote);
+        case _MoreAction.bulletList:
+          _toggle(Attribute.ul);
+        case _MoreAction.orderedList:
+          _toggle(Attribute.ol);
+        case _MoreAction.horizontalRule:
+          _insertBlockEmbed(
+            const Embeddable(MarkdownDeltaCodec.horizontalRuleEmbed, {
+              'version': 1,
+            }),
+          );
+        case _MoreAction.dice:
+          await _insertDice();
+        case _MoreAction.sticker:
+          await widget.onInsertSticker?.call();
+        case _MoreAction.draft:
+          await widget.onSaveDraft();
+        case _MoreAction.strike:
+          _toggle(Attribute.strikeThrough);
+      }
+    } finally {
+      if (mounted) widget.editorFocusNode?.requestFocus();
+      widget.onInteractionChanged?.call(false);
     }
   }
 
@@ -488,15 +592,12 @@ class _ToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      child: IconButton(
-        onPressed: enabled ? () => onPressed() : null,
-        isSelected: selected,
-        selectedIcon: Icon(icon, color: context.wenyouTokens.brand),
-        icon: Icon(icon),
-        tooltip: label,
-      ),
+    return IconButton(
+      onPressed: enabled ? () => onPressed() : null,
+      isSelected: selected,
+      selectedIcon: Icon(icon, color: context.wenyouTokens.brand),
+      icon: Icon(icon),
+      tooltip: label,
     );
   }
 }

@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/features/editor/application/remote_thread_draf
 import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/remote_thread_drafts_sheet.dart';
@@ -41,6 +42,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   final TextEditingController _tagsController = TextEditingController();
 
   bool _applyingDocument = false;
+  bool _editorToolbarActive = false;
   bool _allowPop = false;
   bool _preparingPop = false;
   int _scheduledDocumentRevision = -1;
@@ -61,6 +63,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       document: Document.fromDelta(decoded.delta),
       selection: const TextSelection.collapsed(offset: 0),
     )..addListener(_onDocumentChanged);
+    _editorFocusNode.addListener(_onEditorFocusChanged);
     _titleController.addListener(_onTitleChanged);
     _tagsController.addListener(_onTagsChanged);
   }
@@ -81,7 +84,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     _editorController
       ..removeListener(_onDocumentChanged)
       ..dispose();
-    _editorFocusNode.dispose();
+    _editorFocusNode
+      ..removeListener(_onEditorFocusChanged)
+      ..dispose();
     _editorScrollController.dispose();
     _titleController
       ..removeListener(_onTitleChanged)
@@ -97,6 +102,10 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final state = ref.watch(threadComposeControllerProvider);
     _scheduleDocumentSync(state);
     final locked = state.isSubmitting || _uploading;
+    final compactToolbar =
+        MediaQuery.sizeOf(context).width <= 400 &&
+        MediaQuery.viewInsetsOf(context).bottom > 0 &&
+        (_editorFocusNode.hasFocus || _editorToolbarActive);
     _editorController.readOnly = locked;
 
     return PopScope<Object?>(
@@ -145,8 +154,31 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 ref.read(threadComposeControllerProvider.notifier).load(),
           ),
           ThreadComposePhase.ready ||
-          ThreadComposePhase.published => _buildEditor(context, state, locked),
+          ThreadComposePhase.published => _buildEditor(
+            context,
+            state,
+            locked,
+            compactToolbar: compactToolbar,
+          ),
         },
+        floatingActionButton:
+            (state.phase == ThreadComposePhase.ready ||
+                    state.phase == ThreadComposePhase.published) &&
+                compactToolbar
+            ? WenyouEditorToolbar(
+                key: const Key('compose-floating-toolbar'),
+                controller: _editorController,
+                enabled: !locked && _codecFailure == null,
+                editorFocusNode: _editorFocusNode,
+                onInteractionChanged: _onEditorToolbarInteractionChanged,
+                floating: true,
+                onInsertImage: _insertImage,
+                onInsertSticker: ref.watch(stickersEnabledProvider)
+                    ? _insertSticker
+                    : null,
+                onSaveDraft: _openContentDrafts,
+              )
+            : null,
       ),
     );
   }
@@ -154,8 +186,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   Widget _buildEditor(
     BuildContext context,
     ThreadComposeState state,
-    bool locked,
-  ) {
+    bool locked, {
+    required bool compactToolbar,
+  }) {
     final tokens = context.wenyouTokens;
     final enabled = !locked && _codecFailure == null;
     final selectedCategory = state.categories
@@ -300,15 +333,17 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                WenyouEditorToolbar(
-                  controller: _editorController,
-                  enabled: enabled,
-                  onInsertImage: _insertImage,
-                  onInsertSticker: ref.watch(stickersEnabledProvider)
-                      ? _insertSticker
-                      : null,
-                  onSaveDraft: _openContentDrafts,
-                ),
+                if (!compactToolbar)
+                  WenyouEditorToolbar(
+                    controller: _editorController,
+                    enabled: enabled,
+                    editorFocusNode: _editorFocusNode,
+                    onInsertImage: _insertImage,
+                    onInsertSticker: ref.watch(stickersEnabledProvider)
+                        ? _insertSticker
+                        : null,
+                    onSaveDraft: _openContentDrafts,
+                  ),
                 MentionSuggestions(
                   controller: _editorController,
                   focusNode: _editorFocusNode,
@@ -330,9 +365,12 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                         tokens.space4,
                         tokens.space16,
                         tokens.space4,
-                        tokens.space24,
+                        compactToolbar
+                            ? tokens.minimumTouchTarget + tokens.space16
+                            : tokens.space24,
                       ),
                       placeholder: '从这里开始写正文…',
+                      customStyles: wenyouEditorTextStyles(context),
                       embedBuilders: wenyouEditorEmbedBuilders(),
                     ),
                   ),
@@ -427,6 +465,16 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         ],
       ),
     );
+  }
+
+  void _onEditorFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onEditorToolbarInteractionChanged(bool active) {
+    if (mounted && active != _editorToolbarActive) {
+      setState(() => _editorToolbarActive = active);
+    }
   }
 
   Future<void> _openEmailVerification() async {

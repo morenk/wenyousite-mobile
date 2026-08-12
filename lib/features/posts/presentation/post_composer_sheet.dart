@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
@@ -51,6 +52,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   bool _applyingDocument = false;
+  bool _editorToolbarActive = false;
   bool _closing = false;
   int _scheduledRevision = -1;
   String? _codecFailure;
@@ -71,6 +73,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       document: document,
       selection: TextSelection.collapsed(offset: document.length - 1),
     )..addListener(_onDocumentChanged);
+    _focusNode.addListener(_onEditorFocusChanged);
   }
 
   @override
@@ -79,7 +82,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _editorController
       ..removeListener(_onDocumentChanged)
       ..dispose();
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onEditorFocusChanged)
+      ..dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -91,6 +96,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _scheduleDocumentSync(state);
     final tokens = context.wenyouTokens;
     final locked = state.isSubmitting || _uploading;
+    final compactToolbar =
+        MediaQuery.sizeOf(context).width <= 400 &&
+        MediaQuery.viewInsetsOf(context).bottom > 0 &&
+        (_focusNode.hasFocus || _editorToolbarActive);
     _editorController.readOnly = locked;
     return PopScope<Object?>(
       canPop: _closing,
@@ -236,15 +245,17 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  WenyouEditorToolbar(
-                    controller: _editorController,
-                    enabled: !locked && _codecFailure == null,
-                    onInsertImage: _insertImage,
-                    onInsertSticker: ref.watch(stickersEnabledProvider)
-                        ? _insertSticker
-                        : null,
-                    onSaveDraft: _openContentDrafts,
-                  ),
+                  if (!compactToolbar)
+                    WenyouEditorToolbar(
+                      controller: _editorController,
+                      enabled: !locked && _codecFailure == null,
+                      editorFocusNode: _focusNode,
+                      onInsertImage: _insertImage,
+                      onInsertSticker: ref.watch(stickersEnabledProvider)
+                          ? _insertSticker
+                          : null,
+                      onSaveDraft: _openContentDrafts,
+                    ),
                   MentionSuggestions(
                     controller: _editorController,
                     focusNode: _focusNode,
@@ -253,28 +264,56 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                   ),
                   const Divider(height: 1),
                   Expanded(
-                    child: Semantics(
-                      textField: true,
-                      label: widget.target.label,
-                      child: QuillEditor(
-                        key: const Key('post-composer-body'),
-                        controller: _editorController,
-                        focusNode: _focusNode,
-                        scrollController: _scrollController,
-                        config: QuillEditorConfig(
-                          scrollable: true,
-                          expands: true,
-                          autoFocus: true,
-                          padding: EdgeInsets.fromLTRB(
-                            tokens.space16,
-                            tokens.space16,
-                            tokens.space16,
-                            tokens.space32,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Semantics(
+                          textField: true,
+                          label: widget.target.label,
+                          child: QuillEditor(
+                            key: const Key('post-composer-body'),
+                            controller: _editorController,
+                            focusNode: _focusNode,
+                            scrollController: _scrollController,
+                            config: QuillEditorConfig(
+                              scrollable: true,
+                              expands: true,
+                              autoFocus: true,
+                              padding: EdgeInsets.fromLTRB(
+                                tokens.space16,
+                                tokens.space16,
+                                tokens.space16,
+                                compactToolbar
+                                    ? tokens.minimumTouchTarget + tokens.space16
+                                    : tokens.space32,
+                              ),
+                              placeholder: _placeholder(widget.target.kind),
+                              customStyles: wenyouEditorTextStyles(context),
+                              embedBuilders: wenyouEditorEmbedBuilders(),
+                            ),
                           ),
-                          placeholder: _placeholder(widget.target.kind),
-                          embedBuilders: wenyouEditorEmbedBuilders(),
                         ),
-                      ),
+                        if (compactToolbar)
+                          Positioned(
+                            right: tokens.space8,
+                            bottom: tokens.space8,
+                            child: WenyouEditorToolbar(
+                              key: const Key('post-composer-floating-toolbar'),
+                              controller: _editorController,
+                              enabled: !locked && _codecFailure == null,
+                              editorFocusNode: _focusNode,
+                              onInteractionChanged:
+                                  _onEditorToolbarInteractionChanged,
+                              floating: true,
+                              onInsertImage: _insertImage,
+                              onInsertSticker:
+                                  ref.watch(stickersEnabledProvider)
+                                  ? _insertSticker
+                                  : null,
+                              onSaveDraft: _openContentDrafts,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],
@@ -284,6 +323,16 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         ],
       ),
     );
+  }
+
+  void _onEditorFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onEditorToolbarInteractionChanged(bool active) {
+    if (mounted && active != _editorToolbarActive) {
+      setState(() => _editorToolbarActive = active);
+    }
   }
 
   void _scheduleDocumentSync(PostComposerState state) {

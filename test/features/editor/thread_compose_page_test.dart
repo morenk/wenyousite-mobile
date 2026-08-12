@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -13,6 +14,7 @@ import 'package:wenyousite_mobile/features/editor/application/thread_compose_con
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
@@ -184,6 +186,73 @@ void main() {
     });
   }
 
+  for (final width in const [320.0, 360.0, 400.0]) {
+    testWidgets('$width dp 键盘写作收起整排格式栏且保留焦点选区', (tester) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      final controller = await _readyController(_MemorySnapshotStore());
+
+      await _pumpPage(tester, controller);
+      final editor = tester.widget<QuillEditor>(
+        find.byKey(const Key('compose-body')),
+      );
+      editor.focusNode.requestFocus();
+      await tester.pump();
+      final selection = editor.controller.selection;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+
+      final formatTools = find.byKey(const Key('editor-format-tools'));
+      final floatingToolbar = find.byKey(const Key('compose-floating-toolbar'));
+      expect(floatingToolbar, findsOneWidget);
+      expect(
+        tester.widget<WenyouEditorToolbar>(floatingToolbar).enabled,
+        isTrue,
+      );
+      expect(controller.state.isSubmitting, isFalse);
+      expect(find.text('当前格式组合暂时不能安全保存。'), findsNothing);
+      expect(formatTools, findsOneWidget);
+      expect(tester.getSize(formatTools).height, greaterThanOrEqualTo(48));
+      expect(find.bySemanticsLabel('格式工具'), findsOneWidget);
+      expect(find.byKey(const Key('editor-heading')), findsNothing);
+      expect(editor.focusNode.hasFocus, isTrue);
+
+      await tester.tap(formatTools);
+      await tester.pump();
+
+      expect(find.byKey(const Key('editor-heading')), findsOneWidget);
+      expect(find.byKey(const Key('editor-bold')), findsOneWidget);
+      expect(find.byKey(const Key('editor-italic')), findsOneWidget);
+      expect(find.byKey(const Key('editor-image')), findsOneWidget);
+      expect(find.byKey(const Key('editor-more')), findsOneWidget);
+      expect(editor.controller.selection, selection);
+      expect(editor.focusNode.hasFocus, isTrue);
+      if (width == 360) {
+        await tester.tap(find.byKey(const Key('editor-heading')));
+        await tester.pumpAndSettle();
+        expect(find.text('二级标题'), findsOneWidget);
+
+        await tester.tap(find.text('二级标题'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('compose-floating-toolbar')),
+          findsOneWidget,
+        );
+        expect(editor.controller.selection, selection);
+        expect(
+          editor.controller.getSelectionStyle().attributes['header']?.value,
+          2,
+        );
+        expect(editor.focusNode.hasFocus, isTrue);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('创作首屏先呈现标题和正文，发布设置默认收起', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
@@ -244,6 +313,43 @@ void main() {
     await expectLater(
       find.byKey(const Key('compose-text-first-visual')),
       matchesGoldenFile('goldens/thread_compose_text_first_360.png'),
+    );
+
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('compose-body')),
+    );
+    expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
+    expect(editor.config.customStyles?.paragraph?.style.height, 1.75);
+    editor.focusNode.requestFocus();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('compose-text-first-visual')),
+      matchesGoldenFile('goldens/thread_compose_keyboard_360.png'),
+    );
+  });
+
+  testWidgets('360dp 长文编辑态与成稿保持舒展文字节奏', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = await _readyController(_MemorySnapshotStore());
+    controller
+      ..updateTitle('雾港接力稿')
+      ..updateBody(
+        '钟声从雾里传来，守夜人把最后一盏灯留在码头。\n'
+        '她没有回头，只把写了一半的航海日志推给下一位旅人。\n\n'
+        '接下来的人需要沿着潮痕继续，并保留上一段留下的人物动机。',
+      );
+
+    await _pumpPage(tester, controller);
+
+    await expectLater(
+      find.byKey(const Key('compose-text-first-visual')),
+      matchesGoldenFile('goldens/thread_compose_longform_360.png'),
     );
   });
 
