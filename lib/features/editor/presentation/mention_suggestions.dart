@@ -30,6 +30,9 @@ class MentionSuggestions extends ConsumerStatefulWidget {
 }
 
 class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
+  final OverlayPortalController _overlayController = OverlayPortalController(
+    debugLabel: 'mention-suggestions',
+  );
   Timer? _timer;
   ActiveMentionQuery? _active;
   bool _debouncing = false;
@@ -90,6 +93,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
           _debouncing = false;
         });
       }
+      _hideOverlay();
       return;
     }
     _dismissedSignature = null;
@@ -98,6 +102,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
       _active = visible;
       _debouncing = threadId != null && threadId.isNotEmpty;
     });
+    _showOverlay();
     if (threadId == null || threadId.isEmpty) return;
     _timer = Timer(widget.debounce, () {
       if (!mounted ||
@@ -127,6 +132,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
       _active = null;
       _debouncing = false;
     });
+    _hideOverlay();
     widget.focusNode.requestFocus();
   }
 
@@ -187,25 +193,79 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
       _debouncing = false;
       _dismissedSignature = null;
     });
+    _hideOverlay();
     widget.focusNode.requestFocus();
+  }
+
+  void _showOverlay() {
+    if (!_overlayController.isShowing) _overlayController.show();
+  }
+
+  void _hideOverlay() {
+    if (_overlayController.isShowing) _overlayController.hide();
   }
 
   @override
   Widget build(BuildContext context) {
+    return OverlayPortal(
+      controller: _overlayController,
+      overlayLocation: OverlayChildLocation.rootOverlay,
+      overlayChildBuilder: _buildOverlay,
+      child: const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildOverlay(BuildContext context) {
     final active = _active;
     if (active == null) return const SizedBox.shrink();
+    final tokens = context.wenyouTokens;
+    final media = MediaQuery.of(context);
+    final keepsFormatToolsClear =
+        media.size.width <= 400 && media.viewInsets.bottom > 0;
+    final bottom =
+        media.viewInsets.bottom +
+        (keepsFormatToolsClear
+            ? tokens.minimumTouchTarget + tokens.space16
+            : tokens.space8);
+    final availableHeight =
+        media.size.height - bottom - media.padding.top - tokens.space8;
+    final maxPanelHeight = availableHeight.clamp(
+      tokens.minimumTouchTarget * 2,
+      200.0,
+    );
     final threadId = widget.threadId?.trim();
-    if (threadId == null || threadId.isEmpty) {
-      return _MentionPanel(
-        key: const Key('mention-context-required'),
-        title: '提及需要主题上下文',
-        onDismiss: _dismiss,
-        child: const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          child: Text('请先保存到云端草稿，再继续输入 @ 选择可提及用户。'),
+    final panel = threadId == null || threadId.isEmpty
+        ? _MentionPanel(
+            key: const Key('mention-context-required'),
+            title: '提及需要主题上下文',
+            onDismiss: _dismiss,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('请先保存到云端草稿，再继续输入 @ 选择可提及用户。'),
+            ),
+          )
+        : _buildCandidatesPanel(threadId, active);
+    return Positioned(
+      left: tokens.space8,
+      right: tokens.space8,
+      bottom: bottom,
+      child: SafeArea(
+        top: false,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 600,
+              maxHeight: maxPanelHeight,
+            ),
+            child: panel,
+          ),
         ),
-      );
-    }
+      ),
+    );
+  }
+
+  Widget _buildCandidatesPanel(String threadId, ActiveMentionQuery active) {
     final state = ref.watch(mentionCandidatesControllerProvider(threadId));
     final matchesQuery = state.query == active.query;
     final loading =
@@ -262,37 +322,61 @@ class _MentionPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Material(
-      color: tokens.softPanel,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.space12,
-          tokens.space4,
-          tokens.space4,
-          tokens.space8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+    return RepaintBoundary(
+      key: const Key('mention-floating-panel'),
+      child: Semantics(
+        container: true,
+        explicitChildNodes: true,
+        label: '提及候选',
+        child: Material(
+          elevation: 4,
+          color: Theme.of(context).colorScheme.surface,
+          shadowColor: Theme.of(
+            context,
+          ).colorScheme.shadow.withValues(alpha: 0.14),
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: tokens.border),
+            borderRadius: BorderRadius.circular(tokens.radius12),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              0,
+              tokens.space4,
+              tokens.space8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.labelLarge,
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: tokens.minimumTouchTarget,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
+                      IconButton(
+                        key: const Key('mention-dismiss'),
+                        tooltip: '关闭提及候选',
+                        onPressed: onDismiss,
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  key: const Key('mention-dismiss'),
-                  tooltip: '关闭提及候选',
-                  onPressed: onDismiss,
-                  icon: const Icon(Icons.close_rounded),
-                ),
+                Flexible(child: child),
               ],
             ),
-            child,
-          ],
+          ),
         ),
       ),
     );
@@ -380,7 +464,7 @@ class _MentionResults extends StatelessWidget {
       );
     }
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 224),
+      constraints: const BoxConstraints(maxHeight: 144),
       child: ListView.builder(
         key: const Key('mention-results'),
         shrinkWrap: true,

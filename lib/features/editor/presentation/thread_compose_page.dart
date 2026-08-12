@@ -344,36 +344,40 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                         : null,
                     onSaveDraft: _openContentDrafts,
                   ),
-                MentionSuggestions(
-                  controller: _editorController,
-                  focusNode: _editorFocusNode,
-                  threadId: state.remoteDraft?.id,
-                  enabled: enabled,
-                ),
-                Semantics(
-                  textField: true,
-                  label: '主题正文编辑器',
-                  child: QuillEditor(
-                    key: const Key('compose-body'),
-                    controller: _editorController,
-                    focusNode: _editorFocusNode,
-                    scrollController: _editorScrollController,
-                    config: QuillEditorConfig(
-                      scrollable: false,
-                      minHeight: editorMinHeight,
-                      padding: EdgeInsets.fromLTRB(
-                        tokens.space4,
-                        tokens.space16,
-                        tokens.space4,
-                        compactToolbar
-                            ? tokens.minimumTouchTarget + tokens.space16
-                            : tokens.space24,
+                Stack(
+                  children: [
+                    Semantics(
+                      textField: true,
+                      label: '主题正文编辑器',
+                      child: QuillEditor(
+                        key: const Key('compose-body'),
+                        controller: _editorController,
+                        focusNode: _editorFocusNode,
+                        scrollController: _editorScrollController,
+                        config: QuillEditorConfig(
+                          scrollable: false,
+                          minHeight: editorMinHeight,
+                          padding: EdgeInsets.fromLTRB(
+                            tokens.space4,
+                            tokens.space16,
+                            tokens.space4,
+                            compactToolbar
+                                ? tokens.minimumTouchTarget + tokens.space16
+                                : tokens.space24,
+                          ),
+                          placeholder: '从这里开始写正文…',
+                          customStyles: wenyouEditorTextStyles(context),
+                          embedBuilders: wenyouEditorEmbedBuilders(),
+                        ),
                       ),
-                      placeholder: '从这里开始写正文…',
-                      customStyles: wenyouEditorTextStyles(context),
-                      embedBuilders: wenyouEditorEmbedBuilders(),
                     ),
-                  ),
+                    MentionSuggestions(
+                      controller: _editorController,
+                      focusNode: _editorFocusNode,
+                      threadId: state.remoteDraft?.id,
+                      enabled: enabled,
+                    ),
+                  ],
                 ),
               ],
             ),

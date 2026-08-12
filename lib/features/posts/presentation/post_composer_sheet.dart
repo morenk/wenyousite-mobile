@@ -256,12 +256,6 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                           : null,
                       onSaveDraft: _openContentDrafts,
                     ),
-                  MentionSuggestions(
-                    controller: _editorController,
-                    focusNode: _focusNode,
-                    threadId: widget.target.threadId,
-                    enabled: !locked && _codecFailure == null,
-                  ),
                   const Divider(height: 1),
                   Expanded(
                     child: Stack(
@@ -313,6 +307,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                               onSaveDraft: _openContentDrafts,
                             ),
                           ),
+                        MentionSuggestions(
+                          controller: _editorController,
+                          focusNode: _focusNode,
+                          threadId: widget.target.threadId,
+                          enabled: !locked && _codecFailure == null,
+                        ),
                       ],
                     ),
                   ),

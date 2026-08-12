@@ -434,6 +434,8 @@ const _author = PostAuthor(id: 'author-1', username: '自己', level: 3);
 const _otherAuthor = PostAuthor(id: 'author-2', username: '他人', level: 2);
 const _rootAuthor = PostAuthor(id: 'root-author', username: '楼层作者', level: 4);
 
+final _rootCreatedAt = DateTime.now().subtract(const Duration(days: 2));
+
 final _root = PostItem(
   id: 'root',
   threadId: 'thread',
@@ -441,8 +443,8 @@ final _root = PostItem(
   author: _rootAuthor,
   content: '原楼层内容',
   version: 2,
-  createdAt: DateTime.utc(2026, 8, 10),
-  updatedAt: DateTime.utc(2026, 8, 10),
+  createdAt: _rootCreatedAt,
+  updatedAt: _rootCreatedAt,
   isBody: false,
   isDeleted: false,
   floorNumber: 8,
@@ -457,6 +459,9 @@ PostItem _reply(
   PostAuthor author, {
   int version = 1,
 }) {
+  final createdAt = DateTime.now().subtract(
+    Duration(days: id == 'reply-other' ? 1 : 2),
+  );
   return PostItem(
     id: id,
     threadId: 'thread',
@@ -464,8 +469,8 @@ PostItem _reply(
     author: author,
     content: content,
     version: version,
-    createdAt: DateTime.utc(2026, 8, 10, 1, id.hashCode.abs() % 50),
-    updatedAt: DateTime.utc(2026, 8, 10, 1, id.hashCode.abs() % 50),
+    createdAt: createdAt,
+    updatedAt: createdAt,
     isBody: false,
     isDeleted: false,
     parentPostId: 'root',
