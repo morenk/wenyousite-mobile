@@ -87,14 +87,12 @@ void main() {
     );
     expect(
       tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
-      lessThan(230),
+      lessThan(190),
     );
     expect(find.text('参与者发言'), findsNothing);
     expect(find.text('8 条内容'), findsNothing);
     expect(find.text('12 楼层'), findsNothing);
-    expect(find.text('128 浏览'), findsOneWidget);
-    expect(find.text('2 位玩家'), findsOneWidget);
-    expect(find.text('12 楼'), findsOneWidget);
+    expect(find.text('128 浏览 · 2 玩家 · 12 楼 · 8 升温油'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('主线正文'),
       180,
@@ -226,6 +224,97 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('主题详情').hitTestable(), findsOneWidget);
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
+  });
+
+  testWidgets('360dp 主题首屏优先呈现标题与正文', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const visualKey = Key('thread-detail-overview-visual');
+
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(), visualKey: visualKey),
+    );
+    await tester.pumpAndSettle();
+
+    final overview = find.byKey(const Key('thread-detail-overview'));
+    expect(tester.getSize(overview).height, lessThan(190));
+    expect(
+      find.ancestor(of: overview, matching: find.byType(Card)),
+      findsNothing,
+    );
+    expect(find.text('主线正文'), findsOneWidget);
+
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/thread_detail_overview_360.png'),
+    );
+  });
+
+  for (final size in [const Size(400, 900), const Size(600, 1000)]) {
+    testWidgets('${size.width.toInt()}dp 主题首屏保持文字优先响应式基线', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final visualKey = Key(
+        'thread-detail-overview-${size.width.toInt()}-visual',
+      );
+
+      await tester.pumpWidget(
+        _detailApp(_FakeThreadDetailRepository(), visualKey: visualKey),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
+        lessThan(190),
+      );
+      expect(find.text('主线正文'), findsOneWidget);
+      expect(find.text('第一层内容'), findsOneWidget);
+      await expectLater(
+        find.byKey(visualKey),
+        matchesGoldenFile(
+          'goldens/thread_detail_overview_${size.width.toInt()}.png',
+        ),
+      );
+    });
+  }
+
+  testWidgets('360dp 五标签语境保持单行横滑且不撑高题头', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final manyTagsDetail = _detailWithTags(const [
+      ThreadTagModel(id: 'tag-1', name: '太空歌剧'),
+      ThreadTagModel(id: 'tag-2', name: '群像叙事'),
+      ThreadTagModel(id: 'tag-3', name: '星际远航'),
+      ThreadTagModel(id: 'tag-4', name: '长期接力'),
+      ThreadTagModel(id: 'tag-5', name: '硬科幻'),
+    ]);
+
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(detail: manyTagsDetail)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester
+          .widget<SingleChildScrollView>(
+            find.byKey(const Key('thread-detail-context-row')),
+          )
+          .scrollDirection,
+      Axis.horizontal,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
+      lessThan(190),
+    );
+    expect(find.text('主线正文'), findsOneWidget);
   });
 
   testWidgets('切换子贴同步替换正文与楼层', (tester) async {
@@ -942,6 +1031,29 @@ final _detail = ThreadDetailModel(
   createdAt: DateTime.utc(2026, 8, 1),
   updatedAt: DateTime.utc(2026, 8, 9, 12),
 );
+
+ThreadDetailModel _detailWithTags(List<ThreadTagModel> tags) {
+  return ThreadDetailModel(
+    id: _detail.id,
+    title: _detail.title,
+    owner: _detail.owner,
+    categorySlug: _detail.categorySlug,
+    status: _detail.status,
+    isPrivate: _detail.isPrivate,
+    isPinned: _detail.isPinned,
+    viewCount: _detail.viewCount,
+    likeCount: _detail.likeCount,
+    tipTotal: _detail.tipTotal,
+    memberCount: _detail.memberCount,
+    playerCount: _detail.playerCount,
+    postCount: _detail.postCount,
+    tags: tags,
+    subthreads: _detail.subthreads,
+    defaultSubthreadId: _detail.defaultSubthreadId,
+    createdAt: _detail.createdAt,
+    updatedAt: _detail.updatedAt,
+  );
+}
 
 final _managerDetail = ThreadDetailModel(
   id: 'thread-1',
