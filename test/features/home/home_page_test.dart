@@ -29,14 +29,21 @@ void main() {
       findsNothing,
     );
     expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
-    expect(find.text('8L 加油'), findsOneWidget);
+    expect(find.text('5 成员 · 2 玩家 · 12 回复 · 8L 加油'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('星海旅团')).dy,
       lessThan(tester.getTopLeft(find.text('温柔测试员')).dy),
     );
     expect(
       tester.getSize(find.byKey(const Key('home-thread-thread-1'))).height,
-      lessThan(260),
+      lessThan(190),
+    );
+    expect(
+      find.ancestor(
+        of: find.byKey(const Key('home-thread-thread-1')),
+        matching: find.byType(Card),
+      ),
+      findsNothing,
     );
 
     await tester.tap(find.byKey(const Key('home-category-menu')));
@@ -83,6 +90,26 @@ void main() {
     expect(repository.threadCalls, callsBeforeRefresh + 1);
   });
 
+  testWidgets('多主题以分隔线形成连续文章索引而不是逐张卡片', (tester) async {
+    await tester.pumpWidget(
+      _homeApp(_FakeHomeRepository(items: [_thread, _secondThread])),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('home-thread-divider-thread-2')),
+      findsOneWidget,
+    );
+    expect(
+      find.ancestor(
+        of: find.byKey(const Key('home-thread-thread-2')),
+        matching: find.byType(Card),
+      ),
+      findsNothing,
+    );
+    expect(find.text('第二段接力'), findsOneWidget);
+  });
+
   for (final width in [360.0, 400.0, 600.0]) {
     testWidgets('$width dp 首页筛选与主题卡片无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -108,6 +135,29 @@ void main() {
       );
     });
   }
+
+  testWidgets('360dp 有封面主题使用右侧缩略图而不压过标题', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      _homeApp(_FakeHomeRepository(items: [_threadWithCover])),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final cover = find.byKey(const Key('home-thread-cover-thumbnail'));
+    expect(cover, findsOneWidget);
+    expect(tester.getSize(cover), const Size(104, 88));
+    expect(
+      tester.getSize(find.byKey(const Key('home-thread-thread-cover'))).height,
+      lessThan(190),
+    );
+    expect(find.text('带封面的长篇主题'), findsOneWidget);
+    expect(find.text('正文摘要仍然先于图片建立阅读线索'), findsOneWidget);
+  });
 
   testWidgets('360dp 首页保持标题与摘要优先的视觉基线', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -139,9 +189,10 @@ Widget _homeApp(HomeRepository repository) {
 }
 
 class _FakeHomeRepository implements HomeRepository {
-  _FakeHomeRepository({this.failFirstRequest = false});
+  _FakeHomeRepository({this.failFirstRequest = false, this.items});
 
   final bool failFirstRequest;
+  final List<HomeThreadCardModel>? items;
   int threadCalls = 0;
   HomeFeedQuery? lastQuery;
 
@@ -170,7 +221,7 @@ class _FakeHomeRepository implements HomeRepository {
         requestId: 'home-request-id',
       );
     }
-    return CursorPage(items: [_thread], hasMore: false);
+    return CursorPage(items: items ?? [_thread], hasMore: false);
   }
 }
 
@@ -191,4 +242,42 @@ final _thread = HomeThreadCardModel(
   postCount: 12,
   tipTotal: '8',
   lastActivityAt: DateTime.now().subtract(const Duration(minutes: 5)),
+);
+
+final _threadWithCover = HomeThreadCardModel(
+  id: 'thread-cover',
+  title: '带封面的长篇主题',
+  categorySlug: 'RPG',
+  status: HomeThreadStatus.recruiting,
+  isPinned: false,
+  ownerId: 'user-1',
+  ownerName: '温柔测试员',
+  ownerLevel: 3,
+  preview: '正文摘要仍然先于图片建立阅读线索',
+  tags: const [],
+  coverImageUrls: const ['https://example.com/cover.jpg'],
+  memberCount: 5,
+  playerCount: 2,
+  postCount: 12,
+  tipTotal: '0',
+  lastActivityAt: DateTime(2026, 8, 12),
+);
+
+final _secondThread = HomeThreadCardModel(
+  id: 'thread-2',
+  title: '第二段接力',
+  categorySlug: 'RPG',
+  status: HomeThreadStatus.finished,
+  isPinned: false,
+  ownerId: 'user-2',
+  ownerName: '接力作者',
+  ownerLevel: 2,
+  preview: '新的一段故事从这里继续。',
+  tags: const [],
+  coverImageUrls: const [],
+  memberCount: 3,
+  playerCount: 2,
+  postCount: 8,
+  tipTotal: '0',
+  lastActivityAt: DateTime(2026, 8, 12),
 );

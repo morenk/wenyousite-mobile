@@ -255,6 +255,37 @@ void main() {
     expect(editor.focusNode.hasFocus, isTrue);
   });
 
+  testWidgets('360dp 独立讨论保持正文优先视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    const visualKey = Key('post-discussion-text-first-visual');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const RepaintBoundary(
+            key: visualKey,
+            child: PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/post_discussion_text_first_360.png'),
+    );
+  });
+
   testWidgets('楼中楼阅读顶栏随正文滚动收起并可立即唤回', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);

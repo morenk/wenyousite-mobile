@@ -153,22 +153,33 @@ class _HomePageState extends ConsumerState<HomePage> {
           delegate: SliverChildBuilderDelegate((context, index) {
             final thread = state.items[index];
             return _HomeContent(
-              top: 12,
-              child: HomeThreadCard(
-                key: Key('home-thread-${thread.id}'),
-                thread: thread,
-                categoryName:
-                    categoryNames[thread.categorySlug] ?? thread.categorySlug,
-                onTap: () => context.pushNamed(
-                  'thread-detail',
-                  pathParameters: {'threadId': thread.id},
-                  extra:
-                      categoryNames[thread.categorySlug] ?? thread.categorySlug,
-                ),
-                onTagTap: (tag) => context.pushNamed(
-                  'tag-threads',
-                  pathParameters: {'tagId': tag.id},
-                ),
+              top: index == 0 ? 12 : 0,
+              child: Column(
+                children: [
+                  if (index > 0)
+                    Divider(
+                      key: Key('home-thread-divider-${thread.id}'),
+                      height: 1,
+                    ),
+                  HomeThreadCard(
+                    key: Key('home-thread-${thread.id}'),
+                    thread: thread,
+                    categoryName:
+                        categoryNames[thread.categorySlug] ??
+                        thread.categorySlug,
+                    onTap: () => context.pushNamed(
+                      'thread-detail',
+                      pathParameters: {'threadId': thread.id},
+                      extra:
+                          categoryNames[thread.categorySlug] ??
+                          thread.categorySlug,
+                    ),
+                    onTagTap: (tag) => context.pushNamed(
+                      'tag-threads',
+                      pathParameters: {'tagId': tag.id},
+                    ),
+                  ),
+                ],
               ),
             );
           }, childCount: state.items.length),
