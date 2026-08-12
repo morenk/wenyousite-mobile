@@ -777,9 +777,14 @@ void main() {
 
     expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
+    expect(find.byKey(const Key('thread-body-edit')), findsNothing);
+    expect(find.byKey(const Key('thread-detail-edit-body')), findsNothing);
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-edit-body')), findsOneWidget);
+    expect(find.text('编辑当前子贴正文'), findsOneWidget);
+    expect(find.text('主线'), findsAtLeastNWidgets(1));
     expect(find.byKey(const Key('thread-detail-tip')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
     await tester.tapAt(const Offset(12, 12));
@@ -792,13 +797,10 @@ void main() {
     await tester.tap(find.byKey(const Key('post-composer-close')));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('thread-body-edit')),
-      180,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.byKey(const Key('thread-body-edit')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('thread-body-edit')));
+    expect(find.byKey(const Key('thread-body-edit')), findsNothing);
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-detail-edit-body')));
     await tester.pumpAndSettle();
     expect(find.text('编辑子贴正文'), findsOneWidget);
     await tester.tap(find.byKey(const Key('post-composer-close')));
@@ -826,6 +828,149 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(postRepository.removedIds, ['floor-1']);
+  });
+
+  for (final width in const [360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 管理者阅读区不常驻正文编辑控件', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final container = ProviderContainer(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+          threadDetailRepositoryProvider.overrideWithValue(
+            _FakeThreadDetailRepository(detail: _managerDetail),
+          ),
+          threadSubscriptionRepositoryProvider.overrideWithValue(
+            _FakeThreadSubscriptionRepository(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container
+          .read(sessionControllerProvider.notifier)
+          .authenticate(_tokensFor('user-1'));
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const ThreadDetailPage(threadId: 'thread-1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('thread-body-edit')), findsNothing);
+      expect(find.text('主线正文'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('主线正文')).dy, lessThan(400));
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const Key('thread-detail-more')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('thread-detail-edit-body')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('thread-detail-edit-body'))).height,
+        greaterThanOrEqualTo(48),
+      );
+    });
+  }
+
+  testWidgets('360dp 管理者首屏同样保持正文优先视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(
+          _FakeThreadDetailRepository(detail: _managerDetail),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+    const visualKey = Key('thread-detail-manager-text-first-visual');
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const RepaintBoundary(
+            key: visualKey,
+            child: ThreadDetailPage(threadId: 'thread-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('thread-body-edit')), findsNothing);
+    expect(find.text('主线正文'), findsOneWidget);
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/thread_detail_manager_text_first_360.png'),
+    );
+  });
+
+  testWidgets('管理者在空子贴从主题操作添加正文', (tester) async {
+    final emptyBodyDetail = _copyThreadDetail(
+      _managerDetail,
+      subthreads: const [
+        ThreadSubthreadModel(
+          id: 'subthread-1',
+          title: '尚未开篇',
+          sortOrder: 1,
+          postCount: 0,
+          postingPolicyLabel: '参与者发言',
+        ),
+      ],
+    );
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(
+          _FakeThreadDetailRepository(detail: emptyBodyDetail),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+        postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('这个子贴还没有正文。'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
+    expect(find.text('添加当前子贴正文'), findsOneWidget);
+    expect(find.text('尚未开篇'), findsAtLeastNWidgets(1));
+    await tester.tap(find.byKey(const Key('thread-detail-edit-body')));
+    await tester.pumpAndSettle();
+    expect(find.text('添加子贴正文'), findsOneWidget);
   });
 }
 
@@ -1052,6 +1197,40 @@ ThreadDetailModel _detailWithTags(List<ThreadTagModel> tags) {
     defaultSubthreadId: _detail.defaultSubthreadId,
     createdAt: _detail.createdAt,
     updatedAt: _detail.updatedAt,
+  );
+}
+
+ThreadDetailModel _copyThreadDetail(
+  ThreadDetailModel source, {
+  required List<ThreadSubthreadModel> subthreads,
+}) {
+  return ThreadDetailModel(
+    id: source.id,
+    title: source.title,
+    owner: source.owner,
+    categorySlug: source.categorySlug,
+    status: source.status,
+    isPrivate: source.isPrivate,
+    isPinned: source.isPinned,
+    viewCount: source.viewCount,
+    likeCount: source.likeCount,
+    isLiked: source.isLiked,
+    isBookmarked: source.isBookmarked,
+    bookmarkId: source.bookmarkId,
+    hasAutomaticUpdates: source.hasAutomaticUpdates,
+    canManageThread: source.canManageThread,
+    isCurrentUserPlayer: source.isCurrentUserPlayer,
+    isCurrentUserOwner: source.isCurrentUserOwner,
+    currentUserId: source.currentUserId,
+    tipTotal: source.tipTotal,
+    memberCount: source.memberCount,
+    playerCount: source.playerCount,
+    postCount: source.postCount,
+    tags: source.tags,
+    subthreads: subthreads,
+    defaultSubthreadId: subthreads.firstOrNull?.id,
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
   );
 }
 

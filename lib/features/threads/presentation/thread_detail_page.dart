@@ -232,7 +232,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         IconButton(
           key: const Key('thread-detail-more'),
           tooltip: '更多主题操作',
-          onPressed: () => _openThreadActions(detail, provider),
+          onPressed: () => _openThreadActions(
+            detail,
+            provider,
+            selectedSubthread: state.selectedSubthread,
+          ),
           icon: const Icon(Icons.more_horiz_rounded),
         ),
     ];
@@ -261,8 +265,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   Future<void> _openThreadActions(
     ThreadDetailModel detail,
     AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
-    provider,
-  ) async {
+    provider, {
+    required ThreadSubthreadModel? selectedSubthread,
+  }) async {
     final action = await showModalBottomSheet<_ThreadDetailAction>(
       context: context,
       useSafeArea: true,
@@ -275,6 +280,23 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             title: Text('主题操作'),
             subtitle: Text('低频操作集中在这里，阅读时不占用顶栏。'),
           ),
+          if (detail.canManageThread)
+            ListTile(
+              key: const Key('thread-detail-edit-body'),
+              leading: Icon(
+                selectedSubthread?.body == null
+                    ? Icons.note_add_outlined
+                    : Icons.edit_outlined,
+              ),
+              title: Text(
+                selectedSubthread?.body == null ? '添加当前子贴正文' : '编辑当前子贴正文',
+              ),
+              subtitle: Text(selectedSubthread?.title ?? '当前没有可编辑的子贴'),
+              enabled: selectedSubthread != null,
+              onTap: selectedSubthread == null
+                  ? null
+                  : () => Navigator.pop(context, _ThreadDetailAction.editBody),
+            ),
           if (detail.canManageThread)
             ListTile(
               key: const Key('thread-detail-manage'),
@@ -304,6 +326,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
     if (action == null || !mounted) return;
     switch (action) {
+      case _ThreadDetailAction.editBody:
+        if (selectedSubthread != null) {
+          await _compose(_bodyTarget(detail, selectedSubthread));
+        }
       case _ThreadDetailAction.manage:
         await _openManagement();
       case _ThreadDetailAction.tip:
@@ -460,11 +486,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         SliverToBoxAdapter(
           child: _DetailContent(
             top: 12,
-            child: _SubthreadBody(
-              subthread: selected!,
-              canEdit: detail.canManageThread,
-              onEdit: () => _compose(_bodyTarget(detail, selected)),
-            ),
+            child: _SubthreadBody(subthread: selected!),
           ),
         ),
         if (actions.failure != null)
@@ -679,4 +701,4 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 }
 
-enum _ThreadDetailAction { manage, tip, report }
+enum _ThreadDetailAction { editBody, manage, tip, report }

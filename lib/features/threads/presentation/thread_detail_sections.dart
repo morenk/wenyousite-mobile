@@ -532,15 +532,9 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
 }
 
 class _SubthreadBody extends StatelessWidget {
-  const _SubthreadBody({
-    required this.subthread,
-    required this.canEdit,
-    required this.onEdit,
-  });
+  const _SubthreadBody({required this.subthread});
 
   final ThreadSubthreadModel subthread;
-  final bool canEdit;
-  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -554,21 +548,6 @@ class _SubthreadBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (canEdit)
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  key: const Key('thread-body-edit'),
-                  onPressed: onEdit,
-                  tooltip: body == null ? '添加正文' : '编辑正文',
-                  icon: Icon(
-                    body == null
-                        ? Icons.note_add_outlined
-                        : Icons.edit_outlined,
-                  ),
-                ),
-              ),
-            if (canEdit) SizedBox(height: tokens.space4),
             if (body == null || body.markdown.trim().isEmpty)
               Text(
                 '这个子贴还没有正文。',
