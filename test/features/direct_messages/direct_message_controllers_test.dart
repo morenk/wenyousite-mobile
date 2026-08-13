@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -116,6 +118,261 @@ void main() {
     expect(repository.sentDrafts.last.content, '你好\n世界');
     expect(controller.state.failedDraft, isNull);
     expect(controller.state.messages.last.id, 'sent-1');
+  });
+
+  test('发送立即插入乐观消息且等待网络时不锁定会话', () async {
+    final completion = Completer<DirectMessage>();
+    final repository = _FakeDirectMessageRepository(
+      initialMessages: [_message(id: 'message-1', incoming: true)],
+      sendCompletions: [completion],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+
+    final result = controller.send(content: '立即显示');
+
+    expect(controller.state.isMutating, isFalse);
+    expect(controller.state.messages.last.id, 'optimistic:$_requestId');
+    expect(
+      controller.state.messages.last.deliveryState,
+      DirectMessageDeliveryState.sending,
+    );
+    completion.complete(
+      _message(id: 'server-1', incoming: false, content: '立即显示'),
+    );
+    expect(await result, isTrue);
+    expect(controller.state.messages.map((message) => message.id), [
+      'message-1',
+      'server-1',
+    ]);
+  });
+
+  test('失败消息就地保留且不阻止新消息，重试复用原幂等键', () async {
+    var requestIndex = 0;
+    const requestIds = [_requestId, '223e4567-e89b-42d3-a456-426614174001'];
+    final repository = _FakeDirectMessageRepository(
+      sendFailures: 1,
+      initialMessages: [_message(id: 'message-1', incoming: true)],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+      requestIdFactory: () => requestIds[requestIndex++],
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+
+    expect(await controller.send(content: '第一条'), isFalse);
+    final failed = controller.state.messages.last;
+    expect(failed.deliveryState, DirectMessageDeliveryState.failed);
+    expect(controller.state.sendFailures, contains(failed.id));
+
+    expect(await controller.send(content: '第二条'), isTrue);
+    expect(
+      controller.state.messages.any(
+        (message) =>
+            message.id == failed.id &&
+            message.deliveryState == DirectMessageDeliveryState.failed,
+      ),
+      isTrue,
+    );
+    expect(await controller.retryMessage(failed.id), isTrue);
+    expect(repository.sentDrafts.map((draft) => draft.clientRequestId), [
+      _requestId,
+      requestIds[1],
+      _requestId,
+    ]);
+    expect(
+      controller.state.messages.any((message) => message.isOptimistic),
+      isFalse,
+    );
+    expect(controller.state.sendFailures, isEmpty);
+  });
+
+  test('乐观消息不作为增量轮询 after 锚点', () async {
+    final completion = Completer<DirectMessage>();
+    final repository = _FakeDirectMessageRepository(
+      initialMessages: [_message(id: 'message-1', incoming: false)],
+      sendCompletions: [completion],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+
+    final sendResult = controller.send(content: '等待确认');
+    await controller.pollLatest();
+
+    expect(repository.afterAnchors, ['message-1']);
+    completion.complete(
+      _message(id: 'server-1', incoming: false, content: '等待确认'),
+    );
+    expect(await sendResult, isTrue);
+  });
+
+  test('最近窗口刷新保留已加载历史和本地失败消息', () async {
+    final older = _message(id: 'older-1', incoming: true);
+    final latest = _message(id: 'message-1', incoming: false);
+    final repository = _FakeDirectMessageRepository(
+      initialMessages: [older, latest],
+      sendFailures: 1,
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+    expect(await controller.send(content: '未发送'), isFalse);
+    repository.initialMessages = [latest];
+
+    await controller.refresh();
+
+    expect(
+      controller.state.messages.map((message) => message.id),
+      contains('older-1'),
+    );
+    expect(
+      controller.state.messages.any(
+        (message) =>
+            message.id == 'optimistic:$_requestId' &&
+            message.deliveryState == DirectMessageDeliveryState.failed,
+      ),
+      isTrue,
+    );
+  });
+
+  test('暂停轮询忽略请求，恢复后立即增量同步', () async {
+    final repository = _FakeDirectMessageRepository(
+      initialMessages: [_message(id: 'message-1', incoming: false)],
+      incrementalMessages: [_message(id: 'message-2', incoming: true)],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+
+    controller.pausePolling();
+    await controller.pollLatest();
+    expect(repository.afterAnchors, isEmpty);
+
+    controller.resumePolling();
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.afterAnchors, ['message-1']);
+    expect(controller.state.messages.last.id, 'message-2');
+  });
+
+  test('活跃会话未读为零时增量收到新消息仍标记已读', () async {
+    final repository = _FakeDirectMessageRepository(
+      initialMessages: [_message(id: 'message-1', incoming: false)],
+      incrementalMessages: [_message(id: 'message-2', incoming: true)],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+
+    await controller.pollLatest();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.markedReadIds, ['message-2']);
+  });
+
+  test('已读请求在途时收到更新消息会在完成后继续追赶', () async {
+    final firstMark = Completer<void>();
+    final repository = _FakeDirectMessageRepository(
+      conversation: _conversation(unreadCount: 1),
+      initialMessages: [_message(id: 'incoming-1', incoming: true)],
+      markReadCompletions: [firstMark],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    expect(repository.markedReadIds, ['incoming-1']);
+    repository.incrementalMessages = [
+      _message(id: 'message-2', incoming: true),
+    ];
+    await controller.pollLatest();
+    expect(repository.markedReadIds, ['incoming-1']);
+
+    firstMark.complete();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.markedReadIds, ['incoming-1', 'message-2']);
+  });
+
+  test('发送与刷新交错时保留并完成乐观消息', () async {
+    final sendCompletion = Completer<DirectMessage>();
+    final refreshCompletion = Completer<CursorPage<DirectMessage>>();
+    final repository = _FakeDirectMessageRepository(
+      initialMessages: [_message(id: 'message-1', incoming: false)],
+      sendCompletions: [sendCompletion],
+    );
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+    repository.fetchMessageCompletions = [refreshCompletion];
+
+    final refreshResult = controller.refresh();
+    final sendResult = controller.send(content: '交错消息');
+    refreshCompletion.complete(
+      CursorPage(
+        items: [_message(id: 'message-1', incoming: false)],
+        hasMore: false,
+      ),
+    );
+    await refreshResult;
+    expect(
+      controller.state.messages.last.deliveryState,
+      DirectMessageDeliveryState.sending,
+    );
+
+    sendCompletion.complete(
+      _message(id: 'server-1', incoming: false, content: '交错消息'),
+    );
+    expect(await sendResult, isTrue);
+    expect(controller.state.messages.map((message) => message.id), [
+      'message-1',
+      'server-1',
+    ]);
   });
 
   test('增量轮询按 after 合并新消息并对最新收到消息标记已读', () async {
@@ -237,15 +494,21 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
     this.sendFailures = 0,
     this.createFailures = 0,
     this.handleFailures = 0,
+    this.sendCompletions = const [],
+    this.markReadCompletions = const [],
   }) : conversation = conversation ?? _conversation(),
        initialMessages = initialMessages ?? [_message(id: 'message-1')];
 
   DirectConversation conversation;
   List<DirectMessage> initialMessages;
-  final List<DirectMessage> incrementalMessages;
+  List<DirectMessage> incrementalMessages;
   int sendFailures;
   int createFailures;
   int handleFailures;
+  int sendSuccesses = 0;
+  final List<Completer<DirectMessage>> sendCompletions;
+  List<Completer<CursorPage<DirectMessage>>> fetchMessageCompletions = [];
+  final List<Completer<void>> markReadCompletions;
   DirectRecallResult recallResult = const DirectRecallResult(
     conversationCanceled: false,
   );
@@ -318,6 +581,9 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
       afterAnchors.add(after);
       return CursorPage(items: incrementalMessages, hasMore: false);
     }
+    if (fetchMessageCompletions.isNotEmpty) {
+      return fetchMessageCompletions.removeAt(0).future;
+    }
     return CursorPage(items: initialMessages, hasMore: false);
   }
 
@@ -334,7 +600,14 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
         requestId: 'send-request',
       );
     }
-    return _message(id: 'sent-1', incoming: false, content: draft.content);
+    if (sendCompletions.isNotEmpty) {
+      return sendCompletions.removeAt(0).future;
+    }
+    return _message(
+      id: 'sent-${++sendSuccesses}',
+      incoming: false,
+      content: draft.content,
+    );
   }
 
   @override
@@ -365,6 +638,9 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
     required String throughMessageId,
   }) async {
     markedReadIds.add(throughMessageId);
+    if (markReadCompletions.isNotEmpty) {
+      await markReadCompletions.removeAt(0).future;
+    }
   }
 
   @override

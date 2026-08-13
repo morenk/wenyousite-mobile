@@ -47,6 +47,7 @@ void main() {
       find.byKey(const Key('direct-message-composer-field')),
       '你好，想和你聊聊',
     );
+    await tester.pump();
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pumpAndSettle();
 
@@ -72,7 +73,7 @@ void main() {
     expect(repository.createdDrafts, isEmpty);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 新私聊页面无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 760);

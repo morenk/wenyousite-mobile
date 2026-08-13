@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
@@ -40,9 +40,11 @@ class DirectMessageAvatar extends StatelessWidget {
           dimension: size,
           child: user.avatarUrl == null
               ? fallback
-              : CachedNetworkImage(
+              : WenyouCachedImage(
                   imageUrl: user.avatarUrl!,
                   fit: BoxFit.cover,
+                  cacheWidth: size.ceil(),
+                  cacheHeight: size.ceil(),
                   placeholder: (_, _) => fallback,
                   errorWidget: (_, _, _) => fallback,
                 ),
@@ -62,6 +64,7 @@ class DirectMessageComposer extends ConsumerStatefulWidget {
     this.failure,
     this.failedDraft,
     this.onAbandonFailedDraft,
+    this.optimistic = false,
     super.key,
   });
 
@@ -78,6 +81,7 @@ class DirectMessageComposer extends ConsumerStatefulWidget {
   final ApiFailure? failure;
   final DirectMessageDraft? failedDraft;
   final VoidCallback? onAbandonFailedDraft;
+  final bool optimistic;
 
   @override
   ConsumerState<DirectMessageComposer> createState() =>
@@ -86,15 +90,18 @@ class DirectMessageComposer extends ConsumerStatefulWidget {
 
 class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   late final TextEditingController _controller;
-  MediaUploadInput? _selectedImage;
+  late final FocusNode _focusNode;
+  final Object _uploadTaskId = Object();
   UploadedEditorImage? _uploadedImage;
-  MediaUploadProgress? _uploadProgress;
-  CancelToken? _uploadCancelToken;
   ApiFailure? _localFailure;
   var _busy = false;
 
-  bool get _lockedByFailedSend => widget.failedDraft != null;
-  bool get _disabled => widget.disabled || _busy || _lockedByFailedSend;
+  bool get _disabled => widget.disabled || _busy;
+  bool get _hasPayload =>
+      normalizeDirectMessageContent(_controller.text).isNotEmpty ||
+      _uploadedImage != null;
+  bool get _showCharacterCount =>
+      _controller.text.length >= (directMessageMaxLength * 0.9).floor();
 
   @override
   void initState() {
@@ -102,19 +109,12 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     _controller = TextEditingController(
       text: widget.failedDraft?.content ?? '',
     );
-  }
-
-  @override
-  void didUpdateWidget(covariant DirectMessageComposer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.failedDraft == null && widget.failedDraft != null) {
-      _controller.text = widget.failedDraft?.content ?? _controller.text;
-    }
+    _focusNode = FocusNode();
   }
 
   @override
   void dispose() {
-    _uploadCancelToken?.cancel('composer disposed');
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -122,188 +122,206 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final uploadState = ref.watch(
+      mediaUploadTaskControllerProvider(_uploadTaskId),
+    );
     final failure = _localFailure ?? widget.failure;
-    return Material(
-      color: tokens.softPanel,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space12,
-            tokens.space12,
-            tokens.space12,
-            tokens.space16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.requestHint != null) ...[
-                Text(
-                  widget.requestHint!,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                SizedBox(height: tokens.space8),
-              ],
-              if (_selectedImage != null) ...[
-                _ImagePreview(
-                  input: _selectedImage!,
-                  onRemove: _disabled ? null : _removeImage,
-                ),
-                SizedBox(height: tokens.space8),
-              ],
-              TextField(
-                key: const Key('direct-message-composer-field'),
-                controller: _controller,
-                enabled: !_disabled,
-                minLines: 2,
-                maxLines: 4,
-                maxLength: directMessageMaxLength,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: widget.placeholder,
-                  counterText: '${_controller.text.length}/1000',
-                ),
-                onChanged: (_) {
-                  if (_localFailure != null) {
-                    setState(() => _localFailure = null);
-                  } else {
-                    setState(() {});
-                  }
-                },
-              ),
-              if (_uploadProgress != null) ...[
-                SizedBox(height: tokens.space8),
-                _UploadProgress(
-                  progress: _uploadProgress!,
-                  onCancel: () => _uploadCancelToken?.cancel('user canceled'),
-                ),
-              ],
-              if (failure != null) ...[
-                SizedBox(height: tokens.space8),
-                WenyouStatusBanner(
-                  key: const Key('direct-message-composer-failure'),
-                  tone: WenyouStatusTone.error,
-                  message: failure.userMessage,
-                  detail: failure.requestId == null
-                      ? null
-                      : '请求 ID：${failure.requestId}',
-                  action: widget.failedDraft == null
-                      ? null
-                      : Wrap(
-                          spacing: tokens.space8,
-                          children: [
-                            TextButton(
-                              key: const Key('direct-message-composer-retry'),
-                              onPressed: _busy ? null : _submit,
-                              child: const Text('使用原请求重试'),
-                            ),
-                            TextButton(
-                              key: const Key('direct-message-composer-abandon'),
-                              onPressed: _busy ? null : _abandonFailedDraft,
-                              child: const Text('放弃本次'),
-                            ),
-                          ],
-                        ),
-                ),
-              ],
-              SizedBox(height: tokens.space8),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    key: const Key('direct-message-composer-image'),
-                    onPressed: _disabled || _selectedImage != null
-                        ? null
-                        : _pickImage,
-                    icon: const Icon(Icons.image_outlined),
-                    label: const Text('图片'),
-                  ),
-                  SizedBox(width: tokens.space8),
-                  if (ref.watch(stickersEnabledProvider)) ...[
-                    IconButton.outlined(
-                      key: const Key('direct-message-composer-sticker'),
-                      onPressed: _disabled ? null : _pickSticker,
-                      tooltip: '表情包',
-                      icon: const Icon(Icons.add_reaction_outlined),
-                    ),
-                    SizedBox(width: tokens.space8),
-                  ],
-                  Expanded(
-                    child: Text(
-                      _selectedImage == null
-                          ? '纯文本；图片最大 10MB'
-                          : '图片使用可访问链接，请勿发送敏感内容',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  SizedBox(width: tokens.space8),
-                  FilledButton.icon(
-                    key: const Key('direct-message-composer-submit'),
-                    onPressed: _disabled ? null : _submit,
-                    icon: _busy
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send_rounded),
-                    label: Text(_submitLabel),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    final uploadLocked = uploadState.isBusy || uploadState.failure != null;
+    final supporting = <Widget>[
+      if (widget.requestHint != null) ...[
+        _ComposerStatusLine(
+          icon: Icons.info_outline_rounded,
+          message: widget.requestHint!,
         ),
+        SizedBox(height: tokens.space8),
+      ],
+      if (_uploadedImage != null) ...[
+        _ImagePreview(
+          image: _uploadedImage!,
+          onRemove: _disabled ? null : _removeImage,
+        ),
+        SizedBox(height: tokens.space8),
+      ],
+      if (uploadState.isBusy) ...[
+        _UploadProgress(
+          state: uploadState,
+          onCancel: () => ref
+              .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+              .cancel(),
+        ),
+        SizedBox(height: tokens.space8),
+      ],
+      if (uploadState.failure case final uploadFailure?) ...[
+        _ComposerStatusLine(
+          key: const Key('direct-message-composer-upload-failure'),
+          icon: Icons.error_outline_rounded,
+          message: uploadFailure.requestId == null
+              ? uploadFailure.userMessage
+              : '${uploadFailure.userMessage} · 请求 ID：${uploadFailure.requestId}',
+          error: true,
+          onRetry: uploadFailure.canRetry ? _retryImageUpload : null,
+          onDismiss: _abandonImageUpload,
+          retryKey: const Key('direct-message-composer-retry-upload'),
+          dismissKey: const Key('direct-message-composer-abandon-upload'),
+        ),
+        SizedBox(height: tokens.space8),
+      ],
+      if (failure != null) ...[
+        _ComposerStatusLine(
+          key: const Key('direct-message-composer-failure'),
+          icon: Icons.error_outline_rounded,
+          message: failure.userMessage,
+          error: true,
+          onRetry: widget.failedDraft == null || _busy
+              ? null
+              : _retryFailedDraft,
+          onDismiss: widget.failedDraft == null
+              ? () => setState(() => _localFailure = null)
+              : _abandonFailedDraft,
+          retryKey: const Key('direct-message-composer-retry'),
+          dismissKey: const Key('direct-message-composer-abandon'),
+        ),
+        SizedBox(height: tokens.space8),
+      ],
+    ];
+    return WenyouInlineComposerDock(
+      controller: _controller,
+      focusNode: _focusNode,
+      fieldKey: const Key('direct-message-composer-field'),
+      dockKey: const Key('direct-message-composer-dock'),
+      placeholder: widget.placeholder,
+      maxLength: directMessageMaxLength,
+      enabled: !widget.disabled,
+      onChanged: (_) {
+        if (_localFailure != null) _localFailure = null;
+        setState(() {});
+      },
+      supporting: supporting,
+      leadingActions: [
+        IconButton(
+          key: const Key('direct-message-composer-image'),
+          onPressed: _disabled || _uploadedImage != null || uploadState.isBusy
+              ? null
+              : _pickImage,
+          tooltip: '添加图片',
+          icon: const Icon(Icons.add_photo_alternate_outlined),
+        ),
+      ],
+      trailingActions: [
+        if (ref.watch(stickersEnabledProvider))
+          IconButton(
+            key: const Key('direct-message-composer-sticker'),
+            onPressed: _disabled ? null : _pickSticker,
+            tooltip: '表情',
+            icon: const Icon(Icons.add_reaction_outlined),
+          ),
+      ],
+      submitAction: IconButton.filled(
+        key: const Key('direct-message-composer-submit'),
+        onPressed: _disabled || uploadLocked || !_hasPayload ? null : _submit,
+        tooltip: _submitLabel(uploadState),
+        icon: _busy
+            ? Semantics(
+                liveRegion: true,
+                label: '消息处理中',
+                child: const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : const Icon(Icons.send_rounded),
       ),
+      characterCountText: _showCharacterCount
+          ? '${directMessageMaxLength - _controller.text.length}'
+          : null,
+      characterCountKey: const Key('direct-message-composer-character-count'),
     );
   }
 
-  String get _submitLabel {
-    final progress = _uploadProgress;
-    if (progress?.stage == MediaUploadStage.uploading &&
+  String _submitLabel(MediaUploadTaskState uploadState) {
+    final progress = uploadState.progress;
+    if (uploadState.phase == MediaUploadTaskPhase.uploading &&
         progress?.fraction != null) {
       return '上传 ${(progress!.fraction! * 100).round()}%';
     }
+    if (uploadState.isBusy) return '图片处理中';
     return _busy ? '处理中' : widget.submitLabel;
   }
 
   Future<void> _pickImage() async {
-    try {
-      final input = await ref.read(editorImagePickerProvider).pickFromGallery();
-      if (!mounted || input == null) return;
+    await _runImageUpload(retry: false);
+  }
+
+  Future<void> _retryImageUpload() async {
+    await _runImageUpload(retry: true);
+  }
+
+  Future<void> _runImageUpload({required bool retry}) async {
+    final shouldRestoreFocus = _focusNode.hasFocus;
+    final selection = _controller.selection;
+    final controller = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    );
+    final image = retry
+        ? await controller.retryUpload()
+        : await controller.pickAndUpload();
+    if (!mounted) return;
+    if (image != null) {
       setState(() {
-        _selectedImage = input;
-        _uploadedImage = null;
+        _uploadedImage = image;
         _localFailure = null;
       });
-    } on Object catch (error) {
-      if (!mounted) return;
-      setState(() => _localFailure = _asFailure(error, '无法读取所选图片。'));
+    }
+    if (shouldRestoreFocus) {
+      _restoreFocus(selection);
     }
   }
 
   void _removeImage() {
-    _uploadCancelToken?.cancel('image removed');
+    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
     setState(() {
-      _selectedImage = null;
       _uploadedImage = null;
-      _uploadProgress = null;
       _localFailure = null;
     });
   }
 
+  void _abandonImageUpload() {
+    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
+  }
+
   Future<void> _submit() async {
     if (_busy || widget.disabled) return;
-    final failedDraft = widget.failedDraft;
     final normalized = normalizeDirectMessageContent(_controller.text);
+    final selection = _controller.selection;
+    final shouldRestoreFocus = _focusNode.hasFocus;
     final validation = validateDirectMessagePayload(
       content: normalized,
-      mediaId: _selectedImage == null ? null : 'pending-image',
-      stickerAssetId: failedDraft?.stickerAssetId,
+      mediaId: _uploadedImage?.mediaId,
+      stickerAssetId: null,
     );
-    if (failedDraft == null && validation != null) {
+    if (validation != null) {
       setState(() => _localFailure = ApiFailure(userMessage: validation));
+      return;
+    }
+    if (widget.optimistic) {
+      final mediaId = _uploadedImage?.mediaId;
+      _controller.clear();
+      setState(() {
+        _uploadedImage = null;
+        _localFailure = null;
+      });
+      ref
+          .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+          .reset();
+      _focusNode.requestFocus();
+      unawaited(
+        _dispatchOptimistic(
+          content: normalized.isEmpty ? null : normalized,
+          mediaId: mediaId,
+          selection: selection,
+          shouldRestoreFocus: shouldRestoreFocus,
+        ),
+      );
       return;
     }
     setState(() {
@@ -311,51 +329,106 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       _localFailure = null;
     });
     try {
-      String? mediaId = failedDraft?.mediaId ?? _uploadedImage?.mediaId;
-      if (failedDraft == null && mediaId == null && _selectedImage != null) {
-        final cancelToken = CancelToken();
-        _uploadCancelToken = cancelToken;
-        _uploadedImage = await ref
-            .read(mediaUploadRepositoryProvider)
-            .uploadImage(
-              _selectedImage!,
-              cancelToken: cancelToken,
-              onProgress: (progress) {
-                if (!mounted) return;
-                setState(() => _uploadProgress = progress);
-              },
-            );
-        mediaId = _uploadedImage!.mediaId;
-      }
+      final content = normalized.isEmpty ? null : normalized;
       final succeeded = await widget.onSend(
-        content:
-            failedDraft?.content ?? (normalized.isEmpty ? null : normalized),
-        mediaId: mediaId,
-        stickerAssetId: failedDraft?.stickerAssetId,
+        content: content,
+        mediaId: _uploadedImage?.mediaId,
       );
       if (!mounted) return;
       if (succeeded) {
         _controller.clear();
-        _selectedImage = null;
         _uploadedImage = null;
+        ref
+            .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+            .reset();
       }
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _localFailure = _asFailure(error, '消息发送失败，请重试。'));
     } finally {
-      _uploadCancelToken = null;
       if (mounted) {
-        setState(() {
-          _busy = false;
-          _uploadProgress = null;
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _dispatchOptimistic({
+    required String? content,
+    required String? mediaId,
+    required TextSelection selection,
+    required bool shouldRestoreFocus,
+  }) async {
+    try {
+      await widget.onSend(content: content, mediaId: mediaId);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _localFailure = _asFailure(error, '消息发送失败，请重试。');
+        _restoreOptimisticText(content, selection);
+      });
+      if (shouldRestoreFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _restoreFocus(_restoredSelection(selection, content));
         });
       }
     }
   }
 
+  void _restoreOptimisticText(String? content, TextSelection selection) {
+    final failedText = content ?? '';
+    if (failedText.isEmpty) return;
+    final currentText = _controller.text;
+    if (currentText.isEmpty) {
+      _controller.text = failedText;
+      _controller.selection = _restoredSelection(selection, content);
+      return;
+    }
+    if (currentText != failedText) {
+      _controller.text = '$failedText\n$currentText';
+      _controller.selection = TextSelection.collapsed(
+        offset: _controller.text.length,
+      );
+    }
+  }
+
+  TextSelection _restoredSelection(
+    TextSelection selection,
+    String? restoredContent,
+  ) {
+    final length = restoredContent?.length ?? 0;
+    return TextSelection(
+      baseOffset: selection.baseOffset.clamp(0, length),
+      extentOffset: selection.extentOffset.clamp(0, length),
+      affinity: selection.affinity,
+      isDirectional: selection.isDirectional,
+    );
+  }
+
   Future<void> _pickSticker() async {
+    final shouldRestoreFocus = _focusNode.hasFocus;
+    final selection = _controller.selection;
     final sticker = await showStickerPicker(context);
-    if (!mounted || sticker == null) return;
+    if (!mounted) return;
+    if (sticker == null) {
+      if (shouldRestoreFocus) _restoreFocus(selection);
+      return;
+    }
+    if (widget.optimistic) {
+      unawaited(
+        widget
+            .onSend(stickerAssetId: sticker.asset.id)
+            .then((succeeded) async {
+              if (succeeded) {
+                await ref
+                    .read(stickerCollectionControllerProvider.notifier)
+                    .load();
+              }
+            })
+            .catchError((_) {}),
+      );
+      if (shouldRestoreFocus) _restoreFocus(selection);
+      return;
+    }
     setState(() {
       _busy = true;
       _localFailure = null;
@@ -369,85 +442,199 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       if (!mounted) return;
       setState(() => _localFailure = _asFailure(error, '表情发送失败，请重试。'));
     } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+        if (shouldRestoreFocus) _restoreFocus(selection);
+      }
+    }
+  }
+
+  Future<void> _retryFailedDraft() async {
+    final draft = widget.failedDraft;
+    if (_busy || widget.disabled || draft == null) return;
+    setState(() {
+      _busy = true;
+      _localFailure = null;
+    });
+    try {
+      await widget.onSend(
+        content: draft.content,
+        mediaId: draft.mediaId,
+        stickerAssetId: draft.stickerAssetId,
+      );
+    } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _restoreFocus(TextSelection selection) {
+    final offset = selection.end.clamp(0, _controller.text.length);
+    _controller.selection = TextSelection.collapsed(offset: offset);
+    _focusNode.requestFocus();
   }
 
   void _abandonFailedDraft() {
     widget.onAbandonFailedDraft?.call();
     setState(() {
-      _controller.clear();
-      _selectedImage = null;
-      _uploadedImage = null;
       _localFailure = null;
     });
   }
 }
 
-class _ImagePreview extends StatelessWidget {
-  const _ImagePreview({required this.input, this.onRemove});
+class _ComposerStatusLine extends StatelessWidget {
+  const _ComposerStatusLine({
+    required this.icon,
+    required this.message,
+    this.error = false,
+    this.onRetry,
+    this.onDismiss,
+    this.retryKey,
+    this.dismissKey,
+    super.key,
+  });
 
-  final MediaUploadInput input;
-  final VoidCallback? onRemove;
+  final IconData icon;
+  final String message;
+  final bool error;
+  final VoidCallback? onRetry;
+  final VoidCallback? onDismiss;
+  final Key? retryKey;
+  final Key? dismissKey;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Stack(
-      clipBehavior: Clip.none,
+    final color = error
+        ? Theme.of(context).colorScheme.error
+        : tokens.mutedText;
+    return Row(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(tokens.radius12),
-          child: Image.memory(
-            input.bytes,
-            width: 160,
-            height: 112,
-            fit: BoxFit.cover,
-            gaplessPlayback: true,
+        Icon(icon, size: 16, color: color),
+        SizedBox(width: tokens.space4),
+        Expanded(
+          child: Text(
+            message,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
           ),
         ),
-        Positioned(
-          right: -8,
-          top: -8,
-          child: IconButton.filled(
-            key: const Key('direct-message-composer-remove-image'),
-            onPressed: onRemove,
-            tooltip: '移除图片',
-            constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-            padding: EdgeInsets.zero,
+        if (onRetry != null)
+          IconButton(
+            key: retryKey,
+            onPressed: onRetry,
+            tooltip: '重试',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+          ),
+        if (onDismiss != null)
+          IconButton(
+            key: dismissKey,
+            onPressed: onDismiss,
+            tooltip: '关闭',
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.close_rounded, size: 18),
           ),
-        ),
       ],
     );
   }
 }
 
-class _UploadProgress extends StatelessWidget {
-  const _UploadProgress({required this.progress, required this.onCancel});
+class _ImagePreview extends StatelessWidget {
+  const _ImagePreview({required this.image, this.onRemove});
 
-  final MediaUploadProgress progress;
+  final UploadedEditorImage image;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return DecoratedBox(
+      key: const Key('direct-message-composer-attachment'),
+      decoration: BoxDecoration(
+        color: tokens.softPanel,
+        borderRadius: BorderRadius.circular(tokens.radius12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(tokens.radius12),
+            child: WenyouCachedImage(
+              imageUrl: image.url,
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
+            ),
+          ),
+          SizedBox(width: tokens.space8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: Text(
+              '[图片]',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          IconButton(
+            key: const Key('direct-message-composer-remove-image'),
+            onPressed: onRemove,
+            tooltip: '移除图片',
+            icon: const Icon(Icons.close_rounded, size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UploadProgress extends StatelessWidget {
+  const _UploadProgress({required this.state, required this.onCancel});
+
+  final MediaUploadTaskState state;
   final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final tokens = context.wenyouTokens;
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(switch (progress.stage) {
-                MediaUploadStage.preparing => '正在准备图片…',
-                MediaUploadStage.uploading => '正在上传图片…',
-                MediaUploadStage.confirming => '正在确认图片…',
-                MediaUploadStage.processing => '正在处理图片…',
-              }, style: Theme.of(context).textTheme.bodySmall),
-            ),
-            TextButton(onPressed: onCancel, child: const Text('取消')),
-          ],
+        SizedBox.square(
+          dimension: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            value: state.progress?.fraction,
+          ),
         ),
-        LinearProgressIndicator(value: progress.fraction),
+        SizedBox(width: tokens.space8),
+        Expanded(
+          child: Text(
+            switch (state.phase) {
+              MediaUploadTaskPhase.picking => '正在打开相册…',
+              MediaUploadTaskPhase.preparing => '正在准备图片…',
+              MediaUploadTaskPhase.uploading
+                  when state.progress?.fraction != null =>
+                '正在上传 ${(state.progress!.fraction! * 100).round()}%',
+              MediaUploadTaskPhase.uploading => '正在上传图片…',
+              MediaUploadTaskPhase.confirming => '正在确认图片…',
+              MediaUploadTaskPhase.processing => '正在处理图片…',
+              MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
+            },
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+        IconButton(
+          key: const Key('direct-message-composer-cancel-upload'),
+          onPressed: onCancel,
+          tooltip: '取消上传',
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.close_rounded, size: 18),
+        ),
       ],
     );
   }
@@ -461,6 +648,11 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
     required this.onRecall,
     this.hideIncomingRequestImage = false,
     this.isRecalling = false,
+    this.isGroupEnd = true,
+    this.failure,
+    this.onRetry,
+    this.onAbandon,
+    this.onVerifyEmail,
     super.key,
   });
 
@@ -469,7 +661,12 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
   final bool hideIncomingRequestImage;
   final bool canRecall;
   final bool isRecalling;
+  final bool isGroupEnd;
+  final ApiFailure? failure;
   final VoidCallback onRecall;
+  final VoidCallback? onRetry;
+  final VoidCallback? onAbandon;
+  final VoidCallback? onVerifyEmail;
 
   @override
   ConsumerState<DirectMessageBubble> createState() =>
@@ -497,146 +694,287 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final scheme = Theme.of(context).colorScheme;
     final media = widget.message.media;
     final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final stickerState = ref.watch(stickerCollectionControllerProvider);
-    final savingSticker =
-        stickerState.action == StickerAction.importing &&
-        stickerState.actionTarget == 'direct:${widget.message.id}';
+    final stickerBusy = media == null || !stickersEnabled
+        ? false
+        : ref.watch(
+            stickerCollectionControllerProvider.select((state) => state.isBusy),
+          );
     final pureSticker =
         media?.isSticker == true && widget.message.content == null;
-    return Align(
-      alignment: widget.mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.76,
-        ),
-        child: Column(
-          crossAxisAlignment: widget.mine
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
+    final sending =
+        widget.message.deliveryState == DirectMessageDeliveryState.sending;
+    final failed =
+        widget.message.deliveryState == DirectMessageDeliveryState.failed;
+    final canSaveSticker = stickersEnabled && media != null && _imageRevealed;
+    final actions = <CustomSemanticsAction, VoidCallback>{
+      if (!widget.message.isRecalled && widget.message.content != null)
+        const CustomSemanticsAction(label: '复制消息'): _copyMessage,
+      if (!widget.message.isRecalled && canSaveSticker && !stickerBusy)
+        const CustomSemanticsAction(label: '收藏表情'): _saveSticker,
+      if (!widget.message.isRecalled && widget.canRecall && !widget.isRecalling)
+        const CustomSemanticsAction(label: '撤回消息'): widget.onRecall,
+      if (failed && widget.onRetry != null)
+        const CustomSemanticsAction(label: '重试发送'): widget.onRetry!,
+      if (failed && widget.onAbandon != null)
+        const CustomSemanticsAction(label: '删除失败消息'): widget.onAbandon!,
+      if (failed &&
+          widget.failure?.businessCode == 40107 &&
+          widget.onVerifyEmail != null)
+        const CustomSemanticsAction(label: '验证邮箱'): widget.onVerifyEmail!,
+    };
+    final maxWidth = MediaQuery.sizeOf(context).width >= 600
+        ? 420.0
+        : widget.mine && (sending || failed)
+        ? MediaQuery.sizeOf(context).width * 0.68
+        : MediaQuery.sizeOf(context).width * 0.8;
+    return Semantics(
+      onLongPress: actions.isEmpty ? null : _showActions,
+      onLongPressHint: actions.isEmpty ? null : '打开消息操作',
+      customSemanticsActions: actions,
+      child: Align(
+        alignment: widget.mine ? Alignment.centerRight : Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: pureSticker
-                    ? Colors.transparent
-                    : widget.mine
-                    ? tokens.brand
-                    : tokens.softPanel,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(tokens.radius16),
-                  topRight: Radius.circular(tokens.radius16),
-                  bottomLeft: Radius.circular(
-                    widget.mine ? tokens.radius16 : tokens.space4,
+            if (widget.mine && (sending || failed)) ...[
+              if (sending)
+                Semantics(
+                  label: '消息发送中',
+                  liveRegion: true,
+                  child: const Padding(
+                    padding: EdgeInsets.only(right: 6, bottom: 8),
+                    child: SizedBox.square(
+                      dimension: 14,
+                      child: CircularProgressIndicator(strokeWidth: 1.5),
+                    ),
                   ),
-                  bottomRight: Radius.circular(
-                    widget.mine ? tokens.space4 : tokens.radius16,
+                )
+              else
+                IconButton(
+                  key: ValueKey(
+                    'direct-message-delivery-failed-${widget.message.id}',
+                  ),
+                  onPressed: _showActions,
+                  tooltip: widget.failure?.userMessage ?? '发送失败，点按处理',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    Icons.error_outline_rounded,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 20,
+                  ),
+                ),
+            ],
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: GestureDetector(
+                key: ValueKey('direct-message-actions-${widget.message.id}'),
+                behavior: HitTestBehavior.opaque,
+                onLongPress: actions.isEmpty ? null : _showActions,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: pureSticker
+                        ? Colors.transparent
+                        : widget.mine
+                        ? tokens.brand
+                        : tokens.softPanel,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(tokens.radius16),
+                      topRight: Radius.circular(tokens.radius16),
+                      bottomLeft: Radius.circular(
+                        !widget.isGroupEnd || widget.mine
+                            ? tokens.radius16
+                            : tokens.space4,
+                      ),
+                      bottomRight: Radius.circular(
+                        !widget.isGroupEnd || !widget.mine
+                            ? tokens.radius16
+                            : tokens.space4,
+                      ),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: pureSticker
+                        ? EdgeInsets.zero
+                        : EdgeInsets.symmetric(
+                            horizontal: tokens.space12,
+                            vertical: tokens.space8,
+                          ),
+                    child: widget.message.isRecalled
+                        ? Text(
+                            widget.mine ? '你撤回了一条消息' : '对方撤回了一条消息',
+                            style: TextStyle(
+                              color: widget.mine
+                                  ? tokens.onBrand.withValues(alpha: 0.82)
+                                  : tokens.mutedText,
+                            ),
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.message.content != null)
+                                Text(
+                                  widget.message.content!,
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(
+                                        color: widget.mine
+                                            ? tokens.onBrand
+                                            : tokens.text,
+                                      ),
+                                ),
+                              if (media != null) ...[
+                                if (widget.message.content != null)
+                                  SizedBox(height: tokens.space8),
+                                if (!_imageRevealed)
+                                  OutlinedButton.icon(
+                                    key: ValueKey(
+                                      'direct-message-reveal-${widget.message.id}',
+                                    ),
+                                    onPressed: () =>
+                                        setState(() => _imageRevealed = true),
+                                    icon: const Icon(Icons.image_outlined),
+                                    label: const Text('点击查看陌生人图片'),
+                                  )
+                                else
+                                  _MessageImage(media: media),
+                              ],
+                              if (media == null &&
+                                  widget.message.content == null &&
+                                  widget.message.localDraft != null)
+                                _OptimisticMediaPlaceholder(
+                                  isSticker:
+                                      widget
+                                          .message
+                                          .localDraft!
+                                          .stickerAssetId !=
+                                      null,
+                                ),
+                            ],
+                          ),
                   ),
                 ),
               ),
-              child: Padding(
-                padding: pureSticker
-                    ? EdgeInsets.zero
-                    : EdgeInsets.symmetric(
-                        horizontal: tokens.space12,
-                        vertical: tokens.space8,
-                      ),
-                child: widget.message.isRecalled
-                    ? Text(
-                        widget.mine ? '你撤回了一条消息' : '对方撤回了一条消息',
-                        style: TextStyle(
-                          color: widget.mine
-                              ? tokens.onBrand.withValues(alpha: 0.82)
-                              : tokens.mutedText,
-                        ),
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (widget.message.content != null)
-                            SelectableText(
-                              widget.message.content!,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    color: widget.mine
-                                        ? tokens.onBrand
-                                        : tokens.text,
-                                  ),
-                            ),
-                          if (media != null) ...[
-                            if (widget.message.content != null)
-                              SizedBox(height: tokens.space8),
-                            if (!_imageRevealed)
-                              OutlinedButton.icon(
-                                key: ValueKey(
-                                  'direct-message-reveal-${widget.message.id}',
-                                ),
-                                onPressed: () =>
-                                    setState(() => _imageRevealed = true),
-                                icon: const Icon(Icons.image_outlined),
-                                label: const Text('点击查看陌生人图片'),
-                              )
-                            else
-                              _MessageImage(media: media),
-                          ],
-                        ],
-                      ),
-              ),
             ),
-            if (!widget.message.isRecalled &&
-                ((stickersEnabled && media != null && _imageRevealed) ||
-                    widget.canRecall)) ...[
-              SizedBox(height: tokens.space4),
-              Wrap(
-                alignment: widget.mine
-                    ? WrapAlignment.end
-                    : WrapAlignment.start,
-                spacing: tokens.space4,
-                children: [
-                  if (stickersEnabled && media != null && _imageRevealed)
-                    TextButton.icon(
-                      key: ValueKey(
-                        'direct-message-save-sticker-${widget.message.id}',
-                      ),
-                      onPressed: stickerState.isBusy ? null : _saveSticker,
-                      style: TextButton.styleFrom(
-                        foregroundColor: scheme.onSurfaceVariant,
-                        minimumSize: const Size(48, 32),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: tokens.space8,
-                        ),
-                      ),
-                      icon: savingSticker
-                          ? const SizedBox.square(
-                              dimension: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add_reaction_outlined, size: 18),
-                      label: Text(savingSticker ? '收藏中' : '收藏表情'),
-                    ),
-                  if (widget.canRecall)
-                    TextButton(
-                      key: ValueKey(
-                        'direct-message-recall-${widget.message.id}',
-                      ),
-                      onPressed: widget.isRecalling ? null : widget.onRecall,
-                      style: TextButton.styleFrom(
-                        foregroundColor: scheme.onSurfaceVariant,
-                        minimumSize: const Size(48, 32),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: tokens.space8,
-                        ),
-                      ),
-                      child: Text(widget.isRecalling ? '撤回中…' : '撤回'),
-                    ),
-                ],
-              ),
-            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _showActions() async {
+    final media = widget.message.media;
+    final stickersEnabled = ref.read(stickersEnabledProvider);
+    final canSaveSticker = stickersEnabled && media != null && _imageRevealed;
+    final stickerBusy = canSaveSticker
+        ? ref.read(stickerCollectionControllerProvider).isBusy
+        : false;
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: context.wenyouTokens.space8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.message.content != null)
+              ListTile(
+                key: ValueKey('direct-message-copy-${widget.message.id}'),
+                leading: const Icon(Icons.content_copy_rounded),
+                title: const Text('复制'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _copyMessage();
+                },
+              ),
+            if (canSaveSticker)
+              ListTile(
+                key: ValueKey(
+                  'direct-message-save-sticker-${widget.message.id}',
+                ),
+                leading: const Icon(Icons.add_reaction_outlined),
+                title: Text(stickerBusy ? '处理中…' : '收藏表情'),
+                onTap: stickerBusy
+                    ? null
+                    : () {
+                        Navigator.pop(sheetContext);
+                        _saveSticker();
+                      },
+              ),
+            if (widget.canRecall)
+              ListTile(
+                key: ValueKey('direct-message-recall-${widget.message.id}'),
+                leading: const Icon(Icons.undo_rounded),
+                title: Text(widget.isRecalling ? '撤回中…' : '撤回'),
+                onTap: widget.isRecalling
+                    ? null
+                    : () {
+                        Navigator.pop(sheetContext);
+                        widget.onRecall();
+                      },
+              ),
+            if (widget.message.deliveryState ==
+                    DirectMessageDeliveryState.failed &&
+                widget.failure?.businessCode == 40107 &&
+                widget.onVerifyEmail != null)
+              ListTile(
+                key: ValueKey(
+                  'direct-message-verify-email-${widget.message.id}',
+                ),
+                leading: const Icon(Icons.mark_email_read_outlined),
+                title: const Text('验证邮箱'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  widget.onVerifyEmail!();
+                },
+              ),
+            if (widget.message.deliveryState ==
+                    DirectMessageDeliveryState.failed &&
+                widget.onRetry != null)
+              ListTile(
+                key: ValueKey('direct-message-retry-${widget.message.id}'),
+                leading: const Icon(Icons.refresh_rounded),
+                title: const Text('重新发送'),
+                subtitle: widget.failure == null
+                    ? null
+                    : Text(
+                        widget.failure!.userMessage,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  widget.onRetry!();
+                },
+              ),
+            if (widget.message.deliveryState ==
+                    DirectMessageDeliveryState.failed &&
+                widget.onAbandon != null)
+              ListTile(
+                key: ValueKey('direct-message-abandon-${widget.message.id}'),
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('删除失败消息'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  widget.onAbandon!();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _copyMessage() async {
+    final content = widget.message.content;
+    if (content == null) return;
+    await Clipboard.setData(ClipboardData(text: content));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('已复制')));
   }
 
   Future<void> _saveSticker() async {
@@ -657,6 +995,30 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _OptimisticMediaPlaceholder extends StatelessWidget {
+  const _OptimisticMediaPlaceholder({required this.isSticker});
+
+  final bool isSticker;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return SizedBox.square(
+      dimension: 72,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: tokens.onBrand.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(tokens.radius12),
+        ),
+        child: Icon(
+          isSticker ? Icons.add_reaction_outlined : Icons.image_outlined,
+          color: tokens.onBrand.withValues(alpha: 0.8),
+        ),
+      ),
+    );
   }
 }
 
@@ -683,9 +1045,11 @@ class _MessageImage extends StatelessWidget {
               maxWidth: maxDimension,
               maxHeight: maxDimension,
             ),
-            child: CachedNetworkImage(
+            child: WenyouCachedImage(
               imageUrl: media.displayUrl,
               fit: BoxFit.contain,
+              cacheWidth: maxDimension.ceil(),
+              cacheHeight: maxDimension.ceil(),
               placeholder: (_, _) => SizedBox.square(
                 dimension: 96,
                 child: ColoredBox(
@@ -723,7 +1087,7 @@ class _MessageImage extends StatelessWidget {
                 minScale: 0.8,
                 maxScale: 4,
                 child: Center(
-                  child: CachedNetworkImage(
+                  child: WenyouCachedImage(
                     imageUrl: media.url,
                     fit: BoxFit.contain,
                     errorWidget: (_, _, _) => const Icon(

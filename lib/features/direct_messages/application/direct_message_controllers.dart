@@ -213,23 +213,27 @@ class DirectConversationController
     this._repository, {
     bool autoStart = true,
     Duration pollInterval = const Duration(seconds: 8),
+    this._catchUpPollInterval = const Duration(seconds: 2),
     DirectMessageRequestIdFactory? requestIdFactory,
     this._onUnreadChanged,
   }) : _requestIdFactory = requestIdFactory ?? const Uuid().v4,
+       _pollInterval = pollInterval,
        super(const DirectConversationState.loading()) {
     if (autoStart) unawaited(loadInitial());
-    if (pollInterval > Duration.zero) {
-      _pollTimer = Timer.periodic(pollInterval, (_) => unawaited(pollLatest()));
-    }
+    _schedulePoll(pollInterval);
   }
 
   final String _conversationId;
   final DirectMessageRepository _repository;
   final DirectMessageRequestIdFactory _requestIdFactory;
+  final Duration _pollInterval;
+  final Duration _catchUpPollInterval;
   final Future<void> Function()? _onUnreadChanged;
   Timer? _pollTimer;
   var _epoch = 0;
   var _polling = false;
+  var _pollingPaused = false;
+  var _catchUpPollsRemaining = 0;
   String? _lastMarkedReadId;
   Future<void>? _markReadInFlight;
 
@@ -262,14 +266,19 @@ class DirectConversationController
     }
   }
 
-  Future<void> refresh() async {
-    if (state.phase != DirectConversationPhase.ready || state.isRefreshing) {
+  Future<void> refresh({bool resetPagination = false}) async {
+    if (state.phase != DirectConversationPhase.ready) {
       await loadInitial();
       return;
     }
+    if (state.isRefreshing) return;
     final epoch = ++_epoch;
     final before = state;
-    state = before.copyWith(isRefreshing: true, transientFailure: null);
+    state = before.copyWith(
+      isRefreshing: true,
+      isLoadingOlder: false,
+      transientFailure: null,
+    );
     try {
       final results = await Future.wait<Object>([
         _repository.fetchConversation(_conversationId),
@@ -279,18 +288,19 @@ class DirectConversationController
       final conversation = results[0] as DirectConversation;
       final page = results[1] as CursorPage<DirectMessage>;
       _validateParticipants(conversation, page.items);
-      state = DirectConversationState(
-        phase: DirectConversationPhase.ready,
+      final current = state;
+      state = current.copyWith(
         conversation: conversation,
-        messages: page.items,
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        failedDraft: before.failedDraft,
+        messages: _mergeMessages(current.messages, page.items),
+        cursor: resetPagination ? page.cursor : current.cursor,
+        hasMore: resetPagination ? page.hasMore : current.hasMore,
+        isRefreshing: false,
+        transientFailure: null,
       );
       unawaited(_markLatestIncomingRead());
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      state = before.copyWith(
+      state = state.copyWith(
         isRefreshing: false,
         transientFailure: _asFailure(error, '私聊会话刷新失败，请重试。'),
       );
@@ -318,14 +328,9 @@ class DirectConversationController
         throw const ApiFailure(userMessage: '私聊会话参与者缺失，请重新加载。');
       }
       _validateParticipants(conversation, page.items);
-      final seen = before.messages.map((item) => item.id).toSet();
-      state = before.copyWith(
-        messages: List.unmodifiable(
-          <DirectMessage>[
-            ...page.items.where((item) => seen.add(item.id)),
-            ...before.messages,
-          ]..sort(_compareMessages),
-        ),
+      final current = state;
+      state = current.copyWith(
+        messages: _mergeMessages(current.messages, page.items),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingOlder: false,
@@ -333,13 +338,13 @@ class DirectConversationController
     } on ApiFailure catch (failure) {
       if (!mounted || epoch != _epoch) return;
       if (failure.isInvalidCursor) {
-        await refresh();
+        await refresh(resetPagination: true);
         return;
       }
-      state = before.copyWith(isLoadingOlder: false, transientFailure: failure);
+      state = state.copyWith(isLoadingOlder: false, transientFailure: failure);
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      state = before.copyWith(
+      state = state.copyWith(
         isLoadingOlder: false,
         transientFailure: _asFailure(error, '更早消息没有加载完成。'),
       );
@@ -351,13 +356,16 @@ class DirectConversationController
         _polling ||
         state.phase != DirectConversationPhase.ready ||
         state.isRefreshing ||
-        state.messages.isEmpty) {
+        _pollingPaused) {
       return;
     }
     _polling = true;
     final epoch = _epoch;
     try {
-      var anchor = state.messages.last.id;
+      var anchor = state.messages
+          .where((message) => !message.isOptimistic)
+          .lastOrNull
+          ?.id;
       var rounds = 0;
       do {
         final page = await _repository.fetchMessages(
@@ -365,18 +373,13 @@ class DirectConversationController
           after: anchor,
           limit: 50,
         );
-        if (!mounted || epoch != _epoch || state.isMutating) return;
+        if (!mounted || epoch != _epoch || _pollingPaused) return;
         final conversation = state.conversation;
         if (conversation == null) return;
         _validateParticipants(conversation, page.items);
         if (page.items.isNotEmpty) {
-          final seen = state.messages.map((item) => item.id).toSet();
-          final merged = [
-            ...state.messages,
-            ...page.items.where((item) => seen.add(item.id)),
-          ]..sort(_compareMessages);
           state = state.copyWith(
-            messages: List.unmodifiable(merged),
+            messages: _mergeMessages(state.messages, page.items),
             transientFailure: null,
           );
           anchor = page.items.last.id;
@@ -388,7 +391,7 @@ class DirectConversationController
     } on ApiFailure catch (failure) {
       if (!mounted || epoch != _epoch) return;
       if (failure.isInvalidCursor) {
-        await refresh();
+        await refresh(resetPagination: true);
       }
     } on Object {
       // 轮询失败保持当前可读记录；显式刷新仍会展示诊断请求 ID。
@@ -402,25 +405,15 @@ class DirectConversationController
     String? mediaId,
     String? stickerAssetId,
   }) async {
-    if (state.phase != DirectConversationPhase.ready || state.isMutating) {
+    if (state.phase != DirectConversationPhase.ready) {
       return false;
     }
     final conversation = state.conversation;
     if (conversation == null || !conversation.canSend) return false;
-    final previous = state.failedDraft;
-    final requestId =
-        previous?.samePayload(
-              content: content,
-              mediaId: mediaId,
-              stickerAssetId: stickerAssetId,
-            ) ??
-            false
-        ? previous!.clientRequestId
-        : _requestIdFactory();
     late final DirectMessageDraft draft;
     try {
       draft = DirectMessageDraft.normalized(
-        clientRequestId: requestId,
+        clientRequestId: _requestIdFactory(),
         content: content,
         mediaId: mediaId,
         stickerAssetId: stickerAssetId,
@@ -429,11 +422,56 @@ class DirectConversationController
       state = state.copyWith(transientFailure: _asFailure(error, '消息内容不符合要求。'));
       return false;
     }
-    final before = state;
-    state = before.copyWith(
-      action: DirectConversationAction.sending,
+    final optimistic = DirectMessage.optimistic(
+      conversationId: _conversationId,
+      recipientId: conversation.otherUser.id,
+      draft: draft,
+      createdAt: DateTime.now().toUtc(),
+    );
+    state = state.copyWith(
+      messages: _mergeMessages(state.messages, [optimistic]),
       transientFailure: null,
     );
+    return _deliverOptimistic(optimistic.id);
+  }
+
+  Future<bool> retryMessage(String optimisticMessageId) async {
+    final message = state.messages
+        .where((item) => item.id == optimisticMessageId)
+        .firstOrNull;
+    if (state.phase != DirectConversationPhase.ready ||
+        message?.deliveryState != DirectMessageDeliveryState.failed ||
+        message?.localDraft == null) {
+      return false;
+    }
+    final failures = Map<String, ApiFailure>.of(state.sendFailures)
+      ..remove(optimisticMessageId);
+    state = state.copyWith(
+      messages: state.messages
+          .map(
+            (item) => item.id == optimisticMessageId
+                ? item.copyWith(
+                    deliveryState: DirectMessageDeliveryState.sending,
+                  )
+                : item,
+          )
+          .toList(growable: false),
+      failedDraft: null,
+      sendFailures: Map.unmodifiable(failures),
+      transientFailure: null,
+    );
+    return _deliverOptimistic(optimisticMessageId);
+  }
+
+  Future<bool> _deliverOptimistic(String optimisticMessageId) async {
+    final optimistic = state.messages
+        .where((item) => item.id == optimisticMessageId)
+        .firstOrNull;
+    final conversation = state.conversation;
+    final draft = optimistic?.localDraft;
+    if (optimistic == null || conversation == null || draft == null) {
+      return false;
+    }
     try {
       final message = await _repository.sendMessage(
         conversationId: _conversationId,
@@ -441,42 +479,80 @@ class DirectConversationController
       );
       if (!mounted) return false;
       _validateParticipants(conversation, [message], requireOutgoing: true);
-      final seen = before.messages.map((item) => item.id).toSet();
-      final merged = [...before.messages, if (seen.add(message.id)) message]
-        ..sort(_compareMessages);
-      state = before.copyWith(
-        messages: List.unmodifiable(merged),
-        action: null,
-        actionTargetId: null,
-        transientFailure: null,
-        failedDraft: null,
+      final remaining = state.messages.where(
+        (item) => item.id != optimisticMessageId && item.id != message.id,
       );
+      final failures = Map<String, ApiFailure>.of(state.sendFailures)
+        ..remove(optimisticMessageId);
+      state = state.copyWith(
+        messages: _mergeMessages(remaining, [message]),
+        transientFailure: null,
+        failedDraft: state.failedDraft?.clientRequestId == draft.clientRequestId
+            ? null
+            : state.failedDraft,
+        sendFailures: Map.unmodifiable(failures),
+      );
+      _beginCatchUpPolling();
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      state = before.copyWith(
-        action: null,
-        actionTargetId: null,
-        transientFailure: _asFailure(error, '消息发送失败，请使用原请求重试。'),
+      final failure = _asFailure(error, '消息发送失败，请使用原请求重试。');
+      final failures = Map<String, ApiFailure>.of(state.sendFailures)
+        ..[optimisticMessageId] = failure;
+      state = state.copyWith(
+        messages: state.messages
+            .map(
+              (item) => item.id == optimisticMessageId
+                  ? item.copyWith(
+                      deliveryState: DirectMessageDeliveryState.failed,
+                    )
+                  : item,
+            )
+            .toList(growable: false),
+        transientFailure: null,
         failedDraft: draft,
+        sendFailures: Map.unmodifiable(failures),
       );
       return false;
     }
   }
 
   Future<bool> retrySend() async {
-    final draft = state.failedDraft;
-    if (draft == null) return false;
-    return send(
-      content: draft.content,
-      mediaId: draft.mediaId,
-      stickerAssetId: draft.stickerAssetId,
-    );
+    final message = state.messages
+        .where(
+          (item) => item.deliveryState == DirectMessageDeliveryState.failed,
+        )
+        .lastOrNull;
+    return message == null ? false : retryMessage(message.id);
   }
 
   void abandonFailedDraft() {
-    if (state.isMutating || state.failedDraft == null) return;
-    state = state.copyWith(failedDraft: null, transientFailure: null);
+    final message = state.messages
+        .where(
+          (item) => item.deliveryState == DirectMessageDeliveryState.failed,
+        )
+        .lastOrNull;
+    if (message != null) abandonFailedMessage(message.id);
+  }
+
+  void abandonFailedMessage(String optimisticMessageId) {
+    final message = state.messages
+        .where((item) => item.id == optimisticMessageId)
+        .firstOrNull;
+    if (message?.deliveryState != DirectMessageDeliveryState.failed) return;
+    final failures = Map<String, ApiFailure>.of(state.sendFailures)
+      ..remove(optimisticMessageId);
+    state = state.copyWith(
+      messages: state.messages
+          .where((item) => item.id != optimisticMessageId)
+          .toList(growable: false),
+      failedDraft:
+          state.failedDraft?.clientRequestId == message?.clientRequestId
+          ? null
+          : state.failedDraft,
+      sendFailures: Map.unmodifiable(failures),
+      transientFailure: null,
+    );
   }
 
   Future<bool> handleRequest({required bool accept}) async {
@@ -500,11 +576,12 @@ class DirectConversationController
         accept: accept,
       );
       if (!mounted) return false;
-      state = before.copyWith(
+      final current = state;
+      state = current.copyWith(
         conversation: updated,
-        messages: accept ? before.messages : const [],
-        cursor: accept ? before.cursor : null,
-        hasMore: accept && before.hasMore,
+        messages: accept ? current.messages : const [],
+        cursor: accept ? current.cursor : null,
+        hasMore: accept && current.hasMore,
         action: null,
         actionTargetId: null,
         transientFailure: null,
@@ -513,7 +590,7 @@ class DirectConversationController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      state = before.copyWith(
+      state = state.copyWith(
         action: null,
         actionTargetId: null,
         transientFailure: _asFailure(error, '消息请求处理失败，请重试。'),
@@ -541,7 +618,7 @@ class DirectConversationController
         archived: archived,
       );
       if (!mounted) return false;
-      state = before.copyWith(
+      state = state.copyWith(
         conversation: updated,
         action: null,
         actionTargetId: null,
@@ -550,7 +627,7 @@ class DirectConversationController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      state = before.copyWith(
+      state = state.copyWith(
         action: null,
         actionTargetId: null,
         transientFailure: _asFailure(error, '会话归档操作失败，请重试。'),
@@ -593,7 +670,7 @@ class DirectConversationController
       final result = await _repository.recall(messageId);
       if (!mounted) return false;
       if (result.conversationCanceled) {
-        state = before.copyWith(
+        state = state.copyWith(
           messages: const [],
           action: null,
           actionTargetId: null,
@@ -601,8 +678,8 @@ class DirectConversationController
           conversationCanceled: true,
         );
       } else {
-        state = before.copyWith(
-          messages: before.messages
+        state = state.copyWith(
+          messages: state.messages
               .map(
                 (item) =>
                     item.id == messageId ? item.asRecalled(timestamp) : item,
@@ -617,7 +694,7 @@ class DirectConversationController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      state = before.copyWith(
+      state = state.copyWith(
         action: null,
         actionTargetId: null,
         transientFailure: _asFailure(error, '消息撤回失败，请重试。'),
@@ -628,33 +705,50 @@ class DirectConversationController
 
   Future<void> _markLatestIncomingRead() async {
     final conversation = state.conversation;
-    if (conversation == null || conversation.unreadCount <= 0) return;
-    final incoming = state.messages
-        .where((message) => message.senderId == conversation.otherUser.id)
-        .lastOrNull;
-    if (incoming == null ||
-        incoming.id == _lastMarkedReadId ||
-        _markReadInFlight != null) {
+    if (conversation == null) return;
+    final incoming = _latestIncomingMessage();
+    if (incoming == null || incoming.id == _lastMarkedReadId) {
       return;
     }
+    if (_markReadInFlight != null) return;
+    final targetId = incoming.id;
     final operation = _repository.markRead(
       conversationId: _conversationId,
-      throughMessageId: incoming.id,
+      throughMessageId: targetId,
     );
     _markReadInFlight = operation;
+    var marked = false;
     try {
       await operation;
       if (!mounted) return;
-      _lastMarkedReadId = incoming.id;
-      state = state.copyWith(
-        conversation: state.conversation?.copyWith(unreadCount: 0),
-      );
+      marked = true;
+      _lastMarkedReadId = targetId;
+      if (_latestIncomingMessage()?.id == targetId) {
+        state = state.copyWith(
+          conversation: state.conversation?.copyWith(unreadCount: 0),
+        );
+      }
       await _notifyUnreadChanged();
     } on Object {
       // 保留服务端未读事实；下次增量轮询或显式刷新会再次尝试。
     } finally {
       _markReadInFlight = null;
+      if (mounted &&
+          marked &&
+          _latestIncomingMessage()?.id != _lastMarkedReadId) {
+        unawaited(_markLatestIncomingRead());
+      }
     }
+  }
+
+  DirectMessage? _latestIncomingMessage() {
+    final otherUserId = state.conversation?.otherUser.id;
+    if (otherUserId == null) return null;
+    return state.messages
+        .where(
+          (message) => !message.isOptimistic && message.senderId == otherUserId,
+        )
+        .lastOrNull;
   }
 
   Future<void> _notifyUnreadChanged() async {
@@ -663,6 +757,57 @@ class DirectConversationController
     } on Object {
       // 会话操作已经成功，角标校准失败不回滚业务结果。
     }
+  }
+
+  void pausePolling() {
+    _pollingPaused = true;
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  void resumePolling() {
+    if (!mounted) return;
+    _pollingPaused = false;
+    _beginCatchUpPolling();
+    unawaited(pollLatest());
+  }
+
+  void _beginCatchUpPolling() {
+    if (_pollingPaused || _pollInterval <= Duration.zero) return;
+    _catchUpPollsRemaining = 3;
+    _schedulePoll(_catchUpPollInterval);
+  }
+
+  void _schedulePoll(Duration interval) {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    if (_pollingPaused || interval <= Duration.zero) return;
+    _pollTimer = Timer(interval, () {
+      unawaited(pollLatest());
+      if (_catchUpPollsRemaining > 0) {
+        _catchUpPollsRemaining--;
+        _schedulePoll(
+          _catchUpPollsRemaining > 0 ? _catchUpPollInterval : _pollInterval,
+        );
+      } else {
+        _schedulePoll(_pollInterval);
+      }
+    });
+  }
+
+  List<DirectMessage> _mergeMessages(
+    Iterable<DirectMessage> current,
+    Iterable<DirectMessage> incoming,
+  ) {
+    final byId = <String, DirectMessage>{};
+    for (final message in current) {
+      byId[message.id] = message;
+    }
+    for (final message in incoming) {
+      byId[message.id] = message;
+    }
+    final merged = byId.values.toList()..sort(_compareMessages);
+    return List.unmodifiable(merged);
   }
 
   int _compareMessages(DirectMessage left, DirectMessage right) {

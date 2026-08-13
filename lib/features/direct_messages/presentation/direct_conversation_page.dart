@@ -20,16 +20,16 @@ class DirectConversationPage extends ConsumerStatefulWidget {
       _DirectConversationPageState();
 }
 
-class _DirectConversationPageState
-    extends ConsumerState<DirectConversationPage> {
-  final _scrollController = ScrollController();
+class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
+    with WidgetsBindingObserver {
+  final _scrollController = ScrollController(keepScrollOffset: false);
   Timer? _clockTimer;
   var _now = DateTime.now();
-  String? _lastMessageId;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _clockTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -37,9 +37,26 @@ class _DirectConversationPageState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clockTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final notifier = ref.read(
+      directConversationControllerProvider(widget.conversationId).notifier,
+    );
+    switch (state) {
+      case AppLifecycleState.resumed:
+        notifier.resumePolling();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        notifier.pausePolling();
+    }
   }
 
   @override
@@ -51,8 +68,8 @@ class _DirectConversationPageState
     );
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
-    _scheduleInitialOrOwnMessageScroll(state);
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(context, state, notifier),
       body: switch (state.phase) {
         DirectConversationPhase.loading => const Center(
@@ -69,11 +86,13 @@ class _DirectConversationPageState
           onRefresh: notifier.refresh,
           onLoadOlder: notifier.loadOlder,
           onSend: notifier.send,
-          onAbandonFailedDraft: notifier.abandonFailedDraft,
+          onRetryMessage: notifier.retryMessage,
+          onAbandonFailedMessage: notifier.abandonFailedMessage,
           onAccept: () => _handleRequest(context, notifier, accept: true),
           onDecline: () => _handleRequest(context, notifier, accept: false),
           onRecall: (message) => _recall(context, notifier, message),
           onVerifyEmail: () => _verifyEmail(context, notifier),
+          onVerifyFailedMessage: (_) => _verifyFailedMessage(context),
         ),
       },
     );
@@ -106,6 +125,7 @@ class _DirectConversationPageState
                   SizedBox(width: context.wenyouTokens.space8),
                   Flexible(
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -114,10 +134,12 @@ class _DirectConversationPageState
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        Text(
-                          _conversationSubtitle(conversation),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+                        if (_conversationSubtitle(conversation)
+                            case final subtitle?)
+                          Text(
+                            subtitle,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                       ],
                     ),
                   ),
@@ -126,47 +148,30 @@ class _DirectConversationPageState
             ),
       actions: [
         if (canArchive)
-          IconButton(
+          PopupMenuButton<_ConversationMenuAction>(
             key: const Key('direct-conversation-archive'),
-            onPressed: state.isMutating || state.isRefreshing
-                ? null
-                : () => _toggleArchive(context, notifier, conversation),
-            tooltip: conversation.archivedAt == null ? '归档会话' : '移回会话列表',
-            icon: state.action == DirectConversationAction.archiving
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
+            enabled: !state.isMutating && !state.isRefreshing,
+            tooltip: '更多会话操作',
+            onSelected: (_) => _toggleArchive(context, notifier, conversation),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: _ConversationMenuAction.toggleArchive,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
                     conversation.archivedAt == null
                         ? Icons.archive_outlined
                         : Icons.unarchive_outlined,
                   ),
+                  title: Text(
+                    conversation.archivedAt == null ? '归档会话' : '移回会话列表',
+                  ),
+                ),
+              ),
+            ],
           ),
       ],
     );
-  }
-
-  void _scheduleInitialOrOwnMessageScroll(DirectConversationState state) {
-    final last = state.messages.lastOrNull;
-    final conversation = state.conversation;
-    if (last == null || conversation == null || last.id == _lastMessageId) {
-      return;
-    }
-    final initial = _lastMessageId == null;
-    final ownMessage = last.isMine(conversation.otherUser.id);
-    _lastMessageId = last.id;
-    if (!initial && !ownMessage) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: initial
-            ? Duration.zero
-            : context.wenyouTokens.feedbackDuration,
-        curve: Curves.easeOut,
-      );
-    });
   }
 
   Future<void> _toggleArchive(
@@ -235,6 +240,16 @@ class _DirectConversationPageState
     }
   }
 
+  Future<void> _verifyFailedMessage(BuildContext context) async {
+    final returnTo = '/messages/${widget.conversationId}';
+    await context.pushNamed<bool>(
+      'verify-email',
+      queryParameters: {'returnTo': returnTo},
+    );
+    // The failed bubble intentionally stays in the timeline after returning.
+    // Retrying remains an explicit user action and reuses its original idempotency key.
+  }
+
   Future<void> _recall(
     BuildContext context,
     DirectConversationController notifier,
@@ -291,11 +306,13 @@ class _ReadyConversation extends StatelessWidget {
     required this.onRefresh,
     required this.onLoadOlder,
     required this.onSend,
-    required this.onAbandonFailedDraft,
+    required this.onRetryMessage,
+    required this.onAbandonFailedMessage,
     required this.onAccept,
     required this.onDecline,
     required this.onRecall,
     required this.onVerifyEmail,
+    required this.onVerifyFailedMessage,
   });
 
   final DirectConversationState state;
@@ -309,11 +326,13 @@ class _ReadyConversation extends StatelessWidget {
     String? stickerAssetId,
   })
   onSend;
-  final VoidCallback onAbandonFailedDraft;
+  final ValueChanged<String> onRetryMessage;
+  final ValueChanged<String> onAbandonFailedMessage;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final ValueChanged<DirectMessage> onRecall;
   final VoidCallback onVerifyEmail;
+  final ValueChanged<String> onVerifyFailedMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -360,17 +379,18 @@ class _ReadyConversation extends StatelessWidget {
               controller: scrollController,
               onLoadOlder: onLoadOlder,
               onRecall: onRecall,
+              onRetryMessage: onRetryMessage,
+              onAbandonFailedMessage: onAbandonFailedMessage,
+              onVerifyFailedMessage: onVerifyFailedMessage,
             ),
           ),
         ),
         if (conversation.canSend)
           DirectMessageComposer(
+            optimistic: true,
             disabled:
                 state.isMutating &&
                 state.action != DirectConversationAction.sending,
-            failure: state.failedDraft == null ? null : state.transientFailure,
-            failedDraft: state.failedDraft,
-            onAbandonFailedDraft: onAbandonFailedDraft,
             onSend: ({content, mediaId, stickerAssetId}) => onSend(
               content: content,
               mediaId: mediaId,
@@ -405,12 +425,7 @@ class _IncomingRequestPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('这是对方发来的消息请求', style: Theme.of(context).textTheme.titleSmall),
-            SizedBox(height: tokens.space4),
-            Text(
-              '接受后可继续对话；拒绝会删除首条消息且对方不能再次主动申请。',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text('消息请求', style: Theme.of(context).textTheme.titleSmall),
             SizedBox(height: tokens.space8),
             Row(
               children: [
@@ -448,13 +463,16 @@ class _IncomingRequestPanel extends StatelessWidget {
   }
 }
 
-class _MessageTimeline extends StatelessWidget {
+class _MessageTimeline extends StatefulWidget {
   const _MessageTimeline({
     required this.state,
     required this.now,
     required this.controller,
     required this.onLoadOlder,
     required this.onRecall,
+    required this.onRetryMessage,
+    required this.onAbandonFailedMessage,
+    required this.onVerifyFailedMessage,
   });
 
   final DirectConversationState state;
@@ -462,6 +480,148 @@ class _MessageTimeline extends StatelessWidget {
   final ScrollController controller;
   final VoidCallback onLoadOlder;
   final ValueChanged<DirectMessage> onRecall;
+  final ValueChanged<String> onRetryMessage;
+  final ValueChanged<String> onAbandonFailedMessage;
+  final ValueChanged<String> onVerifyFailedMessage;
+
+  @override
+  State<_MessageTimeline> createState() => _MessageTimelineState();
+}
+
+class _MessageTimelineState extends State<_MessageTimeline> {
+  static const _followThreshold = 96.0;
+
+  var _isNearBottom = true;
+  var _unseenIncomingCount = 0;
+
+  DirectConversationState get state => widget.state;
+  ScrollController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller.addListener(_handleScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MessageTimeline oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != controller) {
+      oldWidget.controller.removeListener(_handleScroll);
+      controller.addListener(_handleScroll);
+    }
+    _handleTimelineUpdate(oldWidget.state, state);
+  }
+
+  @override
+  void dispose() {
+    controller.removeListener(_handleScroll);
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!controller.hasClients) return;
+    final nearBottom = _isAtLatestEdge();
+    if (nearBottom == _isNearBottom &&
+        (!nearBottom || _unseenIncomingCount == 0)) {
+      return;
+    }
+    setState(() {
+      _isNearBottom = nearBottom;
+      if (nearBottom) _unseenIncomingCount = 0;
+    });
+  }
+
+  void _handleTimelineUpdate(
+    DirectConversationState previous,
+    DirectConversationState current,
+  ) {
+    final before = previous.messages;
+    final after = current.messages;
+    if (after.isEmpty || _sameMessageOrder(before, after)) return;
+    if (before.isEmpty) {
+      _scheduleJumpToBottom();
+      return;
+    }
+
+    final previousFirstIndex = after.indexWhere(
+      (message) => message.id == before.first.id,
+    );
+    final prepended = previousFirstIndex > 0 && after.last.id == before.last.id;
+    if (prepended) {
+      return;
+    }
+
+    final previousLastIndex = after.indexWhere(
+      (message) => message.id == before.last.id,
+    );
+    if (previousLastIndex < 0) {
+      final replacedOptimistic =
+          before.last.clientRequestId != null &&
+          after.any(
+            (message) => message.clientRequestId == before.last.clientRequestId,
+          );
+      final nearBottomNow = controller.hasClients
+          ? _isAtLatestEdge()
+          : _isNearBottom;
+      if (replacedOptimistic && nearBottomNow) _scheduleJumpToBottom();
+      return;
+    }
+    if (previousLastIndex == after.length - 1) return;
+    final appended = after.sublist(previousLastIndex + 1);
+    final conversation = current.conversation;
+    if (conversation == null) return;
+    final hasOwnMessage = appended.any(
+      (message) => message.isMine(conversation.otherUser.id),
+    );
+    final incomingCount = appended
+        .where((message) => !message.isMine(conversation.otherUser.id))
+        .length;
+    final nearBottomNow = controller.hasClients
+        ? _isAtLatestEdge()
+        : _isNearBottom;
+    if (nearBottomNow || hasOwnMessage) {
+      _scheduleJumpToBottom();
+      return;
+    }
+    if (incomingCount > 0) {
+      setState(() => _unseenIncomingCount += incomingCount);
+    }
+  }
+
+  bool _sameMessageOrder(
+    List<DirectMessage> before,
+    List<DirectMessage> after,
+  ) {
+    if (before.length != after.length) return false;
+    for (var index = 0; index < before.length; index += 1) {
+      if (before[index].id != after[index].id) return false;
+    }
+    return true;
+  }
+
+  void _scheduleJumpToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !controller.hasClients) return;
+      controller.jumpTo(controller.position.minScrollExtent);
+      if (_unseenIncomingCount != 0 || !_isNearBottom) {
+        setState(() {
+          _unseenIncomingCount = 0;
+          _isNearBottom = true;
+        });
+      }
+    });
+  }
+
+  void _jumpToBottom() {
+    if (!controller.hasClients) return;
+    controller.jumpTo(controller.position.minScrollExtent);
+  }
+
+  bool _isAtLatestEdge() {
+    final position = controller.position;
+    return position.pixels - position.minScrollExtent <= _followThreshold;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -477,100 +637,151 @@ class _MessageTimeline extends StatelessWidget {
           WenyouEmptyState(
             icon: Icons.chat_bubble_outline_rounded,
             title: '暂无可显示消息',
-            message: '会话状态变化后可下拉重新加载。',
+            message: '',
           ),
         ],
       );
     }
-    return ListView.builder(
-      key: const PageStorageKey('direct-message-timeline'),
-      controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        tokens.space12,
-        tokens.space12,
-        tokens.space12,
-        tokens.space24,
-      ),
-      itemCount: headerCount + state.messages.length,
-      itemBuilder: (context, index) {
-        if (headerCount == 1 && index == 0) {
-          if (state.transientFailure != null && state.hasMore) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: tokens.space12),
-              child: WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.transientFailure!.userMessage,
-                detail: state.transientFailure!.requestId == null
-                    ? null
-                    : '请求 ID：${state.transientFailure!.requestId}',
-                action: TextButton(
-                  key: const Key('direct-conversation-load-older-retry'),
-                  onPressed: onLoadOlder,
-                  child: const Text('重试加载'),
+    return Stack(
+      children: [
+        ListView.builder(
+          key: const PageStorageKey('direct-message-timeline'),
+          controller: controller,
+          addAutomaticKeepAlives: false,
+          reverse: true,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            tokens.space12,
+            tokens.space12,
+            tokens.space12,
+            tokens.space24,
+          ),
+          itemCount: headerCount + state.messages.length,
+          itemBuilder: (context, index) {
+            if (index == state.messages.length && headerCount == 1) {
+              if (state.transientFailure != null && state.hasMore) {
+                return Padding(
+                  padding: EdgeInsets.only(bottom: tokens.space12),
+                  child: WenyouStatusBanner(
+                    tone: WenyouStatusTone.error,
+                    message: state.transientFailure!.userMessage,
+                    detail: state.transientFailure!.requestId == null
+                        ? null
+                        : '请求 ID：${state.transientFailure!.requestId}',
+                    action: TextButton(
+                      key: const Key('direct-conversation-load-older-retry'),
+                      onPressed: widget.onLoadOlder,
+                      child: const Text('重试加载'),
+                    ),
+                  ),
+                );
+              }
+              return Padding(
+                padding: EdgeInsets.only(bottom: tokens.space12),
+                child: Center(
+                  child: TextButton.icon(
+                    key: const Key('direct-conversation-load-older'),
+                    onPressed: state.isLoadingOlder ? null : widget.onLoadOlder,
+                    icon: state.isLoadingOlder
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.history_rounded),
+                    label: Text(state.isLoadingOlder ? '正在加载' : '查看更早消息'),
+                  ),
                 ),
+              );
+            }
+            final messageIndex = state.messages.length - index - 1;
+            final message = state.messages[messageIndex];
+            final previous = messageIndex == 0
+                ? null
+                : state.messages[messageIndex - 1];
+            final next = messageIndex == state.messages.length - 1
+                ? null
+                : state.messages[messageIndex + 1];
+            final mine = message.isMine(conversation.otherUser.id);
+            final canRecall =
+                mine &&
+                message.deliveryState == DirectMessageDeliveryState.sent &&
+                !message.isRecalled &&
+                widget.now.difference(message.createdAt.toLocal()) <=
+                    const Duration(minutes: 10);
+            final showTime =
+                previous == null ||
+                message.createdAt.difference(previous.createdAt) >=
+                    const Duration(minutes: 5);
+            final groupEnds =
+                next == null ||
+                next.senderId != message.senderId ||
+                next.createdAt.difference(message.createdAt) >=
+                    const Duration(minutes: 5);
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: groupEnds ? tokens.space12 : tokens.space4,
+              ),
+              child: Column(
+                children: [
+                  if (showTime) ...[
+                    Text(
+                      _formatMessageTime(message.createdAt, widget.now),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    SizedBox(height: tokens.space8),
+                  ],
+                  DirectMessageBubble(
+                    key: ValueKey('direct-message-${message.id}'),
+                    message: message,
+                    mine: mine,
+                    hideIncomingRequestImage:
+                        conversation.isIncomingRequest && !mine,
+                    canRecall: canRecall,
+                    isRecalling:
+                        state.action == DirectConversationAction.recalling &&
+                        state.actionTargetId == message.id,
+                    isGroupEnd: groupEnds,
+                    failure: state.sendFailures[message.id],
+                    onRetry:
+                        message.deliveryState ==
+                            DirectMessageDeliveryState.failed
+                        ? () => widget.onRetryMessage(message.id)
+                        : null,
+                    onAbandon:
+                        message.deliveryState ==
+                            DirectMessageDeliveryState.failed
+                        ? () => widget.onAbandonFailedMessage(message.id)
+                        : null,
+                    onVerifyEmail:
+                        message.deliveryState ==
+                                DirectMessageDeliveryState.failed &&
+                            state.sendFailures[message.id]?.businessCode ==
+                                40107
+                        ? () => widget.onVerifyFailedMessage(message.id)
+                        : null,
+                    onRecall: () => widget.onRecall(message),
+                  ),
+                ],
               ),
             );
-          }
-          return Padding(
-            padding: EdgeInsets.only(bottom: tokens.space12),
-            child: Center(
-              child: TextButton.icon(
-                key: const Key('direct-conversation-load-older'),
-                onPressed: state.isLoadingOlder ? null : onLoadOlder,
-                icon: state.isLoadingOlder
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.history_rounded),
-                label: Text(state.isLoadingOlder ? '正在加载' : '查看更早消息'),
+          },
+        ),
+        if (_unseenIncomingCount > 0)
+          Positioned(
+            right: tokens.space12,
+            bottom: tokens.space8,
+            child: FilledButton.tonalIcon(
+              key: const Key('direct-conversation-new-messages'),
+              onPressed: _jumpToBottom,
+              icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+              label: Text('$_unseenIncomingCount 条新消息'),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                elevation: 2,
               ),
             ),
-          );
-        }
-        final messageIndex = index - headerCount;
-        final message = state.messages[messageIndex];
-        final previous = messageIndex == 0
-            ? null
-            : state.messages[messageIndex - 1];
-        final mine = message.isMine(conversation.otherUser.id);
-        final canRecall =
-            mine &&
-            !message.isRecalled &&
-            now.difference(message.createdAt.toLocal()) <=
-                const Duration(minutes: 10);
-        final showTime =
-            previous == null ||
-            message.createdAt.difference(previous.createdAt) >=
-                const Duration(minutes: 5);
-        return Padding(
-          padding: EdgeInsets.only(bottom: tokens.space12),
-          child: Column(
-            children: [
-              if (showTime) ...[
-                Text(
-                  _formatMessageTime(message.createdAt, now),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                SizedBox(height: tokens.space8),
-              ],
-              DirectMessageBubble(
-                key: ValueKey('direct-message-${message.id}'),
-                message: message,
-                mine: mine,
-                hideIncomingRequestImage:
-                    conversation.isIncomingRequest && !mine,
-                canRecall: canRecall,
-                isRecalling:
-                    state.action == DirectConversationAction.recalling &&
-                    state.actionTargetId == message.id,
-                onRecall: () => onRecall(message),
-              ),
-            ],
           ),
-        );
-      },
+      ],
     );
   }
 }
@@ -653,12 +864,14 @@ class _DirectConversationUnavailablePage extends StatelessWidget {
   }
 }
 
-String _conversationSubtitle(DirectConversation conversation) {
+enum _ConversationMenuAction { toggleArchive }
+
+String? _conversationSubtitle(DirectConversation conversation) {
   if (conversation.isIncomingRequest) return '发来的消息请求';
   if (conversation.isOutgoingRequest) return '等待对方接受';
   if (conversation.isBlocked) return '互动受限';
   if (conversation.otherUser.isDeactivated) return '已注销用户';
-  return '私聊';
+  return null;
 }
 
 String _sendingDisabledReason(DirectConversation conversation) {

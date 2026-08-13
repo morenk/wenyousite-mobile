@@ -71,8 +71,6 @@
     "lib/features/auth/application/registration_controller.dart->lib/features/auth/data/auth_repository.dart",
     "lib/features/direct_messages/application/direct_message_controllers.dart->lib/features/direct_messages/data/direct_message_repository.dart",
     "lib/features/direct_messages/application/direct_message_controllers.dart->lib/features/users/data/public_user_repository.dart",
-    "lib/features/direct_messages/presentation/direct_message_widgets.dart->lib/features/media/data/editor_image_picker.dart",
-    "lib/features/direct_messages/presentation/direct_message_widgets.dart->lib/features/media/data/media_upload_repository.dart",
     "lib/features/drafts/application/content_drafts_controller.dart->lib/features/drafts/data/content_draft_repository.dart",
     "lib/features/editor/application/mention_candidates_controller.dart->lib/features/editor/data/mention_candidate_repository.dart",
     "lib/features/editor/application/remote_thread_drafts_controller.dart->lib/features/editor/data/thread_compose_repository.dart",

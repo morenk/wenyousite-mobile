@@ -11,7 +11,7 @@ import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
 
 void main() {
-  testWidgets('私信中心展示未读摘要、三类列表并进入稳定会话路由', (tester) async {
+  testWidgets('私信中心展示三类列表、精简预览并进入稳定会话路由', (tester) async {
     final repository = _FakeRepository();
     final router = _router();
     addTearDown(router.dispose);
@@ -23,14 +23,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2 条未读 · 1 个待处理请求'), findsOneWidget);
+    expect(
+      find.byKey(const Key('direct-messages-unread-summary')),
+      findsNothing,
+    );
     expect(find.text('小油'), findsOneWidget);
     expect(find.text('你好'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
 
     await tester.tap(find.text('请求 1'));
     await tester.pumpAndSettle();
     expect(repository.views.last, DirectConversationView.requests);
-    expect(find.text('[消息请求] 想和你聊聊'), findsOneWidget);
+    expect(find.text('想和你聊聊'), findsOneWidget);
+    expect(find.text('[消息请求] 想和你聊聊'), findsNothing);
 
     await tester.tap(
       find.byKey(const ValueKey('direct-conversation-request-1')),
@@ -61,7 +66,7 @@ void main() {
     expect(find.text('第二位用户'), findsOneWidget);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 私信中心无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 760);

@@ -44,6 +44,8 @@ enum DirectConversationStatus { pending, accepted, declined, canceled, unknown }
 
 enum DirectRequestDirection { none, incoming, outgoing, unknown }
 
+enum DirectMessageDeliveryState { sent, sending, failed }
+
 enum DirectContactState {
   fresh,
   pending,
@@ -269,7 +271,29 @@ class DirectMessage {
     this.content,
     this.media,
     this.recalledAt,
+    this.deliveryState = DirectMessageDeliveryState.sent,
+    this.clientRequestId,
+    this.localDraft,
   });
+
+  factory DirectMessage.optimistic({
+    required String conversationId,
+    required String recipientId,
+    required DirectMessageDraft draft,
+    required DateTime createdAt,
+  }) {
+    return DirectMessage(
+      id: 'optimistic:${draft.clientRequestId}',
+      conversationId: conversationId,
+      senderId: 'local:self',
+      recipientId: recipientId,
+      content: draft.content,
+      createdAt: createdAt,
+      deliveryState: DirectMessageDeliveryState.sending,
+      clientRequestId: draft.clientRequestId,
+      localDraft: draft,
+    );
+  }
 
   final String id;
   final String conversationId;
@@ -279,9 +303,37 @@ class DirectMessage {
   final DirectMessageMedia? media;
   final DateTime? recalledAt;
   final DateTime createdAt;
+  final DirectMessageDeliveryState deliveryState;
+  final String? clientRequestId;
+  final DirectMessageDraft? localDraft;
 
   bool get isRecalled => recalledAt != null;
+  bool get isOptimistic => deliveryState != DirectMessageDeliveryState.sent;
   bool isMine(String otherUserId) => senderId != otherUserId;
+
+  DirectMessage copyWith({
+    DirectMessageDeliveryState? deliveryState,
+    Object? clientRequestId = _unset,
+    Object? localDraft = _unset,
+  }) {
+    return DirectMessage(
+      id: id,
+      conversationId: conversationId,
+      senderId: senderId,
+      recipientId: recipientId,
+      content: content,
+      media: media,
+      recalledAt: recalledAt,
+      createdAt: createdAt,
+      deliveryState: deliveryState ?? this.deliveryState,
+      clientRequestId: identical(clientRequestId, _unset)
+          ? this.clientRequestId
+          : clientRequestId as String?,
+      localDraft: identical(localDraft, _unset)
+          ? this.localDraft
+          : localDraft as DirectMessageDraft?,
+    );
+  }
 
   DirectMessage asRecalled(DateTime timestamp) {
     return DirectMessage(
@@ -291,6 +343,9 @@ class DirectMessage {
       recipientId: recipientId,
       recalledAt: timestamp,
       createdAt: createdAt,
+      deliveryState: deliveryState,
+      clientRequestId: clientRequestId,
+      localDraft: localDraft,
     );
   }
 }

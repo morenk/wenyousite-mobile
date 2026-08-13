@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,9 +13,16 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_page.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('已接受会话可发送、撤回并切换归档状态', (tester) async {
     final repository = _FakeRepository();
     final router = _router();
@@ -29,15 +40,27 @@ void main() {
       find.byKey(const Key('direct-message-composer-field')),
       '发送内容',
     );
+    await tester.pump();
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(repository.sentDrafts.single.content, '发送内容');
     expect(find.text('发送内容'), findsOneWidget);
 
-    final recall = find.byKey(const ValueKey('direct-message-recall-sent-1'));
-    await tester.ensureVisible(recall);
-    await tester.tap(recall);
+    final sentBubble = find.byKey(
+      const ValueKey('direct-message-actions-sent-1'),
+    );
+    await tester.ensureVisible(sentBubble);
+    expect(
+      find.byKey(const ValueKey('direct-message-recall-sent-1')),
+      findsNothing,
+    );
+    await tester.longPress(sentBubble);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('direct-message-recall-sent-1')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('direct-conversation-recall-confirm')),
@@ -48,8 +71,341 @@ void main() {
 
     await tester.tap(find.byKey(const Key('direct-conversation-archive')));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('归档会话'));
+    await tester.pumpAndSettle();
     expect(repository.archiveValues, [true]);
-    expect(find.byIcon(Icons.unarchive_outlined), findsOneWidget);
+    expect(find.byTooltip('更多会话操作'), findsOneWidget);
+  });
+
+  testWidgets('发送失败只标记对应气泡并可原位重试', (tester) async {
+    final repository = _FakeRepository(failSendOnce: true);
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('direct-message-composer-field')),
+      '稍后重试',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final failed = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'direct-message-delivery-failed-',
+          ),
+    );
+    expect(failed, findsOneWidget);
+    await tester.tap(failed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final retry = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'direct-message-retry-',
+          ),
+    );
+    await tester.tap(retry);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(repository.sentDrafts, hasLength(2));
+    expect(find.text('稍后重试'), findsOneWidget);
+    expect(failed, findsNothing);
+  });
+
+  testWidgets('图片上传失败保留正文、选区与焦点并提供同文件重试', (tester) async {
+    final repository = _FakeRepository();
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ..._overrides(repository),
+          editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
+          mediaUploadGatewayPortProvider.overrideWithValue(
+            _FailingMediaUploadGateway(),
+          ),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const Key('direct-message-composer-field'));
+    final emptySend = tester.widget<IconButton>(
+      find.byKey(const Key('direct-message-composer-submit')),
+    );
+    expect(emptySend.onPressed, isNull);
+    await tester.enterText(field, '带图消息');
+    await tester.tapAt(tester.getTopLeft(field) + const Offset(24, 20));
+    await tester.pump();
+    final editable = tester.widget<EditableText>(
+      find.byType(EditableText).last,
+    );
+    final expectedSelection = editable.controller.selection;
+    await tester.tap(find.byKey(const Key('direct-message-composer-image')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('带图消息'), findsOneWidget);
+    expect(
+      find.byKey(const Key('direct-message-composer-upload-failure')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('direct-message-composer-retry-upload')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('direct-message-composer-attachment')),
+      findsNothing,
+    );
+    final restored = tester.widget<EditableText>(
+      find.byType(EditableText).last,
+    );
+    expect(restored.focusNode.hasFocus, isTrue);
+    expect(restored.controller.selection, expectedSelection);
+    expect(repository.sentDrafts, isEmpty);
+  });
+
+  testWidgets('图片上传失败后重试同一文件，完成后才允许发送', (tester) async {
+    final repository = _FakeRepository();
+    final router = _router();
+    final gateway = _RetryingMediaUploadGateway();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ..._overrides(repository),
+          editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('direct-message-composer-field')),
+      '重试图片',
+    );
+    await tester.tap(find.byKey(const Key('direct-message-composer-image')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.inputs, hasLength(1));
+    expect(
+      find.byKey(const Key('direct-message-composer-retry-upload')),
+      findsOneWidget,
+    );
+    var send = tester.widget<IconButton>(
+      find.byKey(const Key('direct-message-composer-submit')),
+    );
+    expect(send.onPressed, isNull);
+
+    await tester.tap(
+      find.byKey(const Key('direct-message-composer-retry-upload')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(gateway.inputs, hasLength(2));
+    expect(identical(gateway.inputs.first, gateway.inputs.last), isTrue);
+    expect(
+      find.byKey(const Key('direct-message-composer-attachment')),
+      findsOneWidget,
+    );
+    send = tester.widget<IconButton>(
+      find.byKey(const Key('direct-message-composer-submit')),
+    );
+    expect(send.onPressed, isNotNull);
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(repository.sentDrafts.single.content, '重试图片');
+    expect(repository.sentDrafts.single.mediaId, 'media-retried');
+  });
+
+  testWidgets('图片上传中取消会立即解除等待并保留正文', (tester) async {
+    final repository = _FakeRepository();
+    final router = _router();
+    final gateway = _BlockingMediaUploadGateway();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ..._overrides(repository),
+          editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const Key('direct-message-composer-field'));
+    await tester.enterText(field, '取消后保留');
+    await tester.tap(find.byKey(const Key('direct-message-composer-image')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('正在上传 50%'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('direct-message-composer-submit')),
+          )
+          .onPressed,
+      isNull,
+    );
+
+    await tester.tap(
+      find.byKey(const Key('direct-message-composer-cancel-upload')),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(gateway.operation.cancelled, isTrue);
+    expect(find.text('取消后保留'), findsOneWidget);
+    expect(find.text('正在上传 50%'), findsNothing);
+    expect(
+      find.byKey(const Key('direct-message-composer-upload-failure')),
+      findsNothing,
+    );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('direct-message-composer-submit')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(repository.sentDrafts, isEmpty);
+  });
+
+  testWidgets('40107 失败气泡提供验证邮箱入口且返回后保留原位重试', (tester) async {
+    final repository = _FakeRepository(
+      failSendOnce: true,
+      sendFailure: const ApiFailure(
+        userMessage: '请先完成邮箱验证。',
+        businessCode: 40107,
+      ),
+    );
+    final router = _router(verifyResult: true);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('direct-message-composer-field')),
+      '验证后发送',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final failed = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'direct-message-delivery-failed-',
+          ),
+    );
+    await tester.tap(failed);
+    await tester.pumpAndSettle();
+    final verify = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'direct-message-verify-email-',
+          ),
+    );
+    expect(verify, findsOneWidget);
+    await tester.tap(verify);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('finish-email-verification')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('finish-email-verification')));
+    await tester.pumpAndSettle();
+
+    expect(failed, findsOneWidget);
+    await tester.tap(failed);
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget.key is ValueKey<String> &&
+            (widget.key! as ValueKey<String>).value.startsWith(
+              'direct-message-retry-',
+            ),
+      ),
+      findsOneWidget,
+    );
+    expect(repository.sentDrafts, hasLength(1));
+  });
+
+  testWidgets('连续消息保持紧凑分组且组末才有方向尾角', (tester) async {
+    final createdAt = DateTime.now().subtract(const Duration(minutes: 2));
+    final repository = _FakeRepository(
+      messages: [
+        _textMessage(
+          id: 'group-first',
+          senderId: 'user-2',
+          content: '第一条',
+          createdAt: createdAt,
+        ),
+        _textMessage(
+          id: 'group-last',
+          senderId: 'user-2',
+          content: '第二条',
+          createdAt: createdAt.add(const Duration(seconds: 20)),
+        ),
+      ],
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    BorderRadius radiusOf(String id) {
+      final bubble = find.byKey(ValueKey('direct-message-actions-$id'));
+      final decorated = find.descendant(
+        of: bubble,
+        matching: find.byType(DecoratedBox),
+      );
+      final decoration =
+          tester.widget<DecoratedBox>(decorated.first).decoration
+              as BoxDecoration;
+      return decoration.borderRadius! as BorderRadius;
+    }
+
+    final first = radiusOf('group-first');
+    final last = radiusOf('group-last');
+    expect(first.bottomLeft, first.bottomRight);
+    expect(last.bottomLeft.x, lessThan(last.bottomRight.x));
   });
 
   testWidgets('陌生消息请求图片默认隐藏，接受后才开放发送', (tester) async {
@@ -110,7 +466,118 @@ void main() {
     );
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  testWidgets('阅读历史时收到新消息不抢滚动并显示回到底部入口', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final base = DateTime.now().subtract(const Duration(minutes: 30));
+    final repository = _FakeRepository(
+      messages: [
+        for (var index = 0; index < 24; index += 1)
+          _textMessage(
+            id: 'message-$index',
+            senderId: index.isEven ? 'user-2' : 'user-1',
+            content: '用于填满时间线的消息 $index',
+            createdAt: base.add(Duration(minutes: index)),
+          ),
+      ],
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final timeline = find.byKey(
+      const PageStorageKey('direct-message-timeline'),
+    );
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(of: timeline, matching: find.byType(Scrollable)),
+    );
+    scrollable.position.jumpTo(
+      (scrollable.position.minScrollExtent + 360).clamp(
+        scrollable.position.minScrollExtent,
+        scrollable.position.maxScrollExtent,
+      ),
+    );
+    await tester.pump();
+    expect(
+      scrollable.position.pixels - scrollable.position.minScrollExtent,
+      greaterThan(96),
+    );
+    repository.pendingAfterMessages.add(
+      _textMessage(
+        id: 'incoming-new',
+        senderId: 'user-2',
+        content: '一条新消息',
+        createdAt: DateTime.now(),
+      ),
+    );
+    final container = ProviderScope.containerOf(tester.element(timeline));
+    final conversationProvider = directConversationControllerProvider(
+      'conversation-1',
+    );
+    await container.read(conversationProvider.notifier).pollLatest();
+    await tester.pumpAndSettle();
+    expect(
+      container.read(conversationProvider).messages.last.id,
+      'incoming-new',
+    );
+
+    final jump = find.byKey(const Key('direct-conversation-new-messages'));
+    expect(jump, findsOneWidget);
+    expect(find.text('1 条新消息'), findsOneWidget);
+    await tester.tap(jump);
+    await tester.pump();
+    expect(jump, findsNothing);
+    expect(find.text('一条新消息'), findsOneWidget);
+  });
+
+  testWidgets('首次进入长会话直接停留在最新消息且不恢复历史位置', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final base = DateTime.now().subtract(const Duration(minutes: 30));
+    final repository = _FakeRepository(
+      messages: [
+        for (var index = 0; index < 30; index += 1)
+          _textMessage(
+            id: 'initial-$index',
+            senderId: index.isEven ? 'user-2' : 'user-1',
+            content: '初始消息 $index',
+            createdAt: base.add(Duration(minutes: index)),
+          ),
+      ],
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final timeline = find.byKey(
+      const PageStorageKey('direct-message-timeline'),
+    );
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(of: timeline, matching: find.byType(Scrollable)),
+    );
+    expect(scrollable.position.pixels, scrollable.position.minScrollExtent);
+    expect(find.text('初始消息 29'), findsOneWidget);
+    expect(find.text('初始消息 0'), findsNothing);
+    expect(tester.widget<ListView>(timeline).reverse, isTrue);
+  });
+
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 会话与输入器无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 760);
@@ -132,6 +599,173 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('360dp 私信输入 dock 随键盘避让且发送操作保持可见', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+    final repository = _FakeRepository();
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const Key('direct-message-composer-field'));
+    final send = find.byKey(const Key('direct-message-composer-submit'));
+    final dock = find.byKey(const Key('direct-message-composer-dock'));
+    final unobstructedBottom = tester.getBottomRight(send).dy;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pump();
+    final firstInsetFrameBottom = tester.getBottomRight(send).dy;
+
+    expect(firstInsetFrameBottom, lessThan(unobstructedBottom));
+    expect(tester.getBottomRight(send).dy, lessThanOrEqualTo(460));
+    expect(tester.getCenter(field).dy, closeTo(tester.getCenter(send).dy, 8));
+    expect(dock, findsOneWidget);
+    expect(
+      find.descendant(of: dock, matching: find.byType(AnimatedPadding)),
+      findsNothing,
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.getBottomRight(send).dy, firstInsetFrameBottom);
+    expect(find.text('0/1000'), findsNothing);
+    expect(
+      find.byKey(const Key('direct-message-composer-character-count')),
+      findsNothing,
+    );
+    await tester.enterText(field, '长' * 900);
+    await tester.pump();
+    expect(find.text('100'), findsOneWidget);
+    expect(
+      find.byKey(const Key('direct-message-composer-character-count')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final scale in [1.3, 2.0]) {
+    testWidgets('320dp 与 $scale 倍字体下键盘态无溢出', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+      final repository = _FakeRepository();
+      final router = _router();
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: _overrides(repository),
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            routerConfig: router,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('direct-message-composer-submit')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('360dp 键盘态私信输入 dock 视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+    final repository = _FakeRepository(
+      messages: [
+        _textMessage(
+          id: 'golden-keyboard-incoming',
+          senderId: 'user-2',
+          content: '你好',
+          createdAt: DateTime(2024, 1, 1, 9),
+        ),
+      ],
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('direct-message-composer-dock')),
+      matchesGoldenFile('goldens/direct_message_composer_keyboard_360.png'),
+    );
+  });
+
+  testWidgets('600dp 私信气泡分组视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(600, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final base = DateTime(2024, 1, 1, 9);
+    final repository = _FakeRepository(
+      messages: [
+        _textMessage(
+          id: 'golden-incoming-1',
+          senderId: 'user-2',
+          content: '今天的团期还是晚上八点。',
+          createdAt: base,
+        ),
+        _textMessage(
+          id: 'golden-incoming-2',
+          senderId: 'user-2',
+          content: '地图和人物卡我已经整理好了。',
+          createdAt: base.add(const Duration(seconds: 30)),
+        ),
+        _textMessage(
+          id: 'golden-mine',
+          senderId: 'user-1',
+          content: '收到，我会提前上线。',
+          createdAt: base.add(const Duration(minutes: 1)),
+        ),
+      ],
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const PageStorageKey('direct-message-timeline')),
+      matchesGoldenFile('goldens/direct_conversation_bubbles_600.png'),
+    );
+  });
 }
 
 List<Override> _overrides(_FakeRepository repository) {
@@ -152,7 +786,7 @@ List<Override> _overrides(_FakeRepository repository) {
   ];
 }
 
-GoRouter _router() {
+GoRouter _router({bool verifyResult = false}) {
   return GoRouter(
     initialLocation: '/messages/conversation-1',
     routes: [
@@ -171,7 +805,13 @@ GoRouter _router() {
       GoRoute(
         path: '/me/security/verify-email',
         name: 'verify-email',
-        builder: (_, _) => const Scaffold(body: Text('验证邮箱')),
+        builder: (context, _) => Scaffold(
+          body: TextButton(
+            key: const Key('finish-email-verification'),
+            onPressed: () => context.pop(verifyResult),
+            child: const Text('完成验证'),
+          ),
+        ),
       ),
     ],
   );
@@ -182,12 +822,17 @@ class _FakeRepository implements DirectMessageRepository {
     DirectConversation? conversation,
     List<DirectMessage>? messages,
     this.failAcceptOnce = false,
+    this.failSendOnce = false,
+    this.sendFailure,
   }) : conversation = conversation ?? _acceptedConversation(),
        messages = messages ?? [_incomingTextMessage()];
 
   DirectConversation conversation;
   final List<DirectMessage> messages;
+  final List<DirectMessage> pendingAfterMessages = [];
   bool failAcceptOnce;
+  bool failSendOnce;
+  final ApiFailure? sendFailure;
   final List<DirectMessageDraft> sentDrafts = [];
   final List<String> recalledIds = [];
   final List<bool> archiveValues = [];
@@ -205,10 +850,12 @@ class _FakeRepository implements DirectMessageRepository {
     String? after,
     int limit = 30,
   }) async {
-    return CursorPage(
-      items: after == null ? messages : const [],
-      hasMore: false,
-    );
+    if (after != null) {
+      final pending = List<DirectMessage>.of(pendingAfterMessages);
+      pendingAfterMessages.clear();
+      return CursorPage(items: pending, hasMore: false);
+    }
+    return CursorPage(items: List.unmodifiable(messages), hasMore: false);
   }
 
   @override
@@ -217,6 +864,10 @@ class _FakeRepository implements DirectMessageRepository {
     required DirectMessageDraft draft,
   }) async {
     sentDrafts.add(draft);
+    if (failSendOnce) {
+      failSendOnce = false;
+      throw sendFailure ?? const ApiFailure(userMessage: '网络暂时不可用。');
+    }
     final message = DirectMessage(
       id: 'sent-1',
       conversationId: conversationId,
@@ -295,6 +946,108 @@ class _FakeRepository implements DirectMessageRepository {
   }) => throw UnimplementedError();
 }
 
+class _FakeImagePicker implements EditorImagePicker {
+  @override
+  Future<MediaUploadInput?> pickFromGallery() async {
+    return MediaUploadInput(
+      filename: 'draft.png',
+      declaredContentType: 'image/png',
+      bytes: Uint8List.fromList(
+        base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        ),
+      ),
+    );
+  }
+}
+
+class _FailingMediaUploadGateway implements MediaUploadGateway {
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: 1,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return _TestMediaUploadOperation(
+      Future.error(const ApiFailure(userMessage: '图片上传失败。')),
+    );
+  }
+}
+
+class _RetryingMediaUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    inputs.add(input);
+    if (inputs.length == 1) {
+      return _TestMediaUploadOperation(
+        Future.error(const ApiFailure(userMessage: '请稍后重试上传。')),
+      );
+    }
+    return _TestMediaUploadOperation(
+      Future.value(
+        const UploadedEditorImage(
+          mediaId: 'media-retried',
+          url: 'https://wenyou.site/media/retried.png',
+        ),
+      ),
+    );
+  }
+}
+
+class _BlockingMediaUploadGateway implements MediaUploadGateway {
+  final operation = _BlockingMediaUploadOperation();
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length ~/ 2,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return operation;
+  }
+}
+
+class _BlockingMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  final Completer<UploadedEditorImage> _result =
+      Completer<UploadedEditorImage>();
+  var cancelled = false;
+
+  @override
+  Future<UploadedEditorImage> get result => _result.future;
+
+  @override
+  void cancel() => cancelled = true;
+}
+
+class _TestMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  _TestMediaUploadOperation(this.result);
+
+  @override
+  final Future<UploadedEditorImage> result;
+
+  @override
+  void cancel() {}
+}
+
 DirectMessageUser _user() {
   return const DirectMessageUser(
     id: 'user-2',
@@ -356,6 +1109,22 @@ DirectMessage _incomingTextMessage() {
     recipientId: 'user-1',
     content: '你好',
     createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+  );
+}
+
+DirectMessage _textMessage({
+  required String id,
+  required String senderId,
+  required String content,
+  required DateTime createdAt,
+}) {
+  return DirectMessage(
+    id: id,
+    conversationId: 'conversation-1',
+    senderId: senderId,
+    recipientId: senderId == 'user-2' ? 'user-1' : 'user-2',
+    content: content,
+    createdAt: createdAt,
   );
 }
 

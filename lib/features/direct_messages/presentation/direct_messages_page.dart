@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -63,22 +62,7 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
     );
     if (widget.embedded) return body;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('私信'),
-        actions: [
-          IconButton(
-            key: const Key('direct-messages-refresh'),
-            onPressed: state.isRefreshing ? null : notifier.refresh,
-            tooltip: '刷新私信',
-            icon: state.isRefreshing
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('私信')),
       body: body,
     );
   }
@@ -125,47 +109,27 @@ class _DirectMessageViewBar extends StatelessWidget {
           tokens.space12,
           tokens.space12,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    unread.total == 0
-                        ? '所有私信均已处理'
-                        : '${unread.unreadMessages} 条未读 · '
-                              '${unread.pendingRequests} 个待处理请求',
-                    key: const Key('direct-messages-unread-summary'),
-                    style: Theme.of(context).textTheme.bodySmall,
+        child: SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<DirectConversationView>(
+            showSelectedIcon: false,
+            selected: {selected},
+            onSelectionChanged: enabled
+                ? (values) => onSelected(values.single)
+                : null,
+            segments: [
+              for (final view in DirectConversationView.values)
+                ButtonSegment(
+                  value: view,
+                  label: Text(
+                    view == DirectConversationView.requests &&
+                            unread.pendingRequests > 0
+                        ? '${view.label} ${unread.pendingRequests}'
+                        : view.label,
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: tokens.space8),
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<DirectConversationView>(
-                showSelectedIcon: false,
-                selected: {selected},
-                onSelectionChanged: enabled
-                    ? (values) => onSelected(values.single)
-                    : null,
-                segments: [
-                  for (final view in DirectConversationView.values)
-                    ButtonSegment(
-                      value: view,
-                      label: Text(
-                        view == DirectConversationView.requests &&
-                                unread.pendingRequests > 0
-                            ? '${view.label} ${unread.pendingRequests}'
-                            : view.label,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -205,9 +169,7 @@ class _DirectConversationList extends StatelessWidget {
                 DirectConversationView.requests => '暂无消息请求',
                 DirectConversationView.archived => '暂无归档会话',
               },
-              message: state.view == DirectConversationView.inbox
-                  ? '可从其他用户的公开主页发起私聊。'
-                  : '下拉可以重新读取服务端状态。',
+              message: '',
             ),
           ],
         ),
@@ -216,6 +178,7 @@ class _DirectConversationList extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.separated(
+        addAutomaticKeepAlives: false,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: _pagePadding(context),
         itemCount:
@@ -274,11 +237,11 @@ class _DirectConversationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final previewPrefix = conversation.isIncomingRequest
-        ? '[消息请求] '
-        : conversation.isOutgoingRequest
-        ? '[等待接受] '
-        : '';
+    final unread = conversation.unreadCount > 0;
+    final previewStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: unread ? tokens.text : tokens.mutedText,
+      fontWeight: unread ? FontWeight.w600 : FontWeight.normal,
+    );
     return Semantics(
       button: true,
       label: '打开与 ${conversation.otherUser.username} 的私聊',
@@ -304,16 +267,22 @@ class _DirectConversationCard extends StatelessWidget {
                               conversation.otherUser.username,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleSmall,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    fontWeight: unread
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
                             ),
                           ),
                           if (conversation.lastMessageAt != null) ...[
                             SizedBox(width: tokens.space8),
                             Text(
-                              DateFormat(
-                                'MM-dd HH:mm',
-                              ).format(conversation.lastMessageAt!.toLocal()),
-                              style: Theme.of(context).textTheme.bodySmall,
+                              _relativeConversationTime(
+                                conversation.lastMessageAt!.toLocal(),
+                              ),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(color: tokens.mutedText),
                             ),
                           ],
                         ],
@@ -323,10 +292,10 @@ class _DirectConversationCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              '$previewPrefix${conversation.lastMessage?.displayText ?? '暂无消息'}',
+                              conversation.lastMessage?.displayText ?? '暂无消息',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall,
+                              style: previewStyle,
                             ),
                           ),
                           if (conversation.unreadCount > 0) ...[
@@ -347,8 +316,6 @@ class _DirectConversationCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(width: tokens.space4),
-                Icon(Icons.chevron_right_rounded, color: tokens.mutedText),
               ],
             ),
           ),
@@ -357,6 +324,25 @@ class _DirectConversationCard extends StatelessWidget {
     );
   }
 }
+
+String _relativeConversationTime(DateTime value, {DateTime? now}) {
+  final current = (now ?? DateTime.now()).toLocal();
+  final local = value.toLocal();
+  final today = DateTime(current.year, current.month, current.day);
+  final date = DateTime(local.year, local.month, local.day);
+  final dayDifference = today.difference(date).inDays;
+  if (dayDifference == 0) return _twoDigitsTime(local);
+  if (dayDifference == 1) return '昨天';
+  if (dayDifference > 1 && dayDifference < 7) {
+    return const ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][local.weekday - 1];
+  }
+  return '${local.month.toString().padLeft(2, '0')}-'
+      '${local.day.toString().padLeft(2, '0')}';
+}
+
+String _twoDigitsTime(DateTime value) =>
+    '${value.hour.toString().padLeft(2, '0')}:'
+    '${value.minute.toString().padLeft(2, '0')}';
 
 class _DirectListFailure extends StatelessWidget {
   const _DirectListFailure({required this.state, required this.onRetry});

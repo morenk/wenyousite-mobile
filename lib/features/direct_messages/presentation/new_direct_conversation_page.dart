@@ -30,6 +30,7 @@ class _NewDirectConversationPageState
     final notifier = ref.read(provider.notifier);
     _redirectExisting(state);
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('发起私聊')),
       body: switch (state.phase) {
         DirectConversationTargetPhase.loading => const Center(
@@ -189,10 +190,11 @@ class _TargetReady extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       SizedBox(height: tokens.space4),
-                      Text(
-                        copy.headerSubtitle!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      if (copy.headerSubtitle != null)
+                        Text(
+                          copy.headerSubtitle!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),
@@ -259,7 +261,6 @@ class _TargetReady extends StatelessWidget {
           disabled: state.isSending,
           submitLabel: copy.submitLabel!,
           placeholder: '礼貌地介绍一下来意…',
-          requestHint: copy.composerHint,
           failure: state.failure,
           failedDraft: state.failedDraft,
           onAbandonFailedDraft: onAbandonFailedDraft,
@@ -327,14 +328,12 @@ class _EntryCopy {
   const _EntryCopy.disabled({required this.title, required this.description})
     : canInitiate = false,
       headerSubtitle = null,
-      composerHint = null,
       submitLabel = null;
 
   const _EntryCopy.enabled({
     required this.title,
     required this.description,
-    required this.headerSubtitle,
-    required this.composerHint,
+    this.headerSubtitle,
     required this.submitLabel,
   }) : canInitiate = true;
 
@@ -342,7 +341,6 @@ class _EntryCopy {
   final String title;
   final String description;
   final String? headerSubtitle;
-  final String? composerHint;
   final String? submitLabel;
 }
 
@@ -370,15 +368,12 @@ _EntryCopy _entryCopy(DirectConversationLookup lookup, DirectMessageUser user) {
       title: '你曾拒绝过对方的消息请求',
       description: '现在由你主动发送消息，会直接建立私聊。',
       headerSubtitle: '由你主动重新建立私聊',
-      composerHint: '发送后会直接建立私聊，无需再次处理请求。',
       submitLabel: '建立私聊',
     );
   }
   return const _EntryCopy.enabled(
     title: '这会先作为消息请求',
     description: '若你们尚未互相关注，对方接受前只能发送这一条消息。',
-    headerSubtitle: '发送首条消息或消息请求',
-    composerHint: '服务端会按双方关系决定直接建立会话或等待对方接受。',
     submitLabel: '发送',
   );
 }

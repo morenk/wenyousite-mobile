@@ -97,6 +97,7 @@ class DirectConversationState {
     this.action,
     this.actionTargetId,
     this.failedDraft,
+    this.sendFailures = const {},
     this.conversationCanceled = false,
   });
 
@@ -115,6 +116,7 @@ class DirectConversationState {
   final DirectConversationAction? action;
   final String? actionTargetId;
   final DirectMessageDraft? failedDraft;
+  final Map<String, ApiFailure> sendFailures;
   final bool conversationCanceled;
 
   bool get isMutating => action != null;
@@ -132,6 +134,7 @@ class DirectConversationState {
     Object? action = _unset,
     Object? actionTargetId = _unset,
     Object? failedDraft = _unset,
+    Map<String, ApiFailure>? sendFailures,
     bool? conversationCanceled,
   }) {
     return DirectConversationState(
@@ -159,6 +162,7 @@ class DirectConversationState {
       failedDraft: identical(failedDraft, _unset)
           ? this.failedDraft
           : failedDraft as DirectMessageDraft?,
+      sendFailures: sendFailures ?? this.sendFailures,
       conversationCanceled: conversationCanceled ?? this.conversationCanceled,
     );
   }
