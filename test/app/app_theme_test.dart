@@ -5,10 +5,20 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 void main() {
-  test('移动主题完整映射 Foundation v1.2.1 核心 Token', () {
+  test('移动主题完整映射 Foundation v1.3.1 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '1.2.1');
+    expect(WenyouFoundationVersion.value, '1.3.1');
+    expect(WenyouEditorContract.surfaces, [
+      'page',
+      'expandableSheet',
+      'inline',
+    ]);
+    expect(
+      WenyouEditorContract.keyboardToolbarPlacement,
+      'above-keyboard-dock',
+    );
+    expect(WenyouEditorContract.morePresentation, 'inline');
     expect(WenyouCollectionContract.fillAvailableWidth, isTrue);
     expect(WenyouCollectionContract.contentSizedExceptions, contains('badge'));
     expect(tokens.brand, WenyouFoundationPalette.primary);
