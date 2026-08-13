@@ -75,7 +75,7 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`；Foundation `v1.2.1`（`3efa0643cc629a51e0663b696bc241be581aef04`）。
+契约 `4.8.0-dev.20260813.2`；Markdown v2；后端 `67c3c7bdee228b8d7c0c94ef39a08dc9d223fdbf`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
 
 ## 14. 相关代码与架构文档
 

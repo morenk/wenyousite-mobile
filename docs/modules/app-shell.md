@@ -6,6 +6,8 @@
 
 提供启动版本/兼容检查、服务端 capability、Android 站内更新、iOS TestFlight 更新、四分支主导航、游客模式、全局网络/错误状态、统一发布入口和消息中心。当前不实现 FCM、暗色主题或 App Links。
 
+发布选择器只保留“发布主题帖 / 发布动态”两个目标操作，不重复解释内容类型。
+
 ## 2. 用户角色与使用场景
 
 游客可直接进入首页和搜索；已登录用户额外使用通知、创作和个人功能。所有用户在启动时都要确认当前构建仍受支持且服务端契约可兼容；推荐更新可以暂时跳过，强制更新不可绕过。
@@ -40,7 +42,7 @@
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)。app 组合层只连接 capability 与跨 feature 缓存失效等接口，不持有业务页面状态。更新页复用中央 Token、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。app 组合层只连接 capability 与跨 feature 缓存失效等接口，不持有业务页面状态。更新页复用中央 Token、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 
@@ -63,8 +65,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`。
+契约 `4.8.0-dev.20260813.2`；Markdown v2；后端 `67c3c7bdee228b8d7c0c94ef39a08dc9d223fdbf`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`test/features/app_shell/mobile_update_service_test.dart`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/features/app_shell/`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`test/features/app_shell/mobile_update_service_test.dart`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

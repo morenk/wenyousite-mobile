@@ -96,6 +96,8 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
   @override
   final String? avatar;
   @override
+  final ProfileCoverResponseDto? profileCover;
+  @override
   final String? bio;
   @override
   final PrivateUserResponseDtoRoleEnum role;
@@ -135,6 +137,7 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
     required this.email,
     required this.username,
     this.avatar,
+    this.profileCover,
     this.bio,
     required this.role,
     required this.level,
@@ -168,6 +171,7 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
         email == other.email &&
         username == other.username &&
         avatar == other.avatar &&
+        profileCover == other.profileCover &&
         bio == other.bio &&
         role == other.role &&
         level == other.level &&
@@ -192,6 +196,7 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
+    _$hash = $jc(_$hash, profileCover.hashCode);
     _$hash = $jc(_$hash, bio.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
     _$hash = $jc(_$hash, level.hashCode);
@@ -218,6 +223,7 @@ class _$PrivateUserResponseDto extends PrivateUserResponseDto {
           ..add('email', email)
           ..add('username', username)
           ..add('avatar', avatar)
+          ..add('profileCover', profileCover)
           ..add('bio', bio)
           ..add('role', role)
           ..add('level', level)
@@ -256,6 +262,12 @@ class PrivateUserResponseDtoBuilder
   String? _avatar;
   String? get avatar => _$this._avatar;
   set avatar(String? avatar) => _$this._avatar = avatar;
+
+  ProfileCoverResponseDtoBuilder? _profileCover;
+  ProfileCoverResponseDtoBuilder get profileCover =>
+      _$this._profileCover ??= ProfileCoverResponseDtoBuilder();
+  set profileCover(ProfileCoverResponseDtoBuilder? profileCover) =>
+      _$this._profileCover = profileCover;
 
   String? _bio;
   String? get bio => _$this._bio;
@@ -336,6 +348,7 @@ class PrivateUserResponseDtoBuilder
       _email = $v.email;
       _username = $v.username;
       _avatar = $v.avatar;
+      _profileCover = $v.profileCover?.toBuilder();
       _bio = $v.bio;
       _role = $v.role;
       _level = $v.level;
@@ -370,89 +383,106 @@ class PrivateUserResponseDtoBuilder
   PrivateUserResponseDto build() => _build();
 
   _$PrivateUserResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$PrivateUserResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'PrivateUserResponseDto',
-            'id',
-          ),
-          email: BuiltValueNullFieldError.checkNotNull(
-            email,
-            r'PrivateUserResponseDto',
-            'email',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'PrivateUserResponseDto',
-            'username',
-          ),
-          avatar: avatar,
-          bio: bio,
-          role: BuiltValueNullFieldError.checkNotNull(
-            role,
-            r'PrivateUserResponseDto',
-            'role',
-          ),
-          level: BuiltValueNullFieldError.checkNotNull(
-            level,
-            r'PrivateUserResponseDto',
-            'level',
-          ),
-          experience: BuiltValueNullFieldError.checkNotNull(
-            experience,
-            r'PrivateUserResponseDto',
-            'experience',
-          ),
-          currentLevelExperience: BuiltValueNullFieldError.checkNotNull(
-            currentLevelExperience,
-            r'PrivateUserResponseDto',
-            'currentLevelExperience',
-          ),
-          nextLevelExperience: nextLevelExperience,
-          receivedTipTotal: BuiltValueNullFieldError.checkNotNull(
-            receivedTipTotal,
-            r'PrivateUserResponseDto',
-            'receivedTipTotal',
-          ),
-          receivedTipCount: BuiltValueNullFieldError.checkNotNull(
-            receivedTipCount,
-            r'PrivateUserResponseDto',
-            'receivedTipCount',
-          ),
-          showRecentReplies: BuiltValueNullFieldError.checkNotNull(
-            showRecentReplies,
-            r'PrivateUserResponseDto',
-            'showRecentReplies',
-          ),
-          showPlayerBadges: BuiltValueNullFieldError.checkNotNull(
-            showPlayerBadges,
-            r'PrivateUserResponseDto',
-            'showPlayerBadges',
-          ),
-          showBookmarks: BuiltValueNullFieldError.checkNotNull(
-            showBookmarks,
-            r'PrivateUserResponseDto',
-            'showBookmarks',
-          ),
-          emailVerified: BuiltValueNullFieldError.checkNotNull(
-            emailVerified,
-            r'PrivateUserResponseDto',
-            'emailVerified',
-          ),
-          deletedAt: deletedAt,
-          createdAt: BuiltValueNullFieldError.checkNotNull(
-            createdAt,
-            r'PrivateUserResponseDto',
-            'createdAt',
-          ),
-          updatedAt: BuiltValueNullFieldError.checkNotNull(
-            updatedAt,
-            r'PrivateUserResponseDto',
-            'updatedAt',
-          ),
+    _$PrivateUserResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$PrivateUserResponseDto._(
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'PrivateUserResponseDto',
+              'id',
+            ),
+            email: BuiltValueNullFieldError.checkNotNull(
+              email,
+              r'PrivateUserResponseDto',
+              'email',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'PrivateUserResponseDto',
+              'username',
+            ),
+            avatar: avatar,
+            profileCover: _profileCover?.build(),
+            bio: bio,
+            role: BuiltValueNullFieldError.checkNotNull(
+              role,
+              r'PrivateUserResponseDto',
+              'role',
+            ),
+            level: BuiltValueNullFieldError.checkNotNull(
+              level,
+              r'PrivateUserResponseDto',
+              'level',
+            ),
+            experience: BuiltValueNullFieldError.checkNotNull(
+              experience,
+              r'PrivateUserResponseDto',
+              'experience',
+            ),
+            currentLevelExperience: BuiltValueNullFieldError.checkNotNull(
+              currentLevelExperience,
+              r'PrivateUserResponseDto',
+              'currentLevelExperience',
+            ),
+            nextLevelExperience: nextLevelExperience,
+            receivedTipTotal: BuiltValueNullFieldError.checkNotNull(
+              receivedTipTotal,
+              r'PrivateUserResponseDto',
+              'receivedTipTotal',
+            ),
+            receivedTipCount: BuiltValueNullFieldError.checkNotNull(
+              receivedTipCount,
+              r'PrivateUserResponseDto',
+              'receivedTipCount',
+            ),
+            showRecentReplies: BuiltValueNullFieldError.checkNotNull(
+              showRecentReplies,
+              r'PrivateUserResponseDto',
+              'showRecentReplies',
+            ),
+            showPlayerBadges: BuiltValueNullFieldError.checkNotNull(
+              showPlayerBadges,
+              r'PrivateUserResponseDto',
+              'showPlayerBadges',
+            ),
+            showBookmarks: BuiltValueNullFieldError.checkNotNull(
+              showBookmarks,
+              r'PrivateUserResponseDto',
+              'showBookmarks',
+            ),
+            emailVerified: BuiltValueNullFieldError.checkNotNull(
+              emailVerified,
+              r'PrivateUserResponseDto',
+              'emailVerified',
+            ),
+            deletedAt: deletedAt,
+            createdAt: BuiltValueNullFieldError.checkNotNull(
+              createdAt,
+              r'PrivateUserResponseDto',
+              'createdAt',
+            ),
+            updatedAt: BuiltValueNullFieldError.checkNotNull(
+              updatedAt,
+              r'PrivateUserResponseDto',
+              'updatedAt',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'profileCover';
+        _profileCover?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'PrivateUserResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

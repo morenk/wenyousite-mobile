@@ -77,7 +77,7 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.7.0-dev.20260811.1`；Markdown v2（动态正文不消费）；后端 `acd20b07c619f85a17d42dd40cccae03122394be`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.8.0-dev.20260813.2`；Markdown v2（动态正文不消费）；后端 `67c3c7bdee228b8d7c0c94ef39a08dc9d223fdbf`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
 
 ## 14. 相关代码与架构文档
 

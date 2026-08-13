@@ -38,6 +38,8 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
+未输入时只展示搜索表单和结果 Tab，不再附加功能教学；无结果空态也只保留当前状态。
+
 未输入、关键词过短、无结果、首次加载、加载更多和单 Tab 错误分别展示；动态与两类正文加载更多失败保留已有结果与重试入口；`40007 INVALID_CURSOR` 丢弃当前分类旧列表并从第一页恢复。主题内结果若返回其他主题 ID、动态封面枚举/数量/URL 不安全、分页缺少 cursor 或同页重复 ID，均 fail-closed 而不导航到错误目标。
 
 ## 10. 跨模块约束
@@ -60,8 +62,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`。
+契约 `4.8.0-dev.20260813.2`；Markdown v2；后端 `67c3c7bdee228b8d7c0c94ef39a08dc9d223fdbf`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。

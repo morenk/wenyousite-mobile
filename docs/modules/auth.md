@@ -60,7 +60,7 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -84,8 +84,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.7.0-dev.20260811.1`；Markdown v2；后端 `143618951b0746b049f9d6ac9718b35e4139847d`。
+契约 `4.8.0-dev.20260813.2`；Markdown v2；后端 `67c3c7bdee228b8d7c0c94ef39a08dc9d223fdbf`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/`、`lib/core/network/session_remote.dart`；登录后验证由 `email_verification_*` 仓储、状态机和页面承载，找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v1.2.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.2.1/docs/platforms/mobile.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/`、`lib/core/network/session_remote.dart`；登录后验证由 `email_verification_*` 仓储、状态机和页面承载，找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

@@ -175,6 +175,8 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
   @override
   final String? avatar;
   @override
+  final ProfileCoverResponseDto? profileCover;
+  @override
   final String? bio;
   @override
   final PublicUserResponseDtoRoleEnum? role;
@@ -215,6 +217,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
     required this.id,
     required this.username,
     this.avatar,
+    this.profileCover,
     this.bio,
     this.role,
     this.level,
@@ -248,6 +251,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
+        profileCover == other.profileCover &&
         bio == other.bio &&
         role == other.role &&
         level == other.level &&
@@ -272,6 +276,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
+    _$hash = $jc(_$hash, profileCover.hashCode);
     _$hash = $jc(_$hash, bio.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
     _$hash = $jc(_$hash, level.hashCode);
@@ -298,6 +303,7 @@ class _$PublicUserResponseDto extends PublicUserResponseDto {
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
+          ..add('profileCover', profileCover)
           ..add('bio', bio)
           ..add('role', role)
           ..add('level', level)
@@ -333,6 +339,12 @@ class PublicUserResponseDtoBuilder
   String? _avatar;
   String? get avatar => _$this._avatar;
   set avatar(String? avatar) => _$this._avatar = avatar;
+
+  ProfileCoverResponseDtoBuilder? _profileCover;
+  ProfileCoverResponseDtoBuilder get profileCover =>
+      _$this._profileCover ??= ProfileCoverResponseDtoBuilder();
+  set profileCover(ProfileCoverResponseDtoBuilder? profileCover) =>
+      _$this._profileCover = profileCover;
 
   String? _bio;
   String? get bio => _$this._bio;
@@ -417,6 +429,7 @@ class PublicUserResponseDtoBuilder
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
+      _profileCover = $v.profileCover?.toBuilder();
       _bio = $v.bio;
       _role = $v.role;
       _level = $v.level;
@@ -468,6 +481,7 @@ class PublicUserResponseDtoBuilder
               'username',
             ),
             avatar: avatar,
+            profileCover: _profileCover?.build(),
             bio: bio,
             role: role,
             level: level,
@@ -488,6 +502,9 @@ class PublicUserResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'profileCover';
+        _profileCover?.build();
+
         _$failedField = 'count';
         _count?.build();
       } catch (e) {

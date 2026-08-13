@@ -288,6 +288,7 @@ import 'package:wenyou_api/src/model/posts_remove200_response.dart';
 import 'package:wenyou_api/src/model/posts_update200_response.dart';
 import 'package:wenyou_api/src/model/posts_upsert_body200_response.dart';
 import 'package:wenyou_api/src/model/private_user_response_dto.dart';
+import 'package:wenyou_api/src/model/profile_cover_response_dto.dart';
 import 'package:wenyou_api/src/model/progression_response_dto.dart';
 import 'package:wenyou_api/src/model/public_user_response_dto.dart';
 import 'package:wenyou_api/src/model/recent_reply_dice_response_dto.dart';
@@ -333,6 +334,7 @@ import 'package:wenyou_api/src/model/send_system_notification_dto.dart';
 import 'package:wenyou_api/src/model/session_response_dto.dart';
 import 'package:wenyou_api/src/model/set_avatar_dto.dart';
 import 'package:wenyou_api/src/model/set_direct_conversation_archive_dto.dart';
+import 'package:wenyou_api/src/model/set_profile_cover_dto.dart';
 import 'package:wenyou_api/src/model/set_read_status_dto.dart';
 import 'package:wenyou_api/src/model/site_operational_settings_get200_response.dart';
 import 'package:wenyou_api/src/model/site_operational_settings_response_dto.dart';
@@ -417,6 +419,7 @@ import 'package:wenyou_api/src/model/update_thread_dto.dart';
 import 'package:wenyou_api/src/model/update_user_dto.dart';
 import 'package:wenyou_api/src/model/upload_url_response_dto.dart';
 import 'package:wenyou_api/src/model/upsert_body_dto.dart';
+import 'package:wenyou_api/src/model/user_activity_summary_response_dto.dart';
 import 'package:wenyou_api/src/model/user_condition_dto.dart';
 import 'package:wenyou_api/src/model/user_follow_record_response_dto.dart';
 import 'package:wenyou_api/src/model/user_moderation_appeals_appeal201_response.dart';
@@ -438,14 +441,17 @@ import 'package:wenyou_api/src/model/users_follow_user_followers200_response.dar
 import 'package:wenyou_api/src/model/users_follow_user_following200_response.dart';
 import 'package:wenyou_api/src/model/users_get_me200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user200_response.dart';
+import 'package:wenyou_api/src/model/users_get_user_activity_summary200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_bookmarks200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_created_threads200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_played_threads200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_recent_replies200_response.dart';
 import 'package:wenyou_api/src/model/users_mention_candidates200_response.dart';
 import 'package:wenyou_api/src/model/users_remove_avatar200_response.dart';
+import 'package:wenyou_api/src/model/users_remove_profile_cover200_response.dart';
 import 'package:wenyou_api/src/model/users_search200_response.dart';
 import 'package:wenyou_api/src/model/users_set_avatar200_response.dart';
+import 'package:wenyou_api/src/model/users_set_profile_cover200_response.dart';
 import 'package:wenyou_api/src/model/users_update_me200_response.dart';
 import 'package:wenyou_api/src/model/verify_and_complete_dto.dart';
 import 'package:wenyou_api/src/model/verify_email_dto.dart';
@@ -730,6 +736,7 @@ part 'serializers.g.dart';
   PostsUpdate200Response,
   PostsUpsertBody200Response,
   PrivateUserResponseDto,
+  ProfileCoverResponseDto,
   ProgressionResponseDto,
   PublicUserResponseDto,
   RecentReplyDiceResponseDto,
@@ -775,6 +782,7 @@ part 'serializers.g.dart';
   SessionResponseDto,
   SetAvatarDto,
   SetDirectConversationArchiveDto,
+  SetProfileCoverDto,
   SetReadStatusDto,
   SiteOperationalSettingsGet200Response,
   SiteOperationalSettingsResponseDto,
@@ -859,6 +867,7 @@ part 'serializers.g.dart';
   UpdateUserDto,
   UploadUrlResponseDto,
   UpsertBodyDto,
+  UserActivitySummaryResponseDto,
   UserConditionDto,
   UserFollowRecordResponseDto,
   UserModerationAppealsAppeal201Response,
@@ -880,14 +889,17 @@ part 'serializers.g.dart';
   UsersFollowUserFollowing200Response,
   UsersGetMe200Response,
   UsersGetUser200Response,
+  UsersGetUserActivitySummary200Response,
   UsersGetUserBookmarks200Response,
   UsersGetUserCreatedThreads200Response,
   UsersGetUserPlayedThreads200Response,
   UsersGetUserRecentReplies200Response,
   UsersMentionCandidates200Response,
   UsersRemoveAvatar200Response,
+  UsersRemoveProfileCover200Response,
   UsersSearch200Response,
   UsersSetAvatar200Response,
+  UsersSetProfileCover200Response,
   UsersUpdateMe200Response,
   VerifyAndCompleteDto,
   VerifyEmailDto,

@@ -96,6 +96,8 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
   @override
   final String? avatar;
   @override
+  final ProfileCoverResponseDto? profileCover;
+  @override
   final String? bio;
   @override
   final CurrentUserResponseDtoRoleEnum role;
@@ -137,6 +139,7 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
     required this.email,
     required this.username,
     this.avatar,
+    this.profileCover,
     this.bio,
     required this.role,
     required this.level,
@@ -171,6 +174,7 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
         email == other.email &&
         username == other.username &&
         avatar == other.avatar &&
+        profileCover == other.profileCover &&
         bio == other.bio &&
         role == other.role &&
         level == other.level &&
@@ -196,6 +200,7 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
+    _$hash = $jc(_$hash, profileCover.hashCode);
     _$hash = $jc(_$hash, bio.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
     _$hash = $jc(_$hash, level.hashCode);
@@ -223,6 +228,7 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
           ..add('email', email)
           ..add('username', username)
           ..add('avatar', avatar)
+          ..add('profileCover', profileCover)
           ..add('bio', bio)
           ..add('role', role)
           ..add('level', level)
@@ -262,6 +268,12 @@ class CurrentUserResponseDtoBuilder
   String? _avatar;
   String? get avatar => _$this._avatar;
   set avatar(String? avatar) => _$this._avatar = avatar;
+
+  ProfileCoverResponseDtoBuilder? _profileCover;
+  ProfileCoverResponseDtoBuilder get profileCover =>
+      _$this._profileCover ??= ProfileCoverResponseDtoBuilder();
+  set profileCover(ProfileCoverResponseDtoBuilder? profileCover) =>
+      _$this._profileCover = profileCover;
 
   String? _bio;
   String? get bio => _$this._bio;
@@ -347,6 +359,7 @@ class CurrentUserResponseDtoBuilder
       _email = $v.email;
       _username = $v.username;
       _avatar = $v.avatar;
+      _profileCover = $v.profileCover?.toBuilder();
       _bio = $v.bio;
       _role = $v.role;
       _level = $v.level;
@@ -403,6 +416,7 @@ class CurrentUserResponseDtoBuilder
               'username',
             ),
             avatar: avatar,
+            profileCover: _profileCover?.build(),
             bio: bio,
             role: BuiltValueNullFieldError.checkNotNull(
               role,
@@ -471,6 +485,9 @@ class CurrentUserResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'profileCover';
+        _profileCover?.build();
+
         _$failedField = 'count';
         count.build();
       } catch (e) {

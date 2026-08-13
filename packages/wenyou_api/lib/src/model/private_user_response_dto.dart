@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/profile_cover_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -16,6 +17,7 @@ part 'private_user_response_dto.g.dart';
 /// * [email]
 /// * [username]
 /// * [avatar]
+/// * [profileCover]
 /// * [bio]
 /// * [role]
 /// * [level]
@@ -44,6 +46,9 @@ abstract class PrivateUserResponseDto implements Built<PrivateUserResponseDto, P
 
   @BuiltValueField(wireName: r'avatar')
   String? get avatar;
+
+  @BuiltValueField(wireName: r'profileCover')
+  ProfileCoverResponseDto? get profileCover;
 
   @BuiltValueField(wireName: r'bio')
   String? get bio;
@@ -133,6 +138,11 @@ class _$PrivateUserResponseDtoSerializer implements PrimitiveSerializer<PrivateU
     yield object.avatar == null ? null : serializers.serialize(
       object.avatar,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'profileCover';
+    yield object.profileCover == null ? null : serializers.serialize(
+      object.profileCover,
+      specifiedType: const FullType.nullable(ProfileCoverResponseDto),
     );
     yield r'bio';
     yield object.bio == null ? null : serializers.serialize(
@@ -260,6 +270,14 @@ class _$PrivateUserResponseDtoSerializer implements PrimitiveSerializer<PrivateU
           ) as String?;
           if (valueDes == null) continue;
           result.avatar = valueDes;
+          break;
+        case r'profileCover':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ProfileCoverResponseDto),
+          ) as ProfileCoverResponseDto?;
+          if (valueDes == null) continue;
+          result.profileCover.replace(valueDes);
           break;
         case r'bio':
           final valueDes = serializers.deserialize(

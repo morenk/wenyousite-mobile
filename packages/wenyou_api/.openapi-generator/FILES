@@ -317,6 +317,7 @@ lib/src/model/posts_remove200_response.dart
 lib/src/model/posts_update200_response.dart
 lib/src/model/posts_upsert_body200_response.dart
 lib/src/model/private_user_response_dto.dart
+lib/src/model/profile_cover_response_dto.dart
 lib/src/model/progression_response_dto.dart
 lib/src/model/public_user_response_dto.dart
 lib/src/model/recent_reply_dice_response_dto.dart
@@ -362,6 +363,7 @@ lib/src/model/send_system_notification_dto.dart
 lib/src/model/session_response_dto.dart
 lib/src/model/set_avatar_dto.dart
 lib/src/model/set_direct_conversation_archive_dto.dart
+lib/src/model/set_profile_cover_dto.dart
 lib/src/model/set_read_status_dto.dart
 lib/src/model/site_operational_settings_get200_response.dart
 lib/src/model/site_operational_settings_response_dto.dart
@@ -446,6 +448,7 @@ lib/src/model/update_thread_dto.dart
 lib/src/model/update_user_dto.dart
 lib/src/model/upload_url_response_dto.dart
 lib/src/model/upsert_body_dto.dart
+lib/src/model/user_activity_summary_response_dto.dart
 lib/src/model/user_condition_dto.dart
 lib/src/model/user_follow_record_response_dto.dart
 lib/src/model/user_moderation_appeals_appeal201_response.dart
@@ -467,14 +470,17 @@ lib/src/model/users_follow_user_followers200_response.dart
 lib/src/model/users_follow_user_following200_response.dart
 lib/src/model/users_get_me200_response.dart
 lib/src/model/users_get_user200_response.dart
+lib/src/model/users_get_user_activity_summary200_response.dart
 lib/src/model/users_get_user_bookmarks200_response.dart
 lib/src/model/users_get_user_created_threads200_response.dart
 lib/src/model/users_get_user_played_threads200_response.dart
 lib/src/model/users_get_user_recent_replies200_response.dart
 lib/src/model/users_mention_candidates200_response.dart
 lib/src/model/users_remove_avatar200_response.dart
+lib/src/model/users_remove_profile_cover200_response.dart
 lib/src/model/users_search200_response.dart
 lib/src/model/users_set_avatar200_response.dart
+lib/src/model/users_set_profile_cover200_response.dart
 lib/src/model/users_update_me200_response.dart
 lib/src/model/verify_and_complete_dto.dart
 lib/src/model/verify_email_dto.dart
