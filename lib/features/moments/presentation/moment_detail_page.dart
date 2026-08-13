@@ -1,18 +1,18 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -34,6 +34,10 @@ class MomentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
+  static const _contentCacheExtent = 4000.0;
+
+  var _commentComposerOpen = false;
+
   @override
   Widget build(BuildContext context) {
     final provider = momentDetailControllerProvider(widget.momentId);
@@ -50,139 +54,140 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
         ).showSnackBar(SnackBar(content: Text(next.userMessage)));
       }
     });
-    return WenyouReadingChrome(
-      builder: (context, actionsVisible) => Scaffold(
-        appBar: state.phase == MomentLoadPhase.ready
-            ? null
-            : AppBar(
-                title: const Text('动态详情'),
-                actions: _momentAppBarActions(state, provider),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('动态详情'),
+        actions: _momentAppBarActions(state, provider),
+      ),
+      body: switch (state.phase) {
+        MomentLoadPhase.loading => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        MomentLoadPhase.failed => _MomentDetailFailure(
+          failure: state.failure,
+          onRetry: () => ref.read(provider.notifier).load(),
+        ),
+        MomentLoadPhase.ready => RefreshIndicator(
+          onRefresh: () => ref.read(provider.notifier).load(),
+          child: CustomScrollView(
+            key: const PageStorageKey('moment-detail-scroll'),
+            scrollCacheExtent: const ScrollCacheExtent.pixels(
+              _contentCacheExtent,
+            ),
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: MomentContentPadding(
+                  top: context.wenyouTokens.space16,
+                  child: _MomentDetailPanel(
+                    detail: state.detail!,
+                    busy: state.busyMomentAction,
+                    onLike: () => _authenticated(
+                      () => ref.read(provider.notifier).toggleLike(),
+                    ),
+                    onBookmark: () => _authenticated(
+                      () => ref.read(provider.notifier).toggleBookmark(),
+                    ),
+                  ),
+                ),
               ),
-        body: switch (state.phase) {
-          MomentLoadPhase.loading => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          MomentLoadPhase.failed => _MomentDetailFailure(
-            failure: state.failure,
-            onRetry: () => ref.read(provider.notifier).load(),
-          ),
-          MomentLoadPhase.ready => NestedScrollView(
-            key: const Key('moment-detail-reading-scroll'),
-            floatHeaderSlivers: true,
-            headerSliverBuilder: (context, _) => [
-              SliverAppBar(
-                key: const Key('moment-detail-reading-app-bar'),
-                floating: true,
-                snap: true,
-                title: const Text('动态详情'),
-                actions: _momentAppBarActions(state, provider),
+              SliverToBoxAdapter(
+                child: MomentContentPadding(
+                  top: context.wenyouTokens.space12,
+                  child: _CommentFilters(
+                    state: state,
+                    onOrder: (order) =>
+                        ref.read(provider.notifier).selectCommentOrder(order),
+                    onAuthor: (authorId) => ref
+                        .read(provider.notifier)
+                        .selectCommentAuthor(authorId),
+                  ),
+                ),
               ),
-            ],
-            body: RefreshIndicator(
-              onRefresh: () => ref.read(provider.notifier).load(),
-              child: ListView(
-                key: const PageStorageKey('moment-detail-scroll'),
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(
-                  bottom:
+              if (state.comments.isEmpty)
+                SliverToBoxAdapter(
+                  child: MomentContentPadding(
+                    top: context.wenyouTokens.space12,
+                    child: const WenyouEmptyState(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      title: '还没有评论',
+                      message: '可以留下第一条评论。',
+                    ),
+                  ),
+                )
+              else
+                SliverList.builder(
+                  itemCount: state.comments.length,
+                  itemBuilder: (context, index) {
+                    final comment = state.comments[index];
+                    return MomentContentPadding(
+                      top: index == 0 ? context.wenyouTokens.space12 : 0,
+                      child: Column(
+                        children: [
+                          if (index > 0)
+                            Divider(height: context.wenyouTokens.space24),
+                          _MomentRootCommentPanel(
+                            root: comment,
+                            replyPage: state.replyPages[comment.id],
+                            busyCommentIds: state.busyCommentIds,
+                            viewerId: viewerId,
+                            returnTo: '/moments/${widget.momentId}',
+                            onReply: (target) => _authenticated(
+                              () => _openCommentComposer(target),
+                            ),
+                            onDelete: (target) =>
+                                _deleteComment(context, provider, target),
+                            onLoadReplies: () => ref
+                                .read(provider.notifier)
+                                .loadReplies(comment.id),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              if (state.hasMoreComments || state.isLoadingMoreComments)
+                SliverToBoxAdapter(
+                  child: MomentContentPadding(
+                    top: context.wenyouTokens.space12,
+                    child: Center(
+                      child: state.isLoadingMoreComments
+                          ? const CircularProgressIndicator()
+                          : OutlinedButton.icon(
+                              key: const Key('moment-comments-load-more'),
+                              onPressed: () => ref
+                                  .read(provider.notifier)
+                                  .loadMoreComments(),
+                              icon: const Icon(Icons.expand_more_rounded),
+                              label: const Text('加载更多评论'),
+                            ),
+                    ),
+                  ),
+                ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height:
                       context.wenyouTokens.minimumTouchTarget +
                       context.wenyouTokens.space32 +
                       context.wenyouTokens.space16,
                 ),
-                children: [
-                  MomentContentPadding(
-                    top: context.wenyouTokens.space16,
-                    child: _MomentDetailPanel(
-                      detail: state.detail!,
-                      busy: state.busyMomentAction,
-                      onLike: () => _authenticated(
-                        () => ref.read(provider.notifier).toggleLike(),
-                      ),
-                      onBookmark: () => _authenticated(
-                        () => ref.read(provider.notifier).toggleBookmark(),
-                      ),
-                    ),
-                  ),
-                  MomentContentPadding(
-                    top: context.wenyouTokens.space12,
-                    child: _CommentFilters(
-                      state: state,
-                      onOrder: (order) =>
-                          ref.read(provider.notifier).selectCommentOrder(order),
-                      onAuthor: (authorId) => ref
-                          .read(provider.notifier)
-                          .selectCommentAuthor(authorId),
-                    ),
-                  ),
-                  if (state.comments.isEmpty)
-                    MomentContentPadding(
-                      top: context.wenyouTokens.space12,
-                      child: const WenyouEmptyState(
-                        icon: Icons.chat_bubble_outline_rounded,
-                        title: '还没有评论',
-                        message: '可以留下第一条评论。',
-                      ),
-                    )
-                  else
-                    for (var index = 0; index < state.comments.length; index++)
-                      MomentContentPadding(
-                        top: index == 0 ? context.wenyouTokens.space12 : 0,
-                        child: Column(
-                          children: [
-                            if (index > 0)
-                              Divider(height: context.wenyouTokens.space24),
-                            _MomentRootCommentPanel(
-                              root: state.comments[index],
-                              replyPage:
-                                  state.replyPages[state.comments[index].id],
-                              busyCommentIds: state.busyCommentIds,
-                              viewerId: viewerId,
-                              returnTo: '/moments/${widget.momentId}',
-                              onReply: (comment) => _authenticated(
-                                () => _openCommentComposer(comment),
-                              ),
-                              onDelete: (comment) =>
-                                  _deleteComment(context, provider, comment),
-                              onLoadReplies: () => ref
-                                  .read(provider.notifier)
-                                  .loadReplies(state.comments[index].id),
-                            ),
-                          ],
-                        ),
-                      ),
-                  if (state.hasMoreComments || state.isLoadingMoreComments)
-                    MomentContentPadding(
-                      top: context.wenyouTokens.space12,
-                      child: Center(
-                        child: state.isLoadingMoreComments
-                            ? const CircularProgressIndicator()
-                            : OutlinedButton.icon(
-                                key: const Key('moment-comments-load-more'),
-                                onPressed: () => ref
-                                    .read(provider.notifier)
-                                    .loadMoreComments(),
-                                icon: const Icon(Icons.expand_more_rounded),
-                                label: const Text('加载更多评论'),
-                              ),
-                      ),
-                    ),
-                ],
               ),
-            ),
+            ],
           ),
-        },
-        floatingActionButton:
-            state.phase == MomentLoadPhase.ready && actionsVisible
-            ? WenyouComposerAction(
-                key: const Key('moment-comment-dock'),
-                label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
-                icon: session.isAuthenticated
-                    ? Icons.chat_bubble_outline_rounded
-                    : Icons.login_rounded,
-                onPressed: () => _authenticated(() => _openCommentComposer()),
-              )
-            : null,
-      ),
+        ),
+      },
+      floatingActionButton:
+          state.phase == MomentLoadPhase.ready && !_commentComposerOpen
+          ? WenyouComposerAction(
+              key: const Key('moment-comment-dock'),
+              label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
+              icon: session.isAuthenticated
+                  ? Icons.chat_bubble_outline_rounded
+                  : Icons.login_rounded,
+              onPressed: () => _authenticated(() => _openCommentComposer()),
+            )
+          : null,
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
     );
   }
 
@@ -253,53 +258,45 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     }
     final provider = momentDetailControllerProvider(widget.momentId);
     var currentReplyTo = replyTo;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      useSafeArea: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Consumer(
-          builder: (context, sheetRef, _) {
-            final state = sheetRef.watch(provider);
-            final tokens = context.wenyouTokens;
-            final horizontal = MediaQuery.sizeOf(context).width <= 400
-                ? tokens.space12
-                : tokens.space24;
-            return AnimatedPadding(
-              duration: tokens.feedbackDuration,
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  horizontal,
-                  tokens.space12,
-                  horizontal,
-                  tokens.space16,
+    setState(() => _commentComposerOpen = true);
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        useSafeArea: false,
+        backgroundColor: Colors.transparent,
+        constraints: const BoxConstraints(maxWidth: double.infinity),
+        sheetAnimationStyle: AnimationStyle.noAnimation,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (context, setSheetState) => Consumer(
+            builder: (context, sheetRef, _) {
+              final state = sheetRef.watch(provider);
+              return WenyouConstrainedWidth(
+                child: _MomentCommentComposer(
+                  replyTo: currentReplyTo,
+                  isSending: state.isSendingComment,
+                  onCancelReply: () =>
+                      setSheetState(() => currentReplyTo = null),
+                  onClose: () => Navigator.of(sheetContext).pop(),
+                  onSend: (input) async {
+                    final created = await sheetRef
+                        .read(provider.notifier)
+                        .sendComment(input);
+                    return created != null;
+                  },
                 ),
-                child: WenyouConstrainedWidth(
-                  child: _MomentCommentComposer(
-                    replyTo: currentReplyTo,
-                    isSending: state.isSendingComment,
-                    onCancelReply: () =>
-                        setSheetState(() => currentReplyTo = null),
-                    onClose: () => Navigator.of(sheetContext).pop(),
-                    onSend: (input) async {
-                      final created = await sheetRef
-                          .read(provider.notifier)
-                          .sendComment(input);
-                      return created != null;
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _commentComposerOpen = false);
+      }
+    }
   }
 
   Future<void> _deleteComment(
@@ -744,7 +741,7 @@ class _MomentCommentBody extends StatelessWidget {
                     maxWidth: compact ? 180 : 240,
                     maxHeight: compact ? 180 : 240,
                   ),
-                  child: CachedNetworkImage(
+                  child: WenyouCachedImage(
                     imageUrl: comment.media!.bestContentUrl,
                     fit: BoxFit.contain,
                     placeholder: (_, _) => const CircularProgressIndicator(),
@@ -764,7 +761,7 @@ class _MomentCommentBody extends StatelessWidget {
                   maxWidth: 160,
                   maxHeight: 160,
                 ),
-                child: CachedNetworkImage(
+                child: WenyouCachedImage(
                   imageUrl: comment.sticker!.mediumUrl,
                   fit: BoxFit.contain,
                 ),
@@ -824,13 +821,11 @@ class _MomentCommentComposerState
   final _textController = TextEditingController();
   UploadedEditorImage? _image;
   UserSticker? _sticker;
-  MediaUploadProgress? _progress;
-  CancelToken? _cancelToken;
+  final Object _uploadTaskId = Object();
   var _closing = false;
 
   @override
   void dispose() {
-    _cancelToken?.cancel('comment composer disposed');
     _textController.dispose();
     super.dispose();
   }
@@ -838,54 +833,35 @@ class _MomentCommentComposerState
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final uploading = _progress != null;
+    final uploadState = ref.watch(
+      mediaUploadTaskControllerProvider(_uploadTaskId),
+    );
+    final uploading = uploadState.isBusy;
     return PopScope<Object?>(
       canPop: _closing,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_requestClose());
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.replyTo == null ? '发表评论' : '回复评论',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              IconButton(
-                key: const Key('moment-comment-close'),
-                onPressed: uploading || widget.isSending ? null : _requestClose,
-                tooltip: '关闭评论编辑器',
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
+      child: WenyouInlineComposerDock(
+        controller: _textController,
+        fieldKey: const Key('moment-comment-input'),
+        dockKey: const Key('moment-comment-editor-dock'),
+        placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
+        maxLength: 500,
+        autofocus: true,
+        onChanged: (_) => setState(() {}),
+        supporting: [
           if (widget.replyTo != null) ...[
-            SizedBox(height: tokens.space8),
-            InputChip(
-              label: Text('回复 @${widget.replyTo!.author.username}'),
-              onDeleted: widget.onCancelReply,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InputChip(
+                label: Text('回复 @${widget.replyTo!.author.username}'),
+                onDeleted: widget.onCancelReply,
+              ),
             ),
+            SizedBox(height: tokens.space8),
           ],
-          SizedBox(height: tokens.space12),
-          TextField(
-            key: const Key('moment-comment-input'),
-            controller: _textController,
-            minLines: 2,
-            maxLines: 6,
-            maxLength: 500,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: '评论内容',
-              hintText: '写下你的想法，也可以只发送图片或表情',
-              alignLabelWithHint: true,
-            ),
-          ),
           if (_image != null || _sticker != null) ...[
-            SizedBox(height: tokens.space8),
             _SelectedCommentAsset(
               image: _image,
               sticker: _sticker,
@@ -894,49 +870,95 @@ class _MomentCommentComposerState
                 _sticker = null;
               }),
             ),
-          ],
-          if (_progress != null) ...[
             SizedBox(height: tokens.space8),
-            LinearProgressIndicator(value: _progress!.fraction),
-            SizedBox(height: tokens.space4),
-            Text(_progressLabel(_progress!)),
           ],
-          SizedBox(height: tokens.space8),
-          Row(
-            children: [
-              IconButton(
-                key: const Key('moment-comment-image'),
-                onPressed: uploading || widget.isSending ? null : _pickImage,
-                tooltip: '添加一张图片',
-                icon: const Icon(Icons.image_outlined),
-              ),
-              IconButton(
-                key: const Key('moment-comment-sticker'),
-                onPressed: uploading || widget.isSending ? null : _pickSticker,
-                tooltip: '添加一个表情',
-                icon: const Icon(Icons.add_reaction_outlined),
-              ),
-              const Spacer(),
-              FilledButton.icon(
-                key: const Key('moment-comment-send'),
-                onPressed: uploading || widget.isSending ? null : _send,
-                icon: widget.isSending
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+          if (uploadState.isBusy) ...[
+            LinearProgressIndicator(value: uploadState.progress?.fraction),
+            SizedBox(height: tokens.space4),
+            Row(
+              children: [
+                Expanded(child: Text(_uploadProgressLabel(uploadState))),
+                TextButton(
+                  key: const Key('moment-comment-cancel-upload'),
+                  onPressed: () => ref
+                      .read(
+                        mediaUploadTaskControllerProvider(
+                          _uploadTaskId,
+                        ).notifier,
                       )
-                    : const Icon(Icons.send_rounded),
-                label: const Text('发送'),
-              ),
-            ],
+                      .cancel(),
+                  child: const Text('取消'),
+                ),
+              ],
+            ),
+            SizedBox(height: tokens.space8),
+          ],
+          if (uploadState.failure case final failure?) ...[
+            WenyouStatusBanner(
+              key: const Key('moment-comment-upload-failure'),
+              message: failure.userMessage,
+              detail: failure.requestId == null
+                  ? null
+                  : '请求 ID：${failure.requestId}',
+              tone: WenyouStatusTone.error,
+              action: failure.canRetry
+                  ? TextButton(
+                      key: const Key('moment-comment-retry-upload'),
+                      onPressed: _retryImage,
+                      child: const Text('重试上传'),
+                    )
+                  : null,
+            ),
+            SizedBox(height: tokens.space8),
+          ],
+        ],
+        leadingActions: [
+          IconButton(
+            key: const Key('moment-comment-close'),
+            onPressed: uploading || widget.isSending ? null : _requestClose,
+            tooltip: '关闭评论编辑器',
+            icon: const Icon(Icons.close_rounded),
+          ),
+          IconButton(
+            key: const Key('moment-comment-image'),
+            onPressed: uploading || widget.isSending ? null : _pickImage,
+            tooltip: '添加一张图片',
+            icon: const Icon(Icons.image_outlined),
           ),
         ],
+        trailingActions: [
+          IconButton(
+            key: const Key('moment-comment-sticker'),
+            onPressed: uploading || widget.isSending ? null : _pickSticker,
+            tooltip: '添加一个表情',
+            icon: const Icon(Icons.add_reaction_outlined),
+          ),
+        ],
+        submitAction: IconButton.filled(
+          key: const Key('moment-comment-send'),
+          onPressed: uploading || widget.isSending ? null : _send,
+          tooltip: '发送',
+          icon: widget.isSending
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.send_rounded),
+        ),
+        characterCountText: '${_textController.text.length}/500',
       ),
     );
   }
 
   Future<void> _requestClose() async {
-    if (_closing || widget.isSending || _progress != null) return;
+    if (_closing || widget.isSending) return;
+    final uploadController = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    );
+    if (ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy) {
+      uploadController.cancel();
+      if (!mounted) return;
+    }
     var confirmed = true;
     final hasDraft =
         _textController.text.trim().isNotEmpty ||
@@ -968,49 +990,30 @@ class _MomentCommentComposerState
     widget.onClose();
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final input = await ref.read(editorImagePickerProvider).pickFromGallery();
-      if (input == null || !mounted) return;
-      final cancelToken = CancelToken();
-      _cancelToken = cancelToken;
-      setState(() {
-        _sticker = null;
-        _progress = const MediaUploadProgress(
-          stage: MediaUploadStage.preparing,
-        );
-      });
-      final image = await ref
-          .read(mediaUploadRepositoryProvider)
-          .uploadImage(
-            input,
-            cancelToken: cancelToken,
-            onProgress: (progress) {
-              if (mounted) setState(() => _progress = progress);
-            },
-          );
-      if (!mounted) return;
-      setState(() {
-        _image = image;
-        _progress = null;
-      });
-    } on Object catch (error) {
-      if (!mounted) return;
-      setState(() => _progress = null);
-      final message = error is ApiFailure
-          ? error.userMessage
-          : '评论图片没有上传成功，请重试。';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      _cancelToken = null;
-    }
+  Future<void> _pickImage() => _runImageUpload(retry: false);
+
+  Future<void> _retryImage() => _runImageUpload(retry: true);
+
+  Future<void> _runImageUpload({required bool retry}) async {
+    final controller = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    );
+    final image = retry
+        ? await controller.retryUpload()
+        : await controller.pickAndUpload();
+    if (!mounted || _closing || image == null) return;
+    setState(() {
+      _sticker = null;
+      _image = image;
+    });
   }
 
   Future<void> _pickSticker() async {
     final sticker = await showStickerPicker(context);
     if (sticker == null || !mounted) return;
+    ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .reset();
     setState(() {
       _image = null;
       _sticker = sticker;
@@ -1035,17 +1038,6 @@ class _MomentCommentComposerState
     });
     widget.onClose();
   }
-
-  String _progressLabel(MediaUploadProgress progress) {
-    return switch (progress.stage) {
-      MediaUploadStage.preparing => '正在准备图片…',
-      MediaUploadStage.uploading when progress.fraction != null =>
-        '正在上传 ${(progress.fraction! * 100).round()}%',
-      MediaUploadStage.uploading => '正在上传图片…',
-      MediaUploadStage.confirming => '正在确认图片…',
-      MediaUploadStage.processing => '图片正在安全处理中…',
-    };
-  }
 }
 
 class _SelectedCommentAsset extends StatelessWidget {
@@ -1068,7 +1060,7 @@ class _SelectedCommentAsset extends StatelessWidget {
         children: [
           SizedBox.square(
             dimension: 112,
-            child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain),
+            child: WenyouCachedImage(imageUrl: url, fit: BoxFit.contain),
           ),
           Positioned(
             right: 0,
@@ -1083,6 +1075,20 @@ class _SelectedCommentAsset extends StatelessWidget {
       ),
     );
   }
+}
+
+String _uploadProgressLabel(MediaUploadTaskState state) {
+  final progress = state.progress;
+  return switch (state.phase) {
+    MediaUploadTaskPhase.picking => '正在打开相册…',
+    MediaUploadTaskPhase.preparing => '正在准备图片…',
+    MediaUploadTaskPhase.uploading when progress?.fraction != null =>
+      '正在上传 ${(progress!.fraction! * 100).round()}%',
+    MediaUploadTaskPhase.uploading => '正在上传图片…',
+    MediaUploadTaskPhase.confirming => '正在确认图片…',
+    MediaUploadTaskPhase.processing => '图片正在安全处理中…',
+    MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
+  };
 }
 
 class _MomentDetailFailure extends StatelessWidget {

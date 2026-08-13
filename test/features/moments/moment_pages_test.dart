@@ -1,16 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
@@ -33,6 +37,7 @@ void main() {
     await tester.tap(find.text('关注'));
     await tester.pumpAndSettle();
     expect(find.text('登录后查看关注动态'), findsOneWidget);
+    expect(find.textContaining('这里会按时间展示'), findsNothing);
     expect(repository.feedModes, [MomentFeedMode.discover]);
   });
 
@@ -41,6 +46,7 @@ void main() {
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
     final semantics = tester.ensureSemantics();
 
     await tester.pumpWidget(_feedApp(_PageRepository()));
@@ -138,7 +144,7 @@ void main() {
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
   });
 
-  testWidgets('动态详情阅读顶栏随内容滚动收起并向上恢复', (tester) async {
+  testWidgets('动态详情滚动时顶栏和评论入口保持固定', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 600);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -163,8 +169,8 @@ void main() {
       const Offset(0, -500),
     );
     await tester.pumpAndSettle();
-    expect(find.text('动态详情').hitTestable(), findsNothing);
-    expect(find.byKey(const Key('moment-comment-dock')), findsNothing);
+    expect(find.text('动态详情').hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
 
     await tester.drag(
       find.byKey(const PageStorageKey('moment-detail-scroll')),
@@ -211,7 +217,30 @@ void main() {
 
     await tester.tap(dock);
     await tester.pumpAndSettle();
+    expect(find.byType(DraggableScrollableSheet), findsNothing);
+    expect(find.byKey(const Key('moment-comment-dock')), findsNothing);
+    expect(find.byKey(const Key('moment-comment-editor-dock')), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('0/500'), findsOneWidget);
+    final editorDock = find.byKey(const Key('moment-comment-editor-dock'));
+    tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+    await tester.pump();
+    final firstInsetFrameBottom = tester
+        .getBottomRight(find.byKey(const Key('moment-comment-send')))
+        .dy;
+    expect(firstInsetFrameBottom, lessThanOrEqualTo(480));
+    expect(
+      find.descendant(of: editorDock, matching: find.byType(AnimatedPadding)),
+      findsNothing,
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      tester.getBottomRight(find.byKey(const Key('moment-comment-send'))).dy,
+      firstInsetFrameBottom,
+    );
+    tester.view.viewInsets = FakeViewPadding.zero;
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('moment-comment-input')),
       '从悬浮入口发表',
@@ -251,6 +280,122 @@ void main() {
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
   });
 
+  testWidgets('动态发布正文占据剩余高度且图片管理固定在底部 dock', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _PageRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(repository),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final content = find.byKey(const Key('moment-compose-content'));
+    final images = find.byKey(const Key('moment-compose-images'));
+    final submit = find.byKey(const Key('moment-compose-submit'));
+    expect(tester.getSize(content).height, greaterThan(300));
+    expect(tester.getBottomRight(images).dy, lessThanOrEqualTo(760));
+    expect(
+      tester.getCenter(images).dy,
+      closeTo(tester.getCenter(submit).dy, 1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('动态发布上传失败后复用原图重试并只加入一次', (tester) async {
+    final gateway = _FailingThenSuccessfulUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-compose-images')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-compose-add-image')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('图片处理失败'), findsOneWidget);
+    expect(find.text('请求 ID：moment-upload-one'), findsOneWidget);
+    expect(find.byKey(const Key('moment-compose-retry-upload')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('moment-compose-retry-upload')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.inputs, hasLength(2));
+    expect(gateway.inputs[1], same(gateway.inputs[0]));
+    expect(find.byKey(const ValueKey('moment-image')), findsOneWidget);
+    expect(find.text('图片 1/9'), findsOneWidget);
+    expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
+  });
+
+  testWidgets('动态评论上传中系统返回会取消任务并忽略迟到图片', (tester) async {
+    final gateway = _LateCompletingUploadGateway();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        momentRepositoryProvider.overrideWithValue(_PageRepository()),
+        editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
+        mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-comment-dock')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-comment-image')));
+    await tester.pump();
+
+    expect(find.textContaining('正在上传'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    expect(gateway.operation.cancelled, isTrue);
+    gateway.operation.complete(
+      const UploadedEditorImage(
+        mediaId: 'late-moment-image',
+        url: 'https://cdn.example.com/late-moment.png',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('moment-comment-input')), findsNothing);
+    expect(find.byKey(const ValueKey('late-moment-image')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('动态详情多图使用固定舞台横滑并从当前图片进入原图', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
@@ -287,7 +432,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('1 / 3'), findsOneWidget);
-    final firstImage = tester.widget<CachedNetworkImage>(
+    final firstImage = tester.widget<WenyouCachedImage>(
       find.byKey(const Key('moment-content-image-0')),
     );
     expect(firstImage.imageUrl, 'https://cdn.example.com/1-md.webp');
@@ -309,7 +454,7 @@ void main() {
 
     expect(find.text('2 / 3'), findsOneWidget);
     expect(tester.getSize(gallery), initialStageSize);
-    final secondImage = tester.widget<CachedNetworkImage>(
+    final secondImage = tester.widget<WenyouCachedImage>(
       find.byKey(const Key('moment-content-image-1')),
     );
     expect(secondImage.imageUrl, 'https://cdn.example.com/2-md.webp');
@@ -419,10 +564,14 @@ void main() {
           .text,
       '未完成的标题',
     );
+    await tester.tap(find.byKey(const Key('moment-compose-images')));
+    await tester.pumpAndSettle();
     expect(
       tester.getTopLeft(find.byKey(const ValueKey('media-2'))).dy,
       lessThan(tester.getTopLeft(find.byKey(const ValueKey('media-1'))).dy),
     );
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
     final publish = find.byKey(const Key('moment-compose-submit'));
     expect(publish, findsOneWidget);
     expect(tester.getBottomRight(publish).dy, lessThanOrEqualTo(752));
@@ -618,6 +767,91 @@ class _MemoryMomentDraftStore implements MomentDraftStore {
   Future<void> write(String? momentId, MomentLocalDraft value) async {
     draft = value;
   }
+}
+
+class _FakeImagePicker implements EditorImagePicker {
+  @override
+  Future<MediaUploadInput?> pickFromGallery() async {
+    return MediaUploadInput(
+      filename: 'moment.png',
+      declaredContentType: 'image/png',
+      bytes: Uint8List.fromList(const [137, 80, 78, 71]),
+    );
+  }
+}
+
+class _FailingThenSuccessfulUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    inputs.add(input);
+    if (inputs.length == 1) {
+      return _ImmediateUploadOperation(
+        Future<UploadedEditorImage>.error(
+          const ApiFailure(
+            userMessage: '图片处理失败',
+            requestId: 'moment-upload-one',
+          ),
+        ),
+      );
+    }
+    return _ImmediateUploadOperation(
+      Future.value(
+        const UploadedEditorImage(
+          mediaId: 'moment-image',
+          url: 'https://cdn.example.com/moment.png',
+        ),
+      ),
+    );
+  }
+}
+
+class _ImmediateUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  _ImmediateUploadOperation(this.result);
+
+  @override
+  final Future<UploadedEditorImage> result;
+
+  @override
+  void cancel() {}
+}
+
+class _LateCompletingUploadGateway implements MediaUploadGateway {
+  final operation = _LateCompletingUploadOperation();
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length ~/ 2,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return operation;
+  }
+}
+
+class _LateCompletingUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  final _completer = Completer<UploadedEditorImage>();
+  var cancelled = false;
+
+  @override
+  Future<UploadedEditorImage> get result => _completer.future;
+
+  @override
+  void cancel() => cancelled = true;
+
+  void complete(UploadedEditorImage image) => _completer.complete(image);
 }
 
 MomentAuthor _author() =>

@@ -1,17 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
@@ -33,8 +31,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   List<UploadedEditorImage> _images = [];
   String? _coverMediaId;
   int? _hydratedVersion;
-  MediaUploadProgress? _uploadProgress;
-  CancelToken? _uploadCancelToken;
+  final Object _uploadTaskId = Object();
   Timer? _draftTimer;
   var _baselineSignature = '';
   var _contentReady = false;
@@ -51,7 +48,6 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   @override
   void dispose() {
-    _uploadCancelToken?.cancel('moment composer disposed');
     _draftTimer?.cancel();
     _titleController.removeListener(_onDraftChanged);
     _contentController.removeListener(_onDraftChanged);
@@ -64,6 +60,9 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   Widget build(BuildContext context) {
     final provider = momentComposerControllerProvider(widget.momentId);
     final state = ref.watch(provider);
+    final uploadState = ref.watch(
+      mediaUploadTaskControllerProvider(_uploadTaskId),
+    );
     _hydrate(state.initialDetail);
     final editing = widget.momentId != null;
     if (!editing && !_contentReady) {
@@ -75,7 +74,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
         state.phase != MomentComposerPhase.loading &&
         state.phase != MomentComposerPhase.failed;
     return PopScope(
-      canPop: _allowPop || !_hasUnsavedChanges,
+      canPop: _allowPop || (!_hasUnsavedChanges && !uploadState.isBusy),
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _confirmLeave();
       },
@@ -100,118 +99,191 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
             failure: state.failure,
             onRetry: () => ref.read(provider.notifier).load(),
           ),
-          _ => WenyouPageBody(
-            maxWidth: 600,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (state.failure != null) ...[
-                    WenyouStatusBanner(
-                      message: state.failure!.userMessage,
-                      detail: state.failure!.requestId == null
-                          ? null
-                          : '请求 ID：${state.failure!.requestId}',
-                      tone: WenyouStatusTone.error,
-                      action: state.failure!.businessCode == 40002
-                          ? TextButton(
-                              key: const Key('moment-compose-reload-conflict'),
-                              onPressed: () =>
-                                  ref.read(provider.notifier).load(),
-                              child: const Text('读取最新版'),
-                            )
-                          : null,
-                    ),
-                    SizedBox(height: context.wenyouTokens.space12),
-                  ],
-                  WenyouPanel(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextFormField(
-                          key: const Key('moment-compose-title'),
-                          controller: _titleController,
-                          maxLength: 40,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: '标题',
-                            hintText: '用 2～40 个字符概括这一刻',
-                          ),
-                          validator: (value) {
-                            final length = value?.trim().length ?? 0;
-                            return length < 2 || length > 40
-                                ? '请输入 2～40 个字符的标题'
-                                : null;
-                          },
-                        ),
-                        SizedBox(height: context.wenyouTokens.space12),
-                        TextFormField(
-                          key: const Key('moment-compose-content'),
-                          controller: _contentController,
-                          minLines: 6,
-                          maxLines: 14,
-                          maxLength: 1000,
-                          decoration: const InputDecoration(
-                            labelText: '正文（可选）',
-                            hintText: '动态正文是纯文本，不解析 Markdown',
-                            alignLabelWithHint: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: context.wenyouTokens.space12),
-                  _MomentImagesEditor(
-                    images: _images,
-                    coverMediaId: _coverMediaId,
-                    uploadProgress: _uploadProgress,
-                    onAdd: _images.length >= 9 || state.isSubmitting
-                        ? null
-                        : _pickAndUpload,
-                    onCancelUpload: _uploadProgress == null
-                        ? null
-                        : () => _uploadCancelToken?.cancel('user cancelled'),
-                    onCoverSelected: (mediaId) {
-                      setState(() => _coverMediaId = mediaId);
-                      _onDraftChanged();
-                    },
-                    onRemove: (mediaId) {
-                      setState(() {
-                        _images = _images
-                            .where((image) => image.mediaId != mediaId)
-                            .toList(growable: false);
-                        if (_coverMediaId == mediaId) {
-                          _coverMediaId = _images.isEmpty
-                              ? null
-                              : _images.first.mediaId;
-                        }
-                      });
-                      _onDraftChanged();
-                    },
-                    onReorder: (oldIndex, newIndex) {
-                      setState(() {
-                        final reordered = [..._images];
-                        final image = reordered.removeAt(oldIndex);
-                        reordered.insert(newIndex, image);
-                        _images = List.unmodifiable(reordered);
-                      });
-                      _onDraftChanged();
-                    },
-                  ),
-                  SizedBox(height: context.wenyouTokens.space16),
-                ],
-              ),
-            ),
-          ),
+          _ => _buildEditorBody(state, provider),
         },
         bottomNavigationBar: editable
             ? _MomentPublishBar(
                 editing: editing,
                 submitting: state.isSubmitting,
-                onPressed: _uploadProgress == null ? _submit : null,
+                imageCount: _images.length,
+                uploading: uploadState.isBusy,
+                onImagesPressed: state.isSubmitting
+                    ? null
+                    : () => _openImagesEditor(state),
+                onPressed: uploadState.isBusy ? null : _submit,
               )
             : null,
+      ),
+    );
+  }
+
+  Widget _buildEditorBody(
+    MomentComposerState state,
+    AutoDisposeStateNotifierProvider<
+      MomentComposerController,
+      MomentComposerState
+    >
+    provider,
+  ) {
+    final tokens = context.wenyouTokens;
+    final horizontal = MediaQuery.sizeOf(context).width <= 400
+        ? tokens.space12
+        : tokens.space24;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          horizontal,
+          tokens.space12,
+          horizontal,
+          tokens.space8,
+        ),
+        child: WenyouConstrainedWidth(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.failure != null) ...[
+                  WenyouStatusBanner(
+                    message: state.failure!.userMessage,
+                    detail: state.failure!.requestId == null
+                        ? null
+                        : '请求 ID：${state.failure!.requestId}',
+                    tone: WenyouStatusTone.error,
+                    action: state.failure!.businessCode == 40002
+                        ? TextButton(
+                            key: const Key('moment-compose-reload-conflict'),
+                            onPressed: () => ref.read(provider.notifier).load(),
+                            child: const Text('读取最新版'),
+                          )
+                        : null,
+                  ),
+                  SizedBox(height: tokens.space8),
+                ],
+                TextFormField(
+                  key: const Key('moment-compose-title'),
+                  controller: _titleController,
+                  maxLength: 40,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: '标题',
+                    hintText: '用 2～40 个字符概括这一刻',
+                  ),
+                  validator: (value) {
+                    final length = value?.trim().length ?? 0;
+                    return length < 2 || length > 40 ? '请输入 2～40 个字符的标题' : null;
+                  },
+                ),
+                SizedBox(height: tokens.space8),
+                Expanded(
+                  child: TextFormField(
+                    key: const Key('moment-compose-content'),
+                    controller: _contentController,
+                    expands: true,
+                    minLines: null,
+                    maxLines: null,
+                    maxLength: 1000,
+                    textAlignVertical: TextAlignVertical.top,
+                    decoration: const InputDecoration(
+                      labelText: '正文（可选）',
+                      hintText: '动态正文是纯文本，不解析 Markdown',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openImagesEditor(MomentComposerState state) {
+    return showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => Consumer(
+        builder: (context, sheetRef, _) {
+          final uploadState = sheetRef.watch(
+            mediaUploadTaskControllerProvider(_uploadTaskId),
+          );
+          return StatefulBuilder(
+            builder: (context, setSheetState) => FractionallySizedBox(
+              heightFactor: 0.78,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  context.wenyouTokens.space12,
+                  0,
+                  context.wenyouTokens.space12,
+                  context.wenyouTokens.space16,
+                ),
+                child: _MomentImagesEditor(
+                  images: _images,
+                  coverMediaId: _coverMediaId,
+                  uploadState: uploadState,
+                  onAdd:
+                      _images.length >= 9 ||
+                          state.isSubmitting ||
+                          uploadState.isBusy
+                      ? null
+                      : () async {
+                          await _pickAndUpload();
+                          if (sheetContext.mounted) setSheetState(() {});
+                        },
+                  onCancelUpload: uploadState.isBusy
+                      ? () => sheetRef
+                            .read(
+                              mediaUploadTaskControllerProvider(
+                                _uploadTaskId,
+                              ).notifier,
+                            )
+                            .cancel()
+                      : null,
+                  onRetryUpload:
+                      uploadState.failure?.canRetry == true &&
+                          !state.isSubmitting
+                      ? () async {
+                          await _retryUpload();
+                          if (sheetContext.mounted) setSheetState(() {});
+                        }
+                      : null,
+                  onCoverSelected: (mediaId) {
+                    setState(() => _coverMediaId = mediaId);
+                    setSheetState(() {});
+                    _onDraftChanged();
+                  },
+                  onRemove: (mediaId) {
+                    setState(() {
+                      _images = _images
+                          .where((image) => image.mediaId != mediaId)
+                          .toList(growable: false);
+                      if (_coverMediaId == mediaId) {
+                        _coverMediaId = _images.isEmpty
+                            ? null
+                            : _images.first.mediaId;
+                      }
+                    });
+                    setSheetState(() {});
+                    _onDraftChanged();
+                  },
+                  onReorder: (oldIndex, newIndex) {
+                    setState(() {
+                      final reordered = [..._images];
+                      final image = reordered.removeAt(oldIndex);
+                      reordered.insert(newIndex, image);
+                      _images = List.unmodifiable(reordered);
+                    });
+                    setSheetState(() {});
+                    _onDraftChanged();
+                  },
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -239,43 +311,23 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     _scheduleDraftRead();
   }
 
-  Future<void> _pickAndUpload() async {
-    try {
-      final input = await ref.read(editorImagePickerProvider).pickFromGallery();
-      if (input == null || !mounted) return;
-      final cancelToken = CancelToken();
-      _uploadCancelToken = cancelToken;
-      setState(() {
-        _uploadProgress = const MediaUploadProgress(
-          stage: MediaUploadStage.preparing,
-        );
-      });
-      final image = await ref
-          .read(mediaUploadRepositoryProvider)
-          .uploadImage(
-            input,
-            cancelToken: cancelToken,
-            onProgress: (progress) {
-              if (mounted) setState(() => _uploadProgress = progress);
-            },
-          );
-      if (!mounted) return;
-      setState(() {
-        _images = List.unmodifiable([..._images, image]);
-        _coverMediaId ??= image.mediaId;
-        _uploadProgress = null;
-      });
-      _onDraftChanged();
-    } on Object catch (error) {
-      if (!mounted) return;
-      setState(() => _uploadProgress = null);
-      final message = error is ApiFailure ? error.userMessage : '图片没有上传成功，请重试。';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      _uploadCancelToken = null;
-    }
+  Future<void> _pickAndUpload() => _runImageUpload(retry: false);
+
+  Future<void> _retryUpload() => _runImageUpload(retry: true);
+
+  Future<void> _runImageUpload({required bool retry}) async {
+    final controller = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    );
+    final image = retry
+        ? await controller.retryUpload()
+        : await controller.pickAndUpload();
+    if (!mounted || image == null) return;
+    setState(() {
+      _images = List.unmodifiable([..._images, image]);
+      _coverMediaId ??= image.mediaId;
+    });
+    _onDraftChanged();
   }
 
   Future<void> _submit() async {
@@ -424,6 +476,17 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   }
 
   Future<void> _confirmLeave() async {
+    final uploadController = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    );
+    if (ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy) {
+      uploadController.cancel();
+      if (!_hasUnsavedChanges && mounted) {
+        setState(() => _allowPop = true);
+        Navigator.of(context).pop();
+        return;
+      }
+    }
     final decision = await showDialog<_LeaveDraftDecision>(
       context: context,
       builder: (context) => AlertDialog(
@@ -475,11 +538,17 @@ class _MomentPublishBar extends StatelessWidget {
   const _MomentPublishBar({
     required this.editing,
     required this.submitting,
+    required this.imageCount,
+    required this.uploading,
+    required this.onImagesPressed,
     required this.onPressed,
   });
 
   final bool editing;
   final bool submitting;
+  final int imageCount;
+  final bool uploading;
+  final VoidCallback? onImagesPressed;
   final VoidCallback? onPressed;
 
   @override
@@ -503,16 +572,31 @@ class _MomentPublishBar extends StatelessWidget {
             heightFactor: 1,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
-              child: SizedBox(
-                width: double.infinity,
-                child: WenyouAsyncPrimaryButton(
-                  key: const Key('moment-compose-submit'),
-                  label: editing ? '保存修改' : '发布动态',
-                  loadingLabel: editing ? '正在保存' : '正在发布',
-                  isLoading: submitting,
-                  icon: editing ? Icons.save_outlined : Icons.send_rounded,
-                  onPressed: onPressed,
-                ),
+              child: Row(
+                children: [
+                  OutlinedButton.icon(
+                    key: const Key('moment-compose-images'),
+                    onPressed: onImagesPressed,
+                    icon: uploading
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.photo_library_outlined),
+                    label: Text('图片 $imageCount/9'),
+                  ),
+                  SizedBox(width: tokens.space8),
+                  Expanded(
+                    child: WenyouAsyncPrimaryButton(
+                      key: const Key('moment-compose-submit'),
+                      label: editing ? '保存修改' : '发布动态',
+                      loadingLabel: editing ? '正在保存' : '正在发布',
+                      isLoading: submitting,
+                      icon: editing ? Icons.save_outlined : Icons.send_rounded,
+                      onPressed: onPressed,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -526,9 +610,10 @@ class _MomentImagesEditor extends StatelessWidget {
   const _MomentImagesEditor({
     required this.images,
     required this.coverMediaId,
-    required this.uploadProgress,
+    required this.uploadState,
     required this.onAdd,
     required this.onCancelUpload,
+    required this.onRetryUpload,
     required this.onCoverSelected,
     required this.onRemove,
     required this.onReorder,
@@ -536,9 +621,10 @@ class _MomentImagesEditor extends StatelessWidget {
 
   final List<UploadedEditorImage> images;
   final String? coverMediaId;
-  final MediaUploadProgress? uploadProgress;
+  final MediaUploadTaskState uploadState;
   final VoidCallback? onAdd;
   final VoidCallback? onCancelUpload;
+  final VoidCallback? onRetryUpload;
   final ValueChanged<String> onCoverSelected;
   final ValueChanged<String> onRemove;
   final ReorderCallback onReorder;
@@ -560,18 +646,36 @@ class _MomentImagesEditor extends StatelessWidget {
               icon: const Icon(Icons.add_photo_alternate_outlined),
             ),
           ),
-          if (uploadProgress != null) ...[
+          if (uploadState.isBusy) ...[
             SizedBox(height: tokens.space12),
-            LinearProgressIndicator(value: uploadProgress!.fraction),
+            LinearProgressIndicator(value: uploadState.progress?.fraction),
             Row(
               children: [
-                Expanded(child: Text(_progressLabel(uploadProgress!))),
+                Expanded(child: Text(_uploadProgressLabel(uploadState))),
                 TextButton(
                   key: const Key('moment-compose-cancel-upload'),
                   onPressed: onCancelUpload,
                   child: const Text('取消'),
                 ),
               ],
+            ),
+          ],
+          if (uploadState.failure case final failure?) ...[
+            SizedBox(height: tokens.space12),
+            WenyouStatusBanner(
+              key: const Key('moment-compose-upload-failure'),
+              message: failure.userMessage,
+              detail: failure.requestId == null
+                  ? null
+                  : '请求 ID：${failure.requestId}',
+              tone: WenyouStatusTone.error,
+              action: failure.canRetry
+                  ? TextButton(
+                      key: const Key('moment-compose-retry-upload'),
+                      onPressed: onRetryUpload,
+                      child: const Text('重试上传'),
+                    )
+                  : null,
             ),
           ],
           if (images.isEmpty) ...[
@@ -598,7 +702,7 @@ class _MomentImagesEditor extends StatelessWidget {
                     borderRadius: BorderRadius.circular(tokens.radius12),
                     child: SizedBox.square(
                       dimension: 56,
-                      child: CachedNetworkImage(
+                      child: WenyouCachedImage(
                         imageUrl: image.url,
                         fit: BoxFit.contain,
                       ),
@@ -643,16 +747,20 @@ class _MomentImagesEditor extends StatelessWidget {
     );
   }
 
-  String _progressLabel(MediaUploadProgress progress) {
-    return switch (progress.stage) {
-      MediaUploadStage.preparing => '正在准备图片…',
-      MediaUploadStage.uploading when progress.fraction != null =>
-        '正在上传 ${(progress.fraction! * 100).round()}%',
-      MediaUploadStage.uploading => '正在上传图片…',
-      MediaUploadStage.confirming => '正在确认图片…',
-      MediaUploadStage.processing => '图片正在安全处理中…',
-    };
-  }
+}
+
+String _uploadProgressLabel(MediaUploadTaskState state) {
+  final progress = state.progress;
+  return switch (state.phase) {
+    MediaUploadTaskPhase.picking => '正在打开相册…',
+    MediaUploadTaskPhase.preparing => '正在准备图片…',
+    MediaUploadTaskPhase.uploading when progress?.fraction != null =>
+      '正在上传 ${(progress!.fraction! * 100).round()}%',
+    MediaUploadTaskPhase.uploading => '正在上传图片…',
+    MediaUploadTaskPhase.confirming => '正在确认图片…',
+    MediaUploadTaskPhase.processing => '图片正在安全处理中…',
+    MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
+  };
 }
 
 class _ComposeFailure extends StatelessWidget {
