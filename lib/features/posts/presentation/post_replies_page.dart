@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -54,87 +55,72 @@ class PostRepliesPage extends ConsumerWidget {
             state.root?.threadId == threadId
         ? state.root
         : null;
-    return WenyouReadingChrome(
-      builder: (context, actionsVisible) => Scaffold(
-        appBar: readyRoot == null
-            ? AppBar(
-                title: const Text('楼中楼讨论'),
-                actions: [_returnToRootAction(context)],
-              )
-            : null,
-        body: switch (state.phase) {
-          PostDiscussionPhase.loading => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          PostDiscussionPhase.failed => _DiscussionFailure(
-            failure: state.failure,
-            onRetry: () => ref.read(provider.notifier).load(),
-          ),
-          PostDiscussionPhase.ready =>
-            state.root?.threadId != threadId
-                ? const _RouteMismatch()
-                : NestedScrollView(
-                    key: const Key('post-replies-reading-scroll'),
-                    floatHeaderSlivers: true,
-                    headerSliverBuilder: (context, _) => [
-                      SliverAppBar(
-                        key: const Key('post-replies-reading-app-bar'),
-                        floating: true,
-                        snap: true,
-                        title: _DiscussionTitle(root: state.root!),
-                        actions: [_returnToRootAction(context)],
-                      ),
-                    ],
-                    body: RefreshIndicator(
-                      onRefresh: () => ref.read(provider.notifier).refresh(),
-                      child: _DiscussionList(
-                        state: state,
-                        actions: actions,
-                        viewerId: viewerId,
-                        authenticated: session.isAuthenticated,
-                        focusedReplyId: focusedReplyId,
-                        reportsEnabled: reportsEnabled,
-                        onOrder: (order) =>
-                            ref.read(provider.notifier).setOrder(order),
-                        onAuthor: (authorId) =>
-                            ref.read(provider.notifier).setAuthor(authorId),
-                        onLoadMore: () =>
-                            ref.read(provider.notifier).loadMore(),
-                        onCompose: (target) =>
-                            _compose(context, ref, provider, target),
-                        onDelete: (post, root) => _delete(
-                          context,
-                          ref,
-                          provider,
-                          actionsProvider,
-                          post,
-                          root: root,
-                        ),
-                      ),
+    return Scaffold(
+      appBar: AppBar(
+        title: readyRoot == null
+            ? const Text('楼中楼讨论')
+            : _DiscussionTitle(root: readyRoot),
+        actions: [_returnToRootAction(context)],
+      ),
+      body: switch (state.phase) {
+        PostDiscussionPhase.loading => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        PostDiscussionPhase.failed => _DiscussionFailure(
+          failure: state.failure,
+          onRetry: () => ref.read(provider.notifier).load(),
+        ),
+        PostDiscussionPhase.ready =>
+          state.root?.threadId != threadId
+              ? const _RouteMismatch()
+              : RefreshIndicator(
+                  onRefresh: () => ref.read(provider.notifier).refresh(),
+                  child: _DiscussionList(
+                    state: state,
+                    actions: actions,
+                    viewerId: viewerId,
+                    authenticated: session.isAuthenticated,
+                    focusedReplyId: focusedReplyId,
+                    reportsEnabled: reportsEnabled,
+                    onOrder: (order) =>
+                        ref.read(provider.notifier).setOrder(order),
+                    onAuthor: (authorId) =>
+                        ref.read(provider.notifier).setAuthor(authorId),
+                    onLoadMore: () => ref.read(provider.notifier).loadMore(),
+                    onCompose: (target) =>
+                        _compose(context, ref, provider, target),
+                    onDelete: (post, root) => _delete(
+                      context,
+                      ref,
+                      provider,
+                      actionsProvider,
+                      post,
+                      root: root,
                     ),
                   ),
-        },
-        floatingActionButton: readyRoot == null || !actionsVisible
-            ? null
-            : WenyouComposerAction(
-                key: const Key('post-reply-compose'),
-                label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
-                icon: session.isAuthenticated
-                    ? Icons.reply_rounded
-                    : Icons.login_rounded,
-                onPressed: session.isAuthenticated
-                    ? () => _compose(
-                        context,
-                        ref,
-                        provider,
-                        _replyTarget(readyRoot, readyRoot),
-                      )
-                    : () => context.pushNamed(
-                        'login',
-                        queryParameters: {'returnTo': _location()},
-                      ),
-              ),
-      ),
+                ),
+      },
+      floatingActionButton: readyRoot == null
+          ? null
+          : WenyouComposerAction(
+              key: const Key('post-reply-compose'),
+              label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
+              icon: session.isAuthenticated
+                  ? Icons.reply_rounded
+                  : Icons.login_rounded,
+              onPressed: session.isAuthenticated
+                  ? () => _compose(
+                      context,
+                      ref,
+                      provider,
+                      _replyTarget(readyRoot, readyRoot),
+                    )
+                  : () => context.pushNamed(
+                      'login',
+                      queryParameters: {'returnTo': _location()},
+                    ),
+            ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
     );
   }
 
@@ -217,6 +203,8 @@ class PostRepliesPage extends ConsumerWidget {
 }
 
 class _DiscussionList extends StatelessWidget {
+  static const _contentCacheExtent = 4000.0;
+
   const _DiscussionList({
     required this.state,
     required this.actions,
@@ -251,112 +239,139 @@ class _DiscussionList extends StatelessWidget {
       root.author.id: root.author,
       for (final reply in state.replies) reply.author.id: reply.author,
     };
-    return ListView(
-      key: const Key('post-replies-list'),
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        MediaQuery.sizeOf(context).width <= 400
-            ? tokens.space12
-            : tokens.space24,
-        tokens.space8,
-        MediaQuery.sizeOf(context).width <= 400
-            ? tokens.space12
-            : tokens.space24,
-        tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
+    final horizontal = MediaQuery.sizeOf(context).width <= 400
+        ? tokens.space12
+        : tokens.space24;
+    final leadingWidgets = <Widget>[
+      if (actions.failure != null) ...[
+        WenyouStatusBanner(
+          message: actions.failure!.userMessage,
+          detail: _failureDetail(actions.failure),
+          tone: WenyouStatusTone.error,
+        ),
+        SizedBox(height: tokens.space12),
+      ],
+      _PostCard(
+        key: const Key('post-discussion-root'),
+        post: root,
+        root: true,
+        canEdit: root.isAuthoredBy(viewerId),
+        canDelete: root.isAuthoredBy(viewerId),
+        pending: actions.pendingPostId == root.id,
+        reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
+            ? _reportLocation(root, root.id)
+            : null,
+        onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
+        onDelete: () => onDelete(root, true),
       ),
-      children: [
-        WenyouConstrainedWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      SizedBox(height: tokens.space12),
+      _ReplyFilters(
+        state: state,
+        replyCount: root.replyCount,
+        authors: authors.values.toList(growable: false),
+        onOrder: onOrder,
+        onAuthor: onAuthor,
+      ),
+      SizedBox(height: tokens.space12),
+      if (state.transientFailure != null) ...[
+        WenyouStatusBanner(
+          message: state.transientFailure!.userMessage,
+          detail: _failureDetail(state.transientFailure),
+          tone: WenyouStatusTone.error,
+          action: TextButton(onPressed: onLoadMore, child: const Text('重试')),
+        ),
+        SizedBox(height: tokens.space12),
+      ],
+    ];
+    return CustomScrollView(
+      key: const Key('post-replies-list'),
+      scrollCacheExtent: const ScrollCacheExtent.pixels(_contentCacheExtent),
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            horizontal,
+            tokens.space8,
+            horizontal,
+            0,
+          ),
+          sliver: SliverList.list(
             children: [
-              if (actions.failure != null) ...[
-                WenyouStatusBanner(
-                  message: actions.failure!.userMessage,
-                  detail: _failureDetail(actions.failure),
-                  tone: WenyouStatusTone.error,
-                ),
-                SizedBox(height: tokens.space12),
-              ],
-              _PostCard(
-                key: const Key('post-discussion-root'),
-                post: root,
-                root: true,
-                canEdit: root.isAuthoredBy(viewerId),
-                canDelete: root.isAuthoredBy(viewerId),
-                pending: actions.pendingPostId == root.id,
-                reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
-                    ? _reportLocation(root, root.id)
-                    : null,
-                onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
-                onDelete: () => onDelete(root, true),
-              ),
-              SizedBox(height: tokens.space12),
-              _ReplyFilters(
-                state: state,
-                replyCount: root.replyCount,
-                authors: authors.values.toList(growable: false),
-                onOrder: onOrder,
-                onAuthor: onAuthor,
-              ),
-              SizedBox(height: tokens.space12),
-              if (state.transientFailure != null) ...[
-                WenyouStatusBanner(
-                  message: state.transientFailure!.userMessage,
-                  detail: _failureDetail(state.transientFailure),
-                  tone: WenyouStatusTone.error,
-                  action: TextButton(
-                    onPressed: onLoadMore,
-                    child: const Text('重试'),
-                  ),
-                ),
-                SizedBox(height: tokens.space12),
-              ],
-              if (state.replies.isEmpty)
-                const WenyouEmptyState(
+              for (final child in leadingWidgets)
+                WenyouConstrainedWidth(child: child),
+            ],
+          ),
+        ),
+        if (state.replies.isEmpty)
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: horizontal),
+            sliver: const SliverToBoxAdapter(
+              child: WenyouConstrainedWidth(
+                child: WenyouEmptyState(
                   icon: Icons.forum_outlined,
                   title: '还没有回复',
                   message: '成为这段讨论的第一位回复者。',
-                )
-              else
-                for (var index = 0; index < state.replies.length; index++) ...[
-                  if (index > 0) Divider(height: tokens.space24),
-                  _PostCard(
-                    key: Key('post-reply-${state.replies[index].id}'),
-                    post: state.replies[index],
-                    focused: state.replies[index].id == focusedReplyId,
-                    canEdit: state.replies[index].isAuthoredBy(viewerId),
-                    canDelete: state.replies[index].isAuthoredBy(viewerId),
-                    pending: actions.pendingPostId == state.replies[index].id,
-                    reportReturnTo:
-                        reportsEnabled &&
-                            !state.replies[index].isAuthoredBy(viewerId)
-                        ? _reportLocation(root, state.replies[index].id)
-                        : null,
-                    onReply: authenticated
-                        ? () => onCompose(
-                            _replyTarget(root, state.replies[index]),
-                          )
-                        : null,
-                    onEdit: () =>
-                        onCompose(_editTarget(state.replies[index], '编辑回复')),
-                    onDelete: () => onDelete(state.replies[index], false),
-                  ),
-                ],
-              if (state.hasMore) ...[
-                SizedBox(height: tokens.space12),
-                OutlinedButton.icon(
-                  key: const Key('post-replies-load-more'),
-                  onPressed: state.isLoadingMore ? null : onLoadMore,
-                  icon: state.isLoadingMore
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.expand_more_rounded),
-                  label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
                 ),
-              ],
-            ],
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: horizontal),
+            sliver: SliverList.builder(
+              itemCount: state.replies.length,
+              itemBuilder: (context, index) {
+                final reply = state.replies[index];
+                return WenyouConstrainedWidth(
+                  child: Column(
+                    children: [
+                      if (index > 0) Divider(height: tokens.space24),
+                      _PostCard(
+                        key: Key('post-reply-${reply.id}'),
+                        post: reply,
+                        focused: reply.id == focusedReplyId,
+                        canEdit: reply.isAuthoredBy(viewerId),
+                        canDelete: reply.isAuthoredBy(viewerId),
+                        pending: actions.pendingPostId == reply.id,
+                        reportReturnTo:
+                            reportsEnabled && !reply.isAuthoredBy(viewerId)
+                            ? _reportLocation(root, reply.id)
+                            : null,
+                        onReply: authenticated
+                            ? () => onCompose(_replyTarget(root, reply))
+                            : null,
+                        onEdit: () => onCompose(_editTarget(reply, '编辑回复')),
+                        onDelete: () => onDelete(reply, false),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            horizontal,
+            state.hasMore ? tokens.space12 : 0,
+            horizontal,
+            tokens.minimumTouchTarget + tokens.space32 + tokens.space16,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: WenyouConstrainedWidth(
+              child: state.hasMore
+                  ? OutlinedButton.icon(
+                      key: const Key('post-replies-load-more'),
+                      onPressed: state.isLoadingMore ? null : onLoadMore,
+                      icon: state.isLoadingMore
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.expand_more_rounded),
+                      label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ),
         ),
       ],
@@ -769,7 +784,7 @@ class _PostAuthorLine extends StatelessWidget {
             dimension: avatarSize,
             child: post.author.avatarUrl == null
                 ? fallback
-                : CachedNetworkImage(
+                : WenyouCachedImage(
                     imageUrl: post.author.avatarUrl!,
                     fit: BoxFit.cover,
                     placeholder: (_, _) => fallback,

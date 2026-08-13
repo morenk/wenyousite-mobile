@@ -124,10 +124,7 @@ class MarkdownContent {
           _previewDice,
           (match) => '[${match.group(1)!.trim()}]',
         )
-        .replaceAllMapped(_previewImage, (match) {
-          final alt = match.group(1)?.trim() ?? '';
-          return alt.isEmpty ? '[图片]' : '[图片：$alt]';
-        })
+        .replaceAll(_previewImage, '[图片]')
         .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
         .replaceAll(_httpAutolink, '[链接]')
         .replaceAll(_previewUrl, '[链接]')

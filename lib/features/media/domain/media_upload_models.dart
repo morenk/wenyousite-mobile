@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+const maxMediaImageBytes = 10 * 1024 * 1024;
+
 enum MediaUploadStage { preparing, uploading, confirming, processing }
 
 class MediaUploadInput {

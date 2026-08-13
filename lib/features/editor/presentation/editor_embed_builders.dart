@@ -56,16 +56,30 @@ class _DiceEmbedBuilder extends EmbedBuilder {
   @override
   String toPlainText(Embed node) {
     final data = node.value.data;
-    return data is Map ? '🎲 ${data['notation'] ?? '骰子'}' : '🎲 骰子';
+    return data is Map ? data['notation']?.toString() ?? '骰子' : '骰子';
   }
+
+  @override
+  WidgetSpan buildWidgetSpan(Widget widget) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: widget,
+  );
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final notation = _payload(embedContext)?['notation']?.toString() ?? '骰子';
-    return _AtomicNode(
-      icon: Icons.casino_rounded,
-      label: notation,
-      semanticLabel: '待掷骰子 $notation',
+    final style = embedContext.textStyle.copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    return Semantics(
+      key: const Key('editor-dice-inline'),
+      label: '待掷骰子 $notation',
+      child: Text(
+        notation,
+        style: style,
+        strutStyle: StrutStyle.fromTextStyle(style, forceStrutHeight: true),
+      ),
     );
   }
 }
@@ -115,17 +129,16 @@ class _ImageEmbedBuilder extends EmbedBuilder {
   String get key => MarkdownDeltaCodec.imageEmbed;
 
   @override
-  String toPlainText(Embed node) {
-    final data = node.value.data;
-    return data is Map ? '[图片：${data['alt'] ?? '正文插图'}]' : '[正文插图]';
-  }
+  String toPlainText(Embed node) => '[图片]';
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final payload = _payload(embedContext);
     final url = payload?['url']?.toString();
     final alt = payload?['alt']?.toString().trim();
-    final label = alt == null || alt.isEmpty ? '查看正文插图' : '查看正文插图：$alt';
+    final label = alt == null || alt.isEmpty || alt == '图片'
+        ? '查看正文图片原图'
+        : '查看正文图片原图：$alt';
     if (url == null) {
       return const _UnavailableImage(message: '图片节点不完整');
     }

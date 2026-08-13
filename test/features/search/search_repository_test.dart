@@ -77,7 +77,7 @@ void main() {
     expect(posts.cursor, 'cursor-2');
     expect(posts.hasMore, isTrue);
     expect(posts.items.single.floorNumber, 7);
-    expect(posts.items.single.preview, '星海正文 [图片：航图]');
+    expect(posts.items.single.preview, '星海正文 [图片]');
     expect(posts.items.single.threadTitle, '星海旅团');
     expect(threadPosts.items.single.threadId, 'thread-1');
   });

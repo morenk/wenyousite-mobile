@@ -1,15 +1,25 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
@@ -103,23 +113,25 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pump();
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
     await tester.pumpAndSettle();
     expect(find.text('回复 @楼层作者'), findsWidgets);
     expect(find.text('回复会平级挂在当前主楼层下。'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('post-composer-sheet'))).height,
-      greaterThanOrEqualTo(900),
+      inInclusiveRange(400, 600),
     );
     expect(
       tester.getSize(find.byKey(const Key('post-composer-canvas'))).height,
-      greaterThan(780),
+      greaterThan(240),
     );
     expect(
       tester.getSize(find.byKey(const Key('post-composer-close'))).height,
       greaterThanOrEqualTo(48),
     );
     expect(
-      tester.getSize(find.byKey(const Key('post-composer-submit'))).height,
+      tester.getSize(find.byKey(const Key('editor-submit'))).height,
       greaterThanOrEqualTo(48),
     );
     expect(
@@ -144,7 +156,7 @@ void main() {
       'thread',
     );
     await _replaceComposerText(tester, '新发表的回复');
-    await tester.tap(find.byKey(const Key('post-composer-submit')));
+    await tester.tap(find.byKey(const Key('editor-submit')));
     await tester.pumpAndSettle();
 
     expect(repository.createInputs, hasLength(1));
@@ -167,7 +179,7 @@ void main() {
       editController.document.length - 1,
     );
     await _replaceComposerText(tester, '编辑后的新回复');
-    await tester.tap(find.byKey(const Key('post-composer-submit')));
+    await tester.tap(find.byKey(const Key('editor-submit')));
     await tester.pumpAndSettle();
 
     expect(repository.updateRequests.single.version, 1);
@@ -235,28 +247,219 @@ void main() {
     final editor = tester.widget<QuillEditor>(
       find.byKey(const Key('post-composer-body')),
     );
-    expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
-    expect(editor.config.customStyles?.paragraph?.style.height, 1.75);
-    expect(editor.focusNode.hasFocus, isTrue);
-    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
-    await tester.pumpAndSettle();
-
-    expect(
-      find.byKey(const Key('post-composer-floating-toolbar')),
-      findsOneWidget,
+    final dock = tester.widget<WenyouComposerDock>(
+      find.byKey(const Key('post-composer-toolbar')),
     );
-    final formatTools = find.byKey(const Key('editor-format-tools'));
-    expect(formatTools, findsOneWidget);
-    expect(find.byKey(const Key('editor-heading')), findsNothing);
+    expect(dock.surface, WenyouComposerSurface.expandableSheet);
+    expect(dock.profile, WenyouComposerProfile.richMarkdown);
+    expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
+    expect(editor.config.customStyles?.paragraph?.style.height, 1.8);
     expect(editor.focusNode.hasFocus, isTrue);
+    final toolbar = find.byKey(const Key('post-composer-toolbar'));
+    final unobstructedToolbarTop = tester.getTopLeft(toolbar).dy;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pump();
+    final firstInsetFrameToolbarTop = tester.getTopLeft(toolbar).dy;
+
+    expect(firstInsetFrameToolbarTop, lessThan(unobstructedToolbarTop));
+    expect(toolbar, findsOneWidget);
+    expect(
+      find.descendant(of: toolbar, matching: find.byType(AnimatedPadding)),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('editor-heading')), findsOneWidget);
+    expect(editor.focusNode.hasFocus, isTrue);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.getTopLeft(toolbar).dy, firstInsetFrameToolbarTop);
     final selection = editor.controller.selection;
 
-    await tester.tap(formatTools);
+    await tester.tap(find.byKey(const Key('editor-more')));
     await tester.pump();
 
-    expect(find.byKey(const Key('editor-heading')), findsOneWidget);
+    expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
+    expect(
+      find.descendant(of: toolbar, matching: find.byType(AnimatedSize)),
+      findsNothing,
+    );
     expect(editor.controller.selection, selection);
     expect(editor.focusNode.hasFocus, isTrue);
+  });
+
+  testWidgets('回复编辑器选图后直接上传并写入统一图片节点', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        editorImagePickerPortProvider.overrideWithValue(
+          _FakeEditorImagePicker(),
+        ),
+        mediaUploadGatewayPortProvider.overrideWithValue(
+          RepositoryMediaUploadGateway(_FakeMediaUploadRepository()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('描述这张图片'), findsNothing);
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('post-composer-body')),
+    );
+    expect(
+      MarkdownDeltaCodec.encode(editor.controller.document.toDelta()),
+      contains('![图片](https://cdn.example.com/reply.png)'),
+    );
+  });
+
+  testWidgets('回复图片上传失败后可复用原图片重试且只插入一次', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final uploadGateway = _FailingThenSuccessfulMediaUploadGateway();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        editorImagePickerPortProvider.overrideWithValue(
+          _FakeEditorImagePicker(),
+        ),
+        mediaUploadGatewayPortProvider.overrideWithValue(uploadGateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+    await _replaceComposerText(tester, '保留的回复正文');
+
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('图片处理失败'), findsOneWidget);
+    expect(find.text('请求 ID：request-one'), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-retry-upload')), findsOneWidget);
+    var editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('post-composer-body')),
+    );
+    var markdown = MarkdownDeltaCodec.encode(
+      editor.controller.document.toDelta(),
+    );
+    expect(markdown, contains('保留的回复正文'));
+    expect(markdown, isNot(contains('wenyou_image')));
+
+    expect(editor.controller.readOnly, isFalse);
+    expect(
+      tester
+          .widget<WenyouComposerDock>(
+            find.byKey(const Key('post-composer-toolbar')),
+          )
+          .enabled,
+      isTrue,
+    );
+
+    await tester.tap(find.byKey(const Key('post-composer-retry-upload')));
+    await tester.pumpAndSettle();
+
+    editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('post-composer-body')),
+    );
+    markdown = MarkdownDeltaCodec.encode(editor.controller.document.toDelta());
+    expect(uploadGateway.inputs, hasLength(2));
+    expect(uploadGateway.inputs[1], same(uploadGateway.inputs[0]));
+    const retriedImage = '![图片](https://cdn.example.com/retried-reply.png)';
+    expect(markdown.replaceFirst(retriedImage, ''), contains('保留的回复正文'));
+    expect(retriedImage.allMatches(markdown), hasLength(1));
+    expect(find.byKey(const Key('post-composer-retry-upload')), findsNothing);
+  });
+
+  testWidgets('上传中系统返回会在关闭 Sheet 前取消任务', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final uploadGateway = _LateCompletingMediaUploadGateway();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        editorImagePickerPortProvider.overrideWithValue(
+          _FakeEditorImagePicker(),
+        ),
+        mediaUploadGatewayPortProvider.overrideWithValue(uploadGateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await tester.pump();
+    expect(find.textContaining('正在上传图片'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    expect(uploadGateway.operation.cancelled, isTrue);
+    uploadGateway.operation.complete(
+      const UploadedEditorImage(
+        mediaId: 'late-reply-image',
+        url: 'https://cdn.example.com/late-reply.png',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('360dp 独立讨论保持正文优先视觉基线', (tester) async {
@@ -420,7 +623,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('楼中楼阅读顶栏随正文滚动收起并可立即唤回', (tester) async {
+  testWidgets('楼中楼阅读滚动时顶栏和发表入口保持固定', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -452,8 +655,8 @@ void main() {
       const Offset(0, -500),
     );
     await tester.pumpAndSettle();
-    expect(find.text('远行主题').hitTestable(), findsNothing);
-    expect(find.byKey(const Key('post-reply-compose')), findsNothing);
+    expect(find.text('远行主题').hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
 
     await tester.drag(
       find.byKey(const Key('post-replies-list')),
@@ -641,4 +844,108 @@ class _FakeSessionRemote implements SessionRemote {
   @override
   Future<SessionTokens> refresh(String refreshToken) async =>
       _tokensFor('author-1');
+}
+
+class _FakeEditorImagePicker implements EditorImagePicker {
+  @override
+  Future<MediaUploadInput?> pickFromGallery() async {
+    return MediaUploadInput(
+      filename: 'reply.png',
+      declaredContentType: 'image/png',
+      bytes: Uint8List.fromList(const [137, 80, 78, 71]),
+    );
+  }
+}
+
+class _FakeMediaUploadRepository implements MediaUploadRepository {
+  @override
+  Future<UploadedEditorImage> uploadImage(
+    MediaUploadInput input, {
+    CancelToken? cancelToken,
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) async {
+    return const UploadedEditorImage(
+      mediaId: 'reply-image',
+      url: 'https://cdn.example.com/reply.png',
+    );
+  }
+}
+
+class _FailingThenSuccessfulMediaUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    inputs.add(input);
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    if (inputs.length == 1) return _FailingMediaUploadOperation();
+    return _SuccessfulMediaUploadOperation();
+  }
+}
+
+class _FailingMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  @override
+  Future<UploadedEditorImage> get result => Future<UploadedEditorImage>.error(
+    const ApiFailure(userMessage: '图片处理失败', requestId: 'request-one'),
+  );
+
+  @override
+  void cancel() {}
+}
+
+class _SuccessfulMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  @override
+  Future<UploadedEditorImage> get result => Future.value(
+    const UploadedEditorImage(
+      mediaId: 'retried-reply-image',
+      url: 'https://cdn.example.com/retried-reply.png',
+    ),
+  );
+
+  @override
+  void cancel() {}
+}
+
+class _LateCompletingMediaUploadGateway implements MediaUploadGateway {
+  final operation = _LateCompletingMediaUploadOperation();
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length ~/ 2,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return operation;
+  }
+}
+
+class _LateCompletingMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  final _completer = Completer<UploadedEditorImage>();
+  var cancelled = false;
+
+  @override
+  Future<UploadedEditorImage> get result => _completer.future;
+
+  @override
+  void cancel() => cancelled = true;
+
+  void complete(UploadedEditorImage image) => _completer.complete(image);
 }

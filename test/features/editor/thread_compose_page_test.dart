@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -17,7 +19,8 @@ import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.d
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -149,20 +152,95 @@ void main() {
     final imageButton = find.byKey(const Key('editor-image'));
     await tester.ensureVisible(imageButton);
     await tester.tap(imageButton);
-    await tester.pumpAndSettle();
-    expect(find.text('描述这张图片'), findsOneWidget);
-
-    await tester.tap(find.text('继续上传'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
+    expect(find.text('描述这张图片'), findsNothing);
     expect(
       controller.state.body,
-      contains('![主题正文插图](https://cdn.example.com/editor.png)'),
+      contains('![图片](https://cdn.example.com/editor.png)'),
     );
   });
 
-  for (final size in const [Size(360, 600), Size(400, 800), Size(600, 900)]) {
+  testWidgets('图片上传中锁定发布，取消后保留原正文', (tester) async {
+    final controller = await _readyController(_MemorySnapshotStore())
+      ..updateBody('保留的主题正文');
+    final mediaRepository = _BlockingMediaRepository();
+    await _pumpPage(
+      tester,
+      controller,
+      picker: _FakePicker(),
+      mediaRepository: mediaRepository,
+    );
+    final publish = find.byKey(const Key('compose-publish'));
+    expect(tester.widget<TextButton>(publish).onPressed, isNotNull);
+
+    final imageButton = find.byKey(const Key('editor-image'));
+    await tester.ensureVisible(imageButton);
+    await tester.tap(imageButton);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('正在上传图片'), findsOneWidget);
+    expect(
+      tester
+          .widgetList<LinearProgressIndicator>(
+            find.byType(LinearProgressIndicator),
+          )
+          .any((indicator) => indicator.value == .5),
+      isTrue,
+    );
+    expect(tester.widget<TextButton>(publish).onPressed, isNull);
+
+    await tester.tap(find.text('取消上传'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(mediaRepository.cancelled, isTrue);
+    expect(find.textContaining('正在上传图片'), findsNothing);
+    expect(controller.state.body, '保留的主题正文');
+    expect(controller.state.body, isNot(contains('wenyou_image')));
+    expect(tester.widget<TextButton>(publish).onPressed, isNotNull);
+  });
+
+  testWidgets('上传中系统返回先取消任务且迟到成功不会写入草稿', (tester) async {
+    final store = _MemorySnapshotStore();
+    final controller = await _readyController(store)
+      ..updateBody('返回前正文');
+    final gateway = _LateCompletingMediaUploadGateway();
+    await _pumpPage(
+      tester,
+      controller,
+      picker: _FakePicker(),
+      mediaGateway: gateway,
+    );
+
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await tester.pump();
+    expect(find.textContaining('正在上传图片'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    expect(gateway.operation.cancelled, isTrue);
+    gateway.operation.complete(
+      const UploadedEditorImage(
+        mediaId: 'late-image',
+        url: 'https://cdn.example.com/late.png',
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(controller.state.body, '返回前正文');
+    expect(controller.state.body, isNot(contains('late.png')));
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final size in const [
+    Size(320, 640),
+    Size(360, 600),
+    Size(400, 800),
+    Size(600, 900),
+  ]) {
     testWidgets('${size.width}dp 创作页和紧凑顶栏无布局溢出', (tester) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
@@ -171,11 +249,6 @@ void main() {
       final controller = await _readyController(_MemorySnapshotStore());
 
       await _pumpPage(tester, controller);
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('compose-body')),
-        240,
-        scrollable: find.byType(Scrollable).first,
-      );
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(const Key('compose-body')), findsOneWidget);
@@ -186,8 +259,8 @@ void main() {
     });
   }
 
-  for (final width in const [320.0, 360.0, 400.0]) {
-    testWidgets('$width dp 键盘写作收起整排格式栏且保留焦点选区', (tester) async {
+  for (final width in const [320.0, 360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 键盘写作固定完整格式栏且保留焦点选区', (tester) async {
       tester.view.physicalSize = Size(width, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -205,43 +278,40 @@ void main() {
       tester.view.viewInsets = const FakeViewPadding(bottom: 300);
       await tester.pumpAndSettle();
 
-      final formatTools = find.byKey(const Key('editor-format-tools'));
-      final floatingToolbar = find.byKey(const Key('compose-floating-toolbar'));
-      expect(floatingToolbar, findsOneWidget);
-      expect(
-        tester.widget<WenyouEditorToolbar>(floatingToolbar).enabled,
-        isTrue,
-      );
+      final toolbar = find.byKey(const Key('compose-toolbar'));
+      expect(toolbar, findsOneWidget);
+      final dock = tester.widget<WenyouComposerDock>(toolbar);
+      expect(dock.enabled, isTrue);
+      expect(dock.surface, WenyouComposerSurface.page);
+      expect(dock.profile, WenyouComposerProfile.richMarkdown);
       expect(controller.state.isSubmitting, isFalse);
       expect(find.text('当前格式组合暂时不能安全保存。'), findsNothing);
-      expect(formatTools, findsOneWidget);
-      expect(tester.getSize(formatTools).height, greaterThanOrEqualTo(48));
-      expect(find.bySemanticsLabel('格式工具'), findsOneWidget);
-      expect(find.byKey(const Key('editor-heading')), findsNothing);
-      expect(editor.focusNode.hasFocus, isTrue);
-
-      await tester.tap(formatTools);
-      await tester.pump();
-
+      expect(tester.getSize(toolbar).height, greaterThanOrEqualTo(48));
+      if (width <= 400) {
+        expect(find.bySemanticsLabel('正文格式工具'), findsOneWidget);
+      }
       expect(find.byKey(const Key('editor-heading')), findsOneWidget);
       expect(find.byKey(const Key('editor-bold')), findsOneWidget);
       expect(find.byKey(const Key('editor-italic')), findsOneWidget);
       expect(find.byKey(const Key('editor-image')), findsOneWidget);
       expect(find.byKey(const Key('editor-more')), findsOneWidget);
+      expect(editor.focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pump();
+
+      expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
       expect(editor.controller.selection, selection);
       expect(editor.focusNode.hasFocus, isTrue);
       if (width == 360) {
         await tester.tap(find.byKey(const Key('editor-heading')));
-        await tester.pumpAndSettle();
-        expect(find.text('二级标题'), findsOneWidget);
+        await tester.pump();
+        expect(find.byKey(const Key('editor-heading-tray')), findsOneWidget);
 
-        await tester.tap(find.text('二级标题'));
-        await tester.pumpAndSettle();
+        await tester.tap(find.text('H2'));
+        await tester.pump();
 
-        expect(
-          find.byKey(const Key('compose-floating-toolbar')),
-          findsOneWidget,
-        );
+        expect(find.byKey(const Key('editor-heading-tray')), findsNothing);
         expect(editor.controller.selection, selection);
         expect(
           editor.controller.getSelectionStyle().attributes['header']?.value,
@@ -253,7 +323,7 @@ void main() {
     });
   }
 
-  testWidgets('创作首屏先呈现标题和正文，发布设置默认收起', (tester) async {
+  testWidgets('创作首屏固定标题、发布元信息和正文', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -266,8 +336,9 @@ void main() {
     final body = find.byKey(const Key('compose-body'));
     final settings = find.byKey(const Key('compose-publish-settings'));
     expect(tester.getTopLeft(title).dy, lessThan(tester.getTopLeft(body).dy));
-    expect(tester.getSize(body).height, greaterThanOrEqualTo(440));
-    expect(find.byKey(const Key('compose-category')), findsNothing);
+    expect(tester.getSize(body).height, greaterThanOrEqualTo(300));
+    expect(find.byKey(const Key('compose-category')), findsOneWidget);
+    expect(find.byKey(const Key('compose-visibility')), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const Key('compose-remote-drafts'))).height,
       greaterThanOrEqualTo(48),
@@ -294,10 +365,14 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(settings);
-    await tester.tap(settings);
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('compose-category')), findsOneWidget);
-    expect(find.byKey(const Key('compose-visibility')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('compose-category')));
+    await tester.pump();
+    expect(find.byKey(const Key('compose-metadata-panel')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('compose-visibility')));
+    await tester.pump();
+    expect(find.text('公开'), findsOneWidget);
+    await tester.tap(find.byTooltip('标签'));
+    await tester.pump();
     expect(find.byKey(const Key('compose-tags')), findsOneWidget);
   });
 
@@ -319,7 +394,7 @@ void main() {
       find.byKey(const Key('compose-body')),
     );
     expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
-    expect(editor.config.customStyles?.paragraph?.style.height, 1.75);
+    expect(editor.config.customStyles?.paragraph?.style.height, 1.8);
     editor.focusNode.requestFocus();
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     addTearDown(tester.view.resetViewInsets);
@@ -432,6 +507,7 @@ Future<void> _pumpPage(
   ThreadComposeController controller, {
   EditorImagePicker? picker,
   MediaUploadRepository? mediaRepository,
+  MediaUploadGateway? mediaGateway,
   ContentDraftsController? contentDraftsController,
 }) async {
   await tester.pumpWidget(
@@ -443,9 +519,14 @@ Future<void> _pumpPage(
           contentDraftsControllerProvider.overrideWith(
             (ref) => contentDraftsController,
           ),
-        if (picker != null) editorImagePickerProvider.overrideWithValue(picker),
-        if (mediaRepository != null)
-          mediaUploadRepositoryProvider.overrideWithValue(mediaRepository),
+        if (picker != null)
+          editorImagePickerPortProvider.overrideWithValue(picker),
+        if (mediaGateway != null)
+          mediaUploadGatewayPortProvider.overrideWithValue(mediaGateway)
+        else if (mediaRepository != null)
+          mediaUploadGatewayPortProvider.overrideWithValue(
+            RepositoryMediaUploadGateway(mediaRepository),
+          ),
       ],
       child: MaterialApp(
         theme: AppTheme.light,
@@ -650,4 +731,59 @@ class _FakeMediaRepository implements MediaUploadRepository {
       url: 'https://cdn.example.com/editor.png',
     );
   }
+}
+
+class _BlockingMediaRepository implements MediaUploadRepository {
+  var cancelled = false;
+
+  @override
+  Future<UploadedEditorImage> uploadImage(
+    MediaUploadInput input, {
+    CancelToken? cancelToken,
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) async {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length ~/ 2,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    await cancelToken!.whenCancel;
+    cancelled = true;
+    throw const ApiFailure(userMessage: '图片上传已取消。');
+  }
+}
+
+class _LateCompletingMediaUploadGateway implements MediaUploadGateway {
+  final operation = _LateCompletingMediaUploadOperation();
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length ~/ 2,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return operation;
+  }
+}
+
+class _LateCompletingMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  final _completer = Completer<UploadedEditorImage>();
+  var cancelled = false;
+
+  @override
+  Future<UploadedEditorImage> get result => _completer.future;
+
+  @override
+  void cancel() => cancelled = true;
+
+  void complete(UploadedEditorImage image) => _completer.complete(image);
 }

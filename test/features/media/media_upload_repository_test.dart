@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -192,9 +193,65 @@ void main() {
       ),
     );
   });
+
+  test('application gateway 透传进度并幂等取消 data 操作', () async {
+    final repository = _RecordingMediaUploadRepository();
+    final gateway = RepositoryMediaUploadGateway(repository);
+    final input = MediaUploadInput(
+      filename: 'adapter.png',
+      declaredContentType: 'image/png',
+      bytes: Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47]),
+    );
+    final progress = <MediaUploadProgress>[];
+
+    final operation = gateway.startImageUpload(input, onProgress: progress.add);
+    repository.emit(
+      const MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: 2,
+        totalBytes: 4,
+      ),
+    );
+    operation.cancel();
+    operation.cancel();
+
+    expect(repository.input, same(input));
+    expect(repository.cancelToken?.isCancelled, isTrue);
+    expect(progress.single.fraction, .5);
+
+    const image = UploadedEditorImage(
+      mediaId: 'adapter-image',
+      url: 'https://cdn.example.com/adapter.png',
+    );
+    repository.complete(image);
+    expect(await operation.result, same(image));
+  });
 }
 
 class _MockMediaApi extends Mock implements MediaApi {}
+
+class _RecordingMediaUploadRepository implements MediaUploadRepository {
+  final _completer = Completer<UploadedEditorImage>();
+  MediaUploadInput? input;
+  CancelToken? cancelToken;
+  void Function(MediaUploadProgress progress)? onProgress;
+
+  @override
+  Future<UploadedEditorImage> uploadImage(
+    MediaUploadInput input, {
+    CancelToken? cancelToken,
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    this.input = input;
+    this.cancelToken = cancelToken;
+    this.onProgress = onProgress;
+    return _completer.future;
+  }
+
+  void emit(MediaUploadProgress progress) => onProgress?.call(progress);
+
+  void complete(UploadedEditorImage image) => _completer.complete(image);
+}
 
 Response<MediaGetUploadUrl201Response> _uploadUrlResponse() {
   return Response(

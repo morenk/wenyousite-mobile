@@ -98,7 +98,7 @@ void main() {
     expect(played.items.single.isPrivate, isTrue);
     expect(bookmarks.items.single.ownerName, '收藏作者');
     expect(bookmarks.items.single.postCount, 6);
-    expect(replies.single.preview, '最近回复 [图片：航图]');
+    expect(replies.single.preview, '最近回复 [图片]');
     expect(replies.single.parentPostId, 'floor-7');
     expect(replies.single.threadTitle, '星海旅团');
   });

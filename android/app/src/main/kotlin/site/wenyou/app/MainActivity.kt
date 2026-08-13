@@ -6,8 +6,13 @@ import android.content.pm.PackageManager
 import android.content.pm.Signature
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
+import android.view.WindowManager
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -16,7 +21,15 @@ import java.io.File
 class MainActivity : FlutterActivity() {
     private companion object {
         const val UPDATE_CHANNEL = "site.wenyou.app/app_update"
+        const val KEYBOARD_INSETS_CHANNEL = "site.wenyou.app/keyboard_insets"
         const val APK_MIME_TYPE = "application/vnd.android.package-archive"
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        }
+        super.onCreate(savedInstanceState)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -56,6 +69,58 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        val keyboardInsetsChannel =
+            MethodChannel(
+                flutterEngine.dartExecutor.binaryMessenger,
+                KEYBOARD_INSETS_CHANNEL,
+            )
+        installInstantKeyboardInsets(keyboardInsetsChannel)
+    }
+
+    private fun installInstantKeyboardInsets(channel: MethodChannel) {
+        val decorView = window.decorView
+        ViewCompat.setWindowInsetsAnimationCallback(
+            decorView,
+            object : WindowInsetsAnimationCompat.Callback(
+                WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE,
+            ) {
+                override fun onStart(
+                    animation: WindowInsetsAnimationCompat,
+                    bounds: WindowInsetsAnimationCompat.BoundsCompat,
+                ): WindowInsetsAnimationCompat.BoundsCompat {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
+                        // Android has completed its end-state layout before onStart.
+                        // Send that final IME inset once and never forward animation
+                        // progress, so Flutter chrome does not chase every IME frame.
+                        dispatchKeyboardInsetTarget(channel)
+                    }
+                    return bounds
+                }
+
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>,
+                ): WindowInsetsCompat = insets
+
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
+                        dispatchKeyboardInsetTarget(channel)
+                    }
+                }
+            },
+        )
+    }
+
+    private fun dispatchKeyboardInsetTarget(channel: MethodChannel) {
+        val bottom =
+            ViewCompat.getRootWindowInsets(window.decorView)
+                ?.getInsets(WindowInsetsCompat.Type.ime())
+                ?.bottom
+                ?: 0
+        channel.invokeMethod(
+            "keyboardInsetTargetChanged",
+            mapOf("bottomPhysicalPixels" to bottom.toDouble()),
+        )
     }
 
     private fun installApk(

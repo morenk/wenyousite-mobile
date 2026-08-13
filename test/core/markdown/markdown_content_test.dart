@@ -84,7 +84,7 @@ void main() {
         '**星海正文** ![航图](https://cdn.example.com/map.jpg) '
         '[[dice:v1:$nodeId:2d6+1]]',
       ),
-      '星海正文 [图片：航图] [2d6+1]',
+      '星海正文 [图片] [2d6+1]',
     );
   });
 

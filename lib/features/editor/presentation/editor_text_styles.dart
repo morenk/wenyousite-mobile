@@ -3,7 +3,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 const wenyouEditorBodyFontSize = 17.0;
-const wenyouEditorBodyHeight = 1.75;
+const wenyouEditorBodyHeight = 1.8;
 
 DefaultStyles wenyouEditorTextStyles(BuildContext context) {
   final tokens = context.wenyouTokens;

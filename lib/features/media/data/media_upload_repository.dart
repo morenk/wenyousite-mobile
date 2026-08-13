@@ -6,6 +6,7 @@ import 'package:mime/mime.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 typedef MediaUploadDelay = Future<void> Function(Duration duration);
@@ -27,7 +28,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
   }) : _delay = delay ?? Future<void>.delayed,
        _maxPollAttempts = maxPollAttempts < 1 ? 1 : maxPollAttempts;
 
-  static const maxImageBytes = 10 * 1024 * 1024;
+  static const maxImageBytes = maxMediaImageBytes;
   static const allowedContentTypes = {
     'image/jpeg',
     'image/png',
@@ -254,4 +255,49 @@ final mediaUploadRepositoryProvider = Provider<MediaUploadRepository>((ref) {
     ref.watch(wenyouApiProvider).getMediaApi(),
     ref.watch(mediaUploadDioProvider),
   );
+});
+
+class RepositoryMediaUploadGateway implements MediaUploadGateway {
+  RepositoryMediaUploadGateway(this._repository);
+
+  final MediaUploadRepository _repository;
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    final cancelToken = CancelToken();
+    return _DioMediaUploadOperation(
+      result: _repository.uploadImage(
+        input,
+        cancelToken: cancelToken,
+        onProgress: onProgress,
+      ),
+      cancelToken: cancelToken,
+    );
+  }
+}
+
+class _DioMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  const _DioMediaUploadOperation({
+    required this.result,
+    required this.cancelToken,
+  });
+
+  @override
+  final Future<UploadedEditorImage> result;
+  final CancelToken cancelToken;
+
+  @override
+  void cancel() {
+    if (!cancelToken.isCancelled) {
+      cancelToken.cancel('media-upload-task-cancelled');
+    }
+  }
+}
+
+final mediaUploadGatewayAdapterProvider = Provider<MediaUploadGateway>((ref) {
+  return RepositoryMediaUploadGateway(ref.watch(mediaUploadRepositoryProvider));
 });

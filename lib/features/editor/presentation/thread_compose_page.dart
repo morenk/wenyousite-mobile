@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,8 +19,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_text_style
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/remote_thread_drafts_sheet.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
@@ -38,21 +36,21 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   late final QuillController _editorController;
   final FocusNode _editorFocusNode = FocusNode();
   final ScrollController _editorScrollController = ScrollController();
+  final WenyouEditorToolbarController _toolbarController =
+      WenyouEditorToolbarController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
+  final Object _uploadTaskId = Object();
 
   bool _applyingDocument = false;
-  bool _editorToolbarActive = false;
   bool _allowPop = false;
   bool _preparingPop = false;
+  _ComposeMetadataPanel? _metadataPanel;
   int _scheduledDocumentRevision = -1;
   List<MarkdownCodecIssue> _documentIssues = const [];
   String? _codecFailure;
-  MediaUploadProgress? _uploadProgress;
-  ApiFailure? _uploadFailure;
-  CancelToken? _uploadCancelToken;
-
-  bool get _uploading => _uploadCancelToken != null;
+  bool get _uploading =>
+      ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy;
 
   @override
   void initState() {
@@ -80,7 +78,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _uploadCancelToken?.cancel('editor disposed');
     _editorController
       ..removeListener(_onDocumentChanged)
       ..dispose();
@@ -88,6 +85,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       ..removeListener(_onEditorFocusChanged)
       ..dispose();
     _editorScrollController.dispose();
+    _toolbarController.dispose();
     _titleController
       ..removeListener(_onTitleChanged)
       ..dispose();
@@ -100,18 +98,19 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(threadComposeControllerProvider);
+    final uploadState = ref.watch(
+      mediaUploadTaskControllerProvider(_uploadTaskId),
+    );
     _scheduleDocumentSync(state);
-    final locked = state.isSubmitting || _uploading;
-    final compactToolbar =
-        MediaQuery.sizeOf(context).width <= 400 &&
-        MediaQuery.viewInsetsOf(context).bottom > 0 &&
-        (_editorFocusNode.hasFocus || _editorToolbarActive);
+    final locked = state.isSubmitting || uploadState.isBusy;
     _editorController.readOnly = locked;
 
     return PopScope<Object?>(
-      canPop: _allowPop,
+      canPop: _allowPop && !_toolbarController.trayOpen,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) unawaited(_saveBeforePop(result));
+        if (didPop) return;
+        if (_toolbarController.closeTray()) return;
+        unawaited(_saveBeforePop(result));
       },
       child: Scaffold(
         appBar: AppBar(
@@ -153,32 +152,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             onRetry: () =>
                 ref.read(threadComposeControllerProvider.notifier).load(),
           ),
-          ThreadComposePhase.ready ||
-          ThreadComposePhase.published => _buildEditor(
-            context,
-            state,
-            locked,
-            compactToolbar: compactToolbar,
-          ),
+          ThreadComposePhase.ready || ThreadComposePhase.published =>
+            _buildEditor(context, state, uploadState, locked),
         },
-        floatingActionButton:
-            (state.phase == ThreadComposePhase.ready ||
-                    state.phase == ThreadComposePhase.published) &&
-                compactToolbar
-            ? WenyouEditorToolbar(
-                key: const Key('compose-floating-toolbar'),
-                controller: _editorController,
-                enabled: !locked && _codecFailure == null,
-                editorFocusNode: _editorFocusNode,
-                onInteractionChanged: _onEditorToolbarInteractionChanged,
-                floating: true,
-                onInsertImage: _insertImage,
-                onInsertSticker: ref.watch(stickersEnabledProvider)
-                    ? _insertSticker
-                    : null,
-                onSaveDraft: _openContentDrafts,
-              )
-            : null,
       ),
     );
   }
@@ -186,9 +162,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   Widget _buildEditor(
     BuildContext context,
     ThreadComposeState state,
-    bool locked, {
-    required bool compactToolbar,
-  }) {
+    MediaUploadTaskState uploadState,
+    bool locked,
+  ) {
     final tokens = context.wenyouTokens;
     final enabled = !locked && _codecFailure == null;
     final selectedCategory = state.categories
@@ -199,152 +175,67 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       state.visibility.label,
       if (state.tags.isNotEmpty) '${state.tags.length} 个标签',
     ].join(' · ');
-    final editorMinHeight = (MediaQuery.sizeOf(context).height - 360)
-        .clamp(340.0, 560.0)
-        .toDouble();
-    return WenyouPageBody(
-      maxWidth: 800,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (state.action == ThreadComposeAction.openRemoteDraft) ...[
-            const WenyouStatusBanner(message: '正在读取服务端草稿最新版…'),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.restoredFromLocal) ...[
-            const WenyouStatusBanner(
-              message: '已恢复上次未完成的本地内容。',
-              tone: WenyouStatusTone.accent,
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.bootstrapLoading) ...[
-            const WenyouStatusBanner(message: '正在同步分类与账号发布状态…'),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.bootstrapFailure != null) ...[
-            WenyouStatusBanner(
-              message: state.bootstrapFailure!.userMessage,
-              detail: _requestDetail(state.bootstrapFailure),
-              tone: WenyouStatusTone.error,
-              action: TextButton(
-                onPressed: state.bootstrapLoading
-                    ? null
-                    : () => ref
-                          .read(threadComposeControllerProvider.notifier)
-                          .refreshBootstrap(),
-                child: const Text('重新同步'),
+    final horizontalPadding = MediaQuery.sizeOf(context).width <= 400
+        ? tokens.space12
+        : tokens.space24;
+    return SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _ComposeStatusArea(
+                state: state,
+                documentIssues: _documentIssues,
+                codecFailure: _codecFailure,
+                uploadFailure: uploadState.failure,
+                uploadProgress: uploadState.progress,
+                uploading: uploadState.isBusy,
+                onCancelUpload: _cancelUpload,
+                onRetryUpload: _retryImageUpload,
+                onVerifyEmail: _openEmailVerification,
+                onRefreshBootstrap: () => ref
+                    .read(threadComposeControllerProvider.notifier)
+                    .refreshBootstrap(),
               ),
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.emailVerified == false) ...[
-            WenyouStatusBanner(
-              message: '邮箱尚未验证，仍可编辑和保存草稿，但暂时不能发布。',
-              tone: WenyouStatusTone.error,
-              action: TextButton(
-                key: const Key('compose-verify-email'),
-                onPressed: state.isSubmitting ? null : _openEmailVerification,
-                child: const Text('现在验证'),
-              ),
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (_documentIssues.isNotEmpty) ...[
-            WenyouStatusBanner(
-              message: '正文含有 ${_documentIssues.length} 个兼容节点。',
-              detail: '这些内容会锁定显示并原样保存，避免旧协议数据丢失。',
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (_codecFailure != null) ...[
-            WenyouStatusBanner(
-              message: '当前格式组合暂时不能安全保存。',
-              detail: _codecFailure,
-              tone: WenyouStatusTone.error,
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.actionFailure != null) ...[
-            WenyouStatusBanner(
-              key: const Key('compose-action-failure'),
-              message: state.actionFailure!.userMessage,
-              detail: _requestDetail(state.actionFailure),
-              tone: WenyouStatusTone.error,
-              action: state.actionFailure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('compose-action-verify-email'),
-                      onPressed: state.isSubmitting
-                          ? null
-                          : _openEmailVerification,
-                      child: const Text('现在验证'),
-                    )
-                  : null,
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.successMessage != null) ...[
-            WenyouStatusBanner(
-              message: state.successMessage!,
-              tone: WenyouStatusTone.accent,
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (_uploadFailure != null) ...[
-            WenyouStatusBanner(
-              message: _uploadFailure!.userMessage,
-              detail: _requestDetail(_uploadFailure),
-              tone: WenyouStatusTone.error,
-            ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (_uploading) ...[
-            _UploadStatus(progress: _uploadProgress, onCancel: _cancelUpload),
-            SizedBox(height: tokens.space12),
-          ],
-          TextField(
-            key: const Key('compose-title'),
-            controller: _titleController,
-            enabled: !locked,
-            maxLength: 100,
-            maxLines: 3,
-            minLines: 1,
-            textInputAction: TextInputAction.next,
-            style: Theme.of(context).textTheme.headlineSmall,
-            decoration: const InputDecoration(
-              hintText: '主题标题',
-              counterText: '',
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 8),
-            ),
-          ),
-          Divider(height: tokens.space16, color: tokens.border),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: tokens.border),
-                bottom: BorderSide(color: tokens.border),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!compactToolbar)
-                  WenyouEditorToolbar(
-                    controller: _editorController,
-                    enabled: enabled,
-                    editorFocusNode: _editorFocusNode,
-                    onInsertImage: _insertImage,
-                    onInsertSticker: ref.watch(stickersEnabledProvider)
-                        ? _insertSticker
-                        : null,
-                    onSaveDraft: _openContentDrafts,
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                child: TextField(
+                  key: const Key('compose-title'),
+                  controller: _titleController,
+                  enabled: !locked,
+                  maxLength: 100,
+                  maxLines: _editorFocusNode.hasFocus ? 1 : 3,
+                  minLines: 1,
+                  textInputAction: TextInputAction.next,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  decoration: const InputDecoration(
+                    hintText: '主题标题',
+                    counterText: '',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
                   ),
-                Stack(
+                ),
+              ),
+              _ComposeMetadataBar(
+                summary: settingsSummary,
+                activePanel: _metadataPanel,
+                enabled: !locked,
+                onPanelChanged: (panel) {
+                  setState(() {
+                    _metadataPanel = _metadataPanel == panel ? null : panel;
+                  });
+                },
+              ),
+              _buildMetadataPanel(state, locked),
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
                     Semantics(
                       textField: true,
@@ -355,15 +246,13 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                         focusNode: _editorFocusNode,
                         scrollController: _editorScrollController,
                         config: QuillEditorConfig(
-                          scrollable: false,
-                          minHeight: editorMinHeight,
+                          scrollable: true,
+                          expands: true,
                           padding: EdgeInsets.fromLTRB(
-                            tokens.space4,
+                            horizontalPadding,
                             tokens.space16,
-                            tokens.space4,
-                            compactToolbar
-                                ? tokens.minimumTouchTarget + tokens.space16
-                                : tokens.space24,
+                            horizontalPadding,
+                            tokens.space16,
                           ),
                           placeholder: '从这里开始写正文…',
                           customStyles: wenyouEditorTextStyles(context),
@@ -379,106 +268,115 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                child: _LocalSaveStatus(state: state),
+              ),
+              WenyouComposerDock(
+                key: const Key('compose-toolbar'),
+                controller: _editorController,
+                surface: WenyouComposerSurface.page,
+                profile: WenyouComposerProfile.richMarkdown,
+                enabled: enabled,
+                editorFocusNode: _editorFocusNode,
+                onInsertImage: _insertImage,
+                onInsertSticker: ref.watch(stickersEnabledProvider)
+                    ? _insertSticker
+                    : null,
+                onSaveDraft: _openContentDrafts,
+                characterCount: _editorController.document
+                    .toPlainText()
+                    .trim()
+                    .length,
+                characterLimit: 10000,
+                toolbarController: _toolbarController,
+              ),
+            ],
           ),
-          SizedBox(height: tokens.space8),
-          _LocalSaveStatus(state: state),
-          SizedBox(height: tokens.space12),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.symmetric(
-                horizontal: BorderSide(color: tokens.border),
-              ),
-            ),
-            child: ExpansionTile(
-              key: const Key('compose-publish-settings'),
-              leading: const Icon(Icons.tune_rounded, size: 20),
-              title: const Text('发布设置'),
-              subtitle: Text(
-                settingsSummary,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              tilePadding: EdgeInsets.zero,
-              childrenPadding: EdgeInsets.only(bottom: tokens.space12),
-              shape: const Border(),
-              collapsedShape: const Border(),
-              children: [
-                DropdownButtonFormField<String>(
-                  key: const Key('compose-category'),
-                  initialValue:
-                      state.categories.any(
-                        (category) => category.slug == state.categorySlug,
-                      )
-                      ? state.categorySlug
-                      : null,
-                  decoration: const InputDecoration(labelText: '分类'),
-                  hint: Text(state.categories.isEmpty ? '分类同步后可选择' : '请选择分类'),
-                  items: state.categories
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category.slug,
-                          child: Text(category.name),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: locked || state.categories.isEmpty
-                      ? null
-                      : (value) => ref
-                            .read(threadComposeControllerProvider.notifier)
-                            .updateCategory(value),
-                ),
-                SizedBox(height: tokens.space12),
-                DropdownButtonFormField<ThreadComposeVisibility>(
-                  key: const Key('compose-visibility'),
-                  initialValue: state.visibility,
-                  decoration: const InputDecoration(labelText: '可见范围'),
-                  items: ThreadComposeVisibility.values
-                      .map(
-                        (visibility) => DropdownMenuItem(
-                          value: visibility,
-                          child: Text(visibility.label),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: locked
-                      ? null
-                      : (value) {
-                          if (value != null) {
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetadataPanel(ThreadComposeState state, bool locked) {
+    final tokens = context.wenyouTokens;
+    final panel = _metadataPanel;
+    if (panel == null) return const SizedBox.shrink();
+    return Container(
+      key: const Key('compose-metadata-panel'),
+      constraints: const BoxConstraints(maxHeight: 152),
+      padding: EdgeInsets.all(tokens.space12),
+      decoration: BoxDecoration(
+        color: tokens.softPanel,
+        border: Border(bottom: BorderSide(color: tokens.border)),
+      ),
+      child: switch (panel) {
+        _ComposeMetadataPanel.category => SingleChildScrollView(
+          child: Wrap(
+            spacing: tokens.space8,
+            runSpacing: tokens.space8,
+            children: state.categories
+                .map(
+                  (category) => ChoiceChip(
+                    label: Text(category.name),
+                    selected: category.slug == state.categorySlug,
+                    onSelected: locked
+                        ? null
+                        : (_) {
                             ref
                                 .read(threadComposeControllerProvider.notifier)
-                                .updateVisibility(value);
-                          }
+                                .updateCategory(category.slug);
+                            setState(() => _metadataPanel = null);
+                            _editorFocusNode.requestFocus();
+                          },
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        ),
+        _ComposeMetadataPanel.visibility => Wrap(
+          spacing: tokens.space8,
+          children: ThreadComposeVisibility.values
+              .map(
+                (visibility) => ChoiceChip(
+                  label: Text(visibility.label),
+                  selected: visibility == state.visibility,
+                  onSelected: locked
+                      ? null
+                      : (_) {
+                          ref
+                              .read(threadComposeControllerProvider.notifier)
+                              .updateVisibility(visibility);
+                          setState(() => _metadataPanel = null);
+                          _editorFocusNode.requestFocus();
                         },
                 ),
-                SizedBox(height: tokens.space12),
-                TextField(
-                  key: const Key('compose-tags'),
-                  controller: _tagsController,
-                  enabled: !locked,
-                  maxLength: 120,
-                  decoration: const InputDecoration(
-                    labelText: '标签（可选）',
-                    hintText: '用空格或逗号分隔，最多 5 个',
-                  ),
-                ),
-              ],
-            ),
+              )
+              .toList(growable: false),
+        ),
+        _ComposeMetadataPanel.tags => TextField(
+          key: const Key('compose-tags'),
+          controller: _tagsController,
+          enabled: !locked,
+          autofocus: true,
+          maxLength: 120,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: '标签（可选）',
+            hintText: '用空格或逗号分隔，最多 5 个',
           ),
-        ],
-      ),
+          onSubmitted: (_) {
+            setState(() => _metadataPanel = null);
+            _editorFocusNode.requestFocus();
+          },
+        ),
+      },
     );
   }
 
   void _onEditorFocusChanged() {
     if (mounted) setState(() {});
-  }
-
-  void _onEditorToolbarInteractionChanged(bool active) {
-    if (mounted && active != _editorToolbarActive) {
-      setState(() => _editorToolbarActive = active);
-    }
   }
 
   Future<void> _openEmailVerification() async {
@@ -574,89 +472,26 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _insertImage() async {
+    await _runImageUpload(retry: false);
+  }
+
+  Future<void> _retryImageUpload() async {
+    await _runImageUpload(retry: true);
+  }
+
+  Future<void> _runImageUpload({required bool retry}) async {
     if (_uploading) return;
-    setState(() {
-      _uploadFailure = null;
-      _uploadProgress = const MediaUploadProgress(
-        stage: MediaUploadStage.preparing,
-      );
-    });
-    try {
-      final input = await ref.read(editorImagePickerProvider).pickFromGallery();
-      if (input == null || !mounted) {
-        setState(() => _uploadProgress = null);
-        return;
-      }
-      final alt = await _askImageAlt();
-      if (alt == null || !mounted) {
-        setState(() => _uploadProgress = null);
-        return;
-      }
-      final cancelToken = CancelToken();
-      setState(() => _uploadCancelToken = cancelToken);
-      final uploaded = await ref
-          .read(mediaUploadRepositoryProvider)
-          .uploadImage(
-            input,
-            cancelToken: cancelToken,
-            onProgress: (progress) {
-              if (mounted) setState(() => _uploadProgress = progress);
-            },
-          );
-      if (!mounted) return;
-      _insertBlockImage(uploaded, alt);
-    } on Object catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _uploadFailure = error is ApiFailure
-            ? error
-            : ApiFailure(userMessage: '图片没有插入成功，请重试。', cause: error);
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _uploadCancelToken = null;
-          _uploadProgress = null;
-        });
-      }
-    }
-  }
-
-  Future<String?> _askImageAlt() async {
-    var alt = '主题正文插图';
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('描述这张图片'),
-        content: TextFormField(
-          key: const Key('compose-image-alt'),
-          initialValue: alt,
-          onChanged: (value) => alt = value,
-          autofocus: true,
-          maxLength: 80,
-          decoration: const InputDecoration(
-            labelText: '替代文字',
-            helperText: '用于无障碍朗读和图片无法加载时的说明',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = alt.replaceAll(RegExp(r'[\]\r\n]'), ' ').trim();
-              Navigator.pop(context, value.isEmpty ? '主题正文插图' : value);
-            },
-            child: const Text('继续上传'),
-          ),
-        ],
-      ),
+    final controller = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
     );
+    final uploaded = retry
+        ? await controller.retryUpload()
+        : await controller.pickAndUpload();
+    if (!mounted || _preparingPop || uploaded == null) return;
+    _insertBlockImage(uploaded);
   }
 
-  void _insertBlockImage(UploadedEditorImage image, String alt) {
+  void _insertBlockImage(UploadedEditorImage image) {
     var selection = _editorController.selection;
     final documentLength = _editorController.document.length;
     final offset = selection.start
@@ -679,7 +514,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       Embeddable(MarkdownDeltaCodec.imageEmbed, {
         'version': 1,
         'url': image.url,
-        'alt': alt,
+        'alt': '图片',
         'title': null,
       }),
       TextSelection.collapsed(offset: selection.start + 1),
@@ -715,7 +550,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   void _cancelUpload() {
-    _uploadCancelToken?.cancel('user cancelled image upload');
+    ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .cancel();
   }
 
   Future<void> _saveThreadDraft() async {
@@ -844,6 +681,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   Future<void> _saveBeforePop(Object? result) async {
     if (_allowPop || _preparingPop) return;
     _preparingPop = true;
+    ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .cancel();
     await _flushSnapshot();
     if (!mounted) return;
     final latest = ref.read(threadComposeControllerProvider);
@@ -880,6 +720,229 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
 
 enum _RemoteDraftAction { save, open }
 
+enum _ComposeMetadataPanel { category, visibility, tags }
+
+class _ComposeMetadataBar extends StatelessWidget {
+  const _ComposeMetadataBar({
+    required this.summary,
+    required this.activePanel,
+    required this.enabled,
+    required this.onPanelChanged,
+  });
+
+  final String summary;
+  final _ComposeMetadataPanel? activePanel;
+  final bool enabled;
+  final ValueChanged<_ComposeMetadataPanel> onPanelChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Container(
+      key: const Key('compose-publish-settings'),
+      height: tokens.minimumTouchTarget,
+      padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+      decoration: BoxDecoration(
+        border: Border.symmetric(horizontal: BorderSide(color: tokens.border)),
+      ),
+      child: Row(
+        children: [
+          _MetadataButton(
+            key: const Key('compose-category'),
+            icon: Icons.category_outlined,
+            label: '分类',
+            selected: activePanel == _ComposeMetadataPanel.category,
+            enabled: enabled,
+            onPressed: () => onPanelChanged(_ComposeMetadataPanel.category),
+          ),
+          _MetadataButton(
+            key: const Key('compose-visibility'),
+            icon: Icons.visibility_outlined,
+            label: '可见性',
+            selected: activePanel == _ComposeMetadataPanel.visibility,
+            enabled: enabled,
+            onPressed: () => onPanelChanged(_ComposeMetadataPanel.visibility),
+          ),
+          _MetadataButton(
+            icon: Icons.sell_outlined,
+            label: '标签',
+            selected: activePanel == _ComposeMetadataPanel.tags,
+            enabled: enabled,
+            onPressed: () => onPanelChanged(_ComposeMetadataPanel.tags),
+          ),
+          SizedBox(width: tokens.space4),
+          Expanded(
+            child: Text(
+              summary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetadataButton extends StatelessWidget {
+  const _MetadataButton({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.enabled,
+    required this.onPressed,
+    super.key,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: label,
+      onPressed: enabled ? onPressed : null,
+      isSelected: selected,
+      selectedIcon: Icon(icon, color: context.wenyouTokens.brand),
+      icon: Icon(icon),
+    );
+  }
+}
+
+class _ComposeStatusArea extends StatelessWidget {
+  const _ComposeStatusArea({
+    required this.state,
+    required this.documentIssues,
+    required this.codecFailure,
+    required this.uploadFailure,
+    required this.uploadProgress,
+    required this.uploading,
+    required this.onCancelUpload,
+    required this.onRetryUpload,
+    required this.onVerifyEmail,
+    required this.onRefreshBootstrap,
+  });
+
+  final ThreadComposeState state;
+  final List<MarkdownCodecIssue> documentIssues;
+  final String? codecFailure;
+  final MediaUploadFailure? uploadFailure;
+  final MediaUploadProgress? uploadProgress;
+  final bool uploading;
+  final VoidCallback onCancelUpload;
+  final VoidCallback onRetryUpload;
+  final VoidCallback onVerifyEmail;
+  final VoidCallback onRefreshBootstrap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final banners = <Widget>[
+      if (state.action == ThreadComposeAction.openRemoteDraft)
+        const WenyouStatusBanner(message: '正在读取服务端草稿最新版…'),
+      if (state.restoredFromLocal)
+        const WenyouStatusBanner(
+          message: '已恢复上次未完成的本地内容。',
+          tone: WenyouStatusTone.accent,
+        ),
+      if (state.bootstrapLoading)
+        const WenyouStatusBanner(message: '正在同步分类与账号发布状态…'),
+      if (state.bootstrapFailure != null)
+        WenyouStatusBanner(
+          message: state.bootstrapFailure!.userMessage,
+          detail: _requestDetail(state.bootstrapFailure),
+          tone: WenyouStatusTone.error,
+          action: TextButton(
+            onPressed: state.bootstrapLoading ? null : onRefreshBootstrap,
+            child: const Text('重新同步'),
+          ),
+        ),
+      if (state.emailVerified == false)
+        WenyouStatusBanner(
+          message: '邮箱尚未验证，仍可编辑和保存草稿，但暂时不能发布。',
+          tone: WenyouStatusTone.error,
+          action: TextButton(
+            key: const Key('compose-verify-email'),
+            onPressed: state.isSubmitting ? null : onVerifyEmail,
+            child: const Text('现在验证'),
+          ),
+        ),
+      if (documentIssues.isNotEmpty)
+        WenyouStatusBanner(
+          message: '正文含有 ${documentIssues.length} 个兼容节点。',
+          detail: '这些内容会锁定显示并原样保存。',
+        ),
+      if (codecFailure != null)
+        WenyouStatusBanner(
+          message: '当前格式组合暂时不能安全保存。',
+          detail: codecFailure,
+          tone: WenyouStatusTone.error,
+        ),
+      if (state.actionFailure != null)
+        WenyouStatusBanner(
+          key: const Key('compose-action-failure'),
+          message: state.actionFailure!.userMessage,
+          detail: _requestDetail(state.actionFailure),
+          tone: WenyouStatusTone.error,
+          action: state.actionFailure!.businessCode == 40107
+              ? TextButton(
+                  key: const Key('compose-action-verify-email'),
+                  onPressed: state.isSubmitting ? null : onVerifyEmail,
+                  child: const Text('现在验证'),
+                )
+              : null,
+        ),
+      if (state.successMessage != null)
+        WenyouStatusBanner(
+          message: state.successMessage!,
+          tone: WenyouStatusTone.accent,
+        ),
+      if (uploadFailure != null)
+        WenyouStatusBanner(
+          message: uploadFailure!.userMessage,
+          detail: _uploadRequestDetail(uploadFailure),
+          tone: WenyouStatusTone.error,
+          action: uploadFailure!.canRetry
+              ? TextButton(
+                  key: const Key('compose-retry-upload'),
+                  onPressed: onRetryUpload,
+                  child: const Text('重试上传'),
+                )
+              : null,
+        ),
+      if (uploading)
+        _UploadStatus(progress: uploadProgress, onCancel: onCancelUpload),
+    ];
+    if (banners.isEmpty) return const SizedBox.shrink();
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 120),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          tokens.space12,
+          tokens.space8,
+          tokens.space12,
+          tokens.space4,
+        ),
+        child: Column(
+          children: [
+            for (var index = 0; index < banners.length; index++) ...[
+              banners[index],
+              if (index != banners.length - 1) SizedBox(height: tokens.space8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 bool _hasMeaningfulContent(ThreadComposeState state) {
   return state.title.trim().isNotEmpty ||
       state.categorySlug != null ||
@@ -889,6 +952,11 @@ bool _hasMeaningfulContent(ThreadComposeState state) {
 }
 
 String? _requestDetail(ApiFailure? failure) {
+  final requestId = failure?.requestId;
+  return requestId == null ? null : '请求 ID：$requestId';
+}
+
+String? _uploadRequestDetail(MediaUploadFailure? failure) {
   final requestId = failure?.requestId;
   return requestId == null ? null : '请求 ID：$requestId';
 }
