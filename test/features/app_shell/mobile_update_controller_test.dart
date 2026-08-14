@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
-import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 void main() {

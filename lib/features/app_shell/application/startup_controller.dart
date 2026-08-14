@@ -5,10 +5,8 @@ import 'package:wenyousite_mobile/core/config/app_environment.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
-import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
-import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
-import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
@@ -210,21 +208,41 @@ class StartupController extends StateNotifier<StartupState> {
 }
 
 final metaRepositoryProvider = Provider<MetaRepository>(
-  (ref) => ApiMetaRepository(ref.watch(wenyouApiProvider)),
+  (ref) => throw StateError('MetaRepository 尚未在应用组合根绑定。'),
 );
 
 final recommendedUpdateDismissStoreProvider =
     Provider<RecommendedUpdateDismissStore>(
-      (ref) => SharedPreferencesRecommendedUpdateDismissStore(),
+      (ref) => const _NonPersistingRecommendedUpdateDismissStore(),
     );
 
 final startupControllerProvider =
-    StateNotifierProvider<StartupController, StartupState>((ref) {
-      return StartupController(
-        ref.watch(metaRepositoryProvider),
-        ref.watch(appEnvironmentProvider),
-        ref.read(sessionControllerProvider.notifier),
-        mobileUpdateService: ref.watch(mobileUpdateServiceProvider),
-        dismissStore: ref.watch(recommendedUpdateDismissStoreProvider),
-      );
-    });
+    StateNotifierProvider<StartupController, StartupState>(
+      (ref) {
+        return StartupController(
+          ref.watch(metaRepositoryProvider),
+          ref.watch(appEnvironmentProvider),
+          ref.read(sessionControllerProvider.notifier),
+          mobileUpdateService: ref.watch(mobileUpdateServiceProvider),
+          dismissStore: ref.watch(recommendedUpdateDismissStoreProvider),
+        );
+      },
+      dependencies: [
+        metaRepositoryProvider,
+        mobileUpdateServiceProvider,
+        recommendedUpdateDismissStoreProvider,
+      ],
+    );
+
+class _NonPersistingRecommendedUpdateDismissStore
+    implements RecommendedUpdateDismissStore {
+  const _NonPersistingRecommendedUpdateDismissStore();
+
+  @override
+  Future<void> dismiss(MobileClientPlatform platform, int build) async {}
+
+  @override
+  Future<bool> isDismissed(MobileClientPlatform platform, int build) async {
+    return false;
+  }
+}

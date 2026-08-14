@@ -61,10 +61,6 @@
     "users->direct_messages"
   ],
   "layerDependencyDebt": [
-    "lib/features/app_shell/application/mobile_update_controller.dart->lib/features/app_shell/data/mobile_update_service.dart",
-    "lib/features/app_shell/application/startup_controller.dart->lib/features/app_shell/data/meta_repository.dart",
-    "lib/features/app_shell/application/startup_controller.dart->lib/features/app_shell/data/mobile_update_service.dart",
-    "lib/features/app_shell/application/startup_controller.dart->lib/features/app_shell/data/recommended_update_dismiss_store.dart",
     "lib/features/auth/application/email_verification_controller.dart->lib/features/auth/data/email_verification_repository.dart",
     "lib/features/auth/application/login_controller.dart->lib/features/auth/data/auth_repository.dart",
     "lib/features/auth/application/password_recovery_controller.dart->lib/features/auth/data/password_recovery_repository.dart",

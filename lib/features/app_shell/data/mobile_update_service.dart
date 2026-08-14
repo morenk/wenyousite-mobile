@@ -4,34 +4,19 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
-enum UpdateLaunchResult {
-  permissionRequired,
-  installerOpened,
-  externalPageOpened,
-}
-
-enum MobileUpdateStage {
-  checking,
-  downloading,
-  verifying,
-  installing,
-  openingExternalPage,
-}
-
-class MobileUpdateException implements Exception {
-  const MobileUpdateException(this.userMessage, [this.cause]);
-
-  final String userMessage;
-  final Object? cause;
-
-  @override
-  String toString() => userMessage;
-}
+export 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart'
+    show
+        MobileUpdateException,
+        MobileUpdateService,
+        MobileUpdateStage,
+        UpdateLaunchResult;
 
 abstract interface class MobileUpdatePlatformBridge {
   Future<InstalledAppInfo> readInstalledApp(MobileClientPlatform platform);
@@ -73,18 +58,6 @@ class MethodChannelMobileUpdatePlatformBridge
       'expectedBuild': expectedBuild,
     });
   }
-}
-
-abstract interface class MobileUpdateService {
-  MobileClientPlatform get platform;
-
-  Future<InstalledAppInfo> readInstalledApp();
-
-  Future<UpdateLaunchResult> launchUpdate(
-    MobileUpdateInfo update, {
-    required void Function(MobileUpdateStage stage) onStage,
-    required void Function(double progress) onProgress,
-  });
 }
 
 class DeviceMobileUpdateService implements MobileUpdateService {
@@ -458,3 +431,19 @@ class _VerifiedAndroidArtifact {
   final File file;
   final _AndroidReleaseMetadata metadata;
 }
+
+final mobileUpdateDownloadDioProvider = Provider<Dio>((ref) {
+  final dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 12),
+      receiveTimeout: const Duration(minutes: 5),
+      headers: const {'Accept-Encoding': 'identity'},
+    ),
+  );
+  ref.onDispose(() => dio.close(force: true));
+  return dio;
+});
+
+final deviceMobileUpdateServiceProvider = Provider<MobileUpdateService>((ref) {
+  return DeviceMobileUpdateService(ref.watch(mobileUpdateDownloadDioProvider));
+});

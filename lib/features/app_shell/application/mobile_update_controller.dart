@@ -1,6 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
+import 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 enum MobileUpdateActionStatus {
@@ -110,20 +109,8 @@ class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
   }
 }
 
-final mobileUpdateDownloadDioProvider = Provider<Dio>((ref) {
-  final dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 12),
-      receiveTimeout: const Duration(minutes: 5),
-      headers: const {'Accept-Encoding': 'identity'},
-    ),
-  );
-  ref.onDispose(() => dio.close(force: true));
-  return dio;
-});
-
 final mobileUpdateServiceProvider = Provider<MobileUpdateService>((ref) {
-  return DeviceMobileUpdateService(ref.watch(mobileUpdateDownloadDioProvider));
+  return const _UnsupportedMobileUpdateService();
 });
 
 final mobileUpdateControllerProvider =
@@ -131,4 +118,25 @@ final mobileUpdateControllerProvider =
       ref,
     ) {
       return MobileUpdateController(ref.watch(mobileUpdateServiceProvider));
-    });
+    }, dependencies: [mobileUpdateServiceProvider]);
+
+class _UnsupportedMobileUpdateService implements MobileUpdateService {
+  const _UnsupportedMobileUpdateService();
+
+  @override
+  MobileClientPlatform get platform => MobileClientPlatform.unsupported;
+
+  @override
+  Future<UpdateLaunchResult> launchUpdate(
+    MobileUpdateInfo update, {
+    required void Function(MobileUpdateStage stage) onStage,
+    required void Function(double progress) onProgress,
+  }) {
+    throw UnsupportedError('当前平台不支持应用内更新。');
+  }
+
+  @override
+  Future<InstalledAppInfo> readInstalledApp() {
+    throw UnsupportedError('当前平台不支持读取应用版本。');
+  }
+}
