@@ -143,4 +143,5 @@ final momentComposerControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(momentRepositoryProvider),
         momentId: momentId,
       ),
+      dependencies: [momentRepositoryProvider],
     );

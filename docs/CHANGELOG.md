@@ -69,6 +69,7 @@
 
 ### Changed
 
+- 私聊、动态与收藏表情仓储，以及动态本机草稿存储，统一收束为各自 `application/*_ports.dart`，由 `main.dart` 组合根绑定 API/SharedPreferences 适配器；控制器与动态编辑页不再导入具体 data 实现，会话对账、动态幂等写入、草稿恢复和表情处理轮询语义保持不变。
 - 五槽位正文草稿、主题创作/提及/本地快照和帖子读写仓储统一收束为各自 `application/*_ports.dart`，由 `main.dart` 组合根绑定 API/Drift 适配器；相关控制器不再导入具体 data 实现，幂等创建、乐观锁冲突、远端草稿切换和本地防丢语义保持不变。
 - 首页、通知、搜索、举报、治理申诉与钱包六个独立仓储统一收束为各自 `application/*_ports.dart`，由 `main.dart` 组合根绑定 data 适配器；控制器不再导入具体 data 仓储，分页、乐观恢复、专用凭据、幂等请求和 fail-closed 映射保持不变。
 - 账号注销、凭据安全和登录终端仓储收束为 `settings/application` 端口，由 `main.dart` 组合根绑定 API 适配器；settings 控制器不再导入具体 data 仓储，远端注销后的单向本地清理、全端会话撤销和终端列表恢复语义保持不变。

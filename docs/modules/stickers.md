@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-`StickerCollectionController` 保存服务端收藏夹、唯一写动作、动作目标、失败幂等来源和后台处理轮询。相册选择、上传阶段、进度、取消与同文件重试属于每个管理页实例独立的 `media/application` autoDispose 任务，不进入收藏夹状态；上传成功后才把 `mediaId` 交给 `StickerCollectionController`。它显式依赖 capability 的 scoped provider，确保 `WenyouApp` 内层覆盖服务端能力时控制器在同一作用域创建，不触发 Riverpod 依赖断言。仓储把生成 DTO 映射为独立领域模型，在 data 边界应用贴纸专属错误目录，并校验正整数版本/尺寸、连续位置、唯一 ID、安全 HTTP(S) URL、最近列表属于收藏和 pending 仅含 PROCESSING。导入 POST 成功后立即重读收藏；处理中任务完成后再次校准。
+`StickerCollectionController` 保存服务端收藏夹、唯一写动作、动作目标、失败幂等来源和后台处理轮询。收藏表情端口位于 `stickers/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。相册选择、上传阶段、进度、取消与同文件重试属于每个管理页实例独立的 `media/application` autoDispose 任务，不进入收藏夹状态；上传成功后才把 `mediaId` 交给 `StickerCollectionController`。它显式依赖 capability 和仓储的 scoped provider，确保 `WenyouApp` 内层覆盖服务端能力时控制器在同一作用域创建，不触发 Riverpod 依赖断言。data 适配器把生成 DTO 映射为独立领域模型，应用贴纸专属错误目录，并校验正整数版本/尺寸、连续位置、唯一 ID、安全 HTTP(S) URL、最近列表属于收藏和 pending 仅含 PROCESSING。导入 POST 成功后立即重读收藏；处理中任务完成后再次校准。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -65,4 +65,4 @@ media application 负责相册选择与安全上传，stickers presentation 只�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/stickers/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[媒体](media.md)、[编辑器](editor.md)与[站内私聊](direct-messages.md)。
+端口、控制器与状态：`lib/features/stickers/application/`；API 适配器：`lib/features/stickers/data/`；页面：`lib/features/stickers/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[媒体](media.md)、[编辑器](editor.md)与[站内私聊](direct-messages.md)。

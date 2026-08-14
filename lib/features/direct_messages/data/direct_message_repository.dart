@@ -5,56 +5,12 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_failure_messages.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 
-abstract interface class DirectMessageRepository {
-  Future<CursorPage<DirectConversation>> fetchConversations({
-    required DirectConversationView view,
-    String? cursor,
-    int limit = 20,
-  });
-
-  Future<DirectUnreadCounts> fetchUnreadCounts();
-
-  Future<DirectConversationLookup> findByUser(String userId);
-
-  Future<DirectConversationStart> createConversation({
-    required String recipientId,
-    required DirectMessageDraft draft,
-  });
-
-  Future<DirectConversation> fetchConversation(String conversationId);
-
-  Future<CursorPage<DirectMessage>> fetchMessages({
-    required String conversationId,
-    String? cursor,
-    String? after,
-    int limit = 30,
-  });
-
-  Future<DirectMessage> sendMessage({
-    required String conversationId,
-    required DirectMessageDraft draft,
-  });
-
-  Future<DirectConversation> handleRequest({
-    required String conversationId,
-    required bool accept,
-  });
-
-  Future<DirectConversation> setArchived({
-    required String conversationId,
-    required bool archived,
-  });
-
-  Future<void> markRead({
-    required String conversationId,
-    required String throughMessageId,
-  });
-
-  Future<DirectRecallResult> recall(String messageId);
-}
+export 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart'
+    show DirectMessageRepository, directMessageRepositoryProvider;
 
 class ApiDirectMessageRepository implements DirectMessageRepository {
   ApiDirectMessageRepository(this._api);
@@ -728,7 +684,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
   }
 }
 
-final directMessageRepositoryProvider = Provider<DirectMessageRepository>((
+final apiDirectMessageRepositoryProvider = Provider<DirectMessageRepository>((
   ref,
 ) {
   return ApiDirectMessageRepository(

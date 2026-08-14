@@ -144,13 +144,19 @@ final directConversationTargetControllerProvider = StateNotifierProvider
       DirectConversationTargetController,
       DirectConversationTargetState,
       String
-    >((ref, userId) {
-      return DirectConversationTargetController(
-        userId,
-        ref.watch(directMessageRepositoryProvider),
-        ref.watch(publicUserRepositoryProvider),
-      );
-    }, dependencies: [publicUserRepositoryProvider]);
+    >(
+      (ref, userId) {
+        return DirectConversationTargetController(
+          userId,
+          ref.watch(directMessageRepositoryProvider),
+          ref.watch(publicUserRepositoryProvider),
+        );
+      },
+      dependencies: [
+        directMessageRepositoryProvider,
+        publicUserRepositoryProvider,
+      ],
+    );
 
 ApiFailure _asFailure(Object error, String fallback) {
   return mapApplicationFailure(error, fallback);

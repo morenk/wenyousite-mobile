@@ -32,7 +32,7 @@
 
 ## 6. 状态模型和数据流
 
-`MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果，并拆入独立应用文件但保持 provider 接口；动态发布与评论分别按页面实例消费 `media/application` 上传任务，页面只保留已完成图片、封面顺序和评论附件。领域校验使用纯领域异常，网络与 feature 错误目录在仓储边界转换。搜索控制器独立保存关键词与搜索 cursor，但通过 `MomentSearchMapper` 输出同一领域卡片。仓储/映射器对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
+`MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果，并拆入独立应用文件但保持 provider 接口；动态仓储与本机草稿存储端口位于 `moments/application`，API/SharedPreferences 适配器由 `main.dart` 组合根绑定，控制器和页面不导入具体 data 实现。动态发布与评论分别按页面实例消费 `media/application` 上传任务，页面只保留已完成图片、封面顺序和评论附件。领域校验使用纯领域异常，网络与 feature 错误目录在 data 边界转换。搜索控制器独立保存关键词与搜索 cursor，但通过 `MomentSearchMapper` 输出同一领域卡片。仓储/映射器对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -40,7 +40,7 @@
 
 ## 8. 本地存储、缓存及失效规则
 
-动态列表、评论、筛选、游标、上传进度和创建幂等键只保存在当前 Riverpod/页面生命周期。发布/编辑表单例外：按新建或稳定 momentId 分区，将标题、正文、已完成媒体的安全 URL/尺寸、封面 ID、图片顺序和更新时间写入 SharedPreferences；不保存源图片字节、预签名 URL 或 Token。成功发布、保存、删除或用户明确放弃后清除对应草稿。创建/评论请求在结果不明确时保留同一 `clientRequestId`；服务端确认成功后才轮换。图片使用共享安全 HTTP(S) 缓存；发布、编辑、删除和通知返回后失效相关信息流/详情。
+动态列表、评论、筛选、游标、上传进度和创建幂等键只保存在当前 Riverpod/页面生命周期。发布/编辑表单例外：页面通过 `MomentDraftStore` 端口按新建或稳定 momentId 分区，data 适配器将标题、正文、已完成媒体的安全 URL/尺寸、封面 ID、图片顺序和更新时间写入 SharedPreferences；不保存源图片字节、预签名 URL 或 Token。成功发布、保存、删除或用户明确放弃后清除对应草稿。创建/评论请求在结果不明确时保留同一 `clientRequestId`；服务端确认成功后才轮换。图片使用共享安全 HTTP(S) 缓存；发布、编辑、删除和通知返回后失效相关信息流/详情。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
@@ -81,4 +81,4 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/moments/`。参见[导航](../architecture/navigation.md)、[API 生成与覆盖审计](../architecture/api-generation.md)、[媒体](media.md)、[收藏表情](stickers.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[通知](notifications.md)与[用户](users.md)。
+端口与状态：`lib/features/moments/application/`；API 与本机草稿适配器：`lib/features/moments/data/`；页面：`lib/features/moments/presentation/`。参见[导航](../architecture/navigation.md)、[API 生成与覆盖审计](../architecture/api-generation.md)、[媒体](media.md)、[收藏表情](stickers.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[通知](notifications.md)与[用户](users.md)。

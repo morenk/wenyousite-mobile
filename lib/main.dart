@@ -10,12 +10,15 @@ import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
+import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
@@ -24,6 +27,7 @@ import 'package:wenyousite_mobile/features/settings/application/settings_reposit
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
+import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
@@ -56,6 +60,9 @@ void main() {
         ),
         contentDraftRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiContentDraftRepositoryProvider),
+        ),
+        directMessageRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiDirectMessageRepositoryProvider),
         ),
         editorSnapshotStoreProvider.overrideWith(
           (ref) => ref.watch(databaseEditorSnapshotStoreProvider),
@@ -90,6 +97,12 @@ void main() {
         moderationAppealRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiModerationAppealRepositoryProvider),
         ),
+        momentDraftStoreProvider.overrideWith(
+          (ref) => ref.watch(sharedPreferencesMomentDraftStoreProvider),
+        ),
+        momentRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiMomentRepositoryProvider),
+        ),
         notificationRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiNotificationRepositoryProvider),
         ),
@@ -101,6 +114,9 @@ void main() {
         ),
         searchRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiSearchRepositoryProvider),
+        ),
+        stickerRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiStickerRepositoryProvider),
         ),
         walletRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiWalletRepositoryProvider),

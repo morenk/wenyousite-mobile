@@ -7,7 +7,7 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
@@ -83,7 +83,10 @@ final directUnreadControllerProvider =
       // This provider is read from the app shell while the server-advertised
       // capability is scoped by WenyouApp (and overridden by feature tests).
       // Declaring the dependency keeps Riverpod in the same override scope.
-      dependencies: [directMessagesEnabledProvider],
+      dependencies: [
+        directMessagesEnabledProvider,
+        directMessageRepositoryProvider,
+      ],
     );
 
 class DirectConversationListController
@@ -204,7 +207,7 @@ final directConversationListControllerProvider = StateNotifierProvider
         view,
         ref.watch(directMessageRepositoryProvider),
       );
-    });
+    }, dependencies: [directMessageRepositoryProvider]);
 
 class DirectConversationController
     extends StateNotifier<DirectConversationState> {
@@ -849,4 +852,4 @@ final directConversationControllerProvider = StateNotifierProvider.autoDispose
         onUnreadChanged: () =>
             ref.read(directUnreadControllerProvider.notifier).refresh(),
       );
-    });
+    }, dependencies: [directMessageRepositoryProvider]);

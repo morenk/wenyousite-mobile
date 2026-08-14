@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
 part 'moment_composer_controller.dart';
@@ -247,6 +247,7 @@ final momentFeedControllerProvider = StateNotifierProvider.autoDispose
     .family<MomentFeedController, MomentFeedState, MomentFeedTarget>(
       (ref, target) =>
           MomentFeedController(ref.watch(momentRepositoryProvider), target),
+      dependencies: [momentRepositoryProvider],
     );
 
 class MomentReplyPageState {
@@ -694,4 +695,4 @@ final momentDetailControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(momentRepositoryProvider),
         momentId,
       );
-    });
+    }, dependencies: [momentRepositoryProvider]);

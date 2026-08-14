@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 typedef StickerRequestIdFactory = String Function();
@@ -332,5 +332,5 @@ final stickerCollectionControllerProvider =
       },
       // The capability is scoped by WenyouApp, so this controller must be
       // recreated inside the same override scope.
-      dependencies: [stickersEnabledProvider],
+      dependencies: [stickersEnabledProvider, stickerRepositoryProvider],
     );

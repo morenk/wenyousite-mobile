@@ -4,26 +4,12 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_failure_messages.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
-abstract interface class StickerRepository {
-  Future<StickerCollection> fetchCollection();
-
-  Future<StickerImport> fetchImport(String id);
-
-  Future<StickerImport> importSource(
-    StickerImportSource source, {
-    required String clientRequestId,
-  });
-
-  Future<StickerCollection> reorder({
-    required int version,
-    required List<String> favoriteIds,
-  });
-
-  Future<StickerCollection> remove(String favoriteId);
-}
+export 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart'
+    show StickerRepository, stickerRepositoryProvider;
 
 class ApiStickerRepository implements StickerRepository {
   ApiStickerRepository(this._api);
@@ -269,6 +255,6 @@ class ApiStickerRepository implements StickerRepository {
   }
 }
 
-final stickerRepositoryProvider = Provider<StickerRepository>((ref) {
+final apiStickerRepositoryProvider = Provider<StickerRepository>((ref) {
   return ApiStickerRepository(ref.watch(wenyouApiProvider).getStickersApi());
 });
