@@ -4,35 +4,11 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/threads/application/subthread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 
-abstract interface class SubthreadManagementRepository {
-  Future<SubthreadManagementBootstrap> load(String threadId);
-
-  Future<SubthreadManagementItem> findById({
-    required String threadId,
-    required String subthreadId,
-    required bool isDefault,
-  });
-
-  Future<SubthreadManagementItem> create({
-    required String threadId,
-    required SubthreadManagementDraft draft,
-    required String clientRequestId,
-  });
-
-  Future<SubthreadManagementItem> update({
-    required SubthreadManagementItem current,
-    required SubthreadManagementDraft draft,
-  });
-
-  Future<void> remove(SubthreadManagementItem item);
-
-  Future<List<SubthreadManagementItem>> reorder({
-    required String threadId,
-    required List<SubthreadManagementItem> items,
-  });
-}
+export 'package:wenyousite_mobile/features/threads/application/subthread_management_repository_ports.dart'
+    show SubthreadManagementRepository, subthreadManagementRepositoryProvider;
 
 class ApiSubthreadManagementRepository
     implements SubthreadManagementRepository {
@@ -308,7 +284,7 @@ class ApiSubthreadManagementRepository
   }
 }
 
-final subthreadManagementRepositoryProvider =
+final apiSubthreadManagementRepositoryProvider =
     Provider<SubthreadManagementRepository>((ref) {
       final api = ref.watch(wenyouApiProvider);
       return ApiSubthreadManagementRepository(

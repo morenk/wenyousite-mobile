@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
+import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
 
 class ThreadTagManagementController
@@ -211,4 +211,4 @@ final threadTagManagementControllerProvider = StateNotifierProvider.autoDispose
         threadId,
         ref.watch(tagRepositoryProvider),
       );
-    });
+    }, dependencies: [tagRepositoryProvider]);

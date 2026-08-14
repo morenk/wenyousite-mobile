@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/application/subthread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 
 import 'subthread_management_state.dart';
@@ -260,4 +260,4 @@ final subthreadManagementControllerProvider = StateNotifierProvider.autoDispose
         threadId,
         ref.watch(subthreadManagementRepositoryProvider),
       );
-    });
+    }, dependencies: [subthreadManagementRepositoryProvider]);

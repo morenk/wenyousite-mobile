@@ -5,37 +5,13 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_feed_mapper.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
 
-abstract interface class TagRepository {
-  Future<TagThreadsBootstrap> loadTagThreads(String tagId);
-
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
-    required String tagId,
-    String? cursor,
-    int limit = 20,
-  });
-
-  Future<ThreadTagManagementBootstrap> loadManagement(String threadId);
-
-  Future<List<TopicTagModel>> search(String query);
-
-  Future<TopicTagModel> findById(String tagId);
-
-  Future<TopicTagModel> create(String name);
-
-  Future<TopicTagModel> addToThread({
-    required String threadId,
-    required String name,
-  });
-
-  Future<void> removeFromThread({
-    required String threadId,
-    required String tagId,
-  });
-}
+export 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart'
+    show TagRepository, tagRepositoryProvider;
 
 class ApiTagRepository implements TagRepository {
   ApiTagRepository(this._tagsApi, this._threadsApi, this._categoriesApi);
@@ -392,7 +368,7 @@ class ApiTagRepository implements TagRepository {
   }
 }
 
-final tagRepositoryProvider = Provider<TagRepository>((ref) {
+final apiTagRepositoryProvider = Provider<TagRepository>((ref) {
   final api = ref.watch(wenyouApiProvider);
   return ApiTagRepository(
     api.getTagsApi(),

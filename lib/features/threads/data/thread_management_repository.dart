@@ -3,18 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
-abstract interface class ThreadManagementRepository {
-  Future<ThreadManagementBootstrap> load(String threadId);
-
-  Future<ThreadManagementSnapshot> update({
-    required ThreadManagementSnapshot current,
-    required ThreadManagementDraft draft,
-  });
-
-  Future<void> remove(String threadId);
-}
+export 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart'
+    show ThreadManagementRepository, threadManagementRepositoryProvider;
 
 class ApiThreadManagementRepository implements ThreadManagementRepository {
   ApiThreadManagementRepository(this._threadsApi, this._categoriesApi);
@@ -175,12 +168,11 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
   }
 }
 
-final threadManagementRepositoryProvider = Provider<ThreadManagementRepository>(
-  (ref) {
-    final api = ref.watch(wenyouApiProvider);
-    return ApiThreadManagementRepository(
-      api.getThreadsApi(),
-      api.getThreadCategoriesApi(),
-    );
-  },
-);
+final apiThreadManagementRepositoryProvider =
+    Provider<ThreadManagementRepository>((ref) {
+      final api = ref.watch(wenyouApiProvider);
+      return ApiThreadManagementRepository(
+        api.getThreadsApi(),
+        api.getThreadCategoriesApi(),
+      );
+    });

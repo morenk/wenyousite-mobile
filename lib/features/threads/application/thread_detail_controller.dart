@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
 enum ThreadDetailPhase { loading, ready, failed }
@@ -335,9 +335,9 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(threadDetailRepositoryProvider),
         threadId,
       );
-    });
+    }, dependencies: [threadDetailRepositoryProvider]);
 
 final threadPostTargetProvider = FutureProvider.autoDispose
     .family<ThreadPostTargetModel, String>((ref, postId) {
       return ref.watch(threadDetailRepositoryProvider).fetchPostTarget(postId);
-    });
+    }, dependencies: [threadDetailRepositoryProvider]);

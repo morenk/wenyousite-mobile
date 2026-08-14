@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
 import 'thread_invitation_state.dart';
@@ -104,7 +104,7 @@ final threadInviteLinkControllerProvider = StateNotifierProvider.autoDispose
         threadId,
         ref.watch(threadInvitationRepositoryProvider),
       );
-    });
+    }, dependencies: [threadInvitationRepositoryProvider]);
 
 final threadInvitationAccessControllerProvider = StateNotifierProvider
     .autoDispose
@@ -117,4 +117,4 @@ final threadInvitationAccessControllerProvider = StateNotifierProvider
         token,
         ref.watch(threadInvitationRepositoryProvider),
       );
-    });
+    }, dependencies: [threadInvitationRepositoryProvider]);

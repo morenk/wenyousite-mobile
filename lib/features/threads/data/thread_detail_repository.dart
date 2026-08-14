@@ -4,19 +4,11 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-abstract interface class ThreadDetailRepository {
-  Future<ThreadDetailModel> fetchThread(String threadId);
-
-  Future<ThreadPostTargetModel> fetchPostTarget(String postId);
-
-  Future<CursorPage<ThreadFloorModel>> fetchFloors({
-    required String subthreadId,
-    String? cursor,
-    int limit = 20,
-  });
-}
+export 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart'
+    show ThreadDetailRepository, threadDetailRepositoryProvider;
 
 class ApiThreadDetailRepository implements ThreadDetailRepository {
   ApiThreadDetailRepository(this._threadsApi, this._postsApi);
@@ -302,7 +294,9 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
   }
 }
 
-final threadDetailRepositoryProvider = Provider<ThreadDetailRepository>((ref) {
+final apiThreadDetailRepositoryProvider = Provider<ThreadDetailRepository>((
+  ref,
+) {
   final api = ref.watch(wenyouApiProvider);
   return ApiThreadDetailRepository(api.getThreadsApi(), api.getPostsApi());
 });

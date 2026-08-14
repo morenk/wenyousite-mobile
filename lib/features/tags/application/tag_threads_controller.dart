@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
+import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
 
 class TagThreadsController extends StateNotifier<TagThreadsState> {
@@ -130,4 +130,4 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
 final tagThreadsControllerProvider = StateNotifierProvider.autoDispose
     .family<TagThreadsController, TagThreadsState, String>((ref, tagId) {
       return TagThreadsController(tagId, ref.watch(tagRepositoryProvider));
-    });
+    }, dependencies: [tagRepositoryProvider]);

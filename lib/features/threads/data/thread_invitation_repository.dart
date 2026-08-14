@@ -3,15 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 
-abstract interface class ThreadInvitationRepository {
-  Future<ThreadInvitationLink> generateLink(String threadId);
-
-  Future<ThreadInvitationPreview> preview(String token);
-
-  Future<ThreadInvitationJoinResult> join(String token);
-}
+export 'package:wenyousite_mobile/features/threads/application/thread_invitation_repository_ports.dart'
+    show ThreadInvitationRepository, threadInvitationRepositoryProvider;
 
 class ApiThreadInvitationRepository implements ThreadInvitationRepository {
   ApiThreadInvitationRepository(this._threadsApi, this._webOrigin);
@@ -111,11 +107,10 @@ class ApiThreadInvitationRepository implements ThreadInvitationRepository {
   }
 }
 
-final threadInvitationRepositoryProvider = Provider<ThreadInvitationRepository>(
-  (ref) {
-    return ApiThreadInvitationRepository(
-      ref.watch(wenyouApiProvider).getThreadsApi(),
-      ref.watch(appEnvironmentProvider).apiOrigin,
-    );
-  },
-);
+final apiThreadInvitationRepositoryProvider =
+    Provider<ThreadInvitationRepository>((ref) {
+      return ApiThreadInvitationRepository(
+        ref.watch(wenyouApiProvider).getThreadsApi(),
+        ref.watch(appEnvironmentProvider).apiOrigin,
+      );
+    });

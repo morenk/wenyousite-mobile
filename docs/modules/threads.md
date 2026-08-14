@@ -49,7 +49,7 @@
 
 ## 6. 状态模型和数据流
 
-主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离，控制器丢弃过期请求；页面协调文件只保留路由、生命周期与区块组合，详情头部、正文、楼层和管理区块拆入独立 part。目标帖子由独立 FutureProvider 读取。主题内搜索由 search 的 autoDispose family 按 threadId 隔离关键词、请求代次、cursor 和局部错误。点赞/收藏与订阅分别由 social 的 autoDispose family 管理。创建状态由 editor 模块管理表单、本地快照、远端草稿版本、待确认幂等请求和提交动作。已有主题、子贴、标签、成员、邀请生成和邀请访问分别使用独立 autoDispose family，管理状态位于 application 而不是 domain。子贴创建键按规范化表单指纹稳定复用，单条编辑先刷新版本，排序写入不乐观覆盖；标签搜索丢弃旧响应，单个标签写入串行；成员写入串行执行并只替换响应确认的目标成员，退出状态与列表状态分离。邀请预览丢弃过期刷新，加入写入串行执行并校验返回主题与预览目标一致。身份变化会释放旧状态并切换本地分区。
+主题详情阶段、详情数据、选中子贴 ID 与当前楼层页分离，控制器丢弃过期请求；页面协调文件只保留路由、生命周期与区块组合，详情头部、正文、楼层和管理区块拆入独立 part。目标帖子由独立 FutureProvider 读取。主题内搜索由 search 的 autoDispose family 按 threadId 隔离关键词、请求代次、cursor 和局部错误。点赞/收藏与订阅分别由 social 的 autoDispose family 管理。创建状态由 editor 模块管理表单、本地快照、远端草稿版本、待确认幂等请求和提交动作。主题详情、已有主题、子贴、成员与邀请的抽象端口位于 `threads/application`，API 适配器由 `main.dart` 组合根绑定，所有控制器不导入具体 data 仓储。已有主题、子贴、标签、成员、邀请生成和邀请访问分别使用独立 autoDispose family，管理状态位于 application 而不是 domain。子贴创建键按规范化表单指纹稳定复用，单条编辑先刷新版本，排序写入不乐观覆盖；标签搜索丢弃旧响应，单个标签写入串行；成员写入串行执行并只替换响应确认的目标成员，退出状态与列表状态分离。邀请预览丢弃过期刷新，加入写入串行执行并校验返回主题与预览目标一致。身份变化会释放旧状态并切换本地分区。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -112,4 +112,4 @@
 
 ## 14. 相关代码与架构文档
 
-阅读与已有主题管理代码入口：`lib/features/threads/`；标签代码入口：`lib/features/tags/`；创建代码入口：`lib/features/editor/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。
+主题端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；阅读与管理页面：`lib/features/threads/presentation/`；标签代码：`lib/features/tags/`；创建代码：`lib/features/editor/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。

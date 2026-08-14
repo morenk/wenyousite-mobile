@@ -69,6 +69,7 @@
 
 ### Changed
 
+- 标签读写，以及主题详情、子贴管理、主题管理、邀请和成员管理仓储统一收束为 `tags/threads application/*_ports.dart`，由 `main.dart` 组合根绑定 API 适配器；相关控制器与帖子定位 Provider 不再导入具体 data 实现，过期请求丢弃、乐观锁、稳定幂等键和权限 fail-closed 语义保持不变，既有 `layerDependencyDebt` 已清零。
 - 收藏列表、主题互动、主题订阅、用户关系与关系列表五类仓储统一收束为 `social/application/*_ports.dart`，由 `main.dart` 组合根绑定 API 适配器；social 控制器不再导入具体 data 实现，服务端计数/记录 ID、分类局部失败、乐观关系写入与失败恢复语义保持不变。
 - 私聊、动态与收藏表情仓储，以及动态本机草稿存储，统一收束为各自 `application/*_ports.dart`，由 `main.dart` 组合根绑定 API/SharedPreferences 适配器；控制器与动态编辑页不再导入具体 data 实现，会话对账、动态幂等写入、草稿恢复和表情处理轮询语义保持不变。
 - 五槽位正文草稿、主题创作/提及/本地快照和帖子读写仓储统一收束为各自 `application/*_ports.dart`，由 `main.dart` 组合根绑定 API/Drift 适配器；相关控制器不再导入具体 data 实现，幂等创建、乐观锁冲突、远端草稿切换和本地防丢语义保持不变。

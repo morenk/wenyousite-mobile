@@ -33,6 +33,12 @@ import 'package:wenyousite_mobile/features/social/data/thread_subscription_repos
 import 'package:wenyousite_mobile/features/social/data/user_relation_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
+import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_member_management_repository.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
@@ -137,6 +143,24 @@ void main() {
         ),
         stickerRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiStickerRepositoryProvider),
+        ),
+        tagRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiTagRepositoryProvider),
+        ),
+        subthreadManagementRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiSubthreadManagementRepositoryProvider),
+        ),
+        threadDetailRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadDetailRepositoryProvider),
+        ),
+        threadInvitationRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadInvitationRepositoryProvider),
+        ),
+        threadManagementRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadManagementRepositoryProvider),
+        ),
+        threadMemberManagementRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadMemberManagementRepositoryProvider),
         ),
         walletRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiWalletRepositoryProvider),

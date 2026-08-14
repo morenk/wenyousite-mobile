@@ -26,7 +26,7 @@
 
 ## 6. 状态模型和数据流
 
-公开页把标签事实、分类映射、主题页、cursor 和局部失败分离；复用 threads 的主题卡片读模型和映射，使用 `RequestEpoch` 阻止刷新与旧分页结果互相覆盖，并用 `mergeUniqueBy` 按主题 ID 去重。管理状态保存当前标签、候选、规范化查询、搜索标记和单个写操作标识；写入串行，成功只采用服务端返回的标签对象更新本地投影。
+公开页把标签事实、分类映射、主题页、cursor 和局部失败分离；复用 threads 的主题卡片读模型和映射，使用 `RequestEpoch` 阻止刷新与旧分页结果互相覆盖，并用 `mergeUniqueBy` 按主题 ID 去重。管理状态保存当前标签、候选、规范化查询、搜索标记和单个写操作标识；写入串行，成功只采用服务端返回的标签对象更新本地投影。标签读写端口位于 `tags/application`，API 适配器由 `main.dart` 组合根绑定，公开列表和管理控制器不导入具体 data 仓储。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -62,4 +62,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/tags/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)及 [Foundation v1.3.1](https://github.com/morenk/wenyousite-foundation/tree/v1.3.1)。
+端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)及 [Foundation v1.3.1](https://github.com/morenk/wenyousite-foundation/tree/v1.3.1)。

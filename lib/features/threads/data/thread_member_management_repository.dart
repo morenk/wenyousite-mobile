@@ -3,20 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_member_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 
-abstract interface class ThreadMemberManagementRepository {
-  Future<ThreadMemberManagementBootstrap> load(String threadId);
-
-  Future<ThreadMemberManagementMember> updateMember({
-    required String threadId,
-    required String userId,
-    ThreadMemberManagementRole? role,
-    bool? playerMarked,
-  });
-
-  Future<void> exitPlayer(String threadId);
-}
+export 'package:wenyousite_mobile/features/threads/application/thread_member_management_repository_ports.dart'
+    show
+        ThreadMemberManagementRepository,
+        threadMemberManagementRepositoryProvider;
 
 class ApiThreadMemberManagementRepository
     implements ThreadMemberManagementRepository {
@@ -143,7 +136,7 @@ class ApiThreadMemberManagementRepository
   }
 }
 
-final threadMemberManagementRepositoryProvider =
+final apiThreadMemberManagementRepositoryProvider =
     Provider<ThreadMemberManagementRepository>((ref) {
       return ApiThreadMemberManagementRepository(
         ref.watch(wenyouApiProvider).getThreadsApi(),

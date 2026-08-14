@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_member_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_member_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 
 import 'thread_member_management_state.dart';
@@ -144,7 +144,7 @@ final threadMemberManagementControllerProvider = StateNotifierProvider
         threadId,
         ref.watch(threadMemberManagementRepositoryProvider),
       );
-    });
+    }, dependencies: [threadMemberManagementRepositoryProvider]);
 
 final threadPlayerExitControllerProvider = StateNotifierProvider.autoDispose
     .family<ThreadPlayerExitController, ThreadPlayerExitState, String>((
@@ -155,4 +155,4 @@ final threadPlayerExitControllerProvider = StateNotifierProvider.autoDispose
         threadId,
         ref.watch(threadMemberManagementRepositoryProvider),
       );
-    });
+    }, dependencies: [threadMemberManagementRepositoryProvider]);
