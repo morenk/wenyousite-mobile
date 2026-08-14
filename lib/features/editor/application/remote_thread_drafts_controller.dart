@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
+import 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 
 enum RemoteThreadDraftsPhase { loading, ready, failed }
@@ -125,4 +125,4 @@ final remoteThreadDraftsControllerProvider =
       return RemoteThreadDraftsController(
         ref.watch(threadComposeRepositoryProvider),
       );
-    });
+    }, dependencies: [threadComposeRepositoryProvider]);

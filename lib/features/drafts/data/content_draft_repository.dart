@@ -3,23 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 
-abstract interface class ContentDraftRepository {
-  Future<ContentDraftCollection> fetchCollection();
-
-  Future<ContentDraft> fetchById(String id);
-
-  Future<ContentDraft> create(String content, {int? slot});
-
-  Future<ContentDraft> update({
-    required String id,
-    required String content,
-    required int version,
-  });
-
-  Future<void> remove(String id);
-}
+export 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart'
+    show ContentDraftRepository, contentDraftRepositoryProvider;
 
 class ApiContentDraftRepository implements ContentDraftRepository {
   ApiContentDraftRepository(this._api);
@@ -137,6 +125,8 @@ class ApiContentDraftRepository implements ContentDraftRepository {
   }
 }
 
-final contentDraftRepositoryProvider = Provider<ContentDraftRepository>((ref) {
+final apiContentDraftRepositoryProvider = Provider<ContentDraftRepository>((
+  ref,
+) {
   return ApiContentDraftRepository(ref.watch(wenyouApiProvider).getDraftsApi());
 });

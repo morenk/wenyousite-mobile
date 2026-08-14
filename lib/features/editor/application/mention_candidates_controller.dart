@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
+import 'package:wenyousite_mobile/features/editor/application/mention_candidate_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
 enum MentionCandidatesPhase { idle, loading, ready, failed }
@@ -76,4 +76,5 @@ final mentionCandidatesControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(mentionCandidateRepositoryProvider),
         threadId,
       ),
+      dependencies: [mentionCandidateRepositoryProvider],
     );

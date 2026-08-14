@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
 typedef PostDiscussionTarget = ({String rootPostId, String? focusedReplyId});
@@ -449,7 +449,7 @@ final postDiscussionControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(postRepositoryProvider),
         target,
       );
-    });
+    }, dependencies: [postRepositoryProvider]);
 
 final postComposerControllerProvider = StateNotifierProvider.autoDispose
     .family<PostComposerController, PostComposerState, PostComposerTarget>((
@@ -458,10 +458,10 @@ final postComposerControllerProvider = StateNotifierProvider.autoDispose
     ) {
       ref.watch(sessionControllerProvider);
       return PostComposerController(ref.watch(postRepositoryProvider), target);
-    });
+    }, dependencies: [postRepositoryProvider]);
 
 final postActionControllerProvider = StateNotifierProvider.autoDispose
     .family<PostActionController, PostActionState, String>((ref, threadId) {
       ref.watch(sessionControllerProvider);
       return PostActionController(ref.watch(postRepositoryProvider));
-    });
+    }, dependencies: [postRepositoryProvider]);

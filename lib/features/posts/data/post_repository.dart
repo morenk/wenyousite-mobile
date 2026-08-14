@@ -4,35 +4,11 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
-abstract interface class PostRepository {
-  Future<PostItem> fetchPost(String postId);
-
-  Future<PostReplyPage> fetchReplies({
-    required String rootPostId,
-    String? cursor,
-    int limit = 20,
-    PostReplyOrder order = PostReplyOrder.oldest,
-    String? authorId,
-  });
-
-  Future<PostItem> create(PostCreateInput input);
-
-  Future<PostItem> update({
-    required String postId,
-    required String content,
-    required int version,
-  });
-
-  Future<PostItem> upsertBody({
-    required String subthreadId,
-    required String content,
-    int? version,
-  });
-
-  Future<void> remove(String postId);
-}
+export 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart'
+    show PostRepository, postRepositoryProvider;
 
 class ApiPostRepository implements PostRepository {
   ApiPostRepository(this._api);
@@ -266,6 +242,6 @@ class ApiPostRepository implements PostRepository {
   }
 }
 
-final postRepositoryProvider = Provider<PostRepository>((ref) {
+final apiPostRepositoryProvider = Provider<PostRepository>((ref) {
   return ApiPostRepository(ref.watch(wenyouApiProvider).getPostsApi());
 });

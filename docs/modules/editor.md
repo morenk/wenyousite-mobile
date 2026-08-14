@@ -34,7 +34,7 @@
 
 ## 6. 状态模型和数据流
 
-`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。两个创作控制器都只接收 Markdown，不持有 Quill Delta；图片上传进度、失败与取消由 media 的独立上传任务控制器管理，不进入 `ThreadComposeState`、`PostComposerState`，也不持有 Quill Delta。恢复五槽位正文或切换完整主题时递增文档 revision。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；仓储先保留 following/player 关系候选，再合并最多 20 个全站结果，输入触发范围和原子替换仅存在于编辑器页面内存。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
+`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。两个创作控制器都只接收 Markdown，不持有 Quill Delta；主题远端草稿、提及候选和本地快照的端口位于 `editor/application`，API/Drift 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 实现。图片上传进度、失败与取消由 media 的独立上传任务控制器管理，不进入 `ThreadComposeState`、`PostComposerState`，也不持有 Quill Delta。恢复五槽位正文或切换完整主题时递增文档 revision。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；仓储先保留 following/player 关系候选，再合并最多 20 个全站结果，输入触发范围和原子替换仅存在于编辑器页面内存。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -82,4 +82,4 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 14. 相关代码与架构文档
 
-页面与状态：`lib/features/editor/`；媒体上传状态：`lib/features/media/application/`；上传实现：`lib/features/media/data/`；Codec：`lib/core/markdown/markdown_delta_codec.dart`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[草稿](drafts.md)、[媒体](media.md)。
+页面、控制器与创作/提及/快照端口：`lib/features/editor/application/`、`lib/features/editor/presentation/`；API 与 Drift 适配器：`lib/features/editor/data/`；媒体上传状态：`lib/features/media/application/`；上传实现：`lib/features/media/data/`；Codec：`lib/core/markdown/markdown_delta_codec.dart`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[草稿](drafts.md)、[媒体](media.md)。

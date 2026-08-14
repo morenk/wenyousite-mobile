@@ -1,25 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/storage/app_database.dart';
+import 'package:wenyousite_mobile/features/editor/application/editor_snapshot_store_ports.dart';
 
-abstract interface class EditorSnapshotStore {
-  Future<LocalEditorSnapshot?> findThreadSnapshot(String ownerId);
-
-  Future<void> saveThreadSnapshot(LocalEditorSnapshot snapshot);
-
-  Future<void> deleteThreadSnapshot(String ownerId);
-
-  Future<PendingCreateOperation?> findPendingCreate(String clientRequestId);
-
-  Future<void> savePendingCreate(PendingCreateOperation operation);
-
-  Future<void> deletePendingCreate(String clientRequestId);
-}
+export 'package:wenyousite_mobile/features/editor/application/editor_snapshot_store_ports.dart'
+    show
+        EditorSnapshotStore,
+        editorSnapshotStoreProvider,
+        threadEditorSnapshotId;
 
 class DatabaseEditorSnapshotStore implements EditorSnapshotStore {
   DatabaseEditorSnapshotStore(this._database);
 
-  static String threadSnapshotId(String ownerId) => 'thread:new:$ownerId';
+  static String threadSnapshotId(String ownerId) =>
+      threadEditorSnapshotId(ownerId);
 
   final AppDatabase _database;
 
@@ -54,6 +48,8 @@ class DatabaseEditorSnapshotStore implements EditorSnapshotStore {
   }
 }
 
-final editorSnapshotStoreProvider = Provider<EditorSnapshotStore>((ref) {
+final databaseEditorSnapshotStoreProvider = Provider<EditorSnapshotStore>((
+  ref,
+) {
   return DatabaseEditorSnapshotStore(ref.watch(appDatabaseProvider));
 });

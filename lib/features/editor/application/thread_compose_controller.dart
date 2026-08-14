@@ -6,8 +6,8 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
+import 'package:wenyousite_mobile/features/editor/application/editor_snapshot_store_ports.dart';
+import 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 
 enum ThreadComposePhase { loading, ready, failed, published }
@@ -603,7 +603,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   LocalEditorSnapshot _buildSnapshot(ThreadComposeState source) {
     final ownerId = source.ownerId!;
     return LocalEditorSnapshot(
-      id: DatabaseEditorSnapshotStore.threadSnapshotId(ownerId),
+      id: threadEditorSnapshotId(ownerId),
       contextType: EditorContextType.thread,
       contextId: source.remoteDraft?.id,
       body: source.body,
@@ -657,14 +657,20 @@ final threadComposeControllerProvider =
     StateNotifierProvider.autoDispose<
       ThreadComposeController,
       ThreadComposeState
-    >((ref) {
-      ref.watch(sessionControllerProvider);
-      final ownerId = ref
-          .read(sessionControllerProvider.notifier)
-          .currentUserId;
-      return ThreadComposeController(
-        ref.watch(threadComposeRepositoryProvider),
-        ref.watch(editorSnapshotStoreProvider),
-        knownOwnerId: ownerId,
-      );
-    });
+    >(
+      (ref) {
+        ref.watch(sessionControllerProvider);
+        final ownerId = ref
+            .read(sessionControllerProvider.notifier)
+            .currentUserId;
+        return ThreadComposeController(
+          ref.watch(threadComposeRepositoryProvider),
+          ref.watch(editorSnapshotStoreProvider),
+          knownOwnerId: ownerId,
+        );
+      },
+      dependencies: [
+        threadComposeRepositoryProvider,
+        editorSnapshotStoreProvider,
+      ],
+    );

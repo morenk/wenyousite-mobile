@@ -5,32 +5,11 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 
-abstract interface class ThreadComposeRepository {
-  Future<ThreadComposeBootstrap> fetchBootstrap();
-
-  Future<List<ThreadRemoteDraftSummary>> fetchDrafts();
-
-  Future<ThreadRemoteDraft> fetchDraft({
-    required String id,
-    required String ownerId,
-  });
-
-  Future<void> removeDraft(String id);
-
-  Future<ThreadRemoteDraft> createDraft(ThreadCreatePayload payload);
-
-  Future<ThreadRemoteDraft> saveAggregate({
-    required ThreadRemoteDraft remoteDraft,
-    required String title,
-    required String? categorySlug,
-    required ThreadComposeVisibility visibility,
-    required List<String> tags,
-    required String body,
-    required bool publish,
-  });
-}
+export 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart'
+    show ThreadComposeRepository, threadComposeRepositoryProvider;
 
 class ApiThreadComposeRepository implements ThreadComposeRepository {
   ApiThreadComposeRepository(
@@ -307,7 +286,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
   }
 }
 
-final threadComposeRepositoryProvider = Provider<ThreadComposeRepository>((
+final apiThreadComposeRepositoryProvider = Provider<ThreadComposeRepository>((
   ref,
 ) {
   final api = ref.watch(wenyouApiProvider);

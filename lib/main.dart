@@ -10,9 +10,14 @@ import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
+import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
+import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
+import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
+import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
@@ -49,6 +54,18 @@ void main() {
         passwordRecoveryRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiPasswordRecoveryRepositoryProvider),
         ),
+        contentDraftRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiContentDraftRepositoryProvider),
+        ),
+        editorSnapshotStoreProvider.overrideWith(
+          (ref) => ref.watch(databaseEditorSnapshotStoreProvider),
+        ),
+        mentionCandidateRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiMentionCandidateRepositoryProvider),
+        ),
+        threadComposeRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadComposeRepositoryProvider),
+        ),
         avatarRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiAvatarRepositoryProvider),
         ),
@@ -75,6 +92,9 @@ void main() {
         ),
         notificationRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiNotificationRepositoryProvider),
+        ),
+        postRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiPostRepositoryProvider),
         ),
         reportRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiReportRepositoryProvider),

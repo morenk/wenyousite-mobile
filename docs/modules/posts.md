@@ -26,7 +26,7 @@
 
 ## 6. 状态模型和数据流
 
-主题详情继续维护所选子贴的楼层页。独立讨论以主楼层 ID 为 family key，分离主楼层、回复页、cursor、排序、作者筛选、刷新和分页错误；筛选变化从第一页重载，分页合并按 ID 去重并按时间重排。帖子编辑器只持有 Markdown、当前版本、提交结果、待确认创建和冲突最新版；图片上传会话由 `media/application` 独立管理，不进入 `PostComposerState`；删除使用独立串行状态。
+主题详情继续维护所选子贴的楼层页。独立讨论以主楼层 ID 为 family key，分离主楼层、回复页、cursor、排序、作者筛选、刷新和分页错误；筛选变化从第一页重载，分页合并按 ID 去重并按时间重排。帖子读写端口位于 `posts/application`，API 适配器由 `main.dart` 组合根绑定，三个控制器不导入具体 data 仓储。帖子编辑器只持有 Markdown、当前版本、提交结果、待确认创建和冲突最新版；图片上传会话由 `media/application` 独立管理，不进入 `PostComposerState`；删除使用独立串行状态。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -71,4 +71,4 @@
 
 ## 14. 相关代码与架构文档
 
-独立帖子代码：`lib/features/posts/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。
+帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。

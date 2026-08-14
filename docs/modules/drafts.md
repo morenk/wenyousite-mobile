@@ -32,7 +32,7 @@
 
 `ThreadComposeState.localSnapshotStatus` 区分 idle、saving、saved、failed；`ThreadRemoteDraft` 保存服务端主题、默认子贴和正文版本；`PendingCreateOperation` 区分 pending、sending、awaitingConfirmation。`RemoteThreadDraftsState` 独立管理完整主题草稿箱的加载、列表、删除目标和失败，列表摘要不直接承担编辑版本。数据库只存完整 Markdown 和表单元数据，不保存 Delta。
 
-`ContentDraftsState` 分离列表加载阶段、槽位用量、按槽位排序的领域草稿、当前写入/删除目标、动作反馈与版本冲突；`ContentDraftConflict` 同时保留刚读取的云端最新版和未提交的本机正文。服务端 DTO 不直接承担面板状态。
+`ContentDraftsState` 分离列表加载阶段、槽位用量、按槽位排序的领域草稿、当前写入/删除目标、动作反馈与版本冲突；`ContentDraftConflict` 同时保留刚读取的云端最新版和未提交的本机正文。五槽位草稿、主题远端草稿与本地快照的抽象端口都位于各自 `application` 层，API/Drift 适配器由 `main.dart` 组合根绑定；服务端 DTO 不直接承担面板状态。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -79,4 +79,4 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 14. 相关代码与架构文档
 
-五槽位正文草稿：`lib/features/drafts/`；主题创作控制器与存储：`lib/features/editor/application/`、`lib/features/editor/data/editor_snapshot_store.dart`；数据库：`lib/core/storage/app_database.dart`。参见[编辑器](editor.md)、[持久化](../architecture/persistence.md)。
+五槽位正文草稿端口与状态：`lib/features/drafts/application/`；其 API 实现：`lib/features/drafts/data/`；主题创作端口与控制器：`lib/features/editor/application/`；主题 API 与 Drift 适配器：`lib/features/editor/data/`；数据库：`lib/core/storage/app_database.dart`。参见[编辑器](editor.md)、[持久化](../architecture/persistence.md)。

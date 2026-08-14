@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
+import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 
 class ContentDraftsController extends StateNotifier<ContentDraftsState> {
@@ -311,4 +311,4 @@ final contentDraftsControllerProvider =
     >((ref) {
       ref.watch(sessionControllerProvider);
       return ContentDraftsController(ref.watch(contentDraftRepositoryProvider));
-    });
+    }, dependencies: [contentDraftRepositoryProvider]);

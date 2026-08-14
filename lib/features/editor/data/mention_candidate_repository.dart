@@ -3,14 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/editor/application/mention_candidate_repository_ports.dart';
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
-abstract interface class MentionCandidateRepository {
-  Future<MentionCandidatesResult> findCandidates({
-    required String threadId,
-    required String query,
-  });
-}
+export 'package:wenyousite_mobile/features/editor/application/mention_candidate_repository_ports.dart'
+    show MentionCandidateRepository, mentionCandidateRepositoryProvider;
 
 class ApiMentionCandidateRepository implements MentionCandidateRepository {
   ApiMentionCandidateRepository(this._api);
@@ -92,7 +89,9 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
   }
 }
 
-final mentionCandidateRepositoryProvider = Provider<MentionCandidateRepository>(
-  (ref) =>
-      ApiMentionCandidateRepository(ref.watch(wenyouApiProvider).getUsersApi()),
-);
+final apiMentionCandidateRepositoryProvider =
+    Provider<MentionCandidateRepository>(
+      (ref) => ApiMentionCandidateRepository(
+        ref.watch(wenyouApiProvider).getUsersApi(),
+      ),
+    );
