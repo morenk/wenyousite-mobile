@@ -27,6 +27,11 @@ import 'package:wenyousite_mobile/features/settings/application/settings_reposit
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
 import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
+import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
+import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
+import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
+import 'package:wenyousite_mobile/features/social/data/user_relation_list_repository.dart';
+import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
@@ -114,6 +119,21 @@ void main() {
         ),
         searchRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiSearchRepositoryProvider),
+        ),
+        bookmarkListRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiBookmarkListRepositoryProvider),
+        ),
+        threadInteractionRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadInteractionRepositoryProvider),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiThreadSubscriptionRepositoryProvider),
+        ),
+        userRelationListRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiUserRelationListRepositoryProvider),
+        ),
+        userRelationRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiUserRelationRepositoryProvider),
         ),
         stickerRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiStickerRepositoryProvider),

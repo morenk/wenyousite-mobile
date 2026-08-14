@@ -4,23 +4,11 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
-abstract interface class BookmarkListRepository {
-  Future<CursorPage<BookmarkListItem>> fetchPage({
-    String? cursor,
-    String? folderId,
-    int limit = 20,
-  });
-
-  Future<List<BookmarkFolderItem>> fetchFolders();
-
-  Future<BookmarkFolderItem> createFolder(String name);
-
-  Future<void> move(String bookmarkId, String folderId);
-
-  Future<void> remove(String bookmarkId);
-}
+export 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart'
+    show BookmarkListRepository, bookmarkListRepositoryProvider;
 
 class ApiBookmarkListRepository implements BookmarkListRepository {
   ApiBookmarkListRepository(this._api);
@@ -173,7 +161,9 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
   }
 }
 
-final bookmarkListRepositoryProvider = Provider<BookmarkListRepository>((ref) {
+final apiBookmarkListRepositoryProvider = Provider<BookmarkListRepository>((
+  ref,
+) {
   return ApiBookmarkListRepository(
     ref.watch(wenyouApiProvider).getBookmarksApi(),
   );

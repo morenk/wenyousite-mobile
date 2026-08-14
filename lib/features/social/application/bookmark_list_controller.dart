@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
+import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 class BookmarkListController extends StateNotifier<BookmarkListState> {
@@ -413,4 +413,5 @@ final bookmarkListControllerProvider =
     >(
       (ref) =>
           BookmarkListController(ref.watch(bookmarkListRepositoryProvider)),
+      dependencies: [bookmarkListRepositoryProvider],
     );

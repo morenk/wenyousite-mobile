@@ -3,16 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_interaction_repository_ports.dart';
 
-abstract interface class ThreadInteractionRepository {
-  Future<int> like(String threadId);
-
-  Future<int> unlike(String threadId);
-
-  Future<String> createBookmark(String threadId);
-
-  Future<void> removeBookmark(String bookmarkId);
-}
+export 'package:wenyousite_mobile/features/social/application/thread_interaction_repository_ports.dart'
+    show ThreadInteractionRepository, threadInteractionRepositoryProvider;
 
 class ApiThreadInteractionRepository implements ThreadInteractionRepository {
   ApiThreadInteractionRepository(this._threadsApi, this._bookmarksApi);
@@ -76,7 +70,7 @@ class ApiThreadInteractionRepository implements ThreadInteractionRepository {
   }
 }
 
-final threadInteractionRepositoryProvider =
+final apiThreadInteractionRepositoryProvider =
     Provider<ThreadInteractionRepository>((ref) {
       final api = ref.watch(wenyouApiProvider);
       return ApiThreadInteractionRepository(

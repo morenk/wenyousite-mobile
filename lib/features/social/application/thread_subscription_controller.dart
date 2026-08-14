@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 
 class ThreadSubscriptionController
@@ -193,4 +193,4 @@ final threadSubscriptionControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(threadSubscriptionRepositoryProvider),
         target,
       );
-    });
+    }, dependencies: [threadSubscriptionRepositoryProvider]);

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/social/data/user_relation_list_repository.dart';
-import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
+import 'package:wenyousite_mobile/features/social/application/user_relation_list_repository_ports.dart';
+import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 
 class UserRelationListController extends StateNotifier<UserRelationListState> {
@@ -90,10 +90,16 @@ final userRelationListControllerProvider = StateNotifierProvider.autoDispose
       UserRelationListController,
       UserRelationListState,
       UserRelationListTarget
-    >((ref, target) {
-      return UserRelationListController(
-        ref.watch(userRelationListRepositoryProvider),
-        ref.watch(userRelationRepositoryProvider),
-        target,
-      );
-    });
+    >(
+      (ref, target) {
+        return UserRelationListController(
+          ref.watch(userRelationListRepositoryProvider),
+          ref.watch(userRelationRepositoryProvider),
+          target,
+        );
+      },
+      dependencies: [
+        userRelationListRepositoryProvider,
+        userRelationRepositoryProvider,
+      ],
+    );

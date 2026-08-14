@@ -30,7 +30,7 @@
 
 ## 6. 状态模型和数据流
 
-`ThreadInteractionTarget` 管理详情点赞与快捷收藏；`BookmarkListController` 独立保存服务端收藏夹、当前 `selectedFolderId`、分类错误、当前筛选分页和创建/移动/取消的唯一在途动作。分类读取失败不遮断“全部”收藏，列表筛选失败也不丢失已取得的分类。`ThreadSubscriptionTarget` 保存当前主题订阅、玩家候选与唯一在途目标。`UserRelationTarget` 管理关系写入，`UserRelationListTarget` 管理公开/本人列表。所有状态均为 autoDispose，当前不建立跨页面事件总线。
+`ThreadInteractionTarget` 管理详情点赞与快捷收藏；`BookmarkListController` 独立保存服务端收藏夹、当前 `selectedFolderId`、分类错误、当前筛选分页和创建/移动/取消的唯一在途动作。分类读取失败不遮断“全部”收藏，列表筛选失败也不丢失已取得的分类。`ThreadSubscriptionTarget` 保存当前主题订阅、玩家候选与唯一在途目标。`UserRelationTarget` 管理关系写入，`UserRelationListTarget` 管理公开/本人列表。收藏、互动、订阅、关系与关系列表五类端口位于 `social/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。所有状态均为 autoDispose，当前不建立跨页面事件总线。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -72,4 +72,4 @@ threads 页面消费主题互动和订阅控制器，users 的“我的”页面
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/social/`，消费入口为主题详情和公开用户页。参见[主题](threads.md)、[用户与资料](users.md)。
+端口与控制器：`lib/features/social/application/`；API 适配器：`lib/features/social/data/`；页面：`lib/features/social/presentation/`，消费入口为主题详情和公开用户页。参见[主题](threads.md)、[用户与资料](users.md)。

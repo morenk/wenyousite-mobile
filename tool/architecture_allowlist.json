@@ -61,12 +61,6 @@
     "users->direct_messages"
   ],
   "layerDependencyDebt": [
-    "lib/features/social/application/bookmark_list_controller.dart->lib/features/social/data/bookmark_list_repository.dart",
-    "lib/features/social/application/thread_interaction_controller.dart->lib/features/social/data/thread_interaction_repository.dart",
-    "lib/features/social/application/thread_subscription_controller.dart->lib/features/social/data/thread_subscription_repository.dart",
-    "lib/features/social/application/user_relation_controller.dart->lib/features/social/data/user_relation_repository.dart",
-    "lib/features/social/application/user_relation_list_controller.dart->lib/features/social/data/user_relation_list_repository.dart",
-    "lib/features/social/application/user_relation_list_controller.dart->lib/features/social/data/user_relation_repository.dart",
     "lib/features/tags/application/tag_threads_controller.dart->lib/features/tags/data/tag_repository.dart",
     "lib/features/tags/application/thread_tag_management_controller.dart->lib/features/tags/data/tag_repository.dart",
     "lib/features/threads/application/subthread_management_controller.dart->lib/features/threads/data/subthread_management_repository.dart",

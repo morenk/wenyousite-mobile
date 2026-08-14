@@ -3,16 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
 
-abstract interface class UserRelationRepository {
-  Future<void> follow(String userId);
-
-  Future<void> unfollow(String userId);
-
-  Future<void> block(String userId);
-
-  Future<void> unblock(String userId);
-}
+export 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart'
+    show UserRelationRepository, userRelationRepositoryProvider;
 
 class ApiUserRelationRepository implements UserRelationRepository {
   ApiUserRelationRepository(this._api);
@@ -50,6 +44,8 @@ class ApiUserRelationRepository implements UserRelationRepository {
   }
 }
 
-final userRelationRepositoryProvider = Provider<UserRelationRepository>((ref) {
+final apiUserRelationRepositoryProvider = Provider<UserRelationRepository>((
+  ref,
+) {
   return ApiUserRelationRepository(ref.watch(wenyouApiProvider).getUsersApi());
 });

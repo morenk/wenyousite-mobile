@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_interaction_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 
 class ThreadInteractionController
@@ -123,4 +123,4 @@ final threadInteractionControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(threadInteractionRepositoryProvider),
         target,
       );
-    });
+    }, dependencies: [threadInteractionRepositoryProvider]);

@@ -3,24 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 
-abstract interface class ThreadSubscriptionRepository {
-  Future<List<ThreadSubscriptionRecord>> fetchSubscriptions(String threadId);
-
-  Future<List<ThreadSubscriptionCandidate>> fetchCandidates(
-    String threadId, {
-    String? viewerUserId,
-  });
-
-  Future<ThreadSubscriptionRecord> create({
-    required String threadId,
-    required ThreadSubscriptionType type,
-    String? targetUserId,
-  });
-
-  Future<void> remove(String subscriptionId);
-}
+export 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart'
+    show ThreadSubscriptionRepository, threadSubscriptionRepositoryProvider;
 
 class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
   ApiThreadSubscriptionRepository(this._subscriptionsApi, this._threadsApi);
@@ -141,7 +128,7 @@ class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
   }
 }
 
-final threadSubscriptionRepositoryProvider =
+final apiThreadSubscriptionRepositoryProvider =
     Provider<ThreadSubscriptionRepository>((ref) {
       final api = ref.watch(wenyouApiProvider);
       return ApiThreadSubscriptionRepository(
