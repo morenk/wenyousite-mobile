@@ -48,6 +48,9 @@ Serializers _$serializers =
           ..add(AdminDashboardTimeseriesPointDto.serializer)
           ..add(AdminDashboardTimeseriesResponseDto.serializer)
           ..add(AdminGetHistory200Response.serializer)
+          ..add(AdminHiddenContentResponseDto.serializer)
+          ..add(AdminHiddenContentResponseDtoTargetTypeEnum.serializer)
+          ..add(AdminHiddenContentUserResponseDto.serializer)
           ..add(AdminIndex200Response.serializer)
           ..add(AdminInviteAcceptanceAccept201Response.serializer)
           ..add(AdminInviteCreatedResponseDto.serializer)
@@ -57,6 +60,7 @@ Serializers _$serializers =
           ..add(AdminModerationGetUser200Response.serializer)
           ..add(AdminModerationHideContent200Response.serializer)
           ..add(AdminModerationListAuditLogs200Response.serializer)
+          ..add(AdminModerationListHiddenContent200Response.serializer)
           ..add(AdminModerationListUsers200Response.serializer)
           ..add(AdminModerationRestoreContent200Response.serializer)
           ..add(AdminModerationRevokeSanction200Response.serializer)
@@ -595,6 +599,12 @@ Serializers _$serializers =
               const FullType(AdminDashboardTimeseriesPointDto),
             ]),
             () => ListBuilder<AdminDashboardTimeseriesPointDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(AdminHiddenContentResponseDto),
+            ]),
+            () => ListBuilder<AdminHiddenContentResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

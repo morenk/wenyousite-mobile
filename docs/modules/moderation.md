@@ -60,7 +60,7 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.8.0-dev.20260813.2`；后端 `67c3c7bdee228b8d7c0c94ef39a08dc9d223fdbf`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.9.0-dev.20260814.1`；后端 `c7918b4e9bfeb05e2f98c2000f8e93daa81e636c`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
 
 ## 14. 相关代码与架构文档
 

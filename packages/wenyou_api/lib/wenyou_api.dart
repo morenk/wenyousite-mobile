@@ -77,6 +77,8 @@ export 'package:wenyou_api/src/model/admin_dashboard_timeseries200_response.dart
 export 'package:wenyou_api/src/model/admin_dashboard_timeseries_point_dto.dart';
 export 'package:wenyou_api/src/model/admin_dashboard_timeseries_response_dto.dart';
 export 'package:wenyou_api/src/model/admin_get_history200_response.dart';
+export 'package:wenyou_api/src/model/admin_hidden_content_response_dto.dart';
+export 'package:wenyou_api/src/model/admin_hidden_content_user_response_dto.dart';
 export 'package:wenyou_api/src/model/admin_index200_response.dart';
 export 'package:wenyou_api/src/model/admin_invite_acceptance_accept201_response.dart';
 export 'package:wenyou_api/src/model/admin_invite_created_response_dto.dart';
@@ -86,6 +88,7 @@ export 'package:wenyou_api/src/model/admin_moderation_appeals_resolve201_respons
 export 'package:wenyou_api/src/model/admin_moderation_get_user200_response.dart';
 export 'package:wenyou_api/src/model/admin_moderation_hide_content200_response.dart';
 export 'package:wenyou_api/src/model/admin_moderation_list_audit_logs200_response.dart';
+export 'package:wenyou_api/src/model/admin_moderation_list_hidden_content200_response.dart';
 export 'package:wenyou_api/src/model/admin_moderation_list_users200_response.dart';
 export 'package:wenyou_api/src/model/admin_moderation_restore_content200_response.dart';
 export 'package:wenyou_api/src/model/admin_moderation_revoke_sanction200_response.dart';

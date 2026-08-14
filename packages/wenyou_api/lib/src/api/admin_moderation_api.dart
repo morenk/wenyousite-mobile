@@ -13,6 +13,7 @@ import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/admin_moderation_get_user200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_hide_content200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_list_audit_logs200_response.dart';
+import 'package:wenyou_api/src/model/admin_moderation_list_hidden_content200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_list_users200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_restore_content200_response.dart';
 import 'package:wenyou_api/src/model/admin_moderation_revoke_sanction200_response.dart';
@@ -455,6 +456,107 @@ class AdminModerationApi {
     }
 
     return Response<AdminModerationListAuditLogs200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 当前仍由管理员隐藏的内容列表
+  ///
+  ///
+  /// Parameters:
+  /// * [xCSRFToken] - 管理后台写操作必填
+  /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
+  /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [targetType]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminModerationListHiddenContent200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminModerationListHiddenContent200Response>> adminModerationListHiddenContent({
+    String? xCSRFToken,
+    String? cursor,
+    num? limit = 20,
+    String? targetType,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/admin/content/hidden';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        if (xCSRFToken != null) r'X-CSRF-Token': xCSRFToken,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'adminSession',
+            'keyName': '__Secure-wenyou-admin-session',
+            'where': '',
+          },{
+            'type': 'apiKey',
+            'name': 'adminCsrf',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (targetType != null) r'targetType': encodeQueryParameter(_serializers, targetType, const FullType(String)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminModerationListHiddenContent200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminModerationListHiddenContent200Response),
+      ) as AdminModerationListHiddenContent200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminModerationListHiddenContent200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

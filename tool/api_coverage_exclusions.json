@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "4.8.0-dev.20260813.2",
+  "contractVersion": "4.9.0-dev.20260814.1",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
@@ -11,6 +11,7 @@
     { "operationId": "adminDashboardOverview", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminDashboardTimeseries", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminModerationListAuditLogs", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
+    { "operationId": "adminModerationListHiddenContent", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminModerationHideContent", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminModerationRestoreContent", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminModerationListUsers", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
