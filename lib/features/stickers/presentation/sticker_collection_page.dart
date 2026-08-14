@@ -1,13 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
@@ -20,23 +16,16 @@ class StickerCollectionPage extends ConsumerStatefulWidget {
 }
 
 class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
-  CancelToken? _uploadCancelToken;
-  MediaUploadProgress? _uploadProgress;
-  ApiFailure? _uploadFailure;
-
-  bool get _uploading => _uploadCancelToken != null;
-
-  @override
-  void dispose() {
-    _uploadCancelToken?.cancel('sticker page disposed');
-    super.dispose();
-  }
+  final Object _uploadTaskId = Object();
 
   @override
   Widget build(BuildContext context) {
     final enabled = ref.watch(stickersEnabledProvider);
     if (!enabled) return const _StickersUnavailablePage();
     final state = ref.watch(stickerCollectionControllerProvider);
+    final uploadState = ref.watch(
+      mediaUploadTaskControllerProvider(_uploadTaskId),
+    );
     final notifier = ref.read(stickerCollectionControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(title: const Text('表情包')),
@@ -63,7 +52,12 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
             ),
           ),
         ),
-        StickerCollectionPhase.ready => _buildReady(context, state, notifier),
+        StickerCollectionPhase.ready => _buildReady(
+          context,
+          state,
+          notifier,
+          uploadState,
+        ),
       },
     );
   }
@@ -72,6 +66,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     BuildContext context,
     StickerCollectionState state,
     StickerCollectionController notifier,
+    MediaUploadTaskState uploadState,
   ) {
     final collection = state.collection!;
     final tokens = context.wenyouTokens;
@@ -119,13 +114,21 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   ),
                   SizedBox(height: tokens.space12),
                 ],
-                if (_uploadFailure != null) ...[
+                if (uploadState.failure case final uploadFailure?) ...[
                   WenyouStatusBanner(
+                    key: const Key('stickers-upload-failure'),
                     tone: WenyouStatusTone.error,
-                    message: _uploadFailure!.userMessage,
-                    detail: _uploadFailure!.requestId == null
+                    message: uploadFailure.userMessage,
+                    detail: uploadFailure.requestId == null
                         ? null
-                        : '请求 ID：${_uploadFailure!.requestId}',
+                        : '请求 ID：${uploadFailure.requestId}',
+                    action: uploadFailure.canRetry
+                        ? TextButton(
+                            key: const Key('stickers-retry-upload'),
+                            onPressed: _retryUpload,
+                            child: const Text('重试上传'),
+                          )
+                        : null,
                   ),
                   SizedBox(height: tokens.space12),
                 ],
@@ -151,10 +154,12 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                           FilledButton.icon(
                             key: const Key('stickers-add-gallery'),
                             onPressed:
-                                state.isBusy || _uploading || collection.isFull
+                                state.isBusy ||
+                                    uploadState.isBusy ||
+                                    collection.isFull
                                 ? null
                                 : _addFromGallery,
-                            icon: _uploading
+                            icon: uploadState.isBusy
                                 ? const SizedBox.square(
                                     dimension: 18,
                                     child: CircularProgressIndicator(
@@ -164,29 +169,35 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                                 : const Icon(
                                     Icons.add_photo_alternate_outlined,
                                   ),
-                            label: Text(_uploading ? '处理中' : '从相册添加'),
+                            label: Text(uploadState.isBusy ? '处理中' : '从相册添加'),
                           ),
                         ],
                       ),
-                      if (_uploadProgress != null) ...[
+                      if (uploadState.isBusy) ...[
                         SizedBox(height: tokens.space12),
                         Row(
                           children: [
                             Expanded(
                               child: Text(
-                                _uploadProgressLabel(_uploadProgress!),
+                                _uploadProgressLabel(uploadState),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
                             TextButton(
-                              onPressed: () =>
-                                  _uploadCancelToken?.cancel('user canceled'),
+                              key: const Key('stickers-cancel-upload'),
+                              onPressed: () => ref
+                                  .read(
+                                    mediaUploadTaskControllerProvider(
+                                      _uploadTaskId,
+                                    ).notifier,
+                                  )
+                                  .cancel(),
                               child: const Text('取消'),
                             ),
                           ],
                         ),
                         LinearProgressIndicator(
-                          value: _uploadProgress!.fraction,
+                          value: uploadState.progress?.fraction,
                         ),
                       ],
                       if (collection.pendingImports.isNotEmpty) ...[
@@ -232,7 +243,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                           removing:
                               state.action == StickerAction.removing &&
                               state.actionTarget == sticker.id,
-                          disabled: state.isBusy || _uploading,
+                          disabled: state.isBusy || uploadState.isBusy,
                           onRemove: () => _confirmRemove(sticker),
                         );
                       },
@@ -247,45 +258,24 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   }
 
   Future<void> _addFromGallery() async {
-    setState(() => _uploadFailure = null);
-    try {
-      final input = await ref.read(editorImagePickerProvider).pickFromGallery();
-      if (!mounted || input == null) return;
-      final cancelToken = CancelToken();
-      setState(() {
-        _uploadCancelToken = cancelToken;
-        _uploadProgress = const MediaUploadProgress(
-          stage: MediaUploadStage.preparing,
-        );
-      });
-      final uploaded = await ref
-          .read(mediaUploadRepositoryProvider)
-          .uploadImage(
-            input,
-            cancelToken: cancelToken,
-            onProgress: (progress) {
-              if (mounted) setState(() => _uploadProgress = progress);
-            },
-          );
-      if (!mounted) return;
-      await ref
-          .read(stickerCollectionControllerProvider.notifier)
-          .importMedia(uploaded.mediaId);
-    } on Object catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _uploadFailure = error is ApiFailure
-            ? error
-            : ApiFailure(userMessage: '图片没有添加成功，请重试。', cause: error);
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _uploadCancelToken = null;
-          _uploadProgress = null;
-        });
-      }
-    }
+    await _uploadAndImport(retry: false);
+  }
+
+  Future<void> _retryUpload() async {
+    await _uploadAndImport(retry: true);
+  }
+
+  Future<void> _uploadAndImport({required bool retry}) async {
+    final uploadController = ref.read(
+      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    );
+    final uploaded = retry
+        ? await uploadController.retryUpload()
+        : await uploadController.pickAndUpload();
+    if (!mounted || uploaded == null) return;
+    await ref
+        .read(stickerCollectionControllerProvider.notifier)
+        .importMedia(uploaded.mediaId);
   }
 
   Future<void> _confirmRemove(UserSticker sticker) async {
@@ -313,14 +303,16 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
         .remove(sticker.id);
   }
 
-  String _uploadProgressLabel(MediaUploadProgress progress) {
-    return switch (progress.stage) {
-      MediaUploadStage.preparing => '正在准备图片…',
-      MediaUploadStage.uploading when progress.fraction != null =>
-        '正在上传 ${(progress.fraction! * 100).round()}%',
-      MediaUploadStage.uploading => '正在上传图片…',
-      MediaUploadStage.confirming => '正在确认图片…',
-      MediaUploadStage.processing => '图片正在安全处理中…',
+  String _uploadProgressLabel(MediaUploadTaskState state) {
+    return switch (state.phase) {
+      MediaUploadTaskPhase.picking => '正在打开相册…',
+      MediaUploadTaskPhase.preparing => '正在准备图片…',
+      MediaUploadTaskPhase.uploading when state.progress?.fraction != null =>
+        '正在上传 ${(state.progress!.fraction! * 100).round()}%',
+      MediaUploadTaskPhase.uploading => '正在上传图片…',
+      MediaUploadTaskPhase.confirming => '正在确认图片…',
+      MediaUploadTaskPhase.processing => '图片正在安全处理中…',
+      MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
     };
   }
 }
@@ -355,7 +347,7 @@ class _StickerListTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(tokens.radius12),
             child: SizedBox.square(
               dimension: 56,
-              child: CachedNetworkImage(
+              child: WenyouCachedImage(
                 imageUrl: sticker.asset.thumbnailUrl,
                 fit: BoxFit.contain,
                 placeholder: (_, _) => fallback,

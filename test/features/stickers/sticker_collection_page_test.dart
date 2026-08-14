@@ -1,13 +1,14 @@
+import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
@@ -62,10 +63,10 @@ void main() {
   testWidgets('从相册上传完成后导入媒体并展示新收藏', (tester) async {
     final repository = _FakeStickerRepository();
     final picker = _FakeImagePicker();
-    final uploader = _FakeMediaUploadRepository();
+    final gateway = _FakeMediaUploadGateway();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: _overrides(repository, picker: picker, uploader: uploader),
+        overrides: _overrides(repository, picker: picker, gateway: gateway),
         child: MaterialApp(
           theme: AppTheme.light,
           home: const StickerCollectionPage(),
@@ -78,10 +79,90 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(picker.calls, 1);
-    expect(uploader.calls, 1);
+    expect(gateway.calls, 1);
     expect(repository.importedSources.single, isA<StickerMediaSource>());
     expect(find.text('1/200 个收藏'), findsOneWidget);
     expect(find.text('已添加到表情收藏。'), findsOneWidget);
+  });
+
+  testWidgets('上传失败后重试同一文件，完成后才导入收藏', (tester) async {
+    final repository = _FakeStickerRepository();
+    final picker = _FakeImagePicker();
+    final gateway = _RetryingMediaUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository, picker: picker, gateway: gateway),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const StickerCollectionPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('stickers-add-gallery')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.inputs, hasLength(1));
+    expect(repository.importedSources, isEmpty);
+    expect(find.byKey(const Key('stickers-upload-failure')), findsOneWidget);
+    expect(find.byKey(const Key('stickers-retry-upload')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('stickers-retry-upload')));
+    await tester.pumpAndSettle();
+
+    expect(picker.calls, 1);
+    expect(gateway.inputs, hasLength(2));
+    expect(identical(gateway.inputs.first, gateway.inputs.last), isTrue);
+    expect(repository.importedSources, hasLength(1));
+    expect(find.text('1/200 个收藏'), findsOneWidget);
+    expect(find.text('已添加到表情收藏。'), findsOneWidget);
+  });
+
+  testWidgets('上传中取消会立即恢复管理页且不导入媒体', (tester) async {
+    final repository = _FakeStickerRepository();
+    final gateway = _BlockingMediaUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(
+          repository,
+          picker: _FakeImagePicker(),
+          gateway: gateway,
+        ),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const StickerCollectionPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('stickers-add-gallery')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('正在上传 50%'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('stickers-add-gallery')))
+          .onPressed,
+      isNull,
+    );
+
+    await tester.tap(find.byKey(const Key('stickers-cancel-upload')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(gateway.operation.cancelled, isTrue);
+    expect(find.text('正在上传 50%'), findsNothing);
+    expect(find.byKey(const Key('stickers-upload-failure')), findsNothing);
+    expect(repository.importedSources, isEmpty);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('stickers-add-gallery')))
+          .onPressed,
+      isNotNull,
+    );
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -117,7 +198,7 @@ void main() {
 List<Override> _overrides(
   _FakeStickerRepository repository, {
   EditorImagePicker? picker,
-  MediaUploadRepository? uploader,
+  MediaUploadGateway? gateway,
 }) {
   return [
     stickersEnabledProvider.overrideWithValue(true),
@@ -128,9 +209,9 @@ List<Override> _overrides(
         pollInterval: Duration.zero,
       );
     }),
-    if (picker != null) editorImagePickerProvider.overrideWithValue(picker),
-    if (uploader != null)
-      mediaUploadRepositoryProvider.overrideWithValue(uploader),
+    if (picker != null) editorImagePickerPortProvider.overrideWithValue(picker),
+    if (gateway != null)
+      mediaUploadGatewayPortProvider.overrideWithValue(gateway),
   ];
 }
 
@@ -222,15 +303,14 @@ class _FakeImagePicker implements EditorImagePicker {
   }
 }
 
-class _FakeMediaUploadRepository implements MediaUploadRepository {
+class _FakeMediaUploadGateway implements MediaUploadGateway {
   var calls = 0;
 
   @override
-  Future<UploadedEditorImage> uploadImage(
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
     MediaUploadInput input, {
-    CancelToken? cancelToken,
     void Function(MediaUploadProgress progress)? onProgress,
-  }) async {
+  }) {
     calls += 1;
     onProgress?.call(
       MediaUploadProgress(
@@ -239,11 +319,85 @@ class _FakeMediaUploadRepository implements MediaUploadRepository {
         totalBytes: input.bytes.length,
       ),
     );
-    return const UploadedEditorImage(
-      mediaId: 'media-1',
-      url: 'https://cdn.example.com/upload.png',
+    return _TestMediaUploadOperation(
+      Future.value(
+        const UploadedEditorImage(
+          mediaId: 'media-1',
+          url: 'https://cdn.example.com/upload.png',
+        ),
+      ),
     );
   }
+}
+
+class _RetryingMediaUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    inputs.add(input);
+    if (inputs.length == 1) {
+      return _TestMediaUploadOperation(
+        Future.error(
+          const ApiFailure(userMessage: '图片上传失败。', requestId: 'request-upload'),
+        ),
+      );
+    }
+    return _TestMediaUploadOperation(
+      Future.value(
+        const UploadedEditorImage(
+          mediaId: 'media-retried',
+          url: 'https://cdn.example.com/retried.png',
+        ),
+      ),
+    );
+  }
+}
+
+class _BlockingMediaUploadGateway implements MediaUploadGateway {
+  final operation = _BlockingMediaUploadOperation();
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: input.bytes.length ~/ 2,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return operation;
+  }
+}
+
+class _BlockingMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  final Completer<UploadedEditorImage> _result =
+      Completer<UploadedEditorImage>();
+  var cancelled = false;
+
+  @override
+  Future<UploadedEditorImage> get result => _result.future;
+
+  @override
+  void cancel() => cancelled = true;
+}
+
+class _TestMediaUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  _TestMediaUploadOperation(this.result);
+
+  @override
+  final Future<UploadedEditorImage> result;
+
+  @override
+  void cancel() {}
 }
 
 UserSticker _sticker({String id = 'favorite-1', int position = 0}) =>

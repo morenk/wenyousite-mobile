@@ -94,8 +94,6 @@
     "lib/features/social/application/user_relation_list_controller.dart->lib/features/social/data/user_relation_list_repository.dart",
     "lib/features/social/application/user_relation_list_controller.dart->lib/features/social/data/user_relation_repository.dart",
     "lib/features/stickers/application/sticker_collection_controller.dart->lib/features/stickers/data/sticker_repository.dart",
-    "lib/features/stickers/presentation/sticker_collection_page.dart->lib/features/media/data/editor_image_picker.dart",
-    "lib/features/stickers/presentation/sticker_collection_page.dart->lib/features/media/data/media_upload_repository.dart",
     "lib/features/tags/application/tag_threads_controller.dart->lib/features/tags/data/tag_repository.dart",
     "lib/features/tags/application/thread_tag_management_controller.dart->lib/features/tags/data/tag_repository.dart",
     "lib/features/threads/application/subthread_management_controller.dart->lib/features/threads/data/subthread_management_repository.dart",
