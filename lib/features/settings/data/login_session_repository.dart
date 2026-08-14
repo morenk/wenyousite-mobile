@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
 
-abstract interface class LoginSessionRepository {
-  Future<List<LoginSessionModel>> fetchSessions();
-
-  Future<void> revokeSession(String sessionId);
-}
+export 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart'
+    show LoginSessionRepository, loginSessionRepositoryProvider;
 
 class ApiLoginSessionRepository implements LoginSessionRepository {
   ApiLoginSessionRepository(this._api);
@@ -66,6 +64,8 @@ class ApiLoginSessionRepository implements LoginSessionRepository {
   }
 }
 
-final loginSessionRepositoryProvider = Provider<LoginSessionRepository>((ref) {
+final apiLoginSessionRepositoryProvider = Provider<LoginSessionRepository>((
+  ref,
+) {
   return ApiLoginSessionRepository(ref.watch(wenyouApiProvider).getAuthApi());
 });

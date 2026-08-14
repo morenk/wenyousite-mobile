@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 
-abstract interface class AccountDeletionRepository {
-  Future<void> deleteAccount();
-}
+export 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart'
+    show AccountDeletionRepository, accountDeletionRepositoryProvider;
 
 class ApiAccountDeletionRepository implements AccountDeletionRepository {
   ApiAccountDeletionRepository(this._api);
@@ -26,10 +26,9 @@ class ApiAccountDeletionRepository implements AccountDeletionRepository {
   }
 }
 
-final accountDeletionRepositoryProvider = Provider<AccountDeletionRepository>((
-  ref,
-) {
-  return ApiAccountDeletionRepository(
-    ref.watch(wenyouApiProvider).getUsersApi(),
-  );
-});
+final apiAccountDeletionRepositoryProvider =
+    Provider<AccountDeletionRepository>((ref) {
+      return ApiAccountDeletionRepository(
+        ref.watch(wenyouApiProvider).getUsersApi(),
+      );
+    });

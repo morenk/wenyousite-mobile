@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
-import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 
 enum AccountDeletionStatus { idle, submitting, failed }
 
@@ -97,4 +97,4 @@ final accountDeletionControllerProvider =
         ref.watch(accountDeletionRepositoryProvider),
         ref.read(sessionControllerProvider.notifier),
       );
-    });
+    }, dependencies: [accountDeletionRepositoryProvider]);

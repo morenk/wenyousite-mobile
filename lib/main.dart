@@ -10,6 +10,10 @@ import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
+import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
+import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
+import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
@@ -47,6 +51,15 @@ void main() {
         ),
         publicUserRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiPublicUserRepositoryProvider),
+        ),
+        accountDeletionRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiAccountDeletionRepositoryProvider),
+        ),
+        credentialSecurityRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiCredentialSecurityRepositoryProvider),
+        ),
+        loginSessionRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiLoginSessionRepositoryProvider),
         ),
       ],
       child: const WenyouApp(),

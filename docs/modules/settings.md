@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-本人资料和头像端点由 users 的 autoDispose 控制器读取/编排；用户名、头像与资料隐私是独立编辑动作，页面统一阻止并发写入。头像上传进度和取消来自 media/application 的共享上传任务，users 状态只映射展示阶段并保留仅用于设置重试的媒体 ID。表单保存初值、编辑值和局部错误，成功后使用服务端响应重置。黑名单由 social 的 autoDispose 列表控制器管理，终端列表、改密、换邮箱和注销由 settings 的独立 autoDispose 控制器管理，当前账号退出继续由 auth 的独立控制器管理。终端撤销和账号安全写入分别串行执行；换邮箱状态明确区分请求验证码与确认验证码两步，并只在内存保留目标邮箱、冷却和错误。注销状态用远端已确认标记隔开不可逆 API 与可重复的本地 Token 清理。
+本人资料和头像端点由 users 的 autoDispose 控制器读取/编排；用户名、头像与资料隐私是独立编辑动作，页面统一阻止并发写入。头像上传进度和取消来自 media/application 的共享上传任务，users 状态只映射展示阶段并保留仅用于设置重试的媒体 ID。表单保存初值、编辑值和局部错误，成功后使用服务端响应重置。黑名单由 social 的 autoDispose 列表控制器管理；终端列表、凭据安全和注销仓储由 `settings/application` 端口表达，`main.dart` 组合根绑定生成客户端 data 适配器，三个 settings 控制器不直接导入 data。当前账号退出继续由 auth 的独立控制器管理。终端撤销和账号安全写入分别串行执行；换邮箱状态明确区分请求验证码与确认验证码两步，并只在内存保留目标邮箱、冷却和错误。注销状态用远端已确认标记隔开不可逆 API 与可重复的本地 Token 清理。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -71,4 +71,4 @@
 
 ## 14. 相关代码与架构文档
 
-入口：`lib/features/users/presentation/me_page.dart`；终端、账号安全与注销：`lib/features/settings/`。参见[认证](auth.md)、[用户与资料](users.md)、[网络与会话](../architecture/networking.md)。
+入口：`lib/features/users/presentation/me_page.dart`；settings 端口：`lib/features/settings/application/settings_repository_ports.dart`；data 适配器：`lib/features/settings/data/`；组合根：`lib/main.dart`。参见[认证](auth.md)、[用户与资料](users.md)、[网络与会话](../architecture/networking.md)。

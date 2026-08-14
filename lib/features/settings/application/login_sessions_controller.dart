@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
 
 class LoginSessionsController extends StateNotifier<LoginSessionsState> {
@@ -92,4 +92,5 @@ final loginSessionsControllerProvider =
     >(
       (ref) =>
           LoginSessionsController(ref.watch(loginSessionRepositoryProvider)),
+      dependencies: [loginSessionRepositoryProvider],
     );

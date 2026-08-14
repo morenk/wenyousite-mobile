@@ -3,23 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 
-abstract interface class CredentialSecurityRepository {
-  Future<void> changePassword({
-    required String oldPassword,
-    required String newPassword,
-  });
-
-  Future<void> requestEmailChangeCode({
-    required String newEmail,
-    required String oldPassword,
-  });
-
-  Future<void> verifyEmailChange({
-    required String newEmail,
-    required String code,
-  });
-}
+export 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart'
+    show CredentialSecurityRepository, credentialSecurityRepositoryProvider;
 
 class ApiCredentialSecurityRepository implements CredentialSecurityRepository {
   ApiCredentialSecurityRepository(this._api);
@@ -90,7 +77,7 @@ class ApiCredentialSecurityRepository implements CredentialSecurityRepository {
   }
 }
 
-final credentialSecurityRepositoryProvider =
+final apiCredentialSecurityRepositoryProvider =
     Provider<CredentialSecurityRepository>((ref) {
       return ApiCredentialSecurityRepository(
         ref.watch(wenyouApiProvider).getAuthApi(),

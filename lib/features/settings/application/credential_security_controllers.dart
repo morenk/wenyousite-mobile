@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
-import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
+import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 import 'package:wenyousite_mobile/features/settings/domain/credential_security_models.dart';
 
 class PasswordChangeController extends StateNotifier<PasswordChangeState> {
@@ -173,7 +173,7 @@ final passwordChangeControllerProvider =
         ref.watch(credentialSecurityRepositoryProvider),
         ref.read(sessionControllerProvider.notifier),
       );
-    });
+    }, dependencies: [credentialSecurityRepositoryProvider]);
 
 final emailChangeControllerProvider =
     StateNotifierProvider.autoDispose<EmailChangeController, EmailChangeState>((
@@ -183,4 +183,4 @@ final emailChangeControllerProvider =
         ref.watch(credentialSecurityRepositoryProvider),
         ref.read(sessionControllerProvider.notifier),
       );
-    });
+    }, dependencies: [credentialSecurityRepositoryProvider]);
