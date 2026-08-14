@@ -8,34 +8,11 @@ import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 
-abstract interface class SearchRepository {
-  Future<SearchOverviewResult> searchOverview(String query);
-
-  Future<CursorPage<MomentCard>> searchMoments(
-    String query, {
-    String? cursor,
-    int limit = 20,
-  });
-
-  Future<List<SearchThreadResult>> searchThreads(String query);
-
-  Future<List<SearchUserResult>> searchUsers(String query);
-
-  Future<CursorPage<SearchPostResult>> searchPosts(
-    String query, {
-    String? cursor,
-    int limit = 20,
-  });
-
-  Future<CursorPage<SearchPostResult>> searchThreadPosts(
-    String threadId,
-    String query, {
-    String? cursor,
-    int limit = 20,
-  });
-}
+export 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart'
+    show SearchRepository, searchRepositoryProvider;
 
 class ApiSearchRepository implements SearchRepository {
   ApiSearchRepository(this._api);
@@ -295,6 +272,6 @@ class ApiSearchRepository implements SearchRepository {
   }
 }
 
-final searchRepositoryProvider = Provider<SearchRepository>((ref) {
+final apiSearchRepositoryProvider = Provider<SearchRepository>((ref) {
   return ApiSearchRepository(ref.watch(wenyouApiProvider).getSearchApi());
 });

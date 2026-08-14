@@ -25,7 +25,7 @@
 
 ## 6. 状态模型和数据流
 
-通知未读数是服务端事实；列表与角标共享仓储但独立请求。列表控制器按筛选隔离游标并以加载 epoch 丢弃过期响应；写操作串行化。单条已读和全部已读先乐观更新列表与角标，失败恢复列表并重新请求未读数；删除成功后再移除条目，删除未读项同步递减角标。私聊角标只在 capability 开启时消费 direct-messages 状态。通知与会话都使用扁平连续列表、分隔线和状态底色，不为每一条内容创建装饰卡片。未知枚举保留通用条目，不使整个列表反序列化失败。
+通知未读数是服务端事实；列表与角标共享 `notifications/application` 仓储端口但独立请求，`main.dart` 组合根绑定 API data 适配器。列表控制器按筛选隔离游标并以加载 epoch 丢弃过期响应；写操作串行化。单条已读和全部已读先乐观更新列表与角标，失败恢复列表并重新请求未读数；删除成功后再移除条目，删除未读项同步递减角标。私聊角标只在 capability 开启时消费 direct-messages 状态。通知与会话都使用扁平连续列表、分隔线和状态底色，不为每一条内容创建装饰卡片。未知枚举保留通用条目，不使整个列表反序列化失败。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -63,4 +63,4 @@ V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/notifications/`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[动态](moments.md)、[站内私聊](direct-messages.md)。
+代码入口：`lib/features/notifications/application/notification_repository_ports.dart`、`lib/features/notifications/data/`、`lib/main.dart`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[动态](moments.md)、[站内私聊](direct-messages.md)。

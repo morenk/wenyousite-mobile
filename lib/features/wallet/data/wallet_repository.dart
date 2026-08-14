@@ -5,25 +5,12 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
-abstract interface class WalletRepository {
-  Future<WalletSummary> fetchWallet();
-
-  Future<DailyCheckInResult> checkIn();
-
-  Future<CursorPage<WalletTransaction>> fetchTransactions({
-    String? cursor,
-    int limit = 20,
-  });
-
-  Future<TipResult> tip(
-    TipTarget target, {
-    required String amount,
-    required String clientRequestId,
-  });
-}
+export 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart'
+    show WalletRepository, walletRepositoryProvider;
 
 class ApiWalletRepository implements WalletRepository {
   ApiWalletRepository(this._api);
@@ -275,6 +262,6 @@ class ApiWalletRepository implements WalletRepository {
   }
 }
 
-final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+final apiWalletRepositoryProvider = Provider<WalletRepository>((ref) {
   return ApiWalletRepository(ref.watch(wenyouApiProvider).getWalletApi());
 });

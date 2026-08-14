@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-`WalletController` 按当前会话 key 隔离余额、流水、首屏/刷新/分页和三类局部失败；余额与流水并发加载，任一失败不会遮挡另一部分。`DailyCheckInController` 串行执行全局签到，启动组件按登录会话防止重复触发。`TipController` 按目标 family 隔离弹窗写入，保存待确认金额、稳定请求 ID、提交状态和失败详情。仓储在 data 边界应用钱包专属错误目录，把生成 DTO 映射为 feature 模型，并对金额、枚举、计数、目标、分页和安全头像 URL fail-closed。
+`WalletController` 按当前会话 key 隔离余额、流水、首屏/刷新/分页和三类局部失败；余额与流水并发加载，任一失败不会遮挡另一部分。`DailyCheckInController` 串行执行全局签到，启动组件按登录会话防止重复触发。`TipController` 按目标 family 隔离弹窗写入，保存待确认金额、稳定请求 ID、提交状态和失败详情。钱包仓储接口位于 `wallet/application`，`main.dart` 组合根绑定 data 适配器；data 边界应用钱包专属错误目录，把生成 DTO 映射为 feature 模型，并对金额、枚举、计数、目标、分页和安全头像 URL fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -68,4 +68,4 @@ app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/wallet/`。参见[应用壳](app-shell.md)、[用户](users.md)、[主题](threads.md)、[动态](moments.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+代码入口：`lib/features/wallet/application/wallet_repository_ports.dart`、`lib/features/wallet/data/`、`lib/main.dart`。参见[应用壳](app-shell.md)、[用户](users.md)、[主题](threads.md)、[动态](moments.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。

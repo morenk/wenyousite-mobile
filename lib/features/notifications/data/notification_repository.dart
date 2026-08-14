@@ -4,22 +4,11 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
-abstract interface class NotificationRepository {
-  Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilter.all,
-    String? cursor,
-  });
-
-  Future<int> fetchUnreadCount();
-
-  Future<void> setReadStatus(String id, {required bool isRead});
-
-  Future<void> remove(String id);
-
-  Future<void> markAllRead();
-}
+export 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart'
+    show NotificationRepository, notificationRepositoryProvider;
 
 class ApiNotificationRepository implements NotificationRepository {
   ApiNotificationRepository(this._api);
@@ -189,7 +178,9 @@ class ApiNotificationRepository implements NotificationRepository {
   }
 }
 
-final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+final apiNotificationRepositoryProvider = Provider<NotificationRepository>((
+  ref,
+) {
   return ApiNotificationRepository(
     ref.watch(wenyouApiProvider).getNotificationsApi(),
   );

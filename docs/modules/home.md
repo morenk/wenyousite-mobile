@@ -25,7 +25,7 @@
 
 ## 6. 状态模型和数据流
 
-`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 threads，home 仓储只编排分类和信息流查询。作者头像与卡片封面都只接受 HTTP(S) URL；头像缺失或不安全时映射为 null 并由共享卡片统一降级，封面只消费服务端 `coverImages` 的唯一首图，空数组时不预留图片区。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
+`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 threads，home 仓储只编排分类和信息流查询。仓储接口位于 `home/application`，`main.dart` 组合根绑定 API data 适配器，控制器不直接导入 data。作者头像与卡片封面都只接受 HTTP(S) URL；头像缺失或不安全时映射为 null 并由共享卡片统一降级，封面只消费服务端 `coverImages` 的唯一首图，空数组时不预留图片区。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -63,4 +63,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[主题](threads.md)、[标签](tags.md)。

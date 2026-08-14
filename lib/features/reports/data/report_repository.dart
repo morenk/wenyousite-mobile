@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/reports/application/report_repository_ports.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 
-abstract interface class ReportRepository {
-  Future<ReportResult> create(ReportInput input);
-}
+export 'package:wenyousite_mobile/features/reports/application/report_repository_ports.dart'
+    show ReportRepository, reportRepositoryProvider;
 
 class ApiReportRepository implements ReportRepository {
   ApiReportRepository(this._api);
@@ -117,6 +117,6 @@ class ApiReportRepository implements ReportRepository {
   }
 }
 
-final reportRepositoryProvider = Provider<ReportRepository>((ref) {
+final apiReportRepositoryProvider = Provider<ReportRepository>((ref) {
   return ApiReportRepository(ref.watch(wenyouApiProvider).getReportsApi());
 });

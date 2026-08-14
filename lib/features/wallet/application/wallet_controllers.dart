@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
+import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 const _unset = Object();
@@ -197,7 +197,7 @@ class WalletController extends StateNotifier<WalletState> {
 final walletControllerProvider = StateNotifierProvider.autoDispose
     .family<WalletController, WalletState, String>((ref, userId) {
       return WalletController(ref.watch(walletRepositoryProvider));
-    });
+    }, dependencies: [walletRepositoryProvider]);
 
 enum DailyCheckInPhase { idle, submitting, completed, failed }
 
@@ -245,7 +245,7 @@ class DailyCheckInController extends StateNotifier<DailyCheckInState> {
 final dailyCheckInControllerProvider =
     StateNotifierProvider<DailyCheckInController, DailyCheckInState>((ref) {
       return DailyCheckInController(ref.watch(walletRepositoryProvider));
-    });
+    }, dependencies: [walletRepositoryProvider]);
 
 class TipState {
   const TipState({
@@ -314,4 +314,4 @@ class TipController extends StateNotifier<TipState> {
 final tipControllerProvider = StateNotifierProvider.autoDispose
     .family<TipController, TipState, TipTarget>((ref, target) {
       return TipController(ref.watch(walletRepositoryProvider), target);
-    });
+    }, dependencies: [walletRepositoryProvider]);

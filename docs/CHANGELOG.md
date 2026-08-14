@@ -69,6 +69,7 @@
 
 ### Changed
 
+- 首页、通知、搜索、举报、治理申诉与钱包六个独立仓储统一收束为各自 `application/*_ports.dart`，由 `main.dart` 组合根绑定 data 适配器；控制器不再导入具体 data 仓储，分页、乐观恢复、专用凭据、幂等请求和 fail-closed 映射保持不变。
 - 账号注销、凭据安全和登录终端仓储收束为 `settings/application` 端口，由 `main.dart` 组合根绑定 API 适配器；settings 控制器不再导入具体 data 仓储，远端注销后的单向本地清理、全端会话撤销和终端列表恢复语义保持不变。
 - 公开资料、本人资料和头像写入仓储收束为 `users/application` 公共端口，由 `main.dart` 组合根绑定 API 适配器；users 控制器及私聊目标解析不再导入 users data，资料分页、头像单端点重试和新私聊目标校验语义不变。
 - 登录/注册、邮箱验证和密码恢复仓储收束为 `auth/application` 端口，由 `main.dart` 组合根绑定生成客户端适配器；四个认证控制器不再导入具体 data 仓储，既有双 Token、反枚举、冷却和错误恢复语义保持不变。

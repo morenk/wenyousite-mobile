@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
 class NotificationUnreadController
@@ -65,7 +65,7 @@ final notificationUnreadControllerProvider =
         ref.watch(notificationRepositoryProvider),
         autoStart: authenticated,
       );
-    });
+    }, dependencies: [notificationRepositoryProvider]);
 
 class NotificationListController extends StateNotifier<NotificationListState> {
   NotificationListController(this._repository, this._unread)
@@ -288,12 +288,18 @@ final notificationListControllerProvider =
     StateNotifierProvider.autoDispose<
       NotificationListController,
       NotificationListState
-    >((ref) {
-      return NotificationListController(
-        ref.watch(notificationRepositoryProvider),
-        ref.watch(notificationUnreadControllerProvider.notifier),
-      );
-    });
+    >(
+      (ref) {
+        return NotificationListController(
+          ref.watch(notificationRepositoryProvider),
+          ref.watch(notificationUnreadControllerProvider.notifier),
+        );
+      },
+      dependencies: [
+        notificationRepositoryProvider,
+        notificationUnreadControllerProvider,
+      ],
+    );
 
 ApiFailure _asFailure(Object error, String fallback) {
   return error is ApiFailure

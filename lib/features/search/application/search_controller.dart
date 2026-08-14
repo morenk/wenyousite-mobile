@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
+import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 
 class SearchController extends StateNotifier<SearchState> {
@@ -335,7 +335,7 @@ final searchControllerProvider =
         },
       );
       return controller;
-    });
+    }, dependencies: [searchRepositoryProvider]);
 
 class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
   ThreadPostSearchController(this._repository, this._threadId)
@@ -489,4 +489,4 @@ final threadPostSearchControllerProvider = StateNotifierProvider.autoDispose
         },
       );
       return controller;
-    });
+    }, dependencies: [searchRepositoryProvider]);

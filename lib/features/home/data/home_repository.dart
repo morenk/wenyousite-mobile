@@ -5,18 +5,12 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_feed_mapper.dart';
 
-abstract interface class HomeRepository {
-  Future<List<HomeCategory>> fetchCategories();
-
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
-    required HomeFeedQuery query,
-    String? cursor,
-    int limit = 20,
-  });
-}
+export 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart'
+    show HomeRepository, homeRepositoryProvider;
 
 class ApiHomeRepository implements HomeRepository {
   ApiHomeRepository(this._threadsApi, this._categoriesApi);
@@ -87,7 +81,7 @@ class ApiHomeRepository implements HomeRepository {
   }
 }
 
-final homeRepositoryProvider = Provider<HomeRepository>((ref) {
+final apiHomeRepositoryProvider = Provider<HomeRepository>((ref) {
   final api = ref.watch(wenyouApiProvider);
   return ApiHomeRepository(api.getThreadsApi(), api.getThreadCategoriesApi());
 });

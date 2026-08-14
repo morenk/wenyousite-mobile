@@ -4,22 +4,11 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moderation/domain/moderation_appeal_models.dart';
 
-abstract interface class ModerationAppealRepository {
-  Future<AppealCredential> issueCredential({
-    required String account,
-    required String password,
-  });
-
-  Future<List<ModerationDecision>> fetchMyDecisions({String? appealToken});
-
-  Future<void> submitAppeal({
-    required String decisionId,
-    required String statement,
-    String? appealToken,
-  });
-}
+export 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_repository_ports.dart'
+    show ModerationAppealRepository, moderationAppealRepositoryProvider;
 
 class ApiModerationAppealRepository implements ModerationAppealRepository {
   ApiModerationAppealRepository(this._api);
@@ -169,8 +158,9 @@ class ApiModerationAppealRepository implements ModerationAppealRepository {
   }
 }
 
-final moderationAppealRepositoryProvider = Provider<ModerationAppealRepository>(
-  (ref) => ApiModerationAppealRepository(
-    ref.watch(wenyouApiProvider).getModerationAppealsApi(),
-  ),
-);
+final apiModerationAppealRepositoryProvider =
+    Provider<ModerationAppealRepository>(
+      (ref) => ApiModerationAppealRepository(
+        ref.watch(wenyouApiProvider).getModerationAppealsApi(),
+      ),
+    );

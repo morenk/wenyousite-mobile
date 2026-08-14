@@ -27,7 +27,7 @@
 
 ## 6. 状态模型和数据流
 
-`ModerationAppealController` 使用 credential/loading/ready/failed 四阶段，专用凭据只保存在 autoDispose 控制器私有字段，状态仅暴露过期时间。普通会话由 `SessionController` 提供；仓储根据是否存在专用凭据选择普通 Bearer 或显式 `Authorization`。提交按 decisionId 串行，成功后重新调用本人决定接口，不乐观拼装申诉对象。
+`ModerationAppealController` 使用 credential/loading/ready/failed 四阶段，专用凭据只保存在 autoDispose 控制器私有字段，状态仅暴露过期时间。申诉仓储接口位于 `moderation/application`，`main.dart` 组合根绑定 API data 适配器；普通会话由 `SessionController` 提供，适配器根据是否存在专用凭据选择普通 Bearer 或显式 `Authorization`。提交按 decisionId 串行，成功后重新调用本人决定接口，不乐观拼装申诉对象。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -65,4 +65,4 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/moderation/`；登录入口：`lib/features/auth/presentation/login_page.dart`；设置入口：`lib/features/users/presentation/me_page.dart`。参见[认证](auth.md)、[设置](settings.md)、[社区举报](reports.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+代码入口：`lib/features/moderation/application/moderation_appeal_repository_ports.dart`、`lib/features/moderation/data/`、`lib/main.dart`；登录入口：`lib/features/auth/presentation/login_page.dart`；设置入口：`lib/features/users/presentation/me_page.dart`。参见[认证](auth.md)、[设置](settings.md)、[社区举报](reports.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。

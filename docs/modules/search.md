@@ -26,7 +26,7 @@
 
 ## 6. 状态模型和数据流
 
-四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。主题结果只消费 `coverImages` 的唯一首图。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
+四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果只消费 `coverImages` 的唯一首图。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -66,4 +66,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。

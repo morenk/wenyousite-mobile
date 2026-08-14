@@ -25,7 +25,7 @@
 
 ## 6. 状态模型和数据流
 
-`ReportController` 以规范化 `ReportTarget` 为 family key，串行维护提交中和失败状态；原因与补充说明只在当前弹窗内存。`ApiReportRepository` 显式映射五类目标和八类原因，并要求服务端确认目标、原因与本次输入一致且状态为 `PENDING`。未知枚举、空 ID、错配响应和缺失确认一律 fail-closed。
+`ReportController` 以规范化 `ReportTarget` 为 family key，串行维护提交中和失败状态；原因与补充说明只在当前弹窗内存。仓储接口位于 `reports/application`，`main.dart` 组合根绑定 `ApiReportRepository` data 适配器，控制器不直接导入 data。适配器显式映射五类目标和八类原因，并要求服务端确认目标、原因与本次输入一致且状态为 `PENDING`。未知枚举、空 ID、错配响应和缺失确认一律 fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -63,4 +63,4 @@ users、threads、posts 和 moments 只提供目标事实与入口，提交状�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/reports/`。参见[用户](users.md)、[主题](threads.md)、[楼层与回复](posts.md)、[动态](moments.md)、[认证](auth.md)、[网络与会话](../architecture/networking.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+代码入口：`lib/features/reports/application/report_repository_ports.dart`、`lib/features/reports/data/`、`lib/main.dart`。参见[用户](users.md)、[主题](threads.md)、[楼层与回复](posts.md)、[动态](moments.md)、[认证](auth.md)、[网络与会话](../architecture/networking.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。

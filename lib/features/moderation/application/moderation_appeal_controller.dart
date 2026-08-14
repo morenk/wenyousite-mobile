@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
+import 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moderation/domain/moderation_appeal_models.dart';
 
 enum ModerationAppealPhase { credential, loading, ready, failed }
@@ -225,4 +225,4 @@ final moderationAppealControllerProvider =
         ref.watch(moderationAppealRepositoryProvider),
         authenticated: authenticated,
       );
-    });
+    }, dependencies: [moderationAppealRepositoryProvider]);
