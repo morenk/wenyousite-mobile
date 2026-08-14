@@ -322,9 +322,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                   icon: Icons.title_rounded,
                   label: '正文样式',
                   enabled: widget.enabled,
-                  selected: style.attributes.containsKey(
-                    Attribute.header.key,
-                  ),
+                  selected: style.attributes.containsKey(Attribute.header.key),
                   onPressed: () => _toggleTray(_EditorTray.heading),
                 ),
                 _ToolbarButton(
@@ -340,9 +338,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                   icon: Icons.format_italic_rounded,
                   label: '斜体',
                   enabled: widget.enabled,
-                  selected: style.attributes.containsKey(
-                    Attribute.italic.key,
-                  ),
+                  selected: style.attributes.containsKey(Attribute.italic.key),
                   onPressed: () => _toggle(Attribute.italic),
                 ),
                 _ToolbarButton(

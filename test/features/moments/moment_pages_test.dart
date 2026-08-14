@@ -338,7 +338,10 @@ void main() {
 
     expect(find.text('图片处理失败'), findsOneWidget);
     expect(find.text('请求 ID：moment-upload-one'), findsOneWidget);
-    expect(find.byKey(const Key('moment-compose-retry-upload')), findsOneWidget);
+    expect(
+      find.byKey(const Key('moment-compose-retry-upload')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('moment-compose-retry-upload')));
     await tester.pumpAndSettle();

@@ -1011,9 +1011,7 @@ class _MomentCommentComposerState
   Future<void> _pickSticker() async {
     final sticker = await showStickerPicker(context);
     if (sticker == null || !mounted) return;
-    ref
-        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
-        .reset();
+    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
     setState(() {
       _image = null;
       _sticker = sticker;
