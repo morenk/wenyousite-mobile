@@ -69,6 +69,7 @@
 
 ### Changed
 
+- 登录/注册、邮箱验证和密码恢复仓储收束为 `auth/application` 端口，由 `main.dart` 组合根绑定生成客户端适配器；四个认证控制器不再导入具体 data 仓储，既有双 Token、反枚举、冷却和错误恢复语义保持不变。
 - 应用壳把元信息读取、移动端更新和推荐更新忽略记录收束为 `application` 端口，由 `main.dart` 组合根绑定 data 实现；启动与更新控制器不再直接导入 Dio 或具体仓储，同时保持既有兼容门禁、下载校验和忽略语义。
 - 头像图片的格式策略、相册端口和上传生命周期迁入 `media/application`：`AvatarController` 不再导入 Dio 或 media data 实现，只映射共享进度/取消并负责设置、移除及已完成 `mediaId` 的单端点重试。
 - 表情包管理页的相册导入迁入 `media/application` 共享上传任务：页面不再持有 Dio 取消令牌或直接读取 media data provider，上传失败可复用同一文件，取消立即恢复管理操作，只有完成的 `mediaId` 才进入稳定幂等导入端点。

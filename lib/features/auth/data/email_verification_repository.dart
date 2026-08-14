@@ -3,24 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
-class EmailVerificationAccount {
-  const EmailVerificationAccount({
-    required this.email,
-    required this.isVerified,
-  });
-
-  final String email;
-  final bool isVerified;
-}
-
-abstract interface class EmailVerificationRepository {
-  Future<EmailVerificationAccount> fetchAccount();
-
-  Future<void> resendCode({required String email});
-
-  Future<void> verifyCode({required String code});
-}
+export 'package:wenyousite_mobile/features/auth/application/auth_ports.dart'
+    show
+        EmailVerificationAccount,
+        EmailVerificationRepository,
+        emailVerificationRepositoryProvider;
 
 class ApiEmailVerificationRepository implements EmailVerificationRepository {
   ApiEmailVerificationRepository(this._authApi, this._usersApi);
@@ -79,7 +68,7 @@ class ApiEmailVerificationRepository implements EmailVerificationRepository {
   }
 }
 
-final emailVerificationRepositoryProvider =
+final apiEmailVerificationRepositoryProvider =
     Provider<EmailVerificationRepository>((ref) {
       final api = ref.watch(wenyouApiProvider);
       return ApiEmailVerificationRepository(

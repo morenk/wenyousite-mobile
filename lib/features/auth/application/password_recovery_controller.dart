@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
+import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
 enum PasswordRecoveryAction { requestingCode, resetting }
 
@@ -179,4 +179,4 @@ final passwordRecoveryControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(passwordRecoveryRepositoryProvider),
         seed,
       );
-    });
+    }, dependencies: [passwordRecoveryRepositoryProvider]);

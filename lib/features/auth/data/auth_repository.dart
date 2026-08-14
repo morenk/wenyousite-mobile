@@ -4,28 +4,10 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
-abstract interface class AuthRepository {
-  Future<SessionTokens> login({
-    required String account,
-    required String password,
-  });
-
-  Future<RegistrationCodeInfo> requestRegistrationCode({required String email});
-
-  Future<SessionTokens> completeRegistration({
-    required String email,
-    required String code,
-    required String username,
-    required String password,
-  });
-}
-
-class RegistrationCodeInfo {
-  const RegistrationCodeInfo({required this.expiresIn});
-
-  final Duration expiresIn;
-}
+export 'package:wenyousite_mobile/features/auth/application/auth_ports.dart'
+    show AuthRepository, RegistrationCodeInfo, authRepositoryProvider;
 
 class ApiAuthRepository implements AuthRepository {
   ApiAuthRepository(this._api);
@@ -114,6 +96,6 @@ class ApiAuthRepository implements AuthRepository {
   }
 }
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
+final apiAuthRepositoryProvider = Provider<AuthRepository>((ref) {
   return ApiAuthRepository(ref.watch(wenyouApiProvider).getAuthApi());
 });

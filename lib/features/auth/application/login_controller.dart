@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
-import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
+import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
 enum LoginStatus { idle, submitting, failed }
 
@@ -61,4 +61,4 @@ final loginControllerProvider =
         ref.watch(authRepositoryProvider),
         ref.read(sessionControllerProvider.notifier),
       );
-    });
+    }, dependencies: [authRepositoryProvider]);

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
+import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
 enum EmailVerificationPhase { loading, ready, failed }
 
@@ -218,4 +218,4 @@ final emailVerificationControllerProvider =
       return EmailVerificationController(
         ref.watch(emailVerificationRepositoryProvider),
       );
-    });
+    }, dependencies: [emailVerificationRepositoryProvider]);

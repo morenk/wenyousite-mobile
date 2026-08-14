@@ -3,16 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
-abstract interface class PasswordRecoveryRepository {
-  Future<void> requestCode({required String email});
-
-  Future<void> resetPassword({
-    required String email,
-    required String code,
-    required String newPassword,
-  });
-}
+export 'package:wenyousite_mobile/features/auth/application/auth_ports.dart'
+    show PasswordRecoveryRepository, passwordRecoveryRepositoryProvider;
 
 class ApiPasswordRecoveryRepository implements PasswordRecoveryRepository {
   ApiPasswordRecoveryRepository(this._api);
@@ -59,10 +53,9 @@ class ApiPasswordRecoveryRepository implements PasswordRecoveryRepository {
   }
 }
 
-final passwordRecoveryRepositoryProvider = Provider<PasswordRecoveryRepository>(
-  (ref) {
-    return ApiPasswordRecoveryRepository(
-      ref.watch(wenyouApiProvider).getAuthApi(),
-    );
-  },
-);
+final apiPasswordRecoveryRepositoryProvider =
+    Provider<PasswordRecoveryRepository>((ref) {
+      return ApiPasswordRecoveryRepository(
+        ref.watch(wenyouApiProvider).getAuthApi(),
+      );
+    });

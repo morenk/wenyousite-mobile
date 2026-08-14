@@ -42,7 +42,7 @@
 
 ## 6. 状态模型和数据流
 
-`SessionState` 为 guest、restoring、authenticated、invalidated；`LoginState` 与 `LogoutState` 均为 idle、submitting、failed。`RegistrationState` 额外区分 email/verify 步骤、验证码请求/注册提交操作、有效期和重发剩余秒数。`PasswordRecoveryState` 保存唯一在途动作、最近请求邮箱、重发秒数和安全错误；找回与重置页面复用同一个 autoDispose family，但不同路由种子不会共享密码或验证码。`EmailVerificationState` 分离本人事实加载、重发/验证唯一在途动作、冷却、请求 ID 和成功反馈；验证仓储同时映射 `usersGetMe`、`ResendVerificationDto` 与 `VerifyEmailDto`。认证仓储完成 `RequestCodeDto`、`VerifyAndCompleteDto`、`LoginDto` 与双 Token 映射，密码恢复仓储独立映射 `ForgotPasswordDto` 与 `ResetPasswordDto`；独立会话远端通过生成客户端处理 `RefreshDto`、`LogoutDto`，`SessionController` 串行发布安全存储与路由状态。终端管理使用 settings 的 loading/ready/failed 状态和唯一在途撤销 ID，成功后按稳定终端 ID 原地移除；改密使用 idle/submitting/failed，换邮箱状态额外保存 request/verify 步骤、当前动作、规范化目标邮箱和重发剩余秒数。`AccountDeletionState` 区分 idle、submitting、failed，并用 `remoteDeletionConfirmed` 固定远端已完成、本地待清理的单向边界。
+`SessionState` 为 guest、restoring、authenticated、invalidated；`LoginState` 与 `LogoutState` 均为 idle、submitting、failed。`RegistrationState` 额外区分 email/verify 步骤、验证码请求/注册提交操作、有效期和重发剩余秒数。`PasswordRecoveryState` 保存唯一在途动作、最近请求邮箱、重发秒数和安全错误；找回与重置页面复用同一个 autoDispose family，但不同路由种子不会共享密码或验证码。`EmailVerificationState` 分离本人事实加载、重发/验证唯一在途动作、冷却、请求 ID 和成功反馈。登录/注册、邮箱验证和密码恢复控制器只依赖 `auth/application` 端口，`main.dart` 组合根绑定 API data 适配器；适配器分别映射 `usersGetMe`、`ResendVerificationDto`、`VerifyEmailDto`、`RequestCodeDto`、`VerifyAndCompleteDto`、`LoginDto`、`ForgotPasswordDto` 与 `ResetPasswordDto`。独立会话远端通过生成客户端处理 `RefreshDto`、`LogoutDto`，`SessionController` 串行发布安全存储与路由状态。终端管理使用 settings 的 loading/ready/failed 状态和唯一在途撤销 ID，成功后按稳定终端 ID 原地移除；改密使用 idle/submitting/failed，换邮箱状态额外保存 request/verify 步骤、当前动作、规范化目标邮箱和重发剩余秒数。`AccountDeletionState` 区分 idle、submitting、failed，并用 `remoteDeletionConfirmed` 固定远端已完成、本地待清理的单向边界。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -88,4 +88,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/`、`lib/core/network/session_remote.dart`；登录后验证由 `email_verification_*` 仓储、状态机和页面承载，找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/main.dart`、`lib/core/network/session_remote.dart`；登录后验证由 `email_verification_*` 状态机、适配器和页面承载，找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
