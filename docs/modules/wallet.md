@@ -64,7 +64,7 @@ app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.1`；后端 `c7918b4e9bfeb05e2f98c2000f8e93daa81e636c`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.9.0-dev.20260814.2`；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
 
 ## 14. 相关代码与架构文档
 

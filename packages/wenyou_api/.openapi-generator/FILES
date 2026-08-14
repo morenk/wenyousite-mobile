@@ -15,6 +15,7 @@ lib/src/api/admin_reports_api.dart
 lib/src/api/admin_taxonomy_api.dart
 lib/src/api/auth_api.dart
 lib/src/api/bookmarks_api.dart
+lib/src/api/client_moderation_api.dart
 lib/src/api/direct_messages_api.dart
 lib/src/api/drafts_api.dart
 lib/src/api/health_api.dart
@@ -152,6 +153,7 @@ lib/src/model/business_error_code.dart
 lib/src/model/change_email_request_dto.dart
 lib/src/model/change_email_verify_dto.dart
 lib/src/model/change_password_dto.dart
+lib/src/model/client_content_moderation_hide200_response.dart
 lib/src/model/confirm_upload_dto.dart
 lib/src/model/confirm_upload_response_dto.dart
 lib/src/model/create_admin_invite_dto.dart

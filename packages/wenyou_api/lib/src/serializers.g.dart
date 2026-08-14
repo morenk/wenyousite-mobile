@@ -134,6 +134,7 @@ Serializers _$serializers =
           ..add(ChangeEmailRequestDto.serializer)
           ..add(ChangeEmailVerifyDto.serializer)
           ..add(ChangePasswordDto.serializer)
+          ..add(ClientContentModerationHide200Response.serializer)
           ..add(ConfirmUploadDto.serializer)
           ..add(ConfirmUploadResponseDto.serializer)
           ..add(CreateAdminInviteDto.serializer)

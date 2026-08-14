@@ -4,11 +4,11 @@
 
 ## 1. 模块目标与非目标
 
-让普通登录用户和被暂停/封禁而无法建立普通会话的账号，都能查看本人近 30 天治理决定并对仍生效、尚未申诉的决定提交一次复核说明。移动端不承载举报审核、治理案件队列、处罚执行、申诉裁决或管理员站务功能。
+让普通登录用户和被暂停/封禁而无法建立普通会话的账号，都能查看本人近 30 天治理决定并对仍生效、尚未申诉的决定提交一次复核说明。移动端不承载举报审核、治理案件队列、处罚执行、申诉裁决或完整管理员站务产品；契约已提供管理员在内容现场直接隐藏的窄能力，但当前尚未接入可见入口。
 
 ## 2. 用户角色与使用场景
 
-普通有效会话直接读取本人决定；暂停或封禁账号从登录页进入公开申诉入口，验证账号密码后使用 15 分钟专用凭据。游客若没有对应账号只能看到验证表单。管理员审核和最终处理在独立站务产品完成，移动端只展示服务端公开结果。
+普通有效会话直接读取本人决定；暂停或封禁账号从登录页进入公开申诉入口，验证账号密码后使用 15 分钟专用凭据。游客若没有对应账号只能看到验证表单。管理员审核和最终处理在独立站务产品完成；后端 4.9.0 提供普通 Bearer 下的内容隐藏端点，移动端需先可靠投影 `ADMIN / SUPER_ADMIN` 角色并完成现场确认与状态刷新，不能向普通用户猜测或暴露该能力。
 
 ## 3. 页面、入口和导航关系
 
@@ -23,6 +23,7 @@
 - 专用凭据：`userModerationAppealsIssueToken`，使用 `IssueAppealTokenDto`、`AppealAccessTokenResponseDto`。
 - 本人决定：`userModerationAppealsMine`，使用 `ModerationDecisionPublicResponseDto`。
 - 提交申诉：`userModerationAppealsAppeal`，使用 `CreateModerationAppealDto`、`ModerationAppealResponseDto`、`ModerationAppealDecisionResponseDto` 与 `ModerationAppealAppellantResponseDto`。
+- 待接入管理员现场隐藏：`clientContentModerationHide`，使用普通 Access Token、`ModerateContentDto` 与 `AdminContentModerationResponseDto`；当前仅生成客户端并登记计划，不在页面调用。
 
 ## 6. 状态模型和数据流
 
@@ -56,11 +57,11 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 
 ## 12. 已知限制和后续功能
 
-移动端不展示 30 天之外的历史决定，不支持撤回或补充已提交申诉，也不做后台到期提醒。公开决定 DTO 的既有 `appeal` 仍是开放 map，仓储只在必需字段完整时显示；后端未来应将其收敛为 typed DTO。管理员申诉列表、处置和审计继续保持移动端产品范围外。
+移动端不展示 30 天之外的历史决定，不支持撤回或补充已提交申诉，也不做后台到期提醒。公开决定 DTO 的既有 `appeal` 仍是开放 map，仓储只在必需字段完整时显示；后端未来应将其收敛为 typed DTO。管理员申诉列表、案件处置和审计继续保持移动端产品范围外；现场隐藏能力在角色投影、二次确认、成功后的内容失效和 `40308` 降级全部闭环前保持隐藏。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.1`；后端 `c7918b4e9bfeb05e2f98c2000f8e93daa81e636c`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.9.0-dev.20260814.2`；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
 
 ## 14. 相关代码与架构文档
 

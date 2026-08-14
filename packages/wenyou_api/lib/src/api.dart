@@ -22,6 +22,7 @@ import 'package:wenyou_api/src/api/admin_reports_api.dart';
 import 'package:wenyou_api/src/api/admin_taxonomy_api.dart';
 import 'package:wenyou_api/src/api/auth_api.dart';
 import 'package:wenyou_api/src/api/bookmarks_api.dart';
+import 'package:wenyou_api/src/api/client_moderation_api.dart';
 import 'package:wenyou_api/src/api/direct_messages_api.dart';
 import 'package:wenyou_api/src/api/drafts_api.dart';
 import 'package:wenyou_api/src/api/health_api.dart';
@@ -213,6 +214,12 @@ class WenyouApi {
   /// by doing that all interceptors will not be executed
   BookmarksApi getBookmarksApi() {
     return BookmarksApi(dio, serializers);
+  }
+
+  /// Get ClientModerationApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ClientModerationApi getClientModerationApi() {
+    return ClientModerationApi(dio, serializers);
   }
 
   /// Get DirectMessagesApi instance, base route and serializer can be overridden by a given but be careful,

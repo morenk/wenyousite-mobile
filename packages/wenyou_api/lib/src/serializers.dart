@@ -124,6 +124,7 @@ import 'package:wenyou_api/src/model/business_error_code.dart';
 import 'package:wenyou_api/src/model/change_email_request_dto.dart';
 import 'package:wenyou_api/src/model/change_email_verify_dto.dart';
 import 'package:wenyou_api/src/model/change_password_dto.dart';
+import 'package:wenyou_api/src/model/client_content_moderation_hide200_response.dart';
 import 'package:wenyou_api/src/model/confirm_upload_dto.dart';
 import 'package:wenyou_api/src/model/confirm_upload_response_dto.dart';
 import 'package:wenyou_api/src/model/create_admin_invite_dto.dart';
@@ -575,6 +576,7 @@ part 'serializers.g.dart';
   ChangeEmailRequestDto,
   ChangeEmailVerifyDto,
   ChangePasswordDto,
+  ClientContentModerationHide200Response,
   ConfirmUploadDto,
   ConfirmUploadResponseDto,
   CreateAdminInviteDto,

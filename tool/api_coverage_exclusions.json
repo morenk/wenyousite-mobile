@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "4.9.0-dev.20260814.1",
+  "contractVersion": "4.9.0-dev.20260814.2",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
@@ -58,6 +58,7 @@
     { "operationId": "adminModerationExportAuditLogs", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "usersSetProfileCover", "category": "planned_users", "reason": "后端 4.8.0 新增资料背景图；移动端需先完成 3:1 裁剪与上传交互切片。" },
     { "operationId": "usersRemoveProfileCover", "category": "planned_users", "reason": "后端 4.8.0 新增资料背景图；移动端需与设置流程同切片接入。" },
-    { "operationId": "usersGetUserActivitySummary", "category": "planned_users", "reason": "后端 4.8.0 新增活动汇总；移动端需与用户主页统计投影同切片接入。" }
+    { "operationId": "usersGetUserActivitySummary", "category": "planned_users", "reason": "后端 4.8.0 新增活动汇总；移动端需与用户主页统计投影同切片接入。" },
+    { "operationId": "clientContentModerationHide", "category": "planned_moderation", "reason": "后端 4.9.0 新增移动端管理员直接隐藏内容；需先接入可信角色投影、内容操作入口与高风险确认切片。" }
   ]
 }
