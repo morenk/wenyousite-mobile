@@ -150,7 +150,7 @@ final directConversationTargetControllerProvider = StateNotifierProvider
         ref.watch(directMessageRepositoryProvider),
         ref.watch(publicUserRepositoryProvider),
       );
-    });
+    }, dependencies: [publicUserRepositoryProvider]);
 
 ApiFailure _asFailure(Object error, String fallback) {
   return mapApplicationFailure(error, fallback);

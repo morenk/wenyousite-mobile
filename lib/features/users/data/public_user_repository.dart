@@ -5,31 +5,11 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
-abstract interface class PublicUserRepository {
-  Future<PublicUserProfileModel> fetchUser(String userId);
-
-  Future<CursorPage<PublicUserThreadModel>> fetchCreatedThreads(
-    String userId, {
-    String? cursor,
-    int limit = 10,
-  });
-
-  Future<CursorPage<PublicUserThreadModel>> fetchPlayedThreads(
-    String userId, {
-    String? cursor,
-    int limit = 10,
-  });
-
-  Future<List<PublicUserReplyModel>> fetchRecentReplies(String userId);
-
-  Future<CursorPage<PublicUserThreadModel>> fetchBookmarks(
-    String userId, {
-    String? cursor,
-    int limit = 10,
-  });
-}
+export 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart'
+    show PublicUserRepository, publicUserRepositoryProvider;
 
 class ApiPublicUserRepository implements PublicUserRepository {
   ApiPublicUserRepository(this._api);
@@ -254,6 +234,6 @@ class ApiPublicUserRepository implements PublicUserRepository {
   }
 }
 
-final publicUserRepositoryProvider = Provider<PublicUserRepository>((ref) {
+final apiPublicUserRepositoryProvider = Provider<PublicUserRepository>((ref) {
   return ApiPublicUserRepository(ref.watch(wenyouApiProvider).getUsersApi());
 });

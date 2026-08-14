@@ -62,7 +62,6 @@
   ],
   "layerDependencyDebt": [
     "lib/features/direct_messages/application/direct_message_controllers.dart->lib/features/direct_messages/data/direct_message_repository.dart",
-    "lib/features/direct_messages/application/direct_message_controllers.dart->lib/features/users/data/public_user_repository.dart",
     "lib/features/drafts/application/content_drafts_controller.dart->lib/features/drafts/data/content_draft_repository.dart",
     "lib/features/editor/application/mention_candidates_controller.dart->lib/features/editor/data/mention_candidate_repository.dart",
     "lib/features/editor/application/remote_thread_drafts_controller.dart->lib/features/editor/data/thread_compose_repository.dart",
@@ -93,9 +92,6 @@
     "lib/features/threads/application/thread_invitation_controller.dart->lib/features/threads/data/thread_invitation_repository.dart",
     "lib/features/threads/application/thread_management_controller.dart->lib/features/threads/data/thread_management_repository.dart",
     "lib/features/threads/application/thread_member_management_controller.dart->lib/features/threads/data/thread_member_management_repository.dart",
-    "lib/features/users/application/avatar_controller.dart->lib/features/users/data/avatar_repository.dart",
-    "lib/features/users/application/me_profile_controller.dart->lib/features/users/data/me_profile_repository.dart",
-    "lib/features/users/application/public_user_controller.dart->lib/features/users/data/public_user_repository.dart",
     "lib/features/wallet/application/wallet_controllers.dart->lib/features/wallet/data/wallet_repository.dart"
   ]
 }

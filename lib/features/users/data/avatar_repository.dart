@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
-abstract interface class AvatarRepository {
-  Future<AvatarUpdateResult> setAvatar(String mediaId);
-
-  Future<AvatarUpdateResult> removeAvatar();
-}
+export 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart'
+    show AvatarRepository, avatarRepositoryProvider;
 
 class ApiAvatarRepository implements AvatarRepository {
   ApiAvatarRepository(this._api);
@@ -65,6 +63,6 @@ class ApiAvatarRepository implements AvatarRepository {
   }
 }
 
-final avatarRepositoryProvider = Provider<AvatarRepository>((ref) {
+final apiAvatarRepositoryProvider = Provider<AvatarRepository>((ref) {
   return ApiAvatarRepository(ref.watch(wenyouApiProvider).getUsersApi());
 });

@@ -4,7 +4,7 @@ import 'package:wenyousite_mobile/features/media/application/avatar_image_policy
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
-import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
 enum AvatarPhase { idle, picking, uploading, setting, removing, failed }
@@ -185,6 +185,7 @@ final avatarControllerProvider =
       },
       dependencies: [
         avatarImagePickerPortProvider,
+        avatarRepositoryProvider,
         mediaUploadTaskControllerProvider,
       ],
     );

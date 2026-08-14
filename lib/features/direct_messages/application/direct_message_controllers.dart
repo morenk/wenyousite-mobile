@@ -9,7 +9,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
-import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 import 'direct_message_states.dart';

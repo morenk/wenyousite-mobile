@@ -10,6 +10,10 @@ import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
+import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
+import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
+import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +38,15 @@ void main() {
         ),
         passwordRecoveryRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiPasswordRecoveryRepositoryProvider),
+        ),
+        avatarRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiAvatarRepositoryProvider),
+        ),
+        meProfileRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiMeProfileRepositoryProvider),
+        ),
+        publicUserRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiPublicUserRepositoryProvider),
         ),
       ],
       child: const WenyouApp(),

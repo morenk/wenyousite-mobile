@@ -30,7 +30,7 @@
 
 ## 6. 状态模型和数据流
 
-`PublicUserController` 管理公开资料与四个内容分区；`MeProfileController` 管理本人资料和编辑。头像格式策略、相册端口和上传任务生命周期属于 `media/application`；`AvatarController` 只映射共享上传状态，并编排用户头像写入/移除、取消和失败恢复，不导入 Dio 或 media data 实现。上传完成而设置失败时保留 `pendingMediaId`，重试只调用设置端点。成功只把服务端头像 URL 和更新时间合并回本人资料，避免以并发旧响应覆盖其他字段。公开页用本人 ID 排除自我操作后，消费 social 的目标关系 family；关系状态独立串行化写入并在页内覆盖公开资料的关系标记与粉丝数。关系列表由 social 的独立 target family 管理，本人目标使用专用端点。公开、私有和关系列表 DTO 分别映射，不互相复用。
+`PublicUserController` 管理公开资料与四个内容分区；`MeProfileController` 管理本人资料和编辑。公开资料、本人资料与头像写入由 `users/application` 端口表达，`main.dart` 组合根绑定生成客户端 data 适配器；users 控制器与私聊目标解析都不直接导入 users data。头像格式策略、相册端口和上传任务生命周期属于 `media/application`；`AvatarController` 只映射共享上传状态，并编排用户头像写入/移除、取消和失败恢复，不导入 Dio 或 media data 实现。上传完成而设置失败时保留 `pendingMediaId`，重试只调用设置端点。成功只把服务端头像 URL 和更新时间合并回本人资料，避免以并发旧响应覆盖其他字段。公开页用本人 ID 排除自我操作后，消费 social 的目标关系 family；关系状态独立串行化写入并在页内覆盖公开资料的关系标记与粉丝数。关系列表由 social 的独立 target family 管理，本人目标使用专用端点。公开、私有和关系列表 DTO 分别映射，不互相复用。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -78,4 +78,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。

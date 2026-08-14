@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
-abstract interface class MeProfileRepository {
-  Future<MeProfileModel> fetchMe();
-
-  Future<MeProfileUpdateResult> updateMe(MeProfilePatch patch);
-}
+export 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart'
+    show MeProfileRepository, meProfileRepositoryProvider;
 
 class ApiMeProfileRepository implements MeProfileRepository {
   ApiMeProfileRepository(this._api);
@@ -106,6 +104,6 @@ class ApiMeProfileRepository implements MeProfileRepository {
   }
 }
 
-final meProfileRepositoryProvider = Provider<MeProfileRepository>((ref) {
+final apiMeProfileRepositoryProvider = Provider<MeProfileRepository>((ref) {
   return ApiMeProfileRepository(ref.watch(wenyouApiProvider).getUsersApi());
 });

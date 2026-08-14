@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
 enum MeProfilePhase { loading, ready, failed }
@@ -194,4 +194,4 @@ final meProfileControllerProvider =
       ref,
     ) {
       return MeProfileController(ref.watch(meProfileRepositoryProvider));
-    });
+    }, dependencies: [meProfileRepositoryProvider]);
