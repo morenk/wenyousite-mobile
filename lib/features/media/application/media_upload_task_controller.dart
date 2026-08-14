@@ -19,11 +19,13 @@ class MediaUploadFailure {
   const MediaUploadFailure({
     required this.userMessage,
     required this.canRetry,
+    this.businessCode,
     this.requestId,
   });
 
   final String userMessage;
   final bool canRetry;
+  final int? businessCode;
   final String? requestId;
 }
 
@@ -67,8 +69,19 @@ final mediaUploadTaskControllerProvider = NotifierProvider.autoDispose
       ],
     );
 
+abstract interface class MediaUploadTask {
+  MediaUploadTaskState get state;
+
+  Future<UploadedEditorImage?> uploadInput(MediaUploadInput input);
+
+  void cancel();
+
+  void reset();
+}
+
 class MediaUploadTaskController
-    extends AutoDisposeFamilyNotifier<MediaUploadTaskState, Object> {
+    extends AutoDisposeFamilyNotifier<MediaUploadTaskState, Object>
+    implements MediaUploadTask {
   MediaUploadOperation<UploadedEditorImage>? _operation;
   Completer<void>? _cancelSignal;
   MediaUploadInput? _retryInput;
@@ -96,6 +109,13 @@ class MediaUploadTaskController
     return _start(input: input);
   }
 
+  @override
+  Future<UploadedEditorImage?> uploadInput(MediaUploadInput input) {
+    if (_activeFuture == null) _retryInput = null;
+    return _start(input: input);
+  }
+
+  @override
   void cancel() {
     if (!state.isBusy && _operation == null) return;
     _runId += 1;
@@ -112,6 +132,7 @@ class MediaUploadTaskController
     operation?.cancel();
   }
 
+  @override
   void reset() {
     if (state.isBusy) {
       cancel();
@@ -218,6 +239,7 @@ class MediaUploadTaskController
       return MediaUploadFailure(
         userMessage: error.userMessage,
         canRetry: canRetry,
+        businessCode: error.businessCode,
         requestId: error.requestId,
       );
     }

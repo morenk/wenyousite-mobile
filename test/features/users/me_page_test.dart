@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,8 +8,9 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
@@ -375,7 +375,7 @@ void main() {
 Future<ProviderContainer> _authenticatedContainer(
   MeProfileRepository repository, {
   AvatarImagePicker? avatarPicker,
-  MediaUploadRepository? mediaRepository,
+  MediaUploadGateway? mediaRepository,
   AvatarRepository? avatarRepository,
   bool stickersEnabled = false,
 }) async {
@@ -385,10 +385,12 @@ Future<ProviderContainer> _authenticatedContainer(
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       stickersEnabledProvider.overrideWithValue(stickersEnabled),
       meProfileRepositoryProvider.overrideWithValue(repository),
-      if (avatarPicker != null)
-        avatarImagePickerProvider.overrideWithValue(avatarPicker),
-      if (mediaRepository != null)
-        mediaUploadRepositoryProvider.overrideWithValue(mediaRepository),
+      avatarImagePickerPortProvider.overrideWithValue(
+        avatarPicker ?? _FakeAvatarPicker(null),
+      ),
+      mediaUploadGatewayPortProvider.overrideWithValue(
+        mediaRepository ?? _FakeMediaRepository(),
+      ),
       if (avatarRepository != null)
         avatarRepositoryProvider.overrideWithValue(avatarRepository),
     ],
@@ -408,15 +410,14 @@ class _FakeAvatarPicker implements AvatarImagePicker {
   Future<MediaUploadInput?> pickAvatarFromGallery() async => input;
 }
 
-class _FakeMediaRepository implements MediaUploadRepository {
+class _FakeMediaRepository implements MediaUploadGateway {
   int uploadCalls = 0;
 
   @override
-  Future<UploadedEditorImage> uploadImage(
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
     MediaUploadInput input, {
-    CancelToken? cancelToken,
     void Function(MediaUploadProgress progress)? onProgress,
-  }) async {
+  }) {
     uploadCalls += 1;
     onProgress?.call(
       MediaUploadProgress(
@@ -425,11 +426,25 @@ class _FakeMediaRepository implements MediaUploadRepository {
         totalBytes: input.bytes.length,
       ),
     );
-    return const UploadedEditorImage(
-      mediaId: 'media-avatar-1',
-      url: 'https://cdn.example.com/avatar.webp',
+    return _ImmediateUploadOperation(
+      const UploadedEditorImage(
+        mediaId: 'media-avatar-1',
+        url: 'https://cdn.example.com/avatar.webp',
+      ),
     );
   }
+}
+
+class _ImmediateUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  _ImmediateUploadOperation(UploadedEditorImage value)
+    : result = Future.value(value);
+
+  @override
+  final Future<UploadedEditorImage> result;
+
+  @override
+  void cancel() {}
 }
 
 class _FakeAvatarRepository implements AvatarRepository {

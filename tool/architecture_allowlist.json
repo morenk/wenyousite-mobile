@@ -101,8 +101,6 @@
     "lib/features/threads/application/thread_invitation_controller.dart->lib/features/threads/data/thread_invitation_repository.dart",
     "lib/features/threads/application/thread_management_controller.dart->lib/features/threads/data/thread_management_repository.dart",
     "lib/features/threads/application/thread_member_management_controller.dart->lib/features/threads/data/thread_member_management_repository.dart",
-    "lib/features/users/application/avatar_controller.dart->lib/features/media/data/editor_image_picker.dart",
-    "lib/features/users/application/avatar_controller.dart->lib/features/media/data/media_upload_repository.dart",
     "lib/features/users/application/avatar_controller.dart->lib/features/users/data/avatar_repository.dart",
     "lib/features/users/application/me_profile_controller.dart->lib/features/users/data/me_profile_repository.dart",
     "lib/features/users/application/public_user_controller.dart->lib/features/users/data/public_user_repository.dart",

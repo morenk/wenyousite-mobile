@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-`MediaUploadInput` 只在当前进程持有文件名、声明类型和字节；`MediaUploadProgress` 分为 preparing、uploading、confirming、processing，并可携带已发送/总字节；`UploadedEditorImage` 只暴露媒体 ID、安全公开 URL 和可选尺寸。主题、帖子、动态发布、动态评论、私聊输入器与表情包管理页按页面实例创建 autoDispose 上传任务；任务在 `media/application` 统一管理 picking、preparing、uploading、confirming、processing、failed、进度、失败信息、当前上传操作和仅供当前会话重试的已选输入。页面只展示状态、触发选择/取消/重试并消费完成结果；页面释放会取消 data 操作并清除输入，上传中状态不写入编辑快照、动态草稿、私聊草稿或表情收藏状态。相册选择与上传由 application 端口声明，在 `WenyouApp` 组合根绑定到系统相册与 Dio adapter。`AvatarState` 区分 picking、uploading、setting、removing、failed；设置端点失败会保留已完成上传的 `pendingMediaId`，重试不重新选择或上传。
+`MediaUploadInput` 只在当前进程持有文件名、声明类型和字节；`MediaUploadProgress` 分为 preparing、uploading、confirming、processing，并可携带已发送/总字节；`UploadedEditorImage` 只暴露媒体 ID、安全公开 URL 和可选尺寸。主题、帖子、动态发布、动态评论、私聊输入器、表情包管理页与头像流程按页面或业务实例创建 autoDispose 上传任务；任务在 `media/application` 统一管理 picking、preparing、uploading、confirming、processing、failed、进度、失败信息、当前上传操作和仅供当前会话重试的已选输入。页面或业务控制器只展示/映射状态、触发选择/取消/重试并消费完成结果；释放时会取消 data 操作并清除输入，上传中状态不写入编辑快照、动态草稿、私聊草稿、表情收藏或用户资料状态。相册选择、头像格式策略与上传均由 application 声明，在 `WenyouApp` 组合根绑定到系统相册与 Dio adapter。`AvatarController` 只编排头像候选、`usersSetAvatar` / `usersRemoveAvatar` 和本人资料结果；设置端点失败会保留已完成上传的 `pendingMediaId`，重试不重新选择或上传。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -44,7 +44,7 @@
 
 ## 10. 跨模块约束
 
-只有 `COMPLETED` 资源能成为 `wenyou_image` 节点、动态/评论/私聊媒体 ID、收藏表情导入源或头像候选；`media/application` 负责主题、帖子、动态发布、动态评论、私聊与收藏表情图片上传任务的生命周期、进度、取消和失败，editor 只在成功后写入固定 alt“图片”、决定插入位置并生成最终 Markdown 快照，moments 只消费完成结果并负责纯文本、媒体顺序、封面及评论附件互斥，direct_messages 只接收完成的 `mediaId` 并组装发送草稿，stickers 只接收完成的 `mediaId` 并管理导入幂等语义，users 负责头像端点和本人资料事实。正文、动态详情和评论图片遵循 Foundation 的 contain、不裁切、状态占位和全屏交互契约；动态信息流封面和头像是允许 cover 裁切的角色，但动态封面必须可进入详情原图。
+只有 `COMPLETED` 资源能成为 `wenyou_image` 节点、动态/评论/私聊媒体 ID、收藏表情导入源或头像候选；`media/application` 负责主题、帖子、动态发布、动态评论、私聊、收藏表情与头像图片上传任务的生命周期、进度、取消和失败，editor 只在成功后写入固定 alt“图片”、决定插入位置并生成最终 Markdown 快照，moments 只消费完成结果并负责纯文本、媒体顺序、封面及评论附件互斥，direct_messages 只接收完成的 `mediaId` 并组装发送草稿，stickers 只接收完成的 `mediaId` 并管理导入幂等语义，users 只接收头像候选的完成结果并负责头像端点和本人资料事实。正文、动态详情和评论图片遵循 Foundation 的 contain、不裁切、状态占位和全屏交互契约；动态信息流封面和头像是允许 cover 裁切的角色，但动态封面必须可进入详情原图。
 
 ## 11. 测试场景与验收条件
 
@@ -53,7 +53,7 @@
 - [x] 对象存储失败不确认，错误文本不暴露预签名查询参数。
 - [x] 共享上传控制器覆盖进度、取消、失败、重试、迟到结果丢弃与页面释放；主题和帖子页面覆盖选择后直接上传、完成结果插入及固定图片节点，动态发布和评论覆盖失败重试、系统返回取消与完成媒体消费，私聊覆盖同文件重试、完成后发送和上传中取消，收藏表情覆盖同文件重试、取消不导入和完成后才进入导入端点。
 - [x] 正文图片 contain 显示并支持全屏、捏合、双击、平移和未放大下滑关闭。
-- [x] 头像设置/删除、显式 URL 降级、旧缓存失效和重启后服务端事实恢复完成。
+- [x] 头像格式策略、共享上传进度/取消、设置/删除、显式 URL 降级、旧缓存失效和重启后服务端事实恢复完成。
 
 ## 12. 已知限制和后续功能
 

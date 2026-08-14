@@ -1,8 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
-import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/application/avatar_image_policy.dart';
+import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -36,17 +36,16 @@ class AvatarState {
 }
 
 class AvatarController extends StateNotifier<AvatarState> {
-  AvatarController(this._picker, this._mediaRepository, this._avatarRepository)
+  AvatarController(this._picker, this._uploadTask, this._avatarRepository)
     : super(const AvatarState());
 
   final AvatarImagePicker _picker;
-  final MediaUploadRepository _mediaRepository;
+  final MediaUploadTask _uploadTask;
   final AvatarRepository _avatarRepository;
-  CancelToken? _uploadCancelToken;
-  var _cancelRequested = false;
 
   Future<AvatarUpdateResult?> chooseAndSet() async {
     if (state.isBusy) return null;
+    _uploadTask.reset();
     state = const AvatarState(phase: AvatarPhase.picking);
     try {
       final selected = await _picker.pickAvatarFromGallery();
@@ -56,29 +55,31 @@ class AvatarController extends StateNotifier<AvatarState> {
         return null;
       }
       final input = validateAvatarImageInput(selected);
-      final cancelToken = CancelToken();
-      _uploadCancelToken = cancelToken;
-      _cancelRequested = false;
       state = const AvatarState(phase: AvatarPhase.uploading);
-      final image = await _mediaRepository.uploadImage(
-        input,
-        cancelToken: cancelToken,
-        onProgress: (progress) {
-          if (!mounted || _uploadCancelToken != cancelToken) return;
-          state = AvatarState(phase: AvatarPhase.uploading, progress: progress);
-        },
-      );
+      final image = await _uploadTask.uploadInput(input);
       if (!mounted) return null;
-      _uploadCancelToken = null;
+      if (image == null) {
+        final failure = _uploadTask.state.failure;
+        _uploadTask.reset();
+        if (failure == null) {
+          state = const AvatarState();
+          return null;
+        }
+        state = AvatarState(
+          phase: AvatarPhase.failed,
+          failedOperation: AvatarOperation.set,
+          failure: ApiFailure(
+            userMessage: failure.userMessage,
+            businessCode: failure.businessCode,
+            requestId: failure.requestId,
+          ),
+        );
+        return null;
+      }
       return _setUploadedMedia(image.mediaId);
     } on Object catch (error) {
       if (!mounted) return null;
-      _uploadCancelToken = null;
-      if (_cancelRequested) {
-        _cancelRequested = false;
-        state = const AvatarState();
-        return null;
-      }
+      _uploadTask.reset();
       state = AvatarState(
         phase: AvatarPhase.failed,
         failedOperation: AvatarOperation.set,
@@ -116,10 +117,9 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   void cancelUpload() {
-    final cancelToken = _uploadCancelToken;
-    if (cancelToken == null || cancelToken.isCancelled) return;
-    _cancelRequested = true;
-    cancelToken.cancel('avatar-upload-cancelled');
+    if (state.phase != AvatarPhase.uploading) return;
+    _uploadTask.cancel();
+    state = const AvatarState();
   }
 
   void clearFailure() {
@@ -152,18 +152,41 @@ class AvatarController extends StateNotifier<AvatarState> {
         : ApiFailure(userMessage: fallback, cause: error);
   }
 
+  void updateUploadState(MediaUploadTaskState uploadState) {
+    if (!mounted || !uploadState.isBusy) return;
+    state = AvatarState(
+      phase: AvatarPhase.uploading,
+      progress: uploadState.progress,
+    );
+  }
+
   @override
   void dispose() {
-    _uploadCancelToken?.cancel('avatar-controller-disposed');
+    _uploadTask.cancel();
     super.dispose();
   }
 }
 
 final avatarControllerProvider =
-    StateNotifierProvider.autoDispose<AvatarController, AvatarState>((ref) {
-      return AvatarController(
-        ref.watch(avatarImagePickerProvider),
-        ref.watch(mediaUploadRepositoryProvider),
-        ref.watch(avatarRepositoryProvider),
-      );
-    });
+    StateNotifierProvider.autoDispose<AvatarController, AvatarState>(
+      (ref) {
+        final uploadProvider = mediaUploadTaskControllerProvider(
+          _avatarUploadTaskId,
+        );
+        final controller = AvatarController(
+          ref.watch(avatarImagePickerPortProvider),
+          ref.read(uploadProvider.notifier),
+          ref.watch(avatarRepositoryProvider),
+        );
+        ref.listen<MediaUploadTaskState>(uploadProvider, (_, next) {
+          controller.updateUploadState(next);
+        });
+        return controller;
+      },
+      dependencies: [
+        avatarImagePickerPortProvider,
+        mediaUploadTaskControllerProvider,
+      ],
+    );
+
+const _avatarUploadTaskId = 'users/avatar';

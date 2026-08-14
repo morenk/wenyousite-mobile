@@ -68,6 +68,7 @@
 
 ### Changed
 
+- 头像图片的格式策略、相册端口和上传生命周期迁入 `media/application`：`AvatarController` 不再导入 Dio 或 media data 实现，只映射共享进度/取消并负责设置、移除及已完成 `mediaId` 的单端点重试。
 - 表情包管理页的相册导入迁入 `media/application` 共享上传任务：页面不再持有 Dio 取消令牌或直接读取 media data provider，上传失败可复用同一文件，取消立即恢复管理操作，只有完成的 `mediaId` 才进入稳定幂等导入端点。
 - 私聊图片选择与上传迁入 `media/application` 共享任务控制器：输入器只消费上传完成的 `mediaId`，失败可复用同一文件重试，上传中取消立即解除等待并保留正文、选区与焦点；私聊 presentation 不再导入 media data 或 Dio。
 - 主题与帖子编辑器的图片上传迁入 `media/application` 共享任务控制器：页面按实例隔离选择、阶段进度、取消、失败与同文件重试，只在完成后插入固定 `[图片]` 节点；Dio 取消令牌与具体仓储留在 data 层，并由 `WenyouApp` 组合根绑定端口。
