@@ -11,10 +11,10 @@
 
 ## 未解决条目
 
-| 上游产物 | 首次确认基线 | 漂移 | 移动端当前处理 | 关闭条件 |
-| --- | --- | --- | --- | --- |
-| `contracts/mobile-client-guide.md` | 契约 `4.13.0-dev.20260815.1` / 后端 `8c82f3551f58b2060f602802e84893ac7b8d8b78` | 动态纯文本引用说明只列主题坐标，未列 `INVITE` 与 `/join/:token`，但 `internal-reference-v1-fixtures.json` 已固定相对和生产域绝对邀请引用 | 以 fixture、`core/navigation/internal_reference.dart` 与相关测试为准；导航文档明确邀请引用能力，不手改同步指南 | 上游指南补齐邀请引用，随后由正常契约同步导入并通过门禁 |
+暂无。
 
 ## 已解决条目
 
-暂无。关闭条目时保留原记录并移入本节，注明带回修正的契约版本和后端 revision。
+| 上游产物 | 首次确认基线 | 原漂移 | 移动端处理 | 解决基线 |
+| --- | --- | --- | --- | --- |
+| `contracts/mobile-client-guide.md` | 契约 `4.13.0-dev.20260815.1` / 后端 `8c82f3551f58b2060f602802e84893ac7b8d8b78` | 动态纯文本引用说明只列主题坐标，未列 `INVITE` 与 `/join/:token`，但 `internal-reference-v1-fixtures.json` 已固定相对和生产域绝对邀请引用 | 同步前以 fixture、`core/navigation/internal_reference.dart` 与相关测试为准，未手改上游产物 | 契约 `4.13.1-dev.20260815.1` / 后端 `221e28cd0e25cedb2ad1c7c4c1568175e0c3c9c6` 已补齐邀请引用、token 凭据边界和编辑器粘贴旅程 |

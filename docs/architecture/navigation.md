@@ -26,6 +26,6 @@ go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `return
 
 站内私聊的新建页和会话详情使用受保护命名路由 `/messages/new/:userId` 与 `/messages/:conversationId`，游客访问时完整保留原目标进入登录。根路径 `/messages` 只是旧消息中心兼容入口，必须重定向到 `/notifications?section=directMessages`，不能作为第二个私聊列表事实源。通知页只导航到统一消息中心，用户主页只把稳定 userId 交给新私聊页；新私聊页通过 `directConversationsFindByUser` 决定替换到已有 ACCEPTED/PENDING 会话、允许重建或显示受限状态。会话 ID、消息 ID、cursor 和增量 after 都是不透明服务端标识，页面不从用户名、正文预览或关系标记推导目标。
 
-V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。Markdown 中的相对站内路径以及 `wenyou.site`、`www.wenyou.site` 绝对链接由移动端自动识别并交给应用路由；动态纯文本则严格按 `wenyousite-internal-reference` v1 只识别生产域主题、子贴、楼层、讨论和 `/join/:token` 私密邀请坐标，普通 Markdown 与外链保持字面文本。邀请能力以 `contracts/internal-reference-v1-fixtures.json` 和实现测试为当前事实；同步客户端指南遗漏邀请的差异记录在[上游文档漂移](../upstream-documentation-drift.md)。公开 `/appeals` 不要求普通会话，避免受处罚账号被守卫循环拦截；其专用凭据不进入其他路由。站内目标如果当前移动端没有对应页面，会保留在应用内并提示暂不支持。
+V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。Markdown 中的相对站内路径以及 `wenyou.site`、`www.wenyou.site` 绝对链接由移动端自动识别并交给应用路由；动态纯文本则严格按 `wenyousite-internal-reference` v1 只识别生产域主题、子贴、楼层、讨论和 `/join/:token` 私密邀请坐标，普通 Markdown 与外链保持字面文本。邀请能力、token 凭据边界与编辑器智能粘贴目标以 `contracts/internal-reference-v1-fixtures.json` 为事实源；当前阅读态已消费邀请坐标，编辑器 `editorPasteCases` 留待独立切片接入。公开 `/appeals` 不要求普通会话，避免受处罚账号被守卫循环拦截；其专用凭据不进入其他路由。站内目标如果当前移动端没有对应页面，会保留在应用内并提示暂不支持。
 
 参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)、[动态](../modules/moments.md)、[主题与子贴](../modules/threads.md)、[标签](../modules/tags.md)、[楼层与回复](../modules/posts.md)、[站内私聊](../modules/direct-messages.md)。
