@@ -52,7 +52,7 @@ dependencies:
   wenyousite_foundation:
     git:
       url: https://github.com/morenk/wenyousite-foundation.git
-      ref: v2.4.1
+      ref: v2.4.2
       path: packages/flutter
   wenyou_api:
     path: packages/wenyou_api

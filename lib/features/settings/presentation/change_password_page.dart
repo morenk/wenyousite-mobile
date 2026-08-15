@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
@@ -124,7 +125,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     key: const Key('change-password-submit'),
                     label: '保存新密码',
                     loadingLabel: '正在修改密码',
-                    icon: Icons.password_rounded,
+                    icon: WenyouIconIds.securityPassword,
                     isLoading: state.isSubmitting,
                     onPressed: _submit,
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_controller.dart';
@@ -84,7 +85,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
               ],
               decoration: const InputDecoration(
                 labelText: '邮箱或用户名',
-                prefixIcon: Icon(Icons.person_outline_rounded),
+                prefixIcon: WenyouIcon(WenyouIconIds.identityMember),
               ),
               textInputAction: TextInputAction.next,
               validator: (value) =>
@@ -103,7 +104,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
                   : (_) => _issueCredential(),
               decoration: InputDecoration(
                 labelText: '密码',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
                 suffixIcon: IconButton(
                   onPressed: state.isIssuingCredential
                       ? null
@@ -111,10 +112,10 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
                           () => _obscurePassword = !_obscurePassword,
                         ),
                   tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                  icon: Icon(
+                  icon: WenyouIcon(
                     _obscurePassword
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+                        ? WenyouIconIds.actionShow
+                        : WenyouIconIds.actionHide,
                   ),
                 ),
               ),
@@ -176,7 +177,7 @@ class _LoadingState extends StatelessWidget {
   Widget build(BuildContext context) {
     return const WenyouPanel(
       child: WenyouEmptyState(
-        icon: Icons.gavel_outlined,
+        icon: WenyouIconIds.moderationDecision,
         title: '正在读取治理决定',
         message: '只会显示当前账号近 30 天的公开处置信息。',
         action: CircularProgressIndicator(),
@@ -194,7 +195,7 @@ class _FailureState extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return WenyouPanel(
       child: WenyouEmptyState(
-        icon: Icons.cloud_off_outlined,
+        icon: WenyouIconIds.statusOffline,
         title: '治理决定没有加载完成',
         message: state.failure?.userMessage ?? '请稍后重试。',
         detail: state.failure?.requestId == null
@@ -205,7 +206,7 @@ class _FailureState extends ConsumerWidget {
           onPressed: ref
               .read(moderationAppealControllerProvider.notifier)
               .retry,
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重新加载'),
         ),
       ),
@@ -224,7 +225,7 @@ class _DecisionList extends ConsumerWidget {
     if (state.decisions.isEmpty) {
       return const WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.balance_outlined,
+          icon: WenyouIconIds.moderationAppeal,
           title: '近 30 天没有治理决定',
           message: '当前账号没有可展示或可申诉的决定。',
         ),
@@ -365,7 +366,7 @@ class _DecisionCard extends StatelessWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.rate_review_outlined),
+                    : const WenyouIcon(WenyouIconIds.contentReview),
                 label: Text(submitting ? '正在提交' : '提交申诉'),
               ),
             ),

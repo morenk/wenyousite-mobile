@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -9,6 +10,8 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
+
+import '../../support/foundation_icon_finder.dart';
 
 void main() {
   testWidgets('私信中心展示三类列表、精简预览并进入稳定会话路由', (tester) async {
@@ -29,7 +32,7 @@ void main() {
     );
     expect(find.text('小油'), findsOneWidget);
     expect(find.text('你好'), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(findFoundationIcon(WenyouIconIds.navigationNext), findsNothing);
 
     await tester.tap(find.text('请求 1'));
     await tester.pumpAndSettle();

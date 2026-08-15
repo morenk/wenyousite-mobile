@@ -44,7 +44,7 @@
 
 ## 10. 跨模块约束
 
-app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通过 app 组合层的 `ProfileCacheInvalidator` 发布失效意图，不直接导入 users provider。users、threads 和 moments 只挂载目标入口并在成功后重读自身服务端投影。钱包流水目标导航复用这些模块的稳定路由。所有 UI 只消费 Foundation v1.3.1 Token、全局主题和共享面板；精确金额字符串是 Wallet 与动态/主题/用户累计加油的共同约束。
+app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通过 app 组合层的 `ProfileCacheInvalidator` 发布失效意图，不直接导入 users provider。users、threads 和 moments 只挂载目标入口并在成功后重读自身服务端投影。钱包流水目标导航复用这些模块的稳定路由。所有 UI 只消费 Foundation v2.4.2 Token、语义图标、全局主题和共享面板；精确金额字符串是 Wallet 与动态/主题/用户累计加油的共同约束。
 
 ## 11. 测试场景与验收条件
 
@@ -64,7 +64,7 @@ app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.10.0-dev.20260814.1`；后端 `90a33279f6f786685567a27ced11dd7470620cad`；Foundation `v2.4.2`（`7e7d863`）。
 
 ## 14. 相关代码与架构文档
 

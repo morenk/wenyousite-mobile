@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
@@ -24,14 +25,14 @@ class BookmarkListPage extends ConsumerWidget {
           maxWidth: 600,
           child: WenyouPanel(
             child: WenyouEmptyState(
-              icon: Icons.cloud_off_outlined,
+              icon: WenyouIconIds.statusOffline,
               title: '收藏列表没有加载完成',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: _requestDetail(state.failure?.requestId),
               action: OutlinedButton.icon(
                 key: const Key('bookmark-list-retry'),
                 onPressed: notifier.load,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重新加载'),
               ),
             ),
@@ -128,9 +129,7 @@ class _ReadyBookmarkList extends StatelessWidget {
           tokens.space32,
         ),
         children: [
-          const _CenteredContent(
-            child: WenyouSectionHeader(title: '主题帖', subtitle: '稍后继续阅读或参与的内容。'),
-          ),
+          const _CenteredContent(child: WenyouSectionHeader(title: '主题帖')),
           SizedBox(height: tokens.space16),
           _CenteredContent(
             child: _BookmarkFolderBar(
@@ -150,7 +149,7 @@ class _ReadyBookmarkList extends StatelessWidget {
                 action: TextButton.icon(
                   key: const Key('bookmark-folders-retry'),
                   onPressed: state.isBusy ? null : onRetryFolders,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
                   label: const Text('重试分类'),
                 ),
               ),
@@ -183,14 +182,14 @@ class _ReadyBookmarkList extends StatelessWidget {
             _CenteredContent(
               child: WenyouPanel(
                 child: WenyouEmptyState(
-                  icon: Icons.cloud_off_outlined,
+                  icon: WenyouIconIds.statusOffline,
                   title: '这个收藏夹没有加载完成',
                   message: state.failure!.userMessage,
                   detail: _requestDetail(state.failure!.requestId),
                   action: OutlinedButton.icon(
                     key: const Key('bookmark-selected-folder-retry'),
                     onPressed: state.isBusy ? null : onRetryList,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                     label: const Text('重新加载'),
                   ),
                 ),
@@ -205,7 +204,10 @@ class _ReadyBookmarkList extends StatelessWidget {
                   detail: _requestDetail(state.failure!.requestId),
                   action: TextButton.icon(
                     onPressed: state.isBusy ? null : onRetryList,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    icon: const WenyouIcon(
+                      WenyouIconIds.actionRefresh,
+                      size: 18,
+                    ),
                     label: const Text('重新加载'),
                   ),
                 ),
@@ -216,7 +218,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               _CenteredContent(
                 child: WenyouPanel(
                   child: WenyouEmptyState(
-                    icon: Icons.bookmark_border_rounded,
+                    icon: WenyouIconIds.actionBookmark,
                     title: state.selectedFolderId == null
                         ? '还没有收藏'
                         : '这个收藏夹还是空的',
@@ -260,7 +262,7 @@ class _ReadyBookmarkList extends StatelessWidget {
                 action: TextButton.icon(
                   key: const Key('bookmark-list-load-more-retry'),
                   onPressed: state.isBusy ? null : onLoadMore,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
                   label: const Text('重试'),
                 ),
               ),
@@ -278,7 +280,7 @@ class _ReadyBookmarkList extends StatelessWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.expand_more_rounded),
+                      : const WenyouIcon(WenyouIconIds.navigationExpand),
                   label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
                 ),
               ),
@@ -357,10 +359,10 @@ class _BookmarkFolderBar extends StatelessWidget {
                               ),
                               selected: selected,
                               showCheckmark: false,
-                              avatar: Icon(
+                              avatar: WenyouIcon(
                                 selected
-                                    ? Icons.folder_open_rounded
-                                    : Icons.folder_outlined,
+                                    ? WenyouIconIds.contentFolderOpen
+                                    : WenyouIconIds.contentFolder,
                                 size: 18,
                               ),
                               label: Text('${option.name}  ${option.count}'),
@@ -385,7 +387,7 @@ class _BookmarkFolderBar extends StatelessWidget {
                         dimension: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.create_new_folder_outlined),
+                    : const WenyouIcon(WenyouIconIds.actionAddFolder),
               )
             else
               TextButton.icon(
@@ -396,7 +398,7 @@ class _BookmarkFolderBar extends StatelessWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.add_rounded),
+                    : const WenyouIcon(WenyouIconIds.actionAdd),
                 label: const Text('新建收藏夹'),
               ),
           ],
@@ -474,12 +476,12 @@ class _BookmarkCard extends StatelessWidget {
                           if (item.isPinned)
                             const _BookmarkPill(
                               label: '置顶',
-                              icon: Icons.push_pin_outlined,
+                              icon: WenyouIconIds.statusPinned,
                             ),
                           if (item.isPrivate)
                             const _BookmarkPill(
                               label: '私密',
-                              icon: Icons.lock_outline_rounded,
+                              icon: WenyouIconIds.actionLock,
                             ),
                         ],
                       ),
@@ -539,8 +541,8 @@ class _BookmarkCard extends StatelessWidget {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(
-                                  Icons.drive_file_move_outline,
+                              : const WenyouIcon(
+                                  WenyouIconIds.actionMove,
                                   size: 18,
                                 ),
                           label: Text(
@@ -568,7 +570,9 @@ class _BookmarkCard extends StatelessWidget {
                               dimension: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.bookmark_remove_outlined),
+                          : const WenyouIcon(
+                              WenyouIconIds.actionRemoveBookmark,
+                            ),
                     ),
                   ),
                 ],
@@ -585,7 +589,7 @@ class _BookmarkPill extends StatelessWidget {
   const _BookmarkPill({required this.label, this.icon, this.accent = false});
 
   final String label;
-  final IconData? icon;
+  final String? icon;
   final bool accent;
 
   @override
@@ -606,7 +610,7 @@ class _BookmarkPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: color),
+              WenyouIcon(icon!, size: 14, color: color),
               SizedBox(width: tokens.space4),
             ],
             Text(
@@ -742,7 +746,7 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.add_rounded),
+                  : const WenyouIcon(WenyouIconIds.actionAdd),
               label: const Text('新建'),
             ),
           ],
@@ -809,10 +813,10 @@ Future<String?> _showMoveFolderSheet(
                     return ListTile(
                       key: ValueKey('bookmark-move-option-${folder.id}'),
                       enabled: !current,
-                      leading: Icon(
+                      leading: WenyouIcon(
                         current
-                            ? Icons.folder_open_rounded
-                            : Icons.folder_outlined,
+                            ? WenyouIconIds.contentFolderOpen
+                            : WenyouIconIds.contentFolder,
                       ),
                       title: Text(
                         folder.name,
@@ -821,7 +825,7 @@ Future<String?> _showMoveFolderSheet(
                       ),
                       subtitle: Text('${folder.bookmarkCount} 条收藏'),
                       trailing: current
-                          ? const Icon(Icons.check_rounded)
+                          ? const WenyouIcon(WenyouIconIds.actionConfirm)
                           : null,
                       onTap: current
                           ? null

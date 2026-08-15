@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
@@ -51,7 +52,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('home-open-search')));
     await tester.pumpAndSettle();
-    expect(find.text('输入关键词开始搜索'), findsOneWidget);
+    expect(find.text('输入关键词开始搜索'), findsNothing);
   });
 
   testWidgets('登录用户底栏展示服务端未读角标并可进入通知列表', (tester) async {
@@ -250,6 +251,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('global-publish')));
     await tester.pumpAndSettle();
+    expect(find.text('创建可持续讨论的共同创作主题'), findsNothing);
+    expect(find.text('分享短文字或最多九张图片'), findsNothing);
     await tester.tap(find.byKey(const Key('global-publish-thread')));
     await tester.pumpAndSettle();
     expect(find.text('欢迎回到温油站'), findsOneWidget);
@@ -549,6 +552,11 @@ void main() {
         tester.getSize(find.byKey(const Key('login-submit'))).height,
         greaterThanOrEqualTo(48),
       );
+      _expectFoundationPictureSize(
+        tester,
+        WenyouIconIds.identityMember,
+        WenyouIconContract.defaultSize,
+      );
 
       await tester.tap(find.byKey(const Key('login-register')));
       await tester.pumpAndSettle();
@@ -557,8 +565,32 @@ void main() {
         tester.getSize(find.byKey(const Key('register-request-code'))).height,
         greaterThanOrEqualTo(48),
       );
+      _expectFoundationPictureSize(
+        tester,
+        WenyouIconIds.statusMail,
+        WenyouIconContract.defaultSize,
+      );
     });
   }
+}
+
+void _expectFoundationPictureSize(
+  WidgetTester tester,
+  String semanticId,
+  double expectedSize,
+) {
+  final icon = find.byWidgetPredicate(
+    (widget) => widget is WenyouIcon && widget.semanticId == semanticId,
+  );
+  final picture = find.descendant(
+    of: icon,
+    matching: find.byWidgetPredicate(
+      (widget) => widget.runtimeType.toString() == 'SvgPicture',
+    ),
+  );
+  expect(icon, findsOneWidget);
+  expect(picture, findsOneWidget);
+  expect(tester.getSize(picture), Size.square(expectedSize));
 }
 
 class _CompatibleMetaRepository implements MetaRepository {

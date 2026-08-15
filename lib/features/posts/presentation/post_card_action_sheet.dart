@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
 enum PostCardAction { copyText, copyLink, reply, edit, delete, report }
 
@@ -27,19 +28,19 @@ Future<PostCardAction?> showPostCardActionSheet({
             ListTile(title: Text(title), subtitle: Text(authorName)),
             if (canCopyText)
               ListTile(
-                leading: const Icon(Icons.copy_outlined),
+                leading: const WenyouIcon(WenyouIconIds.actionCopy),
                 title: const Text('复制'),
                 onTap: () => Navigator.pop(context, PostCardAction.copyText),
               ),
             ListTile(
-              leading: const Icon(Icons.link_outlined),
+              leading: const WenyouIcon(WenyouIconIds.editorLink),
               title: const Text('复制楼层链接'),
               onTap: () => Navigator.pop(context, PostCardAction.copyLink),
             ),
             if (canReply)
               ListTile(
                 enabled: !pending,
-                leading: const Icon(Icons.reply_rounded),
+                leading: const WenyouIcon(WenyouIconIds.actionReply),
                 title: Text(replyLabel),
                 onTap: pending
                     ? null
@@ -48,7 +49,7 @@ Future<PostCardAction?> showPostCardActionSheet({
             if (canEdit)
               ListTile(
                 enabled: !pending,
-                leading: const Icon(Icons.edit_outlined),
+                leading: const WenyouIcon(WenyouIconIds.actionEdit),
                 title: const Text('编辑'),
                 onTap: pending
                     ? null
@@ -57,7 +58,7 @@ Future<PostCardAction?> showPostCardActionSheet({
             if (canDelete)
               ListTile(
                 enabled: !pending,
-                leading: const Icon(Icons.delete_outline_rounded),
+                leading: const WenyouIcon(WenyouIconIds.actionDelete),
                 title: const Text('删除'),
                 onTap: pending
                     ? null
@@ -65,7 +66,7 @@ Future<PostCardAction?> showPostCardActionSheet({
               ),
             if (canReport)
               ListTile(
-                leading: const Icon(Icons.flag_outlined),
+                leading: const WenyouIcon(WenyouIconIds.actionReport),
                 title: const Text('举报'),
                 onTap: () => Navigator.pop(context, PostCardAction.report),
               ),

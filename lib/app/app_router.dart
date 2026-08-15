@@ -127,8 +127,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/moments/:momentId',
         name: 'moment-detail',
-        builder: (context, state) =>
-            MomentDetailPage(momentId: state.pathParameters['momentId']!),
+        pageBuilder: (context, state) => NoTransitionPage<void>(
+          key: state.pageKey,
+          child: MomentDetailPage(momentId: state.pathParameters['momentId']!),
+        ),
       ),
       GoRoute(
         path: '/users/:userId/moments',

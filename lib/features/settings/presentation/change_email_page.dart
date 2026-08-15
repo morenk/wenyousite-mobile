@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
@@ -116,7 +117,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               validator: _validateEmail,
               decoration: const InputDecoration(
                 labelText: '新邮箱',
-                prefixIcon: Icon(Icons.alternate_email_rounded),
+                prefixIcon: WenyouIcon(WenyouIconIds.actionMention),
               ),
             ),
             if (state.failure != null) ...[
@@ -128,7 +129,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               key: const Key('change-email-request-code'),
               label: buttonLabel,
               loadingLabel: '正在发送验证码',
-              icon: Icons.outgoing_mail,
+              icon: WenyouIconIds.actionSend,
               isLoading: state.isRequestingCode,
               onPressed: state.isBusy || state.resendSecondsRemaining > 0
                   ? null
@@ -185,7 +186,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
             decoration: const InputDecoration(
               labelText: '6 位验证码',
               counterText: '',
-              prefixIcon: Icon(Icons.verified_outlined),
+              prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
             ),
           ),
           if (state.failure != null) ...[
@@ -215,7 +216,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
             key: const Key('change-email-verify'),
             label: '确认更换邮箱',
             loadingLabel: '正在更换邮箱',
-            icon: Icons.mark_email_read_outlined,
+            icon: WenyouIconIds.actionMarkRead,
             isLoading: state.isVerifying,
             onPressed: state.isBusy ? null : _verifyCode,
           ),

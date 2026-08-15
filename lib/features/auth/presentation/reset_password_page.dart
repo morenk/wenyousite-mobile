@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/password_recovery_controller.dart';
@@ -135,7 +136,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
                       labelText: '注册邮箱',
-                      prefixIcon: Icon(Icons.alternate_email_rounded),
+                      prefixIcon: WenyouIcon(WenyouIconIds.actionMention),
                     ),
                     validator: _validateEmail,
                   ),
@@ -150,7 +151,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.outgoing_mail),
+                        : const WenyouIcon(WenyouIconIds.actionSend),
                     label: Text(
                       state.isRequestingCode
                           ? '正在发送验证码'
@@ -177,7 +178,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     decoration: const InputDecoration(
                       labelText: '6 位验证码',
                       counterText: '',
-                      prefixIcon: Icon(Icons.verified_outlined),
+                      prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
                     ),
                   ),
                   SizedBox(height: tokens.space16),
@@ -192,7 +193,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     decoration: InputDecoration(
                       labelText: '新密码',
                       helperText: '8–100 位，至少包含一个字母和一个数字',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded),
+                      prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
                       suffixIcon: IconButton(
                         onPressed: state.isBusy
                             ? null
@@ -200,10 +201,10 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                                 () => _obscurePassword = !_obscurePassword,
                               ),
                         tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                        icon: Icon(
+                        icon: WenyouIcon(
                           _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                              ? WenyouIconIds.actionShow
+                              : WenyouIconIds.actionHide,
                         ),
                       ),
                     ),
@@ -224,7 +225,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                         : '两次输入的新密码不一致',
                     decoration: const InputDecoration(
                       labelText: '确认新密码',
-                      prefixIcon: Icon(Icons.lock_reset_rounded),
+                      prefixIcon: WenyouIcon(WenyouIconIds.actionResetPassword),
                     ),
                   ),
                   if (state.failure != null) ...[
@@ -253,7 +254,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     key: const Key('reset-password-submit'),
                     label: '重置密码',
                     loadingLabel: '正在重置密码',
-                    icon: Icons.password_rounded,
+                    icon: WenyouIconIds.securityPassword,
                     isLoading: state.isResetting,
                     onPressed: state.isBusy ? null : _resetPassword,
                   ),

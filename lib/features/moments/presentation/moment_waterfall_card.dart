@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -227,10 +228,10 @@ class _MomentWaterfallLikeButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                WenyouIcon(
                   selected
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
+                      ? WenyouIconIds.actionLike
+                      : WenyouIconIds.actionLike,
                   size: 18,
                   color: selected ? tokens.focus : tokens.mutedText,
                 ),

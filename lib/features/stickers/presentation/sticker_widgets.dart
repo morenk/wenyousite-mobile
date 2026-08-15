@@ -1,10 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -68,7 +69,7 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
                           .read(stickerCollectionControllerProvider.notifier)
                           .load(),
                 tooltip: '刷新收藏',
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
               ),
               IconButton(
                 key: const Key('sticker-picker-manage'),
@@ -78,7 +79,7 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
                   router.pushNamed('me-stickers');
                 },
                 tooltip: '管理收藏',
-                icon: const Icon(Icons.settings_outlined),
+                icon: const WenyouIcon(WenyouIconIds.actionSettings),
               ),
             ],
           ),
@@ -89,7 +90,7 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
             segments: [
               ButtonSegment(
                 value: false,
-                icon: const Icon(Icons.favorite_border_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionLike),
                 label: Text(
                   collection == null
                       ? '收藏'
@@ -98,7 +99,7 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
               ),
               const ButtonSegment(
                 value: true,
-                icon: Icon(Icons.history_rounded),
+                icon: WenyouIcon(WenyouIconIds.statusHistory),
                 label: Text('最近'),
               ),
             ],
@@ -138,13 +139,13 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
     }
     if (state.phase == StickerCollectionPhase.failed) {
       return WenyouEmptyState(
-        icon: Icons.cloud_off_outlined,
+        icon: WenyouIconIds.statusOffline,
         title: '表情收藏没有加载完成',
         message: state.failure?.userMessage ?? '请稍后重试。',
         action: OutlinedButton.icon(
           onPressed: () =>
               ref.read(stickerCollectionControllerProvider.notifier).load(),
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重新加载'),
         ),
       );
@@ -152,8 +153,8 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
     if (shown.isEmpty) {
       return WenyouEmptyState(
         icon: _recent
-            ? Icons.history_toggle_off_rounded
-            : Icons.add_reaction_outlined,
+            ? WenyouIconIds.statusHistory
+            : WenyouIconIds.actionAddReaction,
         title: _recent ? '还没有最近使用' : '还没有收藏表情',
         message: _recent ? '发送过的收藏表情会显示在这里。' : '可在“表情包”从相册添加，或收藏站内图片。',
       );
@@ -206,7 +207,7 @@ class StickerTile extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.image_outlined, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
     );
     return Semantics(
       button: onTap != null,
@@ -222,7 +223,7 @@ class StickerTile extends StatelessWidget {
             children: [
               Padding(
                 padding: EdgeInsets.all(tokens.space8),
-                child: CachedNetworkImage(
+                child: WenyouCachedImage(
                   imageUrl: sticker.asset.thumbnailUrl,
                   fit: BoxFit.contain,
                   placeholder: (_, _) => fallback,
@@ -233,8 +234,8 @@ class StickerTile extends StatelessWidget {
                 Positioned(
                   left: tokens.space4,
                   bottom: tokens.space4,
-                  child: Icon(
-                    Icons.motion_photos_on_outlined,
+                  child: WenyouIcon(
+                    WenyouIconIds.contentMoment,
                     size: 18,
                     color: tokens.focus,
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -111,7 +112,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ],
                   decoration: const InputDecoration(
                     labelText: '邮箱或用户名',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
+                    prefixIcon: WenyouIcon(WenyouIconIds.identityMember),
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (value) => value == null || value.trim().isEmpty
@@ -126,7 +127,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   autofillHints: const [AutofillHints.password],
                   decoration: InputDecoration(
                     labelText: '密码',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                    prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
                     suffixIcon: IconButton(
                       onPressed: state.isSubmitting
                           ? null
@@ -134,10 +135,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               () => _obscurePassword = !_obscurePassword,
                             ),
                       tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                      icon: Icon(
+                      icon: WenyouIcon(
                         _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                            ? WenyouIconIds.actionShow
+                            : WenyouIconIds.actionHide,
                       ),
                     ),
                   ),
@@ -197,7 +198,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   onPressed: state.isSubmitting
                       ? null
                       : () => context.push(AppRouteLocations.moderationAppeals),
-                  icon: const Icon(Icons.gavel_outlined),
+                  icon: const WenyouIcon(WenyouIconIds.moderationDecision),
                   label: const Text('账号被暂停或封禁？查看决定并申诉'),
                 ),
               ],

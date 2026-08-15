@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
@@ -165,10 +166,10 @@ class _UpdatePage extends StatelessWidget {
                 ),
                 child: SizedBox.square(
                   dimension: 64,
-                  child: Icon(
+                  child: WenyouIcon(
                     isRequired
-                        ? Icons.system_update_alt_rounded
-                        : Icons.new_releases_outlined,
+                        ? WenyouIconIds.actionUpdate
+                        : WenyouIconIds.statusNew,
                     size: 32,
                     color: tokens.brand,
                   ),
@@ -231,8 +232,8 @@ class _UpdatePage extends StatelessWidget {
                     ? _busyLabel(action)
                     : '正在打开 TestFlight',
                 icon: update.platform == MobileClientPlatform.android
-                    ? Icons.download_rounded
-                    : Icons.open_in_new_rounded,
+                    ? WenyouIconIds.actionDownload
+                    : WenyouIconIds.actionOpenExternal,
                 isLoading: action.isBusy,
                 onPressed: update.canStartUpdate ? onUpdate : null,
               ),
@@ -288,7 +289,11 @@ class _BuildTransition extends StatelessWidget {
                 '当前 ${update.currentVersion}+${update.currentBuild}',
                 style: textStyle,
               ),
-              Icon(Icons.arrow_forward_rounded, size: 20, color: tokens.brand),
+              WenyouIcon(
+                WenyouIconIds.navigationForward,
+                size: 20,
+                color: tokens.brand,
+              ),
               Text('可用构建 ${update.targetBuild}', style: textStyle),
             ],
           ),
@@ -320,7 +325,7 @@ class _IncompatiblePage extends StatelessWidget {
     final onUpdate = this.onUpdate;
     final statusMessage = action == null ? null : _statusMessage(action);
     return _MessagePage(
-      icon: Icons.system_update_rounded,
+      icon: WenyouIconIds.actionUpdate,
       title: '需要升级温油站',
       message: reason,
       detail: contractVersion == null ? null : '服务端契约：$contractVersion',
@@ -345,7 +350,7 @@ class _IncompatiblePage extends StatelessWidget {
                     label: _buttonLabel(update, action),
                     isLoading: action.isBusy,
                     onPressed: update.canStartUpdate ? onUpdate : null,
-                    icon: Icons.system_update_alt_rounded,
+                    icon: WenyouIconIds.actionUpdate,
                   ),
                 ],
               ),
@@ -368,13 +373,13 @@ class _FailurePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _MessagePage(
-      icon: Icons.cloud_off_rounded,
+      icon: WenyouIconIds.statusOffline,
       title: '暂时连不上温油站',
       message: message,
       detail: requestId == null ? null : '请求 ID：$requestId',
       action: FilledButton.icon(
         onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded),
+        icon: const WenyouIcon(WenyouIconIds.actionRefresh),
         label: const Text('重试'),
       ),
     );
@@ -390,7 +395,7 @@ class _MessagePage extends StatelessWidget {
     this.action,
   });
 
-  final IconData icon;
+  final String icon;
   final String title;
   final String message;
   final String? detail;

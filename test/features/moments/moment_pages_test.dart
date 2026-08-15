@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -144,6 +145,54 @@ void main() {
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
   });
 
+  testWidgets('动态详情按来源返回且直接进入时回到动态列表', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/moments/moment-1',
+      routes: [
+        GoRoute(
+          path: '/moments',
+          name: 'moments',
+          builder: (_, _) => const Scaffold(
+            body: Text('动态列表返回目标', key: Key('moment-back-target')),
+          ),
+        ),
+        GoRoute(
+          path: '/moments/:momentId',
+          name: 'moment-detail',
+          builder: (_, state) =>
+              MomentDetailPage(momentId: state.pathParameters['momentId']!),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('moment-detail-back')), findsOneWidget);
+    final handled = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(handled, isTrue);
+    expect(find.byKey(const Key('moment-back-target')), findsOneWidget);
+
+    unawaited(
+      router.pushNamed(
+        'moment-detail',
+        pathParameters: const {'momentId': 'moment-1'},
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-detail-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('moment-back-target')), findsOneWidget);
+  });
+
   testWidgets('动态详情滚动时顶栏和评论入口保持固定', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 600);
@@ -226,6 +275,13 @@ void main() {
     final editorDock = find.byKey(const Key('moment-comment-editor-dock'));
     tester.view.viewInsets = const FakeViewPadding(bottom: 280);
     await tester.pump();
+    final opaqueSurface = find
+        .descendant(
+          of: find.byType(WenyouInlineComposerDock),
+          matching: find.byType(Material),
+        )
+        .first;
+    expect(tester.getSize(opaqueSurface).height, lessThan(100));
     final firstInsetFrameBottom = tester
         .getBottomRight(find.byKey(const Key('moment-comment-send')))
         .dy;
@@ -349,7 +405,13 @@ void main() {
     expect(gateway.inputs, hasLength(2));
     expect(gateway.inputs[1], same(gateway.inputs[0]));
     expect(find.byKey(const ValueKey('moment-image')), findsOneWidget);
-    expect(find.text('图片 1/9'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('moment-compose-images')),
+        matching: find.text('图片 1/9'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
   });
 

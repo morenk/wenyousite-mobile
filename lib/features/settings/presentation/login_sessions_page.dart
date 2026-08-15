@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
@@ -23,7 +24,7 @@ class LoginSessionsPage extends ConsumerWidget {
           maxWidth: 600,
           child: WenyouPanel(
             child: WenyouEmptyState(
-              icon: Icons.devices_other_outlined,
+              icon: WenyouIconIds.actionDevices,
               title: '登录终端没有加载完成',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: state.failure?.requestId == null
@@ -32,7 +33,7 @@ class LoginSessionsPage extends ConsumerWidget {
               action: OutlinedButton.icon(
                 key: const Key('login-sessions-retry'),
                 onPressed: notifier.load,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重新加载'),
               ),
             ),
@@ -133,7 +134,7 @@ class _ReadyLoginSessions extends StatelessWidget {
             const _CenteredContent(
               child: WenyouPanel(
                 child: WenyouEmptyState(
-                  icon: Icons.devices_other_outlined,
+                  icon: WenyouIconIds.actionDevices,
                   title: '暂无活跃登录终端',
                   message: '下拉刷新后仍为空时，请重新登录以恢复当前终端。',
                 ),
@@ -214,7 +215,10 @@ class _LoginSessionCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(_platformIcon(session.platform), color: tokens.mutedText),
+              WenyouIcon(
+                _platformIcon(session.platform),
+                color: tokens.mutedText,
+              ),
               SizedBox(width: tokens.space12),
               Expanded(
                 child: Wrap(
@@ -262,7 +266,7 @@ class _LoginSessionCard extends StatelessWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.logout_rounded),
+                    : const WenyouIcon(WenyouIconIds.actionLogout),
                 label: Text(isPending ? '正在退出' : '退出此终端'),
               ),
             ),
@@ -332,10 +336,10 @@ String _platformLabel(LoginSessionPlatform platform) => switch (platform) {
   LoginSessionPlatform.unknown => '其他终端登录',
 };
 
-IconData _platformIcon(LoginSessionPlatform platform) => switch (platform) {
-  LoginSessionPlatform.mobile => Icons.smartphone_rounded,
-  LoginSessionPlatform.web => Icons.laptop_rounded,
-  LoginSessionPlatform.unknown => Icons.devices_other_outlined,
+String _platformIcon(LoginSessionPlatform platform) => switch (platform) {
+  LoginSessionPlatform.mobile => WenyouIconIds.securityDeviceMobile,
+  LoginSessionPlatform.web => WenyouIconIds.securityDeviceDesktop,
+  LoginSessionPlatform.unknown => WenyouIconIds.actionDevices,
 };
 
 String _formatTime(DateTime value) {

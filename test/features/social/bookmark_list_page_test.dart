@@ -17,6 +17,7 @@ void main() {
     await tester.pumpWidget(_app(repository, router));
     await tester.pumpAndSettle();
 
+    expect(find.text('稍后继续阅读或参与的内容。'), findsNothing);
     expect(find.text('雾港来信'), findsOneWidget);
     expect(find.textContaining('骰子猫 · Lv.3'), findsOneWidget);
     await tester.tap(find.byKey(const Key('bookmark-thread-thread-1')));

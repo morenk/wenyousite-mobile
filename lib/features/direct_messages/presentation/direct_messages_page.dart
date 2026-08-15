@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -160,10 +161,10 @@ class _DirectConversationList extends StatelessWidget {
           children: [
             WenyouEmptyState(
               icon: state.view == DirectConversationView.archived
-                  ? Icons.inventory_2_outlined
+                  ? WenyouIconIds.statusArchived
                   : state.view == DirectConversationView.requests
-                  ? Icons.mark_email_unread_outlined
-                  : Icons.forum_outlined,
+                  ? WenyouIconIds.actionMarkUnread
+                  : WenyouIconIds.navigationMessages,
               title: switch (state.view) {
                 DirectConversationView.inbox => '暂无私聊会话',
                 DirectConversationView.requests => '暂无消息请求',
@@ -203,7 +204,7 @@ class _DirectConversationList extends StatelessWidget {
               action: TextButton.icon(
                 key: const Key('direct-messages-load-more-retry'),
                 onPressed: onLoadMore,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重试'),
               ),
             );
@@ -216,7 +217,7 @@ class _DirectConversationList extends StatelessWidget {
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.expand_more_rounded),
+                : const WenyouIcon(WenyouIconIds.navigationExpand),
             label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
           );
         },
@@ -356,7 +357,7 @@ class _DirectListFailure extends StatelessWidget {
       maxWidth: 600,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.cloud_off_outlined,
+          icon: WenyouIconIds.statusOffline,
           title: '私聊会话没有加载完成',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
@@ -365,7 +366,7 @@ class _DirectListFailure extends StatelessWidget {
           action: OutlinedButton.icon(
             key: const Key('direct-messages-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),
@@ -385,7 +386,7 @@ class _DirectMessagesUnavailablePage extends StatelessWidget {
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.forum_outlined,
+            icon: WenyouIconIds.navigationMessages,
             title: '私信功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),

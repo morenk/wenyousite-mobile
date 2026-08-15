@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
@@ -26,8 +27,10 @@ class DirectMessageAvatar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(
-        user.isDeactivated ? Icons.person_off_rounded : Icons.person_rounded,
+      child: WenyouIcon(
+        user.isDeactivated
+            ? WenyouIconIds.statusUserUnavailable
+            : WenyouIconIds.identityMember,
         color: tokens.mutedText,
         size: size * 0.5,
       ),
@@ -130,7 +133,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     final supporting = <Widget>[
       if (widget.requestHint != null) ...[
         _ComposerStatusLine(
-          icon: Icons.info_outline_rounded,
+          icon: WenyouIconIds.statusInfo,
           message: widget.requestHint!,
         ),
         SizedBox(height: tokens.space8),
@@ -154,7 +157,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       if (uploadState.failure case final uploadFailure?) ...[
         _ComposerStatusLine(
           key: const Key('direct-message-composer-upload-failure'),
-          icon: Icons.error_outline_rounded,
+          icon: WenyouIconIds.statusError,
           message: uploadFailure.requestId == null
               ? uploadFailure.userMessage
               : '${uploadFailure.userMessage} · 请求 ID：${uploadFailure.requestId}',
@@ -169,7 +172,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       if (failure != null) ...[
         _ComposerStatusLine(
           key: const Key('direct-message-composer-failure'),
-          icon: Icons.error_outline_rounded,
+          icon: WenyouIconIds.statusError,
           message: failure.userMessage,
           error: true,
           onRetry: widget.failedDraft == null || _busy
@@ -204,7 +207,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
               ? null
               : _pickImage,
           tooltip: '添加图片',
-          icon: const Icon(Icons.add_photo_alternate_outlined),
+          icon: const WenyouIcon(WenyouIconIds.actionAddImage),
         ),
       ],
       trailingActions: [
@@ -213,7 +216,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
             key: const Key('direct-message-composer-sticker'),
             onPressed: _disabled ? null : _pickSticker,
             tooltip: '表情',
-            icon: const Icon(Icons.add_reaction_outlined),
+            icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
           ),
       ],
       submitAction: IconButton.filled(
@@ -229,7 +232,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
-            : const Icon(Icons.send_rounded),
+            : const WenyouIcon(WenyouIconIds.actionSend),
       ),
       characterCountText: _showCharacterCount
           ? '${directMessageMaxLength - _controller.text.length}'
@@ -493,7 +496,7 @@ class _ComposerStatusLine extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final String icon;
   final String message;
   final bool error;
   final VoidCallback? onRetry;
@@ -509,7 +512,7 @@ class _ComposerStatusLine extends StatelessWidget {
         : tokens.mutedText;
     return Row(
       children: [
-        Icon(icon, size: 16, color: color),
+        WenyouIcon(icon, size: 16, color: color),
         SizedBox(width: tokens.space4),
         Expanded(
           child: Text(
@@ -527,7 +530,7 @@ class _ComposerStatusLine extends StatelessWidget {
             onPressed: onRetry,
             tooltip: '重试',
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
           ),
         if (onDismiss != null)
           IconButton(
@@ -535,7 +538,7 @@ class _ComposerStatusLine extends StatelessWidget {
             onPressed: onDismiss,
             tooltip: '关闭',
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.close_rounded, size: 18),
+            icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
           ),
       ],
     );
@@ -583,7 +586,7 @@ class _ImagePreview extends StatelessWidget {
             key: const Key('direct-message-composer-remove-image'),
             onPressed: onRemove,
             tooltip: '移除图片',
-            icon: const Icon(Icons.close_rounded, size: 18),
+            icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
           ),
         ],
       ),
@@ -633,7 +636,7 @@ class _UploadProgress extends StatelessWidget {
           onPressed: onCancel,
           tooltip: '取消上传',
           visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.close_rounded, size: 18),
+          icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
         ),
       ],
     );
@@ -760,8 +763,8 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                   onPressed: _showActions,
                   tooltip: widget.failure?.userMessage ?? '发送失败，点按处理',
                   visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    Icons.error_outline_rounded,
+                  icon: WenyouIcon(
+                    WenyouIconIds.statusError,
                     color: Theme.of(context).colorScheme.error,
                     size: 20,
                   ),
@@ -834,7 +837,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                     ),
                                     onPressed: () =>
                                         setState(() => _imageRevealed = true),
-                                    icon: const Icon(Icons.image_outlined),
+                                    icon: const WenyouIcon(
+                                      WenyouIconIds.actionImage,
+                                    ),
                                     label: const Text('点击查看陌生人图片'),
                                   )
                                 else
@@ -882,7 +887,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
             if (widget.message.content != null)
               ListTile(
                 key: ValueKey('direct-message-copy-${widget.message.id}'),
-                leading: const Icon(Icons.content_copy_rounded),
+                leading: const WenyouIcon(WenyouIconIds.actionCopy),
                 title: const Text('复制'),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -894,7 +899,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                 key: ValueKey(
                   'direct-message-save-sticker-${widget.message.id}',
                 ),
-                leading: const Icon(Icons.add_reaction_outlined),
+                leading: const WenyouIcon(WenyouIconIds.actionAddReaction),
                 title: Text(stickerBusy ? '处理中…' : '收藏表情'),
                 onTap: stickerBusy
                     ? null
@@ -906,7 +911,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
             if (widget.canRecall)
               ListTile(
                 key: ValueKey('direct-message-recall-${widget.message.id}'),
-                leading: const Icon(Icons.undo_rounded),
+                leading: const WenyouIcon(WenyouIconIds.actionUndo),
                 title: Text(widget.isRecalling ? '撤回中…' : '撤回'),
                 onTap: widget.isRecalling
                     ? null
@@ -923,7 +928,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                 key: ValueKey(
                   'direct-message-verify-email-${widget.message.id}',
                 ),
-                leading: const Icon(Icons.mark_email_read_outlined),
+                leading: const WenyouIcon(WenyouIconIds.actionMarkRead),
                 title: const Text('验证邮箱'),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -935,7 +940,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                 widget.onRetry != null)
               ListTile(
                 key: ValueKey('direct-message-retry-${widget.message.id}'),
-                leading: const Icon(Icons.refresh_rounded),
+                leading: const WenyouIcon(WenyouIconIds.actionRefresh),
                 title: const Text('重新发送'),
                 subtitle: widget.failure == null
                     ? null
@@ -954,7 +959,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                 widget.onAbandon != null)
               ListTile(
                 key: ValueKey('direct-message-abandon-${widget.message.id}'),
-                leading: const Icon(Icons.delete_outline_rounded),
+                leading: const WenyouIcon(WenyouIconIds.actionDelete),
                 title: const Text('删除失败消息'),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -1013,8 +1018,10 @@ class _OptimisticMediaPlaceholder extends StatelessWidget {
           color: tokens.onBrand.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(tokens.radius12),
         ),
-        child: Icon(
-          isSticker ? Icons.add_reaction_outlined : Icons.image_outlined,
+        child: WenyouIcon(
+          isSticker
+              ? WenyouIconIds.actionAddReaction
+              : WenyouIconIds.actionImage,
           color: tokens.onBrand.withValues(alpha: 0.8),
         ),
       ),
@@ -1061,8 +1068,8 @@ class _MessageImage extends StatelessWidget {
                 dimension: 96,
                 child: ColoredBox(
                   color: tokens.softPanel,
-                  child: Icon(
-                    Icons.broken_image_outlined,
+                  child: WenyouIcon(
+                    WenyouIconIds.statusImageUnavailable,
                     color: tokens.mutedText,
                   ),
                 ),
@@ -1090,8 +1097,8 @@ class _MessageImage extends StatelessWidget {
                   child: WenyouCachedImage(
                     imageUrl: media.url,
                     fit: BoxFit.contain,
-                    errorWidget: (_, _, _) => const Icon(
-                      Icons.broken_image_outlined,
+                    errorWidget: (_, _, _) => const WenyouIcon(
+                      WenyouIconIds.statusImageUnavailable,
                       color: Colors.white,
                       size: 48,
                     ),
@@ -1105,7 +1112,7 @@ class _MessageImage extends StatelessWidget {
                 child: IconButton.filledTonal(
                   onPressed: () => Navigator.pop(dialogContext),
                   tooltip: '关闭大图',
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionClose),
                 ),
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -92,7 +93,7 @@ class _VerificationLoading extends StatelessWidget {
       maxWidth: 480,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.mark_email_unread_outlined,
+          icon: WenyouIconIds.actionMarkUnread,
           title: '正在确认邮箱状态',
           message: '请稍候…',
           action: CircularProgressIndicator(),
@@ -119,14 +120,14 @@ class _VerificationLoadFailure extends StatelessWidget {
       maxWidth: 480,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.cloud_off_outlined,
+          icon: WenyouIconIds.statusOffline,
           title: '邮箱状态没有加载完成',
           message: message,
           detail: requestId == null ? null : '请求 ID：$requestId',
           action: OutlinedButton.icon(
             key: const Key('verify-email-load-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新确认状态'),
           ),
         ),
@@ -183,7 +184,7 @@ class _VerificationForm extends StatelessWidget {
                 onFieldSubmitted: state.isBusy ? null : (_) => onVerify(),
                 decoration: const InputDecoration(
                   labelText: '6 位验证码',
-                  prefixIcon: Icon(Icons.password_rounded),
+                  prefixIcon: WenyouIcon(WenyouIconIds.securityPassword),
                 ),
                 validator: _validateCode,
               ),
@@ -214,7 +215,7 @@ class _VerificationForm extends StatelessWidget {
                 key: const Key('verify-email-submit'),
                 label: '确认验证',
                 loadingLabel: '正在确认',
-                icon: Icons.verified_outlined,
+                icon: WenyouIconIds.statusVerified,
                 isLoading: state.isVerifying,
                 onPressed: state.isBusy ? null : onVerify,
               ),
@@ -224,7 +225,7 @@ class _VerificationForm extends StatelessWidget {
                 onPressed: state.isBusy || state.resendSecondsRemaining > 0
                     ? null
                     : onResend,
-                icon: const Icon(Icons.outgoing_mail),
+                icon: const WenyouIcon(WenyouIconIds.actionSend),
                 label: Text(
                   state.resendSecondsRemaining > 0
                       ? '${state.resendSecondsRemaining} 秒后可重发'
@@ -251,13 +252,13 @@ class _VerifiedContent extends StatelessWidget {
       maxWidth: 480,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.verified_rounded,
+          icon: WenyouIconIds.statusVerified,
           title: '邮箱已验证',
           message: message ?? '当前邮箱已经完成验证，可以继续使用完整功能。',
           action: FilledButton.icon(
             key: const Key('verify-email-finish'),
             onPressed: onFinish,
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const WenyouIcon(WenyouIconIds.navigationBack),
             label: const Text('继续之前的操作'),
           ),
         ),

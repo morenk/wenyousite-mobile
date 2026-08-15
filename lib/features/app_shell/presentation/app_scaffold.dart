@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -93,13 +94,13 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
           },
           destinations: [
             const NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
+              icon: WenyouIcon(WenyouIconIds.navigationHome),
+              selectedIcon: WenyouIcon(WenyouIconIds.navigationHome),
               label: '首页',
             ),
             const NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined),
-              selectedIcon: Icon(Icons.auto_awesome_rounded),
+              icon: WenyouIcon(WenyouIconIds.navigationMoments),
+              selectedIcon: WenyouIcon(WenyouIconIds.navigationMoments),
               label: '动态',
             ),
             const NavigationDestination(
@@ -108,19 +109,13 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               label: '发布',
             ),
             NavigationDestination(
-              icon: _NotificationNavigationIcon(
-                count: unreadCount,
-                selected: false,
-              ),
-              selectedIcon: _NotificationNavigationIcon(
-                count: unreadCount,
-                selected: true,
-              ),
+              icon: _NotificationNavigationIcon(count: unreadCount),
+              selectedIcon: _NotificationNavigationIcon(count: unreadCount),
               label: '消息',
             ),
             const NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
+              icon: WenyouIcon(WenyouIconIds.navigationProfile),
+              selectedIcon: WenyouIcon(WenyouIconIds.navigationProfile),
               label: '我的',
             ),
           ],
@@ -130,7 +125,6 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   }
 
   Future<void> _openPublishMenu(BuildContext context) async {
-    final currentIndex = widget.navigationShell.currentIndex;
     final location = await showModalBottomSheet<String>(
       context: context,
       useSafeArea: true,
@@ -153,20 +147,18 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               ListTile(
                 key: const Key('global-publish-thread'),
                 minTileHeight: tokens.minimumTouchTarget,
-                leading: const Icon(Icons.article_outlined),
+                leading: const WenyouIcon(WenyouIconIds.contentArticle),
                 title: const Text('发布主题帖'),
-                subtitle: Text(currentIndex == 0 ? '当前频道推荐' : '创建可持续讨论的共同创作主题'),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                 onTap: () =>
                     Navigator.pop(context, AppRouteLocations.composeThread),
               ),
               ListTile(
                 key: const Key('global-publish-moment'),
                 minTileHeight: tokens.minimumTouchTarget,
-                leading: const Icon(Icons.auto_awesome_outlined),
+                leading: const WenyouIcon(WenyouIconIds.navigationMoments),
                 title: const Text('发布动态'),
-                subtitle: Text(currentIndex == 1 ? '当前频道推荐' : '分享短文字或最多九张图片'),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                 onTap: () =>
                     Navigator.pop(context, AppRouteLocations.composeMoment),
               ),
@@ -196,20 +188,20 @@ class _PublishNavigationIcon extends StatelessWidget {
           color: tokens.brand,
           borderRadius: BorderRadius.circular(tokens.radius12),
         ),
-        child: Icon(Icons.add_rounded, color: tokens.onBrand, size: 26),
+        child: WenyouIcon(
+          WenyouIconIds.actionAdd,
+          color: tokens.onBrand,
+          size: 26,
+        ),
       ),
     );
   }
 }
 
 class _NotificationNavigationIcon extends StatelessWidget {
-  const _NotificationNavigationIcon({
-    required this.count,
-    required this.selected,
-  });
+  const _NotificationNavigationIcon({required this.count});
 
   final int count;
-  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -217,11 +209,7 @@ class _NotificationNavigationIcon extends StatelessWidget {
       key: const Key('notification-navigation-badge'),
       isLabelVisible: count > 0,
       label: Text(count > 99 ? '99+' : '$count'),
-      child: Icon(
-        selected
-            ? Icons.chat_bubble_rounded
-            : Icons.chat_bubble_outline_rounded,
-      ),
+      child: WenyouIcon(WenyouIconIds.navigationMessages),
     );
   }
 }

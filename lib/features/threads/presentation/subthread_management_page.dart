@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -27,7 +28,7 @@ class SubthreadManagementPage extends ConsumerWidget {
                 state.phase == SubthreadManagementPhase.loading || state.isBusy
                 ? null
                 : () => ref.read(provider.notifier).load(),
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           ),
         ],
       ),
@@ -105,14 +106,14 @@ class _SubthreadsReadyState extends ConsumerWidget {
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.add_rounded),
+                : const WenyouIcon(WenyouIconIds.actionAdd),
             label: const Text('添加子贴'),
           ),
           SizedBox(height: tokens.space16),
           if (bootstrap.items.isEmpty)
             const WenyouPanel(
               child: WenyouEmptyState(
-                icon: Icons.view_list_outlined,
+                icon: WenyouIconIds.contentList,
                 title: '还没有子贴',
                 message: '添加第一条子贴后，它会自动成为固定的默认子贴。',
               ),
@@ -227,8 +228,8 @@ class _SubthreadCard extends ConsumerWidget {
           if (item.isDefault)
             Row(
               children: [
-                Icon(
-                  Icons.push_pin_outlined,
+                WenyouIcon(
+                  WenyouIconIds.statusPinned,
                   size: 18,
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -251,7 +252,7 @@ class _SubthreadCard extends ConsumerWidget {
                 OutlinedButton.icon(
                   key: ValueKey('subthread-edit-${item.id}'),
                   onPressed: state.isBusy ? null : () => _edit(context, ref),
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const WenyouIcon(WenyouIconIds.actionEdit),
                   label: const Text('编辑'),
                 ),
                 IconButton.outlined(
@@ -260,7 +261,7 @@ class _SubthreadCard extends ConsumerWidget {
                   onPressed: state.isBusy || index <= 1
                       ? null
                       : () => ref.read(provider.notifier).move(item.id, -1),
-                  icon: const Icon(Icons.arrow_upward_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.navigationUp),
                 ),
                 IconButton.outlined(
                   key: ValueKey('subthread-down-${item.id}'),
@@ -268,14 +269,14 @@ class _SubthreadCard extends ConsumerWidget {
                   onPressed: state.isBusy || index >= itemCount - 1
                       ? null
                       : () => ref.read(provider.notifier).move(item.id, 1),
-                  icon: const Icon(Icons.arrow_downward_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.navigationDown),
                 ),
                 IconButton.outlined(
                   key: ValueKey('subthread-delete-${item.id}'),
                   tooltip: '删除 ${item.title}',
                   color: Theme.of(context).colorScheme.error,
                   onPressed: state.isBusy ? null : () => _delete(context, ref),
-                  icon: const Icon(Icons.delete_outline_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionDelete),
                 ),
               ],
             ),
@@ -560,13 +561,13 @@ class _SubthreadsFatalState extends StatelessWidget {
       maxWidth: 520,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.view_list_outlined,
+          icon: WenyouIconIds.contentList,
           title: '子贴管理暂时不可用',
           message: failure?.userMessage ?? '请检查网络后重试。',
           action: FilledButton.icon(
             key: const Key('subthread-management-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),

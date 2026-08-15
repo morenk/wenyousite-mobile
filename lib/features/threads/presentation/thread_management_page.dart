@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -207,7 +208,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   : () => context.push(
                       AppRouteLocations.threadTagManagement(widget.threadId),
                     ),
-              icon: const Icon(Icons.sell_outlined),
+              icon: const WenyouIcon(WenyouIconIds.contentTag),
               label: const Text('管理主题标签'),
             ),
             SizedBox(height: tokens.space12),
@@ -218,7 +219,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   : () => context.push(
                       AppRouteLocations.subthreadManagement(widget.threadId),
                     ),
-              icon: const Icon(Icons.view_list_outlined),
+              icon: const WenyouIcon(WenyouIconIds.contentList),
               label: const Text('管理子贴与发帖权限'),
             ),
             SizedBox(height: tokens.space12),
@@ -229,7 +230,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   : () => context.push(
                       AppRouteLocations.threadMemberManagement(widget.threadId),
                     ),
-              icon: const Icon(Icons.groups_2_outlined),
+              icon: const WenyouIcon(WenyouIconIds.identityMembers),
               label: const Text('管理成员与玩家身份'),
             ),
             if (thread.isOwner &&
@@ -267,7 +268,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               key: const Key('thread-management-save'),
               label: '保存修改',
               loadingLabel: '正在保存修改',
-              icon: Icons.save_outlined,
+              icon: WenyouIconIds.actionSave,
               isLoading: state.isSaving,
               onPressed: locked ? null : _save,
             ),
@@ -297,7 +298,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                               dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.delete_forever_outlined),
+                          : const WenyouIcon(WenyouIconIds.actionDelete),
                       label: Text(state.isDeleting ? '正在删除' : '删除这个主题'),
                     ),
                   ],
@@ -502,14 +503,14 @@ class _ManagementFatalState extends StatelessWidget {
     return WenyouPageBody(
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.manage_accounts_outlined,
+          icon: WenyouIconIds.actionAccount,
           title: '主题管理信息没有加载完成',
           message: failureMessage ?? '请检查网络或账号权限后重试。',
           detail: requestId == null ? null : '请求 ID：$requestId',
           action: OutlinedButton.icon(
             key: const Key('thread-management-load-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),

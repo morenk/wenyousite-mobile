@@ -60,7 +60,7 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -68,7 +68,7 @@
 - [x] 重启恢复和当前终端服务端退出闭环通过，失败可重试或明确选择本机退出。
 - [x] 并发 `40101` 只发起一次刷新并轮转双 Token，原请求最多重放一次。
 - [x] 邮箱验证码注册显式发送 mobile 头，双 Token 原子写入并恢复受保护目标。
-- [x] 登录、注册在 360、400、600dp 宽度无溢出，保留 Widget Key、无障碍错误语义和 48dp 主操作。
+- [x] 登录、注册在 360、400、600dp 宽度无溢出，输入框语义图标保持默认 20dp 并在 48dp 前缀区域居中，同时保留 Widget Key、无障碍错误语义和 48dp 主操作。
 - [x] `40107` 保留只读会话，验证入口、反枚举重发、专用错误、服务端事实刷新和原目标恢复正确。
 - [ ] 撤销与锁定进入正确状态。
 - [x] 注销要求固定短语和二次确认，远端成功后清除本机双 Token，局部清理失败不会重放破坏性端点。
@@ -84,8 +84,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；Markdown v2；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`。
+契约 `4.10.0-dev.20260814.1`；Markdown v2；后端 `90a33279f6f786685567a27ced11dd7470620cad`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/main.dart`、`lib/core/network/session_remote.dart`；登录后验证由 `email_verification_*` 状态机、适配器和页面承载，找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/main.dart`、`lib/core/network/session_remote.dart`；登录后验证由 `email_verification_*` 状态机、适配器和页面承载，找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

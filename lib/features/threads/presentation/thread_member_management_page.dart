@@ -1,10 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -30,7 +31,7 @@ class ThreadMemberManagementPage extends ConsumerWidget {
                     state.isUpdating
                 ? null
                 : () => ref.read(provider.notifier).load(),
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           ),
         ],
       ),
@@ -109,7 +110,7 @@ class _MembersReadyState extends ConsumerWidget {
           if (bootstrap.members.isEmpty)
             const WenyouPanel(
               child: WenyouEmptyState(
-                icon: Icons.group_off_outlined,
+                icon: WenyouIconIds.statusGroupUnavailable,
                 title: '还没有参与人',
                 message: '用户回复主题后，会自动进入这里的候选池。',
               ),
@@ -204,7 +205,7 @@ class _MemberCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded),
+                  const WenyouIcon(WenyouIconIds.navigationNext),
                 ],
               ),
             ),
@@ -217,13 +218,14 @@ class _MemberCard extends ConsumerWidget {
               _MemberBadge(
                 label: member.role.label,
                 icon: switch (member.role) {
-                  ThreadMemberManagementRole.owner => Icons.workspace_premium,
+                  ThreadMemberManagementRole.owner =>
+                    WenyouIconIds.statusPremium,
                   ThreadMemberManagementRole.collaborator =>
-                    Icons.shield_outlined,
+                    WenyouIconIds.statusShield,
                   ThreadMemberManagementRole.participant =>
-                    Icons.person_outline_rounded,
+                    WenyouIconIds.identityMember,
                   ThreadMemberManagementRole.unknown =>
-                    Icons.help_outline_rounded,
+                    WenyouIconIds.statusHelp,
                 },
                 accent:
                     member.role == ThreadMemberManagementRole.owner ||
@@ -232,7 +234,7 @@ class _MemberCard extends ConsumerWidget {
               if (member.playerMarked)
                 const _MemberBadge(
                   label: '玩家',
-                  icon: Icons.theater_comedy_outlined,
+                  icon: WenyouIconIds.contentRoleplay,
                   accent: true,
                 ),
             ],
@@ -268,10 +270,10 @@ class _MemberCard extends ConsumerWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Icon(
+                      : WenyouIcon(
                           member.playerMarked
-                              ? Icons.person_remove_alt_1_outlined
-                              : Icons.person_add_alt_1_outlined,
+                              ? WenyouIconIds.actionUnfollow
+                              : WenyouIconIds.actionFollow,
                         ),
                   label: Text(member.playerMarked ? '收回玩家' : '标记玩家'),
                 ),
@@ -291,11 +293,11 @@ class _MemberCard extends ConsumerWidget {
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(
+                        : WenyouIcon(
                             member.role ==
                                     ThreadMemberManagementRole.collaborator
-                                ? Icons.shield_outlined
-                                : Icons.shield_rounded,
+                                ? WenyouIconIds.statusShield
+                                : WenyouIconIds.statusShield,
                           ),
                     label: Text(
                       member.role == ThreadMemberManagementRole.collaborator
@@ -372,7 +374,7 @@ class _MemberAvatar extends StatelessWidget {
         dimension: 44,
         child: !validAvatar
             ? fallback
-            : CachedNetworkImage(
+            : WenyouCachedImage(
                 imageUrl: member.avatarUrl!,
                 fit: BoxFit.cover,
                 placeholder: (_, _) => fallback,
@@ -391,7 +393,7 @@ class _MemberBadge extends StatelessWidget {
   });
 
   final String label;
-  final IconData icon;
+  final String icon;
   final bool accent;
 
   @override
@@ -411,7 +413,7 @@ class _MemberBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16),
+            WenyouIcon(icon, size: 16),
             SizedBox(width: tokens.space4),
             Text(label, style: Theme.of(context).textTheme.labelMedium),
           ],
@@ -432,7 +434,7 @@ class _MembersFatalState extends StatelessWidget {
     return WenyouPageBody(
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.group_off_outlined,
+          icon: WenyouIconIds.statusGroupUnavailable,
           title: '成员列表没有加载完成',
           message: failure?.userMessage ?? '请检查网络或管理权限后重试。',
           detail: failure?.requestId == null
@@ -441,7 +443,7 @@ class _MembersFatalState extends StatelessWidget {
           action: OutlinedButton.icon(
             key: const Key('thread-members-load-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),

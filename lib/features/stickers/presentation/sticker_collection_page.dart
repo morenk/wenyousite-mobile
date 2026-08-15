@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -37,7 +38,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
           maxWidth: 680,
           child: WenyouPanel(
             child: WenyouEmptyState(
-              icon: Icons.cloud_off_outlined,
+              icon: WenyouIconIds.statusOffline,
               title: '表情收藏没有加载完成',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: state.failure?.requestId == null
@@ -46,7 +47,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
               action: OutlinedButton.icon(
                 key: const Key('stickers-retry'),
                 onPressed: notifier.load,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重新加载'),
               ),
             ),
@@ -166,8 +167,8 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Icon(
-                                    Icons.add_photo_alternate_outlined,
+                                : const WenyouIcon(
+                                    WenyouIconIds.actionAddImage,
                                   ),
                             label: Text(uploadState.isBusy ? '处理中' : '从相册添加'),
                           ),
@@ -214,7 +215,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                 if (collection.items.isEmpty)
                   const WenyouPanel(
                     child: WenyouEmptyState(
-                      icon: Icons.add_reaction_outlined,
+                      icon: WenyouIconIds.actionAddReaction,
                       title: '还没有收藏表情',
                       message: '从相册添加一张图片，或在帖子与私聊图片旁点按收藏。',
                     ),
@@ -338,7 +339,7 @@ class _StickerListTile extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.image_outlined, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
     );
     return Column(
       children: [
@@ -369,14 +370,14 @@ class _StickerListTile extends StatelessWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.delete_outline_rounded),
+                    : const WenyouIcon(WenyouIconIds.actionDelete),
               ),
               ReorderableDragStartListener(
                 index: index,
                 enabled: !disabled,
                 child: const Padding(
                   padding: EdgeInsets.all(12),
-                  child: Icon(Icons.drag_handle_rounded),
+                  child: WenyouIcon(WenyouIconIds.actionReorder),
                 ),
               ),
             ],
@@ -399,7 +400,7 @@ class _StickersUnavailablePage extends StatelessWidget {
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.add_reaction_outlined,
+            icon: WenyouIconIds.actionAddReaction,
             title: '表情包功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),

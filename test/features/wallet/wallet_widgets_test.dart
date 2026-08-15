@@ -49,7 +49,7 @@ void main() {
     expect(repository.checkInCalls, 1);
   });
 
-  testWidgets('加油弹窗校验输入并展示服务端实际到账结果', (tester) async {
+  testWidgets('加油弹窗校验输入并只确认本次加油金额', (tester) async {
     final repository = _WidgetWalletRepository();
     final invalidatedUserIds = <String?>[];
     final container = ProviderContainer(
@@ -84,6 +84,8 @@ void main() {
     );
     await tester.tap(find.text('加油'));
     await tester.pumpAndSettle();
+    expect(find.textContaining('平台保留'), findsNothing);
+    expect(find.textContaining('85%'), findsNothing);
     await tester.enterText(find.byKey(const Key('tip-amount')), '1');
     await tester.tap(find.byKey(const Key('tip-submit')));
     await tester.pumpAndSettle();
@@ -96,7 +98,8 @@ void main() {
     expect(repository.tipCalls, 1);
     expect(repository.lastAmount, '10');
     expect(invalidatedUserIds, ['recipient-1']);
-    expect(find.textContaining('对方到账 8 升'), findsOneWidget);
+    expect(find.text('已加油 10 升'), findsOneWidget);
+    expect(find.textContaining('对方到账'), findsNothing);
   });
 }
 

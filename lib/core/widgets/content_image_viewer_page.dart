@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
@@ -58,7 +59,7 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
                   value: _ContentImageAction.saveSticker,
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.add_reaction_outlined),
+                    leading: WenyouIcon(WenyouIconIds.actionAddReaction),
                     title: Text('添加到表情收藏'),
                   ),
                 ),
@@ -151,7 +152,7 @@ class _UnavailableContentImage extends StatelessWidget {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.broken_image_outlined),
+          WenyouIcon(WenyouIconIds.statusImageUnavailable),
           SizedBox(height: 8),
           Text('原图加载失败，请检查网络后返回重试', textAlign: TextAlign.center),
         ],

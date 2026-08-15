@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
 class SecurityPasswordField extends StatefulWidget {
   const SecurityPasswordField({
@@ -45,16 +46,14 @@ class _SecurityPasswordFieldState extends State<SecurityPasswordField> {
       decoration: InputDecoration(
         labelText: widget.label,
         helperText: widget.helperText,
-        prefixIcon: const Icon(Icons.lock_outline_rounded),
+        prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
         suffixIcon: IconButton(
           onPressed: widget.enabled
               ? () => setState(() => _obscureText = !_obscureText)
               : null,
           tooltip: _obscureText ? '显示密码' : '隐藏密码',
-          icon: Icon(
-            _obscureText
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
+          icon: WenyouIcon(
+            _obscureText ? WenyouIconIds.actionShow : WenyouIconIds.actionHide,
           ),
         ),
       ),

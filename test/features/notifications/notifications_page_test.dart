@@ -81,8 +81,9 @@ void main() {
       find.byKey(const Key('notification-open-direct-messages')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('4 条未读 · 0 个待处理请求'), findsOneWidget);
+    expect(find.textContaining('4 条未读'), findsNothing);
     expect(find.text('暂无私聊会话'), findsOneWidget);
+    expect(find.textContaining('公开主页发起私聊'), findsNothing);
   });
 
   testWidgets('筛选、全部已读、删除和局部错误均可操作', (tester) async {
@@ -122,6 +123,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.removedIds, ['notification-1']);
     expect(find.text('这个分类暂无通知'), findsOneWidget);
+    expect(find.text('可以切换其他分类继续查看。'), findsNothing);
   });
 
   testWidgets('删除目标安全提示，动态目标进入稳定详情路径', (tester) async {

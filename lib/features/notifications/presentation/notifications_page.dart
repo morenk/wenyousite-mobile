@@ -1,12 +1,13 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
@@ -62,7 +63,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       dimension: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.done_all_rounded, size: 19),
+                  : const WenyouIcon(WenyouIconIds.actionMarkRead, size: 19),
               label: const Text('全部已读'),
             ),
         ],
@@ -187,14 +188,14 @@ class _MessageSectionBar extends StatelessWidget {
             segments: [
               ButtonSegment(
                 value: _MessageSection.notifications,
-                icon: const Icon(Icons.notifications_none_rounded),
+                icon: const WenyouIcon(WenyouIconIds.statusNotifications),
                 label: Text(
                   notificationUnread == 0 ? '通知' : '通知 $notificationUnread',
                 ),
               ),
               ButtonSegment(
                 value: _MessageSection.directMessages,
-                icon: const Icon(Icons.forum_outlined),
+                icon: const WenyouIcon(WenyouIconIds.navigationMessages),
                 label: Text(
                   directUnread == 0 ? '私信' : '私信 $directUnread',
                   key: const Key('notification-open-direct-messages'),
@@ -242,7 +243,7 @@ class _NotificationSection extends StatelessWidget {
               maxWidth: 600,
               child: WenyouPanel(
                 child: WenyouEmptyState(
-                  icon: Icons.cloud_off_outlined,
+                  icon: WenyouIconIds.statusOffline,
                   title: '通知列表没有加载完成',
                   message: state.failure?.userMessage ?? '请稍后重试。',
                   detail: state.failure?.requestId == null
@@ -251,7 +252,7 @@ class _NotificationSection extends StatelessWidget {
                   action: OutlinedButton.icon(
                     key: const Key('notification-list-retry'),
                     onPressed: notifier.load,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                     label: const Text('重新加载'),
                   ),
                 ),
@@ -291,7 +292,7 @@ class _NotificationLoginPrompt extends StatelessWidget {
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.chat_bubble_outline_rounded,
+            icon: WenyouIconIds.metricComments,
             title: '登录后查看消息',
             message: '通知、私信请求和未读会话会集中显示在这里。',
             action: FilledButton.icon(
@@ -300,7 +301,7 @@ class _NotificationLoginPrompt extends StatelessWidget {
                 'login',
                 queryParameters: const {'returnTo': '/notifications'},
               ),
-              icon: const Icon(Icons.login_rounded),
+              icon: const WenyouIcon(WenyouIconIds.actionLogin),
               label: const Text('去登录'),
             ),
           ),
@@ -428,13 +429,11 @@ class _ReadyNotificationList extends StatelessWidget {
           if (state.items.isEmpty)
             _Centered(
               child: WenyouEmptyState(
-                icon: Icons.notifications_none_rounded,
+                icon: WenyouIconIds.statusNotifications,
                 title: state.filter == NotificationFilter.all
                     ? '暂无通知'
                     : '这个分类暂无通知',
-                message: state.filter == NotificationFilter.all
-                    ? '新的回复、提及、关注等会出现在这里。'
-                    : '可以切换其他分类继续查看。',
+                message: '',
               ),
             )
           else
@@ -464,7 +463,7 @@ class _ReadyNotificationList extends StatelessWidget {
                 action: TextButton.icon(
                   key: const Key('notification-load-more-retry'),
                   onPressed: state.isBusy ? null : onLoadMore,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
                   label: const Text('重试'),
                 ),
               ),
@@ -482,7 +481,7 @@ class _ReadyNotificationList extends StatelessWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.expand_more_rounded),
+                      : const WenyouIcon(WenyouIconIds.navigationExpand),
                   label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
                 ),
               ),
@@ -587,7 +586,7 @@ class _NotificationCard extends StatelessWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.close_rounded, size: 20),
+                      : const WenyouIcon(WenyouIconIds.actionClose, size: 20),
                 ),
               ],
             ),
@@ -609,8 +608,8 @@ class _NotificationLeading extends StatelessWidget {
     final actor = item.actor;
     final fallback = ColoredBox(
       color: item.isRead ? tokens.softPanel : tokens.panel,
-      child: Icon(
-        actor == null ? _kindIcon(item.kind) : Icons.person_rounded,
+      child: WenyouIcon(
+        actor == null ? _kindIcon(item.kind) : WenyouIconIds.identityMember,
         size: 21,
         color: item.isRead ? tokens.mutedText : tokens.focus,
       ),
@@ -620,9 +619,11 @@ class _NotificationLeading extends StatelessWidget {
         dimension: 40,
         child: actor?.avatarUrl == null
             ? fallback
-            : CachedNetworkImage(
+            : WenyouCachedImage(
                 imageUrl: actor!.avatarUrl!,
                 fit: BoxFit.cover,
+                cacheWidth: 40,
+                cacheHeight: 40,
                 placeholder: (_, _) => fallback,
                 errorWidget: (_, _, _) => fallback,
               ),
@@ -642,17 +643,17 @@ class _Centered extends StatelessWidget {
   }
 }
 
-IconData _kindIcon(NotificationKind kind) => switch (kind) {
-  NotificationKind.reply => Icons.chat_bubble_outline_rounded,
-  NotificationKind.mention => Icons.alternate_email_rounded,
-  NotificationKind.newPost => Icons.post_add_rounded,
-  NotificationKind.threadCreated => Icons.note_add_outlined,
-  NotificationKind.follow => Icons.person_add_alt_rounded,
-  NotificationKind.like => Icons.favorite_border_rounded,
-  NotificationKind.tip => Icons.redeem_rounded,
-  NotificationKind.levelUp => Icons.trending_up_rounded,
-  NotificationKind.system => Icons.campaign_outlined,
-  NotificationKind.unknown => Icons.notifications_none_rounded,
+String _kindIcon(NotificationKind kind) => switch (kind) {
+  NotificationKind.reply => WenyouIconIds.metricComments,
+  NotificationKind.mention => WenyouIconIds.actionMention,
+  NotificationKind.newPost => WenyouIconIds.actionAddComment,
+  NotificationKind.threadCreated => WenyouIconIds.contentThread,
+  NotificationKind.follow => WenyouIconIds.actionFollow,
+  NotificationKind.like => WenyouIconIds.actionLike,
+  NotificationKind.tip => WenyouIconIds.actionRedeem,
+  NotificationKind.levelUp => WenyouIconIds.statusTrending,
+  NotificationKind.system => WenyouIconIds.contentAnnouncement,
+  NotificationKind.unknown => WenyouIconIds.statusNotifications,
 };
 
 String _relativeTime(DateTime value) {

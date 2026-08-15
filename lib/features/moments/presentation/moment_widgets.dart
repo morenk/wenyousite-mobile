@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -133,15 +133,15 @@ class MomentCardTile extends StatelessWidget {
                 _MomentCountAction(
                   key: Key('moment-like-${moment.id}'),
                   icon: moment.viewerLiked
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
+                      ? WenyouIconIds.actionLike
+                      : WenyouIconIds.actionLike,
                   label: '${moment.likeCount}',
                   selected: moment.viewerLiked,
                   onPressed: busy ? null : onLike,
                   tooltip: moment.viewerLiked ? '取消点赞' : '点赞',
                 ),
                 _MomentCountAction(
-                  icon: Icons.chat_bubble_outline_rounded,
+                  icon: WenyouIconIds.metricComments,
                   label: '${moment.commentCount}',
                   onPressed: onTap,
                   tooltip: '查看评论',
@@ -150,10 +150,10 @@ class MomentCardTile extends StatelessWidget {
                   key: Key('moment-bookmark-${moment.id}'),
                   onPressed: busy ? null : onBookmark,
                   tooltip: moment.viewerBookmarked ? '取消收藏' : '收藏',
-                  icon: Icon(
+                  icon: WenyouIcon(
                     moment.viewerBookmarked
-                        ? Icons.bookmark_rounded
-                        : Icons.bookmark_border_rounded,
+                        ? WenyouIconIds.actionBookmark
+                        : WenyouIconIds.actionBookmark,
                     color: moment.viewerBookmarked ? tokens.focus : null,
                   ),
                 ),
@@ -287,8 +287,8 @@ class MomentAvatar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(
-        Icons.person_rounded,
+      child: WenyouIcon(
+        WenyouIconIds.identityMember,
         size: size * 0.55,
         color: tokens.mutedText,
       ),
@@ -301,9 +301,11 @@ class MomentAvatar extends StatelessWidget {
           dimension: size,
           child: author.avatarUrl == null
               ? fallback
-              : CachedNetworkImage(
+              : WenyouCachedImage(
                   imageUrl: author.avatarUrl!,
                   fit: BoxFit.cover,
+                  cacheWidth: size.ceil(),
+                  cacheHeight: size.ceil(),
                   placeholder: (_, _) => fallback,
                   errorWidget: (_, _, _) => fallback,
                 ),
@@ -486,7 +488,7 @@ class _MomentGalleryPage extends StatelessWidget {
       image: true,
       label: '第 ${index + 1} 张动态图片，共 $imageCount 张',
       excludeSemantics: true,
-      child: CachedNetworkImage(
+      child: WenyouCachedImage(
         key: Key('moment-content-image-$index'),
         imageUrl: image.bestContentUrl,
         width: double.infinity,
@@ -500,7 +502,10 @@ class _MomentGalleryPage extends StatelessWidget {
           label: '第 ${index + 1} 张图片加载中',
         ),
         errorWidget: (_, _, _) => _MomentImageStatus(
-          icon: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
+          icon: WenyouIcon(
+            WenyouIconIds.statusImageUnavailable,
+            color: tokens.mutedText,
+          ),
           label: '第 ${index + 1} 张图片加载失败',
           detail: '点按查看原图',
         ),
@@ -611,7 +616,7 @@ class _MomentGalleryViewerState extends State<_MomentGalleryViewer> {
           key: const Key('moment-gallery-close'),
           onPressed: () => Navigator.pop(context),
           tooltip: '关闭图片预览',
-          icon: const Icon(Icons.close_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionClose),
         ),
       ),
       body: GestureDetector(
@@ -702,12 +707,12 @@ class _ZoomableMomentImageState extends State<_ZoomableMomentImage> {
         minScale: 1,
         maxScale: 4,
         child: Center(
-          child: CachedNetworkImage(
+          child: WenyouCachedImage(
             imageUrl: widget.image.url,
             fit: BoxFit.contain,
             placeholder: (_, _) => const CircularProgressIndicator(),
-            errorWidget: (_, _, _) => const Icon(
-              Icons.broken_image_outlined,
+            errorWidget: (_, _, _) => const WenyouIcon(
+              WenyouIconIds.statusImageUnavailable,
               color: Colors.white70,
               size: 48,
             ),
@@ -726,16 +731,20 @@ class MomentCoverImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return CachedNetworkImage(
+    return WenyouCachedImage(
       imageUrl: media.bestFeedUrl,
       fit: BoxFit.cover,
+      cacheWidth: 320,
       placeholder: (_, _) => ColoredBox(
         color: tokens.softPanel,
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
       errorWidget: (_, _, _) => ColoredBox(
         color: tokens.softPanel,
-        child: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
+        child: WenyouIcon(
+          WenyouIconIds.statusImageUnavailable,
+          color: tokens.mutedText,
+        ),
       ),
     );
   }
@@ -751,7 +760,7 @@ class _MomentCountAction extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final String icon;
   final String label;
   final String tooltip;
   final bool selected;
@@ -765,7 +774,7 @@ class _MomentCountAction extends StatelessWidget {
       label: '$tooltip，$label',
       child: TextButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon, size: 20, color: selected ? tokens.focus : null),
+        icon: WenyouIcon(icon, size: 20, color: selected ? tokens.focus : null),
         label: Text(label),
         style: TextButton.styleFrom(
           minimumSize: Size(

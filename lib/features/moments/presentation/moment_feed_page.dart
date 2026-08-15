@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -32,7 +33,7 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
             key: const Key('moment-open-search'),
             onPressed: () => context.pushNamed('search'),
             tooltip: '搜索',
-            icon: const Icon(Icons.search_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionSearch),
           ),
           IconButton(
             key: const Key('moment-open-bookmarks'),
@@ -40,7 +41,7 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
                 ? context.pushNamed('moment-bookmarks')
                 : _openLogin(context, '/moments/bookmarks'),
             tooltip: '动态收藏',
-            icon: const Icon(Icons.bookmarks_outlined),
+            icon: const WenyouIcon(WenyouIconIds.actionBookmark),
           ),
         ],
       ),
@@ -55,12 +56,12 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
                 segments: const [
                   ButtonSegment(
                     value: MomentFeedMode.discover,
-                    icon: Icon(Icons.explore_outlined),
+                    icon: WenyouIcon(WenyouIconIds.navigationExplore),
                     label: Text('发现'),
                   ),
                   ButtonSegment(
                     value: MomentFeedMode.following,
-                    icon: Icon(Icons.people_outline_rounded),
+                    icon: WenyouIcon(WenyouIconIds.identityMembers),
                     label: Text('关注'),
                   ),
                 ],
@@ -82,9 +83,7 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
                     emptyTitle: _mode == MomentFeedMode.discover
                         ? '还没有公开动态'
                         : '关注动态暂时为空',
-                    emptyMessage: _mode == MomentFeedMode.discover
-                        ? '下拉刷新看看，也可以发布第一条动态。'
-                        : '关注更多用户后，他们的新动态会出现在这里。',
+                    emptyMessage: '',
                   ),
           ),
         ],
@@ -225,7 +224,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
             bottom: 80,
             child: WenyouPanel(
               child: WenyouEmptyState(
-                icon: Icons.cloud_off_outlined,
+                icon: WenyouIconIds.statusOffline,
                 title: '动态列表没有加载完成',
                 message: state.failure?.userMessage ?? '请稍后重试。',
                 detail: state.failure?.requestId == null
@@ -234,7 +233,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
                 action: OutlinedButton.icon(
                   key: const Key('moment-feed-retry'),
                   onPressed: () => ref.read(provider.notifier).loadInitial(),
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                   label: const Text('重新加载'),
                 ),
               ),
@@ -252,7 +251,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
             bottom: 80,
             child: WenyouPanel(
               child: WenyouEmptyState(
-                icon: Icons.auto_awesome_outlined,
+                icon: WenyouIconIds.navigationMoments,
                 title: widget.emptyTitle,
                 message: widget.emptyMessage,
               ),
@@ -269,31 +268,36 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
           _feedHorizontalPadding(context),
           0,
         ),
-        sliver: SliverMasonryGrid.count(
-          crossAxisCount: 2,
+        sliver: SliverMasonryGrid(
+          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+          ),
           mainAxisSpacing: context.wenyouTokens.space12,
           crossAxisSpacing: context.wenyouTokens.space12,
-          childCount: state.items.length,
-          itemBuilder: (context, index) {
-            final moment = state.items[index];
-            return MomentWaterfallCard(
-              key: Key('moment-card-${moment.id}'),
-              moment: moment,
-              busy: state.busyMomentIds.contains(moment.id),
-              onTap: () => context.pushNamed(
-                'moment-detail',
-                pathParameters: {'momentId': moment.id},
-              ),
-              onAuthorTap: () => context.pushNamed(
-                'user-profile',
-                pathParameters: {'userId': moment.author.id},
-              ),
-              onLike: () => _authenticatedAction(
-                context,
-                () => ref.read(provider.notifier).toggleLike(moment),
-              ),
-            );
-          },
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final moment = state.items[index];
+              return MomentWaterfallCard(
+                key: Key('moment-card-${moment.id}'),
+                moment: moment,
+                busy: state.busyMomentIds.contains(moment.id),
+                onTap: () => context.pushNamed(
+                  'moment-detail',
+                  pathParameters: {'momentId': moment.id},
+                ),
+                onAuthorTap: () => context.pushNamed(
+                  'user-profile',
+                  pathParameters: {'userId': moment.author.id},
+                ),
+                onLike: () => _authenticatedAction(
+                  context,
+                  () => ref.read(provider.notifier).toggleLike(moment),
+                ),
+              );
+            },
+            childCount: state.items.length,
+            addAutomaticKeepAlives: false,
+          ),
         ),
       ),
       SliverToBoxAdapter(
@@ -310,7 +314,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
                 ? OutlinedButton.icon(
                     key: const Key('moment-load-more'),
                     onPressed: () => ref.read(provider.notifier).loadMore(),
-                    icon: const Icon(Icons.expand_more_rounded),
+                    icon: const WenyouIcon(WenyouIconIds.navigationExpand),
                     label: const Text('加载更多'),
                   )
                 : Text('已经看到这里了', style: Theme.of(context).textTheme.bodySmall),
@@ -427,13 +431,13 @@ class _FollowingLoginState extends StatelessWidget {
       bottom: 80,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.people_outline_rounded,
+          icon: WenyouIconIds.identityMembers,
           title: '登录后查看关注动态',
-          message: '这里会按时间展示你关注用户发布的动态。',
+          message: '',
           action: FilledButton.icon(
             key: const Key('moment-following-login'),
             onPressed: onLogin,
-            icon: const Icon(Icons.login_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionLogin),
             label: const Text('去登录'),
           ),
         ),

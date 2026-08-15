@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -54,8 +55,13 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
         ).showSnackBar(SnackBar(content: Text(next.userMessage)));
       }
     });
-    return Scaffold(
+    final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
+    final scaffold = Scaffold(
       appBar: AppBar(
+        leading: BackButton(
+          key: const Key('moment-detail-back'),
+          onPressed: _leaveDetail,
+        ),
         title: const Text('动态详情'),
         actions: _momentAppBarActions(state, provider),
       ),
@@ -109,7 +115,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   child: MomentContentPadding(
                     top: context.wenyouTokens.space12,
                     child: const WenyouEmptyState(
-                      icon: Icons.chat_bubble_outline_rounded,
+                      icon: WenyouIconIds.metricComments,
                       title: '还没有评论',
                       message: '可以留下第一条评论。',
                     ),
@@ -158,7 +164,9 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                               onPressed: () => ref
                                   .read(provider.notifier)
                                   .loadMoreComments(),
-                              icon: const Icon(Icons.expand_more_rounded),
+                              icon: const WenyouIcon(
+                                WenyouIconIds.navigationExpand,
+                              ),
                               label: const Text('加载更多评论'),
                             ),
                     ),
@@ -182,13 +190,29 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
               key: const Key('moment-comment-dock'),
               label: session.isAuthenticated ? '发表评论…' : '登录后发表评论',
               icon: session.isAuthenticated
-                  ? Icons.chat_bubble_outline_rounded
-                  : Icons.login_rounded,
+                  ? WenyouIconIds.metricComments
+                  : WenyouIconIds.actionLogin,
               onPressed: () => _authenticated(() => _openCommentComposer()),
             )
           : null,
       floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
     );
+    return PopScope<Object?>(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && mounted) context.go(AppRouteLocations.moments);
+      },
+      child: scaffold,
+    );
+  }
+
+  void _leaveDetail() {
+    final navigator = Navigator.maybeOf(context);
+    if (navigator?.canPop() ?? false) {
+      navigator!.pop();
+    } else {
+      context.go(AppRouteLocations.moments);
+    }
   }
 
   List<Widget> _momentAppBarActions(
@@ -230,7 +254,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
             }
           },
           tooltip: '编辑动态',
-          icon: const Icon(Icons.edit_outlined),
+          icon: const WenyouIcon(WenyouIconIds.actionEdit),
         ),
     ];
   }
@@ -273,19 +297,27 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           builder: (context, setSheetState) => Consumer(
             builder: (context, sheetRef, _) {
               final state = sheetRef.watch(provider);
-              return WenyouConstrainedWidth(
-                child: _MomentCommentComposer(
-                  replyTo: currentReplyTo,
-                  isSending: state.isSendingComment,
-                  onCancelReply: () =>
-                      setSheetState(() => currentReplyTo = null),
-                  onClose: () => Navigator.of(sheetContext).pop(),
-                  onSend: (input) async {
-                    final created = await sheetRef
-                        .read(provider.notifier)
-                        .sendComment(input);
-                    return created != null;
-                  },
+              return Align(
+                alignment: Alignment.bottomCenter,
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: _MomentCommentComposer(
+                      replyTo: currentReplyTo,
+                      isSending: state.isSendingComment,
+                      onCancelReply: () =>
+                          setSheetState(() => currentReplyTo = null),
+                      onClose: () => Navigator.of(sheetContext).pop(),
+                      onSend: (input) async {
+                        final created = await sheetRef
+                            .read(provider.notifier)
+                            .sendComment(input);
+                        return created != null;
+                      },
+                    ),
+                  ),
                 ),
               );
             },
@@ -398,8 +430,8 @@ class _MomentDetailPanel extends StatelessWidget {
               child: _DetailAction(
                 key: const Key('moment-detail-like'),
                 icon: card.viewerLiked
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
+                    ? WenyouIconIds.actionLike
+                    : WenyouIconIds.actionLike,
                 label: '${card.likeCount} 点赞',
                 selected: card.viewerLiked,
                 onPressed: busy ? null : onLike,
@@ -409,8 +441,8 @@ class _MomentDetailPanel extends StatelessWidget {
               child: _DetailAction(
                 key: const Key('moment-detail-bookmark'),
                 icon: card.viewerBookmarked
-                    ? Icons.bookmark_rounded
-                    : Icons.bookmark_border_rounded,
+                    ? WenyouIconIds.actionBookmark
+                    : WenyouIconIds.actionBookmark,
                 label: '${card.bookmarkCount} 收藏',
                 selected: card.viewerBookmarked,
                 onPressed: busy ? null : onBookmark,
@@ -418,7 +450,7 @@ class _MomentDetailPanel extends StatelessWidget {
             ),
             Expanded(
               child: _DetailAction(
-                icon: Icons.chat_bubble_outline_rounded,
+                icon: WenyouIconIds.metricComments,
                 label: '${card.commentCount} 评论',
               ),
             ),
@@ -449,7 +481,7 @@ class _DetailAction extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final String icon;
   final String label;
   final bool selected;
   final VoidCallback? onPressed;
@@ -458,7 +490,7 @@ class _DetailAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton.icon(
       onPressed: onPressed,
-      icon: Icon(
+      icon: WenyouIcon(
         icon,
         size: 20,
         color: selected ? context.wenyouTokens.focus : null,
@@ -502,7 +534,7 @@ class _CommentFilters extends StatelessWidget {
               ),
           ],
           child: _CompactFilterButton(
-            icon: Icons.swap_vert_rounded,
+            icon: WenyouIconIds.actionSort,
             label: state.commentOrder == MomentCommentOrder.newest
                 ? '最新在前'
                 : '最早在前',
@@ -512,8 +544,8 @@ class _CommentFilters extends StatelessWidget {
         TextButton.icon(
           key: const Key('moment-comment-author-filter'),
           onPressed: () => _showAuthorFilter(context),
-          icon: Icon(
-            Icons.tune_rounded,
+          icon: WenyouIcon(
+            WenyouIconIds.actionFilter,
             size: 20,
             color: selectedAuthor == null ? tokens.mutedText : tokens.brand,
           ),
@@ -555,7 +587,7 @@ class _CommentFilters extends StatelessWidget {
 class _CompactFilterButton extends StatelessWidget {
   const _CompactFilterButton({required this.icon, required this.label});
 
-  final IconData icon;
+  final String icon;
   final String label;
 
   @override
@@ -568,10 +600,10 @@ class _CompactFilterButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20),
+            WenyouIcon(icon, size: 20),
             SizedBox(width: tokens.space4),
             Text(label),
-            const Icon(Icons.arrow_drop_down_rounded, size: 20),
+            const WenyouIcon(WenyouIconIds.navigationExpand, size: 20),
           ],
         ),
       ),
@@ -659,7 +691,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.subdirectory_arrow_right_rounded),
+                  : const WenyouIcon(WenyouIconIds.actionReply),
               label: Text('查看全部 ${root.replyCount} 条回复'),
             ),
           ),
@@ -746,7 +778,7 @@ class _MomentCommentBody extends StatelessWidget {
                     fit: BoxFit.contain,
                     placeholder: (_, _) => const CircularProgressIndicator(),
                     errorWidget: (_, _, _) =>
-                        const Icon(Icons.broken_image_outlined),
+                        const WenyouIcon(WenyouIconIds.statusImageUnavailable),
                   ),
                 ),
               ),
@@ -917,13 +949,13 @@ class _MomentCommentComposerState
             key: const Key('moment-comment-close'),
             onPressed: uploading || widget.isSending ? null : _requestClose,
             tooltip: '关闭评论编辑器',
-            icon: const Icon(Icons.close_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionClose),
           ),
           IconButton(
             key: const Key('moment-comment-image'),
             onPressed: uploading || widget.isSending ? null : _pickImage,
             tooltip: '添加一张图片',
-            icon: const Icon(Icons.image_outlined),
+            icon: const WenyouIcon(WenyouIconIds.actionImage),
           ),
         ],
         trailingActions: [
@@ -931,7 +963,7 @@ class _MomentCommentComposerState
             key: const Key('moment-comment-sticker'),
             onPressed: uploading || widget.isSending ? null : _pickSticker,
             tooltip: '添加一个表情',
-            icon: const Icon(Icons.add_reaction_outlined),
+            icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
           ),
         ],
         submitAction: IconButton.filled(
@@ -943,7 +975,7 @@ class _MomentCommentComposerState
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.send_rounded),
+              : const WenyouIcon(WenyouIconIds.actionSend),
         ),
         characterCountText: '${_textController.text.length}/500',
       ),
@@ -1066,7 +1098,7 @@ class _SelectedCommentAsset extends StatelessWidget {
             child: IconButton.filledTonal(
               onPressed: onRemove,
               tooltip: '移除附件',
-              icon: const Icon(Icons.close_rounded),
+              icon: const WenyouIcon(WenyouIconIds.actionClose),
             ),
           ),
         ],
@@ -1104,8 +1136,8 @@ class _MomentDetailFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: notFound
-              ? Icons.auto_awesome_outlined
-              : Icons.cloud_off_outlined,
+              ? WenyouIconIds.navigationMoments
+              : WenyouIconIds.statusOffline,
           title: notFound ? '动态不存在' : '动态详情没有加载完成',
           message: notFound
               ? '这条动态可能已被删除或不可见。'
@@ -1118,7 +1150,7 @@ class _MomentDetailFailure extends StatelessWidget {
               : OutlinedButton.icon(
                   key: const Key('moment-detail-retry'),
                   onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                   label: const Text('重新加载'),
                 ),
         ),

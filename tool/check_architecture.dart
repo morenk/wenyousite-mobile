@@ -59,6 +59,8 @@ List<String> collectArchitectureFailures(Directory root) {
     failures,
     root,
   );
+  _checkEditorPublicSurface(dartFiles, failures, root);
+  _checkFoundationIconBoundary(dartFiles, failures, root);
   _checkVersionConsistency(failures, root);
   _checkDirectDependencies(dartFiles, failures, root);
   _checkRawRequestFlags(dartFiles, failures, root);
@@ -66,6 +68,55 @@ List<String> collectArchitectureFailures(Directory root) {
 
   failures.sort();
   return failures;
+}
+
+void _checkFoundationIconBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const forbiddenPatterns = <String, String>{
+    r'\bIcons\.': 'Material Icons.*',
+    r'\bIconData\b': 'Material IconData',
+    r'\bIcon\s*\(': 'Material Icon(...)',
+  };
+  for (final file in files) {
+    final source = file.readAsStringSync();
+    final path = _relative(file.path, root);
+    for (final entry in forbiddenPatterns.entries) {
+      if (RegExp(entry.key).hasMatch(source)) {
+        failures.add(
+          '$path uses ${entry.value}; use Foundation semantic icons',
+        );
+      }
+    }
+  }
+}
+
+void _checkEditorPublicSurface(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const publicEditorSurfaces = <String>{
+    'lib/features/editor/editor.dart',
+    'lib/features/editor/editor_persistence.dart',
+  };
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (!path.startsWith('lib/features/') ||
+        path.startsWith('lib/features/editor/')) {
+      continue;
+    }
+    for (final target in _dependencyTargets(file, root)) {
+      if (target.startsWith('lib/features/editor/') &&
+          !publicEditorSurfaces.contains(target)) {
+        failures.add(
+          '$path imports editor internals $target; use an editor root facade',
+        );
+      }
+    }
+  }
 }
 
 void _checkIdempotentPolicies(

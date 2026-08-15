@@ -49,12 +49,10 @@ class WenyouInlineComposerDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Material(
-      color: tokens.panel,
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Material(
+        color: tokens.panel,
         child: SafeArea(
           top: false,
           child: Padding(

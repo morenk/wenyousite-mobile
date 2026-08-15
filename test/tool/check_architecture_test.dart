@@ -160,6 +160,46 @@ void main() {
 
     expect(collectArchitectureFailures(root), isEmpty);
   });
+
+  test('cross-feature editor consumers must use the public facade', () {
+    const page = 'lib/features/posts/presentation/composer.dart';
+    const internal =
+        'lib/features/editor/presentation/rich_editor_session.dart';
+    _write(root, internal, 'class RichEditorSession {}\n');
+    _write(
+      root,
+      page,
+      "import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';\n",
+    );
+    _writeAllowlist(root, featureDependencies: const ['posts->editor']);
+
+    expect(
+      collectArchitectureFailures(root),
+      contains(
+        '$page imports editor internals $internal; '
+        'use an editor root facade',
+      ),
+    );
+  });
+
+  test('production UI must use Foundation semantic icons', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      'final iconData = IconData(0xe000);\n'
+      'final widget = Icon(Icons.reply);\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path uses Material Icons.*; use Foundation semantic icons',
+        '$path uses Material IconData; use Foundation semantic icons',
+        '$path uses Material Icon(...); use Foundation semantic icons',
+      ]),
+    );
+  });
 }
 
 void _writeAllowlist(

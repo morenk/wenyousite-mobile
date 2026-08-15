@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -87,7 +88,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                 key: const Key('moment-compose-delete'),
                 onPressed: state.isSubmitting ? null : _confirmDelete,
                 tooltip: '删除动态',
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionDelete),
               ),
           ],
         ),
@@ -582,7 +583,7 @@ class _MomentPublishBar extends StatelessWidget {
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.photo_library_outlined),
+                        : const WenyouIcon(WenyouIconIds.contentGallery),
                     label: Text('图片 $imageCount/9'),
                   ),
                   SizedBox(width: tokens.space8),
@@ -592,7 +593,9 @@ class _MomentPublishBar extends StatelessWidget {
                       label: editing ? '保存修改' : '发布动态',
                       loadingLabel: editing ? '正在保存' : '正在发布',
                       isLoading: submitting,
-                      icon: editing ? Icons.save_outlined : Icons.send_rounded,
+                      icon: editing
+                          ? WenyouIconIds.actionSave
+                          : WenyouIconIds.actionSend,
                       onPressed: onPressed,
                     ),
                   ),
@@ -643,7 +646,7 @@ class _MomentImagesEditor extends StatelessWidget {
               key: const Key('moment-compose-add-image'),
               onPressed: onAdd,
               tooltip: '从相册添加图片',
-              icon: const Icon(Icons.add_photo_alternate_outlined),
+              icon: const WenyouIcon(WenyouIconIds.actionAddImage),
             ),
           ),
           if (uploadState.isBusy) ...[
@@ -681,7 +684,7 @@ class _MomentImagesEditor extends StatelessWidget {
           if (images.isEmpty) ...[
             SizedBox(height: tokens.space16),
             const WenyouEmptyState(
-              icon: Icons.photo_library_outlined,
+              icon: WenyouIconIds.contentGallery,
               title: '还没有图片',
               message: '可以发布纯文字动态；添加图片后可指定其中一张为封面。',
             ),
@@ -727,13 +730,13 @@ class _MomentImagesEditor extends StatelessWidget {
                       IconButton(
                         onPressed: () => onRemove(image.mediaId),
                         tooltip: '移除图片 ${index + 1}',
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const WenyouIcon(WenyouIconIds.actionClose),
                       ),
                       ReorderableDragStartListener(
                         index: index,
                         child: const Padding(
                           padding: EdgeInsets.all(12),
-                          child: Icon(Icons.drag_handle_rounded),
+                          child: WenyouIcon(WenyouIconIds.actionReorder),
                         ),
                       ),
                     ],
@@ -774,7 +777,7 @@ class _ComposeFailure extends StatelessWidget {
       maxWidth: 600,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.cloud_off_outlined,
+          icon: WenyouIconIds.statusOffline,
           title: '动态没有加载完成',
           message: failure?.userMessage ?? '请稍后重试。',
           detail: failure?.requestId == null
@@ -783,7 +786,7 @@ class _ComposeFailure extends StatelessWidget {
           action: OutlinedButton.icon(
             key: const Key('moment-compose-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),

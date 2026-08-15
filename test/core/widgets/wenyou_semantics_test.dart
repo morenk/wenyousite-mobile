@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
@@ -49,7 +50,7 @@ void main() {
         theme: AppTheme.light,
         home: const Scaffold(
           body: WenyouEmptyState(
-            icon: Icons.forum_outlined,
+            icon: WenyouIconIds.contentThread,
             title: '暂无主题',
             message: '创建第一个主题开始交流。',
           ),

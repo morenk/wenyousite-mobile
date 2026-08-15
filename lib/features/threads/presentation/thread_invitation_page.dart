@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -71,15 +72,15 @@ class _InvitationReady extends ConsumerWidget {
                   runSpacing: tokens.space8,
                   children: [
                     _InviteFact(
-                      icon: Icons.folder_open_outlined,
+                      icon: WenyouIconIds.contentFolderOpen,
                       label: preview.categorySlug ?? '未分类',
                     ),
                     _InviteFact(
-                      icon: Icons.flag_outlined,
+                      icon: WenyouIconIds.actionReport,
                       label: preview.status.label,
                     ),
                     _InviteFact(
-                      icon: Icons.groups_2_outlined,
+                      icon: WenyouIconIds.identityMembers,
                       label: '${preview.memberCount} 位参与人',
                     ),
                   ],
@@ -89,13 +90,13 @@ class _InvitationReady extends ConsumerWidget {
                   key: const Key('thread-invite-owner'),
                   contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(
-                    child: Icon(Icons.person_outline_rounded),
+                    child: WenyouIcon(WenyouIconIds.identityMember),
                   ),
                   title: Text('楼主 ${preview.ownerName}'),
                   subtitle: Text(
                     '${DateFormat('yyyy-MM-dd').format(preview.createdAt.toLocal())} 创建',
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                  trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                   onTap: () =>
                       context.push(AppRouteLocations.user(preview.ownerId)),
                 ),
@@ -152,7 +153,7 @@ class _InvitationReady extends ConsumerWidget {
               key: const Key('thread-invite-join'),
               label: '接受邀请并加入',
               loadingLabel: '正在加入私密主题',
-              icon: Icons.group_add_outlined,
+              icon: WenyouIconIds.actionAdd,
               isLoading: state.isJoining,
               onPressed: state.isJoining ? null : () => _join(context, ref),
             ),
@@ -191,7 +192,7 @@ class _InvitationReady extends ConsumerWidget {
 class _InviteFact extends StatelessWidget {
   const _InviteFact({required this.icon, required this.label});
 
-  final IconData icon;
+  final String icon;
   final String label;
 
   @override
@@ -211,7 +212,7 @@ class _InviteFact extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16),
+            WenyouIcon(icon, size: 16),
             SizedBox(width: tokens.space4),
             Text(label, style: Theme.of(context).textTheme.labelMedium),
           ],
@@ -237,7 +238,9 @@ class _InvitationFailure extends StatelessWidget {
       maxWidth: 520,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: permanent ? Icons.link_off_rounded : Icons.cloud_off_outlined,
+          icon: permanent
+              ? WenyouIconIds.actionUnlink
+              : WenyouIconIds.statusOffline,
           title: permanent ? '邀请链接无效或已失效' : '邀请信息没有加载完成',
           message: permanent
               ? '请联系主题楼主获取新的私密邀请。'
@@ -249,13 +252,13 @@ class _InvitationFailure extends StatelessWidget {
               ? OutlinedButton.icon(
                   key: const Key('thread-invite-back-home'),
                   onPressed: () => context.go(AppRouteLocations.home),
-                  icon: const Icon(Icons.home_outlined),
+                  icon: const WenyouIcon(WenyouIconIds.navigationHome),
                   label: const Text('返回首页'),
                 )
               : OutlinedButton.icon(
                   key: const Key('thread-invite-load-retry'),
                   onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                   label: const Text('重新加载'),
                 ),
         ),

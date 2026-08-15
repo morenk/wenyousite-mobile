@@ -6,7 +6,7 @@ go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `return
 
 “表情包”使用受保护命名路由 `/me/stickers`，且只有 `meta.capabilities.stickers` 明确开启时才从“我的”、编辑器和私信输入器暴露入口。收藏 ID、资产 ID、导入 ID 与收藏夹版本都由服务端提供；路由只负责登录回跳，页面重新读取当前账号私有收藏，不把列表、图片 URL 或导入状态写入路径。
 
-动态主分支使用 `/moments`，发现流公开，关注流在分支内为游客显示登录回跳。公开详情 `/moments/:momentId`、公开用户动态 `/users/:userId/moments` 只携带服务端稳定 ID；受保护的 `/compose/moment`、`/moments/:momentId/edit` 与 `/moments/bookmarks` 保留完整登录回跳。底栏中央发布动作在四个主分支中稳定打开“发布主题帖 / 发布动态”面板，当前首页或动态分支只改变推荐项。发布/编辑成功后失效信息流和详情，删除成功回动态分支；筛选、评论作者和 cursor 只存在页面状态。
+动态主分支使用 `/moments`，发现流公开，关注流在分支内为游客显示登录回跳。公开详情 `/moments/:momentId`、公开用户动态 `/users/:userId/moments` 只携带服务端稳定 ID；受保护的 `/compose/moment`、`/moments/:momentId/edit` 与 `/moments/bookmarks` 保留完整登录回跳。从信息流、通知、搜索或用户内容入栈进入动态详情时返回真实来源；直接以无来源栈路径进入详情时，系统返回和顶栏返回都回 `/moments`，不能结束 Android 应用进程。底栏中央发布动作在四个主分支中稳定打开“发布主题帖 / 发布动态”面板，当前首页或动态分支只改变推荐项。发布/编辑成功后失效信息流和详情，删除成功回动态分支；筛选、评论作者和 cursor 只存在页面状态。
 
 公开主题详情使用命名路由 `/threads/:threadId`。首页和搜索主题卡片通过主题 ID 入栈进入该路由；系统返回时回到原分支，并保留分支状态。直接以无来源栈路径进入详情时，系统返回和顶栏返回都回 `/home`，不能结束 Android 应用进程。详情工具栏进入公开 `/threads/:threadId/search`，服务端以 OptionalAuth 复核当前主题访问权限，结果仍用稳定 post ID 回详情定位。详情页优先选择响应中的 `defaultSubthreadId`，子贴切换只更新正文与楼层数据源，不把子贴 ID 拼入临时页面路径。服务端 capability 允许时，详情进入受保护命名路由 `/threads/:threadId/manage`，标签、子贴目录和成员身份工作台分别使用 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；四条管理路由都保留完整登录回跳。保存、标签、目录或成员变更成功后返回详情并重读权威投影，删除成功进入 `/home`，未保存表单返回前要求明确放弃。
 

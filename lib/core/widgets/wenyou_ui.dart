@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
@@ -60,41 +59,6 @@ class WenyouPageBody extends StatelessWidget {
   }
 }
 
-typedef WenyouReadingChromeBuilder =
-    Widget Function(BuildContext context, bool actionsVisible);
-
-class WenyouReadingChrome extends StatefulWidget {
-  const WenyouReadingChrome({required this.builder, super.key});
-
-  final WenyouReadingChromeBuilder builder;
-
-  @override
-  State<WenyouReadingChrome> createState() => _WenyouReadingChromeState();
-}
-
-class _WenyouReadingChromeState extends State<WenyouReadingChrome> {
-  var _actionsVisible = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
-    return NotificationListener<UserScrollNotification>(
-      onNotification: (notification) {
-        if (accessibleNavigation ||
-            notification.direction == ScrollDirection.idle) {
-          return false;
-        }
-        final nextVisible = notification.direction == ScrollDirection.forward;
-        if (nextVisible != _actionsVisible) {
-          setState(() => _actionsVisible = nextVisible);
-        }
-        return false;
-      },
-      child: widget.builder(context, accessibleNavigation || _actionsVisible),
-    );
-  }
-}
-
 class WenyouComposerAction extends StatelessWidget {
   const WenyouComposerAction({
     required this.label,
@@ -104,7 +68,7 @@ class WenyouComposerAction extends StatelessWidget {
   });
 
   final String label;
-  final Object icon;
+  final String icon;
   final VoidCallback? onPressed;
 
   @override
@@ -125,7 +89,7 @@ class WenyouComposerAction extends StatelessWidget {
             disabledForegroundColor: tokens.mutedText,
             elevation: 0,
           ),
-          icon: _compatibleIcon(icon, size: 20),
+          icon: WenyouIcon(icon, size: 20),
           label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ),
@@ -306,7 +270,7 @@ class WenyouAsyncPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final String? loadingLabel;
-  final Object? icon;
+  final String? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +294,7 @@ class WenyouAsyncPrimaryButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (icon != null) ...[
-                      _compatibleIcon(icon!, size: 20),
+                      WenyouIcon(icon!, size: 20),
                       SizedBox(width: tokens.space8),
                     ],
                     Text(label),
@@ -352,7 +316,7 @@ class WenyouEmptyState extends StatelessWidget {
     super.key,
   });
 
-  final Object icon;
+  final String icon;
   final String title;
   final String message;
   final String? detail;
@@ -371,7 +335,7 @@ class WenyouEmptyState extends StatelessWidget {
           ),
           child: SizedBox.square(
             dimension: 64,
-            child: _compatibleIcon(icon, size: 32, color: tokens.brand),
+            child: WenyouIcon(icon, size: 32, color: tokens.brand),
           ),
         ),
         SizedBox(height: tokens.space16),
@@ -405,12 +369,4 @@ class WenyouEmptyState extends StatelessWidget {
       ],
     );
   }
-}
-
-Widget _compatibleIcon(Object icon, {double? size, Color? color}) {
-  return switch (icon) {
-    String name => WenyouIcon(name, size: size ?? 24, color: color),
-    IconData data => Icon(data, size: size, color: color),
-    _ => throw ArgumentError.value(icon, 'icon', '必须是语义图标名称或 IconData'),
-  };
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -55,7 +56,7 @@ class ContentDraftsSheet extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.cloud_outlined),
+              const WenyouIcon(WenyouIconIds.statusCloud),
               SizedBox(width: tokens.space12),
               Expanded(
                 child: Column(
@@ -75,7 +76,7 @@ class ContentDraftsSheet extends ConsumerWidget {
               IconButton(
                 tooltip: '关闭正文草稿',
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionClose),
               ),
             ],
           ),
@@ -142,7 +143,7 @@ class _ReadyDrafts extends ConsumerWidget {
                     onPressed: state.isBusy
                         ? null
                         : () => _confirmConflictRetry(context, controller),
-                    icon: const Icon(Icons.sync_rounded),
+                    icon: const WenyouIcon(WenyouIconIds.actionSync),
                     label: const Text('用当前正文覆盖最新版'),
                   ),
           ),
@@ -179,7 +180,7 @@ class _ReadyDrafts extends ConsumerWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.save_outlined),
+                      : const WenyouIcon(WenyouIconIds.actionSave),
                   label: const Text('保存到下一空位'),
                 ),
               ),
@@ -333,7 +334,7 @@ class _DraftSlotCard extends ConsumerWidget {
                       onPressed: state.isBusy
                           ? null
                           : () => _restore(context, ref, item),
-                      icon: const Icon(Icons.restore_rounded),
+                      icon: const WenyouIcon(WenyouIconIds.actionRestore),
                       label: const Text('恢复'),
                     ),
                     TextButton.icon(
@@ -341,7 +342,7 @@ class _DraftSlotCard extends ConsumerWidget {
                       onPressed: !canSave || state.isBusy
                           ? null
                           : () => _overwrite(context, ref, item),
-                      icon: const Icon(Icons.save_as_outlined),
+                      icon: const WenyouIcon(WenyouIconIds.actionSaveAll),
                       label: const Text('覆盖'),
                     ),
                     TextButton.icon(
@@ -349,7 +350,7 @@ class _DraftSlotCard extends ConsumerWidget {
                       onPressed: state.isBusy
                           ? null
                           : () => _delete(context, ref, item),
-                      icon: const Icon(Icons.delete_outline_rounded),
+                      icon: const WenyouIcon(WenyouIconIds.actionDelete),
                       label: const Text('删除'),
                     ),
                   ],
@@ -490,7 +491,7 @@ class _LoadFailure extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(context.wenyouTokens.space24),
         child: WenyouEmptyState(
-          icon: Icons.cloud_off_outlined,
+          icon: WenyouIconIds.statusOffline,
           title: '正文草稿没有加载完成',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null

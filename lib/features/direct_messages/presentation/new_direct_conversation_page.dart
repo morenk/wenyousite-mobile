@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -155,13 +156,13 @@ class _TargetReady extends StatelessWidget {
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.comments_disabled_outlined,
+            icon: WenyouIconIds.statusMessagesDisabled,
             title: copy.title,
             message: copy.description,
             action: OutlinedButton.icon(
               key: const Key('direct-message-new-return-user'),
               onPressed: onReturnToUser,
-              icon: const Icon(Icons.arrow_back_rounded),
+              icon: const WenyouIcon(WenyouIconIds.navigationBack),
               label: const Text('返回用户主页'),
             ),
           ),
@@ -233,8 +234,8 @@ class _TargetReady extends StatelessWidget {
                 child: WenyouPanel(
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.waving_hand_outlined,
+                      WenyouIcon(
+                        WenyouIconIds.statusGreeting,
                         size: 36,
                         color: tokens.brand,
                       ),
@@ -284,8 +285,8 @@ class _TargetFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: state.failure?.httpStatus == 404
-              ? Icons.person_off_outlined
-              : Icons.cloud_off_outlined,
+              ? WenyouIconIds.statusUserUnavailable
+              : WenyouIconIds.statusOffline,
           title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态没有加载完成',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
@@ -294,7 +295,7 @@ class _TargetFailure extends StatelessWidget {
           action: OutlinedButton.icon(
             key: const Key('direct-message-new-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),
@@ -314,7 +315,7 @@ class _NewConversationUnavailablePage extends StatelessWidget {
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.comments_disabled_outlined,
+            icon: WenyouIconIds.statusMessagesDisabled,
             title: '私信功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),

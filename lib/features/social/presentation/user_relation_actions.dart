@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
@@ -19,49 +20,53 @@ class UserRelationActions extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: tokens.space8,
-          runSpacing: tokens.space8,
+        Row(
           children: [
-            state.isFollowing
-                ? OutlinedButton.icon(
-                    key: const Key('user-relation-follow'),
-                    onPressed: state.isPending
-                        ? null
-                        : () => _toggleFollow(context, notifier),
-                    icon: _actionIcon(
-                      pending: state.pendingAction == UserRelationAction.follow,
-                      fallback: Icons.person_remove_alt_1_outlined,
+            Expanded(
+              child: state.isFollowing
+                  ? OutlinedButton.icon(
+                      key: const Key('user-relation-follow'),
+                      onPressed: state.isPending
+                          ? null
+                          : () => _toggleFollow(context, notifier),
+                      icon: _actionIcon(
+                        pending:
+                            state.pendingAction == UserRelationAction.follow,
+                        fallback: WenyouIconIds.actionUnfollow,
+                      ),
+                      label: const Text('已关注'),
+                    )
+                  : FilledButton.icon(
+                      key: const Key('user-relation-follow'),
+                      onPressed: state.isPending
+                          ? null
+                          : () => _toggleFollow(context, notifier),
+                      icon: _actionIcon(
+                        pending:
+                            state.pendingAction == UserRelationAction.follow,
+                        fallback: WenyouIconIds.actionFollow,
+                      ),
+                      label: const Text('关注'),
                     ),
-                    label: const Text('已关注'),
-                  )
-                : FilledButton.icon(
-                    key: const Key('user-relation-follow'),
-                    onPressed: state.isPending
-                        ? null
-                        : () => _toggleFollow(context, notifier),
-                    icon: _actionIcon(
-                      pending: state.pendingAction == UserRelationAction.follow,
-                      fallback: Icons.person_add_alt_1_rounded,
-                    ),
-                    label: const Text('关注'),
-                  ),
-            OutlinedButton.icon(
-              key: const Key('user-relation-block'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            SizedBox(width: tokens.space8),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('user-relation-block'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: state.isPending
+                    ? null
+                    : () => _toggleBlock(context, notifier, state.isBlocked),
+                icon: _actionIcon(
+                  pending: state.pendingAction == UserRelationAction.block,
+                  fallback: state.isBlocked
+                      ? WenyouIconIds.actionUnlock
+                      : WenyouIconIds.actionBlock,
+                ),
+                label: Text(state.isBlocked ? '取消拉黑' : '拉黑'),
               ),
-              onPressed: state.isPending
-                  ? null
-                  : () => _toggleBlock(context, notifier, state.isBlocked),
-              icon: _actionIcon(
-                pending: state.pendingAction == UserRelationAction.block,
-                fallback: state.isBlocked
-                    ? Icons.lock_open_rounded
-                    : Icons.block_rounded,
-              ),
-              label: Text(state.isBlocked ? '取消拉黑' : '拉黑'),
             ),
           ],
         ),
@@ -79,13 +84,13 @@ class UserRelationActions extends ConsumerWidget {
     );
   }
 
-  Widget _actionIcon({required bool pending, required IconData fallback}) {
+  Widget _actionIcon({required bool pending, required String fallback}) {
     return pending
         ? const SizedBox.square(
             dimension: 18,
             child: CircularProgressIndicator(strokeWidth: 2),
           )
-        : Icon(fallback);
+        : WenyouIcon(fallback);
   }
 
   Future<void> _toggleFollow(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_cache_invalidation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -97,7 +98,7 @@ class WenyouTipButton extends ConsumerWidget {
           onSuccess: onSuccess,
         ),
         tooltip: '加油',
-        icon: const Icon(Icons.local_gas_station_outlined),
+        icon: const WenyouIcon(WenyouIconIds.actionTip),
       );
     }
     final button = OutlinedButton.icon(
@@ -109,7 +110,7 @@ class WenyouTipButton extends ConsumerWidget {
         returnTo: returnTo,
         onSuccess: onSuccess,
       ),
-      icon: const Icon(Icons.local_gas_station_outlined),
+      icon: const WenyouIcon(WenyouIconIds.actionTip),
       label: const Text('加油'),
     );
     return expanded ? SizedBox(width: double.infinity, child: button) : button;
@@ -144,12 +145,7 @@ Future<void> showWenyouTipFlow({
   await onSuccess?.call(result);
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        '已投入 ${WenyouAmount.format(result.grossAmount)} 升温油，'
-        '对方到账 ${WenyouAmount.format(result.recipientAmount)} 升。',
-      ),
-    ),
+    SnackBar(content: Text('已加油 ${WenyouAmount.format(result.grossAmount)} 升')),
   );
 }
 
@@ -191,13 +187,6 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              '最低 2 升；创作者到账 85%（向下取整），其余由平台保留。',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-            ),
-            SizedBox(height: tokens.space16),
             TextField(
               key: const Key('tip-amount'),
               controller: _amountController,

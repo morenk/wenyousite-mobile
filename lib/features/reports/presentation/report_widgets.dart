@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -29,12 +30,12 @@ class WenyouReportButton extends ConsumerWidget {
       return IconButton(
         tooltip: '举报',
         onPressed: () => _open(context, ref),
-        icon: const Icon(Icons.flag_outlined),
+        icon: const WenyouIcon(WenyouIconIds.actionReport),
       );
     }
     return TextButton.icon(
       onPressed: () => _open(context, ref),
-      icon: const Icon(Icons.flag_outlined),
+      icon: const WenyouIcon(WenyouIconIds.actionReport),
       label: const Text('举报'),
     );
   }

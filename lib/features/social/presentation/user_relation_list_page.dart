@@ -1,8 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -27,7 +28,7 @@ class UserRelationListPage extends ConsumerWidget {
           maxWidth: 600,
           child: WenyouPanel(
             child: WenyouEmptyState(
-              icon: Icons.cloud_off_outlined,
+              icon: WenyouIconIds.statusOffline,
               title: '${_title(target.kind)}没有加载完成',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: state.failure?.requestId == null
@@ -36,7 +37,7 @@ class UserRelationListPage extends ConsumerWidget {
               action: OutlinedButton.icon(
                 key: const Key('user-relation-list-retry'),
                 onPressed: notifier.load,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重新加载'),
               ),
             ),
@@ -160,7 +161,7 @@ class _RelationUserCard extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
     );
     return WenyouPanel(
       key: ValueKey('relation-user-${item.userId}'),
@@ -179,9 +180,11 @@ class _RelationUserCard extends StatelessWidget {
                 dimension: tokens.minimumTouchTarget,
                 child: item.avatarUrl == null
                     ? fallback
-                    : CachedNetworkImage(
+                    : WenyouCachedImage(
                         imageUrl: item.avatarUrl!,
                         fit: BoxFit.cover,
+                        cacheWidth: tokens.minimumTouchTarget.ceil(),
+                        cacheHeight: tokens.minimumTouchTarget.ceil(),
                         placeholder: (_, _) => fallback,
                         errorWidget: (_, _, _) => fallback,
                       ),
@@ -246,8 +249,8 @@ String _emptyMessage(UserRelationListKind kind) => switch (kind) {
   UserRelationListKind.blocks => '被你拉黑的用户会出现在这里。',
 };
 
-IconData _emptyIcon(UserRelationListKind kind) => switch (kind) {
-  UserRelationListKind.following => Icons.person_add_alt_1_outlined,
-  UserRelationListKind.followers => Icons.people_outline_rounded,
-  UserRelationListKind.blocks => Icons.block_outlined,
+String _emptyIcon(UserRelationListKind kind) => switch (kind) {
+  UserRelationListKind.following => WenyouIconIds.actionFollow,
+  UserRelationListKind.followers => WenyouIconIds.identityMembers,
+  UserRelationListKind.blocks => WenyouIconIds.actionBlock,
 };

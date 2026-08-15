@@ -76,6 +76,11 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
+    await tester.longPress(
+      find.byKey(const ValueKey('direct-message-actions-message-1')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(
       find.byKey(const ValueKey('direct-message-save-sticker-message-1')),
     );

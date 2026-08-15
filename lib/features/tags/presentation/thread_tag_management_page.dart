@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -155,7 +156,7 @@ class _ThreadTagManagementPageState
                   decoration: InputDecoration(
                     labelText: '搜索标签',
                     hintText: '例如：无限流',
-                    prefixIcon: const Icon(Icons.search_rounded),
+                    prefixIcon: const WenyouIcon(WenyouIconIds.actionSearch),
                     suffixIcon: state.isSearching
                         ? const Padding(
                             padding: EdgeInsets.all(14),
@@ -170,7 +171,7 @@ class _ThreadTagManagementPageState
                               setState(() {});
                               _scheduleSearch('');
                             },
-                            icon: const Icon(Icons.close_rounded),
+                            icon: const WenyouIcon(WenyouIconIds.actionClose),
                           ),
                   ),
                   onChanged: (value) {
@@ -194,7 +195,7 @@ class _ThreadTagManagementPageState
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.new_label_outlined),
+                        : const WenyouIcon(WenyouIconIds.actionAddTag),
                     label: Text('新建并添加 #$normalizedQuery'),
                   ),
                 ],
@@ -225,7 +226,7 @@ class _ThreadTagManagementPageState
                               dimension: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.add_circle_outline_rounded),
+                          : const WenyouIcon(WenyouIconIds.actionAdd),
                       enabled: !state.isBusy && !atLimit,
                       onTap: state.isBusy || atLimit
                           ? null
@@ -364,8 +365,8 @@ class _TagManagementFatalState extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: failure?.httpStatus == 403
-              ? Icons.lock_outline_rounded
-              : Icons.cloud_off_outlined,
+              ? WenyouIconIds.actionLock
+              : WenyouIconIds.statusOffline,
           title: failure?.httpStatus == 403 ? '无法管理这个主题' : '主题标签没有加载完成',
           message: failure?.userMessage ?? '请检查网络后重试。',
           detail: failure?.requestId == null
@@ -376,7 +377,7 @@ class _TagManagementFatalState extends StatelessWidget {
               : OutlinedButton.icon(
                   key: const Key('thread-tag-retry'),
                   onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                   label: const Text('重新加载'),
                 ),
         ),

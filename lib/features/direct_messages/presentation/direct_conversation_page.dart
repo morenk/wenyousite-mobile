@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -158,10 +159,10 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
                 value: _ConversationMenuAction.toggleArchive,
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(
+                  leading: WenyouIcon(
                     conversation.archivedAt == null
-                        ? Icons.archive_outlined
-                        : Icons.unarchive_outlined,
+                        ? WenyouIconIds.actionArchive
+                        : WenyouIconIds.actionUnarchive,
                   ),
                   title: Text(
                     conversation.archivedAt == null ? '归档会话' : '移回会话列表',
@@ -635,7 +636,7 @@ class _MessageTimelineState extends State<_MessageTimeline> {
         padding: EdgeInsets.all(tokens.space24),
         children: const [
           WenyouEmptyState(
-            icon: Icons.chat_bubble_outline_rounded,
+            icon: WenyouIconIds.navigationMessages,
             title: '暂无可显示消息',
             message: '',
           ),
@@ -687,7 +688,7 @@ class _MessageTimelineState extends State<_MessageTimeline> {
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.history_rounded),
+                        : const WenyouIcon(WenyouIconIds.statusHistory),
                     label: Text(state.isLoadingOlder ? '正在加载' : '查看更早消息'),
                   ),
                 ),
@@ -773,7 +774,7 @@ class _MessageTimelineState extends State<_MessageTimeline> {
             child: FilledButton.tonalIcon(
               key: const Key('direct-conversation-new-messages'),
               onPressed: _jumpToBottom,
-              icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+              icon: const WenyouIcon(WenyouIconIds.navigationDown, size: 18),
               label: Text('$_unseenIncomingCount 条新消息'),
               style: FilledButton.styleFrom(
                 visualDensity: VisualDensity.compact,
@@ -824,8 +825,8 @@ class _ConversationFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: state.failure?.httpStatus == 404
-              ? Icons.forum_outlined
-              : Icons.cloud_off_outlined,
+              ? WenyouIconIds.navigationMessages
+              : WenyouIconIds.statusOffline,
           title: state.failure?.httpStatus == 404 ? '会话不可访问' : '私聊会话没有加载完成',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
@@ -834,7 +835,7 @@ class _ConversationFailure extends StatelessWidget {
           action: OutlinedButton.icon(
             key: const Key('direct-conversation-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),
@@ -854,7 +855,7 @@ class _DirectConversationUnavailablePage extends StatelessWidget {
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.forum_outlined,
+            icon: WenyouIconIds.navigationMessages,
             title: '私信功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),

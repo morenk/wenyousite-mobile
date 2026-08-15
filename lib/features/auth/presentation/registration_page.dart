@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -101,7 +102,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             onFieldSubmitted: state.isBusy ? null : (_) => _requestCode(),
             decoration: const InputDecoration(
               labelText: '邮箱',
-              prefixIcon: Icon(Icons.mail_outline_rounded),
+              prefixIcon: WenyouIcon(WenyouIconIds.statusMail),
             ),
             validator: _validateEmail,
           ),
@@ -181,7 +182,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               ],
               decoration: const InputDecoration(
                 labelText: '6 位验证码',
-                prefixIcon: Icon(Icons.verified_outlined),
+                prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
                 counterText: '',
               ),
               maxLength: 6,
@@ -197,7 +198,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               decoration: const InputDecoration(
                 labelText: '用户名',
                 helperText: '2–24 位字母、数字或中文',
-                prefixIcon: Icon(Icons.person_outline_rounded),
+                prefixIcon: WenyouIcon(WenyouIconIds.identityMember),
               ),
               textInputAction: TextInputAction.next,
               validator: _validateUsername,
@@ -212,7 +213,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               decoration: InputDecoration(
                 labelText: '密码',
                 helperText: '8–100 位，至少包含一个字母和一个数字',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
                 suffixIcon: IconButton(
                   onPressed: state.isBusy
                       ? null
@@ -220,10 +221,10 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                           () => _obscurePassword = !_obscurePassword,
                         ),
                   tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                  icon: Icon(
+                  icon: WenyouIcon(
                     _obscurePassword
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+                        ? WenyouIconIds.actionShow
+                        : WenyouIconIds.actionHide,
                   ),
                 ),
               ),
@@ -238,7 +239,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               obscureText: _obscurePassword,
               decoration: const InputDecoration(
                 labelText: '确认密码',
-                prefixIcon: Icon(Icons.lock_reset_rounded),
+                prefixIcon: WenyouIcon(WenyouIconIds.actionResetPassword),
               ),
               textInputAction: TextInputAction.done,
               onFieldSubmitted: state.isBusy ? null : (_) => _complete(),

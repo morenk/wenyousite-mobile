@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -80,7 +81,7 @@ class _ThreadPostSearchPageState extends ConsumerState<ThreadPostSearchPage> {
                       decoration: const InputDecoration(
                         labelText: '主题内关键词',
                         hintText: '搜索全部子贴的楼层内容',
-                        prefixIcon: Icon(Icons.search_rounded),
+                        prefixIcon: WenyouIcon(WenyouIconIds.actionSearch),
                         counterText: '',
                       ),
                       onSubmitted: (_) => _submit(),
@@ -102,7 +103,7 @@ class _ThreadPostSearchPageState extends ConsumerState<ThreadPostSearchPage> {
             if (!state.hasQuery)
               const WenyouPanel(
                 child: WenyouEmptyState(
-                  icon: Icons.manage_search_rounded,
+                  icon: WenyouIconIds.actionSearch,
                   title: '输入关键词搜索当前主题',
                   message: '会覆盖这个主题下的全部子贴、楼层与楼中楼。',
                 ),
@@ -110,7 +111,7 @@ class _ThreadPostSearchPageState extends ConsumerState<ThreadPostSearchPage> {
             else if (!state.isQueryValid)
               const WenyouPanel(
                 child: WenyouEmptyState(
-                  icon: Icons.text_fields_rounded,
+                  icon: WenyouIconIds.editorHeading,
                   title: '主题内搜索至少需要 2 个字符',
                   message: '请补充一个字符后重新搜索。',
                 ),
@@ -170,7 +171,7 @@ class _ThreadSearchResults extends ConsumerWidget {
       ),
       SearchSectionPhase.ready when state.items.isEmpty => const WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.search_off_rounded,
+          icon: WenyouIconIds.statusNoResults,
           title: '当前主题没有匹配内容',
           message: '可以换个关键词后重新搜索。',
         ),
@@ -191,7 +192,7 @@ class _ThreadSearchResults extends ConsumerWidget {
                   : '请求 ID：${state.failure!.requestId}',
               action: TextButton.icon(
                 onPressed: () => ref.read(provider.notifier).loadMore(),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
                 label: const Text('重试加载更多'),
               ),
             ),
@@ -210,7 +211,7 @@ class _ThreadSearchResults extends ConsumerWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.expand_more_rounded),
+                    : const WenyouIcon(WenyouIconIds.navigationExpand),
                 label: Text(state.isLoadingMore ? '正在加载' : '加载更多结果'),
               ),
             ),
@@ -279,7 +280,7 @@ class _ThreadSearchError extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouPanel(
       child: WenyouEmptyState(
-        icon: Icons.cloud_off_outlined,
+        icon: WenyouIconIds.statusOffline,
         title: '主题内搜索没有完成',
         message: failure?.userMessage ?? '请检查网络后重试。',
         detail: failure?.requestId == null
@@ -288,7 +289,7 @@ class _ThreadSearchError extends StatelessWidget {
         action: OutlinedButton.icon(
           key: const Key('thread-search-retry'),
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重试'),
         ),
       ),

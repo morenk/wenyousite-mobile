@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class WenyouTagChip extends StatelessWidget {
@@ -22,7 +23,7 @@ class WenyouTagChip extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final accent = _parseColor(colorHex) ?? tokens.brand;
     return InputChip(
-      avatar: Icon(Icons.tag_rounded, size: 18, color: accent),
+      avatar: WenyouIcon(WenyouIconIds.contentTag, size: 18, color: accent),
       label: Text(name),
       tooltip: onPressed == null ? null : '查看 #$name 标签下的主题',
       deleteButtonTooltipMessage: deleteTooltip,

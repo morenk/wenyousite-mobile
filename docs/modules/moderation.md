@@ -43,7 +43,7 @@
 
 ## 10. 跨模块约束
 
-auth 只提供登录页入口和普通会话；settings 只提供已登录入口；moderation 独立拥有凭据、决定与申诉状态，不能把专用 JWT 写入 `SessionController`。core/network 提供 `skipAuth`、请求 ID 与稳定错误映射。页面复用 Foundation v1.3.1 Token、共享面板/状态组件、48dp 操作目标和单列最大宽度，不复制 Web 管理端样式。
+auth 只提供登录页入口和普通会话；settings 只提供已登录入口；moderation 独立拥有凭据、决定与申诉状态，不能把专用 JWT 写入 `SessionController`。core/network 提供 `skipAuth`、请求 ID 与稳定错误映射。页面复用 Foundation v2.4.2 Token、语义图标、共享面板/状态组件、48dp 操作目标和单列最大宽度，不复制 Web 管理端样式。
 
 ## 11. 测试场景与验收条件
 
@@ -61,7 +61,7 @@ auth 只提供登录页入口和普通会话；settings 只提供已登录入口
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.10.0-dev.20260814.1`；后端 `90a33279f6f786685567a27ced11dd7470620cad`；Foundation `v2.4.2`（`7e7d863`）。
 
 ## 14. 相关代码与架构文档
 

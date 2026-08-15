@@ -1,10 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -72,7 +73,7 @@ class _WalletSummaryPanel extends StatelessWidget {
           ? state.isLoadingSummary
                 ? const _WalletLoading(label: '正在读取温油余额…')
                 : WenyouEmptyState(
-                    icon: Icons.cloud_off_outlined,
+                    icon: WenyouIconIds.statusOffline,
                     title: '钱包余额没有加载完成',
                     message: state.summaryFailure?.userMessage ?? '请稍后重试。',
                     detail: state.summaryFailure?.requestId == null
@@ -81,7 +82,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                     action: OutlinedButton.icon(
                       key: const Key('wallet-summary-retry'),
                       onPressed: onRetry,
-                      icon: const Icon(Icons.refresh_rounded),
+                      icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                       label: const Text('重试余额'),
                     ),
                   )
@@ -135,8 +136,8 @@ class _WalletSummaryPanel extends StatelessWidget {
                       ),
                       child: SizedBox.square(
                         dimension: 52,
-                        child: Icon(
-                          Icons.local_gas_station_rounded,
+                        child: WenyouIcon(
+                          WenyouIconIds.actionTip,
                           color: tokens.brand,
                         ),
                       ),
@@ -232,17 +233,14 @@ class _WalletTransactionsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(
-            title: '收支记录',
-            subtitle: '签到、投入与收到的温油均以服务端流水为准。',
-          ),
+          const WenyouSectionHeader(title: '收支记录'),
           SizedBox(height: tokens.space16),
           if (state.transactions.isEmpty && state.isLoadingTransactions)
             const _WalletLoading(label: '正在读取温油流水…')
           else if (state.transactions.isEmpty &&
               state.transactionsFailure != null)
             WenyouEmptyState(
-              icon: Icons.cloud_off_outlined,
+              icon: WenyouIconIds.statusOffline,
               title: '温油流水没有加载完成',
               message: state.transactionsFailure!.userMessage,
               detail: state.transactionsFailure!.requestId == null
@@ -251,15 +249,15 @@ class _WalletTransactionsPanel extends StatelessWidget {
               action: OutlinedButton.icon(
                 key: const Key('wallet-transactions-retry'),
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重试'),
               ),
             )
           else if (state.transactions.isEmpty)
             const WenyouEmptyState(
-              icon: Icons.receipt_long_outlined,
+              icon: WenyouIconIds.economyTransaction,
               title: '暂无收支记录',
-              message: '登录后每日在线会自动领取 1～3 升温油。',
+              message: '',
             )
           else ...[
             for (var index = 0; index < state.transactions.length; index++) ...[
@@ -292,7 +290,7 @@ class _WalletTransactionsPanel extends StatelessWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.expand_more_rounded),
+                      : const WenyouIcon(WenyouIconIds.navigationExpand),
                   label: const Text('加载更多'),
                 ),
               ),
@@ -424,7 +422,7 @@ class _CounterpartyAvatar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
     );
     final url = counterparty?.avatarUrl;
     return ClipOval(
@@ -432,7 +430,7 @@ class _CounterpartyAvatar extends StatelessWidget {
         dimension: 40,
         child: url == null
             ? fallback
-            : CachedNetworkImage(
+            : WenyouCachedImage(
                 imageUrl: url,
                 fit: BoxFit.cover,
                 placeholder: (_, _) => fallback,

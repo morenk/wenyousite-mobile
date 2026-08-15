@@ -41,7 +41,7 @@
 
 ## 10. 跨模块约束
 
-users、threads、posts 和 moments 只提供目标事实与入口，提交状态不写回这些模块。auth 提供登录与邮箱验证恢复；core/network 提供请求 ID、会话失效和稳定业务错误。页面继续只消费 Foundation v1.3.1 Token、共享状态横幅和至少 48dp 触控目标。管理端 operationId 不得为了覆盖数字从移动端调用。
+users、threads、posts 和 moments 只提供目标事实与入口，提交状态不写回这些模块。auth 提供登录与邮箱验证恢复；core/network 提供请求 ID、会话失效和稳定业务错误。页面继续只消费 Foundation v2.4.2 Token、语义图标、共享状态横幅和至少 48dp 触控目标。管理端 operationId 不得为了覆盖数字从移动端调用。
 
 ## 11. 测试场景与验收条件
 
@@ -59,7 +59,7 @@ users、threads、posts 和 moments 只提供目标事实与入口，提交状�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`；Foundation `v1.3.1`（`7cf71327aaeee4f5e6baae069335c8a606f6a911`）。
+契约 `4.10.0-dev.20260814.1`；后端 `90a33279f6f786685567a27ced11dd7470620cad`；Foundation `v2.4.2`（`7e7d863`）。
 
 ## 14. 相关代码与架构文档
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -114,22 +115,22 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                   ),
                   SizedBox(height: tokens.space16),
                   const _DeletionConsequence(
-                    icon: Icons.devices_other_outlined,
+                    icon: WenyouIconIds.actionDevices,
                     text: '当前账号在 Web 和移动端的全部登录终端都会失效。',
                   ),
                   SizedBox(height: tokens.space12),
                   const _DeletionConsequence(
-                    icon: Icons.person_off_outlined,
+                    icon: WenyouIconIds.statusUserUnavailable,
                     text: '用户名、邮箱和头像会从公开身份移除，账号无法恢复。',
                   ),
                   SizedBox(height: tokens.space12),
                   const _DeletionConsequence(
-                    icon: Icons.forum_outlined,
+                    icon: WenyouIconIds.contentThread,
                     text: '为维持讨论结构，已发布内容仍会保留，但作者统一显示为“已注销用户”。',
                   ),
                   SizedBox(height: tokens.space12),
                   const _DeletionConsequence(
-                    icon: Icons.edit_note_rounded,
+                    icon: WenyouIconIds.contentDraft,
                     text: '本机未发布草稿不会上传或自动删除，注销后也无法再以此账号恢复。',
                   ),
                 ],
@@ -157,7 +158,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                       decoration: const InputDecoration(
                         labelText: '确认文字',
                         hintText: confirmationPhrase,
-                        prefixIcon: Icon(Icons.warning_amber_rounded),
+                        prefixIcon: WenyouIcon(WenyouIconIds.statusWarning),
                       ),
                       onChanged: (_) => ref
                           .read(accountDeletionControllerProvider.notifier)
@@ -211,7 +212,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                               dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.delete_forever_outlined),
+                          : const WenyouIcon(WenyouIconIds.actionDelete),
                       label: Text(state.isSubmitting ? '正在注销' : '继续注销账号'),
                     ),
                   ],
@@ -228,7 +229,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
 class _DeletionConsequence extends StatelessWidget {
   const _DeletionConsequence({required this.icon, required this.text});
 
-  final IconData icon;
+  final String icon;
   final String text;
 
   @override
@@ -237,7 +238,7 @@ class _DeletionConsequence extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.error),
+        WenyouIcon(icon, size: 20, color: Theme.of(context).colorScheme.error),
         SizedBox(width: tokens.space8),
         Expanded(child: Text(text)),
       ],
