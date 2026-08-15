@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
+
 enum PublicUserContentTab {
   created('创建', '创建的主题'),
   played('参与', '以玩家身份参与的主题'),
@@ -10,7 +12,16 @@ enum PublicUserContentTab {
   final String description;
 }
 
-enum PublicUserThreadStatus { recruiting, closed, finished, unknown }
+enum PublicUserThreadStatus {
+  recruiting('招募中'),
+  closed('已关闭'),
+  finished('已完结'),
+  unknown('状态未知');
+
+  const PublicUserThreadStatus(this.label);
+
+  final String label;
+}
 
 class PublicUserProfileModel {
   const PublicUserProfileModel({
@@ -32,12 +43,14 @@ class PublicUserProfileModel {
     this.avatarUrl,
     this.bio,
     this.createdAt,
+    this.profileCover,
   });
 
   final String id;
   final String username;
   final String? avatarUrl;
   final String? bio;
+  final ProfileCoverModel? profileCover;
   final int level;
   final int followingCount;
   final int followerCount;
@@ -59,6 +72,20 @@ class PublicUserProfileModel {
     if (showRecentReplies) PublicUserContentTab.replies,
     if (showBookmarks) PublicUserContentTab.bookmarks,
   ];
+}
+
+class PublicUserActivitySummary {
+  const PublicUserActivitySummary({
+    required this.momentCount,
+    required this.createdThreadCount,
+    required this.playedThreadCount,
+    required this.replyCount,
+  });
+
+  final int momentCount;
+  final int createdThreadCount;
+  final int? playedThreadCount;
+  final int? replyCount;
 }
 
 class PublicUserThreadModel {

@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
+import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 export 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart'
@@ -30,6 +31,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
         username: dto.username,
         avatarUrl: _safeHttpUrl(dto.avatar),
         bio: bio == null || bio.isEmpty ? null : bio,
+        profileCover: mapProfileCover(dto.profileCover),
         level: dto.level?.toInt() ?? 0,
         followingCount: dto.count?.following.toInt() ?? 0,
         followerCount: dto.count?.followers.toInt() ?? 0,
@@ -44,6 +46,29 @@ class ApiPublicUserRepository implements PublicUserRepository {
         isBlockedBy: dto.isBlockedBy ?? false,
         isDeactivated: dto.isDeactivated ?? false,
         createdAt: dto.createdAt,
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
+    try {
+      final response = await _api.usersGetUserActivitySummary(id: userId);
+      final dto = response.data?.data;
+      if (dto == null) {
+        throw const ApiFailure(userMessage: '创作活动汇总返回不完整，请稍后重试。');
+      }
+      return PublicUserActivitySummary(
+        momentCount: _nonNegativeCount(dto.momentCount, '动态数'),
+        createdThreadCount: _nonNegativeCount(dto.createdThreadCount, '创建主题数'),
+        playedThreadCount: dto.playedThreadCount == null
+            ? null
+            : _nonNegativeCount(dto.playedThreadCount!, '参与主题数'),
+        replyCount: dto.replyCount == null
+            ? null
+            : _nonNegativeCount(dto.replyCount!, '回复数'),
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -222,6 +247,13 @@ class ApiPublicUserRepository implements PublicUserRepository {
   String _safeTitle(String title) {
     final trimmed = title.trim();
     return trimmed.isEmpty ? '未命名主题' : trimmed;
+  }
+
+  int _nonNegativeCount(num value, String field) {
+    if (!value.isFinite || value < 0 || value % 1 != 0) {
+      throw ApiFailure(userMessage: '$field返回不正确，请稍后重试。');
+    }
+    return value.toInt();
   }
 
   String? _safeHttpUrl(String? value) {

@@ -385,7 +385,7 @@ class AdminAuthApi {
     );
   }
 
-  /// 验证邮箱验证码并建立独立管理员 Cookie 会话
+  /// 验证管理员验证码并建立独立管理员 Cookie 会话
   ///
   ///
   /// Parameters:

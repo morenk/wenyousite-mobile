@@ -76,8 +76,6 @@ class ApiFailure implements Exception {
         return '账号已被锁定，请联系站点管理员。';
       case 40106:
         return '账号已注销。';
-      case 40107:
-        return '请先完成邮箱验证。';
       case 40108:
         return '账号已被暂停，可在“治理决定与申诉”中申请复核。';
       case 40109:

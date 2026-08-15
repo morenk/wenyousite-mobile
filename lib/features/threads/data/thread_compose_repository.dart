@@ -50,7 +50,6 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
             ..sort((left, right) => left.sortOrder.compareTo(right.sortOrder));
       return ThreadComposeBootstrap(
         userId: me.id,
-        emailVerified: me.emailVerified,
         categories: List.unmodifiable(categories),
       );
     } on DioException catch (error) {

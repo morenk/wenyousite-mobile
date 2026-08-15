@@ -138,16 +138,12 @@ class _MomentCommentComposerState
             icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
           ),
         ],
-        submitAction: IconButton.filled(
+        submitAction: WenyouComposerSubmitButton(
           key: const Key('moment-comment-send'),
-          onPressed: uploading || widget.isSending ? null : _send,
-          tooltip: '发送',
-          icon: widget.isSending
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const WenyouIcon(WenyouIconIds.actionSend),
+          enabled: !uploading && !widget.isSending,
+          loading: widget.isSending,
+          label: '发送',
+          onPressed: () => _send(),
         ),
         characterCountText: '${_textController.text.length}/500',
       ),

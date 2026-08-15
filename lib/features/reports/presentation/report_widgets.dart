@@ -8,8 +8,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/application/report_controller.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 
-enum _ReportDialogOutcome { verifyEmail }
-
 class WenyouReportButton extends ConsumerWidget {
   const WenyouReportButton({
     required this.target,
@@ -65,32 +63,13 @@ Future<void> showWenyouReportFlow({
     );
     return;
   }
-  final outcome = await showDialog<Object?>(
+  final outcome = await showDialog<ReportResult>(
     context: context,
     barrierDismissible: false,
     builder: (context) =>
         _ReportDialog(target: target, targetLabel: targetLabel),
   );
-  if (!context.mounted) return;
-  if (outcome == _ReportDialogOutcome.verifyEmail) {
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: {'returnTo': returnTo},
-      ).toString(),
-    );
-    if (verified == true && context.mounted) {
-      await showWenyouReportFlow(
-        context: context,
-        ref: ref,
-        target: target,
-        targetLabel: targetLabel,
-        returnTo: returnTo,
-      );
-    }
-    return;
-  }
-  if (outcome is! ReportResult) return;
+  if (!context.mounted || outcome == null) return;
   ScaffoldMessenger.of(
     context,
   ).showSnackBar(const SnackBar(content: Text('举报已提交，管理员会根据站点规范进行审核。')));
@@ -188,16 +167,6 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                     detail: state.failure!.requestId == null
                         ? null
                         : '请求 ID：${state.failure!.requestId}',
-                    action: state.failure!.businessCode == 40107
-                        ? TextButton(
-                            key: const Key('report-verify-email'),
-                            onPressed: () => Navigator.pop(
-                              context,
-                              _ReportDialogOutcome.verifyEmail,
-                            ),
-                            child: const Text('先验证邮箱'),
-                          )
-                        : null,
                   ),
                 ],
               ],

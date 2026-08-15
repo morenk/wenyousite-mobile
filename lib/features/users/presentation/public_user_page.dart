@@ -21,9 +21,14 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class PublicUserPage extends ConsumerWidget {
-  const PublicUserPage({required this.userId, super.key});
+  const PublicUserPage({
+    required this.userId,
+    this.previewOnly = false,
+    super.key,
+  });
 
   final String userId;
+  final bool previewOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +46,7 @@ class PublicUserPage extends ConsumerWidget {
                 meState!.profile!.id != state.profile!.id));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('用户主页'),
+        title: Text(previewOnly ? '预览公开主页' : '用户主页'),
         actions: [
           if (canTip)
             WenyouTipButton(
@@ -97,6 +102,14 @@ class PublicUserPage extends ConsumerWidget {
                             isCurrentUser:
                                 meState?.phase == MeProfilePhase.ready &&
                                 meState!.profile!.id == state.profile!.id,
+                            previewOnly: previewOnly,
+                          ),
+                          SizedBox(height: context.wenyouTokens.space12),
+                          _UserActivitySummaryPanel(
+                            state: state,
+                            onRetry: () => ref
+                                .read(provider.notifier)
+                                .retryActivitySummary(),
                           ),
                           SizedBox(height: context.wenyouTokens.space12),
                           PublicUserContentArea(
@@ -150,11 +163,13 @@ class _UserProfileContent extends ConsumerWidget {
   const _UserProfileContent({
     required this.profile,
     required this.isCurrentUser,
+    required this.previewOnly,
     this.relationTarget,
   });
 
   final PublicUserProfileModel profile;
   final bool isCurrentUser;
+  final bool previewOnly;
   final UserRelationTarget? relationTarget;
 
   @override
@@ -171,6 +186,9 @@ class _UserProfileContent extends ConsumerWidget {
         (capabilities) => capabilities.directMessages,
       ),
     );
+    final hasLeadingAction =
+        (isCurrentUser && !previewOnly) ||
+        (directMessagesEnabled && relationTarget != null);
     final statuses = <UserProfileStatusItem>[
       if (isFollowing)
         const UserProfileStatusItem(
@@ -197,6 +215,7 @@ class _UserProfileContent extends ConsumerWidget {
       key: const Key('public-user-profile-header'),
       username: profile.username,
       avatarUrl: profile.avatarUrl,
+      profileCover: profile.profileCover,
       level: profile.level,
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '这个人还没有填写简介。',
       metadata: profile.createdAt == null
@@ -234,7 +253,7 @@ class _UserProfileContent extends ConsumerWidget {
           ],
           Row(
             children: [
-              if (isCurrentUser)
+              if (isCurrentUser && !previewOnly)
                 Expanded(
                   child: FilledButton.icon(
                     key: const Key('public-user-edit-profile'),
@@ -255,9 +274,7 @@ class _UserProfileContent extends ConsumerWidget {
                     label: const Text('发私聊'),
                   ),
                 ),
-              if ((isCurrentUser ||
-                  (directMessagesEnabled && relationTarget != null)))
-                SizedBox(width: tokens.space12),
+              if (hasLeadingAction) SizedBox(width: tokens.space12),
               Expanded(
                 child: OutlinedButton.icon(
                   key: const Key('public-user-open-moments'),
@@ -272,6 +289,127 @@ class _UserProfileContent extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _UserActivitySummaryPanel extends StatelessWidget {
+  const _UserActivitySummaryPanel({required this.state, required this.onRetry});
+
+  final PublicUserState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return WenyouPanel(
+      key: const Key('public-user-activity-summary'),
+      padding: EdgeInsets.all(tokens.space16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const WenyouSectionHeader(title: '创作活动', subtitle: '按你当前可见的公开范围统计'),
+          SizedBox(height: tokens.space12),
+          switch (state.activityPhase) {
+            PublicUserActivityPhase.idle ||
+            PublicUserActivityPhase.loading => const LinearProgressIndicator(),
+            PublicUserActivityPhase.failed => WenyouStatusBanner(
+              key: const Key('public-user-activity-failure'),
+              tone: WenyouStatusTone.error,
+              message: state.activityFailure?.userMessage ?? '创作活动汇总没有加载完成。',
+              detail: state.activityFailure?.requestId == null
+                  ? null
+                  : '请求 ID：${state.activityFailure!.requestId}',
+              action: TextButton(
+                key: const Key('public-user-activity-retry'),
+                onPressed: onRetry,
+                child: const Text('重试'),
+              ),
+            ),
+            PublicUserActivityPhase.ready => _ActivitySummaryGrid(
+              summary: state.activitySummary!,
+            ),
+          },
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivitySummaryGrid extends StatelessWidget {
+  const _ActivitySummaryGrid({required this.summary});
+
+  final PublicUserActivitySummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - tokens.space8) / 2;
+        return Wrap(
+          spacing: tokens.space8,
+          runSpacing: tokens.space8,
+          children: [
+            _ActivitySummaryItem(
+              width: itemWidth,
+              label: '动态数',
+              value: '${summary.momentCount}',
+            ),
+            _ActivitySummaryItem(
+              width: itemWidth,
+              label: '自建主题',
+              value: '${summary.createdThreadCount}',
+            ),
+            _ActivitySummaryItem(
+              width: itemWidth,
+              label: '玩家主题',
+              value: summary.playedThreadCount?.toString() ?? '未公开',
+            ),
+            _ActivitySummaryItem(
+              width: itemWidth,
+              label: '公开回复数',
+              value: summary.replyCount?.toString() ?? '未公开',
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ActivitySummaryItem extends StatelessWidget {
+  const _ActivitySummaryItem({
+    required this.width,
+    required this.label,
+    required this.value,
+  });
+
+  final double width;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return SizedBox(
+      width: width,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: tokens.softPanel,
+          borderRadius: BorderRadius.circular(tokens.radius12),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(tokens.space12),
+          child: Column(
+            children: [
+              Text(value, style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(height: tokens.space4),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+        ),
       ),
     );
   }

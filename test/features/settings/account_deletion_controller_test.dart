@@ -27,8 +27,7 @@ void main() {
     final session = await _authenticatedSession(store);
     final repository = _FakeAccountDeletionRepository(
       failure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
+        userMessage: '账号注销暂时没有完成。',
         requestId: 'delete-request-id',
       ),
     );

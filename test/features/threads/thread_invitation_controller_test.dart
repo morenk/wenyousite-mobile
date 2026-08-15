@@ -54,8 +54,7 @@ void main() {
   test('加入失败保留预览与请求 ID，重试成功后切换已加入事实', () async {
     final repository = _FakeInvitationRepository(
       joinFailure: const ApiFailure(
-        userMessage: '请验证邮箱',
-        businessCode: 40107,
+        userMessage: '加入暂时没有完成。',
         requestId: 'join-request-id',
       ),
     );

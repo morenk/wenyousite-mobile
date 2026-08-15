@@ -510,36 +510,40 @@ class _PostCard extends ConsumerWidget {
         ),
       ),
     );
-    return Semantics(
-      container: true,
-      button: canTapReply,
-      hint: canTapReply
-          ? (root ? '点击回复楼层，长按打开楼层操作' : '点击回复这条回复，长按打开回复操作')
-          : (root ? '长按打开楼层操作' : '长按打开回复操作'),
-      onTap: canTapReply ? onReply : null,
-      child: GestureDetector(
-        key: Key('post-card-${post.id}'),
-        behavior: HitTestBehavior.opaque,
-        onTap: canTapReply ? onReply : null,
-        onLongPress: () => _showActions(context, ref),
-        child: card,
-      ),
-    );
-  }
-
-  Future<void> _showActions(BuildContext context, WidgetRef ref) async {
-    final action = await showPostCardActionSheet(
-      context: context,
-      title: root ? '楼层操作' : '回复操作',
-      authorName: post.author.username,
+    return PostCardActionMenu(
       canCopyText: !post.isDeleted,
       canReply: onReply != null,
       canEdit: canEdit,
       canDelete: canDelete,
       canReport: reportReturnTo != null,
       pending: pending,
+      semanticLabel: root ? '楼层操作' : '回复操作',
+      actionKeyPrefix: 'post-card-action-${post.id}',
+      onSelected: (action) => _handleAction(action, context, ref),
+      anchorBuilder: (context, handle) => Semantics(
+        container: true,
+        button: canTapReply,
+        hint: canTapReply
+            ? (root ? '点击回复楼层，长按打开楼层操作' : '点击回复这条回复，长按打开回复操作')
+            : (root ? '长按打开楼层操作' : '长按打开回复操作'),
+        onTap: canTapReply ? onReply : null,
+        onLongPress: handle.open,
+        child: GestureDetector(
+          key: Key('post-card-${post.id}'),
+          behavior: HitTestBehavior.opaque,
+          onTap: canTapReply ? onReply : null,
+          onLongPress: handle.open,
+          child: card,
+        ),
+      ),
     );
-    if (action == null || !context.mounted) return;
+  }
+
+  Future<void> _handleAction(
+    PostCardAction action,
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     switch (action) {
       case PostCardAction.copyText:
         await copyPostCardValue(context, post.content, '内容已复制');

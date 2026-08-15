@@ -37,7 +37,6 @@ abstract final class AppRouteAccessPolicy {
     '/me/security/sessions',
     '/me/security/password',
     '/me/security/email',
-    '/me/security/verify-email',
     '/me/security/delete-account',
   };
 

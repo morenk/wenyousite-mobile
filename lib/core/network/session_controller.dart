@@ -174,10 +174,7 @@ class SessionController extends StateNotifier<SessionState> {
 
   bool _refreshFailureInvalidatesSession(ApiFailure failure) {
     // Refresh responses use HTTP 401 for an invalid/expired/revoked session.
-    // 40107 is deliberately excluded: the account is still authenticated but
-    // has to complete email verification before restricted actions.
     final code = failure.businessCode;
-    if (code == 40107) return false;
     if (code != null && code >= 40100 && code <= 40115) return true;
     return failure.httpStatus == 401;
   }

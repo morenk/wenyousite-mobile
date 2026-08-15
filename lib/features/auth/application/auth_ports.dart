@@ -23,24 +23,6 @@ abstract interface class AuthRepository {
   });
 }
 
-class EmailVerificationAccount {
-  const EmailVerificationAccount({
-    required this.email,
-    required this.isVerified,
-  });
-
-  final String email;
-  final bool isVerified;
-}
-
-abstract interface class EmailVerificationRepository {
-  Future<EmailVerificationAccount> fetchAccount();
-
-  Future<void> resendCode({required String email});
-
-  Future<void> verifyCode({required String code});
-}
-
 abstract interface class PasswordRecoveryRepository {
   Future<void> requestCode({required String email});
 
@@ -54,11 +36,6 @@ abstract interface class PasswordRecoveryRepository {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return const _UnboundAuthRepository();
 });
-
-final emailVerificationRepositoryProvider =
-    Provider<EmailVerificationRepository>((ref) {
-      return const _UnboundEmailVerificationRepository();
-    });
 
 final passwordRecoveryRepositoryProvider = Provider<PasswordRecoveryRepository>(
   (ref) {
@@ -91,26 +68,6 @@ class _UnboundAuthRepository implements AuthRepository {
   Future<RegistrationCodeInfo> requestRegistrationCode({
     required String email,
   }) {
-    return Future.error(_unboundError());
-  }
-}
-
-class _UnboundEmailVerificationRepository
-    implements EmailVerificationRepository {
-  const _UnboundEmailVerificationRepository();
-
-  @override
-  Future<EmailVerificationAccount> fetchAccount() {
-    return Future.error(_unboundError());
-  }
-
-  @override
-  Future<void> resendCode({required String email}) {
-    return Future.error(_unboundError());
-  }
-
-  @override
-  Future<void> verifyCode({required String code}) {
     return Future.error(_unboundError());
   }
 }

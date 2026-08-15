@@ -18,8 +18,6 @@ class _$UserProfile extends UserProfile {
   @override
   final String role;
   @override
-  final bool emailVerified;
-  @override
   final num level;
 
   factory _$UserProfile([void Function(UserProfileBuilder)? updates]) =>
@@ -31,7 +29,6 @@ class _$UserProfile extends UserProfile {
     required this.username,
     this.avatar,
     required this.role,
-    required this.emailVerified,
     required this.level,
   }) : super._();
   @override
@@ -50,7 +47,6 @@ class _$UserProfile extends UserProfile {
         username == other.username &&
         avatar == other.avatar &&
         role == other.role &&
-        emailVerified == other.emailVerified &&
         level == other.level;
   }
 
@@ -62,7 +58,6 @@ class _$UserProfile extends UserProfile {
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
-    _$hash = $jc(_$hash, emailVerified.hashCode);
     _$hash = $jc(_$hash, level.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -76,7 +71,6 @@ class _$UserProfile extends UserProfile {
           ..add('username', username)
           ..add('avatar', avatar)
           ..add('role', role)
-          ..add('emailVerified', emailVerified)
           ..add('level', level))
         .toString();
   }
@@ -105,11 +99,6 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
   String? get role => _$this._role;
   set role(String? role) => _$this._role = role;
 
-  bool? _emailVerified;
-  bool? get emailVerified => _$this._emailVerified;
-  set emailVerified(bool? emailVerified) =>
-      _$this._emailVerified = emailVerified;
-
   num? _level;
   num? get level => _$this._level;
   set level(num? level) => _$this._level = level;
@@ -126,7 +115,6 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
       _username = $v.username;
       _avatar = $v.avatar;
       _role = $v.role;
-      _emailVerified = $v.emailVerified;
       _level = $v.level;
       _$v = null;
     }
@@ -166,11 +154,6 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
             role,
             r'UserProfile',
             'role',
-          ),
-          emailVerified: BuiltValueNullFieldError.checkNotNull(
-            emailVerified,
-            r'UserProfile',
-            'emailVerified',
           ),
           level: BuiltValueNullFieldError.checkNotNull(
             level,

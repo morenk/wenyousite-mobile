@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -95,6 +96,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     );
     _scheduleDocumentSync(state);
     final locked = state.isSubmitting || uploadState.isBusy;
+    final tokens = context.wenyouTokens;
     _editorSession.readOnly = locked;
 
     return PopScope<Object?>(
@@ -110,31 +112,66 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           actions: [
             if (state.phase == ThreadComposePhase.ready ||
                 state.phase == ThreadComposePhase.published)
-              IconButton(
-                key: const Key('compose-remote-drafts'),
-                tooltip: state.remoteDraft == null ? '云端草稿' : '云端草稿 · 当前已同步',
-                onPressed: locked ? null : _openRemoteDraftActions,
-                icon: Badge(
-                  isLabelVisible: state.remoteDraft != null,
-                  child: const WenyouIcon(WenyouIconIds.statusCloud),
+              WenyouAnchoredActionBubble<_RemoteDraftAction>(
+                actions: const [
+                  WenyouPopoverAction(
+                    value: _RemoteDraftAction.save,
+                    icon: WenyouIconIds.statusSyncing,
+                    label: '保存',
+                    semanticsLabel: '保存当前主题到云端草稿',
+                    key: Key('compose-save-draft'),
+                  ),
+                  WenyouPopoverAction(
+                    value: _RemoteDraftAction.open,
+                    icon: WenyouIconIds.contentFolderOpen,
+                    label: '打开',
+                    semanticsLabel: '打开云端草稿',
+                    key: Key('compose-open-remote-drafts'),
+                  ),
+                ],
+                placement: WenyouPopoverPlacement.below,
+                alignment: WenyouPopoverAlignment.end,
+                semanticLabel: '云端草稿操作',
+                onSelected: (action) =>
+                    unawaited(_handleRemoteDraftAction(action)),
+                anchorBuilder: (context, handle) => IconButton(
+                  key: const Key('compose-remote-drafts'),
+                  tooltip: state.remoteDraft == null ? '云端草稿' : '云端草稿 · 当前已同步',
+                  onPressed: locked ? null : handle.toggle,
+                  icon: Badge(
+                    isLabelVisible: state.remoteDraft != null,
+                    child: const WenyouIcon(WenyouIconIds.statusCloud),
+                  ),
                 ),
               ),
             if (state.phase == ThreadComposePhase.ready ||
                 state.phase == ThreadComposePhase.published)
-              TextButton(
+              FilledButton.icon(
                 key: const Key('compose-publish'),
+                style: FilledButton.styleFrom(
+                  minimumSize: Size(0, tokens.minimumTouchTarget),
+                  padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+                  backgroundColor: tokens.brandForeground,
+                  foregroundColor: tokens.panel,
+                  disabledBackgroundColor: tokens.border,
+                  disabledForegroundColor: tokens.mutedText,
+                ),
                 onPressed:
                     !locked &&
                         _editorSession.codecFailure == null &&
                         state.canPublish
                     ? _publish
                     : null,
-                child: state.action == ThreadComposeAction.publish
-                    ? const SizedBox.square(
+                icon: state.action == ThreadComposeAction.publish
+                    ? SizedBox.square(
                         dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: tokens.panel,
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Text('发布'),
+                    : const WenyouIcon(WenyouIconIds.actionSend, size: 18),
+                label: const Text('发布'),
               ),
           ],
         ),
@@ -165,11 +202,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final selectedCategory = state.categories
         .where((category) => category.slug == state.categorySlug)
         .firstOrNull;
-    final settingsSummary = [
-      selectedCategory?.name ?? '未选分类',
-      state.visibility.label,
-      if (state.tags.isNotEmpty) '${state.tags.length} 个标签',
-    ].join(' · ');
     final horizontalPadding = MediaQuery.sizeOf(context).width <= 400
         ? tokens.space12
         : tokens.space24;
@@ -189,7 +221,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 uploading: uploadState.isBusy,
                 onCancelUpload: _cancelUpload,
                 onRetryUpload: _retryImageUpload,
-                onVerifyEmail: _openEmailVerification,
                 onRefreshBootstrap: () => ref
                     .read(threadComposeControllerProvider.notifier)
                     .refreshBootstrap(),
@@ -218,7 +249,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 ),
               ),
               _ComposeMetadataBar(
-                summary: settingsSummary,
+                categoryValue: selectedCategory?.name ?? '未选择',
+                visibilityValue: state.visibility.label,
+                tagsValue: state.tags.isEmpty
+                    ? '未添加'
+                    : '${state.tags.length} 个',
                 activePanel: _metadataPanel,
                 enabled: !locked,
                 onPanelChanged: (panel) {
@@ -370,41 +405,6 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (mounted) setState(() {});
   }
 
-  Future<void> _openEmailVerification() async {
-    await _flushSnapshot();
-    if (!mounted) return;
-    final latest = ref.read(threadComposeControllerProvider);
-    if (latest.phase == ThreadComposePhase.ready &&
-        latest.localSnapshotStatus == LocalSnapshotStatus.failed) {
-      final continueAnyway = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('本地内容尚未保存'),
-          content: const Text('现在进入邮箱验证可能丢失刚才的修改。建议留下并检查设备存储后重试。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('留下编辑'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('仍然验证'),
-            ),
-          ],
-        ),
-      );
-      if (continueAnyway != true || !mounted) return;
-    }
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: const {'returnTo': '/compose/thread'},
-      ).toString(),
-    );
-    if (verified != true || !mounted) return;
-    await ref.read(threadComposeControllerProvider.notifier).refreshBootstrap();
-  }
-
   void _scheduleDocumentSync(ThreadComposeState state) {
     if (state.phase != ThreadComposePhase.ready ||
         state.documentRevision == _scheduledDocumentRevision) {
@@ -494,37 +494,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     ).showSnackBar(const SnackBar(content: Text('已保存到云端草稿')));
   }
 
-  Future<void> _openRemoteDraftActions() async {
-    final action = await showModalBottomSheet<_RemoteDraftAction>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.only(bottom: 8),
-        children: [
-          const ListTile(
-            title: Text('云端草稿'),
-            subtitle: Text('只在需要时保存或切换，不占用正文编辑空间。'),
-          ),
-          ListTile(
-            key: const Key('compose-save-draft'),
-            leading: const WenyouIcon(WenyouIconIds.statusSyncing),
-            title: const Text('保存当前主题'),
-            subtitle: const Text('保存标题、正文和发布设置'),
-            onTap: () => Navigator.pop(context, _RemoteDraftAction.save),
-          ),
-          ListTile(
-            key: const Key('compose-open-remote-drafts'),
-            leading: const WenyouIcon(WenyouIconIds.contentFolderOpen),
-            title: const Text('打开云端草稿'),
-            subtitle: const Text('浏览并切换本人未发布的主题'),
-            onTap: () => Navigator.pop(context, _RemoteDraftAction.open),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || action == null) return;
+  Future<void> _handleRemoteDraftAction(_RemoteDraftAction action) async {
     switch (action) {
       case _RemoteDraftAction.save:
         await _saveThreadDraft();

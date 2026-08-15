@@ -73,12 +73,11 @@ void main() {
     expect(find.text('用户资料 player-1'), findsOneWidget);
   });
 
-  testWidgets('40107 保留成员列表并进入邮箱验证', (tester) async {
+  testWidgets('写入失败保留成员列表并可关闭提示', (tester) async {
     final repository = _FakeRepository(
       bootstrap: _bootstrap(),
       updateFailure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
+        userMessage: '成员状态暂时没有保存。',
         requestId: 'member-verify-id',
       ),
     );
@@ -89,10 +88,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('请求 ID：member-verify-id'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('thread-members-verify-email')));
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
+    await tester.tap(find.byKey(const Key('thread-members-dismiss-failure')));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('thread-members-action-failure')),
@@ -147,20 +143,6 @@ Future<void> _pumpPage(
         path: '/users/:userId',
         builder: (_, state) =>
             Scaffold(body: Text('用户资料 ${state.pathParameters['userId']}')),
-      ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, state) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
-          ),
-        ),
       ),
     ],
   );

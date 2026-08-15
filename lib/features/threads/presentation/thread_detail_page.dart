@@ -9,7 +9,9 @@ import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
@@ -225,15 +227,62 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       ),
       if (state.detail case final detail?
           when !detail.isCurrentUserOwner || detail.canManageThread)
-        IconButton(
-          key: const Key('thread-detail-more'),
-          tooltip: '更多主题操作',
-          onPressed: () => _openThreadActions(
+        WenyouAnchoredActionBubble<_ThreadDetailAction>(
+          actions: [
+            if (detail.canManageThread)
+              WenyouPopoverAction(
+                value: _ThreadDetailAction.editBody,
+                icon: state.selectedSubthread?.body == null
+                    ? WenyouIconIds.contentDraft
+                    : WenyouIconIds.actionEdit,
+                label: state.selectedSubthread?.body == null ? '添加正文' : '编辑正文',
+                semanticsLabel: state.selectedSubthread?.body == null
+                    ? '添加当前子贴正文'
+                    : '编辑当前子贴正文',
+                enabled: state.selectedSubthread != null,
+                key: const Key('thread-detail-edit-body'),
+              ),
+            if (detail.canManageThread)
+              const WenyouPopoverAction(
+                value: _ThreadDetailAction.manage,
+                icon: WenyouIconIds.actionFilter,
+                label: '管理',
+                semanticsLabel: '管理主题',
+                key: Key('thread-detail-manage'),
+              ),
+            if (!detail.isCurrentUserOwner)
+              const WenyouPopoverAction(
+                value: _ThreadDetailAction.tip,
+                icon: WenyouIconIds.actionTip,
+                label: '加油',
+                semanticsLabel: '为创作者加油',
+                key: Key('thread-detail-tip'),
+              ),
+            if (!detail.isPrivate && !detail.isCurrentUserOwner)
+              const WenyouPopoverAction(
+                value: _ThreadDetailAction.report,
+                icon: WenyouIconIds.actionReport,
+                label: '举报',
+                semanticsLabel: '举报主题',
+                tone: WenyouPopoverActionTone.destructive,
+                key: Key('thread-detail-report'),
+              ),
+          ],
+          placement: WenyouPopoverPlacement.below,
+          alignment: WenyouPopoverAlignment.end,
+          semanticLabel: '主题操作',
+          onSelected: (action) => _handleThreadAction(
+            action,
             detail,
             provider,
             selectedSubthread: state.selectedSubthread,
           ),
-          icon: const WenyouIcon(WenyouIconIds.actionMore),
+          anchorBuilder: (context, handle) => IconButton(
+            key: const Key('thread-detail-more'),
+            tooltip: '更多主题操作',
+            onPressed: handle.toggle,
+            icon: const WenyouIcon(WenyouIconIds.actionMore),
+          ),
         ),
     ];
   }
@@ -258,69 +307,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
   }
 
-  Future<void> _openThreadActions(
+  Future<void> _handleThreadAction(
+    _ThreadDetailAction action,
     ThreadDetailModel detail,
     AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
     provider, {
     required ThreadSubthreadModel? selectedSubthread,
   }) async {
-    final action = await showModalBottomSheet<_ThreadDetailAction>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.only(bottom: 8),
-        children: [
-          const ListTile(
-            title: Text('主题操作'),
-            subtitle: Text('低频操作集中在这里，阅读时不占用顶栏。'),
-          ),
-          if (detail.canManageThread)
-            ListTile(
-              key: const Key('thread-detail-edit-body'),
-              leading: WenyouIcon(
-                selectedSubthread?.body == null
-                    ? WenyouIconIds.contentDraft
-                    : WenyouIconIds.actionEdit,
-              ),
-              title: Text(
-                selectedSubthread?.body == null ? '添加当前子贴正文' : '编辑当前子贴正文',
-              ),
-              subtitle: Text(selectedSubthread?.title ?? '当前没有可编辑的子贴'),
-              enabled: selectedSubthread != null,
-              onTap: selectedSubthread == null
-                  ? null
-                  : () => Navigator.pop(context, _ThreadDetailAction.editBody),
-            ),
-          if (detail.canManageThread)
-            ListTile(
-              key: const Key('thread-detail-manage'),
-              leading: const WenyouIcon(WenyouIconIds.actionFilter),
-              title: const Text('管理主题'),
-              subtitle: const Text('维护主题信息、子贴、标签与成员'),
-              onTap: () => Navigator.pop(context, _ThreadDetailAction.manage),
-            ),
-          if (!detail.isCurrentUserOwner)
-            ListTile(
-              key: const Key('thread-detail-tip'),
-              leading: const WenyouIcon(WenyouIconIds.actionTip),
-              title: const Text('为创作者加油'),
-              subtitle: Text('支持 ${detail.owner.username} 的创作'),
-              onTap: () => Navigator.pop(context, _ThreadDetailAction.tip),
-            ),
-          if (!detail.isPrivate && !detail.isCurrentUserOwner)
-            ListTile(
-              key: const Key('thread-detail-report'),
-              leading: const WenyouIcon(WenyouIconIds.actionReport),
-              title: const Text('举报主题'),
-              subtitle: const Text('向站务提交人工审核'),
-              onTap: () => Navigator.pop(context, _ThreadDetailAction.report),
-            ),
-        ],
-      ),
-    );
-    if (action == null || !mounted) return;
     switch (action) {
       case _ThreadDetailAction.editBody:
         if (selectedSubthread != null) {
@@ -439,8 +432,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           top: 16,
           child: _ThreadOverview(
             detail: detail,
-            categoryName:
-                widget.categoryNameHint ?? detail.categorySlug ?? '未分类',
+            categoryName: widget.categoryNameHint ?? '未分类',
             selectedSubthreadId: state.selectedSubthreadId,
             onSubthreadSelected: (id) =>
                 ref.read(provider.notifier).selectSubthread(id),

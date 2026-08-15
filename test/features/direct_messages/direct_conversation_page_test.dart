@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -144,10 +145,10 @@ void main() {
     await tester.pumpAndSettle();
 
     final field = find.byKey(const Key('direct-message-composer-field'));
-    final emptySend = tester.widget<IconButton>(
+    final emptySend = tester.widget<WenyouComposerSubmitButton>(
       find.byKey(const Key('direct-message-composer-submit')),
     );
-    expect(emptySend.onPressed, isNull);
+    expect(emptySend.enabled, isFalse);
     await tester.enterText(field, '带图消息');
     await tester.tapAt(tester.getTopLeft(field) + const Offset(24, 20));
     await tester.pump();
@@ -211,10 +212,10 @@ void main() {
       find.byKey(const Key('direct-message-composer-retry-upload')),
       findsOneWidget,
     );
-    var send = tester.widget<IconButton>(
+    var send = tester.widget<WenyouComposerSubmitButton>(
       find.byKey(const Key('direct-message-composer-submit')),
     );
-    expect(send.onPressed, isNull);
+    expect(send.enabled, isFalse);
 
     await tester.tap(
       find.byKey(const Key('direct-message-composer-retry-upload')),
@@ -227,10 +228,10 @@ void main() {
       find.byKey(const Key('direct-message-composer-attachment')),
       findsOneWidget,
     );
-    send = tester.widget<IconButton>(
+    send = tester.widget<WenyouComposerSubmitButton>(
       find.byKey(const Key('direct-message-composer-submit')),
     );
-    expect(send.onPressed, isNotNull);
+    expect(send.enabled, isTrue);
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -265,11 +266,11 @@ void main() {
     expect(find.text('正在上传 50%'), findsOneWidget);
     expect(
       tester
-          .widget<IconButton>(
+          .widget<WenyouComposerSubmitButton>(
             find.byKey(const Key('direct-message-composer-submit')),
           )
-          .onPressed,
-      isNull,
+          .enabled,
+      isFalse,
     );
 
     await tester.tap(
@@ -287,79 +288,13 @@ void main() {
     );
     expect(
       tester
-          .widget<IconButton>(
+          .widget<WenyouComposerSubmitButton>(
             find.byKey(const Key('direct-message-composer-submit')),
           )
-          .onPressed,
-      isNotNull,
+          .enabled,
+      isTrue,
     );
     expect(repository.sentDrafts, isEmpty);
-  });
-
-  testWidgets('40107 失败气泡提供验证邮箱入口且返回后保留原位重试', (tester) async {
-    final repository = _FakeRepository(
-      failSendOnce: true,
-      sendFailure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
-      ),
-    );
-    final router = _router(verifyResult: true);
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: _overrides(repository),
-        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.byKey(const Key('direct-message-composer-field')),
-      '验证后发送',
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    final failed = find.byWidgetPredicate(
-      (widget) =>
-          widget.key is ValueKey<String> &&
-          (widget.key! as ValueKey<String>).value.startsWith(
-            'direct-message-delivery-failed-',
-          ),
-    );
-    await tester.tap(failed);
-    await tester.pumpAndSettle();
-    final verify = find.byWidgetPredicate(
-      (widget) =>
-          widget.key is ValueKey<String> &&
-          (widget.key! as ValueKey<String>).value.startsWith(
-            'direct-message-verify-email-',
-          ),
-    );
-    expect(verify, findsOneWidget);
-    await tester.tap(verify);
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('finish-email-verification')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('finish-email-verification')));
-    await tester.pumpAndSettle();
-
-    expect(failed, findsOneWidget);
-    await tester.tap(failed);
-    await tester.pumpAndSettle();
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget.key is ValueKey<String> &&
-            (widget.key! as ValueKey<String>).value.startsWith(
-              'direct-message-retry-',
-            ),
-      ),
-      findsOneWidget,
-    );
-    expect(repository.sentDrafts, hasLength(1));
   });
 
   testWidgets('连续消息保持紧凑分组且组末才有方向尾角', (tester) async {
@@ -438,32 +373,6 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('点击查看陌生人图片'), findsNothing);
-  });
-
-  testWidgets('接受请求遇到邮箱验证错误保留首条消息与验证入口', (tester) async {
-    final repository = _FakeRepository(
-      conversation: _incomingRequest(),
-      messages: [_incomingTextMessage()],
-      failAcceptOnce: true,
-    );
-    final router = _router();
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: _overrides(repository),
-        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('direct-conversation-accept')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('你好'), findsOneWidget);
-    expect(
-      find.byKey(const Key('direct-conversation-verify-email')),
-      findsOneWidget,
-    );
   });
 
   testWidgets('阅读历史时收到新消息不抢滚动并显示回到底部入口', (tester) async {
@@ -786,7 +695,7 @@ List<Override> _overrides(_FakeRepository repository) {
   ];
 }
 
-GoRouter _router({bool verifyResult = false}) {
+GoRouter _router() {
   return GoRouter(
     initialLocation: '/messages/conversation-1',
     routes: [
@@ -802,17 +711,6 @@ GoRouter _router({bool verifyResult = false}) {
         builder: (_, state) =>
             Scaffold(body: Text('用户=${state.pathParameters['userId']}')),
       ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        name: 'verify-email',
-        builder: (context, _) => Scaffold(
-          body: TextButton(
-            key: const Key('finish-email-verification'),
-            onPressed: () => context.pop(verifyResult),
-            child: const Text('完成验证'),
-          ),
-        ),
-      ),
     ],
   );
 }
@@ -821,18 +719,14 @@ class _FakeRepository implements DirectMessageRepository {
   _FakeRepository({
     DirectConversation? conversation,
     List<DirectMessage>? messages,
-    this.failAcceptOnce = false,
     this.failSendOnce = false,
-    this.sendFailure,
   }) : conversation = conversation ?? _acceptedConversation(),
        messages = messages ?? [_incomingTextMessage()];
 
   DirectConversation conversation;
   final List<DirectMessage> messages;
   final List<DirectMessage> pendingAfterMessages = [];
-  bool failAcceptOnce;
   bool failSendOnce;
-  final ApiFailure? sendFailure;
   final List<DirectMessageDraft> sentDrafts = [];
   final List<String> recalledIds = [];
   final List<bool> archiveValues = [];
@@ -866,7 +760,7 @@ class _FakeRepository implements DirectMessageRepository {
     sentDrafts.add(draft);
     if (failSendOnce) {
       failSendOnce = false;
-      throw sendFailure ?? const ApiFailure(userMessage: '网络暂时不可用。');
+      throw const ApiFailure(userMessage: '网络暂时不可用。');
     }
     final message = DirectMessage(
       id: 'sent-1',
@@ -886,14 +780,6 @@ class _FakeRepository implements DirectMessageRepository {
     required bool accept,
   }) async {
     requestActions.add(accept);
-    if (accept && failAcceptOnce) {
-      failAcceptOnce = false;
-      throw const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
-        requestId: 'verify-request',
-      );
-    }
     conversation = accept ? _acceptedConversation() : _declinedConversation();
     if (!accept) messages.clear();
     return conversation;

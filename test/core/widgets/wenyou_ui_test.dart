@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 import '../../support/foundation_icon_finder.dart';
@@ -143,6 +144,53 @@ void main() {
     await tester.pump(const Duration(milliseconds: 150));
     expect(tester.getSize(find.byType(FilledButton)).height, 48);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('编辑器发送按钮区分可发送、禁用和发送中状态', (tester) async {
+    Widget buildButton({required bool enabled, required bool loading}) {
+      return MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Center(
+            child: WenyouComposerSubmitButton(
+              enabled: enabled,
+              loading: loading,
+              label: '发送',
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+    }
+
+    Future<void> expectColors({
+      required Color background,
+      required Color foreground,
+    }) async {
+      final button = tester.widget<IconButton>(find.byType(IconButton));
+      final style = button.style!;
+      expect(style.backgroundColor!.resolve(<WidgetState>{}), background);
+      expect(style.foregroundColor!.resolve(<WidgetState>{}), foreground);
+    }
+
+    await tester.pumpWidget(buildButton(enabled: true, loading: false));
+    await expectColors(
+      background: WenyouThemeTokens.light.brandForeground,
+      foreground: WenyouThemeTokens.light.panel,
+    );
+
+    await tester.pumpWidget(buildButton(enabled: false, loading: false));
+    await expectColors(
+      background: WenyouThemeTokens.light.border,
+      foreground: WenyouThemeTokens.light.mutedText,
+    );
+
+    await tester.pumpWidget(buildButton(enabled: false, loading: true));
+    await expectColors(
+      background: WenyouThemeTokens.light.brandForeground,
+      foreground: WenyouThemeTokens.light.panel,
+    );
+    expect(find.bySemanticsLabel('发送，处理中'), findsOneWidget);
   });
 
   testWidgets('状态提示同时展示图标、信息和请求 ID', (tester) async {

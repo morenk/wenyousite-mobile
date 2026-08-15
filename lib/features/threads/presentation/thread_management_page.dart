@@ -254,12 +254,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                         onPressed: locked ? null : _resolveConflict,
                         child: const Text('处理冲突'),
                       )
-                    : failure.businessCode == 40107
-                    ? TextButton(
-                        key: const Key('thread-management-verify-email'),
-                        onPressed: locked ? null : _openEmailVerification,
-                        child: const Text('先验证邮箱'),
-                      )
                     : null,
               ),
             ],
@@ -467,21 +461,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     setState(() {});
     await WidgetsBinding.instance.endOfFrame;
     if (mounted) context.pop(result);
-  }
-
-  Future<void> _openEmailVerification() async {
-    final returnTo = '/threads/${widget.threadId}/manage';
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: {'returnTo': returnTo},
-      ).toString(),
-    );
-    if (verified == true && mounted) {
-      ref
-          .read(threadManagementControllerProvider(widget.threadId).notifier)
-          .clearFailure();
-    }
   }
 }
 

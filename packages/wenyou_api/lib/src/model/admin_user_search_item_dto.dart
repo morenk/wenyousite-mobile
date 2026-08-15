@@ -16,7 +16,6 @@ part 'admin_user_search_item_dto.g.dart';
 /// * [username]
 /// * [email]
 /// * [role]
-/// * [emailVerified]
 /// * [createdAt]
 @BuiltValue()
 abstract class AdminUserSearchItemDto implements Built<AdminUserSearchItemDto, AdminUserSearchItemDtoBuilder> {
@@ -32,9 +31,6 @@ abstract class AdminUserSearchItemDto implements Built<AdminUserSearchItemDto, A
   @BuiltValueField(wireName: r'role')
   AdminUserSearchItemDtoRoleEnum get role;
   // enum roleEnum {  USER,  ADMIN,  SUPER_ADMIN,  };
-
-  @BuiltValueField(wireName: r'emailVerified')
-  bool get emailVerified;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -81,11 +77,6 @@ class _$AdminUserSearchItemDtoSerializer implements PrimitiveSerializer<AdminUse
     yield serializers.serialize(
       object.role,
       specifiedType: const FullType(AdminUserSearchItemDtoRoleEnum),
-    );
-    yield r'emailVerified';
-    yield serializers.serialize(
-      object.emailVerified,
-      specifiedType: const FullType(bool),
     );
     yield r'createdAt';
     yield serializers.serialize(
@@ -142,13 +133,6 @@ class _$AdminUserSearchItemDtoSerializer implements PrimitiveSerializer<AdminUse
             specifiedType: const FullType(AdminUserSearchItemDtoRoleEnum),
           ) as AdminUserSearchItemDtoRoleEnum;
           result.role = valueDes;
-          break;
-        case r'emailVerified':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(bool),
-          ) as bool;
-          result.emailVerified = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(

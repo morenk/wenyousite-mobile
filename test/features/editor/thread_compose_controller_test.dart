@@ -41,7 +41,6 @@ void main() {
     expect(controller.state.title, '恢复标题');
     expect(controller.state.body, '恢复正文');
     expect(controller.state.categories.single.slug, 'TRPG');
-    expect(controller.state.emailVerified, isTrue);
   });
 
   test('字段变化防抖写完整 Markdown 快照且不会保存 Delta', () async {
@@ -321,7 +320,6 @@ class _FakeRepository implements ThreadComposeRepository {
   Future<ThreadComposeBootstrap> fetchBootstrap() async {
     return const ThreadComposeBootstrap(
       userId: 'user-one',
-      emailVerified: true,
       categories: [
         ThreadComposeCategory(slug: 'TRPG', name: '跑团', sortOrder: 1),
       ],

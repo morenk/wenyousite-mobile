@@ -83,27 +83,19 @@ class _MembersReadyState extends ConsumerWidget {
               detail: state.failure!.requestId == null
                   ? null
                   : '请求 ID：${state.failure!.requestId}',
-              action: state.failure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('thread-members-verify-email'),
-                      onPressed: state.isUpdating
-                          ? null
-                          : () => _openVerification(context, ref),
-                      child: const Text('先验证邮箱'),
-                    )
-                  : TextButton(
-                      key: const Key('thread-members-dismiss-failure'),
-                      onPressed: state.isUpdating
-                          ? null
-                          : () => ref
-                                .read(
-                                  threadMemberManagementControllerProvider(
-                                    threadId,
-                                  ).notifier,
-                                )
-                                .clearFailure(),
-                      child: const Text('知道了'),
-                    ),
+              action: TextButton(
+                key: const Key('thread-members-dismiss-failure'),
+                onPressed: state.isUpdating
+                    ? null
+                    : () => ref
+                          .read(
+                            threadMemberManagementControllerProvider(
+                              threadId,
+                            ).notifier,
+                          )
+                          .clearFailure(),
+                child: const Text('知道了'),
+              ),
             ),
           ],
           SizedBox(height: tokens.space12),
@@ -129,21 +121,6 @@ class _MembersReadyState extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _openVerification(BuildContext context, WidgetRef ref) async {
-    final returnTo = '/threads/$threadId/manage/members';
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: {'returnTo': returnTo},
-      ).toString(),
-    );
-    if (verified == true && context.mounted) {
-      ref
-          .read(threadMemberManagementControllerProvider(threadId).notifier)
-          .clearFailure();
-    }
   }
 }
 

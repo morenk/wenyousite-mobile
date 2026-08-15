@@ -35,11 +35,10 @@ void main() {
     expect(find.byKey(const Key('thread-invite-link-copy')), findsOneWidget);
   });
 
-  testWidgets('生成失败显示请求 ID 并可进入邮箱验证后恢复', (tester) async {
+  testWidgets('生成失败显示请求 ID 并可关闭提示', (tester) async {
     final repository = _PanelRepository(
       failure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
+        userMessage: '邀请暂时没有生成。',
         requestId: 'invite-request-id',
       ),
     );
@@ -53,10 +52,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('请求 ID：invite-request-id'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('thread-invite-link-verify-email')));
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
+    await tester.tap(
+      find.byKey(const Key('thread-invite-link-dismiss-failure')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('thread-invite-link-failure')), findsNothing);
@@ -80,20 +78,6 @@ Future<void> _pumpPanel(
         builder: (_, _) => const Scaffold(
           body: SingleChildScrollView(
             child: ThreadInviteLinkPanel(threadId: 'thread-1'),
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, _) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
           ),
         ),
       ),

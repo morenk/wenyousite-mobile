@@ -7,7 +7,6 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/message_center_page.dart';
-import 'package:wenyousite_mobile/features/auth/presentation/email_verification_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
@@ -259,7 +258,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/users/:userId',
         name: 'user-profile',
         builder: (context, state) {
-          return PublicUserPage(userId: state.pathParameters['userId']!);
+          return PublicUserPage(
+            userId: state.pathParameters['userId']!,
+            previewOnly: state.uri.queryParameters['mode'] == 'preview',
+          );
         },
       ),
       GoRoute(
@@ -352,13 +354,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/me/security/email',
         name: 'change-email',
         builder: (context, state) => const ChangeEmailPage(),
-      ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        name: 'verify-email',
-        builder: (context, state) => EmailVerificationPage(
-          returnTo: state.uri.queryParameters['returnTo'],
-        ),
       ),
       GoRoute(
         path: '/me/security/delete-account',

@@ -66,9 +66,6 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40106)
   static const BusinessErrorCode ACCOUNT_DEACTIVATED = _$ACCOUNT_DEACTIVATED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
-  @BuiltValueEnumConst(wireNumber: 40107)
-  static const BusinessErrorCode EMAIL_NOT_VERIFIED = _$EMAIL_NOT_VERIFIED;
-  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40108)
   static const BusinessErrorCode ACCOUNT_SUSPENDED = _$ACCOUNT_SUSPENDED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

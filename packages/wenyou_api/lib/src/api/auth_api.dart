@@ -18,12 +18,10 @@ import 'package:wenyou_api/src/model/auth_logout200_response.dart';
 import 'package:wenyou_api/src/model/auth_refresh200_response.dart';
 import 'package:wenyou_api/src/model/auth_request_change_email_code200_response.dart';
 import 'package:wenyou_api/src/model/auth_request_code200_response.dart';
-import 'package:wenyou_api/src/model/auth_resend_verification200_response.dart';
 import 'package:wenyou_api/src/model/auth_reset_password200_response.dart';
 import 'package:wenyou_api/src/model/auth_revoke_session200_response.dart';
 import 'package:wenyou_api/src/model/auth_verify_and_complete200_response.dart';
 import 'package:wenyou_api/src/model/auth_verify_change_email200_response.dart';
-import 'package:wenyou_api/src/model/auth_verify_email200_response.dart';
 import 'package:wenyou_api/src/model/change_email_request_dto.dart';
 import 'package:wenyou_api/src/model/change_email_verify_dto.dart';
 import 'package:wenyou_api/src/model/change_password_dto.dart';
@@ -32,10 +30,8 @@ import 'package:wenyou_api/src/model/login_dto.dart';
 import 'package:wenyou_api/src/model/logout_dto.dart';
 import 'package:wenyou_api/src/model/refresh_dto.dart';
 import 'package:wenyou_api/src/model/request_code_dto.dart';
-import 'package:wenyou_api/src/model/resend_verification_dto.dart';
 import 'package:wenyou_api/src/model/reset_password_dto.dart';
 import 'package:wenyou_api/src/model/verify_and_complete_dto.dart';
-import 'package:wenyou_api/src/model/verify_email_dto.dart';
 
 class AuthApi {
 
@@ -810,101 +806,6 @@ class AuthApi {
     );
   }
 
-  /// 重发验证邮件（限流 1次/分钟）
-  ///
-  ///
-  /// Parameters:
-  /// * [resendVerificationDto]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [AuthResendVerification200Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<AuthResendVerification200Response>> authResendVerification({
-    required ResendVerificationDto resendVerificationDto,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/api/v1/auth/resend-verification';
-    final _options = Options(
-      method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
-        ...?extra,
-      },
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(ResendVerificationDto);
-      _bodyData = _serializers.serialize(resendVerificationDto, specifiedType: _type);
-
-    } catch(error, stackTrace) {
-      throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    AuthResendVerification200Response? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(AuthResendVerification200Response),
-      ) as AuthResendVerification200Response;
-
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<AuthResendVerification200Response>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
   /// 用邮箱 + 验证码重置密码，成功后吊销全部 refresh token
   ///
   ///
@@ -1081,7 +982,7 @@ class AuthApi {
     );
   }
 
-  /// 注册第二步：验证邮箱 + 设置用户名密码。完成后 emailVerified&#x3D;true 立即可用
+  /// 注册第二步：验证邮箱 + 设置用户名密码，完成后立即建立账号会话
   ///
   ///
   /// Parameters:
@@ -1269,107 +1170,6 @@ class AuthApi {
     }
 
     return Response<AuthVerifyChangeEmail200Response>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// 验证当前登录用户的邮箱（6 位验证码，限流 5次/分钟）
-  ///
-  ///
-  /// Parameters:
-  /// * [verifyEmailDto]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [AuthVerifyEmail200Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<AuthVerifyEmail200Response>> authVerifyEmail({
-    required VerifyEmailDto verifyEmailDto,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/api/v1/auth/verify-email';
-    final _options = Options(
-      method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearer',
-          },
-        ],
-        ...?extra,
-      },
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(VerifyEmailDto);
-      _bodyData = _serializers.serialize(verifyEmailDto, specifiedType: _type);
-
-    } catch(error, stackTrace) {
-      throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    AuthVerifyEmail200Response? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(AuthVerifyEmail200Response),
-      ) as AuthVerifyEmail200Response;
-
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<AuthVerifyEmail200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

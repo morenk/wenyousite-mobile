@@ -641,7 +641,6 @@ final _meProfile = MeProfileModel(
   showRecentReplies: true,
   showPlayedThreads: true,
   showBookmarks: true,
-  emailVerified: true,
   followingCount: 7,
   followerCount: 9,
   createdAt: DateTime.utc(2026, 8, 1),

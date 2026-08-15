@@ -3,9 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
@@ -41,56 +38,6 @@ void main() {
     expect(repository.lastInput?.reason, ReportReason.other);
     expect(repository.lastInput?.details, '这里是具体问题');
     expect(find.textContaining('管理员会根据站点规范进行审核'), findsOneWidget);
-  });
-
-  testWidgets('邮箱未验证时在表单内给出恢复入口和请求 ID', (tester) async {
-    final repository = _WidgetReportRepository(
-      nextFailure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
-        requestId: 'report-request-id',
-      ),
-    );
-    final container = await _reportContainer(repository);
-    final router = GoRouter(
-      initialLocation: '/users/user-1',
-      routes: [
-        GoRoute(
-          path: '/users/:userId',
-          builder: (_, _) => const Scaffold(body: _ReportTestButton()),
-        ),
-        GoRoute(
-          path: '/me/security/verify-email',
-          builder: (context, _) => Scaffold(
-            body: FilledButton(
-              onPressed: () => context.pop(true),
-              child: const Text('完成邮箱验证'),
-            ),
-          ),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
-      ),
-    );
-
-    await tester.tap(find.text('举报'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('report-submit')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('report-verify-email')), findsOneWidget);
-    expect(find.text('请求 ID：report-request-id'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('report-verify-email')));
-    await tester.pumpAndSettle();
-    expect(find.text('完成邮箱验证'), findsOneWidget);
-    await tester.tap(find.text('完成邮箱验证'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('report-reason')), findsOneWidget);
   });
 }
 
@@ -133,21 +80,13 @@ class _ReportTestButton extends StatelessWidget {
 }
 
 class _WidgetReportRepository implements ReportRepository {
-  _WidgetReportRepository({this.nextFailure});
-
   var calls = 0;
-  ApiFailure? nextFailure;
   ReportInput? lastInput;
 
   @override
   Future<ReportResult> create(ReportInput input) async {
     calls += 1;
     lastInput = input;
-    final failure = nextFailure;
-    if (failure != null) {
-      nextFailure = null;
-      throw failure;
-    }
     return ReportResult(
       id: 'report-1',
       target: input.target,

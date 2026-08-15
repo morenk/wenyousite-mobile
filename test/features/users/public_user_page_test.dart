@@ -98,6 +98,30 @@ void main() {
     expect(find.byKey(const Key('user-relation-follow')), findsNothing);
     expect(find.byKey(const Key('user-relation-block')), findsNothing);
     expect(find.byKey(const Key('public-user-report')), findsNothing);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
+  });
+
+  testWidgets('本人公开主页预览模式只读且保留公开内容入口', (tester) async {
+    final container = await _authenticatedContainer(
+      currentUserId: 'user-1',
+      publicRepository: _FakePublicUserRepository(),
+      relationRepository: _FakeUserRelationRepository(),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PublicUserPage(userId: 'user-1', previewOnly: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('预览公开主页'), findsOneWidget);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsNothing);
+    expect(find.byKey(const Key('public-user-open-moments')), findsOneWidget);
   });
 
   testWidgets('能力开启且目标非本人时可从用户主页发起私聊', (tester) async {
@@ -147,6 +171,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('创建主题'), findsOneWidget);
+    expect(find.text('招募中'), findsOneWidget);
+    expect(find.text('RPG'), findsNothing);
     expect(repository.createdCalls, 1);
     expect(repository.playedCalls, 0);
     expect(repository.replyCalls, 0);
@@ -414,6 +440,16 @@ class _FakePublicUserRepository implements PublicUserRepository {
   int bookmarkCalls = 0;
 
   @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
+    return PublicUserActivitySummary(
+      momentCount: 3,
+      createdThreadCount: 2,
+      playedThreadCount: showPrivateContent ? 1 : null,
+      replyCount: showPrivateContent ? 4 : null,
+    );
+  }
+
+  @override
   Future<PublicUserProfileModel> fetchUser(String userId) async {
     calls += 1;
     if (failFirstRequest && calls == 1) {
@@ -544,7 +580,6 @@ class _FakeMeProfileRepository implements MeProfileRepository {
       showRecentReplies: true,
       showPlayedThreads: true,
       showBookmarks: true,
-      emailVerified: true,
       followingCount: 7,
       followerCount: 9,
       createdAt: DateTime.utc(2026, 8, 1),

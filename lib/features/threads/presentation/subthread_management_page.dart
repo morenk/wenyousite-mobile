@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -80,21 +79,13 @@ class _SubthreadsReadyState extends ConsumerWidget {
               detail: state.failure!.requestId == null
                   ? null
                   : '请求 ID：${state.failure!.requestId}',
-              action: state.failure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('subthread-management-verify-email'),
-                      onPressed: state.isBusy
-                          ? null
-                          : () => _verifyEmail(context, ref, threadId),
-                      child: const Text('先验证邮箱'),
-                    )
-                  : TextButton(
-                      key: const Key('subthread-management-dismiss-failure'),
-                      onPressed: state.isBusy
-                          ? null
-                          : () => ref.read(provider.notifier).clearFailure(),
-                      child: const Text('知道了'),
-                    ),
+              action: TextButton(
+                key: const Key('subthread-management-dismiss-failure'),
+                onPressed: state.isBusy
+                    ? null
+                    : () => ref.read(provider.notifier).clearFailure(),
+                child: const Text('知道了'),
+              ),
             ),
           ],
           SizedBox(height: tokens.space12),
@@ -146,7 +137,6 @@ class _SubthreadsReadyState extends ConsumerWidget {
           final succeeded = await ref.read(provider.notifier).create(draft);
           return succeeded ? null : ref.read(provider).failure;
         },
-        onVerifyEmail: () => _verifyEmail(context, ref, threadId),
       ),
     );
     if (succeeded == true && context.mounted) {
@@ -301,7 +291,6 @@ class _SubthreadCard extends ConsumerWidget {
               .update(latest, draft);
           return succeeded ? null : ref.read(provider).failure;
         },
-        onVerifyEmail: () => _verifyEmail(context, ref, threadId),
       ),
     );
     if (succeeded == true && context.mounted) {
@@ -352,14 +341,12 @@ class _SubthreadFormDialog extends StatefulWidget {
   const _SubthreadFormDialog({
     required this.mode,
     required this.onSubmit,
-    required this.onVerifyEmail,
     this.initial,
   });
 
   final _SubthreadFormMode mode;
   final SubthreadManagementItem? initial;
   final Future<ApiFailure?> Function(SubthreadManagementDraft draft) onSubmit;
-  final Future<bool> Function() onVerifyEmail;
 
   @override
   State<_SubthreadFormDialog> createState() => _SubthreadFormDialogState();
@@ -452,21 +439,6 @@ class _SubthreadFormDialogState extends State<_SubthreadFormDialog> {
                     detail: _failure!.requestId == null
                         ? null
                         : '请求 ID：${_failure!.requestId}',
-                    action: _failure!.businessCode == 40107
-                        ? TextButton(
-                            key: const Key('subthread-form-verify-email'),
-                            onPressed: _isSubmitting
-                                ? null
-                                : () async {
-                                    final verified = await widget
-                                        .onVerifyEmail();
-                                    if (verified && mounted) {
-                                      setState(() => _failure = null);
-                                    }
-                                  },
-                            child: const Text('先验证邮箱'),
-                          )
-                        : null,
                   ),
                 ],
               ],
@@ -526,27 +498,6 @@ class _SubthreadFormDialogState extends State<_SubthreadFormDialog> {
       _failure = failure;
     });
   }
-}
-
-Future<bool> _verifyEmail(
-  BuildContext context,
-  WidgetRef ref,
-  String threadId,
-) async {
-  final returnTo = '/threads/$threadId/manage/subthreads';
-  final verified = await context.push<bool>(
-    Uri(
-      path: '/me/security/verify-email',
-      queryParameters: {'returnTo': returnTo},
-    ).toString(),
-  );
-  if (verified == true && context.mounted) {
-    ref
-        .read(subthreadManagementControllerProvider(threadId).notifier)
-        .clearFailure();
-    return true;
-  }
-  return false;
 }
 
 class _SubthreadsFatalState extends StatelessWidget {

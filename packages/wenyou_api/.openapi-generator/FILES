@@ -131,13 +131,11 @@ lib/src/model/auth_logout200_response.dart
 lib/src/model/auth_refresh200_response.dart
 lib/src/model/auth_request_change_email_code200_response.dart
 lib/src/model/auth_request_code200_response.dart
-lib/src/model/auth_resend_verification200_response.dart
 lib/src/model/auth_reset_password200_response.dart
 lib/src/model/auth_response_dto.dart
 lib/src/model/auth_revoke_session200_response.dart
 lib/src/model/auth_verify_and_complete200_response.dart
 lib/src/model/auth_verify_change_email200_response.dart
-lib/src/model/auth_verify_email200_response.dart
 lib/src/model/blocked_user_record_response_dto.dart
 lib/src/model/bookmark_folder_response_dto.dart
 lib/src/model/bookmark_response_dto.dart
@@ -344,7 +342,6 @@ lib/src/model/report_response_dto.dart
 lib/src/model/report_user_summary_dto.dart
 lib/src/model/reports_create201_response.dart
 lib/src/model/request_code_dto.dart
-lib/src/model/resend_verification_dto.dart
 lib/src/model/reset_password_dto.dart
 lib/src/model/resolve_moderation_appeal_dto.dart
 lib/src/model/resolve_moderation_case_dto.dart
@@ -489,7 +486,6 @@ lib/src/model/users_set_avatar200_response.dart
 lib/src/model/users_set_profile_cover200_response.dart
 lib/src/model/users_update_me200_response.dart
 lib/src/model/verify_and_complete_dto.dart
-lib/src/model/verify_email_dto.dart
 lib/src/model/wallet_response_dto.dart
 lib/src/model/wallet_transaction_response_dto.dart
 lib/src/model/wallet_transaction_target_response_dto.dart

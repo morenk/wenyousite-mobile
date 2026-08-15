@@ -90,14 +90,12 @@ class _$NotificationAudienceDtoRolesEnumSerializer
 class _$NotificationAudienceDto extends NotificationAudienceDto {
   @override
   final BuiltList<NotificationAudienceDtoRolesEnum>? roles;
-  @override
-  final bool? emailVerified;
 
   factory _$NotificationAudienceDto([
     void Function(NotificationAudienceDtoBuilder)? updates,
   ]) => (NotificationAudienceDtoBuilder()..update(updates))._build();
 
-  _$NotificationAudienceDto._({this.roles, this.emailVerified}) : super._();
+  _$NotificationAudienceDto._({this.roles}) : super._();
   @override
   NotificationAudienceDto rebuild(
     void Function(NotificationAudienceDtoBuilder) updates,
@@ -110,26 +108,22 @@ class _$NotificationAudienceDto extends NotificationAudienceDto {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is NotificationAudienceDto &&
-        roles == other.roles &&
-        emailVerified == other.emailVerified;
+    return other is NotificationAudienceDto && roles == other.roles;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, roles.hashCode);
-    _$hash = $jc(_$hash, emailVerified.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'NotificationAudienceDto')
-          ..add('roles', roles)
-          ..add('emailVerified', emailVerified))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'NotificationAudienceDto',
+    )..add('roles', roles)).toString();
   }
 }
 
@@ -144,11 +138,6 @@ class NotificationAudienceDtoBuilder
   set roles(ListBuilder<NotificationAudienceDtoRolesEnum>? roles) =>
       _$this._roles = roles;
 
-  bool? _emailVerified;
-  bool? get emailVerified => _$this._emailVerified;
-  set emailVerified(bool? emailVerified) =>
-      _$this._emailVerified = emailVerified;
-
   NotificationAudienceDtoBuilder() {
     NotificationAudienceDto._defaults(this);
   }
@@ -157,7 +146,6 @@ class NotificationAudienceDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _roles = $v.roles?.toBuilder();
-      _emailVerified = $v.emailVerified;
       _$v = null;
     }
     return this;
@@ -179,12 +167,7 @@ class NotificationAudienceDtoBuilder
   _$NotificationAudienceDto _build() {
     _$NotificationAudienceDto _$result;
     try {
-      _$result =
-          _$v ??
-          _$NotificationAudienceDto._(
-            roles: _roles?.build(),
-            emailVerified: emailVerified,
-          );
+      _$result = _$v ?? _$NotificationAudienceDto._(roles: _roles?.build());
     } catch (_) {
       late String _$failedField;
       try {

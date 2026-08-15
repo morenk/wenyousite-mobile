@@ -17,7 +17,6 @@ part 'admin_user_moderation_response_dto.g.dart';
 /// * [email]
 /// * [username]
 /// * [role]
-/// * [emailVerified]
 /// * [moderationStatus]
 /// * [currentSanction]
 /// * [createdAt]
@@ -35,9 +34,6 @@ abstract class AdminUserModerationResponseDto implements Built<AdminUserModerati
   @BuiltValueField(wireName: r'role')
   AdminUserModerationResponseDtoRoleEnum get role;
   // enum roleEnum {  USER,  ADMIN,  SUPER_ADMIN,  };
-
-  @BuiltValueField(wireName: r'emailVerified')
-  bool get emailVerified;
 
   @BuiltValueField(wireName: r'moderationStatus')
   AdminUserModerationResponseDtoModerationStatusEnum get moderationStatus;
@@ -91,11 +87,6 @@ class _$AdminUserModerationResponseDtoSerializer implements PrimitiveSerializer<
     yield serializers.serialize(
       object.role,
       specifiedType: const FullType(AdminUserModerationResponseDtoRoleEnum),
-    );
-    yield r'emailVerified';
-    yield serializers.serialize(
-      object.emailVerified,
-      specifiedType: const FullType(bool),
     );
     yield r'moderationStatus';
     yield serializers.serialize(
@@ -164,13 +155,6 @@ class _$AdminUserModerationResponseDtoSerializer implements PrimitiveSerializer<
             specifiedType: const FullType(AdminUserModerationResponseDtoRoleEnum),
           ) as AdminUserModerationResponseDtoRoleEnum;
           result.role = valueDes;
-          break;
-        case r'emailVerified':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(bool),
-          ) as bool;
-          result.emailVerified = valueDes;
           break;
         case r'moderationStatus':
           final valueDes = serializers.deserialize(

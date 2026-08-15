@@ -62,7 +62,9 @@ void main() {
         'editor-bold',
         'editor-italic',
         'editor-image',
-        ...promotedKeys,
+        ...promotedKeys.where((key) => key != 'editor-content-drafts'),
+        if (promotedKeys.contains('editor-content-drafts'))
+          'editor-content-drafts',
         'editor-more',
         'editor-submit',
       ];

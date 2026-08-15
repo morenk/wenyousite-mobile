@@ -23,13 +23,16 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light,
           home: Scaffold(
-            body: DirectMessageComposer(
-              onSend: ({content, mediaId, stickerAssetId}) async {
-                expect(content, isNull);
-                expect(mediaId, isNull);
-                sentStickerId = stickerAssetId;
-                return true;
-              },
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: DirectMessageComposer(
+                onSend: ({content, mediaId, stickerAssetId}) async {
+                  expect(content, isNull);
+                  expect(mediaId, isNull);
+                  sentStickerId = stickerAssetId;
+                  return true;
+                },
+              ),
             ),
           ),
         ),
@@ -37,12 +40,35 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    const fieldKey = Key('direct-message-composer-field');
+    await tester.tap(find.byKey(fieldKey));
+    await tester.enterText(find.byKey(fieldKey), '保留的文字');
+    final editable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(fieldKey),
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(editable.focusNode.hasFocus, isTrue);
+
     await tester.tap(find.byKey(const Key('direct-message-composer-sticker')));
     await tester.pumpAndSettle();
+    expect(editable.focusNode.hasFocus, isTrue);
+    expect(find.text('保留的文字'), findsOneWidget);
+    expect(
+      tester.getRect(find.byKey(const Key('sticker-favorite-grid'))).bottom,
+      lessThan(
+        tester
+            .getRect(find.byKey(const Key('direct-message-composer-sticker')))
+            .top,
+      ),
+    );
     await tester.tap(find.byType(StickerTile).first);
     await tester.pumpAndSettle();
 
     expect(sentStickerId, 'asset-1');
+    expect(editable.focusNode.hasFocus, isTrue);
+    expect(find.text('保留的文字'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -54,12 +80,14 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light,
           home: Scaffold(
-            body: DirectMessageBubble(
-              message: _message(),
-              mine: false,
-              hideIncomingRequestImage: true,
-              canRecall: false,
-              onRecall: () {},
+            body: Center(
+              child: DirectMessageBubble(
+                message: _message(),
+                mine: false,
+                hideIncomingRequestImage: true,
+                canRecall: false,
+                onRecall: () {},
+              ),
             ),
           ),
         ),
@@ -81,6 +109,18 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    final actionRect = tester.getRect(
+      find.byKey(const ValueKey('direct-message-save-sticker-message-1')),
+    );
+    final bubbleRect = tester.getRect(
+      find.byKey(const ValueKey('direct-message-actions-message-1')),
+    );
+    expect(
+      actionRect.bottom <= bubbleRect.top ||
+          actionRect.top >= bubbleRect.bottom,
+      isTrue,
+      reason: '操作气泡 $actionRect 不应覆盖消息气泡 $bubbleRect',
+    );
     await tester.tap(
       find.byKey(const ValueKey('direct-message-save-sticker-message-1')),
     );

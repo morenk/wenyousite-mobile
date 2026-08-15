@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
-import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
@@ -244,20 +243,12 @@ class _ThreadTagManagementPageState
               detail: state.failure!.requestId == null
                   ? null
                   : '请求 ID：${state.failure!.requestId}',
-              action: state.failure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('thread-tag-verify-email'),
-                      onPressed: state.isMutating
-                          ? null
-                          : _openEmailVerification,
-                      child: const Text('先验证邮箱'),
-                    )
-                  : TextButton(
-                      onPressed: state.isMutating
-                          ? null
-                          : () => ref.read(provider.notifier).clearFailure(),
-                      child: const Text('知道了'),
-                    ),
+              action: TextButton(
+                onPressed: state.isMutating
+                    ? null
+                    : () => ref.read(provider.notifier).clearFailure(),
+                child: const Text('知道了'),
+              ),
             ),
           ],
         ],
@@ -324,11 +315,6 @@ class _ThreadTagManagementPageState
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('已移除 #${tag.name}。')));
-  }
-
-  Future<void> _openEmailVerification() async {
-    final returnTo = AppRouteLocations.threadTagManagement(widget.threadId);
-    await context.push(AppRouteLocations.verifyEmail(returnTo: returnTo));
   }
 }
 

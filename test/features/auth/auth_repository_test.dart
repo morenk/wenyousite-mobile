@@ -255,7 +255,6 @@ Response<AuthLogin200Response> _loginResponse({String? refreshToken}) {
                 ..email = 'user@example.com'
                 ..username = 'user'
                 ..role = 'USER'
-                ..emailVerified = true
                 ..level = 1,
             ),
         ),
@@ -301,7 +300,6 @@ Response<AuthVerifyAndComplete200Response> _registrationResponse({
                 ..email = 'new@example.com'
                 ..username = 'newuser'
                 ..role = 'USER'
-                ..emailVerified = true
                 ..level = 1,
             ),
         ),

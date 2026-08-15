@@ -309,6 +309,59 @@ class WenyouAsyncPrimaryButton extends StatelessWidget {
   }
 }
 
+/// A visually strong, shared submit affordance for inline composers and the
+/// editor dock. Loading keeps the enabled brand color so it is not mistaken
+/// for an unavailable action; only an actually unavailable submit is muted.
+class WenyouComposerSubmitButton extends StatelessWidget {
+  const WenyouComposerSubmitButton({
+    required this.enabled,
+    required this.loading,
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  final bool enabled;
+  final bool loading;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final isUnavailable = !enabled && !loading;
+    return IconButton.filled(
+      constraints: BoxConstraints.tightFor(
+        width: tokens.minimumTouchTarget,
+        height: tokens.minimumTouchTarget,
+      ),
+      style: ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          isUnavailable ? tokens.border : tokens.brandForeground,
+        ),
+        foregroundColor: WidgetStatePropertyAll(
+          isUnavailable ? tokens.mutedText : tokens.panel,
+        ),
+      ),
+      tooltip: loading ? '$label，处理中' : label,
+      onPressed: enabled && !loading ? onPressed : null,
+      icon: loading
+          ? Semantics(
+              liveRegion: true,
+              label: '$label，处理中',
+              child: SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: tokens.panel,
+                ),
+              ),
+            )
+          : const WenyouIcon(WenyouIconIds.actionSend),
+    );
+  }
+}
+
 class WenyouEmptyState extends StatelessWidget {
   const WenyouEmptyState({
     required this.icon,

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -18,6 +19,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_card_action_sheet.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
@@ -145,6 +147,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                             ),
                             onDelete: (target) =>
                                 _deleteComment(context, provider, target),
+                            onReport: (target) =>
+                                _reportComment(context, target),
                             onLoadReplies: () => ref
                                 .read(provider.notifier)
                                 .loadReplies(comment.id),
@@ -360,6 +364,16 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     if (confirmed == true && mounted) {
       await ref.read(provider.notifier).removeComment(comment.id);
     }
+  }
+
+  Future<void> _reportComment(BuildContext context, MomentComment comment) {
+    return showWenyouReportFlow(
+      context: context,
+      ref: ref,
+      target: ReportTarget.momentComment(comment.id),
+      targetLabel: '这条评论',
+      returnTo: '/moments/${widget.momentId}',
+    );
   }
 }
 
@@ -624,6 +638,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
     required this.returnTo,
     required this.onReply,
     required this.onDelete,
+    required this.onReport,
     required this.onLoadReplies,
   });
 
@@ -634,6 +649,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
   final String returnTo;
   final ValueChanged<MomentComment> onReply;
   final ValueChanged<MomentComment> onDelete;
+  final Future<void> Function(MomentComment) onReport;
   final VoidCallback onLoadReplies;
 
   @override
@@ -648,6 +664,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
           busy: busyCommentIds.contains(root.id),
           onReply: () => onReply(root),
           onDelete: root.canDelete ? () => onDelete(root) : null,
+          onReport: () => onReport(root),
           reportReturnTo: root.author.id == viewerId ? null : returnTo,
         ),
         if (replies.isNotEmpty) ...[
@@ -669,6 +686,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
                       onDelete: replies[index].canDelete
                           ? () => onDelete(replies[index])
                           : null,
+                      onReport: () => onReport(replies[index]),
                       reportReturnTo: replies[index].author.id == viewerId
                           ? null
                           : returnTo,
@@ -718,23 +736,26 @@ class _MomentCommentBody extends StatelessWidget {
   const _MomentCommentBody({
     required this.comment,
     required this.busy,
-    required this.onReply,
+    this.onReply,
     this.onDelete,
+    this.onReport,
     this.reportReturnTo,
     this.compact = false,
   });
 
   final MomentComment comment;
   final bool busy;
-  final VoidCallback onReply;
+  final VoidCallback? onReply;
   final VoidCallback? onDelete;
+  final Future<void> Function()? onReport;
   final String? reportReturnTo;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Column(
+    final canReply = !comment.deleted && onReply != null && !busy;
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         MomentAuthorLine(
@@ -805,30 +826,79 @@ class _MomentCommentBody extends StatelessWidget {
             ),
           ],
         ],
-        SizedBox(height: tokens.space4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: comment.deleted ? null : onReply,
-              child: const Text('回复'),
-            ),
-            if (!comment.deleted && reportReturnTo != null)
-              WenyouReportButton(
-                key: Key('moment-comment-report-${comment.id}'),
-                target: ReportTarget.momentComment(comment.id),
-                targetLabel: '这条评论',
-                returnTo: reportReturnTo!,
-              ),
-            if (onDelete != null)
-              TextButton(
-                onPressed: busy ? null : onDelete,
-                child: const Text('删除'),
-              ),
-          ],
-        ),
       ],
     );
+
+    Widget buildCommentCard(VoidCallback openActions) {
+      if (compact) {
+        return WenyouDiscussionReplyCard(
+          key: Key('moment-comment-card-${comment.id}'),
+          semanticsLabel: '${comment.author.username} 的楼中楼回复',
+          enabled: canReply,
+          onTap: canReply ? onReply : null,
+          onLongPress: openActions,
+          tapHint: '点击回复这条回复，长按打开回复操作',
+          child: content,
+        );
+      }
+
+      return Semantics(
+        key: Key('moment-comment-card-${comment.id}'),
+        container: true,
+        button: canReply,
+        label: '${comment.author.username} 的评论',
+        hint: canReply ? '点击回复这条评论，长按打开评论操作' : '长按打开评论操作',
+        onTap: canReply ? onReply : null,
+        onLongPress: openActions,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
+          onTap: canReply ? onReply : null,
+          onLongPress: openActions,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space4,
+              vertical: tokens.space12,
+            ),
+            child: content,
+          ),
+        ),
+      );
+    }
+
+    return PostCardActionMenu(
+      canCopyText: !comment.deleted && comment.content?.isNotEmpty == true,
+      canCopyLink: false,
+      canReply: !comment.deleted && onReply != null,
+      canEdit: false,
+      canDelete: !comment.deleted && onDelete != null,
+      canReport: !comment.deleted && reportReturnTo != null,
+      pending: busy,
+      semanticLabel: compact ? '回复操作' : '评论操作',
+      actionKeyPrefix: 'moment-comment-action-${comment.id}',
+      onSelected: (action) => _handleAction(action, context),
+      anchorBuilder: (context, handle) => buildCommentCard(handle.open),
+    );
+  }
+
+  Future<void> _handleAction(
+    PostCardAction action,
+    BuildContext context,
+  ) async {
+    switch (action) {
+      case PostCardAction.copyText:
+        await copyPostCardValue(context, comment.content!, '内容已复制');
+      case PostCardAction.copyLink:
+        return;
+      case PostCardAction.reply:
+        onReply?.call();
+      case PostCardAction.edit:
+        return;
+      case PostCardAction.delete:
+        onDelete?.call();
+      case PostCardAction.report:
+        await onReport?.call();
+    }
   }
 }
 

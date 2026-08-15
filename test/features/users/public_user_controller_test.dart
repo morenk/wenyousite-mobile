@@ -106,6 +106,16 @@ class _FakePublicUserRepository implements PublicUserRepository {
   int bookmarkCalls = 0;
 
   @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
+    return const PublicUserActivitySummary(
+      momentCount: 3,
+      createdThreadCount: 2,
+      playedThreadCount: 1,
+      replyCount: 4,
+    );
+  }
+
+  @override
   Future<PublicUserProfileModel> fetchUser(String userId) async => profile;
 
   @override

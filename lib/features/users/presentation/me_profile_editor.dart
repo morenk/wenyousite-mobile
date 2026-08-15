@@ -62,8 +62,11 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final avatarState = ref.watch(avatarControllerProvider);
+    final profileCoverState = ref.watch(profileCoverControllerProvider);
     final profileWriteDisabled =
-        widget.state.isSubmitting || avatarState.isBusy;
+        widget.state.isSubmitting ||
+        avatarState.isBusy ||
+        profileCoverState.isBusy;
     return Column(
       children: [
         WenyouPanel(
@@ -74,7 +77,21 @@ class _MeProfileContentState extends ConsumerState<_MeProfileContent> {
               SizedBox(height: tokens.space16),
               _AvatarEditor(
                 profile: _profile,
-                profileWriteDisabled: widget.state.isSubmitting,
+                profileWriteDisabled: profileWriteDisabled,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: tokens.space12),
+        WenyouPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const WenyouSectionHeader(title: '主页背景'),
+              SizedBox(height: tokens.space16),
+              _ProfileCoverEditor(
+                profile: _profile,
+                profileWriteDisabled: profileWriteDisabled,
               ),
             ],
           ),

@@ -9,7 +9,6 @@ class _MessageTimeline extends StatefulWidget {
     required this.onRecall,
     required this.onRetryMessage,
     required this.onAbandonFailedMessage,
-    required this.onVerifyFailedMessage,
   });
 
   final DirectConversationState state;
@@ -19,7 +18,6 @@ class _MessageTimeline extends StatefulWidget {
   final ValueChanged<DirectMessage> onRecall;
   final ValueChanged<String> onRetryMessage;
   final ValueChanged<String> onAbandonFailedMessage;
-  final ValueChanged<String> onVerifyFailedMessage;
 
   @override
   State<_MessageTimeline> createState() => _MessageTimelineState();
@@ -288,13 +286,6 @@ class _MessageTimelineState extends State<_MessageTimeline> {
                         message.deliveryState ==
                             DirectMessageDeliveryState.failed
                         ? () => widget.onAbandonFailedMessage(message.id)
-                        : null,
-                    onVerifyEmail:
-                        message.deliveryState ==
-                                DirectMessageDeliveryState.failed &&
-                            state.sendFailures[message.id]?.businessCode ==
-                                40107
-                        ? () => widget.onVerifyFailedMessage(message.id)
                         : null,
                     onRecall: () => widget.onRecall(message),
                   ),

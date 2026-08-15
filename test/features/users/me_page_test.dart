@@ -11,11 +11,12 @@ import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
-import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
-import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 
 void main() {
@@ -54,6 +55,7 @@ void main() {
     expect(find.byKey(const Key('me-open-following')), findsOneWidget);
     expect(find.byKey(const Key('me-open-followers')), findsOneWidget);
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
+    expect(find.text('预览公开主页'), findsOneWidget);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
     expect(find.text('我的动态'), findsOneWidget);
     expect(find.text('我的收藏'), findsOneWidget);
@@ -80,25 +82,6 @@ void main() {
 
     await tester.ensureVisible(find.byKey(const Key('me-open-stickers')));
     expect(find.text('表情包'), findsOneWidget);
-  });
-
-  testWidgets('未验证邮箱在账号安全区提供验证入口', (tester) async {
-    final repository = _FakeMeProfileRepository(
-      initialProfile: _profileWithEmailVerified(false),
-    );
-    final container = await _authenticatedContainer(repository);
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MeSettingsPage()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.byKey(const Key('me-open-verify-email')));
-    expect(find.text('验证当前邮箱'), findsOneWidget);
-    expect(find.byKey(const Key('logout-submit')), findsOneWidget);
   });
 
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {
@@ -238,38 +221,6 @@ void main() {
     expect(find.text('头像已更新。'), findsOneWidget);
   });
 
-  testWidgets('未验证邮箱导致设置失败时提供验证入口', (tester) async {
-    final avatar = _FakeAvatarRepository(
-      onSet: (_) async => throw const ApiFailure(
-        userMessage: '请先验证邮箱。',
-        businessCode: 40107,
-        requestId: 'avatar-verify-request-id',
-      ),
-    );
-    final container = await _authenticatedContainer(
-      _FakeMeProfileRepository(
-        initialProfile: _profileWithEmailVerified(false),
-      ),
-      avatarPicker: _FakeAvatarPicker(_avatarInput),
-      mediaRepository: _FakeMediaRepository(),
-      avatarRepository: avatar,
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('me-avatar-change')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('请求 ID：avatar-verify-request-id'), findsOneWidget);
-    expect(find.byKey(const Key('me-avatar-verify-email')), findsOneWidget);
-  });
-
   testWidgets('已有头像二次确认后移除并回到默认占位', (tester) async {
     final repository = _FakeMeProfileRepository(
       initialProfile: _profileWithAvatar('https://cdn.example.com/old.png'),
@@ -396,6 +347,12 @@ Future<ProviderContainer> _authenticatedContainer(
       avatarImagePickerPortProvider.overrideWithValue(
         avatarPicker ?? _FakeAvatarPicker(null),
       ),
+      profileCoverImagePickerPortProvider.overrideWithValue(
+        const _FakeProfileCoverPicker(),
+      ),
+      profileCoverRepositoryProvider.overrideWithValue(
+        const _FakeProfileCoverRepository(),
+      ),
       mediaUploadGatewayPortProvider.overrideWithValue(
         mediaRepository ?? _FakeMediaRepository(),
       ),
@@ -407,6 +364,31 @@ Future<ProviderContainer> _authenticatedContainer(
       .read(sessionControllerProvider.notifier)
       .authenticate(_tokens);
   return container;
+}
+
+class _FakeProfileCoverPicker implements ProfileCoverImagePicker {
+  const _FakeProfileCoverPicker();
+
+  @override
+  Future<ProfileCoverImageSelection?> pickProfileCoverFromGallery() async =>
+      null;
+}
+
+class _FakeProfileCoverRepository implements ProfileCoverRepository {
+  const _FakeProfileCoverRepository();
+
+  @override
+  Future<ProfileCoverUpdateResult> removeProfileCover() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ProfileCoverUpdateResult> setProfileCover({
+    required String webMediaId,
+    required String mobileMediaId,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeAvatarPicker implements AvatarImagePicker {
@@ -520,7 +502,6 @@ class _FakeMeProfileRepository implements MeProfileRepository {
       showRecentReplies: patch.showRecentReplies ?? profile.showRecentReplies,
       showPlayedThreads: patch.showPlayedThreads ?? profile.showPlayedThreads,
       showBookmarks: patch.showBookmarks ?? profile.showBookmarks,
-      emailVerified: profile.emailVerified,
       updatedAt: profile.updatedAt.add(const Duration(minutes: 1)),
     );
     profile = profile.apply(result);
@@ -542,36 +523,11 @@ final _profile = MeProfileModel(
   showRecentReplies: true,
   showPlayedThreads: true,
   showBookmarks: true,
-  emailVerified: true,
   followingCount: 7,
   followerCount: 9,
   createdAt: DateTime.utc(2026, 8, 1),
   updatedAt: DateTime.utc(2026, 8, 10, 8),
 );
-
-MeProfileModel _profileWithEmailVerified(bool emailVerified) {
-  return MeProfileModel(
-    id: _profile.id,
-    email: _profile.email,
-    username: _profile.username,
-    avatarUrl: _profile.avatarUrl,
-    bio: _profile.bio,
-    level: _profile.level,
-    experience: _profile.experience,
-    currentLevelExperience: _profile.currentLevelExperience,
-    nextLevelExperience: _profile.nextLevelExperience,
-    receivedTipTotal: _profile.receivedTipTotal,
-    receivedTipCount: _profile.receivedTipCount,
-    showRecentReplies: _profile.showRecentReplies,
-    showPlayedThreads: _profile.showPlayedThreads,
-    showBookmarks: _profile.showBookmarks,
-    emailVerified: emailVerified,
-    followingCount: _profile.followingCount,
-    followerCount: _profile.followerCount,
-    createdAt: _profile.createdAt,
-    updatedAt: _profile.updatedAt,
-  );
-}
 
 MeProfileModel _profileWithAvatar(String avatarUrl) {
   return MeProfileModel(
@@ -589,7 +545,6 @@ MeProfileModel _profileWithAvatar(String avatarUrl) {
     showRecentReplies: _profile.showRecentReplies,
     showPlayedThreads: _profile.showPlayedThreads,
     showBookmarks: _profile.showBookmarks,
-    emailVerified: _profile.emailVerified,
     followingCount: _profile.followingCount,
     followerCount: _profile.followerCount,
     createdAt: _profile.createdAt,

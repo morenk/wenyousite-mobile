@@ -57,9 +57,6 @@ const BusinessErrorCode _$ACCOUNT_LOCKED = const BusinessErrorCode._(
 const BusinessErrorCode _$ACCOUNT_DEACTIVATED = const BusinessErrorCode._(
   'ACCOUNT_DEACTIVATED',
 );
-const BusinessErrorCode _$EMAIL_NOT_VERIFIED = const BusinessErrorCode._(
-  'EMAIL_NOT_VERIFIED',
-);
 const BusinessErrorCode _$ACCOUNT_SUSPENDED = const BusinessErrorCode._(
   'ACCOUNT_SUSPENDED',
 );
@@ -296,8 +293,6 @@ BusinessErrorCode _$valueOf(String name) {
       return _$ACCOUNT_LOCKED;
     case 'ACCOUNT_DEACTIVATED':
       return _$ACCOUNT_DEACTIVATED;
-    case 'EMAIL_NOT_VERIFIED':
-      return _$EMAIL_NOT_VERIFIED;
     case 'ACCOUNT_SUSPENDED':
       return _$ACCOUNT_SUSPENDED;
     case 'ACCOUNT_BANNED':
@@ -467,7 +462,6 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$TOKEN_THEFT_DETECTED,
       _$ACCOUNT_LOCKED,
       _$ACCOUNT_DEACTIVATED,
-      _$EMAIL_NOT_VERIFIED,
       _$ACCOUNT_SUSPENDED,
       _$ACCOUNT_BANNED,
       _$LOGIN_FAILED,
@@ -563,7 +557,6 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get TOKEN_THEFT_DETECTED => _$TOKEN_THEFT_DETECTED;
   BusinessErrorCode get ACCOUNT_LOCKED => _$ACCOUNT_LOCKED;
   BusinessErrorCode get ACCOUNT_DEACTIVATED => _$ACCOUNT_DEACTIVATED;
-  BusinessErrorCode get EMAIL_NOT_VERIFIED => _$EMAIL_NOT_VERIFIED;
   BusinessErrorCode get ACCOUNT_SUSPENDED => _$ACCOUNT_SUSPENDED;
   BusinessErrorCode get ACCOUNT_BANNED => _$ACCOUNT_BANNED;
   BusinessErrorCode get LOGIN_FAILED => _$LOGIN_FAILED;
@@ -683,7 +676,6 @@ class _$BusinessErrorCodeSerializer
     'TOKEN_THEFT_DETECTED': 40104,
     'ACCOUNT_LOCKED': 40105,
     'ACCOUNT_DEACTIVATED': 40106,
-    'EMAIL_NOT_VERIFIED': 40107,
     'ACCOUNT_SUSPENDED': 40108,
     'ACCOUNT_BANNED': 40109,
     'LOGIN_FAILED': 40110,
@@ -776,7 +768,6 @@ class _$BusinessErrorCodeSerializer
     40104: 'TOKEN_THEFT_DETECTED',
     40105: 'ACCOUNT_LOCKED',
     40106: 'ACCOUNT_DEACTIVATED',
-    40107: 'EMAIL_NOT_VERIFIED',
     40108: 'ACCOUNT_SUSPENDED',
     40109: 'ACCOUNT_BANNED',
     40110: 'LOGIN_FAILED',

@@ -44,7 +44,6 @@ class _NewDirectConversationPageState
         DirectConversationTargetPhase.ready => _TargetReady(
           state: state,
           onReturnToUser: () => context.pop(),
-          onVerifyEmail: () => _verifyEmail(context, notifier),
           onAbandonFailedDraft: notifier.abandonFailedDraft,
           onSend: ({content, mediaId, stickerAssetId}) => _send(
             context,
@@ -106,38 +105,18 @@ class _NewDirectConversationPageState
     );
     return true;
   }
-
-  Future<void> _verifyEmail(
-    BuildContext context,
-    DirectConversationTargetController notifier,
-  ) async {
-    final returnTo = '/messages/new/${widget.userId}';
-    final verified = await context.pushNamed<bool>(
-      'verify-email',
-      queryParameters: {'returnTo': returnTo},
-    );
-    if (verified != true || !context.mounted) return;
-    final result = await notifier.retryStart();
-    if (!context.mounted || result == null) return;
-    context.replaceNamed(
-      'direct-conversation',
-      pathParameters: {'conversationId': result.conversation.id},
-    );
-  }
 }
 
 class _TargetReady extends StatelessWidget {
   const _TargetReady({
     required this.state,
     required this.onReturnToUser,
-    required this.onVerifyEmail,
     required this.onAbandonFailedDraft,
     required this.onSend,
   });
 
   final DirectConversationTargetState state;
   final VoidCallback onReturnToUser;
-  final VoidCallback onVerifyEmail;
   final VoidCallback onAbandonFailedDraft;
   final Future<bool> Function({
     String? content,
@@ -203,28 +182,6 @@ class _TargetReady extends StatelessWidget {
             ),
           ),
         ),
-        if (state.failure?.businessCode == 40107)
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.space12,
-              tokens.space12,
-              tokens.space12,
-              0,
-            ),
-            child: WenyouStatusBanner(
-              key: const Key('direct-message-new-verify-banner'),
-              tone: WenyouStatusTone.error,
-              message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '请求 ID：${state.failure!.requestId}',
-              action: TextButton(
-                key: const Key('direct-message-new-verify-email'),
-                onPressed: onVerifyEmail,
-                child: const Text('先验证邮箱'),
-              ),
-            ),
-          ),
         Expanded(
           child: Center(
             child: SingleChildScrollView(

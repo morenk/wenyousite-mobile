@@ -74,9 +74,9 @@ void main() {
       failure: const MediaUploadTaskState(
         phase: MediaUploadTaskPhase.failed,
         failure: MediaUploadFailure(
-          userMessage: '请先验证邮箱。',
+          userMessage: '上传过于频繁，请稍后重试。',
           canRetry: true,
-          businessCode: 40107,
+          businessCode: 42900,
           requestId: 'upload-request-id',
         ),
       ),
@@ -92,7 +92,7 @@ void main() {
 
     expect(controller.state.phase, AvatarPhase.failed);
     expect(controller.state.pendingMediaId, isNull);
-    expect(controller.state.failure?.businessCode, 40107);
+    expect(controller.state.failure?.businessCode, 42900);
     expect(controller.state.failure?.requestId, 'upload-request-id');
     await controller.retry();
     expect(picker.calls, 2);

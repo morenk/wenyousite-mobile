@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
@@ -45,39 +44,6 @@ void main() {
     );
   });
 
-  testWidgets('40107 可进入验证页并保留搜索词', (tester) async {
-    final repository = _FakeTagRepository(
-      addFailure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
-      ),
-    );
-    await _pumpPage(tester, repository);
-    await tester.enterText(find.byKey(const Key('thread-tag-search')), '群像');
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pumpAndSettle();
-
-    final suggestion = find.byKey(const Key('thread-tag-suggestion-tag-2'));
-    await tester.ensureVisible(suggestion);
-    await tester.tap(suggestion);
-    await tester.pumpAndSettle();
-    final verify = find.byKey(const Key('thread-tag-verify-email'));
-    await tester.ensureVisible(verify);
-    await tester.tap(verify);
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester
-          .widget<TextField>(find.byKey(const Key('thread-tag-search')))
-          .controller!
-          .text,
-      '群像',
-    );
-  });
-
   for (final width in [360.0, 400.0, 600.0]) {
     testWidgets('$width dp 标签管理页无布局溢出且触控区达标', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -114,20 +80,6 @@ Future<void> _pumpPage(WidgetTester tester, TagRepository repository) async {
         name: 'tag-threads',
         builder: (_, _) => const Scaffold(body: Text('标签主题占位')),
       ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, _) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
-          ),
-        ),
-      ),
     ],
   );
   addTearDown(router.dispose);
@@ -142,9 +94,6 @@ Future<void> _pumpPage(WidgetTester tester, TagRepository repository) async {
 }
 
 class _FakeTagRepository implements TagRepository {
-  _FakeTagRepository({this.addFailure});
-
-  final ApiFailure? addFailure;
   final findIds = <String>[];
   final addedNames = <String>[];
   final createdNames = <String>[];
@@ -154,7 +103,6 @@ class _FakeTagRepository implements TagRepository {
     required String threadId,
     required String name,
   }) async {
-    if (addFailure != null) throw addFailure!;
     addedNames.add(name);
     return name == '新标签'
         ? _tag(id: 'created', name: name)

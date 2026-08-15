@@ -17,7 +17,6 @@ class ApiModerationAppealRepository implements ModerationAppealRepository {
 
   static const _featureMessages = <int, String>{
     40105: '密码尝试次数过多，请稍后再试。',
-    40107: '该账号尚未验证邮箱，暂时不能提交申诉。',
     40108: '账号处于暂停状态，请验证密码后进入申诉通道。',
     40109: '账号已被封禁，请验证密码后进入申诉通道。',
     40110: '账号或密码错误。',

@@ -6,13 +6,17 @@ enum _ComposeMetadataPanel { category, visibility, tags }
 
 class _ComposeMetadataBar extends StatelessWidget {
   const _ComposeMetadataBar({
-    required this.summary,
+    required this.categoryValue,
+    required this.visibilityValue,
+    required this.tagsValue,
     required this.activePanel,
     required this.enabled,
     required this.onPanelChanged,
   });
 
-  final String summary;
+  final String categoryValue;
+  final String visibilityValue;
+  final String tagsValue;
   final _ComposeMetadataPanel? activePanel;
   final bool enabled;
   final ValueChanged<_ComposeMetadataPanel> onPanelChanged;
@@ -29,39 +33,36 @@ class _ComposeMetadataBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _MetadataButton(
-            key: const Key('compose-category'),
-            icon: WenyouIconIds.contentCategory,
-            label: '分类',
-            selected: activePanel == _ComposeMetadataPanel.category,
-            enabled: enabled,
-            onPressed: () => onPanelChanged(_ComposeMetadataPanel.category),
-          ),
-          _MetadataButton(
-            key: const Key('compose-visibility'),
-            icon: WenyouIconIds.actionShow,
-            label: '可见性',
-            selected: activePanel == _ComposeMetadataPanel.visibility,
-            enabled: enabled,
-            onPressed: () => onPanelChanged(_ComposeMetadataPanel.visibility),
-          ),
-          _MetadataButton(
-            icon: WenyouIconIds.contentTag,
-            label: '标签',
-            selected: activePanel == _ComposeMetadataPanel.tags,
-            enabled: enabled,
-            onPressed: () => onPanelChanged(_ComposeMetadataPanel.tags),
-          ),
-          SizedBox(width: tokens.space4),
           Expanded(
-            child: Text(
-              summary,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            child: _MetadataButton(
+              key: const Key('compose-category'),
+              icon: WenyouIconIds.contentCategory,
+              title: '分类',
+              value: categoryValue,
+              selected: activePanel == _ComposeMetadataPanel.category,
+              enabled: enabled,
+              onPressed: () => onPanelChanged(_ComposeMetadataPanel.category),
+            ),
+          ),
+          Expanded(
+            child: _MetadataButton(
+              key: const Key('compose-visibility'),
+              icon: WenyouIconIds.actionShow,
+              title: '可见性',
+              value: visibilityValue,
+              selected: activePanel == _ComposeMetadataPanel.visibility,
+              enabled: enabled,
+              onPressed: () => onPanelChanged(_ComposeMetadataPanel.visibility),
+            ),
+          ),
+          Expanded(
+            child: _MetadataButton(
+              icon: WenyouIconIds.contentTag,
+              title: '标签',
+              value: tagsValue,
+              selected: activePanel == _ComposeMetadataPanel.tags,
+              enabled: enabled,
+              onPressed: () => onPanelChanged(_ComposeMetadataPanel.tags),
             ),
           ),
         ],
@@ -73,7 +74,8 @@ class _ComposeMetadataBar extends StatelessWidget {
 class _MetadataButton extends StatelessWidget {
   const _MetadataButton({
     required this.icon,
-    required this.label,
+    required this.title,
+    required this.value,
     required this.selected,
     required this.enabled,
     required this.onPressed,
@@ -81,22 +83,52 @@ class _MetadataButton extends StatelessWidget {
   });
 
   final String icon;
-  final String label;
+  final String title;
+  final String value;
   final bool selected;
   final bool enabled;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: label,
-      onPressed: enabled ? onPressed : null,
-      isSelected: selected,
-      selectedIcon: WenyouIcon(
-        icon,
-        color: context.wenyouTokens.brandForeground,
+    final tokens = context.wenyouTokens;
+    final semanticLabel = '$title：$value';
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Tooltip(
+        message: title,
+        child: TextButton.icon(
+          onPressed: enabled ? onPressed : null,
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(
+              Size(0, tokens.minimumTouchTarget),
+            ),
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: tokens.space4),
+            ),
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (states) => selected && !states.contains(WidgetState.disabled)
+                  ? tokens.accentedBackground
+                  : Colors.transparent,
+            ),
+            foregroundColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.disabled)
+                  ? tokens.mutedText
+                  : selected
+                  ? tokens.brandForeground
+                  : tokens.text,
+            ),
+          ),
+          icon: WenyouIcon(icon, size: 18),
+          label: Text(
+            '$title · $value',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+        ),
       ),
-      icon: WenyouIcon(icon),
     );
   }
 }
@@ -111,7 +143,6 @@ class _ComposeStatusArea extends StatelessWidget {
     required this.uploading,
     required this.onCancelUpload,
     required this.onRetryUpload,
-    required this.onVerifyEmail,
     required this.onRefreshBootstrap,
   });
 
@@ -123,7 +154,6 @@ class _ComposeStatusArea extends StatelessWidget {
   final bool uploading;
   final VoidCallback onCancelUpload;
   final VoidCallback onRetryUpload;
-  final VoidCallback onVerifyEmail;
   final VoidCallback onRefreshBootstrap;
 
   @override
@@ -149,16 +179,6 @@ class _ComposeStatusArea extends StatelessWidget {
             child: const Text('重新同步'),
           ),
         ),
-      if (state.emailVerified == false)
-        WenyouStatusBanner(
-          message: '邮箱尚未验证，仍可编辑和保存草稿，但暂时不能发布。',
-          tone: WenyouStatusTone.error,
-          action: TextButton(
-            key: const Key('compose-verify-email'),
-            onPressed: state.isSubmitting ? null : onVerifyEmail,
-            child: const Text('现在验证'),
-          ),
-        ),
       if (documentIssues.isNotEmpty)
         WenyouStatusBanner(
           message: '正文含有 ${documentIssues.length} 个兼容节点。',
@@ -176,13 +196,6 @@ class _ComposeStatusArea extends StatelessWidget {
           message: state.actionFailure!.userMessage,
           detail: _requestDetail(state.actionFailure),
           tone: WenyouStatusTone.error,
-          action: state.actionFailure!.businessCode == 40107
-              ? TextButton(
-                  key: const Key('compose-action-verify-email'),
-                  onPressed: state.isSubmitting ? null : onVerifyEmail,
-                  child: const Text('现在验证'),
-                )
-              : null,
         ),
       if (state.successMessage != null)
         WenyouStatusBanner(

@@ -13,15 +13,11 @@ part 'notification_audience_dto.g.dart';
 ///
 /// Properties:
 /// * [roles]
-/// * [emailVerified]
 @BuiltValue()
 abstract class NotificationAudienceDto implements Built<NotificationAudienceDto, NotificationAudienceDtoBuilder> {
   @BuiltValueField(wireName: r'roles')
   BuiltList<NotificationAudienceDtoRolesEnum>? get roles;
   // enum rolesEnum {  USER,  ADMIN,  SUPER_ADMIN,  };
-
-  @BuiltValueField(wireName: r'emailVerified')
-  bool? get emailVerified;
 
   NotificationAudienceDto._();
 
@@ -53,13 +49,6 @@ class _$NotificationAudienceDtoSerializer implements PrimitiveSerializer<Notific
         specifiedType: const FullType(BuiltList, [FullType(NotificationAudienceDtoRolesEnum)]),
       );
     }
-    if (object.emailVerified != null) {
-      yield r'emailVerified';
-      yield serializers.serialize(
-        object.emailVerified,
-        specifiedType: const FullType(bool),
-      );
-    }
   }
 
   @override
@@ -89,13 +78,6 @@ class _$NotificationAudienceDtoSerializer implements PrimitiveSerializer<Notific
             specifiedType: const FullType(BuiltList, [FullType(NotificationAudienceDtoRolesEnum)]),
           ) as BuiltList<NotificationAudienceDtoRolesEnum>;
           result.roles.replace(valueDes);
-          break;
-        case r'emailVerified':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(bool),
-          ) as bool;
-          result.emailVerified = valueDes;
           break;
         default:
           unhandled.add(key);

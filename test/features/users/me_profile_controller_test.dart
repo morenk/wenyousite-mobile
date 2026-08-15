@@ -140,7 +140,6 @@ final _profile = MeProfileModel(
   showRecentReplies: true,
   showPlayedThreads: true,
   showBookmarks: true,
-  emailVerified: true,
   followingCount: 7,
   followerCount: 9,
   createdAt: DateTime.utc(2026, 8, 1),
@@ -161,7 +160,6 @@ MeProfileUpdateResult _updatedResult(MeProfilePatch patch) {
     showRecentReplies: patch.showRecentReplies ?? _profile.showRecentReplies,
     showPlayedThreads: patch.showPlayedThreads ?? _profile.showPlayedThreads,
     showBookmarks: patch.showBookmarks ?? _profile.showBookmarks,
-    emailVerified: _profile.emailVerified,
     updatedAt: DateTime.utc(2026, 8, 10, 10),
   );
 }

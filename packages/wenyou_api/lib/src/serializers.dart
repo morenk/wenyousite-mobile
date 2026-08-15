@@ -102,13 +102,11 @@ import 'package:wenyou_api/src/model/auth_logout200_response.dart';
 import 'package:wenyou_api/src/model/auth_refresh200_response.dart';
 import 'package:wenyou_api/src/model/auth_request_change_email_code200_response.dart';
 import 'package:wenyou_api/src/model/auth_request_code200_response.dart';
-import 'package:wenyou_api/src/model/auth_resend_verification200_response.dart';
 import 'package:wenyou_api/src/model/auth_reset_password200_response.dart';
 import 'package:wenyou_api/src/model/auth_response_dto.dart';
 import 'package:wenyou_api/src/model/auth_revoke_session200_response.dart';
 import 'package:wenyou_api/src/model/auth_verify_and_complete200_response.dart';
 import 'package:wenyou_api/src/model/auth_verify_change_email200_response.dart';
-import 'package:wenyou_api/src/model/auth_verify_email200_response.dart';
 import 'package:wenyou_api/src/model/blocked_user_record_response_dto.dart';
 import 'package:wenyou_api/src/model/bookmark_folder_response_dto.dart';
 import 'package:wenyou_api/src/model/bookmark_response_dto.dart';
@@ -314,7 +312,6 @@ import 'package:wenyou_api/src/model/report_response_dto.dart';
 import 'package:wenyou_api/src/model/report_user_summary_dto.dart';
 import 'package:wenyou_api/src/model/reports_create201_response.dart';
 import 'package:wenyou_api/src/model/request_code_dto.dart';
-import 'package:wenyou_api/src/model/resend_verification_dto.dart';
 import 'package:wenyou_api/src/model/reset_password_dto.dart';
 import 'package:wenyou_api/src/model/resolve_moderation_appeal_dto.dart';
 import 'package:wenyou_api/src/model/resolve_moderation_case_dto.dart';
@@ -459,7 +456,6 @@ import 'package:wenyou_api/src/model/users_set_avatar200_response.dart';
 import 'package:wenyou_api/src/model/users_set_profile_cover200_response.dart';
 import 'package:wenyou_api/src/model/users_update_me200_response.dart';
 import 'package:wenyou_api/src/model/verify_and_complete_dto.dart';
-import 'package:wenyou_api/src/model/verify_email_dto.dart';
 import 'package:wenyou_api/src/model/wallet_response_dto.dart';
 import 'package:wenyou_api/src/model/wallet_transaction_response_dto.dart';
 import 'package:wenyou_api/src/model/wallet_transaction_target_response_dto.dart';
@@ -555,13 +551,11 @@ part 'serializers.g.dart';
   AuthRefresh200Response,
   AuthRequestChangeEmailCode200Response,
   AuthRequestCode200Response,
-  AuthResendVerification200Response,
   AuthResetPassword200Response,
   AuthResponseDto,
   AuthRevokeSession200Response,
   AuthVerifyAndComplete200Response,
   AuthVerifyChangeEmail200Response,
-  AuthVerifyEmail200Response,
   BlockedUserRecordResponseDto,
   BookmarkFolderResponseDto,
   BookmarkResponseDto,
@@ -767,7 +761,6 @@ part 'serializers.g.dart';
   ReportUserSummaryDto,
   ReportsCreate201Response,
   RequestCodeDto,
-  ResendVerificationDto,
   ResetPasswordDto,
   ResolveModerationAppealDto,
   ResolveModerationCaseDto,
@@ -912,7 +905,6 @@ part 'serializers.g.dart';
   UsersSetProfileCover200Response,
   UsersUpdateMe200Response,
   VerifyAndCompleteDto,
-  VerifyEmailDto,
   WalletResponseDto,
   WalletTransactionResponseDto,
   WalletTransactionTargetResponseDto,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 enum MeProfilePhase { loading, ready, failed }
 
@@ -147,6 +148,15 @@ class MeProfileController extends StateNotifier<MeProfileState> {
     state = MeProfileState(
       phase: MeProfilePhase.ready,
       profile: profile.applyAvatar(update),
+    );
+  }
+
+  void applyProfileCoverUpdate(ProfileCoverUpdateResult update) {
+    final profile = state.profile;
+    if (profile == null || state.isSubmitting) return;
+    state = MeProfileState(
+      phase: MeProfilePhase.ready,
+      profile: profile.applyProfileCover(update),
     );
   }
 

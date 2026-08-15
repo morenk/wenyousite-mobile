@@ -16,9 +16,6 @@ abstract final class AppRouteLocations {
   static String register({String? returnTo}) =>
       _withQuery('/auth/register', {'returnTo': ?returnTo});
 
-  static String verifyEmail({String? returnTo}) =>
-      _withQuery('/me/security/verify-email', {'returnTo': ?returnTo});
-
   static String thread(String threadId, {String? postId}) =>
       _fromSegments(['threads', threadId], {'post': ?postId});
 

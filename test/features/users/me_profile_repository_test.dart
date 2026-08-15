@@ -27,7 +27,6 @@ void main() {
     expect(profile.followingCount, 7);
     expect(profile.followerCount, 9);
     expect(profile.showPlayedThreads, isTrue);
-    expect(profile.emailVerified, isTrue);
   });
 
   test('本人资料响应可反序列化移动端双画幅背景图', () {
@@ -64,7 +63,6 @@ void main() {
           'showRecentReplies': true,
           'showPlayerBadges': true,
           'showBookmarks': true,
-          'emailVerified': true,
           'deletedAt': null,
           'createdAt': '2026-08-01T00:00:00.000Z',
           'updatedAt': '2026-08-10T08:00:00.000Z',
@@ -147,7 +145,6 @@ Response<UsersGetMe200Response> _meResponse({
             ..showRecentReplies = true
             ..showPlayerBadges = true
             ..showBookmarks = true
-            ..emailVerified = true
             ..createdAt = DateTime.utc(2026, 8, 1)
             ..updatedAt = DateTime.utc(2026, 8, 10, 8)
             ..count.update(
@@ -183,7 +180,6 @@ Response<UsersUpdateMe200Response> _updateResponse() {
             ..showRecentReplies = true
             ..showPlayerBadges = true
             ..showBookmarks = false
-            ..emailVerified = true
             ..createdAt = DateTime.utc(2026, 8, 1)
             ..updatedAt = DateTime.utc(2026, 8, 10, 10),
         ),

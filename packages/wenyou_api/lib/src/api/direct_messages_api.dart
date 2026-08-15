@@ -493,7 +493,7 @@ class DirectMessagesApi {
     );
   }
 
-  /// 接受或拒绝收到的消息请求；接受要求邮箱已验证
+  /// 接受或拒绝收到的消息请求
   ///
   ///
   /// Parameters:

@@ -245,7 +245,6 @@ class _UserThreadCard extends StatelessWidget {
         onTap: () => context.pushNamed(
           'thread-detail',
           pathParameters: {'threadId': item.id},
-          extra: item.categorySlug,
         ),
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
@@ -255,10 +254,8 @@ class _UserThreadCard extends StatelessWidget {
               spacing: tokens.space8,
               runSpacing: tokens.space4,
               children: [
-                if (item.categorySlug != null)
-                  _ContentPill(label: item.categorySlug!),
                 _ContentPill(
-                  label: _statusLabel(item.status),
+                  label: item.status.label,
                   accent: item.status == PublicUserThreadStatus.recruiting,
                 ),
                 if (item.isPrivate)
@@ -478,13 +475,6 @@ class _ContentInlineFailure extends StatelessWidget {
     );
   }
 }
-
-String _statusLabel(PublicUserThreadStatus status) => switch (status) {
-  PublicUserThreadStatus.recruiting => '招募中',
-  PublicUserThreadStatus.closed => '已关闭',
-  PublicUserThreadStatus.finished => '已完结',
-  PublicUserThreadStatus.unknown => '状态未知',
-};
 
 String _replyKind(PublicUserReplyModel item) {
   if (item.parentPostId != null) return '楼中楼';

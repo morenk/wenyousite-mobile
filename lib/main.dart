@@ -8,7 +8,6 @@ import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.
 import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
-import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
@@ -42,6 +41,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_member_management
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/avatar_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
+import 'package:wenyousite_mobile/features/users/data/profile_cover_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
@@ -63,9 +63,6 @@ void main() {
         authRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiAuthRepositoryProvider),
         ),
-        emailVerificationRepositoryProvider.overrideWith(
-          (ref) => ref.watch(apiEmailVerificationRepositoryProvider),
-        ),
         passwordRecoveryRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiPasswordRecoveryRepositoryProvider),
         ),
@@ -86,6 +83,9 @@ void main() {
         ),
         avatarRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiAvatarRepositoryProvider),
+        ),
+        profileCoverRepositoryProvider.overrideWith(
+          (ref) => ref.watch(apiProfileCoverRepositoryProvider),
         ),
         meProfileRepositoryProvider.overrideWith(
           (ref) => ref.watch(apiMeProfileRepositoryProvider),

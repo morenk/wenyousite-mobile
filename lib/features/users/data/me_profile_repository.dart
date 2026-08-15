@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
+import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 
 export 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart'
@@ -29,6 +30,7 @@ class ApiMeProfileRepository implements MeProfileRepository {
         username: dto.username,
         avatarUrl: _safeHttpUrl(dto.avatar),
         bio: _safeBio(dto.bio),
+        profileCover: mapProfileCover(dto.profileCover),
         level: dto.level.toInt(),
         experience: dto.experience.toInt(),
         currentLevelExperience: dto.currentLevelExperience.toInt(),
@@ -38,7 +40,6 @@ class ApiMeProfileRepository implements MeProfileRepository {
         showRecentReplies: dto.showRecentReplies,
         showPlayedThreads: dto.showPlayerBadges,
         showBookmarks: dto.showBookmarks,
-        emailVerified: dto.emailVerified,
         followingCount: dto.count.following.toInt(),
         followerCount: dto.count.followers.toInt(),
         createdAt: dto.createdAt,
@@ -72,6 +73,7 @@ class ApiMeProfileRepository implements MeProfileRepository {
         username: dto.username,
         avatarUrl: _safeHttpUrl(dto.avatar),
         bio: _safeBio(dto.bio),
+        profileCover: mapProfileCover(dto.profileCover),
         level: dto.level.toInt(),
         experience: dto.experience.toInt(),
         currentLevelExperience: dto.currentLevelExperience.toInt(),
@@ -81,7 +83,6 @@ class ApiMeProfileRepository implements MeProfileRepository {
         showRecentReplies: dto.showRecentReplies,
         showPlayedThreads: dto.showPlayerBadges,
         showBookmarks: dto.showBookmarks,
-        emailVerified: dto.emailVerified,
         updatedAt: dto.updatedAt,
       );
     } on DioException catch (error) {

@@ -29,7 +29,6 @@ part 'private_user_response_dto.g.dart';
 /// * [showRecentReplies]
 /// * [showPlayerBadges]
 /// * [showBookmarks]
-/// * [emailVerified]
 /// * [deletedAt]
 /// * [createdAt]
 /// * [updatedAt]
@@ -83,9 +82,6 @@ abstract class PrivateUserResponseDto implements Built<PrivateUserResponseDto, P
 
   @BuiltValueField(wireName: r'showBookmarks')
   bool get showBookmarks;
-
-  @BuiltValueField(wireName: r'emailVerified')
-  bool get emailVerified;
 
   @BuiltValueField(wireName: r'deletedAt')
   DateTime? get deletedAt;
@@ -197,11 +193,6 @@ class _$PrivateUserResponseDtoSerializer implements PrimitiveSerializer<PrivateU
     yield r'showBookmarks';
     yield serializers.serialize(
       object.showBookmarks,
-      specifiedType: const FullType(bool),
-    );
-    yield r'emailVerified';
-    yield serializers.serialize(
-      object.emailVerified,
       specifiedType: const FullType(bool),
     );
     yield r'deletedAt';
@@ -357,13 +348,6 @@ class _$PrivateUserResponseDtoSerializer implements PrimitiveSerializer<PrivateU
             specifiedType: const FullType(bool),
           ) as bool;
           result.showBookmarks = valueDes;
-          break;
-        case r'emailVerified':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(bool),
-          ) as bool;
-          result.emailVerified = valueDes;
           break;
         case r'deletedAt':
           final valueDes = serializers.deserialize(

@@ -11,10 +11,10 @@ part 'create_admin_invite_dto.g.dart';
 /// CreateAdminInviteDto
 ///
 /// Properties:
-/// * [userId] - 已验证邮箱的现有温油账号 ID
+/// * [userId] - 现有温油账号 ID
 @BuiltValue()
 abstract class CreateAdminInviteDto implements Built<CreateAdminInviteDto, CreateAdminInviteDtoBuilder> {
-  /// 已验证邮箱的现有温油账号 ID
+  /// 现有温油账号 ID
   @BuiltValueField(wireName: r'userId')
   String get userId;
 

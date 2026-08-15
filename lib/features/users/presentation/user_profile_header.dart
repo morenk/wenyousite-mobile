@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 class UserProfileStatItem {
   const UserProfileStatItem({
@@ -31,6 +32,7 @@ class UserProfileHeader extends StatelessWidget {
     required this.level,
     required this.stats,
     this.avatarUrl,
+    this.profileCover,
     this.bio,
     this.metadata,
     this.statuses = const [],
@@ -42,6 +44,7 @@ class UserProfileHeader extends StatelessWidget {
 
   final String username;
   final String? avatarUrl;
+  final ProfileCoverModel? profileCover;
   final int level;
   final String? bio;
   final String? metadata;
@@ -62,7 +65,10 @@ class UserProfileHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(height: 4, color: tokens.brandSurface),
+            if (profileCover case final cover?)
+              _ProfileCover(cover: cover, username: username)
+            else
+              Container(height: 4, color: tokens.brandSurface),
             Padding(
               padding: EdgeInsets.fromLTRB(
                 tokens.space16,
@@ -175,6 +181,45 @@ class UserProfileHeader extends StatelessWidget {
               Padding(padding: EdgeInsets.all(tokens.space12), child: actions),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileCover extends StatelessWidget {
+  const _ProfileCover({required this.cover, required this.username});
+
+  final ProfileCoverModel cover;
+  final String username;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final variant = cover.preferredForMobile;
+    final fallback = ColoredBox(
+      color: tokens.brandSurface,
+      child: Center(
+        child: WenyouIcon(
+          WenyouIconIds.contentGallery,
+          size: 32,
+          color: tokens.mutedText,
+        ),
+      ),
+    );
+    return Semantics(
+      image: true,
+      label: '$username 的主页背景图',
+      child: AspectRatio(
+        aspectRatio: 2,
+        child: WenyouCachedImage(
+          imageUrl: variant.url,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          cacheWidth: 1200,
+          cacheHeight: 600,
+          placeholder: (_, _) => fallback,
+          errorWidget: (_, _, _) => fallback,
         ),
       ),
     );

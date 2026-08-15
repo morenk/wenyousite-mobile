@@ -34,12 +34,10 @@ class ThreadComposeCategory {
 class ThreadComposeBootstrap {
   const ThreadComposeBootstrap({
     required this.userId,
-    required this.emailVerified,
     required this.categories,
   });
 
   final String userId;
-  final bool emailVerified;
   final List<ThreadComposeCategory> categories;
 }
 

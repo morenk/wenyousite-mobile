@@ -86,8 +86,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('compose-remote-drafts')));
     await tester.pumpAndSettle();
-    expect(find.text('保存当前主题'), findsOneWidget);
-    expect(find.text('打开云端草稿'), findsOneWidget);
+    expect(find.text('保存'), findsOneWidget);
+    expect(find.text('打开'), findsOneWidget);
     expect(find.byKey(const Key('compose-save-draft')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('compose-save-draft')));
@@ -110,36 +110,6 @@ void main() {
 
     expect(find.text('请填写主题标题。'), findsOneWidget);
     expect(repository.createCalls, 0);
-  });
-
-  testWidgets('未验证邮箱保留编辑能力并提供验证恢复入口', (tester) async {
-    final controller = await _readyController(
-      _MemorySnapshotStore(),
-      repository: _FakeRepository(emailVerified: false),
-    );
-    await _pumpPage(tester, controller);
-
-    expect(find.textContaining('仍可编辑和保存草稿'), findsOneWidget);
-    expect(find.byKey(const Key('compose-verify-email')), findsOneWidget);
-    expect(find.byKey(const Key('compose-title')), findsOneWidget);
-  });
-
-  testWidgets('进入邮箱验证前落盘失败会要求明确选择', (tester) async {
-    final controller = await _readyController(
-      _MemorySnapshotStore(failSaves: true),
-      repository: _FakeRepository(emailVerified: false),
-    );
-    await _pumpPage(tester, controller);
-    await tester.enterText(find.byKey(const Key('compose-title')), '尚未保存的标题');
-
-    await tester.tap(find.byKey(const Key('compose-verify-email')));
-    await tester.pump();
-
-    expect(find.text('本地内容尚未保存'), findsOneWidget);
-    expect(find.textContaining('进入邮箱验证可能丢失'), findsOneWidget);
-    await tester.tap(find.text('留下编辑'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ThreadComposePage), findsOneWidget);
   });
 
   testWidgets('图片上传完成后插入安全 Markdown 图片节点', (tester) async {
@@ -174,7 +144,7 @@ void main() {
       mediaRepository: mediaRepository,
     );
     final publish = find.byKey(const Key('compose-publish'));
-    expect(tester.widget<TextButton>(publish).onPressed, isNotNull);
+    expect(tester.widget<FilledButton>(publish).onPressed, isNotNull);
 
     final imageButton = find.byKey(const Key('editor-image'));
     await tester.ensureVisible(imageButton);
@@ -191,7 +161,7 @@ void main() {
           .any((indicator) => indicator.value == .5),
       isTrue,
     );
-    expect(tester.widget<TextButton>(publish).onPressed, isNull);
+    expect(tester.widget<FilledButton>(publish).onPressed, isNull);
 
     await tester.tap(find.text('取消上传'));
     await tester.pump();
@@ -201,7 +171,7 @@ void main() {
     expect(find.textContaining('正在上传图片'), findsNothing);
     expect(controller.state.body, '保留的主题正文');
     expect(controller.state.body, isNot(contains('wenyou_image')));
-    expect(tester.widget<TextButton>(publish).onPressed, isNotNull);
+    expect(tester.widget<FilledButton>(publish).onPressed, isNotNull);
   });
 
   testWidgets('上传中系统返回先取消任务且迟到成功不会写入草稿', (tester) async {
@@ -462,7 +432,8 @@ void main() {
 
     expect(find.byKey(const Key('compose-save-draft')), findsOneWidget);
     expect(find.byKey(const Key('compose-open-remote-drafts')), findsOneWidget);
-    expect(find.text('保存标题、正文和发布设置'), findsOneWidget);
+    expect(find.text('保存'), findsOneWidget);
+    expect(find.text('打开'), findsOneWidget);
   });
 
   testWidgets('离页强制落盘失败时要求用户明确选择而不静默退出', (tester) async {
@@ -545,9 +516,6 @@ Future<void> _pumpPage(
 const _requestId = '550e8400-e29b-41d4-a716-446655440000';
 
 class _FakeRepository implements ThreadComposeRepository {
-  _FakeRepository({this.emailVerified = true});
-
-  final bool emailVerified;
   int createCalls = 0;
 
   @override
@@ -579,7 +547,6 @@ class _FakeRepository implements ThreadComposeRepository {
   Future<ThreadComposeBootstrap> fetchBootstrap() async {
     return ThreadComposeBootstrap(
       userId: 'user-one',
-      emailVerified: emailVerified,
       categories: const [
         ThreadComposeCategory(slug: 'TRPG', name: '跑团', sortOrder: 1),
       ],

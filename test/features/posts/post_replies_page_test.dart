@@ -97,17 +97,18 @@ void main() {
 
     await tester.longPress(find.byKey(const Key('post-card-root')));
     await tester.pumpAndSettle();
-    expect(find.text('楼层操作'), findsOneWidget);
-    expect(find.text('复制楼层链接'), findsOneWidget);
+    expect(find.byKey(const Key('post-card-action-root-link')), findsOneWidget);
     expect(find.text('举报'), findsAtLeastNWidgets(1));
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
 
     await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
     await tester.pumpAndSettle();
-    expect(find.text('回复操作'), findsOneWidget);
     expect(find.text('复制'), findsOneWidget);
-    expect(find.text('复制楼层链接'), findsOneWidget);
+    expect(
+      find.byKey(const Key('post-card-action-reply-other-link')),
+      findsOneWidget,
+    );
     expect(find.text('举报'), findsAtLeastNWidgets(1));
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
@@ -167,7 +168,10 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
     await tester.longPress(find.byKey(const Key('post-reply-created')));
     await tester.pumpAndSettle();
-    expect(find.text('回复操作'), findsOneWidget);
+    expect(
+      find.byKey(const Key('post-card-action-created-edit')),
+      findsOneWidget,
+    );
     await tester.tap(find.text('编辑'));
     await tester.pumpAndSettle();
     final editController = tester

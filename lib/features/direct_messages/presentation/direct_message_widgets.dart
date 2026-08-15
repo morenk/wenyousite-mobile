@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -62,6 +65,8 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   UploadedEditorImage? _uploadedImage;
   ApiFailure? _localFailure;
   var _busy = false;
+  var _restoreFocusAfterSticker = false;
+  var _selectionBeforeSticker = const TextSelection.collapsed(offset: 0);
 
   bool get _disabled => widget.disabled || _busy;
   bool get _hasPayload =>
@@ -94,6 +99,15 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     );
     final failure = _localFailure ?? widget.failure;
     final uploadLocked = uploadState.isBusy || uploadState.failure != null;
+    final mediaQuery = MediaQuery.of(context);
+    final stickerPopoverSize = Size(
+      (mediaQuery.size.width - tokens.space16).clamp(280.0, 360.0),
+      (mediaQuery.size.height -
+              mediaQuery.viewPadding.top -
+              mediaQuery.viewInsets.bottom -
+              112)
+          .clamp(220.0, 320.0),
+    );
     final supporting = <Widget>[
       if (widget.requestHint != null) ...[
         _ComposerStatusLine(
@@ -176,27 +190,45 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       ],
       trailingActions: [
         if (ref.watch(stickersEnabledProvider))
-          IconButton(
-            key: const Key('direct-message-composer-sticker'),
-            onPressed: _disabled ? null : _pickSticker,
-            tooltip: '表情',
-            icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
+          WenyouAnchoredPopover(
+            size: stickerPopoverSize,
+            placement: WenyouPopoverPlacement.above,
+            alignment: WenyouPopoverAlignment.end,
+            semanticLabel: '收藏表情选择器',
+            anchorBuilder: (context, handle) => IconButton(
+              key: const Key('direct-message-composer-sticker'),
+              onPressed: _disabled
+                  ? null
+                  : () {
+                      _restoreFocusAfterSticker = _focusNode.hasFocus;
+                      _selectionBeforeSticker = _controller.selection;
+                      handle.toggle();
+                    },
+              tooltip: handle.isOpen ? '收起表情' : '表情',
+              icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
+            ),
+            popoverBuilder: (context, close) => StickerPickerPanel(
+              compact: true,
+              onSelected: (sticker) {
+                close();
+                unawaited(_sendSticker(sticker));
+              },
+              onManage: () {
+                close();
+                if (_restoreFocusAfterSticker) {
+                  _restoreFocus(_selectionBeforeSticker);
+                }
+                context.pushNamed('me-stickers');
+              },
+            ),
           ),
       ],
-      submitAction: IconButton.filled(
+      submitAction: WenyouComposerSubmitButton(
         key: const Key('direct-message-composer-submit'),
-        onPressed: _disabled || uploadLocked || !_hasPayload ? null : _submit,
-        tooltip: _submitLabel(uploadState),
-        icon: _busy
-            ? Semantics(
-                liveRegion: true,
-                label: '消息处理中',
-                child: const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            : const WenyouIcon(WenyouIconIds.actionSend),
+        enabled: !_disabled && !uploadLocked && _hasPayload,
+        loading: _busy,
+        label: _submitLabel(uploadState),
+        onPressed: () => _submit(),
       ),
       characterCountText: _showCharacterCount
           ? '${directMessageMaxLength - _controller.text.length}'
@@ -371,15 +403,9 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     );
   }
 
-  Future<void> _pickSticker() async {
-    final shouldRestoreFocus = _focusNode.hasFocus;
-    final selection = _controller.selection;
-    final sticker = await showStickerPicker(context);
-    if (!mounted) return;
-    if (sticker == null) {
-      if (shouldRestoreFocus) _restoreFocus(selection);
-      return;
-    }
+  Future<void> _sendSticker(UserSticker sticker) async {
+    final shouldRestoreFocus = _restoreFocusAfterSticker;
+    final selection = _selectionBeforeSticker;
     if (widget.optimistic) {
       unawaited(
         widget
@@ -448,6 +474,8 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   }
 }
 
+enum _DirectMessageAction { copy, saveSticker, recall, retry, abandon }
+
 class DirectMessageBubble extends ConsumerStatefulWidget {
   const DirectMessageBubble({
     required this.message,
@@ -460,7 +488,6 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
     this.failure,
     this.onRetry,
     this.onAbandon,
-    this.onVerifyEmail,
     super.key,
   });
 
@@ -474,7 +501,6 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
   final VoidCallback onRecall;
   final VoidCallback? onRetry;
   final VoidCallback? onAbandon;
-  final VoidCallback? onVerifyEmail;
 
   @override
   ConsumerState<DirectMessageBubble> createState() =>
@@ -516,7 +542,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     final failed =
         widget.message.deliveryState == DirectMessageDeliveryState.failed;
     final canSaveSticker = stickersEnabled && media != null && _imageRevealed;
-    final actions = <CustomSemanticsAction, VoidCallback>{
+    final semanticActions = <CustomSemanticsAction, VoidCallback>{
       if (!widget.message.isRecalled && widget.message.content != null)
         const CustomSemanticsAction(label: '复制消息'): _copyMessage,
       if (!widget.message.isRecalled && canSaveSticker && !stickerBusy)
@@ -527,256 +553,226 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         const CustomSemanticsAction(label: '重试发送'): widget.onRetry!,
       if (failed && widget.onAbandon != null)
         const CustomSemanticsAction(label: '删除失败消息'): widget.onAbandon!,
-      if (failed &&
-          widget.failure?.businessCode == 40107 &&
-          widget.onVerifyEmail != null)
-        const CustomSemanticsAction(label: '验证邮箱'): widget.onVerifyEmail!,
     };
+    final popoverActions = <WenyouPopoverAction<_DirectMessageAction>>[
+      if (!widget.message.isRecalled && widget.message.content != null)
+        WenyouPopoverAction(
+          value: _DirectMessageAction.copy,
+          icon: WenyouIconIds.actionCopy,
+          label: '复制',
+          semanticsLabel: '复制消息',
+          key: ValueKey('direct-message-copy-${widget.message.id}'),
+        ),
+      if (!widget.message.isRecalled && canSaveSticker)
+        WenyouPopoverAction(
+          value: _DirectMessageAction.saveSticker,
+          icon: WenyouIconIds.actionAddReaction,
+          label: stickerBusy ? '处理中' : '收藏',
+          semanticsLabel: '收藏表情',
+          enabled: !stickerBusy,
+          loading: stickerBusy,
+          key: ValueKey('direct-message-save-sticker-${widget.message.id}'),
+        ),
+      if (!widget.message.isRecalled && widget.canRecall)
+        WenyouPopoverAction(
+          value: _DirectMessageAction.recall,
+          icon: WenyouIconIds.actionUndo,
+          label: widget.isRecalling ? '撤回中' : '撤回',
+          semanticsLabel: '撤回消息',
+          enabled: !widget.isRecalling,
+          loading: widget.isRecalling,
+          key: ValueKey('direct-message-recall-${widget.message.id}'),
+        ),
+      if (failed && widget.onRetry != null)
+        WenyouPopoverAction(
+          value: _DirectMessageAction.retry,
+          icon: WenyouIconIds.actionRefresh,
+          label: '重试',
+          semanticsLabel: '重新发送消息',
+          key: ValueKey('direct-message-retry-${widget.message.id}'),
+        ),
+      if (failed && widget.onAbandon != null)
+        WenyouPopoverAction(
+          value: _DirectMessageAction.abandon,
+          icon: WenyouIconIds.actionDelete,
+          label: '删除',
+          semanticsLabel: '删除失败消息',
+          tone: WenyouPopoverActionTone.destructive,
+          key: ValueKey('direct-message-abandon-${widget.message.id}'),
+        ),
+    ];
     final maxWidth = MediaQuery.sizeOf(context).width >= 600
         ? 420.0
         : widget.mine && (sending || failed)
         ? MediaQuery.sizeOf(context).width * 0.68
         : MediaQuery.sizeOf(context).width * 0.8;
-    return Semantics(
-      onLongPress: actions.isEmpty ? null : _showActions,
-      onLongPressHint: actions.isEmpty ? null : '打开消息操作',
-      customSemanticsActions: actions,
-      child: Align(
-        alignment: widget.mine ? Alignment.centerRight : Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (widget.mine && (sending || failed)) ...[
-              if (sending)
-                Semantics(
-                  label: '消息发送中',
-                  liveRegion: true,
-                  child: const Padding(
-                    padding: EdgeInsets.only(right: 6, bottom: 8),
-                    child: SizedBox.square(
-                      dimension: 14,
-                      child: CircularProgressIndicator(strokeWidth: 1.5),
-                    ),
-                  ),
-                )
-              else
-                IconButton(
-                  key: ValueKey(
-                    'direct-message-delivery-failed-${widget.message.id}',
-                  ),
-                  onPressed: _showActions,
-                  tooltip: widget.failure?.userMessage ?? '发送失败，点按处理',
-                  visualDensity: VisualDensity.compact,
-                  icon: WenyouIcon(
-                    WenyouIconIds.statusError,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 20,
-                  ),
-                ),
-            ],
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: GestureDetector(
-                key: ValueKey('direct-message-actions-${widget.message.id}'),
-                behavior: HitTestBehavior.opaque,
-                onLongPress: actions.isEmpty ? null : _showActions,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: pureSticker
-                        ? Colors.transparent
-                        : widget.mine
-                        ? tokens.brandSurface
-                        : tokens.softPanel,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(tokens.radius16),
-                      topRight: Radius.circular(tokens.radius16),
-                      bottomLeft: Radius.circular(
-                        !widget.isGroupEnd || widget.mine
-                            ? tokens.radius16
-                            : tokens.space4,
-                      ),
-                      bottomRight: Radius.circular(
-                        !widget.isGroupEnd || !widget.mine
-                            ? tokens.radius16
-                            : tokens.space4,
+    Widget buildBubble(VoidCallback? openActions) {
+      return Semantics(
+        onLongPress: openActions,
+        onLongPressHint: openActions == null ? null : '打开消息操作',
+        customSemanticsActions: semanticActions,
+        child: Align(
+          alignment: widget.mine ? Alignment.centerRight : Alignment.centerLeft,
+          heightFactor: 1,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (widget.mine && (sending || failed)) ...[
+                if (sending)
+                  Semantics(
+                    label: '消息发送中',
+                    liveRegion: true,
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 6, bottom: 8),
+                      child: SizedBox.square(
+                        dimension: 14,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
                       ),
                     ),
+                  )
+                else
+                  IconButton(
+                    key: ValueKey(
+                      'direct-message-delivery-failed-${widget.message.id}',
+                    ),
+                    onPressed: openActions,
+                    tooltip: widget.failure?.userMessage ?? '发送失败，点按处理',
+                    visualDensity: VisualDensity.compact,
+                    icon: WenyouIcon(
+                      WenyouIconIds.statusError,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 20,
+                    ),
                   ),
-                  child: Padding(
-                    padding: pureSticker
-                        ? EdgeInsets.zero
-                        : EdgeInsets.symmetric(
-                            horizontal: tokens.space12,
-                            vertical: tokens.space8,
-                          ),
-                    child: widget.message.isRecalled
-                        ? Text(
-                            widget.mine ? '你撤回了一条消息' : '对方撤回了一条消息',
-                            style: TextStyle(
-                              color: widget.mine
-                                  ? tokens.onBrandSurface.withValues(
-                                      alpha: 0.82,
-                                    )
-                                  : tokens.mutedText,
+              ],
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: GestureDetector(
+                  key: ValueKey('direct-message-actions-${widget.message.id}'),
+                  behavior: HitTestBehavior.opaque,
+                  onLongPress: openActions,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: pureSticker
+                          ? Colors.transparent
+                          : widget.mine
+                          ? tokens.brandSurface
+                          : tokens.softPanel,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(tokens.radius16),
+                        topRight: Radius.circular(tokens.radius16),
+                        bottomLeft: Radius.circular(
+                          !widget.isGroupEnd || widget.mine
+                              ? tokens.radius16
+                              : tokens.space4,
+                        ),
+                        bottomRight: Radius.circular(
+                          !widget.isGroupEnd || !widget.mine
+                              ? tokens.radius16
+                              : tokens.space4,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: pureSticker
+                          ? EdgeInsets.zero
+                          : EdgeInsets.symmetric(
+                              horizontal: tokens.space12,
+                              vertical: tokens.space8,
                             ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (widget.message.content != null)
-                                Text(
-                                  widget.message.content!,
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(
-                                        color: widget.mine
-                                            ? tokens.onBrandSurface
-                                            : tokens.text,
-                                      ),
-                                ),
-                              if (media != null) ...[
+                      child: widget.message.isRecalled
+                          ? Text(
+                              widget.mine ? '你撤回了一条消息' : '对方撤回了一条消息',
+                              style: TextStyle(
+                                color: widget.mine
+                                    ? tokens.onBrandSurface.withValues(
+                                        alpha: 0.82,
+                                      )
+                                    : tokens.mutedText,
+                              ),
+                            )
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 if (widget.message.content != null)
-                                  SizedBox(height: tokens.space8),
-                                if (!_imageRevealed)
-                                  OutlinedButton.icon(
-                                    key: ValueKey(
-                                      'direct-message-reveal-${widget.message.id}',
-                                    ),
-                                    onPressed: () =>
-                                        setState(() => _imageRevealed = true),
-                                    icon: const WenyouIcon(
-                                      WenyouIconIds.actionImage,
-                                    ),
-                                    label: const Text('点击查看陌生人图片'),
-                                  )
-                                else
-                                  _MessageImage(media: media),
+                                  Text(
+                                    widget.message.content!,
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          color: widget.mine
+                                              ? tokens.onBrandSurface
+                                              : tokens.text,
+                                        ),
+                                  ),
+                                if (media != null) ...[
+                                  if (widget.message.content != null)
+                                    SizedBox(height: tokens.space8),
+                                  if (!_imageRevealed)
+                                    OutlinedButton.icon(
+                                      key: ValueKey(
+                                        'direct-message-reveal-${widget.message.id}',
+                                      ),
+                                      onPressed: () =>
+                                          setState(() => _imageRevealed = true),
+                                      icon: const WenyouIcon(
+                                        WenyouIconIds.actionImage,
+                                      ),
+                                      label: const Text('点击查看陌生人图片'),
+                                    )
+                                  else
+                                    _MessageImage(media: media),
+                                ],
+                                if (media == null &&
+                                    widget.message.content == null &&
+                                    widget.message.localDraft != null)
+                                  _OptimisticMediaPlaceholder(
+                                    isSticker:
+                                        widget
+                                            .message
+                                            .localDraft!
+                                            .stickerAssetId !=
+                                        null,
+                                  ),
                               ],
-                              if (media == null &&
-                                  widget.message.content == null &&
-                                  widget.message.localDraft != null)
-                                _OptimisticMediaPlaceholder(
-                                  isSticker:
-                                      widget
-                                          .message
-                                          .localDraft!
-                                          .stickerAssetId !=
-                                      null,
-                                ),
-                            ],
-                          ),
+                            ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      );
+    }
+
+    if (popoverActions.isEmpty) return buildBubble(null);
+    return WenyouAnchoredActionBubble<_DirectMessageAction>(
+      actions: popoverActions,
+      placement: WenyouPopoverPlacement.above,
+      alignment: widget.mine
+          ? WenyouPopoverAlignment.end
+          : WenyouPopoverAlignment.start,
+      semanticLabel: '消息操作',
+      onSelected: _handleAction,
+      anchorBuilder: (context, handle) => buildBubble(handle.open),
     );
   }
 
-  Future<void> _showActions() async {
-    final media = widget.message.media;
-    final stickersEnabled = ref.read(stickersEnabledProvider);
-    final canSaveSticker = stickersEnabled && media != null && _imageRevealed;
-    final stickerBusy = canSaveSticker
-        ? ref.read(stickerCollectionControllerProvider).isBusy
-        : false;
-    await showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(bottom: context.wenyouTokens.space8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.message.content != null)
-              ListTile(
-                key: ValueKey('direct-message-copy-${widget.message.id}'),
-                leading: const WenyouIcon(WenyouIconIds.actionCopy),
-                title: const Text('复制'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _copyMessage();
-                },
-              ),
-            if (canSaveSticker)
-              ListTile(
-                key: ValueKey(
-                  'direct-message-save-sticker-${widget.message.id}',
-                ),
-                leading: const WenyouIcon(WenyouIconIds.actionAddReaction),
-                title: Text(stickerBusy ? '处理中…' : '收藏表情'),
-                onTap: stickerBusy
-                    ? null
-                    : () {
-                        Navigator.pop(sheetContext);
-                        _saveSticker();
-                      },
-              ),
-            if (widget.canRecall)
-              ListTile(
-                key: ValueKey('direct-message-recall-${widget.message.id}'),
-                leading: const WenyouIcon(WenyouIconIds.actionUndo),
-                title: Text(widget.isRecalling ? '撤回中…' : '撤回'),
-                onTap: widget.isRecalling
-                    ? null
-                    : () {
-                        Navigator.pop(sheetContext);
-                        widget.onRecall();
-                      },
-              ),
-            if (widget.message.deliveryState ==
-                    DirectMessageDeliveryState.failed &&
-                widget.failure?.businessCode == 40107 &&
-                widget.onVerifyEmail != null)
-              ListTile(
-                key: ValueKey(
-                  'direct-message-verify-email-${widget.message.id}',
-                ),
-                leading: const WenyouIcon(WenyouIconIds.actionMarkRead),
-                title: const Text('验证邮箱'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  widget.onVerifyEmail!();
-                },
-              ),
-            if (widget.message.deliveryState ==
-                    DirectMessageDeliveryState.failed &&
-                widget.onRetry != null)
-              ListTile(
-                key: ValueKey('direct-message-retry-${widget.message.id}'),
-                leading: const WenyouIcon(WenyouIconIds.actionRefresh),
-                title: const Text('重新发送'),
-                subtitle: widget.failure == null
-                    ? null
-                    : Text(
-                        widget.failure!.userMessage,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  widget.onRetry!();
-                },
-              ),
-            if (widget.message.deliveryState ==
-                    DirectMessageDeliveryState.failed &&
-                widget.onAbandon != null)
-              ListTile(
-                key: ValueKey('direct-message-abandon-${widget.message.id}'),
-                leading: const WenyouIcon(WenyouIconIds.actionDelete),
-                title: const Text('删除失败消息'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  widget.onAbandon!();
-                },
-              ),
-          ],
-        ),
-      ),
-    );
+  void _handleAction(_DirectMessageAction action) {
+    switch (action) {
+      case _DirectMessageAction.copy:
+        unawaited(_copyMessage());
+      case _DirectMessageAction.saveSticker:
+        unawaited(_saveSticker());
+      case _DirectMessageAction.recall:
+        widget.onRecall();
+      case _DirectMessageAction.retry:
+        widget.onRetry?.call();
+      case _DirectMessageAction.abandon:
+        widget.onAbandon?.call();
+    }
   }
 
   Future<void> _copyMessage() async {

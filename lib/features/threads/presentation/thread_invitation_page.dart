@@ -112,27 +112,19 @@ class _InvitationReady extends ConsumerWidget {
               detail: state.joinFailure!.requestId == null
                   ? null
                   : '请求 ID：${state.joinFailure!.requestId}',
-              action: state.joinFailure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('thread-invite-verify-email'),
-                      onPressed: state.isJoining
-                          ? null
-                          : () => _openVerification(context, ref),
-                      child: const Text('先验证邮箱'),
-                    )
-                  : TextButton(
-                      key: const Key('thread-invite-dismiss-failure'),
-                      onPressed: state.isJoining
-                          ? null
-                          : () => ref
-                                .read(
-                                  threadInvitationAccessControllerProvider(
-                                    token,
-                                  ).notifier,
-                                )
-                                .clearJoinFailure(),
-                      child: const Text('知道了'),
-                    ),
+              action: TextButton(
+                key: const Key('thread-invite-dismiss-failure'),
+                onPressed: state.isJoining
+                    ? null
+                    : () => ref
+                          .read(
+                            threadInvitationAccessControllerProvider(
+                              token,
+                            ).notifier,
+                          )
+                          .clearJoinFailure(),
+                child: const Text('知道了'),
+              ),
             ),
           ],
           SizedBox(height: tokens.space16),
@@ -171,21 +163,6 @@ class _InvitationReady extends ConsumerWidget {
       context,
     ).showSnackBar(const SnackBar(content: Text('已加入私密主题。')));
     context.go(AppRouteLocations.thread(result.threadId));
-  }
-
-  Future<void> _openVerification(BuildContext context, WidgetRef ref) async {
-    final returnTo = '/join/$token';
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: {'returnTo': returnTo},
-      ).toString(),
-    );
-    if (verified == true && context.mounted) {
-      ref
-          .read(threadInvitationAccessControllerProvider(token).notifier)
-          .clearJoinFailure();
-    }
   }
 }
 

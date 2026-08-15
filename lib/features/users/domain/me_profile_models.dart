@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
+
 class MeProfileModel {
   const MeProfileModel({
     required this.id,
@@ -11,7 +13,6 @@ class MeProfileModel {
     required this.showRecentReplies,
     required this.showPlayedThreads,
     required this.showBookmarks,
-    required this.emailVerified,
     required this.followingCount,
     required this.followerCount,
     required this.createdAt,
@@ -19,6 +20,7 @@ class MeProfileModel {
     this.avatarUrl,
     this.bio,
     this.nextLevelExperience,
+    this.profileCover,
   });
 
   final String id;
@@ -26,6 +28,7 @@ class MeProfileModel {
   final String username;
   final String? avatarUrl;
   final String? bio;
+  final ProfileCoverModel? profileCover;
   final int level;
   final int experience;
   final int currentLevelExperience;
@@ -35,7 +38,6 @@ class MeProfileModel {
   final bool showRecentReplies;
   final bool showPlayedThreads;
   final bool showBookmarks;
-  final bool emailVerified;
   final int followingCount;
   final int followerCount;
   final DateTime createdAt;
@@ -56,6 +58,7 @@ class MeProfileModel {
       username: update.username,
       avatarUrl: update.avatarUrl,
       bio: update.bio,
+      profileCover: update.profileCover,
       level: update.level,
       experience: update.experience,
       currentLevelExperience: update.currentLevelExperience,
@@ -65,7 +68,6 @@ class MeProfileModel {
       showRecentReplies: update.showRecentReplies,
       showPlayedThreads: update.showPlayedThreads,
       showBookmarks: update.showBookmarks,
-      emailVerified: update.emailVerified,
       followingCount: followingCount,
       followerCount: followerCount,
       createdAt: createdAt,
@@ -80,6 +82,7 @@ class MeProfileModel {
       username: username,
       avatarUrl: update.avatarUrl,
       bio: bio,
+      profileCover: profileCover,
       level: level,
       experience: experience,
       currentLevelExperience: currentLevelExperience,
@@ -89,7 +92,30 @@ class MeProfileModel {
       showRecentReplies: showRecentReplies,
       showPlayedThreads: showPlayedThreads,
       showBookmarks: showBookmarks,
-      emailVerified: emailVerified,
+      followingCount: followingCount,
+      followerCount: followerCount,
+      createdAt: createdAt,
+      updatedAt: update.updatedAt,
+    );
+  }
+
+  MeProfileModel applyProfileCover(ProfileCoverUpdateResult update) {
+    return MeProfileModel(
+      id: id,
+      email: email,
+      username: username,
+      avatarUrl: avatarUrl,
+      bio: bio,
+      profileCover: update.profileCover,
+      level: level,
+      experience: experience,
+      currentLevelExperience: currentLevelExperience,
+      nextLevelExperience: nextLevelExperience,
+      receivedTipTotal: receivedTipTotal,
+      receivedTipCount: receivedTipCount,
+      showRecentReplies: showRecentReplies,
+      showPlayedThreads: showPlayedThreads,
+      showBookmarks: showBookmarks,
       followingCount: followingCount,
       followerCount: followerCount,
       createdAt: createdAt,
@@ -140,17 +166,18 @@ class MeProfileUpdateResult {
     required this.showRecentReplies,
     required this.showPlayedThreads,
     required this.showBookmarks,
-    required this.emailVerified,
     required this.updatedAt,
     this.avatarUrl,
     this.bio,
     this.nextLevelExperience,
+    this.profileCover,
   });
 
   final String email;
   final String username;
   final String? avatarUrl;
   final String? bio;
+  final ProfileCoverModel? profileCover;
   final int level;
   final int experience;
   final int currentLevelExperience;
@@ -160,6 +187,5 @@ class MeProfileUpdateResult {
   final bool showRecentReplies;
   final bool showPlayedThreads;
   final bool showBookmarks;
-  final bool emailVerified;
   final DateTime updatedAt;
 }

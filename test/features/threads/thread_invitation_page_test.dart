@@ -38,11 +38,10 @@ void main() {
     expect(find.text('主题详情 thread-1'), findsOneWidget);
   });
 
-  testWidgets('加入遇到 40107 时保留预览并在验证后可显式重试', (tester) async {
+  testWidgets('加入失败时保留预览并可显式重试', (tester) async {
     final repository = _PageRepository(
       joinFailureOnce: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
+        userMessage: '加入暂时没有完成。',
         requestId: 'join-request-id',
       ),
     );
@@ -52,10 +51,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('星海密谈'), findsOneWidget);
     expect(find.text('请求 ID：join-request-id'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('thread-invite-verify-email')));
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
+    await tester.tap(find.byKey(const Key('thread-invite-dismiss-failure')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('thread-invite-join-failure')), findsNothing);
@@ -143,20 +139,6 @@ Future<void> _pumpPage(
         path: '/users/:userId',
         builder: (_, state) =>
             Scaffold(body: Text('用户 ${state.pathParameters['userId']}')),
-      ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, _) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
-          ),
-        ),
       ),
     ],
   );

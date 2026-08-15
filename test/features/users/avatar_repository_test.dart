@@ -122,7 +122,6 @@ PrivateUserResponseDto _privateUser({required String? avatar}) {
       ..showRecentReplies = true
       ..showPlayerBadges = true
       ..showBookmarks = true
-      ..emailVerified = true
       ..createdAt = DateTime.utc(2026, 8, 1)
       ..updatedAt = DateTime.utc(2026, 8, 10, 11),
   );

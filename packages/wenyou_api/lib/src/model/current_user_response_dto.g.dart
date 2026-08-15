@@ -120,8 +120,6 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
   @override
   final bool showBookmarks;
   @override
-  final bool emailVerified;
-  @override
   final DateTime? deletedAt;
   @override
   final DateTime createdAt;
@@ -151,7 +149,6 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
     required this.showRecentReplies,
     required this.showPlayerBadges,
     required this.showBookmarks,
-    required this.emailVerified,
     this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -186,7 +183,6 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
         showRecentReplies == other.showRecentReplies &&
         showPlayerBadges == other.showPlayerBadges &&
         showBookmarks == other.showBookmarks &&
-        emailVerified == other.emailVerified &&
         deletedAt == other.deletedAt &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
@@ -212,7 +208,6 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
     _$hash = $jc(_$hash, showRecentReplies.hashCode);
     _$hash = $jc(_$hash, showPlayerBadges.hashCode);
     _$hash = $jc(_$hash, showBookmarks.hashCode);
-    _$hash = $jc(_$hash, emailVerified.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
@@ -240,7 +235,6 @@ class _$CurrentUserResponseDto extends CurrentUserResponseDto {
           ..add('showRecentReplies', showRecentReplies)
           ..add('showPlayerBadges', showPlayerBadges)
           ..add('showBookmarks', showBookmarks)
-          ..add('emailVerified', emailVerified)
           ..add('deletedAt', deletedAt)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
@@ -326,11 +320,6 @@ class CurrentUserResponseDtoBuilder
   set showBookmarks(bool? showBookmarks) =>
       _$this._showBookmarks = showBookmarks;
 
-  bool? _emailVerified;
-  bool? get emailVerified => _$this._emailVerified;
-  set emailVerified(bool? emailVerified) =>
-      _$this._emailVerified = emailVerified;
-
   DateTime? _deletedAt;
   DateTime? get deletedAt => _$this._deletedAt;
   set deletedAt(DateTime? deletedAt) => _$this._deletedAt = deletedAt;
@@ -371,7 +360,6 @@ class CurrentUserResponseDtoBuilder
       _showRecentReplies = $v.showRecentReplies;
       _showPlayerBadges = $v.showPlayerBadges;
       _showBookmarks = $v.showBookmarks;
-      _emailVerified = $v.emailVerified;
       _deletedAt = $v.deletedAt;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
@@ -463,11 +451,6 @@ class CurrentUserResponseDtoBuilder
               showBookmarks,
               r'CurrentUserResponseDto',
               'showBookmarks',
-            ),
-            emailVerified: BuiltValueNullFieldError.checkNotNull(
-              emailVerified,
-              r'CurrentUserResponseDto',
-              'emailVerified',
             ),
             deletedAt: deletedAt,
             createdAt: BuiltValueNullFieldError.checkNotNull(

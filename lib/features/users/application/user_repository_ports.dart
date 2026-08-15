@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 abstract interface class AvatarRepository {
@@ -15,8 +16,19 @@ abstract interface class MeProfileRepository {
   Future<MeProfileUpdateResult> updateMe(MeProfilePatch patch);
 }
 
+abstract interface class ProfileCoverRepository {
+  Future<ProfileCoverUpdateResult> setProfileCover({
+    required String webMediaId,
+    required String mobileMediaId,
+  });
+
+  Future<ProfileCoverUpdateResult> removeProfileCover();
+}
+
 abstract interface class PublicUserRepository {
   Future<PublicUserProfileModel> fetchUser(String userId);
+
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId);
 
   Future<CursorPage<PublicUserThreadModel>> fetchCreatedThreads(
     String userId, {
@@ -45,6 +57,10 @@ final avatarRepositoryProvider = Provider<AvatarRepository>((ref) {
 
 final meProfileRepositoryProvider = Provider<MeProfileRepository>((ref) {
   return const _UnboundMeProfileRepository();
+});
+
+final profileCoverRepositoryProvider = Provider<ProfileCoverRepository>((ref) {
+  return const _UnboundProfileCoverRepository();
 });
 
 final publicUserRepositoryProvider = Provider<PublicUserRepository>((ref) {
@@ -79,8 +95,30 @@ class _UnboundMeProfileRepository implements MeProfileRepository {
   }
 }
 
+class _UnboundProfileCoverRepository implements ProfileCoverRepository {
+  const _UnboundProfileCoverRepository();
+
+  @override
+  Future<ProfileCoverUpdateResult> removeProfileCover() {
+    return Future.error(_unboundError());
+  }
+
+  @override
+  Future<ProfileCoverUpdateResult> setProfileCover({
+    required String webMediaId,
+    required String mobileMediaId,
+  }) {
+    return Future.error(_unboundError());
+  }
+}
+
 class _UnboundPublicUserRepository implements PublicUserRepository {
   const _UnboundPublicUserRepository();
+
+  @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) {
+    return Future.error(_unboundError());
+  }
 
   @override
   Future<CursorPage<PublicUserThreadModel>> fetchBookmarks(

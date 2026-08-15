@@ -77,23 +77,17 @@ class _AvatarEditor extends ConsumerWidget {
             detail: state.failure!.requestId == null
                 ? null
                 : '请求 ID：${state.failure!.requestId}',
-            action: state.failure!.businessCode == 40107
-                ? TextButton(
-                    key: const Key('me-avatar-verify-email'),
-                    onPressed: () => _verifyAndRetry(context, ref),
-                    child: const Text('先验证邮箱'),
-                  )
-                : TextButton(
-                    key: const Key('me-avatar-retry'),
-                    onPressed: () => _retry(context, ref),
-                    child: Text(
-                      state.pendingMediaId == null
-                          ? state.failedOperation == AvatarOperation.remove
-                                ? '重试移除'
-                                : '重新选择'
-                          : '重试设置',
-                    ),
-                  ),
+            action: TextButton(
+              key: const Key('me-avatar-retry'),
+              onPressed: () => _retry(context, ref),
+              child: Text(
+                state.pendingMediaId == null
+                    ? state.failedOperation == AvatarOperation.remove
+                          ? '重试移除'
+                          : '重新选择'
+                    : '重试设置',
+              ),
+            ),
           ),
         ],
       ],
@@ -143,18 +137,6 @@ class _AvatarEditor extends ConsumerWidget {
       result,
       operation == AvatarOperation.remove ? '头像已移除。' : '头像已更新。',
     );
-  }
-
-  Future<void> _verifyAndRetry(BuildContext context, WidgetRef ref) async {
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: const {'returnTo': '/me'},
-      ).toString(),
-    );
-    if (verified == true && context.mounted) {
-      await _retry(context, ref);
-    }
   }
 
   void _applyResult(

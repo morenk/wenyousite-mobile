@@ -438,7 +438,7 @@ void main() {
     expect(controller.state.messages, isEmpty);
   });
 
-  test('接受请求的邮箱错误保留会话，成功重试再切到可发送态', () async {
+  test('接受请求失败保留会话，成功重试再切到可发送态', () async {
     final repository = _FakeDirectMessageRepository(
       conversation: _incomingRequest(),
       initialMessages: [_message(id: 'request-1', incoming: true)],
@@ -455,7 +455,7 @@ void main() {
 
     expect(await controller.handleRequest(accept: true), isFalse);
     expect(controller.state.conversation?.isIncomingRequest, isTrue);
-    expect(controller.state.transientFailure?.businessCode, 40107);
+    expect(controller.state.transientFailure?.userMessage, '请求暂时没有完成。');
     expect(await controller.handleRequest(accept: true), isTrue);
     expect(controller.state.conversation?.canSend, isTrue);
   });
@@ -617,7 +617,7 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
   }) async {
     if (handleFailures > 0) {
       handleFailures--;
-      throw const ApiFailure(userMessage: '请先完成邮箱验证。', businessCode: 40107);
+      throw const ApiFailure(userMessage: '请求暂时没有完成。');
     }
     conversation = _conversation();
     return conversation;
@@ -648,6 +648,10 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
 }
 
 class _FakePublicUserRepository implements PublicUserRepository {
+  @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) =>
+      throw UnimplementedError();
+
   @override
   Future<PublicUserProfileModel> fetchUser(String userId) async {
     return PublicUserProfileModel(

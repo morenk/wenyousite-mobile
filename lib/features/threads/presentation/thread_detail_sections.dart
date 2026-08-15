@@ -278,133 +278,125 @@ class _FloorCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
-    return Semantics(
-      key: Key('thread-floor-card-${floor.id}'),
-      container: true,
-      button: !pending && !floor.isDeleted,
-      label: floor.floorNumber == null ? '回复楼层' : '回复第 ${floor.floorNumber} 楼',
-      hint: '点击回复，长按打开楼层操作',
-      onTap: pending || floor.isDeleted ? null : onReply,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+    return PostCardActionMenu(
+      canCopyText: !floor.isDeleted,
+      canReply: !floor.isDeleted,
+      canEdit: !floor.isDeleted && canEdit,
+      canDelete: !floor.isDeleted && canDelete,
+      canReport: !floor.isDeleted && reportReturnTo != null,
+      pending: pending,
+      semanticLabel: '楼层操作',
+      actionKeyPrefix: 'thread-floor-action-${floor.id}',
+      onSelected: (action) => _handleAction(action, context, ref),
+      anchorBuilder: (context, handle) => Semantics(
+        key: Key('thread-floor-card-${floor.id}'),
+        container: true,
+        button: !pending && !floor.isDeleted,
+        label: floor.floorNumber == null
+            ? '回复楼层'
+            : '回复第 ${floor.floorNumber} 楼',
+        hint: '点击回复，长按打开楼层操作',
         onTap: pending || floor.isDeleted ? null : onReply,
-        onLongPress: () => _showActions(context, ref),
-        child: WenyouTransientTargetFrame(
-          targetId: isFocused ? floor.id : null,
-          announcement: '已定位到目标楼层',
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.space4,
-              vertical: tokens.space12,
-            ),
-            decoration: const BoxDecoration(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _AuthorLine(
-                        key: Key('thread-floor-author-${floor.id}'),
-                        author: floor.author,
-                        time: floor.createdAt,
-                        compact: true,
+        onLongPress: handle.open,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: pending || floor.isDeleted ? null : onReply,
+          onLongPress: handle.open,
+          child: WenyouTransientTargetFrame(
+            targetId: isFocused ? floor.id : null,
+            announcement: '已定位到目标楼层',
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.space4,
+                vertical: tokens.space12,
+              ),
+              decoration: const BoxDecoration(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _AuthorLine(
+                          key: Key('thread-floor-author-${floor.id}'),
+                          author: floor.author,
+                          time: floor.createdAt,
+                          compact: true,
+                        ),
                       ),
+                      SizedBox(width: tokens.space8),
+                      Text(
+                        floor.floorNumber == null
+                            ? '楼层'
+                            : '#${floor.floorNumber}',
+                        key: Key('thread-floor-number-${floor.id}'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: tokens.space8),
+                  if (floor.isDeleted)
+                    Text(
+                      '该楼层已删除。',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                    )
+                  else
+                    StickerPostMarkdown(
+                      postId: floor.id,
+                      data: floor.body.markdown,
+                      diceLabels: _diceLabels(floor.body.diceRolls),
+                      onInternalLink: (uri) =>
+                          _showInternalLinkNotice(context, uri),
+                      onTapText: pending ? null : onReply,
                     ),
-                    SizedBox(width: tokens.space8),
-                    Tooltip(
-                      message: '楼层操作',
+                  if (floor.replyCount > 0) ...[
+                    SizedBox(height: tokens.space4),
+                    Align(
+                      alignment: Alignment.centerRight,
                       child: TextButton(
-                        key: Key('thread-floor-actions-${floor.id}'),
-                        onPressed: pending
-                            ? null
-                            : () => _showActions(context, ref),
+                        key: Key('thread-floor-discussion-${floor.id}'),
+                        onPressed: pending ? null : onDiscussion,
                         style: TextButton.styleFrom(
                           foregroundColor: tokens.mutedText,
                           padding: EdgeInsets.symmetric(
-                            horizontal: tokens.space4,
+                            horizontal: tokens.space8,
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            WenyouIcon(WenyouIconIds.metricComments, size: 16),
+                            SizedBox(width: tokens.space4),
                             Text(
-                              floor.floorNumber == null
-                                  ? '楼层'
-                                  : '#${floor.floorNumber}',
+                              '${floor.replyCount} 条回复',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             SizedBox(width: tokens.space4),
                             const WenyouIcon(
-                              WenyouIconIds.actionMore,
-                              size: 18,
+                              WenyouIconIds.navigationNext,
+                              size: 16,
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: tokens.space8),
-                if (floor.isDeleted)
-                  Text(
-                    '该楼层已删除。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                  )
-                else
-                  StickerPostMarkdown(
-                    postId: floor.id,
-                    data: floor.body.markdown,
-                    diceLabels: _diceLabels(floor.body.diceRolls),
-                    onInternalLink: (uri) =>
-                        _showInternalLinkNotice(context, uri),
-                    onTapText: pending ? null : onReply,
-                  ),
-                if (floor.replyCount > 0) ...[
-                  SizedBox(height: tokens.space4),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      key: Key('thread-floor-discussion-${floor.id}'),
-                      onPressed: pending ? null : onDiscussion,
-                      style: TextButton.styleFrom(
-                        foregroundColor: tokens.mutedText,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: tokens.space8,
-                        ),
+                    if (floor.replies.isNotEmpty) ...[
+                      SizedBox(height: tokens.space4),
+                      _FloorInlineReplyPreview(
+                        floorId: floor.id,
+                        replies: floor.replies,
+                        replyCount: floor.replyCount,
+                        pending: pending,
+                        onDiscussion: onDiscussion,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          WenyouIcon(WenyouIconIds.metricComments, size: 16),
-                          SizedBox(width: tokens.space4),
-                          Text(
-                            '${floor.replyCount} 条回复',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          SizedBox(width: tokens.space4),
-                          const WenyouIcon(
-                            WenyouIconIds.navigationNext,
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (floor.replies.isNotEmpty) ...[
-                    SizedBox(height: tokens.space4),
-                    _FloorInlineReplyPreview(
-                      floorId: floor.id,
-                      replies: floor.replies,
-                      replyCount: floor.replyCount,
-                      pending: pending,
-                      onDiscussion: onDiscussion,
-                    ),
+                    ],
                   ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -412,20 +404,11 @@ class _FloorCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _showActions(BuildContext context, WidgetRef ref) async {
-    final action = await showPostCardActionSheet(
-      context: context,
-      title: '楼层操作',
-      authorName: floor.author.username,
-      canCopyText: !floor.isDeleted,
-      canReply: !floor.isDeleted,
-      canEdit: !floor.isDeleted && canEdit,
-      canDelete: !floor.isDeleted && canDelete,
-      canReport: !floor.isDeleted && reportReturnTo != null,
-      pending: pending,
-      replyLabel: '回复',
-    );
-    if (action == null || !context.mounted) return;
+  Future<void> _handleAction(
+    PostCardAction action,
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     switch (action) {
       case PostCardAction.copyText:
         await copyPostCardValue(context, floor.body.markdown, '内容已复制');
@@ -565,60 +548,47 @@ class _FloorInlineReplyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Semantics(
-      button: enabled,
-      label: '${reply.author.username} 的楼中楼回复',
-      hint: enabled ? '点击查看完整讨论' : null,
-      onTap: enabled ? onDiscussion : null,
-      child: Material(
-        color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
-        child: InkWell(
-          key: Key('thread-floor-reply-$floorId-${reply.id}'),
-          onTap: enabled ? onDiscussion : null,
-          borderRadius: BorderRadius.circular(tokens.radius12),
-          child: Padding(
-            padding: EdgeInsets.all(tokens.space12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _AuthorLine(
-                  author: reply.author,
-                  time: reply.createdAt,
-                  compact: true,
-                ),
-                if (reply.replyToUsername case final username?) ...[
-                  SizedBox(height: tokens.space4),
-                  Text(
-                    '回复 @$username',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                  ),
-                ],
-                SizedBox(height: tokens.space8),
-                if (reply.isDeleted)
-                  Text(
-                    '该回复已删除。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                  )
-                else
-                  StickerPostMarkdown(
-                    postId: reply.id,
-                    data: reply.body.markdown,
-                    diceLabels: _diceLabels(reply.body.diceRolls),
-                    onInternalLink: (uri) =>
-                        _showInternalLinkNotice(context, uri),
-                    onTapText: enabled ? onDiscussion : null,
-                    bodyFontSize: 15,
-                    bodyHeight: 1.65,
-                  ),
-              ],
-            ),
+    return WenyouDiscussionReplyCard(
+      key: Key('thread-floor-reply-$floorId-${reply.id}'),
+      semanticsLabel: '${reply.author.username} 的楼中楼回复',
+      enabled: enabled,
+      onTap: onDiscussion,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _AuthorLine(
+            author: reply.author,
+            time: reply.createdAt,
+            compact: true,
           ),
-        ),
+          if (reply.replyToUsername case final username?) ...[
+            SizedBox(height: tokens.space4),
+            Text(
+              '回复 @$username',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ),
+          ],
+          SizedBox(height: tokens.space8),
+          if (reply.isDeleted)
+            Text(
+              '该回复已删除。',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+            )
+          else
+            StickerPostMarkdown(
+              postId: reply.id,
+              data: reply.body.markdown,
+              diceLabels: _diceLabels(reply.body.diceRolls),
+              onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+              onTapText: enabled ? onDiscussion : null,
+              bodyFontSize: 15,
+              bodyHeight: 1.65,
+            ),
+        ],
       ),
     );
   }

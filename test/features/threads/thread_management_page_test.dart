@@ -168,42 +168,6 @@ void main() {
     );
   });
 
-  testWidgets('40107 提供邮箱验证入口并保留表单', (tester) async {
-    final repository = _FakeRepository(
-      initial: _bootstrap(),
-      updateFailure: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
-      ),
-    );
-    await _pumpPage(tester, repository);
-    await tester.enterText(
-      find.byKey(const Key('thread-management-title')),
-      '验证后继续保存',
-    );
-    await tester.ensureVisible(find.byKey(const Key('thread-management-save')));
-    await tester.tap(find.byKey(const Key('thread-management-save')));
-    await tester.pumpAndSettle();
-    final verify = find.byKey(const Key('thread-management-verify-email'));
-    await tester.ensureVisible(verify);
-    await tester.tap(verify);
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('thread-management-failure')), findsNothing);
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const Key('thread-management-title')),
-          )
-          .controller!
-          .text,
-      '验证后继续保存',
-    );
-  });
-
   testWidgets('有未保存修改时返回需要明确确认放弃', (tester) async {
     await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
     await tester.enterText(
@@ -284,20 +248,6 @@ Future<void> _pumpPage(
         path: '/threads/:threadId/manage/subthreads',
         builder: (_, _) => const Scaffold(body: Text('子贴工作台占位')),
       ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, state) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
-          ),
-        ),
-      ),
     ],
   );
   addTearDown(router.dispose);
@@ -318,13 +268,11 @@ class _FakeRepository implements ThreadManagementRepository {
     required this.initial,
     ThreadManagementBootstrap? latest,
     this.conflictOnce = false,
-    this.updateFailure,
   }) : latest = latest ?? initial;
 
   final ThreadManagementBootstrap initial;
   final ThreadManagementBootstrap latest;
   final bool conflictOnce;
-  final ApiFailure? updateFailure;
   int loadCalls = 0;
   int removeCalls = 0;
   bool _didConflict = false;
@@ -355,7 +303,6 @@ class _FakeRepository implements ThreadManagementRepository {
         httpStatus: 409,
       );
     }
-    if (updateFailure != null) throw updateFailure!;
     return ThreadManagementSnapshot(
       id: current.id,
       title: draft.title.trim(),

@@ -105,51 +105,6 @@ void main() {
     expect(find.text('子贴已被修改，请重新编辑。'), findsOneWidget);
   });
 
-  testWidgets('40107 在表单内完成邮箱验证后保留输入并重试', (tester) async {
-    final repository = _FakeRepository(
-      bootstrap: _bootstrap(),
-      createFailureOnce: const ApiFailure(
-        userMessage: '请先完成邮箱验证。',
-        businessCode: 40107,
-        requestId: 'subthread-verify-id',
-      ),
-    );
-    await _pumpPage(tester, repository);
-
-    await tester.tap(find.byKey(const Key('subthread-management-create')));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('subthread-form-title')),
-      '验证后创建',
-    );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('subthread-form-failure')),
-        matching: find.text('请求 ID：subthread-verify-id'),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('subthread-form-verify-email')));
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester
-          .widget<TextFormField>(find.byKey(const Key('subthread-form-title')))
-          .controller!
-          .text,
-      '验证后创建',
-    );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-    expect(repository.createdTitles, ['验证后创建', '验证后创建']);
-    expect(find.text('子贴已创建。'), findsOneWidget);
-  });
-
   testWidgets('加载失败保留请求 ID并可重试', (tester) async {
     final repository = _FakeRepository(
       bootstrap: _bootstrap(),
@@ -198,20 +153,6 @@ Future<void> _pumpPage(
           threadId: state.pathParameters['threadId']!,
         ),
       ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, state) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
-          ),
-        ),
-      ),
     ],
   );
   addTearDown(router.dispose);
@@ -229,13 +170,11 @@ Future<void> _pumpPage(
 class _FakeRepository implements SubthreadManagementRepository {
   _FakeRepository({
     required this.bootstrap,
-    this.createFailureOnce,
     this.updateFailureOnce,
     this.loadFailureOnce,
   });
 
   SubthreadManagementBootstrap bootstrap;
-  ApiFailure? createFailureOnce;
   ApiFailure? updateFailureOnce;
   ApiFailure? loadFailureOnce;
   int findCalls = 0;
@@ -271,9 +210,6 @@ class _FakeRepository implements SubthreadManagementRepository {
     required String clientRequestId,
   }) async {
     createdTitles.add(draft.normalizedTitle);
-    final failure = createFailureOnce;
-    createFailureOnce = null;
-    if (failure != null) throw failure;
     return SubthreadManagementItem(
       id: 'sub-created',
       threadId: threadId,

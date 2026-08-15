@@ -12,27 +12,42 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 Future<UserSticker?> showStickerPicker(BuildContext context) {
+  final router = GoRouter.of(context);
   return showModalBottomSheet<UserSticker>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => const FractionallySizedBox(
+    builder: (sheetContext) => FractionallySizedBox(
       heightFactor: 0.68,
-      child: _StickerPickerSheet(),
+      child: StickerPickerPanel(
+        onSelected: (sticker) => Navigator.pop(sheetContext, sticker),
+        onManage: () {
+          Navigator.pop(sheetContext);
+          router.pushNamed('me-stickers');
+        },
+      ),
     ),
   );
 }
 
-class _StickerPickerSheet extends ConsumerStatefulWidget {
-  const _StickerPickerSheet();
+class StickerPickerPanel extends ConsumerStatefulWidget {
+  const StickerPickerPanel({
+    required this.onSelected,
+    required this.onManage,
+    this.compact = false,
+    super.key,
+  });
+
+  final ValueChanged<UserSticker> onSelected;
+  final VoidCallback onManage;
+  final bool compact;
 
   @override
-  ConsumerState<_StickerPickerSheet> createState() =>
-      _StickerPickerSheetState();
+  ConsumerState<StickerPickerPanel> createState() => _StickerPickerPanelState();
 }
 
-class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
+class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
   var _recent = false;
 
   @override
@@ -46,69 +61,48 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space16,
-            0,
-            tokens.space8,
-            tokens.space8,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '选择表情',
-                  style: Theme.of(context).textTheme.titleMedium,
+        if (widget.compact)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space8,
+              tokens.space8,
+              tokens.space4,
+              0,
+            ),
+            child: Row(
+              children: [
+                Expanded(child: _buildTabs(collection, compact: true)),
+                _buildRefreshButton(state),
+                _buildManageButton(),
+              ],
+            ),
+          )
+        else ...[
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space16,
+              0,
+              tokens.space8,
+              tokens.space8,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '选择表情',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
-              ),
-              IconButton(
-                key: const Key('sticker-picker-refresh'),
-                onPressed: state.isBusy
-                    ? null
-                    : () => ref
-                          .read(stickerCollectionControllerProvider.notifier)
-                          .load(),
-                tooltip: '刷新收藏',
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-              ),
-              IconButton(
-                key: const Key('sticker-picker-manage'),
-                onPressed: () {
-                  final router = GoRouter.of(context);
-                  Navigator.pop(context);
-                  router.pushNamed('me-stickers');
-                },
-                tooltip: '管理收藏',
-                icon: const WenyouIcon(WenyouIconIds.actionSettings),
-              ),
-            ],
+                _buildRefreshButton(state),
+                _buildManageButton(),
+              ],
+            ),
           ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.space16),
-          child: SegmentedButton<bool>(
-            segments: [
-              ButtonSegment(
-                value: false,
-                icon: const WenyouIcon(WenyouIconIds.actionLike),
-                label: Text(
-                  collection == null
-                      ? '收藏'
-                      : '收藏 ${collection.items.length}/${collection.limit}',
-                ),
-              ),
-              const ButtonSegment(
-                value: true,
-                icon: WenyouIcon(WenyouIconIds.statusHistory),
-                label: Text('最近'),
-              ),
-            ],
-            selected: {_recent},
-            onSelectionChanged: (selection) {
-              setState(() => _recent = selection.single);
-            },
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: tokens.space16),
+            child: _buildTabs(collection),
           ),
-        ),
+        ],
         if (collection?.pendingImports.isNotEmpty ?? false)
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -122,9 +116,57 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-        SizedBox(height: tokens.space12),
+        SizedBox(height: widget.compact ? tokens.space8 : tokens.space12),
         Expanded(child: _buildBody(context, state, shown)),
       ],
+    );
+  }
+
+  Widget _buildTabs(StickerCollection? collection, {bool compact = false}) {
+    return SegmentedButton<bool>(
+      showSelectedIcon: false,
+      segments: [
+        ButtonSegment(
+          value: false,
+          icon: compact ? null : const WenyouIcon(WenyouIconIds.actionLike),
+          label: Text(
+            collection == null
+                ? '收藏'
+                : compact
+                ? '收藏 ${collection.items.length}'
+                : '收藏 ${collection.items.length}/${collection.limit}',
+          ),
+        ),
+        ButtonSegment(
+          value: true,
+          icon: compact ? null : const WenyouIcon(WenyouIconIds.statusHistory),
+          label: const Text('最近'),
+        ),
+      ],
+      selected: {_recent},
+      onSelectionChanged: (selection) {
+        setState(() => _recent = selection.single);
+      },
+    );
+  }
+
+  Widget _buildRefreshButton(StickerCollectionState state) {
+    return IconButton(
+      key: const Key('sticker-picker-refresh'),
+      onPressed: state.isBusy
+          ? null
+          : () => ref.read(stickerCollectionControllerProvider.notifier).load(),
+      tooltip: '刷新收藏',
+      icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+    );
+  }
+
+  Widget _buildManageButton() {
+    return IconButton(
+      key: const Key('sticker-picker-manage'),
+      onPressed: widget.onManage,
+      tooltip: '管理收藏',
+      icon: const WenyouIcon(WenyouIconIds.actionSettings),
     );
   }
 
@@ -159,31 +201,42 @@ class _StickerPickerSheetState extends ConsumerState<_StickerPickerSheet> {
         message: _recent ? '发送过的收藏表情会显示在这里。' : '可在“表情包”从相册添加，或收藏站内图片。',
       );
     }
-    final width = MediaQuery.sizeOf(context).width;
-    final columns = width >= 600
-        ? 8
-        : width >= 400
-        ? 5
-        : 4;
-    return GridView.builder(
-      key: ValueKey(_recent ? 'sticker-recent-grid' : 'sticker-favorite-grid'),
-      padding: EdgeInsets.fromLTRB(
-        context.wenyouTokens.space16,
-        0,
-        context.wenyouTokens.space16,
-        context.wenyouTokens.space24,
-      ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        crossAxisSpacing: context.wenyouTokens.space8,
-        mainAxisSpacing: context.wenyouTokens.space8,
-      ),
-      itemCount: shown.length,
-      itemBuilder: (context, index) {
-        final sticker = shown[index];
-        return StickerTile(
-          sticker: sticker,
-          onTap: () => Navigator.pop(context, sticker),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = width >= 600
+            ? 8
+            : width >= 400
+            ? 5
+            : 4;
+        final horizontalPadding = widget.compact
+            ? context.wenyouTokens.space8
+            : context.wenyouTokens.space16;
+        return GridView.builder(
+          key: ValueKey(
+            _recent ? 'sticker-recent-grid' : 'sticker-favorite-grid',
+          ),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            0,
+            horizontalPadding,
+            widget.compact
+                ? context.wenyouTokens.space8
+                : context.wenyouTokens.space24,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: context.wenyouTokens.space8,
+            mainAxisSpacing: context.wenyouTokens.space8,
+          ),
+          itemCount: shown.length,
+          itemBuilder: (context, index) {
+            final sticker = shown[index];
+            return StickerTile(
+              sticker: sticker,
+              onTap: () => widget.onSelected(sticker),
+            );
+          },
         );
       },
     );

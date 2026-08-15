@@ -16,10 +16,13 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
+import 'package:wenyousite_mobile/features/users/application/profile_cover_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 
 part 'me_avatar_editor.dart';
+part 'me_profile_cover_editor.dart';
 part 'me_profile_editor.dart';
 
 class MePage extends ConsumerWidget {
@@ -135,6 +138,7 @@ class MeEditPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(meProfileControllerProvider);
     final avatarState = ref.watch(avatarControllerProvider);
+    final profileCoverState = ref.watch(profileCoverControllerProvider);
     final notifier = ref.read(meProfileControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(title: const Text('编辑资料')),
@@ -172,7 +176,10 @@ class MeEditPage extends ConsumerWidget {
           ],
         ),
         MeProfilePhase.ready => RefreshIndicator(
-          onRefresh: state.isSubmitting || avatarState.isBusy
+          onRefresh:
+              state.isSubmitting ||
+                  avatarState.isBusy ||
+                  profileCoverState.isBusy
               ? () async {}
               : notifier.load,
           child: _MePageList(children: [_MeProfileContent(state: state)]),
@@ -230,10 +237,7 @@ class MeSettingsPage extends ConsumerWidget {
           onRefresh: state.isSubmitting ? () async {} : notifier.load,
           child: _MePageList(
             children: [
-              _AccountSecurityPanel(
-                disabled: state.isSubmitting,
-                emailVerified: state.profile!.emailVerified,
-              ),
+              _AccountSecurityPanel(disabled: state.isSubmitting),
               const _LogoutPanel(),
             ],
           ),
@@ -297,9 +301,10 @@ class _MeDashboard extends ConsumerWidget {
                 onPressed: () => context.pushNamed(
                   'user-profile',
                   pathParameters: {'userId': profile.id},
+                  queryParameters: const {'mode': 'preview'},
                 ),
                 icon: const WenyouIcon(WenyouIconIds.actionShow),
-                label: const Text('公开主页'),
+                label: const Text('预览公开主页'),
               ),
             ),
           ],
@@ -358,13 +363,9 @@ class _MeDashboard extends ConsumerWidget {
 }
 
 class _AccountSecurityPanel extends StatelessWidget {
-  const _AccountSecurityPanel({
-    required this.disabled,
-    required this.emailVerified,
-  });
+  const _AccountSecurityPanel({required this.disabled});
 
   final bool disabled;
-  final bool emailVerified;
 
   @override
   Widget build(BuildContext context) {
@@ -402,23 +403,6 @@ class _AccountSecurityPanel extends StatelessWidget {
             onTap: disabled ? null : () => context.pushNamed('change-password'),
           ),
           const Divider(height: 1),
-          if (!emailVerified) ...[
-            ListTile(
-              key: const Key('me-open-verify-email'),
-              enabled: !disabled,
-              leading: const WenyouIcon(WenyouIconIds.actionMarkUnread),
-              title: const Text('验证当前邮箱'),
-              subtitle: const Text('验证后可发布主题和参与互动'),
-              trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-              onTap: disabled
-                  ? null
-                  : () => context.pushNamed(
-                      'verify-email',
-                      queryParameters: const {'returnTo': '/me'},
-                    ),
-            ),
-            const Divider(height: 1),
-          ],
           ListTile(
             key: const Key('me-open-change-email'),
             enabled: !disabled,
@@ -473,18 +457,11 @@ class _ProfileOverview extends StatelessWidget {
       key: const Key('me-profile-header'),
       username: profile.username,
       avatarUrl: profile.avatarUrl,
+      profileCover: profile.profileCover,
       level: profile.level,
       bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '还没有填写个人简介。',
       metadata:
           '${DateFormat('yyyy-MM-dd').format(profile.createdAt)} 加入温油站 · ${_maskEmail(profile.email)}',
-      statuses: [
-        UserProfileStatusItem(
-          icon: profile.emailVerified
-              ? WenyouIconIds.statusVerified
-              : WenyouIconIds.statusWarning,
-          label: profile.emailVerified ? '邮箱已验证' : '邮箱待验证',
-        ),
-      ],
       levelProgress: profile.levelProgress,
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'

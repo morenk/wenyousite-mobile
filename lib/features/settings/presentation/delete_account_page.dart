@@ -80,18 +80,6 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     router.go(AppRouteLocations.home);
   }
 
-  Future<void> _openEmailVerification() async {
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: const {'returnTo': '/me/security/delete-account'},
-      ).toString(),
-    );
-    if (verified == true && mounted) {
-      ref.read(accountDeletionControllerProvider.notifier).clearFailure();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
@@ -187,14 +175,6 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                                     ? null
                                     : _retryLocalCleanup,
                                 child: const Text('重试清除本机登录'),
-                              )
-                            : state.failure!.businessCode == 40107
-                            ? TextButton(
-                                key: const Key('delete-account-verify-email'),
-                                onPressed: state.isSubmitting
-                                    ? null
-                                    : _openEmailVerification,
-                                child: const Text('先验证邮箱'),
                               )
                             : null,
                       ),

@@ -65,26 +65,6 @@ void main() {
     expect(harness.tokenStore.value, isNotNull);
   });
 
-  testWidgets('40107 提供邮箱验证入口并保留当前页面', (tester) async {
-    final repository = _FakeAccountDeletionRepository(
-      failure: const ApiFailure(userMessage: '请先完成邮箱验证。', businessCode: 40107),
-    );
-    await _pumpPage(tester, repository);
-    await _confirmDeletion(tester);
-
-    expect(
-      find.byKey(const Key('delete-account-verify-email')),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('delete-account-verify-email')));
-    await tester.pumpAndSettle();
-    expect(find.text('邮箱验证占位'), findsOneWidget);
-    await tester.tap(find.text('完成验证'));
-    await tester.pumpAndSettle();
-    expect(find.text('注销账号'), findsWidgets);
-    expect(find.byKey(const Key('delete-account-failure')), findsNothing);
-  });
-
   testWidgets('远端已注销时只重试本机清理', (tester) async {
     final repository = _FakeAccountDeletionRepository();
     final harness = await _pumpPage(tester, repository, failFirstClear: true);
@@ -167,20 +147,6 @@ Future<_Harness> _pumpPage(
       GoRoute(
         path: '/delete-account',
         builder: (context, state) => const DeleteAccountPage(),
-      ),
-      GoRoute(
-        path: '/me/security/verify-email',
-        builder: (context, state) => Scaffold(
-          body: Column(
-            children: [
-              const Text('邮箱验证占位'),
-              TextButton(
-                onPressed: () => context.pop(true),
-                child: const Text('完成验证'),
-              ),
-            ],
-          ),
-        ),
       ),
     ],
   );

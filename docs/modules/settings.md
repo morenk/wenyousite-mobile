@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-“我的” `/me` 当前直接展示本人总览、资料和公开范围表单，并可进入自己的公开主页、本人关注/粉丝、`/me/blocks` 黑名单页、`/me/security/sessions` 登录终端页、`/me/security/password` 修改密码页、`/me/security/email` 更换邮箱页及 `/me/security/delete-account` 注销页；本人邮箱尚未验证时额外显示 `/me/security/verify-email` 入口。关于后续拆为二级页面；任何开发信息都不得显示凭据。
+“我的” `/me` 当前展示本人总览并进入独立资料编辑与账号设置；账号设置可继续进入自己的公开主页、本人关注/粉丝、`/me/blocks` 黑名单页、`/me/security/sessions` 登录终端页、`/me/security/password` 修改密码页、`/me/security/email` 更换邮箱页及 `/me/security/delete-account` 注销页。契约 4.14 不再提供登录后邮箱验证入口。关于页后续接入；任何开发信息都不得显示凭据。
 
 普通登录用户还可从账号设置进入公开 `/appeals` 治理决定页；设置只提供入口，不读取或持有 moderation 的专用申诉凭据。
 
@@ -24,7 +24,7 @@
 
 ## 5. API operationId 与生成类型
 
-- 已接入：`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersDeleteMe`、`usersFollowBlocks`、`usersFollowUnblock`、`authLogout`、`authListSessions`、`authRevokeSession`、`authChangePassword`、`authRequestChangeEmailCode`、`authVerifyChangeEmail`、`authResendVerification`、`authVerifyEmail`。
+- 已接入：`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersSetProfileCover`、`usersRemoveProfileCover`、`usersDeleteMe`、`usersFollowBlocks`、`usersFollowUnblock`、`authLogout`、`authListSessions`、`authRevokeSession`、`authChangePassword`、`authRequestChangeEmailCode`、`authVerifyChangeEmail`。
 
 ## 6. 状态模型和数据流
 
@@ -40,7 +40,7 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-表单提交防重复，未变化不发请求；失败保留输入、旧资料与请求 ID。黑名单与终端读取均提供加载、空、失败、重试和刷新；写入串行执行并在失败时保留列表。终端和邮箱验证码限流使用全局 `42900` 友好提示，邮箱验证码额外按 `Retry-After` 倒计时；未知平台降级为“其他终端登录”，任一账号安全成功响应缺失 data 时不伪装成功。已有简介因当前 DTO 不支持 null 而不能清空，客户端明确提示。当前账号退出失败保留会话并提供本机后备。注销失败保留短语、会话和请求 ID；`40107` 提供验证邮箱入口，远端成功后的本地清理失败只能重试本机清理。
+表单提交防重复，未变化不发请求；失败保留输入、旧资料与请求 ID。黑名单与终端读取均提供加载、空、失败、重试和刷新；写入串行执行并在失败时保留列表。终端和邮箱验证码限流使用全局 `42900` 友好提示，邮箱验证码额外按 `Retry-After` 倒计时；未知平台降级为“其他终端登录”，任一账号安全成功响应缺失 data 时不伪装成功。已有简介因当前 DTO 不支持 null 而不能清空，客户端明确提示。当前账号退出失败保留会话并提供本机后备。注销失败保留短语、会话和请求 ID；远端成功后的本地清理失败只能重试本机清理。
 
 ## 10. 跨模块约束
 
@@ -54,7 +54,7 @@
 - [x] 本人关系与黑名单入口受鉴权，取消拉黑失败保留条目与请求 ID。
 - [x] 登录终端读取、排序、隐私降级、当前终端保护、其他终端撤销及失败恢复正确。
 - [x] 改密与换邮箱两步操作可恢复、限流正确，成功后清除本机双 Token 并要求重新登录。
-- [x] 未验证邮箱在本人页显示入口，验证页受鉴权且成功后刷新本人资料。
+- [x] 契约 4.14 已清理登录后邮箱验证路由、状态字段和写操作专用恢复入口。
 - [x] 退出清本地会话且服务端失败保留安全后备。
 - [x] 注销要求固定短语和最终确认，成功进入游客态，远端已完成后的本机清理可安全单向重试。
 - [ ] 开发信息准确且无敏感数据。
@@ -67,7 +67,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.13.1-dev.20260815.1`；Markdown v3；后端 `221e28cd0e25cedb2ad1c7c4c1568175e0c3c9c6`。
+契约 `4.14.0-dev.20260815.1`；Markdown v3；后端 `9752c2289acb0db19af7d91d98978adb558991bf`。
 
 ## 14. 相关代码与架构文档
 

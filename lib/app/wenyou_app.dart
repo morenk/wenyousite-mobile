@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
@@ -9,8 +10,10 @@ import 'package:wenyousite_mobile/features/app_shell/application/startup_control
 import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
+import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
@@ -24,6 +27,9 @@ class WenyouApp extends StatelessWidget {
       overrides: [
         avatarImagePickerPortProvider.overrideWith(
           (ref) => ref.watch(avatarImagePickerProvider),
+        ),
+        profileCoverImagePickerPortProvider.overrideWith(
+          (ref) => ref.watch(profileCoverImagePickerProvider),
         ),
         editorImagePickerPortProvider.overrideWith(
           (ref) => ref.watch(editorImagePickerProvider),
@@ -64,6 +70,13 @@ class _WenyouMaterialApp extends ConsumerWidget {
       title: '温油站',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      locale: const Locale('zh', 'CN'),
+      supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) {
         return WenyouInstantKeyboardInsets(

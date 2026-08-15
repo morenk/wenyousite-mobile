@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -40,21 +39,13 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
               detail: state.failure!.requestId == null
                   ? null
                   : '请求 ID：${state.failure!.requestId}',
-              action: state.failure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('thread-invite-link-verify-email'),
-                      onPressed: state.isGenerating
-                          ? null
-                          : () => _openVerification(context, ref),
-                      child: const Text('先验证邮箱'),
-                    )
-                  : TextButton(
-                      key: const Key('thread-invite-link-dismiss-failure'),
-                      onPressed: state.isGenerating
-                          ? null
-                          : () => ref.read(provider.notifier).clearFailure(),
-                      child: const Text('知道了'),
-                    ),
+              action: TextButton(
+                key: const Key('thread-invite-link-dismiss-failure'),
+                onPressed: state.isGenerating
+                    ? null
+                    : () => ref.read(provider.notifier).clearFailure(),
+                child: const Text('知道了'),
+              ),
             ),
           ],
           if (state.link != null) ...[
@@ -155,21 +146,6 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('邀请已生成，但自动复制失败，请长按上方链接复制。')));
-    }
-  }
-
-  Future<void> _openVerification(BuildContext context, WidgetRef ref) async {
-    final returnTo = '/threads/$threadId/manage';
-    final verified = await context.push<bool>(
-      Uri(
-        path: '/me/security/verify-email',
-        queryParameters: {'returnTo': returnTo},
-      ).toString(),
-    );
-    if (verified == true && context.mounted) {
-      ref
-          .read(threadInviteLinkControllerProvider(threadId).notifier)
-          .clearFailure();
     }
   }
 }

@@ -23,7 +23,6 @@ class ThreadComposeState {
     this.phase = ThreadComposePhase.loading,
     this.ownerId,
     this.categories = const [],
-    this.emailVerified,
     this.bootstrapLoading = false,
     this.title = '',
     this.categorySlug,
@@ -47,7 +46,6 @@ class ThreadComposeState {
   final ThreadComposePhase phase;
   final String? ownerId;
   final List<ThreadComposeCategory> categories;
-  final bool? emailVerified;
   final bool bootstrapLoading;
   final String title;
   final String? categorySlug;
@@ -72,14 +70,12 @@ class ThreadComposeState {
       phase == ThreadComposePhase.ready &&
       !isSubmitting &&
       !bootstrapLoading &&
-      emailVerified == true &&
       bootstrapFailure == null;
 
   ThreadComposeState copyWith({
     ThreadComposePhase? phase,
     Object? ownerId = _unset,
     List<ThreadComposeCategory>? categories,
-    Object? emailVerified = _unset,
     bool? bootstrapLoading,
     String? title,
     Object? categorySlug = _unset,
@@ -103,9 +99,6 @@ class ThreadComposeState {
       phase: phase ?? this.phase,
       ownerId: identical(ownerId, _unset) ? this.ownerId : ownerId as String?,
       categories: categories ?? this.categories,
-      emailVerified: identical(emailVerified, _unset)
-          ? this.emailVerified
-          : emailVerified as bool?,
       bootstrapLoading: bootstrapLoading ?? this.bootstrapLoading,
       title: title ?? this.title,
       categorySlug: identical(categorySlug, _unset)
@@ -199,7 +192,6 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         ownerId: ownerId,
         bootstrapLoading: false,
         categories: bootstrap?.categories,
-        emailVerified: bootstrap?.emailVerified,
       );
       if (snapshot != null) {
         _pendingCreate = await _snapshotStore.findPendingCreate(
@@ -236,7 +228,6 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       }
       state = state.copyWith(
         categories: bootstrap.categories,
-        emailVerified: bootstrap.emailVerified,
         bootstrapLoading: false,
         bootstrapFailure: null,
       );
@@ -408,14 +399,6 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       );
       return null;
     }
-    if (publish && state.emailVerified != true) {
-      state = state.copyWith(
-        actionFailure: const ApiFailure(userMessage: '请先完成邮箱验证再发布主题。'),
-        successMessage: null,
-      );
-      return null;
-    }
-
     await flushLocalSnapshot();
     if (!mounted || state.phase != ThreadComposePhase.ready) return null;
     state = state.copyWith(

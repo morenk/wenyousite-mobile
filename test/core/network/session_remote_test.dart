@@ -121,7 +121,6 @@ Response<AuthRefresh200Response> _refreshResponse({String? refreshToken}) {
                 ..email = 'user@example.com'
                 ..username = 'user'
                 ..role = 'USER'
-                ..emailVerified = true
                 ..level = 1,
             ),
         ),

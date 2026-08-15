@@ -123,11 +123,10 @@ void main() {
           .height,
       lessThanOrEqualTo(36),
     );
+    expect(find.byKey(const Key('thread-floor-actions-floor-1')), findsNothing);
     expect(
-      tester
-          .getSize(find.byKey(const Key('thread-floor-actions-floor-1')))
-          .height,
-      greaterThanOrEqualTo(48),
+      find.byKey(const Key('thread-floor-number-floor-1')),
+      findsOneWidget,
     );
     expect(find.byKey(const Key('thread-floor-report-floor-1')), findsNothing);
     expect(find.byType(AnimatedContainer), findsNothing);
@@ -147,10 +146,12 @@ void main() {
     expect(discussionSemantics.label, contains('1 条回复'));
     expect(tester.widget<TextButton>(discussion).onPressed, isNotNull);
 
-    await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
+    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
     await tester.pumpAndSettle();
-    expect(find.text('楼层操作'), findsOneWidget);
-    expect(find.text('复制楼层链接'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-link')),
+      findsOneWidget,
+    );
     expect(find.text('举报'), findsAtLeastNWidgets(1));
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
@@ -965,7 +966,7 @@ void main() {
     expect(find.text('回复 @温柔测试员'), findsOneWidget);
   });
 
-  testWidgets('楼层回复数与更多菜单保留独立点击行为', (tester) async {
+  testWidgets('楼层回复数与长按菜单保留独立点击行为', (tester) async {
     final repository = _FakeThreadDetailRepository();
     await tester.pumpWidget(_detailRouterApp(repository));
     await tester.pumpAndSettle();
@@ -994,19 +995,25 @@ void main() {
     );
     await tester.longPressAt(tester.getTopLeft(floor) + const Offset(8, 8));
     await tester.pumpAndSettle();
-    expect(find.text('楼层操作'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-copy')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('post-composer-body')), findsNothing);
     await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.byKey(const Key('thread-floor-actions-floor-1')),
+      floor,
       180,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
+    await tester.longPress(floor);
     await tester.pumpAndSettle();
-    expect(find.text('楼层操作'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-copy')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('post-composer-body')), findsNothing);
   });
 
@@ -1049,7 +1056,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-edit-body')), findsOneWidget);
-    expect(find.text('编辑当前子贴正文'), findsOneWidget);
+    expect(find.text('编辑正文'), findsOneWidget);
     expect(find.text('主线'), findsAtLeastNWidgets(1));
     expect(find.byKey(const Key('thread-detail-tip')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-report')), findsOneWidget);
@@ -1082,9 +1089,12 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
+    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
     await tester.pumpAndSettle();
-    expect(find.text('楼层操作'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-delete')),
+      findsOneWidget,
+    );
     await tester.ensureVisible(find.text('删除'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('删除'));
@@ -1232,7 +1242,7 @@ void main() {
     expect(find.text('这个子贴还没有正文。'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();
-    expect(find.text('添加当前子贴正文'), findsOneWidget);
+    expect(find.text('添加正文'), findsOneWidget);
     expect(find.text('尚未开篇'), findsAtLeastNWidgets(1));
     await tester.tap(find.byKey(const Key('thread-detail-edit-body')));
     await tester.pumpAndSettle();

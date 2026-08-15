@@ -186,8 +186,6 @@ class _$AdminUserModerationResponseDto extends AdminUserModerationResponseDto {
   @override
   final AdminUserModerationResponseDtoRoleEnum role;
   @override
-  final bool emailVerified;
-  @override
   final AdminUserModerationResponseDtoModerationStatusEnum moderationStatus;
   @override
   final AdminUserSanctionResponseDto? currentSanction;
@@ -203,7 +201,6 @@ class _$AdminUserModerationResponseDto extends AdminUserModerationResponseDto {
     required this.email,
     required this.username,
     required this.role,
-    required this.emailVerified,
     required this.moderationStatus,
     this.currentSanction,
     required this.createdAt,
@@ -225,7 +222,6 @@ class _$AdminUserModerationResponseDto extends AdminUserModerationResponseDto {
         email == other.email &&
         username == other.username &&
         role == other.role &&
-        emailVerified == other.emailVerified &&
         moderationStatus == other.moderationStatus &&
         currentSanction == other.currentSanction &&
         createdAt == other.createdAt;
@@ -238,7 +234,6 @@ class _$AdminUserModerationResponseDto extends AdminUserModerationResponseDto {
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
-    _$hash = $jc(_$hash, emailVerified.hashCode);
     _$hash = $jc(_$hash, moderationStatus.hashCode);
     _$hash = $jc(_$hash, currentSanction.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
@@ -253,7 +248,6 @@ class _$AdminUserModerationResponseDto extends AdminUserModerationResponseDto {
           ..add('email', email)
           ..add('username', username)
           ..add('role', role)
-          ..add('emailVerified', emailVerified)
           ..add('moderationStatus', moderationStatus)
           ..add('currentSanction', currentSanction)
           ..add('createdAt', createdAt))
@@ -285,11 +279,6 @@ class AdminUserModerationResponseDtoBuilder
   AdminUserModerationResponseDtoRoleEnum? get role => _$this._role;
   set role(AdminUserModerationResponseDtoRoleEnum? role) => _$this._role = role;
 
-  bool? _emailVerified;
-  bool? get emailVerified => _$this._emailVerified;
-  set emailVerified(bool? emailVerified) =>
-      _$this._emailVerified = emailVerified;
-
   AdminUserModerationResponseDtoModerationStatusEnum? _moderationStatus;
   AdminUserModerationResponseDtoModerationStatusEnum? get moderationStatus =>
       _$this._moderationStatus;
@@ -318,7 +307,6 @@ class AdminUserModerationResponseDtoBuilder
       _email = $v.email;
       _username = $v.username;
       _role = $v.role;
-      _emailVerified = $v.emailVerified;
       _moderationStatus = $v.moderationStatus;
       _currentSanction = $v.currentSanction?.toBuilder();
       _createdAt = $v.createdAt;
@@ -365,11 +353,6 @@ class AdminUserModerationResponseDtoBuilder
               role,
               r'AdminUserModerationResponseDto',
               'role',
-            ),
-            emailVerified: BuiltValueNullFieldError.checkNotNull(
-              emailVerified,
-              r'AdminUserModerationResponseDto',
-              'emailVerified',
             ),
             moderationStatus: BuiltValueNullFieldError.checkNotNull(
               moderationStatus,

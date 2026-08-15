@@ -13,7 +13,6 @@ part 'user_condition_dto.g.dart';
 ///
 /// Properties:
 /// * [role] - 角色筛选（USER / ADMIN / SUPER_ADMIN）
-/// * [emailVerified] - 邮箱验证状态筛选
 /// * [createdAfter] - 注册时间起始（ISO 8601）
 /// * [createdBefore] - 注册时间截止（ISO 8601）
 @BuiltValue()
@@ -22,10 +21,6 @@ abstract class UserConditionDto implements Built<UserConditionDto, UserCondition
   @BuiltValueField(wireName: r'role')
   BuiltList<UserConditionDtoRoleEnum>? get role;
   // enum roleEnum {  USER,  ADMIN,  SUPER_ADMIN,  };
-
-  /// 邮箱验证状态筛选
-  @BuiltValueField(wireName: r'emailVerified')
-  bool? get emailVerified;
 
   /// 注册时间起始（ISO 8601）
   @BuiltValueField(wireName: r'createdAfter')
@@ -63,13 +58,6 @@ class _$UserConditionDtoSerializer implements PrimitiveSerializer<UserConditionD
       yield serializers.serialize(
         object.role,
         specifiedType: const FullType(BuiltList, [FullType(UserConditionDtoRoleEnum)]),
-      );
-    }
-    if (object.emailVerified != null) {
-      yield r'emailVerified';
-      yield serializers.serialize(
-        object.emailVerified,
-        specifiedType: const FullType(bool),
       );
     }
     if (object.createdAfter != null) {
@@ -115,13 +103,6 @@ class _$UserConditionDtoSerializer implements PrimitiveSerializer<UserConditionD
             specifiedType: const FullType(BuiltList, [FullType(UserConditionDtoRoleEnum)]),
           ) as BuiltList<UserConditionDtoRoleEnum>;
           result.role.replace(valueDes);
-          break;
-        case r'emailVerified':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(bool),
-          ) as bool;
-          result.emailVerified = valueDes;
           break;
         case r'createdAfter':
           final valueDes = serializers.deserialize(

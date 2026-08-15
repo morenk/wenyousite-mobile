@@ -225,6 +225,10 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
 
 class _FakePublicUserRepository implements PublicUserRepository {
   @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) =>
+      throw UnimplementedError();
+
+  @override
   Future<PublicUserProfileModel> fetchUser(String userId) async {
     return PublicUserProfileModel(
       id: userId,

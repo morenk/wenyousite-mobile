@@ -94,8 +94,6 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
           onAccept: () => _handleRequest(context, notifier, accept: true),
           onDecline: () => _handleRequest(context, notifier, accept: false),
           onRecall: (message) => _recall(context, notifier, message),
-          onVerifyEmail: () => _verifyEmail(context, notifier),
-          onVerifyFailedMessage: (_) => _verifyFailedMessage(context),
         ),
       },
     );
@@ -223,36 +221,6 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
     ).showSnackBar(SnackBar(content: Text(accept ? '已接受消息请求。' : '已拒绝消息请求。')));
   }
 
-  Future<void> _verifyEmail(
-    BuildContext context,
-    DirectConversationController notifier,
-  ) async {
-    final returnTo = '/messages/${widget.conversationId}';
-    final verified = await context.pushNamed<bool>(
-      'verify-email',
-      queryParameters: {'returnTo': returnTo},
-    );
-    if (verified != true || !context.mounted) return;
-    if (ref
-            .read(directConversationControllerProvider(widget.conversationId))
-            .failedDraft !=
-        null) {
-      await notifier.retrySend();
-    } else {
-      await notifier.handleRequest(accept: true);
-    }
-  }
-
-  Future<void> _verifyFailedMessage(BuildContext context) async {
-    final returnTo = '/messages/${widget.conversationId}';
-    await context.pushNamed<bool>(
-      'verify-email',
-      queryParameters: {'returnTo': returnTo},
-    );
-    // The failed bubble intentionally stays in the timeline after returning.
-    // Retrying remains an explicit user action and reuses its original idempotency key.
-  }
-
   Future<void> _recall(
     BuildContext context,
     DirectConversationController notifier,
@@ -314,8 +282,6 @@ class _ReadyConversation extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
     required this.onRecall,
-    required this.onVerifyEmail,
-    required this.onVerifyFailedMessage,
   });
 
   final DirectConversationState state;
@@ -334,8 +300,6 @@ class _ReadyConversation extends StatelessWidget {
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final ValueChanged<DirectMessage> onRecall;
-  final VoidCallback onVerifyEmail;
-  final ValueChanged<String> onVerifyFailedMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -364,13 +328,6 @@ class _ReadyConversation extends StatelessWidget {
               detail: state.transientFailure!.requestId == null
                   ? null
                   : '请求 ID：${state.transientFailure!.requestId}',
-              action: state.transientFailure!.businessCode == 40107
-                  ? TextButton(
-                      key: const Key('direct-conversation-verify-email'),
-                      onPressed: onVerifyEmail,
-                      child: const Text('先验证邮箱'),
-                    )
-                  : null,
             ),
           ),
         Expanded(
@@ -384,7 +341,6 @@ class _ReadyConversation extends StatelessWidget {
               onRecall: onRecall,
               onRetryMessage: onRetryMessage,
               onAbandonFailedMessage: onAbandonFailedMessage,
-              onVerifyFailedMessage: onVerifyFailedMessage,
             ),
           ),
         ),

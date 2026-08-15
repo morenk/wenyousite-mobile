@@ -96,8 +96,6 @@ class _$AdminUserSearchItemDto extends AdminUserSearchItemDto {
   @override
   final AdminUserSearchItemDtoRoleEnum role;
   @override
-  final bool emailVerified;
-  @override
   final DateTime createdAt;
 
   factory _$AdminUserSearchItemDto([
@@ -109,7 +107,6 @@ class _$AdminUserSearchItemDto extends AdminUserSearchItemDto {
     required this.username,
     required this.email,
     required this.role,
-    required this.emailVerified,
     required this.createdAt,
   }) : super._();
   @override
@@ -129,7 +126,6 @@ class _$AdminUserSearchItemDto extends AdminUserSearchItemDto {
         username == other.username &&
         email == other.email &&
         role == other.role &&
-        emailVerified == other.emailVerified &&
         createdAt == other.createdAt;
   }
 
@@ -140,7 +136,6 @@ class _$AdminUserSearchItemDto extends AdminUserSearchItemDto {
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
-    _$hash = $jc(_$hash, emailVerified.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -153,7 +148,6 @@ class _$AdminUserSearchItemDto extends AdminUserSearchItemDto {
           ..add('username', username)
           ..add('email', email)
           ..add('role', role)
-          ..add('emailVerified', emailVerified)
           ..add('createdAt', createdAt))
         .toString();
   }
@@ -179,11 +173,6 @@ class AdminUserSearchItemDtoBuilder
   AdminUserSearchItemDtoRoleEnum? get role => _$this._role;
   set role(AdminUserSearchItemDtoRoleEnum? role) => _$this._role = role;
 
-  bool? _emailVerified;
-  bool? get emailVerified => _$this._emailVerified;
-  set emailVerified(bool? emailVerified) =>
-      _$this._emailVerified = emailVerified;
-
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -199,7 +188,6 @@ class AdminUserSearchItemDtoBuilder
       _username = $v.username;
       _email = $v.email;
       _role = $v.role;
-      _emailVerified = $v.emailVerified;
       _createdAt = $v.createdAt;
       _$v = null;
     }
@@ -242,11 +230,6 @@ class AdminUserSearchItemDtoBuilder
             role,
             r'AdminUserSearchItemDto',
             'role',
-          ),
-          emailVerified: BuiltValueNullFieldError.checkNotNull(
-            emailVerified,
-            r'AdminUserSearchItemDto',
-            'emailVerified',
           ),
           createdAt: BuiltValueNullFieldError.checkNotNull(
             createdAt,

@@ -72,27 +72,6 @@ void main() {
     );
   });
 
-  test('邮箱验证页受会话保护并保留原业务目标', () {
-    final redirect = resolveSessionRedirect(
-      session: const SessionState.guest(),
-      matchedLocation: '/me/security/verify-email',
-      uri: Uri.parse('/me/security/verify-email?returnTo=%2Fcompose%2Fthread'),
-    );
-
-    expect(
-      Uri.parse(redirect!).queryParameters['returnTo'],
-      '/me/security/verify-email?returnTo=%2Fcompose%2Fthread',
-    );
-    expect(
-      resolveSessionRedirect(
-        session: const SessionState.authenticated(),
-        matchedLocation: '/me/security/verify-email',
-        uri: Uri.parse('/me/security/verify-email'),
-      ),
-      isNull,
-    );
-  });
-
   test('私聊中心、会话与新会话路由均受登录保护', () {
     for (final location in [
       '/messages',

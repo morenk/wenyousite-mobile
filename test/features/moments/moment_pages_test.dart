@@ -139,14 +139,28 @@ void main() {
     expect(find.text('动态正文是纯文本'), findsOneWidget);
     expect(find.text('主评论'), findsOneWidget);
     expect(
-      find.byKey(const Key('moment-comment-report-comment-root')),
+      find.byKey(const Key('moment-comment-card-comment-root')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('moment-comment-report-comment-root')),
+      findsNothing,
+    );
+    expect(find.text('回复'), findsNothing);
     expect(find.text('最新在前'), findsOneWidget);
     expect(find.byType(DropdownButton<String?>), findsNothing);
     expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
     expect(find.text('登录后发表评论'), findsOneWidget);
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
+
+    await tester.longPress(find.text('主评论'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('moment-comment-action-comment-root-report')),
+      findsOneWidget,
+    );
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('动态详情按来源返回且直接进入时回到动态列表', (tester) async {
@@ -313,13 +327,9 @@ void main() {
     expect(repository.commentInputs.single.replyToCommentId, isNull);
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
 
-    final replyAction = find.widgetWithText(
-      TextButton,
-      '回复',
-      skipOffstage: false,
-    );
-    await tester.ensureVisible(replyAction);
-    await tester.tap(replyAction);
+    final rootCommentText = find.text('主评论');
+    await tester.ensureVisible(rootCommentText);
+    await tester.tap(rootCommentText);
     await tester.pumpAndSettle();
     expect(find.text('回复 @温柔测试员'), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);

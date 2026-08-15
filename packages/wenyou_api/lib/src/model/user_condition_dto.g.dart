@@ -83,8 +83,6 @@ class _$UserConditionDto extends UserConditionDto {
   @override
   final BuiltList<UserConditionDtoRoleEnum>? role;
   @override
-  final bool? emailVerified;
-  @override
   final String? createdAfter;
   @override
   final String? createdBefore;
@@ -93,12 +91,8 @@ class _$UserConditionDto extends UserConditionDto {
     void Function(UserConditionDtoBuilder)? updates,
   ]) => (UserConditionDtoBuilder()..update(updates))._build();
 
-  _$UserConditionDto._({
-    this.role,
-    this.emailVerified,
-    this.createdAfter,
-    this.createdBefore,
-  }) : super._();
+  _$UserConditionDto._({this.role, this.createdAfter, this.createdBefore})
+    : super._();
   @override
   UserConditionDto rebuild(void Function(UserConditionDtoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -112,7 +106,6 @@ class _$UserConditionDto extends UserConditionDto {
     if (identical(other, this)) return true;
     return other is UserConditionDto &&
         role == other.role &&
-        emailVerified == other.emailVerified &&
         createdAfter == other.createdAfter &&
         createdBefore == other.createdBefore;
   }
@@ -121,7 +114,6 @@ class _$UserConditionDto extends UserConditionDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, role.hashCode);
-    _$hash = $jc(_$hash, emailVerified.hashCode);
     _$hash = $jc(_$hash, createdAfter.hashCode);
     _$hash = $jc(_$hash, createdBefore.hashCode);
     _$hash = $jf(_$hash);
@@ -132,7 +124,6 @@ class _$UserConditionDto extends UserConditionDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'UserConditionDto')
           ..add('role', role)
-          ..add('emailVerified', emailVerified)
           ..add('createdAfter', createdAfter)
           ..add('createdBefore', createdBefore))
         .toString();
@@ -147,11 +138,6 @@ class UserConditionDtoBuilder
   ListBuilder<UserConditionDtoRoleEnum> get role =>
       _$this._role ??= ListBuilder<UserConditionDtoRoleEnum>();
   set role(ListBuilder<UserConditionDtoRoleEnum>? role) => _$this._role = role;
-
-  bool? _emailVerified;
-  bool? get emailVerified => _$this._emailVerified;
-  set emailVerified(bool? emailVerified) =>
-      _$this._emailVerified = emailVerified;
 
   String? _createdAfter;
   String? get createdAfter => _$this._createdAfter;
@@ -170,7 +156,6 @@ class UserConditionDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _role = $v.role?.toBuilder();
-      _emailVerified = $v.emailVerified;
       _createdAfter = $v.createdAfter;
       _createdBefore = $v.createdBefore;
       _$v = null;
@@ -198,7 +183,6 @@ class UserConditionDtoBuilder
           _$v ??
           _$UserConditionDto._(
             role: _role?.build(),
-            emailVerified: emailVerified,
             createdAfter: createdAfter,
             createdBefore: createdBefore,
           );

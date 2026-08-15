@@ -11,11 +11,16 @@ export 'package:wenyousite_mobile/features/users/application/public_user_states.
 
 enum PublicUserPhase { loading, ready, failed }
 
+enum PublicUserActivityPhase { idle, loading, ready, failed }
+
 class PublicUserState {
   const PublicUserState({
     this.phase = PublicUserPhase.loading,
     this.profile,
     this.failure,
+    this.activityPhase = PublicUserActivityPhase.idle,
+    this.activitySummary,
+    this.activityFailure,
     this.activeTab = PublicUserContentTab.created,
     this.created = const PublicUserContentSection(),
     this.played = const PublicUserContentSection(),
@@ -26,6 +31,9 @@ class PublicUserState {
   final PublicUserPhase phase;
   final PublicUserProfileModel? profile;
   final ApiFailure? failure;
+  final PublicUserActivityPhase activityPhase;
+  final PublicUserActivitySummary? activitySummary;
+  final ApiFailure? activityFailure;
   final PublicUserContentTab activeTab;
   final PublicUserContentSection<PublicUserThreadModel> created;
   final PublicUserContentSection<PublicUserThreadModel> played;
@@ -39,6 +47,9 @@ class PublicUserState {
     PublicUserPhase? phase,
     PublicUserProfileModel? profile,
     ApiFailure? failure,
+    PublicUserActivityPhase? activityPhase,
+    PublicUserActivitySummary? activitySummary,
+    ApiFailure? activityFailure,
     PublicUserContentTab? activeTab,
     PublicUserContentSection<PublicUserThreadModel>? created,
     PublicUserContentSection<PublicUserThreadModel>? played,
@@ -49,6 +60,9 @@ class PublicUserState {
       phase: phase ?? this.phase,
       profile: profile ?? this.profile,
       failure: failure,
+      activityPhase: activityPhase ?? this.activityPhase,
+      activitySummary: activitySummary ?? this.activitySummary,
+      activityFailure: activityFailure,
       activeTab: activeTab ?? this.activeTab,
       created: created ?? this.created,
       played: played ?? this.played,
@@ -85,7 +99,12 @@ class PublicUserController extends StateNotifier<PublicUserState> {
         profile: profile,
         activeTab: activeTab,
       );
-      if (!profile.isDeactivated) await _loadTab(activeTab, epoch);
+      if (!profile.isDeactivated) {
+        await Future.wait([
+          _loadActivitySummary(epoch),
+          _loadTab(activeTab, epoch),
+        ]);
+      }
     } on Object catch (error) {
       if (!_isProfileCurrent(epoch)) return;
       state = PublicUserState(
@@ -94,6 +113,15 @@ class PublicUserController extends StateNotifier<PublicUserState> {
         failure: _asFailure(error, '用户资料没有加载完成，请稍后重试。'),
       );
     }
+  }
+
+  Future<void> retryActivitySummary() {
+    if (state.phase != PublicUserPhase.ready ||
+        state.profile?.isDeactivated != false ||
+        state.activityPhase == PublicUserActivityPhase.loading) {
+      return Future.value();
+    }
+    return _loadActivitySummary(_profileEpoch);
   }
 
   Future<void> selectTab(PublicUserContentTab tab) async {
@@ -188,6 +216,28 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       return _loadReplies(profileEpoch);
     }
     return _loadThreadTab(tab, profileEpoch);
+  }
+
+  Future<void> _loadActivitySummary(int profileEpoch) async {
+    state = state.copyWith(
+      activityPhase: PublicUserActivityPhase.loading,
+      activityFailure: null,
+    );
+    try {
+      final summary = await _repository.fetchActivitySummary(userId);
+      if (!_isProfileCurrent(profileEpoch)) return;
+      state = state.copyWith(
+        activityPhase: PublicUserActivityPhase.ready,
+        activitySummary: summary,
+        activityFailure: null,
+      );
+    } on Object catch (error) {
+      if (!_isProfileCurrent(profileEpoch)) return;
+      state = state.copyWith(
+        activityPhase: PublicUserActivityPhase.failed,
+        activityFailure: _asFailure(error, '创作活动汇总没有加载完成，请稍后重试。'),
+      );
+    }
   }
 
   Future<void> _loadThreadTab(
