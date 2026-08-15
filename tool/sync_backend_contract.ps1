@@ -11,6 +11,7 @@ New-Item -ItemType Directory -Force -Path $contractDir | Out-Null
 Copy-Item -LiteralPath (Join-Path $backend "contracts\openapi.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-v2-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-v2-nodes-fixtures.json") -Destination $contractDir -Force
+Copy-Item -LiteralPath (Join-Path $backend "contracts\markdown-editor-roundtrip-v1-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1-fixtures.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-push-v1.schema.json") -Destination $contractDir -Force
 Copy-Item -LiteralPath (Join-Path $backend "contracts\mobile-v1-golden-fixtures.json") -Destination $contractDir -Force

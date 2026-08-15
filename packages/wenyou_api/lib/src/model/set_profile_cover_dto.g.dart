@@ -9,12 +9,15 @@ part of 'set_profile_cover_dto.dart';
 class _$SetProfileCoverDto extends SetProfileCoverDto {
   @override
   final String mediaId;
+  @override
+  final String? mobileMediaId;
 
   factory _$SetProfileCoverDto([
     void Function(SetProfileCoverDtoBuilder)? updates,
   ]) => (SetProfileCoverDtoBuilder()..update(updates))._build();
 
-  _$SetProfileCoverDto._({required this.mediaId}) : super._();
+  _$SetProfileCoverDto._({required this.mediaId, this.mobileMediaId})
+    : super._();
   @override
   SetProfileCoverDto rebuild(
     void Function(SetProfileCoverDtoBuilder) updates,
@@ -27,22 +30,26 @@ class _$SetProfileCoverDto extends SetProfileCoverDto {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is SetProfileCoverDto && mediaId == other.mediaId;
+    return other is SetProfileCoverDto &&
+        mediaId == other.mediaId &&
+        mobileMediaId == other.mobileMediaId;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, mediaId.hashCode);
+    _$hash = $jc(_$hash, mobileMediaId.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'SetProfileCoverDto',
-    )..add('mediaId', mediaId)).toString();
+    return (newBuiltValueToStringHelper(r'SetProfileCoverDto')
+          ..add('mediaId', mediaId)
+          ..add('mobileMediaId', mobileMediaId))
+        .toString();
   }
 }
 
@@ -54,6 +61,11 @@ class SetProfileCoverDtoBuilder
   String? get mediaId => _$this._mediaId;
   set mediaId(String? mediaId) => _$this._mediaId = mediaId;
 
+  String? _mobileMediaId;
+  String? get mobileMediaId => _$this._mobileMediaId;
+  set mobileMediaId(String? mobileMediaId) =>
+      _$this._mobileMediaId = mobileMediaId;
+
   SetProfileCoverDtoBuilder() {
     SetProfileCoverDto._defaults(this);
   }
@@ -62,6 +74,7 @@ class SetProfileCoverDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _mediaId = $v.mediaId;
+      _mobileMediaId = $v.mobileMediaId;
       _$v = null;
     }
     return this;
@@ -89,6 +102,7 @@ class SetProfileCoverDtoBuilder
             r'SetProfileCoverDto',
             'mediaId',
           ),
+          mobileMediaId: mobileMediaId,
         );
     replace(_$result);
     return _$result;

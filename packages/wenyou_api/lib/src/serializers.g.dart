@@ -353,6 +353,7 @@ Serializers _$serializers =
           ..add(PrivateUserResponseDto.serializer)
           ..add(PrivateUserResponseDtoRoleEnum.serializer)
           ..add(ProfileCoverResponseDto.serializer)
+          ..add(ProfileCoverVariantResponseDto.serializer)
           ..add(ProgressionResponseDto.serializer)
           ..add(PublicUserResponseDto.serializer)
           ..add(PublicUserResponseDtoAccountStatusEnum.serializer)

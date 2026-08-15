@@ -324,6 +324,7 @@ export 'package:wenyou_api/src/model/posts_update200_response.dart';
 export 'package:wenyou_api/src/model/posts_upsert_body200_response.dart';
 export 'package:wenyou_api/src/model/private_user_response_dto.dart';
 export 'package:wenyou_api/src/model/profile_cover_response_dto.dart';
+export 'package:wenyou_api/src/model/profile_cover_variant_response_dto.dart';
 export 'package:wenyou_api/src/model/progression_response_dto.dart';
 export 'package:wenyou_api/src/model/public_user_response_dto.dart';
 export 'package:wenyou_api/src/model/recent_reply_dice_response_dto.dart';

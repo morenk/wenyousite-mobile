@@ -30,6 +30,55 @@ void main() {
     expect(profile.emailVerified, isTrue);
   });
 
+  test('本人资料响应可反序列化移动端双画幅背景图', () {
+    final response = standardSerializers.deserializeWith(
+      UsersGetMe200Response.serializer,
+      <String, Object?>{
+        'code': 0,
+        'message': 'ok',
+        'data': <String, Object?>{
+          'id': 'user-1',
+          'email': 'owner@example.com',
+          'username': '温柔测试员',
+          'avatar': null,
+          'profileCover': <String, Object?>{
+            'url': 'https://cdn.example.com/profile-web.webp',
+            'mediumUrl': 'https://cdn.example.com/profile-web-md.webp',
+            'width': 1920,
+            'height': 640,
+            'mobile': <String, Object?>{
+              'url': 'https://cdn.example.com/profile-mobile.webp',
+              'mediumUrl': 'https://cdn.example.com/profile-mobile-md.webp',
+              'width': 1600,
+              'height': 800,
+            },
+          },
+          'bio': '一起写故事。',
+          'role': 'USER',
+          'level': 4,
+          'experience': 150,
+          'currentLevelExperience': 100,
+          'nextLevelExperience': 200,
+          'receivedTipTotal': '18',
+          'receivedTipCount': 6,
+          'showRecentReplies': true,
+          'showPlayerBadges': true,
+          'showBookmarks': true,
+          'emailVerified': true,
+          'deletedAt': null,
+          'createdAt': '2026-08-01T00:00:00.000Z',
+          'updatedAt': '2026-08-10T08:00:00.000Z',
+          '_count': <String, Object?>{'following': 7, 'followers': 9},
+        },
+      },
+    );
+
+    expect(
+      response?.data.profileCover?.mobile?.url,
+      'https://cdn.example.com/profile-mobile.webp',
+    );
+  });
+
   test('重新创建仓储后从本人事实恢复安全头像 URL', () async {
     final api = _MockUsersApi();
     when(api.usersGetMe).thenAnswer(

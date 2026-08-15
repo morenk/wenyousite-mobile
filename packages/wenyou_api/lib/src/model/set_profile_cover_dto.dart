@@ -11,12 +11,17 @@ part 'set_profile_cover_dto.g.dart';
 /// SetProfileCoverDto
 ///
 /// Properties:
-/// * [mediaId] - upload-url 返回的 mediaId
+/// * [mediaId] - 电脑端 3:1 背景图 mediaId
+/// * [mobileMediaId] - 移动端 2:1 背景图 mediaId；旧客户端省略时会清空移动端裁切
 @BuiltValue()
 abstract class SetProfileCoverDto implements Built<SetProfileCoverDto, SetProfileCoverDtoBuilder> {
-  /// upload-url 返回的 mediaId
+  /// 电脑端 3:1 背景图 mediaId
   @BuiltValueField(wireName: r'mediaId')
   String get mediaId;
+
+  /// 移动端 2:1 背景图 mediaId；旧客户端省略时会清空移动端裁切
+  @BuiltValueField(wireName: r'mobileMediaId')
+  String? get mobileMediaId;
 
   SetProfileCoverDto._();
 
@@ -46,6 +51,13 @@ class _$SetProfileCoverDtoSerializer implements PrimitiveSerializer<SetProfileCo
       object.mediaId,
       specifiedType: const FullType(String),
     );
+    if (object.mobileMediaId != null) {
+      yield r'mobileMediaId';
+      yield serializers.serialize(
+        object.mobileMediaId,
+        specifiedType: const FullType(String),
+      );
+    }
   }
 
   @override
@@ -75,6 +87,13 @@ class _$SetProfileCoverDtoSerializer implements PrimitiveSerializer<SetProfileCo
             specifiedType: const FullType(String),
           ) as String;
           result.mediaId = valueDes;
+          break;
+        case r'mobileMediaId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.mobileMediaId = valueDes;
           break;
         default:
           unhandled.add(key);

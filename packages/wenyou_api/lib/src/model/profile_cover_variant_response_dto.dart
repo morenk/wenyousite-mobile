@@ -3,22 +3,20 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:wenyou_api/src/model/profile_cover_variant_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'profile_cover_response_dto.g.dart';
+part 'profile_cover_variant_response_dto.g.dart';
 
-/// ProfileCoverResponseDto
+/// ProfileCoverVariantResponseDto
 ///
 /// Properties:
 /// * [url] - 背景图原图地址
 /// * [mediumUrl] - 800px WebP 中图地址
 /// * [width]
 /// * [height]
-/// * [mobile] - 移动端 2:1 裁切；历史背景图可能为空
 @BuiltValue()
-abstract class ProfileCoverResponseDto implements Built<ProfileCoverResponseDto, ProfileCoverResponseDtoBuilder> {
+abstract class ProfileCoverVariantResponseDto implements Built<ProfileCoverVariantResponseDto, ProfileCoverVariantResponseDtoBuilder> {
   /// 背景图原图地址
   @BuiltValueField(wireName: r'url')
   String get url;
@@ -33,31 +31,27 @@ abstract class ProfileCoverResponseDto implements Built<ProfileCoverResponseDto,
   @BuiltValueField(wireName: r'height')
   num? get height;
 
-  /// 移动端 2:1 裁切；历史背景图可能为空
-  @BuiltValueField(wireName: r'mobile')
-  ProfileCoverVariantResponseDto? get mobile;
+  ProfileCoverVariantResponseDto._();
 
-  ProfileCoverResponseDto._();
-
-  factory ProfileCoverResponseDto([void updates(ProfileCoverResponseDtoBuilder b)]) = _$ProfileCoverResponseDto;
+  factory ProfileCoverVariantResponseDto([void updates(ProfileCoverVariantResponseDtoBuilder b)]) = _$ProfileCoverVariantResponseDto;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(ProfileCoverResponseDtoBuilder b) => b;
+  static void _defaults(ProfileCoverVariantResponseDtoBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<ProfileCoverResponseDto> get serializer => _$ProfileCoverResponseDtoSerializer();
+  static Serializer<ProfileCoverVariantResponseDto> get serializer => _$ProfileCoverVariantResponseDtoSerializer();
 }
 
-class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<ProfileCoverResponseDto> {
+class _$ProfileCoverVariantResponseDtoSerializer implements PrimitiveSerializer<ProfileCoverVariantResponseDto> {
   @override
-  final Iterable<Type> types = const [ProfileCoverResponseDto, _$ProfileCoverResponseDto];
+  final Iterable<Type> types = const [ProfileCoverVariantResponseDto, _$ProfileCoverVariantResponseDto];
 
   @override
-  final String wireName = r'ProfileCoverResponseDto';
+  final String wireName = r'ProfileCoverVariantResponseDto';
 
   Iterable<Object?> _serializeProperties(
     Serializers serializers,
-    ProfileCoverResponseDto object, {
+    ProfileCoverVariantResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
     yield r'url';
@@ -80,17 +74,12 @@ class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<Profile
       object.height,
       specifiedType: const FullType.nullable(num),
     );
-    yield r'mobile';
-    yield object.mobile == null ? null : serializers.serialize(
-      object.mobile,
-      specifiedType: const FullType.nullable(ProfileCoverVariantResponseDto),
-    );
   }
 
   @override
   Object serialize(
     Serializers serializers,
-    ProfileCoverResponseDto object, {
+    ProfileCoverVariantResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
@@ -101,7 +90,7 @@ class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<Profile
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
     required List<Object?> serializedList,
-    required ProfileCoverResponseDtoBuilder result,
+    required ProfileCoverVariantResponseDtoBuilder result,
     required List<Object?> unhandled,
   }) {
     for (var i = 0; i < serializedList.length; i += 2) {
@@ -139,14 +128,6 @@ class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<Profile
           if (valueDes == null) continue;
           result.height = valueDes;
           break;
-        case r'mobile':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(ProfileCoverVariantResponseDto),
-          ) as ProfileCoverVariantResponseDto?;
-          if (valueDes == null) continue;
-          result.mobile.replace(valueDes);
-          break;
         default:
           unhandled.add(key);
           unhandled.add(value);
@@ -156,12 +137,12 @@ class _$ProfileCoverResponseDtoSerializer implements PrimitiveSerializer<Profile
   }
 
   @override
-  ProfileCoverResponseDto deserialize(
+  ProfileCoverVariantResponseDto deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = ProfileCoverResponseDtoBuilder();
+    final result = ProfileCoverVariantResponseDtoBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(
