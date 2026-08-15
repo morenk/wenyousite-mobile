@@ -66,8 +66,8 @@ class _DetailFatalState extends StatelessWidget {
         child: WenyouPanel(
           child: WenyouEmptyState(
             icon: notFound
-                ? Icons.visibility_off_outlined
-                : Icons.cloud_off_outlined,
+                ? WenyouIconIds.actionHide
+                : WenyouIconIds.statusOffline,
             title: notFound ? '这个主题暂时不可见' : '主题详情没有加载完成',
             message: notFound
                 ? '它可能已经删除、设为私密，或当前账号没有访问权限。'
@@ -78,7 +78,7 @@ class _DetailFatalState extends StatelessWidget {
             action: OutlinedButton.icon(
               key: const Key('thread-detail-retry'),
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
               label: const Text('重新加载'),
             ),
           ),
@@ -103,7 +103,7 @@ class _DetailTransientFailure extends StatelessWidget {
       action: TextButton.icon(
         key: const Key('thread-detail-transient-retry'),
         onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded, size: 18),
+        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
         label: const Text('重试'),
       ),
     );
@@ -363,7 +363,7 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
           tooltip: canCycle
               ? '上一个子贴：${widget.subthreads[previousIndex].title}'
               : '没有其他子贴',
-          icon: const Icon(Icons.chevron_left_rounded),
+          icon: const WenyouIcon(WenyouIconIds.navigationPrevious),
         ),
         SizedBox(width: tokens.space4),
         Expanded(
@@ -381,7 +381,7 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
                 return Row(
                   children: [
                     if (showDirectoryIcon) ...[
-                      const Icon(Icons.format_list_bulleted_rounded, size: 18),
+                      const WenyouIcon(WenyouIconIds.contentList, size: 18),
                       SizedBox(width: tokens.space8),
                     ],
                     Expanded(
@@ -401,10 +401,10 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
                       ),
                     ],
                     SizedBox(width: tokens.space4),
-                    Icon(
+                    WenyouIcon(
                       _menuOpen
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
+                          ? WenyouIconIds.navigationCollapse
+                          : WenyouIconIds.navigationExpand,
                       size: 18,
                     ),
                   ],
@@ -422,7 +422,7 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
           tooltip: canCycle
               ? '下一个子贴：${widget.subthreads[nextIndex].title}'
               : '没有其他子贴',
-          icon: const Icon(Icons.chevron_right_rounded),
+          icon: const WenyouIcon(WenyouIconIds.navigationNext),
         ),
         SizedBox(width: tokens.space4),
         widget.trailing,
@@ -501,7 +501,10 @@ class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
                           leading: SizedBox.square(
                             dimension: 24,
                             child: isSelected
-                                ? const Icon(Icons.check_rounded, size: 20)
+                                ? const WenyouIcon(
+                                    WenyouIconIds.actionConfirm,
+                                    size: 20,
+                                  )
                                 : null,
                           ),
                           title: Text(subthread.title),
@@ -610,7 +613,7 @@ class _TargetPostStatus extends StatelessWidget {
           action: TextButton.icon(
             key: const Key('thread-target-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
             label: const Text('重试定位'),
           ),
         );
@@ -623,7 +626,7 @@ class _TargetPostStatus extends StatelessWidget {
             detail: '请返回搜索结果后重新打开。',
             action: TextButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
+              icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
               label: const Text('重新确认'),
             ),
           );
@@ -635,7 +638,7 @@ class _TargetPostStatus extends StatelessWidget {
             detail: '请返回搜索结果后重新打开，或稍后重试。',
             action: TextButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
+              icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
               label: const Text('重新确认'),
             ),
           );
@@ -643,7 +646,7 @@ class _TargetPostStatus extends StatelessWidget {
         return WenyouStatusBanner(
           tone: WenyouStatusTone.accent,
           message: target.focusedReplyId == null ? '已定位到匹配楼层' : '已定位到匹配的楼中楼回复',
-          detail: '目标上下文置顶并使用强调底色；其余楼层保持原有顺序。',
+          detail: '目标上下文使用强调底色；已加载楼层保持原有顺序。',
         );
       },
     );
@@ -679,7 +682,7 @@ class _FloorCard extends ConsumerWidget {
     required this.canEdit,
     required this.canDelete,
     required this.pending,
-    required this.showDiscussion,
+    required this.onReply,
     required this.onDiscussion,
     required this.onEdit,
     required this.onDelete,
@@ -694,7 +697,7 @@ class _FloorCard extends ConsumerWidget {
   final bool canEdit;
   final bool canDelete;
   final bool pending;
-  final bool showDiscussion;
+  final VoidCallback onReply;
   final VoidCallback onDiscussion;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -704,12 +707,15 @@ class _FloorCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     return Semantics(
+      key: Key('thread-floor-card-${floor.id}'),
       container: true,
-      label: floor.floorNumber == null ? '楼层' : '第 ${floor.floorNumber} 楼',
-      hint: '长按打开楼层操作',
+      button: !pending && !floor.isDeleted,
+      label: floor.floorNumber == null ? '回复楼层' : '回复第 ${floor.floorNumber} 楼',
+      hint: '点击回复，长按打开楼层操作',
+      onTap: pending || floor.isDeleted ? null : onReply,
       child: GestureDetector(
-        key: Key('thread-floor-card-${floor.id}'),
         behavior: HitTestBehavior.opaque,
+        onTap: pending || floor.isDeleted ? null : onReply,
         onLongPress: () => _showActions(context, ref),
         child: Container(
           padding: EdgeInsets.symmetric(
@@ -756,7 +762,7 @@ class _FloorCard extends ConsumerWidget {
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           SizedBox(width: tokens.space4),
-                          const Icon(Icons.more_horiz_rounded, size: 18),
+                          const WenyouIcon(WenyouIconIds.actionMore, size: 18),
                         ],
                       ),
                     ),
@@ -778,8 +784,9 @@ class _FloorCard extends ConsumerWidget {
                   diceLabels: _diceLabels(floor.body.diceRolls),
                   onInternalLink: (uri) =>
                       _showInternalLinkNotice(context, uri),
+                  onTapText: pending ? null : onReply,
                 ),
-              if (showDiscussion) ...[
+              if (floor.replyCount > 0) ...[
                 SizedBox(height: tokens.space4),
                 Align(
                   alignment: Alignment.centerRight,
@@ -793,27 +800,31 @@ class _FloorCard extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          floor.replyCount == 0
-                              ? Icons.reply_rounded
-                              : Icons.chat_bubble_outline_rounded,
-                          size: 16,
-                        ),
+                        WenyouIcon(WenyouIconIds.metricComments, size: 16),
                         SizedBox(width: tokens.space4),
                         Text(
-                          floor.replyCount == 0
-                              ? '回复'
-                              : '${floor.replyCount} 条回复',
+                          '${floor.replyCount} 条回复',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        if (floor.replyCount > 0) ...[
-                          SizedBox(width: tokens.space4),
-                          const Icon(Icons.chevron_right_rounded, size: 16),
-                        ],
+                        SizedBox(width: tokens.space4),
+                        const WenyouIcon(
+                          WenyouIconIds.navigationNext,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
                 ),
+                if (floor.replies.isNotEmpty) ...[
+                  SizedBox(height: tokens.space4),
+                  _FloorInlineReplyPreview(
+                    floorId: floor.id,
+                    replies: floor.replies,
+                    replyCount: floor.replyCount,
+                    pending: pending,
+                    onDiscussion: onDiscussion,
+                  ),
+                ],
               ],
             ],
           ),
@@ -828,12 +839,12 @@ class _FloorCard extends ConsumerWidget {
       title: '楼层操作',
       authorName: floor.author.username,
       canCopyText: !floor.isDeleted,
-      canReply: showDiscussion,
+      canReply: !floor.isDeleted,
       canEdit: !floor.isDeleted && canEdit,
       canDelete: !floor.isDeleted && canDelete,
       canReport: !floor.isDeleted && reportReturnTo != null,
       pending: pending,
-      replyLabel: floor.replyCount > 0 ? '查看回复' : '回复',
+      replyLabel: '回复',
     );
     if (action == null || !context.mounted) return;
     switch (action) {
@@ -842,7 +853,7 @@ class _FloorCard extends ConsumerWidget {
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
       case PostCardAction.reply:
-        onDiscussion();
+        onReply();
       case PostCardAction.edit:
         onEdit();
       case PostCardAction.delete:
@@ -862,6 +873,176 @@ class _FloorCard extends ConsumerWidget {
   String _publicLink() => Uri.parse(
     'https://wenyou.site',
   ).resolve('/threads/$threadId?post=${floor.id}').toString();
+}
+
+class _FloorInlineReplyPreview extends StatelessWidget {
+  const _FloorInlineReplyPreview({
+    required this.floorId,
+    required this.replies,
+    required this.replyCount,
+    required this.pending,
+    required this.onDiscussion,
+  });
+
+  static const _previewLimit = 5;
+  static const _collapseContentLength = 500;
+  static const _collapsedHeight = 320.0;
+
+  final String floorId;
+  final List<ThreadReplyModel> replies;
+  final int replyCount;
+  final bool pending;
+  final VoidCallback onDiscussion;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final visibleReplies = replies.take(_previewLimit).toList(growable: false);
+    final contentLength = visibleReplies.fold<int>(
+      0,
+      (sum, reply) => sum + reply.body.markdown.length,
+    );
+    final collapsed = contentLength > _collapseContentLength;
+    final replyCards = <Widget>[
+      for (var index = 0; index < visibleReplies.length; index++) ...[
+        if (index > 0) SizedBox(height: tokens.space4),
+        _FloorInlineReplyCard(
+          floorId: floorId,
+          reply: visibleReplies[index],
+          enabled: !pending,
+          onDiscussion: onDiscussion,
+        ),
+      ],
+    ];
+    if (!collapsed) {
+      return Column(
+        key: Key('thread-floor-reply-preview-$floorId'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: replyCards,
+      );
+    }
+    return SizedBox(
+      key: Key('thread-floor-reply-preview-collapsed-$floorId'),
+      height: _collapsedHeight,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: replyCards,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 104,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [tokens.panel.withValues(alpha: 0), tokens.panel],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: tokens.space8,
+            right: tokens.space8,
+            bottom: tokens.space4,
+            child: FilledButton.tonalIcon(
+              key: Key('thread-floor-reply-preview-expand-$floorId'),
+              onPressed: pending ? null : onDiscussion,
+              icon: const WenyouIcon(WenyouIconIds.navigationExpand),
+              label: Text('展开全部 $replyCount 条回复'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FloorInlineReplyCard extends StatelessWidget {
+  const _FloorInlineReplyCard({
+    required this.floorId,
+    required this.reply,
+    required this.enabled,
+    required this.onDiscussion,
+  });
+
+  final String floorId;
+  final ThreadReplyModel reply;
+  final bool enabled;
+  final VoidCallback onDiscussion;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      button: enabled,
+      label: '${reply.author.username} 的楼中楼回复',
+      hint: enabled ? '点击查看完整讨论' : null,
+      onTap: enabled ? onDiscussion : null,
+      child: Material(
+        color: tokens.softPanel,
+        borderRadius: BorderRadius.circular(tokens.radius12),
+        child: InkWell(
+          key: Key('thread-floor-reply-$floorId-${reply.id}'),
+          onTap: enabled ? onDiscussion : null,
+          borderRadius: BorderRadius.circular(tokens.radius12),
+          child: Padding(
+            padding: EdgeInsets.all(tokens.space12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _AuthorLine(
+                  author: reply.author,
+                  time: reply.createdAt,
+                  compact: true,
+                ),
+                if (reply.replyToUsername case final username?) ...[
+                  SizedBox(height: tokens.space4),
+                  Text(
+                    '回复 @$username',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  ),
+                ],
+                SizedBox(height: tokens.space8),
+                if (reply.isDeleted)
+                  Text(
+                    '该回复已删除。',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  )
+                else
+                  StickerPostMarkdown(
+                    postId: reply.id,
+                    data: reply.body.markdown,
+                    diceLabels: _diceLabels(reply.body.diceRolls),
+                    onInternalLink: (uri) =>
+                        _showInternalLinkNotice(context, uri),
+                    onTapText: enabled ? onDiscussion : null,
+                    bodyFontSize: 15,
+                    bodyHeight: 1.65,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FloorsFooter extends StatelessWidget {
@@ -901,7 +1082,7 @@ class _FloorsFooter extends StatelessWidget {
               dimension: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.expand_more_rounded),
+          : const WenyouIcon(WenyouIconIds.navigationExpand),
       label: Text(state.isLoadingMore ? '正在加载' : '加载更多楼层'),
     );
   }
@@ -925,7 +1106,7 @@ class _AuthorLine extends StatelessWidget {
     final size = compact ? 32.0 : 36.0;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
     );
     return Row(
       children: [
@@ -937,7 +1118,7 @@ class _AuthorLine extends StatelessWidget {
               dimension: size,
               child: author.avatarUrl == null
                   ? fallback
-                  : CachedNetworkImage(
+                  : WenyouCachedImage(
                       imageUrl: author.avatarUrl!,
                       fit: BoxFit.cover,
                       placeholder: (_, _) => fallback,
@@ -991,6 +1172,24 @@ PostComposerTarget _bodyTarget(
     version: body?.version,
     initialContent: body?.markdown ?? '',
     label: body == null ? '添加子贴正文' : '编辑子贴正文',
+  );
+}
+
+PostComposerTarget _replyFloorTarget(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+  ThreadFloorModel floor,
+) {
+  return (
+    kind: PostComposerKind.createReply,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    postId: null,
+    parentPostId: floor.id,
+    replyToPostId: floor.id,
+    version: null,
+    initialContent: '',
+    label: '回复 @${floor.author.username}',
   );
 }
 

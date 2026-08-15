@@ -259,6 +259,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     required this.data,
     this.diceLabels = const {},
     this.onInternalLink,
+    this.onTapText,
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     super.key,
@@ -268,6 +269,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final String data;
   final Map<String, String> diceLabels;
   final ValueChanged<Uri>? onInternalLink;
+  final VoidCallback? onTapText;
   final double bodyFontSize;
   final double bodyHeight;
 
@@ -281,6 +283,7 @@ class StickerPostMarkdown extends ConsumerWidget {
       data: data,
       diceLabels: diceLabels,
       onInternalLink: onInternalLink,
+      onTapText: onTapText,
       bodyFontSize: bodyFontSize,
       bodyHeight: bodyHeight,
       onSaveImage: !enabled || !authenticated

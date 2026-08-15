@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -52,7 +53,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
           key: const Key('thread-subscription-retry'),
           onPressed: notifier.load,
           tooltip: '订阅状态加载失败，点击重试',
-          icon: const Icon(Icons.notifications_off_outlined),
+          icon: const WenyouIcon(WenyouIconIds.statusNotificationsOff),
           color: Theme.of(context).colorScheme.error,
         ),
         ThreadSubscriptionPhase.ready => IconButton(
@@ -65,10 +66,10 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                   includeThreadToggle: true,
                 ),
           tooltip: state.threadSubscription == null ? '管理更新订阅' : '已订阅官方更新，管理订阅',
-          icon: Icon(
+          icon: WenyouIcon(
             state.threadSubscription == null
-                ? Icons.notifications_none_rounded
-                : Icons.notifications_active_rounded,
+                ? WenyouIconIds.statusNotifications
+                : WenyouIconIds.statusNotificationsActive,
           ),
           color: state.threadSubscription == null
               ? tokens.mutedText
@@ -117,10 +118,10 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Icon(
+                      : WenyouIcon(
                           state.threadSubscription == null
-                              ? Icons.notifications_none_rounded
-                              : Icons.notifications_active_rounded,
+                              ? WenyouIconIds.statusNotifications
+                              : WenyouIconIds.statusNotificationsActive,
                         ),
                   label: Text(
                     state.threadSubscription == null ? '订阅官方更新' : '已订阅官方更新',
@@ -132,7 +133,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                     onPressed: state.isPending
                         ? null
                         : () => _showPlayerSheet(context, target),
-                    icon: const Icon(Icons.groups_2_outlined),
+                    icon: const WenyouIcon(WenyouIconIds.identityMembers),
                     label: Text(
                       '玩家发言 ${state.userSubscriptionCount}/${state.candidates.length}',
                     ),
@@ -235,10 +236,10 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               ListTile(
                 key: const Key('thread-subscription-official'),
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(
+                leading: WenyouIcon(
                   state.threadSubscription == null
-                      ? Icons.notifications_none_rounded
-                      : Icons.notifications_active_rounded,
+                      ? WenyouIconIds.statusNotifications
+                      : WenyouIconIds.statusNotificationsActive,
                 ),
                 title: const Text('官方更新'),
                 subtitle: Text(

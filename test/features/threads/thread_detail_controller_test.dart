@@ -236,6 +236,37 @@ void main() {
     expect(controller.state.retryAction, ThreadDetailRetryAction.refresh);
   });
 
+  test('发表后只刷新主题元信息并保留已加载楼层窗口', () async {
+    var threadCalls = 0;
+    final repository = _FakeThreadDetailRepository(
+      onThread: (_) async {
+        threadCalls += 1;
+        return _detail;
+      },
+      onFloors: (_, _) async => CursorPage(
+        items: [_floor('retained-floor')],
+        cursor: 'cursor-1',
+        hasMore: true,
+      ),
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    await controller.refreshMetadata();
+
+    expect(threadCalls, 2);
+    expect(repository.floorRequests, ['subthread-2:null']);
+    expect(controller.state.floors.single.id, 'retained-floor');
+    expect(controller.state.cursor, 'cursor-1');
+    expect(controller.state.hasMore, isTrue);
+    expect(controller.state.isRefreshing, isFalse);
+  });
+
   test('详情首屏失败进入可重试终态并保留请求 ID', () async {
     final repository = _FakeThreadDetailRepository(
       onThread: (_) => throw const ApiFailure(

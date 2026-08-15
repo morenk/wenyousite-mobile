@@ -1,13 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
@@ -51,6 +53,9 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
 }
 
 class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
+  static const _contentCacheExtent = 4000.0;
+  static const _loadMoreThreshold = 2400.0;
+
   final _scrollController = ScrollController();
   final _targetKey = GlobalKey();
   String? _lastRevealedTargetId;
@@ -81,7 +86,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   void _loadMoreNearEnd() {
     if (!_scrollController.hasClients ||
-        _scrollController.position.extentAfter > 520) {
+        _scrollController.position.extentAfter > _loadMoreThreshold) {
       return;
     }
     ref
@@ -138,70 +143,58 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     _revealTargetWhenReady(state, resolvedTarget);
     _openReplyTargetWhenReady(state, resolvedTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
-    final scaffold = WenyouReadingChrome(
-      builder: (context, actionsVisible) => Scaffold(
-        appBar: state.phase == ThreadDetailPhase.ready
-            ? null
-            : AppBar(
-                leading: BackButton(
-                  key: const Key('thread-detail-back'),
-                  onPressed: _leaveDetail,
-                ),
-                title: const Text('主题详情'),
-                actions: _threadAppBarActions(state, provider),
-              ),
-        body: switch (state.phase) {
-          ThreadDetailPhase.loading => const _DetailLoadingState(),
-          ThreadDetailPhase.failed => _DetailFatalState(
-            failure: state.failure,
-            onRetry: () => ref.read(provider.notifier).loadInitial(),
-          ),
-          ThreadDetailPhase.ready => RefreshIndicator(
-            onRefresh: () => ref.read(provider.notifier).refresh(),
-            child: CustomScrollView(
-              key: PageStorageKey('thread-detail-${widget.threadId}'),
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverAppBar(
-                  key: const Key('thread-detail-reading-app-bar'),
-                  floating: true,
-                  snap: true,
-                  leading: BackButton(
-                    key: const Key('thread-detail-back'),
-                    onPressed: _leaveDetail,
-                  ),
-                  title: const Text('主题详情'),
-                  actions: _threadAppBarActions(state, provider),
-                ),
-                ..._buildReadySlivers(
-                  context,
-                  state,
-                  provider,
-                  target,
-                  actions: actions,
-                  authenticated: session.isAuthenticated,
-                  viewerId: viewerId,
-                ),
-              ],
-            ),
-          ),
-        },
-        floatingActionButton: selectedSubthread == null || !actionsVisible
-            ? null
-            : WenyouComposerAction(
-                key: const Key('thread-floor-compose'),
-                label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
-                icon: session.isAuthenticated
-                    ? Icons.add_comment_outlined
-                    : Icons.login_rounded,
-                onPressed: session.isAuthenticated
-                    ? () => _compose(
-                        _floorTarget(state.detail!, selectedSubthread),
-                      )
-                    : _requireLogin,
-              ),
+    final scaffold = Scaffold(
+      appBar: AppBar(
+        leading: BackButton(
+          key: const Key('thread-detail-back'),
+          onPressed: _leaveDetail,
+        ),
+        title: const Text('主题详情'),
+        actions: _threadAppBarActions(state, provider),
       ),
+      body: switch (state.phase) {
+        ThreadDetailPhase.loading => const _DetailLoadingState(),
+        ThreadDetailPhase.failed => _DetailFatalState(
+          failure: state.failure,
+          onRetry: () => ref.read(provider.notifier).loadInitial(),
+        ),
+        ThreadDetailPhase.ready => RefreshIndicator(
+          onRefresh: () => ref.read(provider.notifier).refresh(),
+          child: CustomScrollView(
+            key: PageStorageKey('thread-detail-${widget.threadId}'),
+            controller: _scrollController,
+            scrollCacheExtent: const ScrollCacheExtent.pixels(
+              _contentCacheExtent,
+            ),
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              ..._buildReadySlivers(
+                context,
+                state,
+                provider,
+                target,
+                actions: actions,
+                authenticated: session.isAuthenticated,
+                viewerId: viewerId,
+              ),
+            ],
+          ),
+        ),
+      },
+      floatingActionButton: selectedSubthread == null
+          ? null
+          : WenyouComposerAction(
+              key: const Key('thread-floor-compose'),
+              label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
+              icon: session.isAuthenticated
+                  ? WenyouIconIds.actionAddComment
+                  : WenyouIconIds.actionLogin,
+              onPressed: session.isAuthenticated
+                  ? () =>
+                        _compose(_floorTarget(state.detail!, selectedSubthread))
+                  : _requireLogin,
+            ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
     );
     return PopScope<Object?>(
       canPop: canPop,
@@ -225,7 +218,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           'thread-post-search',
           pathParameters: {'threadId': widget.threadId},
         ),
-        icon: const Icon(Icons.search_rounded),
+        icon: const WenyouIcon(WenyouIconIds.actionSearch),
       ),
       if (state.detail case final detail?
           when !detail.isCurrentUserOwner || detail.canManageThread)
@@ -237,7 +230,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             provider,
             selectedSubthread: state.selectedSubthread,
           ),
-          icon: const Icon(Icons.more_horiz_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionMore),
         ),
     ];
   }
@@ -283,10 +276,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           if (detail.canManageThread)
             ListTile(
               key: const Key('thread-detail-edit-body'),
-              leading: Icon(
+              leading: WenyouIcon(
                 selectedSubthread?.body == null
-                    ? Icons.note_add_outlined
-                    : Icons.edit_outlined,
+                    ? WenyouIconIds.contentDraft
+                    : WenyouIconIds.actionEdit,
               ),
               title: Text(
                 selectedSubthread?.body == null ? '添加当前子贴正文' : '编辑当前子贴正文',
@@ -300,7 +293,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           if (detail.canManageThread)
             ListTile(
               key: const Key('thread-detail-manage'),
-              leading: const Icon(Icons.tune_rounded),
+              leading: const WenyouIcon(WenyouIconIds.actionFilter),
               title: const Text('管理主题'),
               subtitle: const Text('维护主题信息、子贴、标签与成员'),
               onTap: () => Navigator.pop(context, _ThreadDetailAction.manage),
@@ -308,7 +301,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           if (!detail.isCurrentUserOwner)
             ListTile(
               key: const Key('thread-detail-tip'),
-              leading: const Icon(Icons.local_gas_station_outlined),
+              leading: const WenyouIcon(WenyouIconIds.actionTip),
               title: const Text('为创作者加油'),
               subtitle: Text('支持 ${detail.owner.username} 的创作'),
               onTap: () => Navigator.pop(context, _ThreadDetailAction.tip),
@@ -316,7 +309,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           if (!detail.isPrivate && !detail.isCurrentUserOwner)
             ListTile(
               key: const Key('thread-detail-report'),
-              leading: const Icon(Icons.flag_outlined),
+              leading: const WenyouIcon(WenyouIconIds.actionReport),
               title: const Text('举报主题'),
               subtitle: const Text('向站务提交人工审核'),
               onTap: () => Navigator.pop(context, _ThreadDetailAction.report),
@@ -387,8 +380,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (!mounted || targetContext == null) return;
       Scrollable.ensureVisible(
         targetContext,
-        duration: Duration.zero,
+        duration: context.wenyouTokens.feedbackDuration,
         alignment: 0.12,
+        curve: Curves.easeOutCubic,
       );
     });
   }
@@ -475,7 +469,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             bottom: 40,
             child: const WenyouPanel(
               child: WenyouEmptyState(
-                icon: Icons.topic_outlined,
+                icon: WenyouIconIds.contentTopic,
                 title: '这个主题还没有子贴',
                 message: '楼主补充内容后，可以在这里继续阅读。',
               ),
@@ -539,7 +533,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               top: 12,
               child: WenyouPanel(
                 child: WenyouEmptyState(
-                  icon: Icons.chat_bubble_outline_rounded,
+                  icon: WenyouIconIds.metricComments,
                   title: '还没有楼层',
                   message: '这个子贴目前只有正文，暂时没有后续讨论。',
                 ),
@@ -565,6 +559,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                       canDelete:
                           floor.author.id == viewerId || detail.canManageThread,
                       pending: actions.pendingPostId == floor.id,
+                      onReply: authenticated
+                          ? () => _compose(
+                              _replyFloorTarget(detail, selected, floor),
+                            )
+                          : _requireLogin,
                       onDiscussion: () => _openDiscussion(
                         floor,
                         reportsEnabled: !detail.isPrivate,
@@ -572,7 +571,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                             ? usableTarget?.focusedReplyId
                             : null,
                       ),
-                      showDiscussion: floor.replyCount > 0 || authenticated,
                       reportReturnTo:
                           !detail.isPrivate && floor.author.id != viewerId
                           ? _postLocation(floor.id)
@@ -611,7 +609,16 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (result == null || !mounted) return;
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
-        .refresh();
+        .refreshMetadata();
+    if (!mounted) return;
+    switch (target.kind) {
+      case PostComposerKind.createFloor ||
+          PostComposerKind.createReply ||
+          PostComposerKind.editPost:
+        context.replace(_postLocation(result.id));
+      case PostComposerKind.upsertBody:
+        break;
+    }
   }
 
   void _requireLogin() {
@@ -693,10 +700,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   ) {
     if (target == null) return floors;
     final index = floors.indexWhere((floor) => floor.id == target.floor.id);
-    final focusedFloor = index == -1 ? target.floor : floors[index];
+    if (index == -1) return [...floors, target.floor];
     return [
-      focusedFloor,
-      ...floors.where((floor) => floor.id != focusedFloor.id),
+      for (var floorIndex = 0; floorIndex < floors.length; floorIndex++)
+        floorIndex == index ? target.floor : floors[floorIndex],
     ];
   }
 }

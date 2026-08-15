@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +22,7 @@ import 'package:wenyousite_mobile/features/social/data/thread_interaction_reposi
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
@@ -106,7 +109,7 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
-    expect(find.text('收到，准备出发。'), findsNothing);
+    expect(find.text('收到，准备出发。'), findsOneWidget);
     expect(
       find.ancestor(
         of: find.byKey(const Key('thread-body-subthread-1')),
@@ -128,7 +131,14 @@ void main() {
     );
     expect(find.byKey(const Key('thread-floor-report-floor-1')), findsNothing);
     expect(find.byType(AnimatedContainer), findsNothing);
-    expect(find.byKey(const Key('thread-inline-reply-reply-1')), findsNothing);
+    expect(
+      find.byKey(const Key('thread-floor-reply-floor-1-reply-1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-reply-preview-collapsed-floor-1')),
+      findsNothing,
+    );
     expect(find.byKey(const Key('thread-reply-level-reply-1')), findsNothing);
     final discussion = find.byKey(const Key('thread-floor-discussion-floor-1'));
     expect(discussion, findsOneWidget);
@@ -189,7 +199,64 @@ void main() {
     expect(find.text('主题详情'), findsOneWidget);
   });
 
-  testWidgets('360dp 长文阅读向下收起顶栏并向上恢复', (tester) async {
+  testWidgets('楼层只预览前五条回复且合计正文超过 500 字时折叠', (tester) async {
+    final replies = [
+      for (var index = 1; index <= 6; index++)
+        ThreadReplyModel(
+          id: 'preview-$index',
+          author: _author,
+          body: ThreadBodyModel(
+            markdown: index == 1
+                ? List.filled(501, '长').join()
+                : '第 $index 条简短回复',
+          ),
+          createdAt: DateTime.utc(2026, 8, 9, 12, 20 + index),
+          isDeleted: false,
+        ),
+    ];
+    final floor = ThreadFloorModel(
+      id: 'floor-preview',
+      floorNumber: 1,
+      author: _author,
+      body: const ThreadBodyModel(markdown: '带有较长讨论的楼层'),
+      createdAt: DateTime.utc(2026, 8, 9, 12, 10),
+      isDeleted: false,
+      replyCount: replies.length,
+      replies: replies,
+    );
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(mainFloor: floor)),
+    );
+    await tester.pumpAndSettle();
+
+    final collapsed = find.byKey(
+      const Key('thread-floor-reply-preview-collapsed-floor-preview'),
+    );
+    await tester.scrollUntilVisible(
+      collapsed,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(collapsed, findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-floor-reply-preview-expand-floor-preview')),
+      findsOneWidget,
+    );
+    for (var index = 1; index <= 5; index++) {
+      expect(
+        find.byKey(Key('thread-floor-reply-floor-preview-preview-$index')),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.byKey(const Key('thread-floor-reply-floor-preview-preview-6')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('360dp 长文阅读滚动时顶栏和发表入口保持固定', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -208,13 +275,13 @@ void main() {
 
     expect(
       find.byKey(const Key('thread-detail-reading-app-bar')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text('主题详情').hitTestable(), findsOneWidget);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
     await tester.pumpAndSettle();
-    expect(find.text('主题详情').hitTestable(), findsNothing);
-    expect(find.byKey(const Key('thread-floor-compose')), findsNothing);
+    expect(find.text('主题详情').hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     await expectLater(
       find.byKey(visualKey),
       matchesGoldenFile('goldens/thread_detail_text_first_360.png'),
@@ -401,6 +468,106 @@ void main() {
     expect(find.text('目标楼层内容'), findsOneWidget);
     expect(repository.targetPostIds, ['floor-target']);
     expect(repository.requestedSubthreads.last, 'subthread-2');
+    expect(
+      tester
+          .getTopLeft(find.byKey(const Key('thread-floor-card-floor-target')))
+          .dy,
+      greaterThan(
+        tester
+            .getTopLeft(find.byKey(const Key('thread-floor-card-floor-2')))
+            .dy,
+      ),
+    );
+  });
+
+  testWidgets('发表楼层后保留已加载窗口并定位到新楼层', (tester) async {
+    tester.view.physicalSize = const Size(360, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final createdFloor = ThreadFloorModel(
+      id: 'floor-created',
+      floorNumber: 2,
+      author: _author,
+      body: const ThreadBodyModel(markdown: '刚发表的楼层'),
+      createdAt: DateTime.utc(2026, 8, 10, 9),
+      isDeleted: false,
+      replyCount: 0,
+      replies: const [],
+    );
+    final detailRepository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-created',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: createdFloor,
+      ),
+    );
+    final postRepository = _CreatingPostRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        threadDetailRepositoryProvider.overrideWithValue(detailRepository),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+        postRepositoryProvider.overrideWithValue(postRepository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+    final router = GoRouter(
+      initialLocation: '/threads/thread-1',
+      routes: [
+        GoRoute(
+          path: '/threads/:threadId',
+          name: 'thread-detail',
+          builder: (context, state) => ThreadDetailPage(
+            threadId: state.pathParameters['threadId']!,
+            targetPostId: state.uri.queryParameters['post'],
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-floor-compose')));
+    await tester.pumpAndSettle();
+    await _replacePostComposerText(tester, '刚发表的楼层');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await tester.pumpAndSettle();
+
+    expect(postRepository.createInputs, hasLength(1));
+    expect(postRepository.createInputs.single.parentPostId, isNull);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['post'],
+      'floor-created',
+    );
+    expect(detailRepository.targetPostIds, ['floor-created']);
+    expect(detailRepository.requestedSubthreads, ['subthread-1']);
+    expect(find.text('刚发表的楼层'), findsOneWidget);
+    expect(
+      tester
+          .getTopLeft(find.byKey(const Key('thread-floor-card-floor-created')))
+          .dy,
+      greaterThan(
+        tester
+            .getTopLeft(find.byKey(const Key('thread-floor-card-floor-1')))
+            .dy,
+      ),
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('楼层首屏失败展示局部错误而不是空数据', (tester) async {
@@ -451,6 +618,48 @@ void main() {
       tester.getTopLeft(find.text('加载更多楼层失败。')).dy,
       greaterThan(tester.getTopLeft(find.text('第一层内容')).dy),
     );
+  });
+
+  testWidgets('分页新增楼层首帧直接进入最终位置且 200ms 后不再变化', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      mainFloors: [_mainFloor],
+      nextFloors: [_paginatedFloor],
+    );
+    final container = ProviderContainer(
+      overrides: [
+        stickersEnabledProvider.overrideWithValue(false),
+        threadDetailRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final loadMore = container
+        .read(threadDetailControllerProvider('thread-1').notifier)
+        .loadMore();
+    await tester.pump();
+    await loadMore;
+
+    final addedFloor = find.byKey(const Key('thread-floor-card-floor-page'));
+    await tester.scrollUntilVisible(
+      addedFloor,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(addedFloor, findsOneWidget);
+    final firstFrameTop = tester.getTopLeft(addedFloor).dy;
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.getTopLeft(addedFloor).dy, firstFrameTop);
   });
 
   testWidgets('404 使用不泄露私密信息的不可见状态', (tester) async {
@@ -705,7 +914,7 @@ void main() {
     expect(repository.threadCalls, 2);
   });
 
-  testWidgets('登录用户在零回复楼层仍看到可发现的回复入口', (tester) async {
+  testWidgets('登录用户点击零回复楼层正文直接回复且不显示回复按钮', (tester) async {
     final repository = _FakeThreadDetailRepository(mainFloor: _sideFloor);
     final container = ProviderContainer(
       overrides: [
@@ -732,16 +941,70 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final discussion = find.byKey(const Key('thread-floor-discussion-floor-2'));
+    final floor = find.byKey(const Key('thread-floor-card-floor-2'));
+    await tester.scrollUntilVisible(
+      floor,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-discussion-floor-2')),
+      findsNothing,
+    );
+
+    final semantics = tester.getSemantics(floor);
+    expect(semantics.label, contains('回复第 1 楼'));
+    expect(semantics.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+    await tester.tap(find.text('支线楼层'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
+    expect(find.text('回复 @温柔测试员'), findsOneWidget);
+  });
+
+  testWidgets('楼层回复数与更多菜单保留独立点击行为', (tester) async {
+    final repository = _FakeThreadDetailRepository();
+    await tester.pumpWidget(_detailRouterApp(repository));
+    await tester.pumpAndSettle();
+
+    final discussion = find.byKey(const Key('thread-floor-discussion-floor-1'));
     await tester.scrollUntilVisible(
       discussion,
       180,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.tap(discussion);
+    await tester.pumpAndSettle();
     expect(
-      find.descendant(of: discussion, matching: find.text('回复')),
+      find.byKey(const Key('test-post-replies-destination')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('post-composer-body')), findsNothing);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final floor = find.byKey(const Key('thread-floor-card-floor-1'));
+    await tester.scrollUntilVisible(
+      floor,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.longPressAt(tester.getTopLeft(floor) + const Offset(8, 8));
+    await tester.pumpAndSettle();
+    expect(find.text('楼层操作'), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-body')), findsNothing);
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('thread-floor-actions-floor-1')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('thread-floor-actions-floor-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('楼层操作'), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-body')), findsNothing);
   });
 
   testWidgets('管理者从主题详情编辑正文并按作者与管理权限操作楼层', (tester) async {
@@ -808,7 +1071,7 @@ void main() {
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('thread-floor-compose')), findsNothing);
+    expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     expect(find.byKey(const Key('thread-floor-edit-floor-1')), findsNothing);
     expect(find.byKey(const Key('thread-floor-delete-floor-1')), findsNothing);
     expect(
@@ -974,6 +1237,25 @@ void main() {
   });
 }
 
+Future<void> _replacePostComposerText(WidgetTester tester, String text) async {
+  final editor = find.byKey(const Key('post-composer-body'));
+  final state = tester.state<QuillEditorState>(editor);
+  state.widget.focusNode.requestFocus();
+  await tester.pump();
+  final rawEditor = tester.state<QuillRawEditorState>(
+    find.descendant(of: editor, matching: find.byType(QuillRawEditor)),
+  );
+  tester.testTextInput.updateEditingValue(
+    TextEditingValue(
+      text: '$text\n',
+      selection: TextSelection.collapsed(
+        offset: rawEditor.textEditingValue.text.length,
+      ),
+    ),
+  );
+  await tester.idle();
+}
+
 Widget _detailApp(
   ThreadDetailRepository repository, {
   String? targetPostId,
@@ -1056,6 +1338,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     ThreadDetailModel? detail,
     ThreadFloorModel? mainFloor,
     List<ThreadFloorModel>? mainFloors,
+    this.nextFloors,
   }) : detail = detail ?? _detail,
        mainFloors = mainFloors ?? [mainFloor ?? _mainFloor];
 
@@ -1065,6 +1348,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final ThreadPostTargetModel? postTarget;
   final ThreadDetailModel detail;
   final List<ThreadFloorModel> mainFloors;
+  final List<ThreadFloorModel>? nextFloors;
   final List<String> requestedSubthreads = [];
   final List<String> targetPostIds = [];
   int threadCalls = 0;
@@ -1092,10 +1376,13 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     if (cursor != null && loadMoreFailure != null) {
       throw loadMoreFailure!;
     }
+    if (cursor != null) {
+      return CursorPage(items: nextFloors ?? const [], hasMore: false);
+    }
     if (cursor == null && floorFailure != null) {
       throw floorFailure!;
     }
-    if (cursor == null && loadMoreFailure != null) {
+    if (cursor == null && (loadMoreFailure != null || nextFloors != null)) {
       return CursorPage(
         items: subthreadId == 'subthread-1' ? mainFloors : [_sideFloor],
         cursor: 'next-cursor',
@@ -1382,6 +1669,60 @@ class _FakePostRepository implements PostRepository {
   }) => throw UnsupportedError('unused');
 }
 
+class _CreatingPostRepository implements PostRepository {
+  final List<PostCreateInput> createInputs = [];
+
+  @override
+  Future<PostItem> create(PostCreateInput input) async {
+    createInputs.add(input);
+    final createdAt = DateTime.utc(2026, 8, 10, 9);
+    return PostItem(
+      id: 'floor-created',
+      threadId: 'thread-1',
+      subthreadId: input.subthreadId,
+      author: const PostAuthor(id: 'user-1', username: '温柔测试员', level: 3),
+      content: input.content,
+      version: 1,
+      createdAt: createdAt,
+      updatedAt: createdAt,
+      isBody: false,
+      isDeleted: false,
+      floorNumber: 2,
+      parentPostId: input.parentPostId,
+      replyToPostId: input.replyToPostId,
+    );
+  }
+
+  @override
+  Future<PostItem> fetchPost(String postId) => throw UnsupportedError('unused');
+
+  @override
+  Future<PostReplyPage> fetchReplies({
+    required String rootPostId,
+    String? cursor,
+    int limit = 20,
+    PostReplyOrder order = PostReplyOrder.oldest,
+    String? authorId,
+  }) => throw UnsupportedError('unused');
+
+  @override
+  Future<void> remove(String postId) => throw UnsupportedError('unused');
+
+  @override
+  Future<PostItem> update({
+    required String postId,
+    required String content,
+    required int version,
+  }) => throw UnsupportedError('unused');
+
+  @override
+  Future<PostItem> upsertBody({
+    required String subthreadId,
+    required String content,
+    int? version,
+  }) => throw UnsupportedError('unused');
+}
+
 final _mainFloor = ThreadFloorModel(
   id: 'floor-1',
   floorNumber: 1,
@@ -1460,6 +1801,17 @@ final _sideFloor = ThreadFloorModel(
   author: _author,
   body: const ThreadBodyModel(markdown: '支线楼层'),
   createdAt: DateTime.utc(2026, 8, 9, 13),
+  isDeleted: false,
+  replyCount: 0,
+  replies: const [],
+);
+
+final _paginatedFloor = ThreadFloorModel(
+  id: 'floor-page',
+  floorNumber: 2,
+  author: _author,
+  body: const ThreadBodyModel(markdown: '分页新增内容'),
+  createdAt: DateTime.utc(2026, 8, 9, 13, 30),
   isDeleted: false,
   replyCount: 0,
   replies: const [],

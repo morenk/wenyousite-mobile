@@ -80,8 +80,9 @@ class _WenyouInternalReferenceTextState
       }
     }
     final span = TextSpan(style: widget.style, children: children);
-    if (widget.selectable) return SelectableText.rich(span);
-    return Text.rich(span);
+    final text = Text.rich(span);
+    if (widget.selectable) return SelectionArea(child: text);
+    return text;
   }
 
   void _rebuildSegments() {

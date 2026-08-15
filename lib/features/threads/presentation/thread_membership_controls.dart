@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
@@ -37,7 +38,7 @@ class ThreadMembershipControls extends ConsumerWidget {
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.logout_rounded),
+                : const WenyouIcon(WenyouIconIds.actionLogout),
             label: Text(state.isSubmitting ? '正在退出' : '退出玩家身份'),
           ),
           if (state.failure != null) ...[

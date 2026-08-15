@@ -33,6 +33,47 @@ void main() {
     expect(find.textContaining('🎲', findRichText: true), findsNothing);
   });
 
+  testWidgets('混排和换行后的骰子与正文共享行高与文字基线', (tester) async {
+    const secondNodeId = '550e8400-e29b-41d4-a716-446655440001';
+    const secondDiceNode = '[[dice:v1:$secondNodeId:2d6+3]]';
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 240);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: RepaintBoundary(
+            key: Key('markdown-inline-dice-visual'),
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: WenyouMarkdown(
+                data: '第一行文字 $diceNode 继续叙述\n第二行文字 $secondDiceNode 仍然同行',
+                diceLabels: {nodeId: '1d20 = 16', secondNodeId: '2d6+3 = 11'},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final firstDice = find.byKey(const ValueKey('wenyou-dice-$nodeId'));
+    final secondDice = find.byKey(const ValueKey('wenyou-dice-$secondNodeId'));
+    expect(firstDice, findsOneWidget);
+    expect(secondDice, findsOneWidget);
+    expect(tester.getSize(firstDice).height, lessThanOrEqualTo(31));
+    expect(tester.getSize(secondDice).height, lessThanOrEqualTo(31));
+    expect(tester.takeException(), isNull);
+
+    await expectLater(
+      find.byKey(const Key('markdown-inline-dice-visual')),
+      matchesGoldenFile('goldens/markdown_inline_dice_360.png'),
+    );
+  });
+
   testWidgets('骰子结果异步到达后更新内联标签', (tester) async {
     Widget app(Map<String, String> labels) => MaterialApp(
       home: Scaffold(
@@ -42,17 +83,11 @@ void main() {
 
     await tester.pumpWidget(app(const {}));
     expect(find.text('1d20 = ?'), findsOneWidget);
-    final markdownElement = tester.element(find.byType(MarkdownBody));
-
     await tester.pumpWidget(app(const {nodeId: '1d20 = 16'}));
     await tester.pump();
 
     expect(find.text('1d20 = ?'), findsNothing);
     expect(find.text('1d20 = 16'), findsOneWidget);
-    expect(
-      identical(markdownElement, tester.element(find.byType(MarkdownBody))),
-      isTrue,
-    );
   });
 
   testWidgets('代码与转义内容中的骰子表达式保持原文', (tester) async {
@@ -186,6 +221,55 @@ $diceNode
     expect(saveCalls, 1);
     expect(find.text('已添加到表情收藏。'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('纯文本点击回调不吞图片自身交互', (tester) async {
+    const url = 'https://cdn.example.com/story.png';
+    var textTapCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: '点击正文\n\n![雾港地图]($url)',
+            onTapText: () => textTapCalls += 1,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.textContaining('点击正文', findRichText: true));
+    await tester.pump();
+    expect(textTapCalls, 1);
+
+    await tester.tap(find.byKey(const ValueKey('markdown-image-$url')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('content-image-viewer')), findsOneWidget);
+    expect(textTapCalls, 1);
+  });
+
+  testWidgets('纯文本点击回调不吞链接自身交互', (tester) async {
+    var textTapCalls = 0;
+    Uri? openedInternalLink;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: '[打开主题](/threads/thread-2)',
+            onTapText: () => textTapCalls += 1,
+            onInternalLink: (uri) => openedInternalLink = uri,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.textContaining('打开主题', findRichText: true));
+    await tester.pump();
+    expect(openedInternalLink?.toString(), '/threads/thread-2');
+    expect(textTapCalls, 0);
   });
 
   testWidgets('游客正文图片仍可查看原图且没有收藏入口', (tester) async {

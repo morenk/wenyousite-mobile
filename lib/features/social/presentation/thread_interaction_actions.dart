@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -61,8 +62,8 @@ class ThreadInteractionActions extends ConsumerWidget {
                     pending:
                         state.pendingAction == ThreadInteractionAction.like,
                     fallback: state.isLiked
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
+                        ? WenyouIconIds.actionLike
+                        : WenyouIconIds.actionLike,
                   ),
                   SizedBox(width: tokens.space4),
                   Text(
@@ -87,8 +88,8 @@ class ThreadInteractionActions extends ConsumerWidget {
                 pending:
                     state.pendingAction == ThreadInteractionAction.bookmark,
                 fallback: state.isBookmarked
-                    ? Icons.bookmark_rounded
-                    : Icons.bookmark_border_rounded,
+                    ? WenyouIconIds.actionBookmark
+                    : WenyouIconIds.actionBookmark,
               ),
             ),
         ],
@@ -111,8 +112,8 @@ class ThreadInteractionActions extends ConsumerWidget {
               icon: _actionIcon(
                 pending: state.pendingAction == ThreadInteractionAction.like,
                 fallback: state.isLiked
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
+                    ? WenyouIconIds.actionLike
+                    : WenyouIconIds.actionLike,
               ),
               label: Text(
                 state.isLiked
@@ -130,8 +131,8 @@ class ThreadInteractionActions extends ConsumerWidget {
                   pending:
                       state.pendingAction == ThreadInteractionAction.bookmark,
                   fallback: state.isBookmarked
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_border_rounded,
+                      ? WenyouIconIds.actionBookmark
+                      : WenyouIconIds.actionBookmark,
                 ),
                 label: Text(state.isBookmarked ? '已收藏' : '收藏'),
               ),
@@ -151,13 +152,13 @@ class ThreadInteractionActions extends ConsumerWidget {
     );
   }
 
-  Widget _actionIcon({required bool pending, required IconData fallback}) {
+  Widget _actionIcon({required bool pending, required String fallback}) {
     return pending
         ? const SizedBox.square(
             dimension: 18,
             child: CircularProgressIndicator(strokeWidth: 2),
           )
-        : Icon(fallback);
+        : WenyouIcon(fallback);
   }
 
   Future<void> _toggleLike(

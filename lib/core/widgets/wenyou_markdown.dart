@@ -1,15 +1,16 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 
 class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
@@ -17,6 +18,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.diceLabels = const {},
     this.onInternalLink,
     this.onSaveImage,
+    this.onTapText,
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     super.key,
@@ -26,6 +28,7 @@ class WenyouMarkdown extends StatefulWidget {
   final Map<String, String> diceLabels;
   final ValueChanged<Uri>? onInternalLink;
   final Future<String> Function(Uri uri)? onSaveImage;
+  final VoidCallback? onTapText;
   final double bodyFontSize;
   final double bodyHeight;
 
@@ -33,14 +36,20 @@ class WenyouMarkdown extends StatefulWidget {
   State<WenyouMarkdown> createState() => _WenyouMarkdownState();
 }
 
-class _WenyouMarkdownState extends State<WenyouMarkdown> {
+class _WenyouMarkdownState extends State<WenyouMarkdown>
+    with AutomaticKeepAliveClientMixin<WenyouMarkdown> {
   late final ValueNotifier<Map<String, String>> _diceLabels;
+  late String _normalizedData;
   MarkdownStyleSheet? _styleSheet;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
+    _normalizedData = MarkdownContent.normalize(widget.data);
   }
 
   @override
@@ -54,6 +63,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     super.didUpdateWidget(oldWidget);
     if (!mapEquals(oldWidget.diceLabels, widget.diceLabels)) {
       _diceLabels.value = Map.unmodifiable(widget.diceLabels);
+    }
+    if (oldWidget.data != widget.data) {
+      _normalizedData = MarkdownContent.normalize(widget.data);
     }
     if (oldWidget.bodyFontSize != widget.bodyFontSize ||
         oldWidget.bodyHeight != widget.bodyHeight) {
@@ -69,14 +81,16 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return MarkdownBody(
-      data: MarkdownContent.normalize(widget.data),
+      data: _normalizedData,
       selectable: true,
       softLineBreak: true,
       styleSheet: _styleSheet,
       inlineSyntaxes: [_DiceInlineSyntax()],
       builders: {'wenyou-dice': _DiceMarkdownBuilder(_diceLabels)},
       onTapLink: (_, href, _) => _openLink(context, href),
+      onTapText: widget.onTapText,
       imageBuilder: (uri, title, alt) => _MarkdownImage(
         uri: uri,
         title: title,
@@ -224,32 +238,39 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
-    final tokens = context.wenyouTokens;
     final nodeId = element.attributes['node-id']!;
     final notation = element.textContent;
     final style =
         (preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style)
             .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-      child: ValueListenableBuilder<Map<String, String>>(
-        valueListenable: labelsByNodeId,
-        builder: (context, labels, _) {
-          final label = labels[nodeId] ?? '$notation = ?';
-          final isResult = labels.containsKey(nodeId);
-          return DecoratedBox(
-            key: ValueKey('wenyou-dice-$nodeId'),
-            decoration: BoxDecoration(
-              color: (isResult ? tokens.accentedBackground : tokens.softPanel)
-                  .withValues(alpha: isResult ? 0.3 : 0.7),
-              borderRadius: BorderRadius.circular(tokens.radius12 / 2),
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: ValueListenableBuilder<Map<String, String>>(
+              valueListenable: labelsByNodeId,
+              builder: (context, labels, _) {
+                final label = labels[nodeId] ?? '$notation = ?';
+                return Semantics(
+                  key: ValueKey('wenyou-dice-$nodeId'),
+                  label: labels.containsKey(nodeId)
+                      ? '骰子结果 $label'
+                      : '待掷骰子 $notation',
+                  child: Text(
+                    label,
+                    style: style,
+                    strutStyle: StrutStyle.fromTextStyle(
+                      style,
+                      forceStrutHeight: true,
+                    ),
+                  ),
+                );
+              },
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              child: Text(label, style: style),
-            ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -269,15 +290,20 @@ class _MarkdownImage extends StatelessWidget {
     if (!MarkdownContent.isSafeImage(uri)) {
       return Semantics(
         label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
-        child: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
+        child: WenyouIcon(
+          WenyouIconIds.statusImageUnavailable,
+          color: tokens.mutedText,
+        ),
       );
     }
     final isSticker = title?.startsWith('wenyousite-sticker:') == true;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Center(child: Icon(Icons.image_outlined, color: tokens.mutedText)),
+      child: Center(
+        child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
+      ),
     );
-    final image = CachedNetworkImage(
+    final image = WenyouCachedImage(
       imageUrl: uri.toString(),
       fit: BoxFit.contain,
       placeholder: (_, _) => fallback,
@@ -303,10 +329,11 @@ class _MarkdownImage extends StatelessWidget {
       );
     }
     final imageAlt = alt?.trim() ?? '';
+    final descriptiveAlt = imageAlt == '图片' ? '' : imageAlt;
     return Semantics(
       button: true,
       image: true,
-      label: imageAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$imageAlt',
+      label: descriptiveAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$descriptiveAlt',
       child: InkWell(
         key: ValueKey('markdown-image-$uri'),
         borderRadius: BorderRadius.circular(tokens.radius12),

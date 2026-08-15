@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
@@ -106,8 +107,8 @@ class PostRepliesPage extends ConsumerWidget {
               key: const Key('post-reply-compose'),
               label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
               icon: session.isAuthenticated
-                  ? Icons.reply_rounded
-                  : Icons.login_rounded,
+                  ? WenyouIconIds.actionReply
+                  : WenyouIconIds.actionLogin,
               onPressed: session.isAuthenticated
                   ? () => _compose(
                       context,
@@ -129,7 +130,7 @@ class PostRepliesPage extends ConsumerWidget {
       tooltip: '返回原楼层',
       onPressed: () =>
           context.go(AppRouteLocations.thread(threadId, postId: rootPostId)),
-      icon: const Icon(Icons.layers_outlined),
+      icon: const WenyouIcon(WenyouIconIds.contentLayers),
     );
   }
 
@@ -261,6 +262,9 @@ class _DiscussionList extends StatelessWidget {
         reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
             ? _reportLocation(root, root.id)
             : null,
+        onReply: authenticated
+            ? () => onCompose(_replyTarget(root, root))
+            : null,
         onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
         onDelete: () => onDelete(root, true),
       ),
@@ -308,7 +312,7 @@ class _DiscussionList extends StatelessWidget {
             sliver: const SliverToBoxAdapter(
               child: WenyouConstrainedWidth(
                 child: WenyouEmptyState(
-                  icon: Icons.forum_outlined,
+                  icon: WenyouIconIds.metricReplies,
                   title: '还没有回复',
                   message: '成为这段讨论的第一位回复者。',
                 ),
@@ -367,7 +371,7 @@ class _DiscussionList extends StatelessWidget {
                               dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.expand_more_rounded),
+                          : const WenyouIcon(WenyouIconIds.navigationExpand),
                       label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
                     )
                   : const SizedBox.shrink(),
@@ -429,8 +433,8 @@ class _ReplyFilters extends StatelessWidget {
             foregroundColor: tokens.mutedText,
             padding: EdgeInsets.symmetric(horizontal: tokens.space8),
           ),
-          icon: Icon(
-            Icons.tune_rounded,
+          icon: WenyouIcon(
+            WenyouIconIds.actionFilter,
             size: 20,
             color:
                 selectedAuthor == null && state.order == PostReplyOrder.oldest
@@ -663,6 +667,7 @@ class _PostCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
+    final canTapReply = onReply != null && !pending && !post.isDeleted;
     final card = Container(
       padding: EdgeInsets.symmetric(
         horizontal: tokens.space4,
@@ -693,16 +698,22 @@ class _PostCard extends ConsumerWidget {
               },
               bodyFontSize: root ? 17 : 16,
               bodyHeight: root ? 1.8 : 1.75,
+              onTapText: canTapReply ? onReply : null,
             ),
         ],
       ),
     );
     return Semantics(
       container: true,
-      hint: root ? '长按打开楼层操作' : '长按打开回复操作',
+      button: canTapReply,
+      hint: canTapReply
+          ? (root ? '点击回复楼层，长按打开楼层操作' : '点击回复这条回复，长按打开回复操作')
+          : (root ? '长按打开楼层操作' : '长按打开回复操作'),
+      onTap: canTapReply ? onReply : null,
       child: GestureDetector(
         key: Key('post-card-${post.id}'),
         behavior: HitTestBehavior.opaque,
+        onTap: canTapReply ? onReply : null,
         onLongPress: () => _showActions(context, ref),
         child: card,
       ),
@@ -775,7 +786,7 @@ class _PostAuthorLine extends StatelessWidget {
     final avatarSize = root ? 36.0 : 28.0;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
     );
     return Row(
       children: [
@@ -849,7 +860,7 @@ class _DiscussionFailure extends StatelessWidget {
     return WenyouPageBody(
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.forum_outlined,
+          icon: WenyouIconIds.metricReplies,
           title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论没有加载完成',
           message: failure?.userMessage ?? '请稍后重试。',
           detail: _failureDetail(failure),
@@ -868,7 +879,7 @@ class _RouteMismatch extends StatelessWidget {
     return const WenyouPageBody(
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.link_off_rounded,
+          icon: WenyouIconIds.actionUnlink,
           title: '楼层不属于当前主题',
           message: '请返回主题详情后重新打开。',
         ),

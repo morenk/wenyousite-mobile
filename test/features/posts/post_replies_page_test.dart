@@ -199,6 +199,53 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('点击别人的楼中楼回复会把回复目标指向该回复', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _FakePostRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final otherReply = find.byKey(const Key('post-card-reply-other'));
+    await tester.ensureVisible(otherReply);
+    await tester.tap(otherReply);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+    expect(find.text('回复 @他人'), findsWidgets);
+    await _replaceComposerText(tester, '针对这条回复继续讨论');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await tester.pumpAndSettle();
+
+    expect(repository.createInputs, hasLength(1));
+    expect(repository.createInputs.single.parentPostId, 'root');
+    expect(repository.createInputs.single.replyToPostId, 'reply-other');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('360dp 回复编辑器保持纯正文画布的视觉基线', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);

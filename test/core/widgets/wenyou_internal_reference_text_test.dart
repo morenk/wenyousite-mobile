@@ -37,12 +37,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('参见 设定 A。', findRichText: true), findsOneWidget);
-    final selectable = tester.widget<SelectableText>(
-      find.byType(SelectableText),
+    expect(find.byType(SelectionArea), findsOneWidget);
+    final text = tester.widget<Text>(find.byType(Text));
+    final rootSpan = text.textSpan! as TextSpan;
+    final portal = rootSpan.children!.whereType<TextSpan>().singleWhere(
+      (span) => span.text == '设定 A',
     );
-    final portal = selectable.textSpan!.children!
-        .whereType<TextSpan>()
-        .singleWhere((span) => span.text == '设定 A');
     (portal.recognizer! as TapGestureRecognizer).onTap!();
     await tester.pumpAndSettle();
 

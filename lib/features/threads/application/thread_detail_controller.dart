@@ -170,6 +170,36 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     }
   }
 
+  /// Refreshes counts, permissions and thread metadata without discarding the
+  /// currently loaded floor window. This is used after a successful post
+  /// mutation so the reader's scroll position remains stable.
+  Future<void> refreshMetadata() async {
+    final epoch = _requestEpoch;
+    state = state.copyWith(transientFailure: null);
+    try {
+      final detail = await _repository.fetchThread(threadId);
+      if (!_isCurrent(epoch)) return;
+      final selectedId = detail.preferredSubthreadId(state.selectedSubthreadId);
+      state = state.copyWith(
+        phase: ThreadDetailPhase.ready,
+        detail: detail,
+        selectedSubthreadId: selectedId,
+        failure: null,
+      );
+    } on Object catch (error) {
+      if (!_isCurrent(epoch)) return;
+      final failure = _asFailure(error, '主题信息刷新失败，请稍后重试。');
+      if (_isRestricted(failure)) {
+        _hideRestrictedContent(failure);
+        return;
+      }
+      state = state.copyWith(
+        transientFailure: failure,
+        retryAction: ThreadDetailRetryAction.refresh,
+      );
+    }
+  }
+
   Future<void> selectSubthread(String subthreadId) async {
     if (state.selectedSubthreadId == subthreadId ||
         state.detail?.subthreadById(subthreadId) == null) {
