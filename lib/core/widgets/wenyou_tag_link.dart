@@ -35,7 +35,12 @@ class WenyouTagLink extends StatelessWidget {
             child: Center(
               widthFactor: 1,
               heightFactor: 1,
-              child: Text(label, style: textStyle),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textStyle,
+              ),
             ),
           ),
         ),
@@ -61,7 +66,7 @@ class WenyouTagLink extends StatelessWidget {
           ),
           textStyle: textStyle,
         ),
-        child: Text(label),
+        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
@@ -73,11 +74,15 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
     final categoryNames = {
       for (final category in state.categories) category.slug: category.name,
     };
+    final transientCount = state.transientFailure == null ? 0 : 1;
+    final contentCount = state.items.isEmpty ? 1 : state.items.length;
+    final footerCount = state.items.isEmpty ? 0 : 1;
     return RefreshIndicator(
       onRefresh: () => ref.read(provider.notifier).refresh(),
-      child: ListView(
+      child: ListView.builder(
         key: PageStorageKey('tag-threads-${widget.tagId}'),
         controller: _scrollController,
+        addAutomaticKeepAlives: false,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
           MediaQuery.sizeOf(context).width <= 400
@@ -89,69 +94,83 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
               : tokens.space24,
           tokens.space32,
         ),
-        children: [
-          _CenteredTagContent(
-            child: WenyouPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  WenyouSectionHeader(
-                    title: '#${state.tag!.name}',
-                    subtitle: state.tag!.description ?? '浏览使用这个标签的公开主题。',
-                  ),
-                  SizedBox(height: tokens.space12),
-                  WenyouTagChip(
-                    key: Key('tag-detail-${state.tag!.id}'),
-                    name: state.tag!.name,
-                    colorHex: state.tag!.color,
-                  ),
-                  SizedBox(height: tokens.space8),
-                  Text(
-                    '已加载 ${state.items.length} 个主题',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (state.transientFailure != null) ...[
-            SizedBox(height: tokens.space12),
-            _CenteredTagContent(
-              child: WenyouStatusBanner(
-                key: const Key('tag-threads-transient-failure'),
-                tone: WenyouStatusTone.error,
-                message: state.transientFailure!.userMessage,
-                detail: state.transientFailure!.requestId == null
-                    ? null
-                    : '请求 ID：${state.transientFailure!.requestId}',
-                action: TextButton(
-                  onPressed:
-                      state.transientRetryAction ==
-                          TagThreadsRetryAction.loadMore
-                      ? () => ref.read(provider.notifier).loadMore()
-                      : () => ref.read(provider.notifier).refresh(),
-                  child: const Text('重试'),
-                ),
-              ),
-            ),
-          ],
-          if (state.items.isEmpty) ...[
-            SizedBox(height: tokens.space12),
-            const _CenteredTagContent(
+        itemCount: 1 + transientCount + contentCount + footerCount,
+        itemBuilder: (context, index) {
+          var cursor = index;
+          if (cursor == 0) {
+            return _CenteredTagContent(
               child: WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: Icons.tag_faces_outlined,
-                  title: '这个标签下还没有公开主题',
-                  message: '标签本身仍然有效，稍后可以下拉刷新。',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    WenyouSectionHeader(
+                      title: '#${state.tag!.name}',
+                      subtitle: state.tag!.description ?? '浏览使用这个标签的公开主题。',
+                    ),
+                    SizedBox(height: tokens.space12),
+                    WenyouTagChip(
+                      key: Key('tag-detail-${state.tag!.id}'),
+                      name: state.tag!.name,
+                      colorHex: state.tag!.color,
+                    ),
+                    SizedBox(height: tokens.space8),
+                    Text(
+                      '已加载 ${state.items.length} 个主题',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ] else
-            for (final thread in state.items) ...[
-              SizedBox(height: tokens.space12),
-              _CenteredTagContent(
+            );
+          }
+          cursor -= 1;
+          if (state.transientFailure != null) {
+            if (cursor == 0) {
+              return Padding(
+                padding: EdgeInsets.only(top: tokens.space12),
+                child: _CenteredTagContent(
+                  child: WenyouStatusBanner(
+                    key: const Key('tag-threads-transient-failure'),
+                    tone: WenyouStatusTone.error,
+                    message: state.transientFailure!.userMessage,
+                    detail: state.transientFailure!.requestId == null
+                        ? null
+                        : '请求 ID：${state.transientFailure!.requestId}',
+                    action: TextButton(
+                      onPressed:
+                          state.transientRetryAction ==
+                              TagThreadsRetryAction.loadMore
+                          ? () => ref.read(provider.notifier).loadMore()
+                          : () => ref.read(provider.notifier).refresh(),
+                      child: const Text('重试'),
+                    ),
+                  ),
+                ),
+              );
+            }
+            cursor -= 1;
+          }
+          if (state.items.isEmpty) {
+            return Padding(
+              padding: EdgeInsets.only(top: tokens.space12),
+              child: const _CenteredTagContent(
+                child: WenyouPanel(
+                  child: WenyouEmptyState(
+                    icon: WenyouIconIds.actionAddReaction,
+                    title: '这个标签下还没有公开主题',
+                    message: '标签本身仍然有效，稍后可以下拉刷新。',
+                  ),
+                ),
+              ),
+            );
+          }
+          if (cursor < state.items.length) {
+            final thread = state.items[cursor];
+            return Padding(
+              padding: EdgeInsets.only(top: tokens.space12),
+              child: _CenteredTagContent(
                 child: HomeThreadCard(
                   key: Key('tag-thread-${thread.id}'),
                   thread: thread,
@@ -170,10 +189,11 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                   ),
                 ),
               ),
-            ],
-          if (state.items.isNotEmpty) ...[
-            SizedBox(height: tokens.space16),
-            _CenteredTagContent(
+            );
+          }
+          return Padding(
+            padding: EdgeInsets.only(top: tokens.space16),
+            child: _CenteredTagContent(
               child: Center(
                 child: state.isLoadingMore
                     ? const CircularProgressIndicator()
@@ -181,7 +201,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                     ? OutlinedButton.icon(
                         key: const Key('tag-threads-load-more'),
                         onPressed: () => ref.read(provider.notifier).loadMore(),
-                        icon: const Icon(Icons.expand_more_rounded),
+                        icon: const WenyouIcon(WenyouIconIds.navigationExpand),
                         label: const Text('加载更多'),
                       )
                     : Text(
@@ -192,8 +212,8 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                       ),
               ),
             ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
@@ -223,8 +243,8 @@ class _TagFatalState extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: failure?.httpStatus == 404
-              ? Icons.label_off_outlined
-              : Icons.cloud_off_outlined,
+              ? WenyouIconIds.actionRemoveTag
+              : WenyouIconIds.statusOffline,
           title: failure?.httpStatus == 404 ? '标签不存在或已停用' : '标签主题没有加载完成',
           message: failure?.userMessage ?? '请检查网络后重试。',
           detail: failure?.requestId == null
@@ -233,7 +253,7 @@ class _TagFatalState extends StatelessWidget {
           action: OutlinedButton.icon(
             key: const Key('tag-threads-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),

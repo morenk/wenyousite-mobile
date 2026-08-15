@@ -55,6 +55,7 @@ void main() {
     expect(item.title, '星海旅团');
     expect(item.status, HomeThreadStatus.finished);
     expect(item.ownerName, '温柔测试员');
+    expect(item.ownerAvatarUrl, 'https://cdn.example.com/avatar.webp');
     expect(item.ownerLevel, 3);
     expect(item.preview, '向星海出发');
     expect(item.tags.single.name, '太空歌剧');
@@ -62,6 +63,31 @@ void main() {
     expect(item.memberCount, 5);
     expect(item.postCount, 12);
     expect(item.tipTotal, '8');
+  });
+
+  test('主题作者头像只保留安全 HTTP URL', () async {
+    final threadsApi = _MockThreadsApi();
+    final categoriesApi = _MockThreadCategoriesApi();
+    when(
+      () => threadsApi.threadsFindAll(
+        cursor: null,
+        limit: 20,
+        filter: 'all',
+        category: null,
+        sort: 'recommended',
+        status: null,
+        tagId: null,
+      ),
+    ).thenAnswer(
+      (_) async => _threadsResponse(avatar: 'file:///private/avatar.png'),
+    );
+
+    final page = await ApiHomeRepository(
+      threadsApi,
+      categoriesApi,
+    ).fetchThreads(query: const HomeFeedQuery());
+
+    expect(page.items.single.ownerAvatarUrl, isNull);
   });
 }
 
@@ -114,7 +140,9 @@ Response<ThreadCategoriesList200Response> _categoriesResponse() {
   );
 }
 
-Response<ThreadsFindAll200Response> _threadsResponse() {
+Response<ThreadsFindAll200Response> _threadsResponse({
+  String? avatar = 'https://cdn.example.com/avatar.webp',
+}) {
   final now = DateTime.utc(2026, 8, 9, 12);
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/threads'),
@@ -144,6 +172,7 @@ Response<ThreadsFindAll200Response> _threadsResponse() {
                 (owner) => owner
                   ..id = 'user-1'
                   ..username = '温柔测试员'
+                  ..avatar = avatar
                   ..level = 3,
               )
               ..defaultSubthread.update(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -51,7 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             key: const Key('home-open-search'),
             onPressed: () => context.pushNamed('search'),
             tooltip: '搜索',
-            icon: const Icon(Icons.search_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionSearch),
           ),
         ],
       ),
@@ -134,14 +135,14 @@ class _HomePageState extends ConsumerState<HomePage> {
             topPadding: 12,
             child: WenyouPanel(
               child: WenyouEmptyState(
-                icon: Icons.forum_outlined,
+                icon: WenyouIconIds.contentThread,
                 title: '这里还没有公开主题',
                 message: '可以换一个分类或状态，也可以下拉刷新看看。',
                 action: OutlinedButton.icon(
                   onPressed: () => ref
                       .read(homeFeedControllerProvider.notifier)
                       .clearFilters(),
-                  icon: const Icon(Icons.filter_alt_off_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.actionClearFilter),
                   label: const Text('查看全部主题'),
                 ),
               ),
@@ -150,28 +151,33 @@ class _HomePageState extends ConsumerState<HomePage> {
         )
       else
         SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final thread = state.items[index];
-            return _HomeContent(
-              top: 12,
-              child: HomeThreadCard(
-                key: Key('home-thread-${thread.id}'),
-                thread: thread,
-                categoryName:
-                    categoryNames[thread.categorySlug] ?? thread.categorySlug,
-                onTap: () => context.pushNamed(
-                  'thread-detail',
-                  pathParameters: {'threadId': thread.id},
-                  extra:
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final thread = state.items[index];
+              return _HomeContent(
+                top: 12,
+                child: HomeThreadCard(
+                  key: Key('home-thread-${thread.id}'),
+                  thread: thread,
+                  categoryName:
                       categoryNames[thread.categorySlug] ?? thread.categorySlug,
+                  onTap: () => context.pushNamed(
+                    'thread-detail',
+                    pathParameters: {'threadId': thread.id},
+                    extra:
+                        categoryNames[thread.categorySlug] ??
+                        thread.categorySlug,
+                  ),
+                  onTagTap: (tag) => context.pushNamed(
+                    'tag-threads',
+                    pathParameters: {'tagId': tag.id},
+                  ),
                 ),
-                onTagTap: (tag) => context.pushNamed(
-                  'tag-threads',
-                  pathParameters: {'tagId': tag.id},
-                ),
-              ),
-            );
-          }, childCount: state.items.length),
+              );
+            },
+            childCount: state.items.length,
+            addAutomaticKeepAlives: false,
+          ),
         ),
       if (state.items.isNotEmpty)
         SliverToBoxAdapter(
@@ -260,7 +266,7 @@ class _HomeErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouPanel(
       child: WenyouEmptyState(
-        icon: Icons.cloud_off_rounded,
+        icon: WenyouIconIds.statusOffline,
         title: '主题列表没有加载完成',
         message: failure?.userMessage ?? '请检查网络后重试。',
         detail: failure?.requestId == null
@@ -269,7 +275,7 @@ class _HomeErrorState extends StatelessWidget {
         action: FilledButton.icon(
           key: const Key('home-retry'),
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重新加载'),
         ),
       ),
@@ -291,7 +297,7 @@ class _HomeTransientError extends StatelessWidget {
       tone: WenyouStatusTone.error,
       action: TextButton.icon(
         onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded, size: 18),
+        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
         label: const Text('重试'),
       ),
     );
@@ -412,7 +418,11 @@ class _HomeFilterMenu<T> extends StatelessWidget {
                 SizedBox(
                   width: 24,
                   child: value == selected
-                      ? Icon(Icons.check_rounded, size: 20, color: tokens.brand)
+                      ? WenyouIcon(
+                          WenyouIconIds.actionConfirm,
+                          size: 20,
+                          color: tokens.brand,
+                        )
                       : null,
                 ),
                 SizedBox(width: tokens.space8),
@@ -448,8 +458,8 @@ class _HomeFilterMenu<T> extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: tokens.space4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
+                WenyouIcon(
+                  WenyouIconIds.navigationExpand,
                   size: 20,
                   color: active ? tokens.brand : tokens.mutedText,
                 ),
@@ -489,7 +499,7 @@ class _HomeFeedFooter extends StatelessWidget {
               dimension: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.expand_more_rounded),
+          : const WenyouIcon(WenyouIconIds.navigationExpand),
       label: Text(state.isLoadingMore ? '正在加载更多' : '加载更多主题'),
     );
   }

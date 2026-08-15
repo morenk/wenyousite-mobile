@@ -2,12 +2,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+
+import '../../support/foundation_icon_finder.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -19,7 +22,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('发现主题'), findsNothing);
-    expect(find.text('角色扮演'), findsOneWidget);
+    expect(find.textContaining('角色扮演'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('向星海出发'), findsOneWidget);
     expect(find.text('#太空歌剧'), findsOneWidget);
@@ -30,14 +33,20 @@ void main() {
       findsNothing,
     );
     expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
-    expect(find.text('5 成员 · 2 玩家 · 12 回复 · 8L 加油'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'2 玩家')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'12 回复')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'8 L 加油')), findsOneWidget);
+    expect(findFoundationIcon(WenyouIconIds.metricPlayers), findsOneWidget);
+    expect(findFoundationIcon(WenyouIconIds.metricReplies), findsOneWidget);
+    expect(findFoundationIcon(WenyouIconIds.metricTips), findsOneWidget);
+    expect(find.textContaining('成员'), findsNothing);
     expect(
-      tester.getTopLeft(find.text('星海旅团')).dy,
-      lessThan(tester.getTopLeft(find.text('温柔测试员')).dy),
+      tester.getTopLeft(find.text('温柔测试员')).dy,
+      lessThan(tester.getTopLeft(find.text('星海旅团')).dy),
     );
     expect(
       tester.getSize(find.byKey(const Key('home-thread-thread-1'))).height,
-      lessThan(220),
+      lessThan(300),
     );
     expect(
       find.ancestor(
@@ -115,6 +124,31 @@ void main() {
     expect(find.text('第二段接力'), findsOneWidget);
   });
 
+  testWidgets('主题卡片展示作者头像且无头像时使用人物占位', (tester) async {
+    await tester.pumpWidget(
+      _homeApp(_FakeHomeRepository(items: [_threadWithAvatar, _secondThread])),
+    );
+    await tester.pump();
+
+    final avatar = find.byKey(
+      const Key('home-thread-author-avatar-thread-avatar'),
+    );
+    final fallback = find.byKey(
+      const Key('home-thread-author-avatar-thread-2'),
+    );
+    expect(
+      find.descendant(of: avatar, matching: find.byType(CachedNetworkImage)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: fallback,
+        matching: findFoundationIcon(WenyouIconIds.identityMember),
+      ),
+      findsOneWidget,
+    );
+  });
+
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 首页筛选与独立主题卡片无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -123,7 +157,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(
-        _homeApp(_FakeHomeRepository(items: [_threadWithCover, _secondThread])),
+        _homeApp(
+          _FakeHomeRepository(
+            items: [_threadWithAvatar, _threadWithCover, _secondThread],
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -143,7 +181,7 @@ void main() {
     });
   }
 
-  testWidgets('360dp 有封面主题使用卡片内整宽 16:9 单封面', (tester) async {
+  testWidgets('360dp 有封面主题使用正文整宽 16:9 单封面', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -160,9 +198,10 @@ void main() {
     expect(cover, findsOneWidget);
     final coverSize = tester.getSize(cover);
     final cardSize = tester.getSize(card);
-    expect((coverSize.width - cardSize.width).abs(), lessThanOrEqualTo(2));
+    expect(coverSize.width, greaterThan(cardSize.width * 0.9));
+    expect(coverSize.width, cardSize.width - 24);
     expect(coverSize.width / coverSize.height, closeTo(16 / 9, 0.01));
-    expect(tester.getTopLeft(cover).dx, closeTo(tester.getTopLeft(card).dx, 1));
+    expect(tester.getTopLeft(cover).dx, tester.getTopLeft(card).dx + 12);
     expect(find.text('带封面的长篇主题'), findsOneWidget);
     expect(find.text('正文摘要在封面之后延续阅读线索'), findsOneWidget);
     expect(find.byType(CachedNetworkImage), findsOneWidget);
@@ -171,6 +210,55 @@ void main() {
       BoxFit.cover,
     );
   });
+
+  for (final (width, visibleTags) in <(double, int)>[
+    (320, 1),
+    (360, 2),
+    (600, 3),
+  ]) {
+    testWidgets('$width dp 底栏按可用宽度限制 $visibleTags 个标签并汇总剩余项', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 900);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        _homeApp(_FakeHomeRepository(items: [_threadWithManyTags])),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .getSize(
+              find.byKey(const Key('home-thread-footer-thread-many-tags')),
+            )
+            .height,
+        48,
+      );
+      for (var index = 1; index <= visibleTags; index++) {
+        expect(
+          find.byKey(Key('home-thread-tag-thread-many-tags-tag-$index')),
+          findsOneWidget,
+        );
+      }
+      for (var index = visibleTags + 1; index <= 4; index++) {
+        expect(
+          find.byKey(Key('home-thread-tag-thread-many-tags-tag-$index')),
+          findsNothing,
+        );
+      }
+      final more = find.byKey(
+        const Key('home-thread-tags-more-thread-many-tags'),
+      );
+      expect(more, findsOneWidget);
+      expect(tester.widget<Text>(more).data, '+${4 - visibleTags}');
+      expect(
+        find.ancestor(of: more, matching: find.byType(TextButton)),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('360dp 首页保持标题与摘要优先的视觉基线', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -294,6 +382,50 @@ final _threadWithCover = HomeThreadCardModel(
   postCount: 12,
   tipTotal: '0',
   lastActivityAt: DateTime.now().subtract(const Duration(hours: 10)),
+);
+
+final _threadWithAvatar = HomeThreadCardModel(
+  id: 'thread-avatar',
+  title: '有头像的主题',
+  categorySlug: 'RPG',
+  status: HomeThreadStatus.recruiting,
+  isPinned: false,
+  ownerId: 'user-avatar',
+  ownerName: '一位名字很长但仍需完整保持卡片节奏的头像作者',
+  ownerAvatarUrl: 'https://cdn.example.com/avatar.webp',
+  ownerLevel: 4,
+  preview: '头像与作者元信息保持同一阅读组。',
+  tags: const [],
+  coverImageUrls: const [],
+  memberCount: 2,
+  playerCount: 1,
+  postCount: 3,
+  tipTotal: '0',
+  lastActivityAt: DateTime(2026, 8, 12),
+);
+
+final _threadWithManyTags = HomeThreadCardModel(
+  id: 'thread-many-tags',
+  title: '标签密度测试主题',
+  categorySlug: 'RPG',
+  status: HomeThreadStatus.recruiting,
+  isPinned: true,
+  ownerId: 'user-1',
+  ownerName: '温柔测试员',
+  ownerLevel: 3,
+  preview: '标签只占固定底栏，不推动正文高度。',
+  tags: const [
+    HomeThreadTag(id: 'tag-1', name: '太空歌剧'),
+    HomeThreadTag(id: 'tag-2', name: '长期演绎'),
+    HomeThreadTag(id: 'tag-3', name: '角色招募'),
+    HomeThreadTag(id: 'tag-4', name: '轻松日常'),
+  ],
+  coverImageUrls: const [],
+  memberCount: 5,
+  playerCount: 2,
+  postCount: 12,
+  tipTotal: '0',
+  lastActivityAt: DateTime(2026, 8, 15),
 );
 
 final _secondThread = HomeThreadCardModel(

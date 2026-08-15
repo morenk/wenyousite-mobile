@@ -16,12 +16,15 @@ void main() {
     final repository = _FakeSearchRepository();
     await tester.pumpWidget(_searchApp(repository));
 
-    expect(find.text('输入关键词开始搜索'), findsOneWidget);
+    expect(find.text('输入关键词开始搜索'), findsNothing);
     await tester.enterText(find.byKey(const Key('search-query-input')), '星海');
     await tester.tap(find.byKey(const Key('search-submit')));
     await tester.pumpAndSettle();
 
     expect(find.text('星海旅团'), findsOneWidget);
+    expect(find.byKey(const Key('home-thread-card-thread-1')), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
     expect(repository.threadCalls, 1);
     expect(repository.userCalls, 0);
     expect(repository.postCalls, 0);

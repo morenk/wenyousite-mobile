@@ -1,7 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
@@ -29,119 +30,115 @@ class HomeThreadCard extends StatelessWidget {
       explicitChildNodes: true,
       button: true,
       label: '打开主题：${thread.title}，作者 ${thread.ownerName}',
+      onTap: onTap,
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: Column(
+          excludeFromSemantics: true,
+          child: Padding(
             key: Key('home-thread-card-${thread.id}'),
+            padding: EdgeInsets.all(compact ? tokens.space12 : tokens.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ThreadHeader(thread: thread, categoryName: categoryName),
+                SizedBox(height: tokens.space12),
+                Text(
+                  thread.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (thread.coverImageUrls.isNotEmpty) ...[
+                  SizedBox(height: tokens.space12),
+                  _ThreadCover(
+                    key: Key('home-thread-cover-${thread.id}'),
+                    url: thread.coverImageUrls.first,
+                  ),
+                ],
+                if (thread.preview != null) ...[
+                  SizedBox(height: tokens.space12),
+                  Text(
+                    thread.preview!,
+                    key: Key('home-thread-preview-${thread.id}'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+                SizedBox(height: tokens.space8),
+                SizedBox(
+                  key: Key('home-thread-footer-${thread.id}'),
+                  height: tokens.minimumTouchTarget,
+                  child: _ThreadFooter(thread: thread, onTagTap: onTagTap),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThreadHeader extends StatelessWidget {
+  const _ThreadHeader({required this.thread, required this.categoryName});
+
+  final HomeThreadCardModel thread;
+  final String? categoryName;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _ThreadAuthorAvatar(
+          threadId: thread.id,
+          ownerName: thread.ownerName,
+          avatarUrl: thread.ownerAvatarUrl,
+        ),
+        SizedBox(width: tokens.space12),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  compact ? tokens.space12 : tokens.space16,
-                  compact ? tokens.space12 : tokens.space16,
-                  compact ? tokens.space12 : tokens.space16,
-                  tokens.space12,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SingleChildScrollView(
-                      key: Key('home-thread-context-${thread.id}'),
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          if (categoryName != null)
-                            _ThreadContextLabel(label: categoryName!),
-                          if (thread.status case final status) ...[
-                            SizedBox(width: tokens.space12),
-                            _ThreadContextLabel(
-                              label: status.label,
-                              accent: status == HomeThreadStatus.recruiting,
-                            ),
-                          ],
-                          if (thread.isPinned) ...[
-                            SizedBox(width: tokens.space12),
-                            const _ThreadContextLabel(label: '置顶'),
-                          ],
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: tokens.space4),
-                    Text(
-                      thread.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    SizedBox(height: tokens.space4),
-                    _ThreadAuthor(thread: thread),
-                  ],
-                ),
-              ),
-              if (thread.coverImageUrls.isNotEmpty)
-                _ThreadCover(
-                  key: Key('home-thread-cover-${thread.id}'),
-                  url: thread.coverImageUrls.first,
-                ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  compact ? tokens.space12 : tokens.space16,
-                  thread.coverImageUrls.isEmpty ? 0 : tokens.space12,
-                  compact ? tokens.space12 : tokens.space16,
-                  compact ? tokens.space12 : tokens.space16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (thread.preview != null)
-                      Text(
-                        thread.preview!,
-                        maxLines: thread.coverImageUrls.isEmpty ? 3 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    if (thread.tags.isNotEmpty) ...[
-                      SizedBox(height: tokens.space4),
-                      Wrap(
-                        spacing: tokens.space4,
-                        runSpacing: 0,
-                        children: [
-                          for (final tag in thread.tags.take(4))
-                            WenyouTagLink(
-                              key: Key(
-                                'home-thread-tag-${thread.id}-${tag.id}',
-                              ),
-                              name: tag.name,
-                              onPressed: onTagTap == null
-                                  ? null
-                                  : () => onTagTap!(tag),
-                            ),
-                        ],
-                      ),
-                    ],
-                    if (thread.preview != null || thread.tags.isNotEmpty)
-                      SizedBox(height: tokens.space8),
-                    Text(
-                      [
-                        '${thread.memberCount} 成员',
-                        '${thread.playerCount} 玩家',
-                        '${thread.postCount} 回复',
-                        if (thread.tipTotal != '0') '${thread.tipTotal}L 加油',
-                      ].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                    ),
-                  ],
-                ),
-              ),
+              _ThreadAuthor(thread: thread),
+              SizedBox(height: tokens.space4),
+              _ThreadContextLine(thread: thread, categoryName: categoryName),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ThreadContextLine extends StatelessWidget {
+  const _ThreadContextLine({required this.thread, required this.categoryName});
+
+  final HomeThreadCardModel thread;
+  final String? categoryName;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final labels = <String>[
+      ?categoryName,
+      thread.status.label,
+      if (thread.isPinned) '置顶',
+    ];
+    return Text(
+      labels.join(' · '),
+      key: Key('home-thread-context-${thread.id}'),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: thread.status == HomeThreadStatus.recruiting
+            ? tokens.brand
+            : tokens.mutedText,
+        fontWeight: FontWeight.w500,
       ),
     );
   }
@@ -155,25 +152,75 @@ class _ThreadAuthor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: tokens.space4,
-      runSpacing: tokens.space4,
+    return Row(
       children: [
-        Text(
-          thread.ownerName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelLarge,
+        Flexible(
+          child: Text(
+            thread.ownerName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
         ),
+        SizedBox(width: tokens.space4),
         WenyouLevelBadge(level: thread.ownerLevel),
-        Text(
-          '${formatWenyouRelativeTime(thread.lastActivityAt)}活跃',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+        SizedBox(width: tokens.space8),
+        Flexible(
+          child: Text(
+            '· ${formatWenyouRelativeTime(thread.lastActivityAt)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _ThreadAuthorAvatar extends StatelessWidget {
+  const _ThreadAuthorAvatar({
+    required this.threadId,
+    required this.ownerName,
+    required this.avatarUrl,
+  });
+
+  final String threadId;
+  final String ownerName;
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final fallback = ColoredBox(
+      color: tokens.softPanel,
+      child: WenyouIcon(
+        WenyouIconIds.identityMember,
+        color: tokens.mutedText,
+        size: 22,
+      ),
+    );
+    return Semantics(
+      key: Key('home-thread-author-avatar-$threadId'),
+      image: true,
+      label: '$ownerName 的头像',
+      child: ClipOval(
+        child: SizedBox.square(
+          dimension: 40,
+          child: avatarUrl == null
+              ? fallback
+              : WenyouCachedImage(
+                  imageUrl: avatarUrl!,
+                  fit: BoxFit.cover,
+                  cacheWidth: 40,
+                  cacheHeight: 40,
+                  placeholder: (_, _) => fallback,
+                  errorWidget: (_, _, _) => fallback,
+                ),
+        ),
+      ),
     );
   }
 }
@@ -188,23 +235,27 @@ class _ThreadCover extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final placeholder = ColoredBox(
       color: tokens.softPanel,
-      child: Center(child: Icon(Icons.image_outlined, color: tokens.mutedText)),
+      child: Center(
+        child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
+      ),
     );
-    return SizedBox(
-      width: double.infinity,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radius12),
       child: AspectRatio(
         aspectRatio: 16 / 9,
-        child: CachedNetworkImage(
+        child: WenyouCachedImage(
           imageUrl: url,
           fit: BoxFit.cover,
+          cacheWidth: 1080,
+          cacheHeight: 608,
           placeholder: (_, _) => placeholder,
           errorWidget: (_, _, _) => Semantics(
             label: '图片加载失败',
             child: ColoredBox(
               color: tokens.softPanel,
               child: Center(
-                child: Icon(
-                  Icons.broken_image_outlined,
+                child: WenyouIcon(
+                  WenyouIconIds.statusImageUnavailable,
                   color: tokens.mutedText,
                 ),
               ),
@@ -216,20 +267,162 @@ class _ThreadCover extends StatelessWidget {
   }
 }
 
-class _ThreadContextLabel extends StatelessWidget {
-  const _ThreadContextLabel({required this.label, this.accent = false});
+class _ThreadFooter extends StatelessWidget {
+  const _ThreadFooter({required this.thread, required this.onTagTap});
 
-  final String label;
-  final bool accent;
+  final HomeThreadCardModel thread;
+  final ValueChanged<HomeThreadTag>? onTagTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: accent ? tokens.brand : tokens.mutedText,
-        fontWeight: accent ? FontWeight.w600 : FontWeight.w500,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tagLimit = constraints.maxWidth <= 300
+            ? 1
+            : constraints.maxWidth <= 400
+            ? 2
+            : 3;
+        return Row(
+          children: [
+            _ThreadStat(
+              icon: WenyouIconIds.metricPlayers,
+              value: thread.playerCount,
+              label: '玩家',
+            ),
+            SizedBox(width: tokens.space12),
+            _ThreadStat(
+              icon: WenyouIconIds.metricReplies,
+              value: thread.postCount,
+              label: '回复',
+            ),
+            if (thread.tipTotal != '0') ...[
+              SizedBox(width: tokens.space12),
+              _ThreadTipStat(value: thread.tipTotal),
+            ],
+            if (thread.tags.isNotEmpty) ...[
+              SizedBox(width: tokens.space8),
+              Expanded(
+                child: _ThreadTagSummary(
+                  threadId: thread.id,
+                  tags: thread.tags,
+                  visibleLimit: tagLimit,
+                  onTagTap: onTagTap,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ThreadTagSummary extends StatelessWidget {
+  const _ThreadTagSummary({
+    required this.threadId,
+    required this.tags,
+    required this.visibleLimit,
+    required this.onTagTap,
+  });
+
+  final String threadId;
+  final List<HomeThreadTag> tags;
+  final int visibleLimit;
+  final ValueChanged<HomeThreadTag>? onTagTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final visibleTags = tags.take(visibleLimit).toList(growable: false);
+    final hiddenCount = tags.length - visibleTags.length;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        for (var index = 0; index < visibleTags.length; index++) ...[
+          if (index > 0) SizedBox(width: tokens.space4),
+          Flexible(
+            child: WenyouTagLink(
+              key: Key('home-thread-tag-$threadId-${visibleTags[index].id}'),
+              name: visibleTags[index].name,
+              onPressed: onTagTap == null
+                  ? null
+                  : () => onTagTap!(visibleTags[index]),
+            ),
+          ),
+        ],
+        if (hiddenCount > 0) ...[
+          SizedBox(width: tokens.space4),
+          Text(
+            '+$hiddenCount',
+            key: Key('home-thread-tags-more-$threadId'),
+            maxLines: 1,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ThreadStat extends StatelessWidget {
+  const _ThreadStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final String icon;
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      label: '$value $label',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          WenyouIcon(icon, size: 16, color: tokens.mutedText),
+          SizedBox(width: tokens.space4),
+          Text(
+            '$value',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThreadTipStat extends StatelessWidget {
+  const _ThreadTipStat({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      label: '$value L 加油',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          WenyouIcon(WenyouIconIds.metricTips, size: 16, color: tokens.brand),
+          SizedBox(width: tokens.space4),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens.brand,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

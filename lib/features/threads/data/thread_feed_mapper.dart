@@ -13,7 +13,7 @@ HomeThreadCardModel mapHomeThreadCardResponse(
     isPinned: item.pinned,
     ownerId: item.owner.id,
     ownerName: item.owner.username,
-    ownerAvatarUrl: item.owner.avatar,
+    ownerAvatarUrl: _safeHttpUrl(item.owner.avatar),
     ownerLevel: item.owner.level.toInt(),
     preview: preview == null || preview.isEmpty ? null : preview,
     tags: item.topicTags
@@ -35,6 +35,15 @@ HomeThreadCardModel mapHomeThreadCardResponse(
     tipTotal: item.tipTotal,
     lastActivityAt: item.defaultSubthread?.lastPostAt ?? item.updatedAt,
   );
+}
+
+String? _safeHttpUrl(String? value) {
+  if (value == null) return null;
+  final uri = Uri.tryParse(value);
+  if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http')) {
+    return null;
+  }
+  return value;
 }
 
 HomeThreadStatus _mapHomeThreadStatus(

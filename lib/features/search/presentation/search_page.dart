@@ -1,16 +1,18 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_feed_card.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
@@ -76,16 +78,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             SizedBox(height: tokens.space16),
             _SearchTabs(state: state),
             SizedBox(height: tokens.space16),
-            if (!state.hasQuery)
-              const WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: Icons.manage_search_rounded,
-                  title: '输入关键词开始搜索',
-                  message: '可以查找公开动态、主题、用户和楼层正文。',
-                ),
-              )
-            else
-              _ActiveSearchResults(state: state),
+            if (state.hasQuery) _ActiveSearchResults(state: state),
           ],
         ),
       ),
@@ -136,7 +129,7 @@ class _SearchForm extends StatelessWidget {
               decoration: const InputDecoration(
                 labelText: '关键词',
                 hintText: '动态、主题、用户名或楼层内容',
-                prefixIcon: Icon(Icons.search_rounded),
+                prefixIcon: WenyouIcon(WenyouIconIds.actionSearch),
                 counterText: '',
               ),
               onSubmitted: (_) => onSubmitted(),
@@ -224,7 +217,7 @@ class _ActiveSearchResults extends ConsumerWidget {
         !state.isContentQueryValid) {
       return const WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.text_fields_rounded,
+          icon: WenyouIconIds.editorHeading,
           title: '动态和楼层内容搜索至少需要 2 个字符',
           message: '主题和用户名仍然支持单字符搜索。',
         ),
@@ -236,13 +229,13 @@ class _ActiveSearchResults extends ConsumerWidget {
       SearchResultTab.threads => _SectionBody<SearchThreadResult>(
         state: state.threads,
         emptyTitle: '没有匹配的主题',
-        emptyMessage: '可以换个关键词，或切换到用户和正文。',
+        emptyMessage: '',
         itemBuilder: (context, item) => _ThreadResultCard(item: item),
       ),
       SearchResultTab.users => _SectionBody<SearchUserResult>(
         state: state.users,
         emptyTitle: '没有匹配的用户',
-        emptyMessage: '用户搜索只匹配当前有效的用户名。',
+        emptyMessage: '',
         itemBuilder: (context, item) => _UserResultCard(item: item),
       ),
       SearchResultTab.posts => _PostSectionBody(state: state.posts),
@@ -269,9 +262,9 @@ class _OverviewSectionBody extends ConsumerWidget {
           when state.items.isEmpty || state.items.single.isEmpty =>
         const WenyouPanel(
           child: WenyouEmptyState(
-            icon: Icons.search_off_rounded,
+            icon: WenyouIconIds.statusNoResults,
             title: '没有综合匹配结果',
-            message: '可以换个关键词，或进入动态分类继续搜索。',
+            message: '',
           ),
         ),
       SearchSectionPhase.ready => _OverviewResults(result: state.items.single),
@@ -382,7 +375,7 @@ class _MomentSectionBody extends ConsumerWidget {
       return _SectionBody<MomentCard>(
         state: state,
         emptyTitle: '没有匹配的动态',
-        emptyMessage: '动态会同时匹配标题和纯文本正文。',
+        emptyMessage: '',
         itemBuilder: (context, item) => _MomentResultCard(item: item),
       );
     }
@@ -416,7 +409,7 @@ class _MomentSectionBody extends ConsumerWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.expand_more_rounded),
+                  : const WenyouIcon(WenyouIconIds.navigationExpand),
               label: Text(state.isLoadingMore ? '正在加载' : '加载更多动态'),
             ),
           ),
@@ -473,7 +466,7 @@ class _SectionBody<T> extends ConsumerWidget {
       ),
       SearchSectionPhase.ready when state.items.isEmpty => WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.search_off_rounded,
+          icon: WenyouIconIds.statusNoResults,
           title: emptyTitle,
           message: emptyMessage,
         ),
@@ -502,7 +495,7 @@ class _PostSectionBody extends ConsumerWidget {
       return _SectionBody<SearchPostResult>(
         state: state,
         emptyTitle: '没有匹配的正文',
-        emptyMessage: '可以换个关键词，或切换到主题和用户。',
+        emptyMessage: '',
         itemBuilder: (context, item) => _PostResultCard(item: item),
       );
     }
@@ -536,7 +529,7 @@ class _PostSectionBody extends ConsumerWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.expand_more_rounded),
+                  : const WenyouIcon(WenyouIconIds.navigationExpand),
               label: Text(state.isLoadingMore ? '正在加载' : '加载更多正文'),
             ),
           ),
@@ -553,65 +546,31 @@ class _ThreadResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Semantics(
-      button: true,
-      label: '打开主题 ${item.title}',
-      child: WenyouPanel(
-        onTap: () => context.pushNamed(
-          'thread-detail',
-          pathParameters: {'threadId': item.id},
-          extra: item.categorySlug,
-        ),
-        padding: EdgeInsets.all(tokens.space16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.title, style: Theme.of(context).textTheme.titleLarge),
-            if (item.coverImageUrls.isNotEmpty) ...[
-              SizedBox(height: tokens.space12),
-              _SearchCover(url: item.coverImageUrls.first),
-            ],
-            SizedBox(height: tokens.space12),
-            Text(
-              '${item.ownerName} · ${_formatDate(item.createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            SizedBox(height: tokens.space8),
-            Text(
-              '${item.memberCount} 成员 · ${item.playerCount} 玩家 · '
-              '${item.postCount} 条内容',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
+    return HomeThreadCard(
+      key: Key('search-thread-${item.id}'),
+      thread: HomeThreadCardModel(
+        id: item.id,
+        title: item.title,
+        categorySlug: item.categorySlug,
+        status: HomeThreadStatus.unknown,
+        isPinned: false,
+        ownerId: item.ownerId,
+        ownerName: item.ownerName,
+        ownerAvatarUrl: item.ownerAvatarUrl,
+        ownerLevel: 0,
+        tags: const [],
+        coverImageUrls: item.coverImageUrls,
+        memberCount: item.memberCount,
+        playerCount: item.playerCount,
+        postCount: item.postCount,
+        tipTotal: '0',
+        lastActivityAt: item.createdAt,
       ),
-    );
-  }
-}
-
-class _SearchCover extends StatelessWidget {
-  const _SearchCover({required this.url});
-
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: Icon(Icons.broken_image_outlined, color: tokens.mutedText),
-    );
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: CachedNetworkImage(
-          imageUrl: url,
-          fit: BoxFit.cover,
-          placeholder: (_, _) => fallback,
-          errorWidget: (_, _, _) => fallback,
-        ),
+      categoryName: item.categorySlug,
+      onTap: () => context.pushNamed(
+        'thread-detail',
+        pathParameters: {'threadId': item.id},
+        extra: item.categorySlug,
       ),
     );
   }
@@ -659,7 +618,7 @@ class _UserResultCard extends StatelessWidget {
               ),
             ),
             SizedBox(width: tokens.space8),
-            const Icon(Icons.chevron_right_rounded),
+            const WenyouIcon(WenyouIconIds.navigationNext),
           ],
         ),
       ),
@@ -722,7 +681,7 @@ class _SearchAvatar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
       color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, color: tokens.mutedText),
+      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
     );
     return Semantics(
       image: true,
@@ -732,9 +691,11 @@ class _SearchAvatar extends StatelessWidget {
           dimension: tokens.minimumTouchTarget,
           child: url == null
               ? fallback
-              : CachedNetworkImage(
+              : WenyouCachedImage(
                   imageUrl: url!,
                   fit: BoxFit.cover,
+                  cacheWidth: 48,
+                  cacheHeight: 48,
                   placeholder: (_, _) => fallback,
                   errorWidget: (_, _, _) => fallback,
                 ),
@@ -776,7 +737,7 @@ class _SearchErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouPanel(
       child: WenyouEmptyState(
-        icon: Icons.cloud_off_outlined,
+        icon: WenyouIconIds.statusOffline,
         title: '搜索没有完成',
         message: failure?.userMessage ?? '请检查网络后重试。',
         detail: failure?.requestId == null
@@ -785,7 +746,7 @@ class _SearchErrorState extends StatelessWidget {
         action: OutlinedButton.icon(
           key: const Key('search-retry'),
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重试'),
         ),
       ),
@@ -807,11 +768,9 @@ class _SearchInlineError extends StatelessWidget {
       detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
       action: TextButton.icon(
         onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded, size: 18),
+        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
         label: const Text('重试加载更多'),
       ),
     );
   }
 }
-
-String _formatDate(DateTime value) => DateFormat('yyyy-MM-dd').format(value);

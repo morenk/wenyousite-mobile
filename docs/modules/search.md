@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-首页和动态顶栏的搜索按钮进入独立 `/search` 页面；它不占用底部导航分支。页面包含输入框和“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab，360dp 起全部可见且不横向滚动。动态结果进入 `/moments/:momentId`，主题帖结果进入 `/threads/:threadId`，用户结果进入 `/users/:userId`，楼层内容结果进入 `/threads/:threadId?post=:postId`。主题详情工具栏进入公开 `/threads/:threadId/search`，结果继续用稳定帖子 ID 回到同一详情定位目标上下文。
+首页和动态顶栏的搜索按钮进入独立 `/search` 页面；它不占用底部导航分支。页面包含输入框和“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab，360dp 起全部可见且不横向滚动。主题帖结果直接复用首页与标签页的整宽主题卡片；搜索投影未提供状态、等级、摘要、加油和标签时使用安全缺省值，封面、作者、分类、玩家数与回复数仍保持同一信息层级和响应式布局。动态结果进入 `/moments/:momentId`，主题帖结果进入 `/threads/:threadId`，用户结果进入 `/users/:userId`，楼层内容结果进入 `/threads/:threadId?post=:postId`。主题详情工具栏进入公开 `/threads/:threadId/search`，结果继续用稳定帖子 ID 回到同一详情定位目标上下文。
 
 ## 4. 用户操作流程
 
@@ -62,8 +62,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；Markdown v2；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`。
+契约 `4.10.0-dev.20260814.1`；Markdown v2；后端 `90a33279f6f786685567a27ced11dd7470620cad`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v2.4.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.1/docs/platforms/mobile.md)。
