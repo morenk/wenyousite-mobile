@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/auth/data/email_verification_repository.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/email_verification_page.dart';
@@ -10,7 +11,12 @@ import 'package:wenyousite_mobile/features/auth/presentation/email_verification_
 void main() {
   testWidgets('明确重发、校验验证码并在服务端事实刷新后完成', (tester) async {
     final repository = _FakeEmailVerificationRepository();
-    final router = await _pumpVerificationApp(tester, repository);
+    final invalidations = <String?>[];
+    final router = await _pumpVerificationApp(
+      tester,
+      repository,
+      invalidations: invalidations,
+    );
     addTearDown(router.dispose);
 
     expect(find.textContaining('o***@example.com'), findsOneWidget);
@@ -38,6 +44,7 @@ void main() {
 
     expect(repository.codes, ['654321']);
     expect(repository.fetches, 2);
+    expect(invalidations, [null]);
     expect(find.text('邮箱已验证'), findsOneWidget);
     await tester.tap(find.byKey(const Key('verify-email-finish')));
     await tester.pumpAndSettle();
@@ -107,8 +114,9 @@ void main() {
 
 Future<GoRouter> _pumpVerificationApp(
   WidgetTester tester,
-  EmailVerificationRepository repository,
-) async {
+  EmailVerificationRepository repository, {
+  List<String?>? invalidations,
+}) async {
   final router = GoRouter(
     initialLocation: '/me/security/verify-email?returnTo=%2Fhome',
     routes: [
@@ -128,6 +136,8 @@ Future<GoRouter> _pumpVerificationApp(
     ProviderScope(
       overrides: [
         emailVerificationRepositoryProvider.overrideWithValue(repository),
+        if (invalidations != null)
+          profileCacheInvalidatorProvider.overrideWithValue(invalidations.add),
       ],
       child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ),

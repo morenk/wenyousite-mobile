@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_states.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
+
+export 'package:wenyousite_mobile/features/notifications/application/notification_states.dart';
 
 class NotificationUnreadController
     extends StateNotifier<NotificationUnreadState> {

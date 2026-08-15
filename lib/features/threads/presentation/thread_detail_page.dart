@@ -32,7 +32,9 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_membershi
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
+part 'thread_detail_overview.dart';
 part 'thread_detail_sections.dart';
+part 'thread_detail_subthread_navigator.dart';
 
 class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({

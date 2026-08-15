@@ -6,7 +6,6 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
-import 'package:wenyousite_mobile/features/settings/domain/credential_security_models.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/security_password_field.dart';
 
 class ChangeEmailPage extends ConsumerStatefulWidget {

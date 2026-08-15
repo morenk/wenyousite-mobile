@@ -3,7 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('Foundation 核心色板、圆角和间距保持稳定', (tester) async {
     const visualKey = Key('foundation-visual');
 
@@ -46,7 +50,7 @@ class _FoundationVisualFixture extends StatelessWidget {
               Row(
                 children: [
                   for (final color in [
-                    tokens.brand,
+                    tokens.brandSurface,
                     tokens.accentedBackground,
                     tokens.softPanel,
                     tokens.border,
@@ -79,7 +83,7 @@ class _FoundationVisualFixture extends StatelessWidget {
                         width: 112,
                         height: tokens.space12,
                         decoration: BoxDecoration(
-                          color: tokens.brand,
+                          color: tokens.brandSurface,
                           borderRadius: BorderRadius.circular(
                             tokens.radiusPill,
                           ),

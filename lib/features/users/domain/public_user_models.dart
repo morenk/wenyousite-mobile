@@ -1,5 +1,3 @@
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
-
 enum PublicUserContentTab {
   created('创建', '创建的主题'),
   played('参与', '以玩家身份参与的主题'),
@@ -11,8 +9,6 @@ enum PublicUserContentTab {
   final String label;
   final String description;
 }
-
-enum PublicUserContentPhase { idle, loading, ready, failed }
 
 enum PublicUserThreadStatus { recruiting, closed, finished, unknown }
 
@@ -113,22 +109,4 @@ class PublicUserReplyModel {
   final DateTime createdAt;
   final int? floorNumber;
   final String? parentPostId;
-}
-
-class PublicUserContentSection<T> {
-  const PublicUserContentSection({
-    this.phase = PublicUserContentPhase.idle,
-    this.items = const [],
-    this.cursor,
-    this.hasMore = false,
-    this.isLoadingMore = false,
-    this.failure,
-  });
-
-  final PublicUserContentPhase phase;
-  final List<T> items;
-  final String? cursor;
-  final bool hasMore;
-  final bool isLoadingMore;
-  final ApiFailure? failure;
 }

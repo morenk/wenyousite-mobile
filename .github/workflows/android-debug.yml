@@ -1,7 +1,7 @@
-name: Android Debug APK
+name: Android Debug Build Check
 
 on:
-  # 第一阶段快速迭代期间不自动构建；需要远端制品时由维护者手动执行。
+  # 第一阶段快速迭代期间不自动构建；仅用于 Windows runner 手动复核。
   workflow_dispatch:
 
 permissions:
@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -31,9 +31,3 @@ jobs:
 
       - run: flutter pub get
       - run: flutter build apk --debug
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: wenyousite-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 7

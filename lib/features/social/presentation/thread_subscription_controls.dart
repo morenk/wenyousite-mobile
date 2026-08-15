@@ -73,7 +73,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
           ),
           color: state.threadSubscription == null
               ? tokens.mutedText
-              : tokens.brand,
+              : tokens.brandForeground,
         ),
       };
     }

@@ -595,7 +595,7 @@ class _BookmarkPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final color = accent ? tokens.brand : tokens.mutedText;
+    final color = accent ? tokens.brandForeground : tokens.mutedText;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: accent ? tokens.accentedBackground : tokens.softPanel,

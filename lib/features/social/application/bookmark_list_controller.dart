@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
+import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
+
+export 'package:wenyousite_mobile/features/social/application/social_states.dart';
 
 class BookmarkListController extends StateNotifier<BookmarkListState> {
   BookmarkListController(this._repository)

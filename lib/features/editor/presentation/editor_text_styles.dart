@@ -79,7 +79,9 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       VerticalSpacing(tokens.space4, tokens.space4),
       BoxDecoration(
         color: tokens.softPanel,
-        border: Border(left: BorderSide(color: tokens.brand, width: 3)),
+        border: Border(
+          left: BorderSide(color: tokens.brandForeground, width: 3),
+        ),
       ),
     ),
     code: DefaultTextBlockStyle(
@@ -101,10 +103,10 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       header3: compact.copyWith(fontSize: h3.fontSize),
     ),
     link: body.copyWith(
-      color: tokens.brand,
+      color: tokens.brandForeground,
       fontWeight: FontWeight.w600,
       decoration: TextDecoration.underline,
-      decorationColor: tokens.brand,
+      decorationColor: tokens.brandForeground,
     ),
     bold: const TextStyle(fontWeight: FontWeight.w700),
   );

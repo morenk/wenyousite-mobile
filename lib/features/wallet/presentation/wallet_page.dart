@@ -138,7 +138,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                         dimension: 52,
                         child: WenyouIcon(
                           WenyouIconIds.actionTip,
-                          color: tokens.brand,
+                          color: tokens.brandForeground,
                         ),
                       ),
                     ),

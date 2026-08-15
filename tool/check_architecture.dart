@@ -17,6 +17,8 @@ const _idempotentOperations = <String>{
   'threadsCreate',
 };
 
+const _maximumDartFileLines = 900;
+
 void main() {
   final failures = collectArchitectureFailures(Directory.current);
 
@@ -30,7 +32,8 @@ void main() {
   }
   stdout.writeln(
     'Architecture checks passed: request policies, domain boundaries, '
-    'layering, feature dependencies, cycles, version and dependency hygiene.',
+    'layering, feature dependencies, cycles, file size, version and '
+    'dependency hygiene.',
   );
 }
 
@@ -38,6 +41,7 @@ List<String> collectArchitectureFailures(Directory root) {
   final failures = <String>[];
   final allowlist = _readAllowlist(root);
   final dartFiles = _dartFiles(Directory('${root.path}/lib'));
+  final testDartFiles = _dartFiles(Directory('${root.path}/test'));
 
   _checkIdempotentPolicies(dartFiles, failures, root);
   _checkDomainBoundaries(
@@ -46,6 +50,8 @@ List<String> collectArchitectureFailures(Directory root) {
     failures,
     root,
   );
+  _checkDomainStateOwnership(dartFiles, failures, root);
+  _checkDartFileSizes(dartFiles, allowlist.largeFileDebt, failures, root);
   _checkLayerDependencies(
     dartFiles,
     allowlist.layerDependencyDebt,
@@ -65,9 +71,56 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkDirectDependencies(dartFiles, failures, root);
   _checkRawRequestFlags(dartFiles, failures, root);
   _checkRawRouteNavigation(dartFiles, failures, root);
+  _checkGoldenTestSetup(testDartFiles, failures, root);
 
   failures.sort();
   return failures;
+}
+
+void _checkDartFileSizes(
+  List<File> files,
+  Map<String, int> allowlist,
+  List<String> failures,
+  Directory root,
+) {
+  final actualDebt = <String, int>{};
+  for (final file in files.where(
+    (file) => !file.path.replaceAll('\\', '/').endsWith('.g.dart'),
+  )) {
+    final path = _relative(file.path, root);
+    final lineCount = _lineCount(file.readAsStringSync());
+    if (lineCount <= _maximumDartFileLines) continue;
+
+    actualDebt[path] = lineCount;
+    final baseline = allowlist[path];
+    if (baseline == null) {
+      failures.add(
+        '$path has $lineCount lines; split non-generated Dart files above '
+        '$_maximumDartFileLines lines',
+      );
+    } else if (lineCount > baseline) {
+      failures.add(
+        '$path grew from the allowed $baseline lines to $lineCount lines',
+      );
+    } else if (lineCount < baseline) {
+      failures.add(
+        '$path large-file debt can be tightened from $baseline to '
+        '$lineCount lines',
+      );
+    }
+  }
+
+  for (final path in allowlist.keys.where(
+    (path) => !actualDebt.containsKey(path),
+  )) {
+    failures.add('stale large-file debt: $path');
+  }
+}
+
+int _lineCount(String source) {
+  if (source.isEmpty) return 0;
+  final newlineCount = '\n'.allMatches(source).length;
+  return source.endsWith('\n') ? newlineCount : newlineCount + 1;
 }
 
 void _checkFoundationIconBoundary(
@@ -176,6 +229,34 @@ void _checkDomainBoundaries(
       in allowlist.difference(actualDebt).toList()
         ..sort((left, right) => left.key.compareTo(right.key))) {
     failures.add('stale domain boundary debt: ${debt.key}');
+  }
+}
+
+void _checkDomainStateOwnership(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  final stateDeclaration = RegExp(
+    r'^(?:sealed\s+|abstract\s+|final\s+)?class\s+\w*State\b',
+    multiLine: true,
+  );
+  final phaseDeclaration = RegExp(r'^enum\s+\w*Phase\b', multiLine: true);
+  for (final file in files.where(
+    (file) => _relative(file.path, root).contains('/domain/'),
+  )) {
+    final source = file.readAsStringSync();
+    final path = _relative(file.path, root);
+    if (stateDeclaration.hasMatch(source)) {
+      failures.add(
+        '$path declares application state in domain; move it to application',
+      );
+    }
+    if (phaseDeclaration.hasMatch(source)) {
+      failures.add(
+        '$path declares an application phase in domain; move it to application',
+      );
+    }
   }
 }
 
@@ -348,6 +429,48 @@ void _checkVersionConsistency(List<String> failures, Directory root) {
       'README version $readmeVersion does not match pubspec $pubspecVersion',
     );
   }
+
+  final foundationRef = RegExp(
+    r'wenyousite_foundation:\s*[\s\S]*?^\s+ref:\s*([^\s]+)',
+    multiLine: true,
+  ).firstMatch(pubspec)?.group(1);
+  if (foundationRef == null) return;
+
+  final documentedFoundationVersions = <String>{
+    for (final match in RegExp(
+      r'wenyousite-foundation(?:/tree/|\s+)v(\d+\.\d+\.\d+)',
+    ).allMatches(readme))
+      'v${match.group(1)}',
+  };
+  if (documentedFoundationVersions.isEmpty) {
+    failures.add('README does not document the locked Foundation ref');
+  } else {
+    for (final documentedVersion in documentedFoundationVersions) {
+      if (documentedVersion != foundationRef) {
+        failures.add(
+          'README Foundation $documentedVersion does not match pubspec '
+          '$foundationRef',
+        );
+      }
+    }
+  }
+}
+
+void _checkGoldenTestSetup(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  for (final file in files) {
+    final source = file.readAsStringSync();
+    if (!source.contains('matchesGoldenFile(')) continue;
+    if (!source.contains('setUpAll(loadFoundationTestFonts)')) {
+      failures.add(
+        '${_relative(file.path, root)} uses golden files without loading '
+        'Foundation test fonts',
+      );
+    }
+  }
 }
 
 void _checkDirectDependencies(
@@ -440,6 +563,7 @@ String _balancedCall(String source, int openingParenthesis) {
 }
 
 List<File> _dartFiles(Directory directory) {
+  if (!directory.existsSync()) return const <File>[];
   return directory
       .listSync(recursive: true)
       .whereType<File>()
@@ -476,6 +600,8 @@ _ArchitectureAllowlist _readAllowlist(Directory root) {
     layerDependencyDebt: (json['layerDependencyDebt'] as List<dynamic>)
         .cast<String>()
         .toSet(),
+    largeFileDebt: (json['largeFileDebt'] as Map<String, dynamic>? ?? const {})
+        .map((path, lines) => MapEntry(path, (lines as num).toInt())),
   );
 }
 
@@ -485,12 +611,14 @@ class _ArchitectureAllowlist {
     required this.featureDependencies,
     required this.featureCycleDebt,
     required this.layerDependencyDebt,
+    required this.largeFileDebt,
   });
 
   final Set<_DomainBoundaryDebt> domainBoundaryDebt;
   final Set<String> featureDependencies;
   final Set<String> featureCycleDebt;
   final Set<String> layerDependencyDebt;
+  final Map<String, int> largeFileDebt;
 }
 
 class _DomainBoundaryDebt {

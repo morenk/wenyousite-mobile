@@ -274,8 +274,8 @@ class TipController extends StateNotifier<TipState> {
     String amount;
     try {
       amount = WenyouAmount.normalizeTip(input);
-    } on ApiFailure catch (failure) {
-      state = TipState(failure: failure);
+    } on WenyouAmountValidationException catch (failure) {
+      state = TipState(failure: ApiFailure(userMessage: failure.userMessage));
       return null;
     }
     final requestId = state.pendingAmount == amount

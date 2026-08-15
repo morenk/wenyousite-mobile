@@ -25,8 +25,10 @@ class ReportController extends StateNotifier<ReportState> {
         reason: reason,
         details: details,
       ).normalized();
-    } on ApiFailure catch (failure) {
-      state = ReportState(failure: failure);
+    } on ReportInputValidationException catch (failure) {
+      state = ReportState(
+        failure: ApiFailure(userMessage: failure.userMessage),
+      );
       return null;
     }
     state = const ReportState(isSubmitting: true);

@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
+import 'package:wenyousite_mobile/features/tags/application/tag_states.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
+
+export 'package:wenyousite_mobile/features/tags/application/tag_states.dart';
 
 class ThreadTagManagementController
     extends StateNotifier<ThreadTagManagementState> {

@@ -306,14 +306,14 @@ class _CurrentSessionPill extends StatelessWidget {
         vertical: tokens.space4,
       ),
       decoration: BoxDecoration(
-        color: tokens.brand.withValues(alpha: 0.12),
+        color: tokens.brandForeground.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         '当前终端',
         style: Theme.of(
           context,
-        ).textTheme.labelSmall?.copyWith(color: tokens.brand),
+        ).textTheme.labelSmall?.copyWith(color: tokens.brandForeground),
       ),
     );
   }

@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.3.0-dev.71+77`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.3.0-dev.75+81`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v2
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v2.4.1：跨端语义 Token、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
+- wenyousite-foundation v2.4.2：跨端语义 Token、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v2.4.1) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v2.4.2) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
@@ -26,6 +26,7 @@
 D:\sdk\flutter
 D:\sdk\android
 Node.js 22+
+Flutter 3.44.8 / Dart 3.12.2
 ```
 
 确认环境：
@@ -36,13 +37,13 @@ flutter pub get
 npm ci
 ```
 
-Android 模拟器连接本地后端：
+移动端默认连接部署在 VPS 的公网开发 API，不在 Windows 启动后端。只有已经显式建立“Windows `127.0.0.1:3000` → VPS `127.0.0.1:3000`”SSH 隧道时，Android 模拟器才使用：
 
 ```bash
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 ```
 
-不传 `API_BASE_URL` 时连接公网开发 API。
+不传 `API_BASE_URL` 时连接公网开发 API。Windows 下的前端和后端目录均为只读参考镜像，不得在移动端任务中安装依赖、启动服务、迁移或部署。
 
 ## 契约同步
 
@@ -58,18 +59,13 @@ npm run api:generate
 
 ## 质量门禁
 
-第一阶段以快速本地迭代为主：日常切片只运行相关测试和受影响范围检查；认证、契约、网络、持久化等高风险变更或阶段验收时运行完整本地门禁：
+第一阶段以快速本地迭代为主：日常切片只运行相关测试和受影响范围检查；认证、契约、网络、持久化等高风险变更或阶段验收时运行唯一完整本地门禁：
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test tool
-flutter analyze --fatal-infos --fatal-warnings
-flutter test
-npm run api:check
-npm run api:verify:production # 仅在可访问公网、准备声明生产 API 已同步时运行
-npm run architecture:check
-npm run docs:check
-flutter build apk --debug
+npm run check
 ```
+
+需要 Debug APK 时运行 `npm run check:apk`；仅在可访问公网、准备声明公网 API 已同步时额外运行 `npm run api:verify:production`。
 
 GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后默认原子提交并推送 `dev`；`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 

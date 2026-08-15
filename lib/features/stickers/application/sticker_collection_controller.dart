@@ -5,8 +5,11 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_state.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+
+export 'package:wenyousite_mobile/features/stickers/application/sticker_collection_state.dart';
 
 typedef StickerRequestIdFactory = String Function();
 

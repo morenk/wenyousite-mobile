@@ -421,7 +421,7 @@ class _HomeFilterMenu<T> extends StatelessWidget {
                       ? WenyouIcon(
                           WenyouIconIds.actionConfirm,
                           size: 20,
-                          color: tokens.brand,
+                          color: tokens.brandForeground,
                         )
                       : null,
                 ),
@@ -436,7 +436,7 @@ class _HomeFilterMenu<T> extends StatelessWidget {
           color: active ? tokens.accentedBackground : tokens.softPanel,
           border: Border.all(
             color: active
-                ? tokens.brand.withValues(alpha: 0.42)
+                ? tokens.brandForeground.withValues(alpha: 0.42)
                 : tokens.border,
           ),
           borderRadius: BorderRadius.circular(tokens.radius12),
@@ -453,7 +453,7 @@ class _HomeFilterMenu<T> extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: active ? tokens.brand : null,
+                      color: active ? tokens.brandForeground : null,
                     ),
                   ),
                 ),
@@ -461,7 +461,7 @@ class _HomeFilterMenu<T> extends StatelessWidget {
                 WenyouIcon(
                   WenyouIconIds.navigationExpand,
                   size: 20,
-                  color: active ? tokens.brand : tokens.mutedText,
+                  color: active ? tokens.brandForeground : tokens.mutedText,
                 ),
               ],
             ),

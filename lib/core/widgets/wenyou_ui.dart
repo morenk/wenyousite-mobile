@@ -3,20 +3,19 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class WenyouConstrainedWidth extends StatelessWidget {
-  const WenyouConstrainedWidth({
-    required this.child,
-    this.maxWidth = 600,
-    super.key,
-  });
+  const WenyouConstrainedWidth({required this.child, this.maxWidth, super.key});
 
   final Widget child;
-  final double maxWidth;
+  final double? maxWidth;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
+        constraints: BoxConstraints(
+          maxWidth: maxWidth ?? tokens.wideContainerMaxWidth,
+        ),
         child: SizedBox(width: double.infinity, child: child),
       ),
     );
@@ -26,14 +25,14 @@ class WenyouConstrainedWidth extends StatelessWidget {
 class WenyouPageBody extends StatelessWidget {
   const WenyouPageBody({
     required this.child,
-    this.maxWidth = 520,
-    this.bottomPadding = 40,
+    this.maxWidth,
+    this.bottomPadding,
     super.key,
   });
 
   final Widget child;
-  final double maxWidth;
-  final double bottomPadding;
+  final double? maxWidth;
+  final double? bottomPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -41,17 +40,21 @@ class WenyouPageBody extends StatelessWidget {
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final horizontalPadding = constraints.maxWidth <= 400
-              ? tokens.space12
-              : tokens.space24;
+          final horizontalPadding =
+              constraints.maxWidth < tokens.regularHorizontalPaddingFrom
+              ? tokens.compactHorizontalPadding
+              : tokens.regularHorizontalPadding;
           return SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
               tokens.space16,
               horizontalPadding,
-              bottomPadding,
+              bottomPadding ?? tokens.space32 + tokens.space8,
             ),
-            child: WenyouConstrainedWidth(maxWidth: maxWidth, child: child),
+            child: WenyouConstrainedWidth(
+              maxWidth: maxWidth ?? tokens.pageContentMaxWidth,
+              child: child,
+            ),
           );
         },
       ),
@@ -335,7 +338,7 @@ class WenyouEmptyState extends StatelessWidget {
           ),
           child: SizedBox.square(
             dimension: 64,
-            child: WenyouIcon(icon, size: 32, color: tokens.brand),
+            child: WenyouIcon(icon, size: 32, color: tokens.brandForeground),
           ),
         ),
         SizedBox(height: tokens.space16),

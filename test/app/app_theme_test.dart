@@ -21,8 +21,9 @@ void main() {
     expect(WenyouEditorContract.morePresentation, 'inline');
     expect(WenyouCollectionContract.fillAvailableWidth, isTrue);
     expect(WenyouCollectionContract.contentSizedExceptions, contains('badge'));
-    expect(tokens.brand, WenyouFoundationPalette.primary);
-    expect(tokens.onBrand, WenyouFoundationPalette.onPrimary);
+    expect(tokens.brandSurface, WenyouFoundationPalette.primary);
+    expect(tokens.brandForeground, WenyouFoundationPalette.brandStrong);
+    expect(tokens.onBrandSurface, WenyouFoundationPalette.onPrimary);
     expect(tokens.background, WenyouFoundationPalette.background);
     expect(tokens.panel, WenyouFoundationPalette.surface);
     expect(tokens.softPanel, WenyouFoundationPalette.muted);
@@ -30,6 +31,7 @@ void main() {
     expect(tokens.text, WenyouFoundationPalette.foreground);
     expect(tokens.mutedText, WenyouFoundationPalette.mutedForeground);
     expect(tokens.accentedBackground, WenyouFoundationPalette.accent);
+    expect(tokens.onAccentedBackground, WenyouFoundationPalette.onAccent);
     expect(tokens.focus, WenyouFoundationPalette.brandStrong);
     expect([
       tokens.space4,
@@ -52,14 +54,42 @@ void main() {
       tokens.minimumTouchTarget,
       WenyouFoundationMobile.minimumTouchTarget,
     );
+    expect(
+      tokens.compactHorizontalPadding,
+      WenyouFoundationMobile.compactHorizontalPadding,
+    );
+    expect(
+      tokens.regularHorizontalPadding,
+      WenyouFoundationMobile.regularHorizontalPadding,
+    );
+    expect(
+      tokens.regularHorizontalPaddingFrom,
+      WenyouFoundationMobile.regularHorizontalPaddingFrom,
+    );
+    expect(
+      tokens.pageContentMaxWidth,
+      WenyouFoundationMobile.pageContentMaxWidth,
+    );
+    expect(
+      tokens.wideContainerMaxWidth,
+      WenyouFoundationMobile.wideContainerMaxWidth,
+    );
     expect(tokens.feedbackDuration, WenyouFoundationMotion.fast);
   });
 
-  test('品牌主按钮和正文颜色满足普通文字 AA 对比度', () {
+  test('所有可用作文字或图标前景的语义色满足普通文字 AA 对比度', () {
     const tokens = WenyouThemeTokens.light;
 
     expect(
-      _contrastRatio(tokens.brand, tokens.onBrand),
+      _contrastRatio(tokens.brandSurface, tokens.onBrandSurface),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
+      _contrastRatio(tokens.panel, tokens.brandForeground),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
+      _contrastRatio(tokens.accentedBackground, tokens.onAccentedBackground),
       greaterThanOrEqualTo(4.5),
     );
     expect(
@@ -85,8 +115,16 @@ void main() {
     final textMinimum = theme.textButtonTheme.style!.minimumSize!.resolve({});
 
     expect(tokens, isNotNull);
-    expect(theme.colorScheme.primary, WenyouThemeTokens.light.brand);
-    expect(theme.colorScheme.onPrimary, WenyouThemeTokens.light.onBrand);
+    expect(theme.colorScheme.primary, WenyouThemeTokens.light.brandForeground);
+    expect(theme.colorScheme.onPrimary, WenyouThemeTokens.light.panel);
+    expect(
+      theme.colorScheme.primaryContainer,
+      WenyouThemeTokens.light.brandSurface,
+    );
+    expect(
+      theme.colorScheme.onPrimaryContainer,
+      WenyouThemeTokens.light.onBrandSurface,
+    );
     expect(theme.colorScheme.secondary, WenyouFoundationPalette.secondary);
     expect(theme.colorScheme.error, WenyouFoundationPalette.destructive);
     expect(

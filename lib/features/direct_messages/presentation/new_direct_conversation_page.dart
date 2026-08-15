@@ -237,7 +237,7 @@ class _TargetReady extends StatelessWidget {
                       WenyouIcon(
                         WenyouIconIds.statusGreeting,
                         size: 36,
-                        color: tokens.brand,
+                        color: tokens.brandForeground,
                       ),
                       SizedBox(height: tokens.space12),
                       Text(

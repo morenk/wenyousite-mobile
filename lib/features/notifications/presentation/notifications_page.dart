@@ -572,7 +572,7 @@ class _NotificationCard extends StatelessWidget {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: tokens.brand,
+                        color: tokens.brandForeground,
                         shape: BoxShape.circle,
                       ),
                     ),

@@ -174,7 +174,7 @@ class _SearchTabs extends ConsumerWidget {
                 border: Border(
                   bottom: BorderSide(
                     color: state.activeTab == tab
-                        ? tokens.brand
+                        ? tokens.brandForeground
                         : tokens.border,
                     width: state.activeTab == tab ? 2 : 1,
                   ),
@@ -188,7 +188,7 @@ class _SearchTabs extends ConsumerWidget {
                   minimumSize: Size(0, tokens.minimumTouchTarget),
                   padding: EdgeInsets.symmetric(horizontal: tokens.space4),
                   foregroundColor: state.activeTab == tab
-                      ? tokens.brand
+                      ? tokens.brandForeground
                       : tokens.mutedText,
                 ),
                 child: Text(

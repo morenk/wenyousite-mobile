@@ -21,7 +21,7 @@ class WenyouTagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final accent = _parseColor(colorHex) ?? tokens.brand;
+    final accent = _parseColor(colorHex) ?? tokens.brandForeground;
     return InputChip(
       avatar: WenyouIcon(WenyouIconIds.contentTag, size: 18, color: accent),
       label: Text(name),

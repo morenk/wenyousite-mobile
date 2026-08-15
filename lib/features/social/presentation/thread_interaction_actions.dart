@@ -52,7 +52,7 @@ class ThreadInteractionActions extends ConsumerWidget {
                 ),
                 padding: EdgeInsets.symmetric(horizontal: tokens.space4),
                 foregroundColor: state.isLiked
-                    ? tokens.brand
+                    ? tokens.brandForeground
                     : tokens.mutedText,
               ),
               child: Row(
@@ -83,7 +83,9 @@ class ThreadInteractionActions extends ConsumerWidget {
                   ? null
                   : () => _toggleBookmark(context, notifier, compact: true),
               tooltip: state.isBookmarked ? '取消收藏' : '收藏主题',
-              color: state.isBookmarked ? tokens.brand : tokens.mutedText,
+              color: state.isBookmarked
+                  ? tokens.brandForeground
+                  : tokens.mutedText,
               icon: _actionIcon(
                 pending:
                     state.pendingAction == ThreadInteractionAction.bookmark,

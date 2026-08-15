@@ -16,7 +16,7 @@ class WenyouTagLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final textStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: onPressed == null ? tokens.mutedText : tokens.brand,
+      color: onPressed == null ? tokens.mutedText : tokens.brandForeground,
       fontWeight: FontWeight.w600,
     );
     final label = '#$name';
@@ -54,7 +54,7 @@ class WenyouTagLink extends StatelessWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          foregroundColor: tokens.brand,
+          foregroundColor: tokens.brandForeground,
           minimumSize: Size(
             tokens.minimumTouchTarget,
             tokens.minimumTouchTarget,

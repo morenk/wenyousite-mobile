@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
-import 'package:wenyousite_mobile/features/auth/application/logout_controller.dart';
 
 void main() {
   test('退出提交期间拒绝重复请求并在成功后进入游客状态', () async {

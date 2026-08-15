@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
+import 'package:wenyousite_mobile/features/search/application/search_states.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
+
+export 'package:wenyousite_mobile/features/search/application/search_states.dart';
 
 class SearchController extends StateNotifier<SearchState> {
   SearchController(this._repository) : super(const SearchState());

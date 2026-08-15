@@ -119,7 +119,7 @@ class ApiWalletRepository implements WalletRepository {
     required String clientRequestId,
   }) async {
     final targetId = _requiredText(target.id, '加油目标 ID');
-    final normalizedAmount = WenyouAmount.normalizeTip(amount);
+    final normalizedAmount = _normalizeTip(amount);
     final requestId = _requiredText(clientRequestId, '加油请求 ID');
     final request = TipRequestDto(
       (builder) => builder
@@ -228,7 +228,19 @@ class ApiWalletRepository implements WalletRepository {
   }
 
   String _amount(String value, String field) {
-    return WenyouAmount.requireNonNegative(value, field);
+    try {
+      return WenyouAmount.requireNonNegative(value, field);
+    } on WenyouAmountValidationException catch (failure) {
+      throw ApiFailure(userMessage: failure.userMessage, cause: failure);
+    }
+  }
+
+  String _normalizeTip(String value) {
+    try {
+      return WenyouAmount.normalizeTip(value);
+    } on WenyouAmountValidationException catch (failure) {
+      throw ApiFailure(userMessage: failure.userMessage, cause: failure);
+    }
   }
 
   int _nonNegativeInteger(num value, String field) {

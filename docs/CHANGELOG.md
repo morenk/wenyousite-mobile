@@ -4,6 +4,10 @@
 
 ### Added
 
+- 开发版本进入 `0.3.0-dev.75+81`；继续按职责拆分个人中心资料/头像编辑、动态评论编辑器、主题创作辅助区、楼层回复筛选器和私信消息时间线，清空全部 5 项大文件债务。所有非生成 Dart 文件现均不超过 900 行，`largeFileDebt` 归零。
+- 开发版本进入 `0.3.0-dev.74+80`；拆分私信组合组件与主题详情展示区，将 `direct_message_widgets.dart` 从 1132 行降至 817 行、`thread_detail_sections.dart` 从 1278 行降至 854 行。架构门禁新增非生成 Dart 文件 900 行上限，现有 5 项超限文件按精确行数冻结，只能缩减，不能新增或增长。
+- 开发版本进入 `0.3.0-dev.73+79`；将草稿、通知、帖子、搜索、设置、社交、贴纸、标签和公开用户的加载/提交状态从 domain 迁入 application，举报与温油金额使用领域校验异常并在边界映射 `ApiFailure`，清空全部 16 项 domain 反向依赖债务。退出会话与资料缓存失效提升为 core application 协作能力，用户页直接消费全局 capability，解除 `auth/users` 与 `direct_messages/users` 循环；架构门禁新增 domain 状态所有权检查，`domainBoundaryDebt` 与 `featureCycleDebt` 均归零。
+- 开发版本进入 `0.3.0-dev.72+78`；固化 Windows 本地移动端开发边界，本机前后端仓库降为只读参考镜像，完整质量入口统一为 `npm run check`，GitHub Actions 改用 Windows runner；后端契约同步只从 `origin/dev` 已提交对象导出，避免工作树内容与记录 revision 不一致。Foundation 品牌浅粉只承担表面，文字、链接、图标和选中态统一使用满足 AA 对比度的深色品牌前景；Golden 门禁强制加载 Foundation 字体并修复动态瀑布流方块字假基线。
 - Foundation 升级到 `v2.4.2`：语义 SVG 在输入框、图标按钮和导航容器内保持 16/20/24dp 声明尺寸，48dp 触控区不再放大图形；动态评论移除键盘上方的空白编辑器表面，动态详情在无历史栈时返回动态列表而不是退出应用。
 - 开发版本进入 `0.3.0-dev.71+77`；Foundation 升级到 `v2.4.1`，生产代码原有 64 个文件、539 处 Material 图标引用全部迁移到跨端语义注册表并新增架构门禁。首页与标签主题卡片改为 40dp 题头头像、整宽 16:9 封面、两行摘要和固定 48dp 页脚，标签按宽度显示一至三个并用不可点击 `+N` 汇总。
 - 修复本人资料含移动端双画幅背景图时生成客户端遗漏 `ProfileCoverVariantResponseDto` serializer、导致成功响应被误判为“本人资料没有加载完成”的严重问题，并加入真实响应形状的反序列化回归测试。

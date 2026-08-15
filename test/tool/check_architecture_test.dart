@@ -52,6 +52,60 @@ void main() {
     );
   });
 
+  test('domain cannot own loading or submission state', () {
+    const path = 'lib/features/alpha/domain/item.dart';
+    _write(
+      root,
+      path,
+      'enum ItemPhase { loading, ready }\n'
+      'class ItemState {}\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path declares application state in domain; move it to application',
+        '$path declares an application phase in domain; move it to application',
+      ]),
+    );
+  });
+
+  test('non-generated Dart files cannot exceed 900 lines', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(root, path, '${List.filled(901, '// line').join('\n')}\n');
+
+    expect(
+      collectArchitectureFailures(root),
+      contains(
+        '$path has 901 lines; split non-generated Dart files above 900 lines',
+      ),
+    );
+  });
+
+  test('large-file debt is frozen to its exact line count', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(root, path, '${List.filled(901, '// line').join('\n')}\n');
+    _writeAllowlist(root, largeFileDebt: const {path: 902});
+
+    expect(
+      collectArchitectureFailures(root),
+      contains('$path large-file debt can be tightened from 902 to 901 lines'),
+    );
+
+    _writeAllowlist(root, largeFileDebt: const {path: 901});
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
+  test('generated Dart files are exempt from the line limit', () {
+    _write(
+      root,
+      'lib/core/generated_client.g.dart',
+      '${List.filled(901, '// generated').join('\n')}\n',
+    );
+
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
   test('detects a new layered dependency beside existing debt', () {
     const page = 'lib/features/alpha/presentation/page.dart';
     const first = 'lib/features/alpha/data/first_repository.dart';
@@ -200,6 +254,36 @@ void main() {
       ]),
     );
   });
+
+  test('golden tests must load Foundation fonts', () {
+    const path = 'test/features/alpha/page_test.dart';
+    const goldenMatcher = 'matchesGoldenFile';
+    _write(root, path, "final matcher = $goldenMatcher('goldens/page.png');\n");
+
+    expect(
+      collectArchitectureFailures(root),
+      contains('$path uses golden files without loading Foundation test fonts'),
+    );
+  });
+
+  test('README Foundation version must match pubspec ref', () {
+    _write(root, 'README.md', '当前版本：`1.0.0+1`。wenyousite-foundation v2.4.1。');
+    _write(
+      root,
+      'pubspec.yaml',
+      'name: fixture\n'
+          'version: 1.0.0+1\n'
+          'dependencies:\n'
+          '  wenyousite_foundation:\n'
+          '    git:\n'
+          '      ref: v2.4.2\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      contains('README Foundation v2.4.1 does not match pubspec v2.4.2'),
+    );
+  });
 }
 
 void _writeAllowlist(
@@ -208,6 +292,7 @@ void _writeAllowlist(
   List<String> featureDependencies = const [],
   List<String> featureCycleDebt = const [],
   List<String> layerDependencyDebt = const [],
+  Map<String, int> largeFileDebt = const {},
 }) {
   _write(
     root,
@@ -217,6 +302,7 @@ void _writeAllowlist(
       'featureDependencies': featureDependencies,
       'featureCycleDebt': featureCycleDebt,
       'layerDependencyDebt': layerDependencyDebt,
+      'largeFileDebt': largeFileDebt,
     }),
   );
 }

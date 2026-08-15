@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
+
+export 'package:wenyousite_mobile/features/social/application/social_states.dart';
 
 class ThreadSubscriptionController
     extends StateNotifier<ThreadSubscriptionState> {

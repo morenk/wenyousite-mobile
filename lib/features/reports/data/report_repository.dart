@@ -16,7 +16,12 @@ class ApiReportRepository implements ReportRepository {
 
   @override
   Future<ReportResult> create(ReportInput input) async {
-    final normalized = input.normalized();
+    late final ReportInput normalized;
+    try {
+      normalized = input.normalized();
+    } on ReportInputValidationException catch (failure) {
+      throw ApiFailure(userMessage: failure.userMessage, cause: failure);
+    }
     final request = CreateReportDto((builder) {
       builder
         ..targetType = _requestTargetType(normalized.target.type)

@@ -6,9 +6,9 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/email_verification_controller.dart';
-import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 
 class EmailVerificationPage extends ConsumerStatefulWidget {
   const EmailVerificationPage({this.returnTo, super.key});
@@ -38,7 +38,7 @@ class _EmailVerificationPageState extends ConsumerState<EmailVerificationPage> {
         .verifyCode(_codeController.text);
     if (!succeeded || !mounted) return;
     _codeController.clear();
-    ref.invalidate(meProfileControllerProvider);
+    ref.read(profileCacheInvalidatorProvider)(null);
   }
 
   void _finish() {

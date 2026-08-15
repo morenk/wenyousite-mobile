@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
+
+export 'package:wenyousite_mobile/features/social/application/social_states.dart';
 
 class ThreadInteractionController
     extends StateNotifier<ThreadInteractionState> {

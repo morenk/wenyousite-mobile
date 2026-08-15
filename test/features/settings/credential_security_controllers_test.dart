@@ -7,7 +7,6 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
-import 'package:wenyousite_mobile/features/settings/domain/credential_security_models.dart';
 
 void main() {
   test('修改密码成功后清除本地会话', () async {

@@ -10,14 +10,14 @@ abstract final class AppTheme {
     const tokens = WenyouThemeTokens.light;
     final colorScheme =
         ColorScheme.fromSeed(
-          seedColor: tokens.brand,
+          seedColor: tokens.brandForeground,
           brightness: Brightness.light,
           surface: tokens.panel,
         ).copyWith(
-          primary: tokens.brand,
-          onPrimary: tokens.onBrand,
-          primaryContainer: tokens.accentedBackground,
-          onPrimaryContainer: WenyouFoundationPalette.onAccent,
+          primary: tokens.brandForeground,
+          onPrimary: tokens.panel,
+          primaryContainer: tokens.brandSurface,
+          onPrimaryContainer: tokens.onBrandSurface,
           secondary: WenyouFoundationPalette.secondary,
           onSecondary: WenyouFoundationPalette.onSecondary,
           secondaryContainer: WenyouFoundationPalette.infoSoft,
@@ -44,32 +44,38 @@ abstract final class AppTheme {
       headlineSmall: baseTextTheme.headlineSmall?.copyWith(
         fontFamily: WenyouFoundationTypography.display,
         fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-        fontSize: 22,
-        height: 1.3,
-        fontWeight: FontWeight.w500,
+        fontSize: _typeSize('pageTitle'),
+        height: _typeHeight('pageTitle'),
+        fontWeight: _typeWeight('pageTitle'),
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
         fontFamily: WenyouFoundationTypography.display,
         fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-        fontSize: 18,
-        height: 1.35,
-        fontWeight: FontWeight.w500,
+        fontSize: _typeSize('sectionTitle'),
+        height: _typeHeight('sectionTitle'),
+        fontWeight: _typeWeight('sectionTitle'),
       ),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
         fontFamily: WenyouFoundationTypography.display,
         fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-        fontSize: 16,
-        height: 1.35,
-        fontWeight: FontWeight.w500,
+        fontSize: _typeSize('subsectionTitle'),
+        height: _typeHeight('subsectionTitle'),
+        fontWeight: _typeWeight('subsectionTitle'),
       ),
-      bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.6),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+        fontSize: _typeSize('body'),
+        height: _typeHeight('body'),
+        fontWeight: _typeWeight('body'),
+      ),
       bodyMedium: baseTextTheme.bodyMedium?.copyWith(
-        fontSize: 14,
-        height: 1.45,
+        fontSize: _typeSize('compactBody'),
+        height: _typeHeight('compactBody'),
+        fontWeight: _typeWeight('compactBody'),
       ),
       bodySmall: baseTextTheme.bodySmall?.copyWith(
-        fontSize: 12,
-        height: 1.4,
+        fontSize: _typeSize('caption'),
+        height: _typeHeight('caption'),
+        fontWeight: _typeWeight('caption'),
         color: tokens.mutedText,
       ),
       labelSmall: baseTextTheme.labelSmall?.copyWith(
@@ -77,8 +83,9 @@ abstract final class AppTheme {
         fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       ),
       labelLarge: baseTextTheme.labelLarge?.copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
+        fontSize: _typeSize('label'),
+        height: _typeHeight('label'),
+        fontWeight: _typeWeight('label'),
       ),
     );
     final rounded16 = RoundedRectangleBorder(
@@ -120,8 +127,8 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: tokens.brand,
-        foregroundColor: tokens.onBrand,
+        backgroundColor: tokens.brandSurface,
+        foregroundColor: tokens.onBrandSurface,
         elevation: 2,
         focusElevation: 2,
         hoverElevation: 3,
@@ -139,12 +146,12 @@ abstract final class AppTheme {
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
                 ? tokens.border
-                : tokens.brand,
+                : tokens.brandSurface,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
                 ? tokens.mutedText
-                : tokens.onBrand,
+                : tokens.onBrandSurface,
           ),
           textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
           animationDuration: tokens.feedbackDuration,
@@ -222,7 +229,7 @@ abstract final class AppTheme {
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? tokens.brand
+                ? tokens.brandForeground
                 : tokens.mutedText,
           ),
         ),
@@ -253,5 +260,16 @@ abstract final class AppTheme {
       borderRadius: BorderRadius.circular(radius),
       borderSide: BorderSide(color: color, width: width),
     );
+  }
+
+  static double _typeSize(String role) =>
+      WenyouFoundationTypography.mobileSizes[role]!;
+
+  static double _typeHeight(String role) =>
+      WenyouFoundationTypography.mobileLineHeights[role]!;
+
+  static FontWeight _typeWeight(String role) {
+    final weight = WenyouFoundationTypography.mobileWeights[role]!;
+    return FontWeight.values[(weight ~/ 100) - 1];
   }
 }

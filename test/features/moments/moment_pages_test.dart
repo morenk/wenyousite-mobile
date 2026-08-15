@@ -24,7 +24,11 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_p
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('发现信息流展示文本封面，游客切到关注只发起登录引导', (tester) async {
     final repository = _PageRepository();
     await tester.pumpWidget(_feedApp(repository));

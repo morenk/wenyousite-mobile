@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
+
+export 'package:wenyousite_mobile/features/social/application/social_states.dart';
 
 class UserRelationListController extends StateNotifier<UserRelationListState> {
   UserRelationListController(

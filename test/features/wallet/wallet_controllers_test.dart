@@ -79,7 +79,7 @@ void main() {
     for (final invalid in ['02', '2.5', '1', '9223372036854775808']) {
       expect(
         () => WenyouAmount.normalizeTip(invalid),
-        throwsA(isA<ApiFailure>()),
+        throwsA(isA<WenyouAmountValidationException>()),
       );
     }
   });

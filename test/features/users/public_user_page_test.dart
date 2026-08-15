@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
-import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
@@ -231,7 +231,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          directMessagesEnabledProvider.overrideWithValue(false),
+          appCapabilitiesProvider.overrideWithValue(const AppCapabilities()),
           publicUserRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -284,7 +284,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          directMessagesEnabledProvider.overrideWithValue(false),
+          appCapabilitiesProvider.overrideWithValue(const AppCapabilities()),
           publicUserRepositoryProvider.overrideWithValue(
             _FakePublicUserRepository(),
           ),
@@ -357,7 +357,7 @@ void main() {
 Widget _userApp(PublicUserRepository repository) {
   return ProviderScope(
     overrides: [
-      directMessagesEnabledProvider.overrideWithValue(false),
+      appCapabilitiesProvider.overrideWithValue(const AppCapabilities()),
       publicUserRepositoryProvider.overrideWithValue(repository),
     ],
     child: MaterialApp(
@@ -375,7 +375,9 @@ Future<ProviderContainer> _authenticatedContainer({
 }) async {
   final container = ProviderContainer(
     overrides: [
-      directMessagesEnabledProvider.overrideWithValue(directMessagesEnabled),
+      appCapabilitiesProvider.overrideWithValue(
+        AppCapabilities(directMessages: directMessagesEnabled),
+      ),
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       meProfileRepositoryProvider.overrideWithValue(

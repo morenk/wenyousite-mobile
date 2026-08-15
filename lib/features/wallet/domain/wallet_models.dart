@@ -1,4 +1,8 @@
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+class WenyouAmountValidationException implements Exception {
+  const WenyouAmountValidationException(this.userMessage);
+
+  final String userMessage;
+}
 
 abstract final class WenyouAmount {
   static final RegExp _nonNegativeInteger = RegExp(r'^(?:0|[1-9]\d*)$');
@@ -7,7 +11,7 @@ abstract final class WenyouAmount {
 
   static String requireNonNegative(String value, String field) {
     if (!_nonNegativeInteger.hasMatch(value)) {
-      throw ApiFailure(userMessage: '$field不是有效的温油整数，请重新加载。');
+      throw WenyouAmountValidationException('$field不是有效的温油整数，请重新加载。');
     }
     return value;
   }
@@ -15,7 +19,7 @@ abstract final class WenyouAmount {
   static String normalizeTip(String value) {
     final normalized = value.trim();
     if (!_tipInteger.hasMatch(normalized) || _exceedsMaximum(normalized)) {
-      throw const ApiFailure(userMessage: '最低投入 2 升，且只能填写可用范围内的整数。');
+      throw const WenyouAmountValidationException('最低投入 2 升，且只能填写可用范围内的整数。');
     }
     return normalized;
   }

@@ -62,7 +62,7 @@ class UserProfileHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(height: 4, color: tokens.brand),
+            Container(height: 4, color: tokens.brandSurface),
             Padding(
               padding: EdgeInsets.fromLTRB(
                 tokens.space16,

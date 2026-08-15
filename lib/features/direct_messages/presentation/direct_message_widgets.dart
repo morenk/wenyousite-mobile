@@ -16,46 +16,10 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
-class DirectMessageAvatar extends StatelessWidget {
-  const DirectMessageAvatar({required this.user, this.size = 44, super.key});
+export 'direct_message_avatar.dart';
 
-  final DirectMessageUser user;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(
-        user.isDeactivated
-            ? WenyouIconIds.statusUserUnavailable
-            : WenyouIconIds.identityMember,
-        color: tokens.mutedText,
-        size: size * 0.5,
-      ),
-    );
-    return Semantics(
-      image: true,
-      label: '${user.username} 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: size,
-          child: user.avatarUrl == null
-              ? fallback
-              : WenyouCachedImage(
-                  imageUrl: user.avatarUrl!,
-                  fit: BoxFit.cover,
-                  cacheWidth: size.ceil(),
-                  cacheHeight: size.ceil(),
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
-    );
-  }
-}
+part 'direct_message_composer_support.dart';
+part 'direct_message_media.dart';
 
 class DirectMessageComposer extends ConsumerStatefulWidget {
   const DirectMessageComposer({
@@ -484,165 +448,6 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   }
 }
 
-class _ComposerStatusLine extends StatelessWidget {
-  const _ComposerStatusLine({
-    required this.icon,
-    required this.message,
-    this.error = false,
-    this.onRetry,
-    this.onDismiss,
-    this.retryKey,
-    this.dismissKey,
-    super.key,
-  });
-
-  final String icon;
-  final String message;
-  final bool error;
-  final VoidCallback? onRetry;
-  final VoidCallback? onDismiss;
-  final Key? retryKey;
-  final Key? dismissKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final color = error
-        ? Theme.of(context).colorScheme.error
-        : tokens.mutedText;
-    return Row(
-      children: [
-        WenyouIcon(icon, size: 16, color: color),
-        SizedBox(width: tokens.space4),
-        Expanded(
-          child: Text(
-            message,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: color),
-          ),
-        ),
-        if (onRetry != null)
-          IconButton(
-            key: retryKey,
-            onPressed: onRetry,
-            tooltip: '重试',
-            visualDensity: VisualDensity.compact,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-          ),
-        if (onDismiss != null)
-          IconButton(
-            key: dismissKey,
-            onPressed: onDismiss,
-            tooltip: '关闭',
-            visualDensity: VisualDensity.compact,
-            icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
-          ),
-      ],
-    );
-  }
-}
-
-class _ImagePreview extends StatelessWidget {
-  const _ImagePreview({required this.image, this.onRemove});
-
-  final UploadedEditorImage image;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      key: const Key('direct-message-composer-attachment'),
-      decoration: BoxDecoration(
-        color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(tokens.radius12),
-            child: WenyouCachedImage(
-              imageUrl: image.url,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-            ),
-          ),
-          SizedBox(width: tokens.space8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 160),
-            child: Text(
-              '[图片]',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-          IconButton(
-            key: const Key('direct-message-composer-remove-image'),
-            onPressed: onRemove,
-            tooltip: '移除图片',
-            icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _UploadProgress extends StatelessWidget {
-  const _UploadProgress({required this.state, required this.onCancel});
-
-  final MediaUploadTaskState state;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Row(
-      children: [
-        SizedBox.square(
-          dimension: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            value: state.progress?.fraction,
-          ),
-        ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Text(
-            switch (state.phase) {
-              MediaUploadTaskPhase.picking => '正在打开相册…',
-              MediaUploadTaskPhase.preparing => '正在准备图片…',
-              MediaUploadTaskPhase.uploading
-                  when state.progress?.fraction != null =>
-                '正在上传 ${(state.progress!.fraction! * 100).round()}%',
-              MediaUploadTaskPhase.uploading => '正在上传图片…',
-              MediaUploadTaskPhase.confirming => '正在确认图片…',
-              MediaUploadTaskPhase.processing => '正在处理图片…',
-              MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
-            },
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        IconButton(
-          key: const Key('direct-message-composer-cancel-upload'),
-          onPressed: onCancel,
-          tooltip: '取消上传',
-          visualDensity: VisualDensity.compact,
-          icon: const WenyouIcon(WenyouIconIds.actionClose, size: 18),
-        ),
-      ],
-    );
-  }
-}
-
 class DirectMessageBubble extends ConsumerStatefulWidget {
   const DirectMessageBubble({
     required this.message,
@@ -781,7 +586,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                     color: pureSticker
                         ? Colors.transparent
                         : widget.mine
-                        ? tokens.brand
+                        ? tokens.brandSurface
                         : tokens.softPanel,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(tokens.radius16),
@@ -810,7 +615,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                             widget.mine ? '你撤回了一条消息' : '对方撤回了一条消息',
                             style: TextStyle(
                               color: widget.mine
-                                  ? tokens.onBrand.withValues(alpha: 0.82)
+                                  ? tokens.onBrandSurface.withValues(
+                                      alpha: 0.82,
+                                    )
                                   : tokens.mutedText,
                             ),
                           )
@@ -823,7 +630,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                   style: Theme.of(context).textTheme.bodyLarge
                                       ?.copyWith(
                                         color: widget.mine
-                                            ? tokens.onBrand
+                                            ? tokens.onBrandSurface
                                             : tokens.text,
                                       ),
                                 ),
@@ -1000,126 +807,6 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-}
-
-class _OptimisticMediaPlaceholder extends StatelessWidget {
-  const _OptimisticMediaPlaceholder({required this.isSticker});
-
-  final bool isSticker;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return SizedBox.square(
-      dimension: 72,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.onBrand.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        child: WenyouIcon(
-          isSticker
-              ? WenyouIconIds.actionAddReaction
-              : WenyouIconIds.actionImage,
-          color: tokens.onBrand.withValues(alpha: 0.8),
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageImage extends StatelessWidget {
-  const _MessageImage({required this.media});
-
-  final DirectMessageMedia media;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final maxDimension = media.isSticker ? 160.0 : 280.0;
-    return Semantics(
-      button: true,
-      image: true,
-      label: media.isSticker ? '私聊表情，点按查看大图' : '私聊图片，点按查看大图',
-      child: InkWell(
-        onTap: () => _showImage(context),
-        borderRadius: BorderRadius.circular(tokens.radius12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens.radius12),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: maxDimension,
-              maxHeight: maxDimension,
-            ),
-            child: WenyouCachedImage(
-              imageUrl: media.displayUrl,
-              fit: BoxFit.contain,
-              cacheWidth: maxDimension.ceil(),
-              cacheHeight: maxDimension.ceil(),
-              placeholder: (_, _) => SizedBox.square(
-                dimension: 96,
-                child: ColoredBox(
-                  color: tokens.softPanel,
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-              ),
-              errorWidget: (_, _, _) => SizedBox.square(
-                dimension: 96,
-                child: ColoredBox(
-                  color: tokens.softPanel,
-                  child: WenyouIcon(
-                    WenyouIconIds.statusImageUnavailable,
-                    color: tokens.mutedText,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showImage(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      useSafeArea: true,
-      builder: (dialogContext) => Dialog.fullscreen(
-        backgroundColor: Colors.black.withValues(alpha: 0.92),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: InteractiveViewer(
-                minScale: 0.8,
-                maxScale: 4,
-                child: Center(
-                  child: WenyouCachedImage(
-                    imageUrl: media.url,
-                    fit: BoxFit.contain,
-                    errorWidget: (_, _, _) => const WenyouIcon(
-                      WenyouIconIds.statusImageUnavailable,
-                      color: Colors.white,
-                      size: 48,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topRight,
-                child: IconButton.filledTonal(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  tooltip: '关闭大图',
-                  icon: const WenyouIcon(WenyouIconIds.actionClose),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

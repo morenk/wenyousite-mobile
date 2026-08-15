@@ -4,8 +4,9 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 @immutable
 class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   const WenyouThemeTokens({
-    required this.brand,
-    required this.onBrand,
+    required this.brandSurface,
+    required this.brandForeground,
+    required this.onBrandSurface,
     required this.background,
     required this.panel,
     required this.softPanel,
@@ -13,6 +14,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     required this.text,
     required this.mutedText,
     required this.accentedBackground,
+    required this.onAccentedBackground,
     required this.focus,
     required this.space4,
     required this.space8,
@@ -26,12 +28,18 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     required this.radius20,
     required this.radiusPill,
     required this.minimumTouchTarget,
+    required this.compactHorizontalPadding,
+    required this.regularHorizontalPadding,
+    required this.regularHorizontalPaddingFrom,
+    required this.pageContentMaxWidth,
+    required this.wideContainerMaxWidth,
     required this.feedbackDuration,
   });
 
   static const light = WenyouThemeTokens(
-    brand: WenyouFoundationPalette.primary,
-    onBrand: WenyouFoundationPalette.onPrimary,
+    brandSurface: WenyouFoundationPalette.primary,
+    brandForeground: WenyouFoundationPalette.brandStrong,
+    onBrandSurface: WenyouFoundationPalette.onPrimary,
     background: WenyouFoundationPalette.background,
     panel: WenyouFoundationPalette.surface,
     softPanel: WenyouFoundationPalette.muted,
@@ -39,6 +47,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     text: WenyouFoundationPalette.foreground,
     mutedText: WenyouFoundationPalette.mutedForeground,
     accentedBackground: WenyouFoundationPalette.accent,
+    onAccentedBackground: WenyouFoundationPalette.onAccent,
     focus: WenyouFoundationPalette.brandStrong,
     space4: WenyouFoundationMobile.space4,
     space8: WenyouFoundationMobile.space8,
@@ -52,11 +61,18 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     radius20: WenyouFoundationMobile.radiusPanel,
     radiusPill: WenyouFoundationMobile.radiusPill,
     minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
+    compactHorizontalPadding: WenyouFoundationMobile.compactHorizontalPadding,
+    regularHorizontalPadding: WenyouFoundationMobile.regularHorizontalPadding,
+    regularHorizontalPaddingFrom:
+        WenyouFoundationMobile.regularHorizontalPaddingFrom,
+    pageContentMaxWidth: WenyouFoundationMobile.pageContentMaxWidth,
+    wideContainerMaxWidth: WenyouFoundationMobile.wideContainerMaxWidth,
     feedbackDuration: WenyouFoundationMotion.fast,
   );
 
-  final Color brand;
-  final Color onBrand;
+  final Color brandSurface;
+  final Color brandForeground;
+  final Color onBrandSurface;
   final Color background;
   final Color panel;
   final Color softPanel;
@@ -64,6 +80,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   final Color text;
   final Color mutedText;
   final Color accentedBackground;
+  final Color onAccentedBackground;
   final Color focus;
 
   final double space4;
@@ -79,12 +96,18 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   final double radius20;
   final double radiusPill;
   final double minimumTouchTarget;
+  final double compactHorizontalPadding;
+  final double regularHorizontalPadding;
+  final double regularHorizontalPaddingFrom;
+  final double pageContentMaxWidth;
+  final double wideContainerMaxWidth;
   final Duration feedbackDuration;
 
   @override
   WenyouThemeTokens copyWith({
-    Color? brand,
-    Color? onBrand,
+    Color? brandSurface,
+    Color? brandForeground,
+    Color? onBrandSurface,
     Color? background,
     Color? panel,
     Color? softPanel,
@@ -92,6 +115,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     Color? text,
     Color? mutedText,
     Color? accentedBackground,
+    Color? onAccentedBackground,
     Color? focus,
     double? space4,
     double? space8,
@@ -105,11 +129,17 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     double? radius20,
     double? radiusPill,
     double? minimumTouchTarget,
+    double? compactHorizontalPadding,
+    double? regularHorizontalPadding,
+    double? regularHorizontalPaddingFrom,
+    double? pageContentMaxWidth,
+    double? wideContainerMaxWidth,
     Duration? feedbackDuration,
   }) {
     return WenyouThemeTokens(
-      brand: brand ?? this.brand,
-      onBrand: onBrand ?? this.onBrand,
+      brandSurface: brandSurface ?? this.brandSurface,
+      brandForeground: brandForeground ?? this.brandForeground,
+      onBrandSurface: onBrandSurface ?? this.onBrandSurface,
       background: background ?? this.background,
       panel: panel ?? this.panel,
       softPanel: softPanel ?? this.softPanel,
@@ -117,6 +147,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       text: text ?? this.text,
       mutedText: mutedText ?? this.mutedText,
       accentedBackground: accentedBackground ?? this.accentedBackground,
+      onAccentedBackground: onAccentedBackground ?? this.onAccentedBackground,
       focus: focus ?? this.focus,
       space4: space4 ?? this.space4,
       space8: space8 ?? this.space8,
@@ -130,6 +161,15 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       radius20: radius20 ?? this.radius20,
       radiusPill: radiusPill ?? this.radiusPill,
       minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
+      compactHorizontalPadding:
+          compactHorizontalPadding ?? this.compactHorizontalPadding,
+      regularHorizontalPadding:
+          regularHorizontalPadding ?? this.regularHorizontalPadding,
+      regularHorizontalPaddingFrom:
+          regularHorizontalPaddingFrom ?? this.regularHorizontalPaddingFrom,
+      pageContentMaxWidth: pageContentMaxWidth ?? this.pageContentMaxWidth,
+      wideContainerMaxWidth:
+          wideContainerMaxWidth ?? this.wideContainerMaxWidth,
       feedbackDuration: feedbackDuration ?? this.feedbackDuration,
     );
   }
@@ -138,8 +178,9 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   WenyouThemeTokens lerp(covariant WenyouThemeTokens? other, double t) {
     if (other == null) return this;
     return WenyouThemeTokens(
-      brand: Color.lerp(brand, other.brand, t)!,
-      onBrand: Color.lerp(onBrand, other.onBrand, t)!,
+      brandSurface: Color.lerp(brandSurface, other.brandSurface, t)!,
+      brandForeground: Color.lerp(brandForeground, other.brandForeground, t)!,
+      onBrandSurface: Color.lerp(onBrandSurface, other.onBrandSurface, t)!,
       background: Color.lerp(background, other.background, t)!,
       panel: Color.lerp(panel, other.panel, t)!,
       softPanel: Color.lerp(softPanel, other.softPanel, t)!,
@@ -149,6 +190,11 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       accentedBackground: Color.lerp(
         accentedBackground,
         other.accentedBackground,
+        t,
+      )!,
+      onAccentedBackground: Color.lerp(
+        onAccentedBackground,
+        other.onAccentedBackground,
         t,
       )!,
       focus: Color.lerp(focus, other.focus, t)!,
@@ -166,6 +212,31 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       minimumTouchTarget: _lerpDouble(
         minimumTouchTarget,
         other.minimumTouchTarget,
+        t,
+      ),
+      compactHorizontalPadding: _lerpDouble(
+        compactHorizontalPadding,
+        other.compactHorizontalPadding,
+        t,
+      ),
+      regularHorizontalPadding: _lerpDouble(
+        regularHorizontalPadding,
+        other.regularHorizontalPadding,
+        t,
+      ),
+      regularHorizontalPaddingFrom: _lerpDouble(
+        regularHorizontalPaddingFrom,
+        other.regularHorizontalPaddingFrom,
+        t,
+      ),
+      pageContentMaxWidth: _lerpDouble(
+        pageContentMaxWidth,
+        other.pageContentMaxWidth,
+        t,
+      ),
+      wideContainerMaxWidth: _lerpDouble(
+        wideContainerMaxWidth,
+        other.wideContainerMaxWidth,
         t,
       ),
       feedbackDuration: t < 0.5 ? feedbackDuration : other.feedbackDuration,

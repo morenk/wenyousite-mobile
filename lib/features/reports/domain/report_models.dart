@@ -1,6 +1,10 @@
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
-
 enum ReportTargetType { user, thread, post, moment, momentComment }
+
+class ReportInputValidationException implements Exception {
+  const ReportInputValidationException(this.userMessage);
+
+  final String userMessage;
+}
 
 class ReportTarget {
   const ReportTarget._(this.type, this.id);
@@ -55,15 +59,15 @@ class ReportInput {
   ReportInput normalized() {
     final targetId = target.id.trim();
     if (targetId.isEmpty) {
-      throw const ApiFailure(userMessage: '举报目标无效，请重新打开页面。');
+      throw const ReportInputValidationException('举报目标无效，请重新打开页面。');
     }
     final normalizedDetails = details?.trim();
     if (reason.requiresDetails &&
         (normalizedDetails == null || normalizedDetails.isEmpty)) {
-      throw const ApiFailure(userMessage: '选择其他原因时，请填写补充说明。');
+      throw const ReportInputValidationException('选择其他原因时，请填写补充说明。');
     }
     if (normalizedDetails != null && normalizedDetails.length > 1000) {
-      throw const ApiFailure(userMessage: '补充说明不能超过 1000 字。');
+      throw const ReportInputValidationException('补充说明不能超过 1000 字。');
     }
     return ReportInput(
       target: ReportTarget._(target.type, targetId),

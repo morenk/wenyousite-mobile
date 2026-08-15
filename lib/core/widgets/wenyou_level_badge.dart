@@ -24,7 +24,7 @@ class WenyouLevelBadge extends StatelessWidget {
           child: Text(
             'Lv.$level',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: tokens.brand,
+              color: tokens.brandForeground,
               fontSize: 11,
               height: 1,
               fontWeight: FontWeight.w700,

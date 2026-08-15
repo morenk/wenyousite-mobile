@@ -339,7 +339,7 @@ class _TagColorDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = context.wenyouTokens.brand;
+    final fallback = context.wenyouTokens.brandForeground;
     final color = colorHex == null
         ? fallback
         : Color(int.parse(colorHex!.substring(1), radix: 16) | 0xff000000);

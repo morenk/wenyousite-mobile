@@ -136,7 +136,7 @@ class _ThreadContextLine extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: thread.status == HomeThreadStatus.recruiting
-            ? tokens.brand
+            ? tokens.brandForeground
             : tokens.mutedText,
         fontWeight: FontWeight.w500,
       ),
@@ -413,12 +413,16 @@ class _ThreadTipStat extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          WenyouIcon(WenyouIconIds.metricTips, size: 16, color: tokens.brand),
+          WenyouIcon(
+            WenyouIconIds.metricTips,
+            size: 16,
+            color: tokens.brandForeground,
+          ),
           SizedBox(width: tokens.space4),
           Text(
             value,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens.brand,
+              color: tokens.brandForeground,
               fontWeight: FontWeight.w600,
             ),
           ),

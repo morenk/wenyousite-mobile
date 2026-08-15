@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
@@ -166,7 +166,11 @@ class _UserProfileContent extends ConsumerWidget {
     final isFollowing = relationState?.isFollowing ?? profile.isFollowing;
     final isBlocked = relationState?.isBlocked ?? profile.isBlocked;
     final isBlockedBy = relationState?.isBlockedBy ?? profile.isBlockedBy;
-    final directMessagesEnabled = ref.watch(directMessagesEnabledProvider);
+    final directMessagesEnabled = ref.watch(
+      appCapabilitiesProvider.select(
+        (capabilities) => capabilities.directMessages,
+      ),
+    );
     final statuses = <UserProfileStatusItem>[
       if (isFollowing)
         const UserProfileStatusItem(

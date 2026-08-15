@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/settings/application/credential_security_states.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
-import 'package:wenyousite_mobile/features/settings/domain/credential_security_models.dart';
+
+export 'package:wenyousite_mobile/features/settings/application/credential_security_states.dart';
 
 class PasswordChangeController extends StateNotifier<PasswordChangeState> {
   PasswordChangeController(this._repository, this._sessionController)

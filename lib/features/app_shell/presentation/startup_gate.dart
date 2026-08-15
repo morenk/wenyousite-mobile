@@ -171,7 +171,7 @@ class _UpdatePage extends StatelessWidget {
                         ? WenyouIconIds.actionUpdate
                         : WenyouIconIds.statusNew,
                     size: 32,
-                    color: tokens.brand,
+                    color: tokens.brandForeground,
                   ),
                 ),
               ),
@@ -292,7 +292,7 @@ class _BuildTransition extends StatelessWidget {
               WenyouIcon(
                 WenyouIconIds.navigationForward,
                 size: 20,
-                color: tokens.brand,
+                color: tokens.brandForeground,
               ),
               Text('可用构建 ${update.targetBuild}', style: textStyle),
             ],

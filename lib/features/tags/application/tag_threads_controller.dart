@@ -5,7 +5,9 @@ import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
-import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
+import 'package:wenyousite_mobile/features/tags/application/tag_states.dart';
+
+export 'package:wenyousite_mobile/features/tags/application/tag_states.dart';
 
 class TagThreadsController extends StateNotifier<TagThreadsState> {
   TagThreadsController(this._tagId, this._repository, {bool autoStart = true})

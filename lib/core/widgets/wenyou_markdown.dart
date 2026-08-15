@@ -135,10 +135,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     return baseStyle.copyWith(
       p: bodyStyle,
       a: bodyStyle?.copyWith(
-        color: tokens.brand,
+        color: tokens.brandForeground,
         fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
-        decorationColor: tokens.brand,
+        decorationColor: tokens.brandForeground,
       ),
       h1: h1,
       h1Padding: EdgeInsets.only(top: tokens.space16, bottom: tokens.space8),
@@ -156,7 +156,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       ),
       em: const TextStyle(fontStyle: FontStyle.italic),
       blockSpacing: tokens.space12,
-      listBullet: bodyStyle?.copyWith(color: tokens.brand),
+      listBullet: bodyStyle?.copyWith(color: tokens.brandForeground),
       code: compactBody?.copyWith(
         color: tokens.text,
         backgroundColor: tokens.softPanel,
@@ -173,7 +173,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       blockquotePadding: EdgeInsets.all(tokens.space12),
       blockquoteDecoration: BoxDecoration(
         color: tokens.softPanel,
-        border: Border(left: BorderSide(color: tokens.brand, width: 3)),
+        border: Border(
+          left: BorderSide(color: tokens.brandForeground, width: 3),
+        ),
         borderRadius: BorderRadius.horizontal(
           right: Radius.circular(tokens.radius12),
         ),

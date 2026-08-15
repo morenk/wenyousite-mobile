@@ -6,7 +6,10 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_states.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+
+export 'package:wenyousite_mobile/features/posts/application/post_states.dart';
 
 typedef PostDiscussionTarget = ({String rootPostId, String? focusedReplyId});
 

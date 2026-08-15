@@ -1,5 +1,14 @@
 # 温油站移动端 — AI 辅助开发规范
 
+## 0. 开发位置硬约束
+
+- 本仓库的日常开发只允许在 Windows 本地开发机上修改、生成、测试、构建、签名和发布；标准工作区为 `D:\code\wenyousite\wenyousite-mobile`。
+- 在 Linux、VPS 或非 Windows CI 环境发现本仓库时，只允许阅读；必须停止源码修改、Flutter/Gradle 构建、签名和发布。
+- Windows 工作区中的 `wenyousite-frontend` 与 `wenyousite-backend` 只是只读参考镜像。移动端任务只允许对它们执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
+- Web 与后端只能在 VPS 的 `/root/wenyousite` 工作区开发和切换服务。需要修改 Web 或后端时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改。
+- `wenyousite-foundation` 对移动端而言是已发布依赖。移动端切片只消费固定 Tag；需要修改 Foundation 时必须另开独立任务并在其授权环境发布新 Tag，再由本仓库独立升级。
+- GitHub Actions 若保留，只能使用 Windows runner 在临时 checkout 内复核质量或 Debug 构建；CI 对仓库和外部系统只读，不拥有部署、签名、制品上传或发布权限，也不能替代 Windows 本地验收。
+
 ## 1. 项目定位
 
 温油站移动端使用 Flutter 构建。首发 Android，最低 Android 8（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 可兼容，但当前不做 iOS 签名和真机验收。
@@ -7,10 +16,11 @@
 - 应用名称：温油站
 - Android applicationId：`site.wenyou.app`
 - 开发 API：`https://wenyou.site/api/v1`
-- 本地 Android 模拟器 API：`http://10.0.2.2:3000/api/v1`
+- Android 模拟器经显式 SSH 隧道访问 VPS loopback 时：`http://10.0.2.2:3000/api/v1`
 - Flutter SDK：`D:\sdk\flutter`
 - Android SDK：`D:\sdk\android`
-- 后端参考仓库：`..\wenyousite-backend`
+- Flutter/Dart 基线：Flutter `3.44.8`、Dart `3.12.2`
+- 后端只读参考镜像：`..\wenyousite-backend`
 
 当前阶段是公网开发环境上的第一阶段快速迭代，不是正式生产发布。开发闭环以相关本地检查和真机冒烟为主，GitHub Actions 仅保留手动触发，不作为日常切片完成条件。所有公网联调必须使用专用测试账号；禁止对共享开发数据运行批量删除、账号注销或其他破坏性自动化。
 
@@ -34,7 +44,7 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 
 视觉切片开始前还要 fetch Foundation，确认 `pubspec.yaml` 的 tag 仍是目标版本并阅读该版本 CHANGELOG；需要升级时先做独立 `chore`，不得直接跟随主分支。
 
-每个切片开始先 fetch 后端并比较：
+每个切片开始先比较已记录后端 revision、`origin/dev` 与公网 `/meta`；仅在契约 revision 变化或明确同步契约时 fetch 后端只读镜像并比较：
 
 - `contracts/openapi.json`
 - `contracts/CHANGELOG.md`
@@ -63,6 +73,7 @@ OpenAPI Generator 固定为 `7.23.0`。`packages/wenyou_api` 全部由生成器�
 lib/
   app/                  # App、主题、路由、启动兼容检查
   core/
+    application/        # 会话退出、资料缓存失效等跨 feature 应用协作契约
     config/             # AppEnvironment
     network/            # Dio、错误、请求追踪、刷新锁
     storage/            # Token 与本地数据库
@@ -102,6 +113,7 @@ packages/
 - 优先使用 Dart 语言能力，避免为简单状态额外引入代码生成框架。
 - 注释解释权限、重试、生命周期和兼容原因，不复述显然代码。
 - 不得通过关闭 lint、使用大范围 `dynamic` 或吞异常规避类型问题。
+- 非生成 Dart 文件不得超过 900 行；`tool/architecture_allowlist.json` 只冻结启用门禁时的存量超限文件和精确行数。存量只能拆分、收紧和清零，禁止新增条目、提高基线或把实现机械搬进新的超大 `part` 文件。
 
 ## 5. 网络与安全不变量
 
@@ -168,16 +180,13 @@ Docs-Impact: updated
 
 ## 8. 质量门禁
 
-第一阶段开发优先运行相关测试和受影响范围的静态检查。以下完整本地门禁用于认证、契约、网络、上传、持久化等高风险切片，以及阶段验收、准备交付或用户明确要求时；普通展示和低风险切片不必机械重复全部命令：
+第一阶段开发优先运行相关测试和受影响范围的静态检查。以下完整本地门禁用于认证、契约、网络、上传、持久化等高风险切片，以及阶段验收、准备交付或用户明确要求时；普通展示和低风险切片不必机械重复全部命令。完整门禁的唯一入口是：
 
 ```powershell
-dart format --output=none --set-exit-if-changed lib test tool
-flutter analyze --fatal-infos --fatal-warnings
-flutter test
-dart run tool/check_docs.dart
-dart run tool/audit_api_coverage.dart --require-complete
-npm run api:validate
+npm run check
 ```
+
+该入口必须覆盖格式、应用与生成客户端分析、全量测试、架构、文档、API 覆盖、契约校验/再生成一致性和 Windows 发布工具测试；不得在本文复制第二套易漂移的子命令清单。
 
 生成契约变化时还要重新生成并确认 `git diff` 符合预期。涉及 Android 配置、依赖、原生插件、演示构建或准备晋级时执行：
 

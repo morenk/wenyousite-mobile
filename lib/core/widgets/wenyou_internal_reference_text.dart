@@ -64,16 +64,16 @@ class _WenyouInternalReferenceTextState
               recognizer: recognizer,
               style:
                   widget.style?.copyWith(
-                    color: tokens.brand,
+                    color: tokens.brandForeground,
                     fontWeight: FontWeight.w700,
                     decoration: TextDecoration.underline,
-                    decorationColor: tokens.brand,
+                    decorationColor: tokens.brandForeground,
                   ) ??
                   TextStyle(
-                    color: tokens.brand,
+                    color: tokens.brandForeground,
                     fontWeight: FontWeight.w700,
                     decoration: TextDecoration.underline,
-                    decorationColor: tokens.brand,
+                    decorationColor: tokens.brandForeground,
                   ),
             ),
           );

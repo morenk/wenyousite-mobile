@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/app/app_cache_invalidation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_instant_keyboard_insets.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';

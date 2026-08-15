@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/users/application/public_user_states.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+
+export 'package:wenyousite_mobile/features/users/application/public_user_states.dart';
 
 enum PublicUserPhase { loading, ready, failed }
 

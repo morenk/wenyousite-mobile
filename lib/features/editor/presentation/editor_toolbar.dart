@@ -728,7 +728,10 @@ class _ToolbarButton extends StatelessWidget {
       ),
       onPressed: enabled ? () => onPressed() : null,
       isSelected: selected,
-      selectedIcon: WenyouIcon(icon, color: context.wenyouTokens.brand),
+      selectedIcon: WenyouIcon(
+        icon,
+        color: context.wenyouTokens.brandForeground,
+      ),
       icon: WenyouIcon(icon),
       tooltip: label,
     );
@@ -790,7 +793,10 @@ class _TrayButton extends StatelessWidget {
       ),
       tooltip: label,
       isSelected: selected,
-      selectedIcon: WenyouIcon(icon, color: context.wenyouTokens.brand),
+      selectedIcon: WenyouIcon(
+        icon,
+        color: context.wenyouTokens.brandForeground,
+      ),
       onPressed: onPressed,
       icon: WenyouIcon(icon),
     );
