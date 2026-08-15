@@ -56,6 +56,8 @@
 - [x] 创建、参与、回复和收藏按隐私字段显示并惰性加载，关闭项不发请求。
 - [x] 三类主题列表独立分页、按 ID 去重，cursor 失效从第一页恢复；最近回复使用精确帖子目标。
 - [x] 本人资料读取、用户名/简介/公开范围更新、失败重试与服务端结果回写正确。
+- [x] 本人资料响应包含 `profileCover.mobile` 双画幅背景图时，生成客户端完整注册嵌套 DTO serializer，成功响应不会降级为“本人资料没有加载完成”。
+- [x] 本人页与公开用户页复用整宽资料头，统一 88dp 头像、等级与状态徽标、资料元信息和等宽统计入口；320/360/400/600dp 均占满可用内容宽度且不溢出。
 - [x] 游客不读取私有资料，本人资料与设置在 360dp、400dp、600dp 无布局溢出。
 - [x] “我的”是本人摘要与内容捷径，`/me/edit` 和 `/me/settings` 分离资料编辑与账号安全操作。
 - [x] 他人页关注和拉黑可逆，自我页与游客不显示写操作，失败保留原关系。
@@ -74,8 +76,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；Markdown v2；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`。
+契约 `4.10.0-dev.20260814.1`；Markdown v2；后端 `90a33279f6f786685567a27ced11dd7470620cad`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v1.3.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v1.3.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v2.4.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.1/docs/platforms/mobile.md)。

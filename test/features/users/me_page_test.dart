@@ -48,7 +48,9 @@ void main() {
 
     expect(find.text('温柔测试员'), findsWidgets);
     expect(find.textContaining('o***@example.com'), findsOneWidget);
-    expect(find.text('Lv.4 · 150 / 200 经验'), findsOneWidget);
+    expect(find.text('Lv.4'), findsOneWidget);
+    expect(find.text('150 / 200 经验'), findsOneWidget);
+    expect(find.byKey(const Key('me-profile-header')), findsOneWidget);
     expect(find.byKey(const Key('me-open-following')), findsOneWidget);
     expect(find.byKey(const Key('me-open-followers')), findsOneWidget);
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
@@ -143,6 +145,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('用于主题、动态、评论和私聊中的身份识别。'), findsNothing);
     await tester.enterText(find.byKey(const Key('me-bio-field')), '新的移动端简介');
     await tester.ensureVisible(find.byKey(const Key('me-privacy-bookmarks')));
     await tester.pumpAndSettle();
@@ -324,7 +327,7 @@ void main() {
     expect(repository.updateCalls, 0);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 个人中心、资料编辑和账号设置无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 900);
@@ -340,6 +343,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      expect(
+        tester.getSize(find.byKey(const Key('me-profile-header'))).width,
+        expectedWidth,
+      );
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(

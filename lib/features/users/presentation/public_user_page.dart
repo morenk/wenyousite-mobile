@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/features/users/application/me_profile_controll
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
+import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
@@ -75,25 +76,37 @@ class PublicUserPage extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: _pagePadding(context),
             children: [
-              if (state.profile!.isDeactivated)
-                const WenyouPanel(
-                  child: WenyouEmptyState(
-                    icon: Icons.person_off_outlined,
-                    title: '已注销用户',
-                    message: '该账号已经注销，公开资料不再展示。',
-                  ),
-                )
-              else ...[
-                _UserProfileContent(
-                  profile: state.profile!,
-                  relationTarget: _relationTarget(state.profile!, meState),
-                  isCurrentUser:
-                      meState?.phase == MeProfilePhase.ready &&
-                      meState!.profile!.id == state.profile!.id,
-                ),
-                SizedBox(height: context.wenyouTokens.space12),
-                PublicUserContentArea(userId: userId, state: state),
-              ],
+              WenyouConstrainedWidth(
+                child: state.profile!.isDeactivated
+                    ? const WenyouPanel(
+                        child: WenyouEmptyState(
+                          icon: WenyouIconIds.statusUserUnavailable,
+                          title: '已注销用户',
+                          message: '该账号已经注销，公开资料不再展示。',
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _UserProfileContent(
+                            profile: state.profile!,
+                            relationTarget: _relationTarget(
+                              state.profile!,
+                              meState,
+                            ),
+                            isCurrentUser:
+                                meState?.phase == MeProfilePhase.ready &&
+                                meState!.profile!.id == state.profile!.id,
+                          ),
+                          SizedBox(height: context.wenyouTokens.space12),
+                          PublicUserContentArea(
+                            key: const Key('public-user-content-area'),
+                            userId: userId,
+                            state: state,
+                          ),
+                        ],
+                      ),
+              ),
             ],
           ),
         ),
@@ -154,272 +167,107 @@ class _UserProfileContent extends ConsumerWidget {
     final isBlocked = relationState?.isBlocked ?? profile.isBlocked;
     final isBlockedBy = relationState?.isBlockedBy ?? profile.isBlockedBy;
     final directMessagesEnabled = ref.watch(directMessagesEnabledProvider);
-    return Column(
-      children: [
-        WenyouPanel(
-          child: Column(
-            children: [
-              _ProfileAvatar(profile: profile),
-              SizedBox(height: tokens.space16),
-              Text(
-                profile.username,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              SizedBox(height: tokens.space8),
-              _ProfilePill(
-                icon: Icons.auto_awesome_outlined,
-                label: 'Lv.${profile.level}',
-              ),
-              if (profile.bio != null) ...[
-                SizedBox(height: tokens.space16),
-                Text(
-                  profile.bio!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-              if (profile.createdAt != null) ...[
-                SizedBox(height: tokens.space12),
-                Text(
-                  '${DateFormat('yyyy-MM-dd').format(profile.createdAt!)} 加入温油站',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ],
+    final statuses = <UserProfileStatusItem>[
+      if (isFollowing)
+        const UserProfileStatusItem(
+          icon: WenyouIconIds.statusSuccess,
+          label: '已关注',
+        ),
+      if (profile.isFollowedBy)
+        const UserProfileStatusItem(
+          icon: WenyouIconIds.identityMembers,
+          label: '关注了你',
+        ),
+      if (isBlocked)
+        const UserProfileStatusItem(
+          icon: WenyouIconIds.actionBlock,
+          label: '已拉黑',
+        ),
+      if (isBlockedBy)
+        const UserProfileStatusItem(
+          icon: WenyouIconIds.actionHide,
+          label: '互动受限',
+        ),
+    ];
+    return UserProfileHeader(
+      key: const Key('public-user-profile-header'),
+      username: profile.username,
+      avatarUrl: profile.avatarUrl,
+      level: profile.level,
+      bio: profile.bio?.trim().isNotEmpty == true ? profile.bio : '这个人还没有填写简介。',
+      metadata: profile.createdAt == null
+          ? null
+          : '${DateFormat('yyyy-MM-dd').format(profile.createdAt!)} 加入温油站',
+      statuses: statuses,
+      stats: [
+        UserProfileStatItem(
+          label: '关注',
+          value: '${profile.followingCount}',
+          onTap: () => context.pushNamed(
+            isCurrentUser ? 'me-following' : 'user-following',
+            pathParameters: isCurrentUser ? const {} : {'userId': profile.id},
           ),
         ),
-        SizedBox(height: tokens.space12),
-        WenyouPanel(
-          padding: EdgeInsets.all(tokens.space16),
-          child: Row(
+        UserProfileStatItem(
+          label: '粉丝',
+          value: '${relationState?.followerCount ?? profile.followerCount}',
+          onTap: () => context.pushNamed(
+            isCurrentUser ? 'me-followers' : 'user-followers',
+            pathParameters: isCurrentUser ? const {} : {'userId': profile.id},
+          ),
+        ),
+        UserProfileStatItem(
+          label: '收到加油',
+          value: '${WenyouAmount.format(profile.receivedTipTotal)}L',
+        ),
+      ],
+      actions: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (relationTarget != null) ...[
+            UserRelationActions(target: relationTarget!),
+            SizedBox(height: tokens.space12),
+          ],
+          Row(
             children: [
-              Expanded(
-                child: _ProfileStat(
-                  label: '关注',
-                  value: '${profile.followingCount}',
-                  onTap: () => context.pushNamed(
-                    isCurrentUser ? 'me-following' : 'user-following',
-                    pathParameters: isCurrentUser
-                        ? const {}
-                        : {'userId': profile.id},
+              if (isCurrentUser)
+                Expanded(
+                  child: FilledButton.icon(
+                    key: const Key('public-user-edit-profile'),
+                    onPressed: () => context.pushNamed('me-edit'),
+                    icon: const WenyouIcon(WenyouIconIds.actionEdit),
+                    label: const Text('编辑资料'),
+                  ),
+                )
+              else if (directMessagesEnabled && relationTarget != null)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('public-user-open-direct-message'),
+                    onPressed: () => context.pushNamed(
+                      'direct-message-new',
+                      pathParameters: {'userId': profile.id},
+                    ),
+                    icon: const WenyouIcon(WenyouIconIds.contentThread),
+                    label: const Text('发私聊'),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: tokens.minimumTouchTarget,
-                child: const VerticalDivider(),
-              ),
+              if ((isCurrentUser ||
+                  (directMessagesEnabled && relationTarget != null)))
+                SizedBox(width: tokens.space12),
               Expanded(
-                child: _ProfileStat(
-                  label: '粉丝',
-                  value:
-                      '${relationState?.followerCount ?? profile.followerCount}',
-                  onTap: () => context.pushNamed(
-                    isCurrentUser ? 'me-followers' : 'user-followers',
-                    pathParameters: isCurrentUser
-                        ? const {}
-                        : {'userId': profile.id},
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: tokens.minimumTouchTarget,
-                child: const VerticalDivider(),
-              ),
-              Expanded(
-                child: _ProfileStat(
-                  label: '收到加油',
-                  value: '${WenyouAmount.format(profile.receivedTipTotal)}L',
-                ),
-              ),
-              SizedBox(
-                height: tokens.minimumTouchTarget,
-                child: const VerticalDivider(),
-              ),
-              Expanded(
-                child: _ProfileStat(
+                child: OutlinedButton.icon(
                   key: const Key('public-user-open-moments'),
-                  label: '动态',
-                  value: '查看',
-                  onTap: () => context.pushNamed(
+                  onPressed: () => context.pushNamed(
                     'user-moments',
                     pathParameters: {'userId': profile.id},
                   ),
+                  icon: const WenyouIcon(WenyouIconIds.navigationMoments),
+                  label: const Text('查看动态'),
                 ),
               ),
             ],
           ),
-        ),
-        if (isFollowing ||
-            profile.isFollowedBy ||
-            isBlocked ||
-            isBlockedBy) ...[
-          SizedBox(height: tokens.space12),
-          WenyouPanel(
-            padding: EdgeInsets.all(tokens.space16),
-            child: Wrap(
-              spacing: tokens.space8,
-              runSpacing: tokens.space8,
-              children: [
-                if (isFollowing)
-                  const _ProfilePill(
-                    icon: Icons.check_circle_outline_rounded,
-                    label: '已关注',
-                  ),
-                if (profile.isFollowedBy)
-                  const _ProfilePill(
-                    icon: Icons.people_outline_rounded,
-                    label: '关注了你',
-                  ),
-                if (isBlocked)
-                  const _ProfilePill(icon: Icons.block_rounded, label: '已拉黑'),
-                if (isBlockedBy)
-                  const _ProfilePill(
-                    icon: Icons.visibility_off_outlined,
-                    label: '互动受限',
-                  ),
-              ],
-            ),
-          ),
         ],
-        if (relationTarget != null) ...[
-          SizedBox(height: tokens.space12),
-          WenyouPanel(
-            padding: EdgeInsets.all(tokens.space16),
-            child: Column(
-              children: [
-                if (directMessagesEnabled) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      key: const Key('public-user-open-direct-message'),
-                      onPressed: () => context.pushNamed(
-                        'direct-message-new',
-                        pathParameters: {'userId': profile.id},
-                      ),
-                      icon: const Icon(Icons.forum_outlined),
-                      label: const Text('发私聊'),
-                    ),
-                  ),
-                  SizedBox(height: tokens.space12),
-                ],
-                UserRelationActions(target: relationTarget!),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.profile});
-
-  final PublicUserProfileModel profile;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: Icon(Icons.person_rounded, size: 44, color: tokens.mutedText),
-    );
-    return Semantics(
-      image: true,
-      label: '${profile.username} 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: 88,
-          child: profile.avatarUrl == null
-              ? fallback
-              : CachedNetworkImage(
-                  imageUrl: profile.avatarUrl!,
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({
-    required this.label,
-    required this.value,
-    this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(value, style: Theme.of(context).textTheme.titleMedium),
-            SizedBox(height: tokens.space4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label, style: Theme.of(context).textTheme.bodySmall),
-                if (onTap != null) ...[
-                  SizedBox(width: tokens.space4),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: tokens.mutedText,
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfilePill extends StatelessWidget {
-  const _ProfilePill({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.accentedBackground,
-        border: Border.all(color: tokens.border),
-        borderRadius: BorderRadius.circular(tokens.radiusPill),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.space8,
-          vertical: tokens.space4,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: tokens.focus),
-            SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
       ),
     );
   }
@@ -459,14 +307,16 @@ class _UserFailureState extends StatelessWidget {
       maxWidth: 600,
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: notFound ? Icons.person_off_outlined : Icons.cloud_off_outlined,
+          icon: notFound
+              ? WenyouIconIds.statusUserUnavailable
+              : WenyouIconIds.statusOffline,
           title: notFound ? '用户不存在' : '用户资料没有加载完成',
           message: notFound ? '该用户可能已经注销，或账号不存在。' : (message ?? '请稍后重试。'),
           detail: requestId == null ? null : '请求 ID：$requestId',
           action: OutlinedButton.icon(
             key: const Key('public-user-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
           ),
         ),

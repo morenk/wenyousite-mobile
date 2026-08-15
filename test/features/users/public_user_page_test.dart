@@ -323,8 +323,8 @@ void main() {
     expect(find.text('温柔测试员'), findsNothing);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 公开用户资料无布局溢出', (tester) async {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 公开用户资料与内容卡片始终占满内容宽度', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 900);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -333,6 +333,22 @@ void main() {
       await tester.pumpWidget(_userApp(_FakePublicUserRepository()));
       await tester.pumpAndSettle();
 
+      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      expect(
+        tester
+            .getSize(find.byKey(const Key('public-user-profile-header')))
+            .width,
+        expectedWidth,
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('public-user-content-area'))).width,
+        expectedWidth,
+      );
+      final tabWidths = [
+        for (final tab in ['created', 'played', 'replies', 'bookmarks'])
+          tester.getSize(find.byKey(Key('public-user-$tab-tab'))).width,
+      ];
+      expect(tabWidths.toSet(), hasLength(1));
       expect(tester.takeException(), isNull);
     });
   }

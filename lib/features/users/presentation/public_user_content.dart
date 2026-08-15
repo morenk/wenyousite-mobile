@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -24,6 +25,7 @@ class PublicUserContentArea extends ConsumerWidget {
     final tokens = context.wenyouTokens;
     final notifier = ref.read(publicUserControllerProvider(userId).notifier);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         WenyouPanel(
           padding: EdgeInsets.all(tokens.space16),
@@ -35,19 +37,17 @@ class PublicUserContentArea extends ConsumerWidget {
                 subtitle: state.activeTab.description,
               ),
               SizedBox(height: tokens.space12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<PublicUserContentTab>(
-                  showSelectedIcon: false,
-                  selected: {state.activeTab},
-                  onSelectionChanged: (selection) {
-                    notifier.selectTab(selection.single);
-                  },
-                  segments: [
-                    for (final tab in state.availableTabs)
-                      ButtonSegment(value: tab, label: Text(tab.label)),
-                  ],
-                ),
+              Row(
+                children: [
+                  for (final tab in state.availableTabs)
+                    Expanded(
+                      child: _ContentTabButton(
+                        tab: tab,
+                        selected: tab == state.activeTab,
+                        onTap: () => notifier.selectTab(tab),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -78,6 +78,56 @@ class PublicUserContentArea extends ConsumerWidget {
           ),
         },
       ],
+    );
+  }
+}
+
+class _ContentTabButton extends StatelessWidget {
+  const _ContentTabButton({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final PublicUserContentTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final color = selected ? tokens.focus : tokens.mutedText;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: InkWell(
+        key: Key('public-user-${tab.name}-tab'),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: selected ? tokens.brand : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                tab.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -113,6 +163,7 @@ class _ThreadSection extends StatelessWidget {
     }
     final tokens = context.wenyouTokens;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < section.items.length; index++) ...[
           if (index > 0) SizedBox(height: tokens.space12),
@@ -134,7 +185,7 @@ class _ThreadSection extends StatelessWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.expand_more_rounded),
+                  : const WenyouIcon(WenyouIconIds.navigationExpand),
               label: Text(section.isLoadingMore ? '正在加载' : '加载更多'),
             ),
           ),
@@ -168,6 +219,7 @@ class _ReplySection extends StatelessWidget {
     }
     final tokens = context.wenyouTokens;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < section.items.length; index++) ...[
           if (index > 0) SizedBox(height: tokens.space12),
@@ -210,7 +262,10 @@ class _UserThreadCard extends StatelessWidget {
                   accent: item.status == PublicUserThreadStatus.recruiting,
                 ),
                 if (item.isPrivate)
-                  const _ContentPill(label: '私密', icon: Icons.lock_outline),
+                  const _ContentPill(
+                    label: '私密',
+                    icon: WenyouIconIds.actionLock,
+                  ),
               ],
             ),
             SizedBox(height: tokens.space12),
@@ -293,7 +348,7 @@ class _ContentPill extends StatelessWidget {
   const _ContentPill({required this.label, this.icon, this.accent = false});
 
   final String label;
-  final IconData? icon;
+  final String? icon;
   final bool accent;
 
   @override
@@ -315,7 +370,7 @@ class _ContentPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: color),
+              WenyouIcon(icon!, size: 14, color: color),
               SizedBox(width: tokens.space4),
             ],
             Text(
@@ -386,7 +441,7 @@ class _ContentFailureState extends StatelessWidget {
     final hidden = failure?.httpStatus == 404;
     return WenyouPanel(
       child: WenyouEmptyState(
-        icon: hidden ? Icons.visibility_off_outlined : Icons.cloud_off_outlined,
+        icon: hidden ? WenyouIconIds.actionHide : WenyouIconIds.statusOffline,
         title: hidden ? '该用户未公开${tab.description}' : '${tab.description}没有加载完成',
         message: hidden ? '隐私设置可能刚刚发生变化。' : (failure?.userMessage ?? '请稍后重试。'),
         detail: failure?.requestId == null
@@ -395,7 +450,7 @@ class _ContentFailureState extends StatelessWidget {
         action: OutlinedButton.icon(
           key: Key('public-user-${tab.name}-retry'),
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重新加载'),
         ),
       ),
@@ -417,7 +472,7 @@ class _ContentInlineFailure extends StatelessWidget {
       detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
       action: TextButton.icon(
         onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded, size: 18),
+        icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
         label: const Text('重试加载更多'),
       ),
     );
@@ -444,9 +499,9 @@ String _emptyTitle(PublicUserContentTab tab) => switch (tab) {
   PublicUserContentTab.bookmarks => '还没有公开收藏',
 };
 
-IconData _emptyIcon(PublicUserContentTab tab) => switch (tab) {
-  PublicUserContentTab.created => Icons.forum_outlined,
-  PublicUserContentTab.played => Icons.sports_esports_outlined,
-  PublicUserContentTab.replies => Icons.chat_bubble_outline_rounded,
-  PublicUserContentTab.bookmarks => Icons.bookmark_border_rounded,
+String _emptyIcon(PublicUserContentTab tab) => switch (tab) {
+  PublicUserContentTab.created => WenyouIconIds.contentThread,
+  PublicUserContentTab.played => WenyouIconIds.metricPlayers,
+  PublicUserContentTab.replies => WenyouIconIds.metricComments,
+  PublicUserContentTab.bookmarks => WenyouIconIds.actionBookmark,
 };
