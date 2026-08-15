@@ -7,7 +7,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.da
 
 void main() {
   for (final width in const [320.0, 360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 工具栏使用固定核心栏和内部更多托盘', (tester) async {
+    testWidgets('$width dp 工具栏按可用宽度提升常用命令', (tester) async {
       tester.view.physicalSize = Size(width, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -47,19 +47,28 @@ void main() {
       );
       expect(find.byKey(const Key('editor-heading')), findsOneWidget);
       expect(find.byKey(const Key('editor-submit')), findsOneWidget);
+      final promotedKeys = switch (width) {
+        320 => const <String>[],
+        360 => const ['editor-content-drafts'],
+        400 => const ['editor-content-drafts', 'editor-quote'],
+        _ => const [
+          'editor-content-drafts',
+          'editor-quote',
+          'editor-horizontal-rule',
+        ],
+      };
       final controlKeys = <String>[
         'editor-heading',
         'editor-bold',
         'editor-italic',
         'editor-image',
-        if (find
-            .byKey(const Key('editor-content-drafts'))
-            .evaluate()
-            .isNotEmpty)
-          'editor-content-drafts',
+        ...promotedKeys,
         'editor-more',
         'editor-submit',
       ];
+      for (final key in promotedKeys) {
+        expect(find.byKey(Key(key)), findsOneWidget);
+      }
       final centers = controlKeys
           .map((key) => tester.getCenter(find.byKey(Key(key))).dx)
           .toList();
@@ -84,9 +93,72 @@ void main() {
       await tester.tap(find.byKey(const Key('editor-more')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
+      for (final key in promotedKeys) {
+        final label = switch (key) {
+          'editor-content-drafts' => '正文草稿',
+          'editor-quote' => '引用',
+          'editor-horizontal-rule' => '分隔线',
+          _ => throw StateError('未知提升命令 $key'),
+        };
+        expect(find.byTooltip(label), findsOneWidget);
+      }
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('无提交按钮时 400dp 提升草稿、引用和分隔线并从更多去重', (tester) async {
+    tester.view.physicalSize = const Size(400, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = QuillController.basic();
+    final focusNode = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              editorFocusNode: focusNode,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('editor-content-drafts')), findsOneWidget);
+    expect(find.byKey(const Key('editor-quote')), findsOneWidget);
+    expect(find.byKey(const Key('editor-horizontal-rule')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('editor-quote')));
+    await tester.pump();
+    expect(
+      controller.getSelectionStyle().attributes[Attribute.blockQuote.key],
+      isNotNull,
+    );
+
+    await tester.tap(find.byKey(const Key('editor-horizontal-rule')));
+    await tester.pump();
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      contains('---'),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('正文草稿'), findsOneWidget);
+    expect(find.byTooltip('引用'), findsOneWidget);
+    expect(find.byTooltip('分隔线'), findsOneWidget);
+    expect(find.byTooltip('无序列表'), findsOneWidget);
+  });
 
   testWidgets('链接和骰子在编辑器内部输入并保持 Markdown 往返', (tester) async {
     final document = Document()..insert(0, '查看资料');
@@ -193,5 +265,40 @@ void main() {
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pump();
     expect(tester.getSize(dock).height, 56);
+  });
+
+  testWidgets('工具栏按能力集合隐藏业务上下文不支持的命令', (tester) async {
+    final controller = QuillController.basic();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouEditorToolbar(
+            controller: controller,
+            enabled: true,
+            capabilities: const WenyouEditorCapabilities(
+              headings: false,
+              inlineStyles: false,
+              images: false,
+              links: false,
+              blockStyles: false,
+              dice: false,
+              stickers: false,
+              drafts: false,
+            ),
+            onInsertImage: () async {},
+            onSaveDraft: () async {},
+            onSubmit: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('editor-heading')), findsNothing);
+    expect(find.byKey(const Key('editor-image')), findsNothing);
+    expect(find.byKey(const Key('editor-more')), findsNothing);
+    expect(find.byKey(const Key('editor-submit')), findsOneWidget);
   });
 }

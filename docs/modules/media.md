@@ -61,8 +61,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.9.0-dev.20260814.2`；Markdown v2；后端 `2a23bcb7c3f3c2ad3885685cbbbc9b58270e3479`；Foundation `v1.3.1`。
+契约 `4.10.0-dev.20260814.1`；Markdown v2；后端 `90a33279f6f786685567a27ced11dd7470620cad`；Foundation `v2.4.1`。
 
 ## 14. 相关代码与架构文档
 
-端口与任务状态位于 `lib/features/media/application/`，系统相册与 Dio adapter 位于 `lib/features/media/data/`，组合根绑定位于 `lib/app/wenyou_app.dart`；正文插入入口分别位于 `lib/features/editor/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`。头像仓储与状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。
+端口与任务状态位于 `lib/features/media/application/`，系统相册与 Dio adapter 位于 `lib/features/media/data/`，组合根绑定位于 `lib/app/wenyou_app.dart`；正文插入入口分别位于 `lib/features/threads/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`，共同使用 editor 公共会话。头像仓储与状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。

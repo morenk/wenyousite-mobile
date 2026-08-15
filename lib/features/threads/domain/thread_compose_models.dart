@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 
+/// Visibility accepted by the thread creation workflow.
 enum ThreadComposeVisibility {
   public('PUBLIC', '公开'),
   private('PRIVATE', '私密');

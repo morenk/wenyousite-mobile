@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 abstract interface class ThreadComposeRepository {
   Future<ThreadComposeBootstrap> fetchBootstrap();

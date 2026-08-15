@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -77,10 +78,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
     if (!mounted) return;
     final selection = widget.controller.selection;
     final next = widget.enabled && selection.isCollapsed
-        ? detectActiveMentionQuery(
-            widget.controller.document.toPlainText(),
-            selection.baseOffset,
-          )
+        ? _detectQueryAt(selection.baseOffset)
         : null;
     final signature = _signature(next);
     final visible = signature == _dismissedSignature ? null : next;
@@ -161,10 +159,7 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
     final active = _active;
     final selection = widget.controller.selection;
     final current = selection.isCollapsed
-        ? detectActiveMentionQuery(
-            widget.controller.document.toPlainText(),
-            selection.baseOffset,
-          )
+        ? _detectQueryAt(selection.baseOffset)
         : null;
     if (active == null || current != active) {
       _syncFromController(force: true);
@@ -195,6 +190,24 @@ class _MentionSuggestionsState extends ConsumerState<MentionSuggestions> {
     });
     _hideOverlay();
     widget.focusNode.requestFocus();
+  }
+
+  ActiveMentionQuery? _detectQueryAt(int cursor) {
+    // A valid query contains at most 24 characters. Reading one extra
+    // character before `@` is enough to validate the boundary without
+    // materializing the complete document for every key event.
+    final windowStart = cursor > 26 ? cursor - 26 : 0;
+    final text = widget.controller.document.getPlainText(
+      windowStart,
+      cursor - windowStart,
+    );
+    final local = detectActiveMentionQuery(text, text.length);
+    if (local == null) return null;
+    return ActiveMentionQuery(
+      start: local.start + windowStart,
+      end: local.end + windowStart,
+      query: local.query,
+    );
   }
 
   void _showOverlay() {
@@ -368,7 +381,7 @@ class _MentionPanel extends StatelessWidget {
                         key: const Key('mention-dismiss'),
                         tooltip: '关闭提及候选',
                         onPressed: onDismiss,
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const WenyouIcon(WenyouIconIds.actionClose),
                       ),
                     ],
                   ),
@@ -428,7 +441,7 @@ class _MentionFailure extends StatelessWidget {
           child: TextButton.icon(
             key: const Key('mention-retry'),
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重试'),
           ),
         ),
@@ -459,7 +472,7 @@ class _MentionResults extends StatelessWidget {
     if (count == 0) {
       return const _MentionStatus(
         key: Key('mention-empty'),
-        icon: Icon(Icons.alternate_email_rounded),
+        icon: WenyouIcon(WenyouIconIds.actionMention),
         message: '暂无匹配的可提及用户。',
       );
     }
@@ -474,7 +487,7 @@ class _MentionResults extends StatelessWidget {
             return ListTile(
               key: const Key('mention-all-players'),
               minTileHeight: context.wenyouTokens.minimumTouchTarget,
-              leading: const Icon(Icons.groups_2_outlined),
+              leading: const WenyouIcon(WenyouIconIds.identityMembers),
               title: const Text('@全体玩家'),
               trailing: const Text('仅楼主/协作者'),
               onTap: onAllPlayers,
@@ -484,7 +497,7 @@ class _MentionResults extends StatelessWidget {
           return ListTile(
             key: ValueKey('mention-user-${candidate.id}'),
             minTileHeight: context.wenyouTokens.minimumTouchTarget,
-            leading: const Icon(Icons.alternate_email_rounded),
+            leading: const WenyouIcon(WenyouIconIds.actionMention),
             title: Text(candidate.label),
             trailing: Text(candidate.relationLabel),
             onTap: () => onUser(candidate),

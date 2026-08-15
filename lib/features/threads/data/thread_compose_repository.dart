@@ -5,10 +5,10 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_compose_repository_ports.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
-export 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart'
+export 'package:wenyousite_mobile/features/threads/application/thread_compose_repository_ports.dart'
     show ThreadComposeRepository, threadComposeRepositoryProvider;
 
 class ApiThreadComposeRepository implements ThreadComposeRepository {

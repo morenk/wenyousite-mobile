@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/features/editor/application/remote_thread_drafts_controller.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/remote_thread_drafts_sheet.dart';
+import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/remote_thread_drafts_sheet.dart';
 
 void main() {
   testWidgets('360dp 草稿箱展示当前项并二次确认删除其他服务端草稿', (tester) async {

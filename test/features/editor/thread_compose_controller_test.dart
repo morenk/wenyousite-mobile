@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 void main() {
   test('按 JWT 用户隔离恢复本地快照并异步补齐分类与邮箱状态', () async {
@@ -67,6 +69,33 @@ void main() {
       ThreadSnapshotMetadata.fromJson(store.snapshot!.metadataJson)?.title,
       '新标题',
     );
+  });
+
+  test('旧快照完成时不会把更新后的正文误标为已保存', () async {
+    final store = _ControlledSnapshotStore();
+    final controller = ThreadComposeController(
+      _FakeRepository(),
+      store,
+      knownOwnerId: 'user-one',
+      createRequestId: () => _requestId,
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    controller.updateBody('第一版');
+    final firstSave = controller.flushLocalSnapshot();
+    await store.firstSaveStarted.future;
+    controller.updateBody('第二版');
+    expect(controller.state.localSnapshotStatus, LocalSnapshotStatus.idle);
+
+    store.releaseFirstSave.complete();
+    await firstSave;
+    expect(controller.state.localSnapshotStatus, LocalSnapshotStatus.idle);
+
+    await controller.flushLocalSnapshot();
+    expect(controller.state.localSnapshotStatus, LocalSnapshotStatus.saved);
+    expect(store.snapshot?.body, '第二版');
   });
 
   test('首次发布严格执行待确认记录、创建草稿、聚合发布与本地清理', () async {
@@ -368,5 +397,21 @@ class _MemorySnapshotStore implements EditorSnapshotStore {
   @override
   Future<void> saveThreadSnapshot(LocalEditorSnapshot value) async {
     snapshot = value;
+  }
+}
+
+class _ControlledSnapshotStore extends _MemorySnapshotStore {
+  final Completer<void> firstSaveStarted = Completer<void>();
+  final Completer<void> releaseFirstSave = Completer<void>();
+  var _saveCount = 0;
+
+  @override
+  Future<void> saveThreadSnapshot(LocalEditorSnapshot value) async {
+    _saveCount += 1;
+    if (_saveCount == 1) {
+      firstSaveStarted.complete();
+      await releaseFirstSave.future;
+    }
+    await super.saveThreadSnapshot(value);
   }
 }

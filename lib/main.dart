@@ -14,7 +14,6 @@ import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_r
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
@@ -35,6 +34,7 @@ import 'package:wenyousite_mobile/features/social/data/user_relation_repository.
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';

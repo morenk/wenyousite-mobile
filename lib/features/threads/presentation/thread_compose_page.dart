@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
@@ -11,18 +12,15 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
-import 'package:wenyousite_mobile/features/editor/application/remote_thread_drafts_controller.dart';
-import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/remote_thread_drafts_sheet.dart';
+import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/remote_thread_drafts_sheet.dart';
 
 class ThreadComposePage extends ConsumerStatefulWidget {
   const ThreadComposePage({super.key});
@@ -33,22 +31,18 @@ class ThreadComposePage extends ConsumerStatefulWidget {
 
 class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     with WidgetsBindingObserver {
-  late final QuillController _editorController;
-  final FocusNode _editorFocusNode = FocusNode();
-  final ScrollController _editorScrollController = ScrollController();
+  late final RichEditorSession _editorSession;
   final WenyouEditorToolbarController _toolbarController =
       WenyouEditorToolbarController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final Object _uploadTaskId = Object();
 
-  bool _applyingDocument = false;
+  bool _applyingInputs = false;
   bool _allowPop = false;
   bool _preparingPop = false;
   _ComposeMetadataPanel? _metadataPanel;
   int _scheduledDocumentRevision = -1;
-  List<MarkdownCodecIssue> _documentIssues = const [];
-  String? _codecFailure;
   bool get _uploading =>
       ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy;
 
@@ -56,12 +50,12 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final decoded = MarkdownDeltaCodec.decode('');
-    _editorController = QuillController(
-      document: Document.fromDelta(decoded.delta),
-      selection: const TextSelection.collapsed(offset: 0),
-    )..addListener(_onDocumentChanged);
-    _editorFocusNode.addListener(_onEditorFocusChanged);
+    _editorSession = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (markdown) => ref
+          .read(threadComposeControllerProvider.notifier)
+          .updateBody(markdown),
+    )..addListener(_onEditorSessionChanged);
     _titleController.addListener(_onTitleChanged);
     _tagsController.addListener(_onTagsChanged);
   }
@@ -78,13 +72,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _editorController
-      ..removeListener(_onDocumentChanged)
+    _editorSession
+      ..removeListener(_onEditorSessionChanged)
       ..dispose();
-    _editorFocusNode
-      ..removeListener(_onEditorFocusChanged)
-      ..dispose();
-    _editorScrollController.dispose();
     _toolbarController.dispose();
     _titleController
       ..removeListener(_onTitleChanged)
@@ -103,7 +93,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     );
     _scheduleDocumentSync(state);
     final locked = state.isSubmitting || uploadState.isBusy;
-    _editorController.readOnly = locked;
+    _editorSession.readOnly = locked;
 
     return PopScope<Object?>(
       canPop: _allowPop && !_toolbarController.trayOpen,
@@ -124,14 +114,17 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 onPressed: locked ? null : _openRemoteDraftActions,
                 icon: Badge(
                   isLabelVisible: state.remoteDraft != null,
-                  child: const Icon(Icons.cloud_outlined),
+                  child: const WenyouIcon(WenyouIconIds.statusCloud),
                 ),
               ),
             if (state.phase == ThreadComposePhase.ready ||
                 state.phase == ThreadComposePhase.published)
               TextButton(
                 key: const Key('compose-publish'),
-                onPressed: !locked && _codecFailure == null && state.canPublish
+                onPressed:
+                    !locked &&
+                        _editorSession.codecFailure == null &&
+                        state.canPublish
                     ? _publish
                     : null,
                 child: state.action == ThreadComposeAction.publish
@@ -166,7 +159,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     bool locked,
   ) {
     final tokens = context.wenyouTokens;
-    final enabled = !locked && _codecFailure == null;
+    final enabled = !locked && _editorSession.codecFailure == null;
     final selectedCategory = state.categories
         .where((category) => category.slug == state.categorySlug)
         .firstOrNull;
@@ -187,8 +180,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
             children: [
               _ComposeStatusArea(
                 state: state,
-                documentIssues: _documentIssues,
-                codecFailure: _codecFailure,
+                documentIssues: _editorSession.issues,
+                codecFailure: _editorSession.codecFailure,
                 uploadFailure: uploadState.failure,
                 uploadProgress: uploadState.progress,
                 uploading: uploadState.isBusy,
@@ -206,7 +199,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                   controller: _titleController,
                   enabled: !locked,
                   maxLength: 100,
-                  maxLines: _editorFocusNode.hasFocus ? 1 : 3,
+                  maxLines: _editorSession.hasFocus ? 1 : 3,
                   minLines: 1,
                   textInputAction: TextInputAction.next,
                   style: Theme.of(context).textTheme.headlineSmall,
@@ -242,9 +235,9 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                       label: '主题正文编辑器',
                       child: QuillEditor(
                         key: const Key('compose-body'),
-                        controller: _editorController,
-                        focusNode: _editorFocusNode,
-                        scrollController: _editorScrollController,
+                        controller: _editorSession.controller,
+                        focusNode: _editorSession.focusNode,
+                        scrollController: _editorSession.scrollController,
                         config: QuillEditorConfig(
                           scrollable: true,
                           expands: true,
@@ -261,8 +254,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                       ),
                     ),
                     MentionSuggestions(
-                      controller: _editorController,
-                      focusNode: _editorFocusNode,
+                      controller: _editorSession.controller,
+                      focusNode: _editorSession.focusNode,
                       threadId: state.remoteDraft?.id,
                       enabled: enabled,
                     ),
@@ -275,20 +268,16 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ),
               WenyouComposerDock(
                 key: const Key('compose-toolbar'),
-                controller: _editorController,
+                controller: _editorSession.controller,
                 surface: WenyouComposerSurface.page,
-                profile: WenyouComposerProfile.richMarkdown,
                 enabled: enabled,
-                editorFocusNode: _editorFocusNode,
+                editorFocusNode: _editorSession.focusNode,
                 onInsertImage: _insertImage,
                 onInsertSticker: ref.watch(stickersEnabledProvider)
                     ? _insertSticker
                     : null,
                 onSaveDraft: _openContentDrafts,
-                characterCount: _editorController.document
-                    .toPlainText()
-                    .trim()
-                    .length,
+                characterCount: _editorSession.characterCount,
                 characterLimit: 10000,
                 toolbarController: _toolbarController,
               ),
@@ -328,7 +317,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                                 .read(threadComposeControllerProvider.notifier)
                                 .updateCategory(category.slug);
                             setState(() => _metadataPanel = null);
-                            _editorFocusNode.requestFocus();
+                            _editorSession.focusNode.requestFocus();
                           },
                   ),
                 )
@@ -349,7 +338,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                               .read(threadComposeControllerProvider.notifier)
                               .updateVisibility(visibility);
                           setState(() => _metadataPanel = null);
-                          _editorFocusNode.requestFocus();
+                          _editorSession.focusNode.requestFocus();
                         },
                 ),
               )
@@ -368,14 +357,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           ),
           onSubmitted: (_) {
             setState(() => _metadataPanel = null);
-            _editorFocusNode.requestFocus();
+            _editorSession.focusNode.requestFocus();
           },
         ),
       },
     );
   }
 
-  void _onEditorFocusChanged() {
+  void _onEditorSessionChanged() {
     if (mounted) setState(() {});
   }
 
@@ -426,49 +415,29 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   void _applyStateToInputs(ThreadComposeState state) {
-    _applyingDocument = true;
+    _applyingInputs = true;
     try {
       _titleController.text = state.title;
       _tagsController.text = state.tags.join(' ');
-      final decoded = MarkdownDeltaCodec.decode(state.body);
-      _documentIssues = decoded.issues;
-      _editorController.document = Document.fromDelta(decoded.delta);
-      _codecFailure = null;
-    } on Object catch (error) {
-      _codecFailure = '恢复正文时发生错误：$error';
+      _editorSession.applyExternalMarkdown(state.body);
     } finally {
-      _applyingDocument = false;
+      _applyingInputs = false;
     }
     if (mounted) setState(() {});
   }
 
   void _onTitleChanged() {
-    if (_applyingDocument) return;
+    if (_applyingInputs) return;
     ref
         .read(threadComposeControllerProvider.notifier)
         .updateTitle(_titleController.text);
   }
 
   void _onTagsChanged() {
-    if (_applyingDocument) return;
+    if (_applyingInputs) return;
     ref
         .read(threadComposeControllerProvider.notifier)
         .updateTags(_tagsController.text.split(RegExp(r'[,，\s]+')));
-  }
-
-  void _onDocumentChanged() {
-    if (_applyingDocument) return;
-    try {
-      final markdown = MarkdownDeltaCodec.encode(
-        _editorController.document.toDelta(),
-      );
-      ref.read(threadComposeControllerProvider.notifier).updateBody(markdown);
-      if (_codecFailure != null && mounted) {
-        setState(() => _codecFailure = null);
-      }
-    } on MarkdownCodecException catch (error) {
-      if (mounted) setState(() => _codecFailure = error.message);
-    }
   }
 
   Future<void> _insertImage() async {
@@ -492,60 +461,15 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   void _insertBlockImage(UploadedEditorImage image) {
-    var selection = _editorController.selection;
-    final documentLength = _editorController.document.length;
-    final offset = selection.start
-        .clamp(0, documentLength > 0 ? documentLength - 1 : 0)
-        .toInt();
-    selection = TextSelection.collapsed(offset: offset);
-    final plain = _editorController.document.toPlainText();
-    if (selection.start > 0 && plain[selection.start - 1] != '\n') {
-      _editorController.replaceText(
-        selection.start,
-        0,
-        '\n',
-        TextSelection.collapsed(offset: selection.start + 1),
-      );
-      selection = TextSelection.collapsed(offset: selection.start + 1);
-    }
-    _editorController.replaceText(
-      selection.start,
-      0,
-      Embeddable(MarkdownDeltaCodec.imageEmbed, {
-        'version': 1,
-        'url': image.url,
-        'alt': '图片',
-        'title': null,
-      }),
-      TextSelection.collapsed(offset: selection.start + 1),
-    );
-    _editorController.replaceText(
-      selection.start + 1,
-      0,
-      '\n',
-      TextSelection.collapsed(offset: selection.start + 2),
-    );
+    _editorSession.insertBlockImage(url: image.url);
   }
 
   Future<void> _insertSticker() async {
     final sticker = await showStickerPicker(context);
     if (!mounted || sticker == null) return;
-    var selection = _editorController.selection;
-    final documentLength = _editorController.document.length;
-    final offset = selection.start
-        .clamp(0, documentLength > 0 ? documentLength - 1 : 0)
-        .toInt();
-    selection = TextSelection.collapsed(offset: offset);
-    _editorController.replaceText(
-      selection.start,
-      0,
-      Embeddable(MarkdownDeltaCodec.stickerEmbed, {
-        'version': 1,
-        'assetId': sticker.asset.id,
-        'url': sticker.asset.url,
-        'alt': '表情',
-      }),
-      TextSelection.collapsed(offset: selection.start + 1),
+    _editorSession.insertSticker(
+      assetId: sticker.asset.id,
+      url: sticker.asset.url,
     );
   }
 
@@ -556,7 +480,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _saveThreadDraft() async {
-    if (_codecFailure != null || _uploading) return;
+    if (_uploading || !_editorSession.flush()) return;
     final saved = await ref
         .read(threadComposeControllerProvider.notifier)
         .saveDraft();
@@ -583,14 +507,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           ),
           ListTile(
             key: const Key('compose-save-draft'),
-            leading: const Icon(Icons.cloud_upload_outlined),
+            leading: const WenyouIcon(WenyouIconIds.statusSyncing),
             title: const Text('保存当前主题'),
             subtitle: const Text('保存标题、正文和发布设置'),
             onTap: () => Navigator.pop(context, _RemoteDraftAction.save),
           ),
           ListTile(
             key: const Key('compose-open-remote-drafts'),
-            leading: const Icon(Icons.folder_open_outlined),
+            leading: const WenyouIcon(WenyouIconIds.contentFolderOpen),
             title: const Text('打开云端草稿'),
             subtitle: const Text('浏览并切换本人未发布的主题'),
             onTap: () => Navigator.pop(context, _RemoteDraftAction.open),
@@ -608,7 +532,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _openRemoteDrafts() async {
-    if (_codecFailure != null || _uploading) return;
+    if (_uploading || !_editorSession.flush()) return;
     final before = ref.read(threadComposeControllerProvider);
     final selected = await showRemoteThreadDraftsSheet(
       context: context,
@@ -645,7 +569,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _openContentDrafts() async {
-    if (_codecFailure != null || _uploading) return;
+    if (_uploading || !_editorSession.flush()) return;
     await _flushSnapshot();
     if (!mounted) return;
     final currentBody = ref.read(threadComposeControllerProvider).body;
@@ -659,7 +583,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _publish() async {
-    if (_codecFailure != null || _uploading) return;
+    if (_uploading || !_editorSession.flush()) return;
     final threadId = await ref
         .read(threadComposeControllerProvider.notifier)
         .publish();
@@ -670,6 +594,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _flushSnapshot() async {
+    if (!_editorSession.flush()) return;
     final state = ref.read(threadComposeControllerProvider);
     if (state.phase == ThreadComposePhase.ready) {
       await ref
@@ -749,7 +674,7 @@ class _ComposeMetadataBar extends StatelessWidget {
         children: [
           _MetadataButton(
             key: const Key('compose-category'),
-            icon: Icons.category_outlined,
+            icon: WenyouIconIds.contentCategory,
             label: '分类',
             selected: activePanel == _ComposeMetadataPanel.category,
             enabled: enabled,
@@ -757,14 +682,14 @@ class _ComposeMetadataBar extends StatelessWidget {
           ),
           _MetadataButton(
             key: const Key('compose-visibility'),
-            icon: Icons.visibility_outlined,
+            icon: WenyouIconIds.actionShow,
             label: '可见性',
             selected: activePanel == _ComposeMetadataPanel.visibility,
             enabled: enabled,
             onPressed: () => onPanelChanged(_ComposeMetadataPanel.visibility),
           ),
           _MetadataButton(
-            icon: Icons.sell_outlined,
+            icon: WenyouIconIds.contentTag,
             label: '标签',
             selected: activePanel == _ComposeMetadataPanel.tags,
             enabled: enabled,
@@ -798,7 +723,7 @@ class _MetadataButton extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final String icon;
   final String label;
   final bool selected;
   final bool enabled;
@@ -810,8 +735,8 @@ class _MetadataButton extends StatelessWidget {
       tooltip: label,
       onPressed: enabled ? onPressed : null,
       isSelected: selected,
-      selectedIcon: Icon(icon, color: context.wenyouTokens.brand),
-      icon: Icon(icon),
+      selectedIcon: WenyouIcon(icon, color: context.wenyouTokens.brand),
+      icon: WenyouIcon(icon),
     );
   }
 }
@@ -972,7 +897,7 @@ class _LoadFailure extends StatelessWidget {
     return WenyouPageBody(
       child: WenyouPanel(
         child: WenyouEmptyState(
-          icon: Icons.edit_off_outlined,
+          icon: WenyouIconIds.actionDisableEdit,
           title: '创作空间没有准备完成',
           message: failure?.userMessage ?? '请重试；原有本地数据不会被覆盖。',
           detail: _requestDetail(failure),
@@ -1023,14 +948,11 @@ class _LocalSaveStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, label) = switch (state.localSnapshotStatus) {
-      LocalSnapshotStatus.idle => (Icons.edit_outlined, '内容有变更，稍后自动保存到本机'),
-      LocalSnapshotStatus.saving => (Icons.sync_rounded, '正在保存到本机…'),
-      LocalSnapshotStatus.saved => (
-        Icons.check_circle_outline_rounded,
-        '已保存到本机',
-      ),
+      LocalSnapshotStatus.idle => (WenyouIconIds.actionEdit, '内容有变更，稍后自动保存到本机'),
+      LocalSnapshotStatus.saving => (WenyouIconIds.actionSync, '正在保存到本机…'),
+      LocalSnapshotStatus.saved => (WenyouIconIds.statusSuccess, '已保存到本机'),
       LocalSnapshotStatus.failed => (
-        Icons.error_outline_rounded,
+        WenyouIconIds.statusError,
         '本地保存失败，请先不要退出',
       ),
     };
@@ -1038,7 +960,7 @@ class _LocalSaveStatus extends StatelessWidget {
       liveRegion: true,
       child: Row(
         children: [
-          Icon(icon, size: 18),
+          WenyouIcon(icon, size: 18),
           SizedBox(width: context.wenyouTokens.space8),
           Expanded(
             child: Text(label, style: Theme.of(context).textTheme.bodySmall),

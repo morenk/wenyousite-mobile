@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class WenyouConstrainedWidth extends StatelessWidget {
@@ -103,7 +104,7 @@ class WenyouComposerAction extends StatelessWidget {
   });
 
   final String label;
-  final IconData icon;
+  final Object icon;
   final VoidCallback? onPressed;
 
   @override
@@ -124,7 +125,7 @@ class WenyouComposerAction extends StatelessWidget {
             disabledForegroundColor: tokens.mutedText,
             elevation: 0,
           ),
-          icon: Icon(icon, size: 20),
+          icon: _compatibleIcon(icon, size: 20),
           label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ),
@@ -232,23 +233,22 @@ class WenyouStatusBanner extends StatelessWidget {
       WenyouStatusTone.neutral => (
         tokens.softPanel,
         tokens.text,
-        Icons.info_outline_rounded,
+        WenyouIconIds.statusInfo,
       ),
       WenyouStatusTone.accent => (
         tokens.accentedBackground,
         tokens.text,
-        Icons.favorite_outline_rounded,
+        WenyouIconIds.statusInfo,
       ),
       WenyouStatusTone.error => (
         scheme.errorContainer,
         scheme.onErrorContainer,
-        Icons.error_outline_rounded,
+        WenyouIconIds.statusError,
       ),
     };
     return Semantics(
       liveRegion: true,
-      child: AnimatedContainer(
-        duration: tokens.feedbackDuration,
+      child: Container(
         padding: EdgeInsets.all(tokens.space12),
         decoration: BoxDecoration(
           color: background,
@@ -262,7 +262,7 @@ class WenyouStatusBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: foreground),
+            WenyouIcon(icon, size: 20, color: foreground),
             SizedBox(width: tokens.space8),
             Expanded(
               child: Column(
@@ -306,7 +306,7 @@ class WenyouAsyncPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final String? loadingLabel;
-  final IconData? icon;
+  final Object? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -319,26 +319,23 @@ class WenyouAsyncPrimaryButton extends StatelessWidget {
         child: Semantics(
           label: isLoading ? (loadingLabel ?? '$label，处理中') : label,
           excludeSemantics: true,
-          child: AnimatedSwitcher(
-            duration: tokens.feedbackDuration,
-            child: isLoading
-                ? const SizedBox.square(
-                    key: ValueKey('loading'),
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Row(
-                    key: const ValueKey('label'),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(icon, size: 20),
-                        SizedBox(width: tokens.space8),
-                      ],
-                      Text(label),
+          child: isLoading
+              ? const SizedBox.square(
+                  key: ValueKey('loading'),
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Row(
+                  key: const ValueKey('label'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      _compatibleIcon(icon!, size: 20),
+                      SizedBox(width: tokens.space8),
                     ],
-                  ),
-          ),
+                    Text(label),
+                  ],
+                ),
         ),
       ),
     );
@@ -355,7 +352,7 @@ class WenyouEmptyState extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final Object icon;
   final String title;
   final String message;
   final String? detail;
@@ -374,7 +371,7 @@ class WenyouEmptyState extends StatelessWidget {
           ),
           child: SizedBox.square(
             dimension: 64,
-            child: Icon(icon, size: 32, color: tokens.brand),
+            child: _compatibleIcon(icon, size: 32, color: tokens.brand),
           ),
         ),
         SizedBox(height: tokens.space16),
@@ -386,14 +383,16 @@ class WenyouEmptyState extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        SizedBox(height: tokens.space8),
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-        ),
+        if (message.trim().isNotEmpty) ...[
+          SizedBox(height: tokens.space8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+          ),
+        ],
         if (detail != null) ...[
           SizedBox(height: tokens.space8),
           SelectableText(
@@ -406,4 +405,12 @@ class WenyouEmptyState extends StatelessWidget {
       ],
     );
   }
+}
+
+Widget _compatibleIcon(Object icon, {double? size, Color? color}) {
+  return switch (icon) {
+    String name => WenyouIcon(name, size: size ?? 24, color: color),
+    IconData data => Icon(data, size: size, color: color),
+    _ => throw ArgumentError.value(icon, 'icon', '必须是语义图标名称或 IconData'),
+  };
 }

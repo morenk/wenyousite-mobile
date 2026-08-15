@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+
+import '../../support/foundation_icon_finder.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -60,7 +63,7 @@ void main() {
           floatingActionButton: WenyouComposerAction(
             key: const Key('composer-dock'),
             label: '发表评论…',
-            icon: Icons.chat_bubble_outline_rounded,
+            icon: WenyouIconIds.metricComments,
             onPressed: () => pressed = true,
           ),
         ),
@@ -86,22 +89,20 @@ void main() {
     expect(pressed, isTrue);
   });
 
-  testWidgets('无障碍导航开启时阅读操作不会随滚动隐藏', (tester) async {
+  testWidgets('固定阅读操作不会随滚动隐藏', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: MediaQuery(
-          data: const MediaQueryData(accessibleNavigation: true),
-          child: WenyouReadingChrome(
-            builder: (context, actionsVisible) => Scaffold(
-              floatingActionButton: actionsVisible
-                  ? const Icon(Icons.edit_rounded, key: Key('reading-action'))
-                  : null,
-              body: ListView(
-                key: const Key('reading-list'),
-                children: const [SizedBox(height: 1600)],
-              ),
-            ),
+        home: Scaffold(
+          floatingActionButtonAnimator:
+              FloatingActionButtonAnimator.noAnimation,
+          floatingActionButton: const Icon(
+            Icons.edit_rounded,
+            key: Key('reading-action'),
+          ),
+          body: ListView(
+            key: const Key('reading-list'),
+            children: const [SizedBox(height: 1600)],
           ),
         ),
       ),
@@ -158,7 +159,7 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+    expect(findFoundationIcon(WenyouIconIds.statusError), findsOneWidget);
     expect(find.text('暂时无法提交'), findsOneWidget);
     expect(find.text('请求 ID：request-id'), findsOneWidget);
   });

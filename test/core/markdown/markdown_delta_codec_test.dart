@@ -6,6 +6,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
 void main() {
+  final editorRoundTripContract =
+      jsonDecode(
+            File(
+              'contracts/markdown-editor-roundtrip-v1-fixtures.json',
+            ).readAsStringSync(),
+          )
+          as Map<String, dynamic>;
+  final editorRoundTripCases =
+      (editorRoundTripContract['cases'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+
+  test('消费后端编辑器往返黄金语料 v1', () {
+    expect(editorRoundTripContract['version'], 1);
+    expect(editorRoundTripContract['markdownContractVersion'], 2);
+    expect(editorRoundTripCases, isNotEmpty);
+  });
+
+  for (final fixture in editorRoundTripCases) {
+    final id = fixture['id'] as String;
+    final markdown = fixture['markdown'] as String;
+    final serialized = fixture['serialized'] as String;
+
+    test('$id 编辑器黄金语料往返不改写', () {
+      final document = MarkdownDeltaCodec.decode(markdown);
+      expect(MarkdownDeltaCodec.encode(document.delta), serialized);
+      expect(
+        MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(serialized).delta),
+        serialized,
+      );
+    });
+  }
+
   final nodeContract =
       jsonDecode(
             File(
@@ -116,6 +148,45 @@ void main() {
     );
   });
 
+  test('骰子在混排文本与换行第二行中保持行内原子节点并无损往返', () {
+    const firstId = '550e8400-e29b-41d4-a716-446655440000';
+    const secondId = '550e8400-e29b-41d4-a716-446655440001';
+    const source =
+        '他掷出 [[dice:v1:$firstId:1d20]] 后继续前进\n'
+        '第二行 [[dice:v1:$secondId:2D6 + 03]] 仍接着叙述';
+
+    final document = MarkdownDeltaCodec.decode(source);
+    final operations = document.delta.operations.toList(growable: false);
+
+    expect(document.issues, isEmpty);
+    expect(
+      operations.where((operation) => operation.data is Map),
+      hasLength(2),
+    );
+    expect(operations[1].data, {
+      MarkdownDeltaCodec.diceEmbed: {
+        'version': 1,
+        'nodeId': firstId,
+        'notation': '1d20',
+      },
+    });
+    expect(
+      operations[2].data,
+      ' 后继续前进\n第二行 ',
+      reason: '骰子后文字与下一行前缀保持连续文本，不能被 embed 拆成块级卡片',
+    );
+    expect(
+      (operations[2].data as String).split('\n'),
+      [' 后继续前进', '第二行 '],
+      reason: 'Markdown 源换行必须原位保留在两个骰子节点之间',
+    );
+    expect(
+      MarkdownDeltaCodec.encode(document.delta),
+      '他掷出 [[dice:v1:$firstId:1d20]] 后继续前进\n'
+      '第二行 [[dice:v1:$secondId:2d6+3]] 仍接着叙述',
+    );
+  });
+
   test('损坏或未知 Quill embed 拒绝序列化而不是静默丢失', () {
     final unknown = Delta()
       ..insert({
@@ -188,6 +259,65 @@ void main() {
       '## 标题\n***粗斜***[链接](https://wenyou.site/help)\n'
       '  - 条目\n> 引用\n``a`b``',
     );
+  });
+
+  test('受支持的既有 Markdown 解码为 Quill 富文本属性而不是源码标记', () {
+    const source =
+        '## 标题\n'
+        '***粗斜***[链接](https://wenyou.site/help)\n'
+        '  - 条目\n'
+        '> 引用\n'
+        '``a`b``';
+
+    final document = MarkdownDeltaCodec.decode(source);
+    final operations = document.delta.operations.toList(growable: false);
+
+    expect(
+      operations,
+      contains(
+        isA<Operation>()
+            .having((operation) => operation.data, 'text', '粗斜')
+            .having(
+              (operation) => operation.attributes,
+              'attributes',
+              containsPair('bold', true),
+            )
+            .having(
+              (operation) => operation.attributes,
+              'attributes',
+              containsPair('italic', true),
+            ),
+      ),
+    );
+    expect(
+      operations.where((operation) => operation.data == '\n'),
+      contains(
+        isA<Operation>().having(
+          (operation) => operation.attributes,
+          'heading',
+          containsPair('header', 2),
+        ),
+      ),
+    );
+    expect(
+      operations.where((operation) => operation.data == '\n'),
+      contains(
+        isA<Operation>().having(
+          (operation) => operation.attributes,
+          'nested list',
+          allOf(containsPair('list', 'bullet'), containsPair('indent', 1)),
+        ),
+      ),
+    );
+    expect(MarkdownDeltaCodec.encode(document.delta), source);
+  });
+
+  test('未支持的任务列表继续保留源码模式', () {
+    final document = MarkdownDeltaCodec.decode('- [ ] 待处理');
+
+    expect(document.delta.operations.first.data, '- [ ] 待处理');
+    expect(document.delta.operations.first.attributes, isNull);
+    expect(MarkdownDeltaCodec.encode(document.delta), '- [ ] 待处理');
   });
 
   test('分隔线使用本地原子节点往返且不改变其他主题分隔线写法', () {

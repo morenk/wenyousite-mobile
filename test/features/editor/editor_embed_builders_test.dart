@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 
+import '../../support/foundation_icon_finder.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -71,7 +73,7 @@ void main() {
       );
       expect(tester.getSize(finder).height, lessThanOrEqualTo(32));
     }
-    expect(find.byIcon(Icons.casino_rounded), findsNothing);
+    expect(findFoundationIcon(WenyouIconIds.editorDice), findsNothing);
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
     expect(tester.takeException(), isNull);
 

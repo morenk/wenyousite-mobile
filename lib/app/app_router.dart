@@ -14,7 +14,6 @@ import 'package:wenyousite_mobile/features/auth/presentation/reset_password_page
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_page.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -36,6 +35,7 @@ import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collect
 import 'package:wenyousite_mobile/features/tags/presentation/tag_threads_page.dart';
 import 'package:wenyousite_mobile/features/tags/presentation/thread_tag_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';

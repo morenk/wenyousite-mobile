@@ -251,7 +251,7 @@ void main() {
       find.byKey(const Key('post-composer-toolbar')),
     );
     expect(dock.surface, WenyouComposerSurface.expandableSheet);
-    expect(dock.profile, WenyouComposerProfile.richMarkdown);
+    expect(dock.capabilities, WenyouEditorCapabilities.richMarkdown);
     expect(editor.config.customStyles?.paragraph?.style.fontSize, 17);
     expect(editor.config.customStyles?.paragraph?.style.height, 1.8);
     expect(editor.focusNode.hasFocus, isTrue);

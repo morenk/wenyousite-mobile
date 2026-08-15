@@ -12,18 +12,19 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
-import 'package:wenyousite_mobile/features/editor/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
+
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -283,7 +284,7 @@ void main() {
       final dock = tester.widget<WenyouComposerDock>(toolbar);
       expect(dock.enabled, isTrue);
       expect(dock.surface, WenyouComposerSurface.page);
-      expect(dock.profile, WenyouComposerProfile.richMarkdown);
+      expect(dock.capabilities, WenyouEditorCapabilities.richMarkdown);
       expect(controller.state.isSubmitting, isFalse);
       expect(find.text('当前格式组合暂时不能安全保存。'), findsNothing);
       expect(tester.getSize(toolbar).height, greaterThanOrEqualTo(48));

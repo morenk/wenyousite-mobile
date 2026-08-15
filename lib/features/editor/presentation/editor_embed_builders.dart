@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
@@ -37,7 +38,7 @@ class _MentionEmbedBuilder extends EmbedBuilder {
   Widget build(BuildContext context, EmbedContext embedContext) {
     final payload = _payload(embedContext);
     return _AtomicNode(
-      icon: Icons.alternate_email_rounded,
+      icon: WenyouIconIds.actionMention,
       label: payload?['label']?.toString() ?? '@用户',
       semanticLabel: '提及 ${payload?['label'] ?? '用户'}',
     );
@@ -102,7 +103,7 @@ class _StickerEmbedBuilder extends EmbedBuilder {
     final url = payload?['url']?.toString();
     if (url == null) {
       return const _AtomicNode(
-        icon: Icons.sentiment_satisfied_alt_rounded,
+        icon: WenyouIconIds.actionAddReaction,
         label: '表情不可用',
         semanticLabel: '表情不可用',
       );
@@ -115,7 +116,8 @@ class _StickerEmbedBuilder extends EmbedBuilder {
         child: Image.network(
           url,
           fit: BoxFit.contain,
-          errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+          errorBuilder: (_, _, _) =>
+              const WenyouIcon(WenyouIconIds.statusImageUnavailable),
         ),
       ),
     );
@@ -191,7 +193,7 @@ class _CompatibilityEmbedBuilder extends EmbedBuilder {
     return const Tooltip(
       message: '此节点来自未知或损坏协议，保存时会保留原文',
       child: _AtomicNode(
-        icon: Icons.lock_outline_rounded,
+        icon: WenyouIconIds.actionLock,
         label: '只读兼容内容',
         semanticLabel: '只读兼容内容，原文会被保留',
         warning: true,
@@ -229,7 +231,7 @@ class _AtomicNode extends StatelessWidget {
     this.warning = false,
   });
 
-  final IconData icon;
+  final String icon;
   final String label;
   final String semanticLabel;
   final bool warning;
@@ -253,7 +255,7 @@ class _AtomicNode extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16),
+            WenyouIcon(icon, size: 16),
             SizedBox(width: tokens.space4),
             Text(label, style: Theme.of(context).textTheme.bodySmall),
           ],
@@ -290,7 +292,7 @@ class _UnavailableImage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.broken_image_outlined),
+          const WenyouIcon(WenyouIconIds.statusImageUnavailable),
           SizedBox(height: context.wenyouTokens.space8),
           Text(message, textAlign: TextAlign.center),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 
 enum MarkdownCodecIssueKind {
   unknownProtocol,
@@ -41,9 +42,9 @@ class MarkdownCodecException implements Exception {
 
 /// Markdown v2 扩展节点与 Quill Delta 之间的无损协议层。
 ///
-/// 当前切片把普通 Markdown 保留为可编辑源码文本，只把需要稳定身份的扩展
-/// 节点提升为原子 embed。后续富文本属性映射可以复用同一 embed 载荷，不改变
-/// 后端、云草稿和本地快照继续保存完整 Markdown 的边界。
+/// 受支持的普通 Markdown 先解析为中立富文本行模型，再映射为 Quill 属性；
+/// 需要稳定身份的扩展节点提升为原子 embed。无法证明精确往返的语法继续保留
+/// 源码文本，不改变后端、云草稿和本地快照保存完整 Markdown 的边界。
 class MarkdownDeltaCodec {
   MarkdownDeltaCodec._();
 
@@ -99,6 +100,7 @@ class MarkdownDeltaCodec {
       final line = lines[lineIndex];
       final opening = _openingFence.firstMatch(line)?.group(1);
       var isProtocolEmptyParagraph = false;
+      Map<String, dynamic>? richLineAttributes;
       if (fence != null) {
         delta.insert(line);
         final closing = _closingFence.firstMatch(line)?.group(1);
@@ -118,11 +120,20 @@ class MarkdownDeltaCodec {
           horizontalRuleEmbed: const {'version': 1},
         });
       } else {
-        _decodeInlineLine(line, delta, issues, diceNodeIds);
+        final richLine = _tryDecodeRichLine(line);
+        if (richLine == null) {
+          _decodeInlineLine(line, delta, issues, diceNodeIds);
+        } else {
+          for (final span in richLine.spans) {
+            delta.insert(span.text, span.attributes);
+          }
+          richLineAttributes = richLine.lineAttributes;
+        }
       }
 
       final isLastLine = lineIndex == lines.length - 1;
       final attributes = <String, dynamic>{
+        ...?richLineAttributes,
         if (isProtocolEmptyParagraph) emptyParagraphAttribute: true,
         if (isLastLine) sourceBreakAttribute: false,
       };
@@ -387,6 +398,32 @@ class MarkdownDeltaCodec {
       index += 1;
     }
     flushText();
+  }
+
+  static MarkdownRichLine? _tryDecodeRichLine(String source) {
+    if (source.contains('](/users/') ||
+        source.contains(_allPlayersLabel) ||
+        source.toLowerCase().contains('[[dice:') ||
+        source.contains('![')) {
+      return null;
+    }
+    final richLine = MarkdownRichLineDecoder.decode(source);
+    if (richLine == null) return null;
+
+    final candidate = Delta();
+    for (final span in richLine.spans) {
+      candidate.insert(span.text, span.attributes);
+    }
+    candidate.insert('\n', {
+      ...richLine.lineAttributes,
+      sourceBreakAttribute: false,
+    });
+    try {
+      if (encode(candidate) != source) return null;
+    } on MarkdownCodecException {
+      return null;
+    }
+    return richLine;
   }
 
   static void _encodeText(

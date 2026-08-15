@@ -5,8 +5,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
-import 'package:wenyousite_mobile/features/editor/data/thread_compose_repository.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 void main() {
   setUpAll(() {

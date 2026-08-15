@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/editor/application/remote_thread_drafts_controller.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 Future<ThreadRemoteDraftSummary?> showRemoteThreadDraftsSheet({
   required BuildContext context,
@@ -53,7 +54,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
                   : () => ref
                         .read(remoteThreadDraftsControllerProvider.notifier)
                         .load(),
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             ),
           ),
           SizedBox(height: tokens.space12),
@@ -82,20 +83,20 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         child: CircularProgressIndicator(),
       ),
       RemoteThreadDraftsPhase.failed => WenyouEmptyState(
-        icon: Icons.cloud_off_outlined,
+        icon: WenyouIconIds.statusOffline,
         title: '服务端草稿没有加载完成',
         message: state.failure?.userMessage ?? '请检查网络后重试。',
         detail: _requestDetail(state.failure),
         action: FilledButton.icon(
           onPressed: () =>
               ref.read(remoteThreadDraftsControllerProvider.notifier).load(),
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重试'),
         ),
       ),
       RemoteThreadDraftsPhase.ready when state.drafts.isEmpty =>
         const WenyouEmptyState(
-          icon: Icons.cloud_done_outlined,
+          icon: WenyouIconIds.statusSynced,
           title: '还没有服务端主题草稿',
           message: '在创作页顶栏的云端草稿入口选择“保存当前主题”后，会出现在这里。',
         ),
@@ -199,7 +200,7 @@ class _DraftCard extends StatelessWidget {
               ),
               if (isCurrent)
                 const Chip(
-                  avatar: Icon(Icons.edit_outlined, size: 16),
+                  avatar: WenyouIcon(WenyouIconIds.actionEdit, size: 16),
                   label: Text('正在编辑'),
                 ),
             ],
@@ -235,7 +236,7 @@ class _DraftCard extends StatelessWidget {
                 child: OutlinedButton.icon(
                   key: Key('remote-draft-open-${draft.id}'),
                   onPressed: actionsLocked ? null : onOpen,
-                  icon: const Icon(Icons.edit_note_rounded),
+                  icon: const WenyouIcon(WenyouIconIds.contentDraft),
                   label: Text(isCurrent ? '返回当前编辑' : '继续编辑'),
                 ),
               ),
@@ -249,7 +250,7 @@ class _DraftCard extends StatelessWidget {
                         dimension: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.delete_outline_rounded),
+                    : const WenyouIcon(WenyouIconIds.actionDelete),
               ),
             ],
           ),

@@ -3,15 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
+import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -133,17 +130,11 @@ class PostComposerSheet extends ConsumerStatefulWidget {
 }
 
 class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
-  late final QuillController _editorController;
-  final FocusNode _focusNode = FocusNode();
-  final ScrollController _scrollController = ScrollController();
+  late final RichEditorSession _editorSession;
   final WenyouEditorToolbarController _toolbarController =
       WenyouEditorToolbarController();
-  bool _applyingDocument = false;
   bool _closing = false;
   bool _preparingClose = false;
-  int _scheduledRevision = -1;
-  String? _codecFailure;
-  List<MarkdownCodecIssue> _issues = const [];
   final Object _uploadTaskId = Object();
 
   bool get _uploading =>
@@ -152,25 +143,20 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   @override
   void initState() {
     super.initState();
-    final decoded = MarkdownDeltaCodec.decode(widget.target.initialContent);
-    _issues = decoded.issues;
-    final document = Document.fromDelta(decoded.delta);
-    _editorController = QuillController(
-      document: document,
-      selection: TextSelection.collapsed(offset: document.length - 1),
-    )..addListener(_onDocumentChanged);
-    _focusNode.addListener(_onEditorFocusChanged);
+    _editorSession = RichEditorSession(
+      initialMarkdown: widget.target.initialContent,
+      initialSelection: RichEditorSelectionPlacement.end,
+      onMarkdownChanged: (markdown) => ref
+          .read(postComposerControllerProvider(widget.target).notifier)
+          .updateContent(markdown),
+    )..addListener(_onEditorSessionChanged);
   }
 
   @override
   void dispose() {
-    _editorController
-      ..removeListener(_onDocumentChanged)
+    _editorSession
+      ..removeListener(_onEditorSessionChanged)
       ..dispose();
-    _focusNode
-      ..removeListener(_onEditorFocusChanged)
-      ..dispose();
-    _scrollController.dispose();
     _toolbarController.dispose();
     super.dispose();
   }
@@ -182,10 +168,14 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     final uploadState = ref.watch(
       mediaUploadTaskControllerProvider(_uploadTaskId),
     );
-    _scheduleDocumentSync(state);
+    _editorSession.scheduleExternalMarkdown(
+      markdown: state.content,
+      revision: state.documentRevision,
+      selection: RichEditorSelectionPlacement.end,
+    );
     final tokens = context.wenyouTokens;
     final locked = state.isSubmitting || uploadState.isBusy;
-    _editorController.readOnly = locked;
+    _editorSession.readOnly = locked;
     return PopScope<Object?>(
       canPop: _closing && !_toolbarController.trayOpen,
       onPopInvokedWithResult: (didPop, _) {
@@ -227,7 +217,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                         key: const Key('post-composer-close'),
                         tooltip: '关闭编辑器',
                         onPressed: locked ? null : _requestClose,
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const WenyouIcon(WenyouIconIds.actionClose),
                       ),
                       SizedBox(width: tokens.space4),
                       Expanded(
@@ -242,10 +232,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                         key: const Key('post-composer-expand'),
                         tooltip: widget.expanded ? '恢复半屏' : '展开编辑器',
                         onPressed: widget.onToggleExpanded,
-                        icon: Icon(
+                        icon: WenyouIcon(
                           widget.expanded
-                              ? Icons.close_fullscreen_rounded
-                              : Icons.open_in_full_rounded,
+                              ? WenyouIconIds.actionExitFullscreen
+                              : WenyouIconIds.actionFullscreen,
                         ),
                       ),
                     ],
@@ -273,7 +263,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                     : TextButton.icon(
                         key: const Key('post-composer-retry-conflict'),
                         onPressed: locked ? null : _confirmConflictRetry,
-                        icon: const Icon(Icons.sync_rounded),
+                        icon: const WenyouIcon(WenyouIconIds.actionSync),
                         label: const Text('用当前正文覆盖最新版'),
                       ),
               ),
@@ -291,7 +281,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 detail: '再次提交会先用原请求确认创建结果；若正文已继续修改，再以版本更新保存当前内容。',
               ),
             ),
-          if (_codecFailure != null)
+          if (_editorSession.codecFailure != null)
             Padding(
               padding: EdgeInsets.fromLTRB(
                 tokens.space12,
@@ -301,11 +291,11 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
               ),
               child: WenyouStatusBanner(
                 message: '当前格式组合暂时不能安全保存。',
-                detail: _codecFailure,
+                detail: _editorSession.codecFailure,
                 tone: WenyouStatusTone.error,
               ),
             ),
-          if (_issues.isNotEmpty)
+          if (_editorSession.issues.isNotEmpty)
             Padding(
               padding: EdgeInsets.fromLTRB(
                 tokens.space12,
@@ -314,7 +304,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 0,
               ),
               child: WenyouStatusBanner(
-                message: '正文含有 ${_issues.length} 个兼容节点。',
+                message: '正文含有 ${_editorSession.issues.length} 个兼容节点。',
                 detail: '这些节点会锁定显示并原样保存。',
               ),
             ),
@@ -372,9 +362,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                           label: widget.target.label,
                           child: QuillEditor(
                             key: const Key('post-composer-body'),
-                            controller: _editorController,
-                            focusNode: _focusNode,
-                            scrollController: _scrollController,
+                            controller: _editorSession.controller,
+                            focusNode: _editorSession.focusNode,
+                            scrollController: _editorSession.scrollController,
                             config: QuillEditorConfig(
                               scrollable: true,
                               expands: true,
@@ -392,21 +382,21 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                           ),
                         ),
                         MentionSuggestions(
-                          controller: _editorController,
-                          focusNode: _focusNode,
+                          controller: _editorSession.controller,
+                          focusNode: _editorSession.focusNode,
                           threadId: widget.target.threadId,
-                          enabled: !locked && _codecFailure == null,
+                          enabled:
+                              !locked && _editorSession.codecFailure == null,
                         ),
                       ],
                     ),
                   ),
                   WenyouComposerDock(
                     key: const Key('post-composer-toolbar'),
-                    controller: _editorController,
+                    controller: _editorSession.controller,
                     surface: WenyouComposerSurface.expandableSheet,
-                    profile: WenyouComposerProfile.richMarkdown,
-                    enabled: !locked && _codecFailure == null,
-                    editorFocusNode: _focusNode,
+                    enabled: !locked && _editorSession.codecFailure == null,
+                    editorFocusNode: _editorSession.focusNode,
                     onInsertImage: _insertImage,
                     onInsertSticker: ref.watch(stickersEnabledProvider)
                         ? _insertSticker
@@ -415,10 +405,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                     onSubmit: _submit,
                     isSubmitting: state.isSubmitting,
                     submitLabel: _submitLabel(widget.target.kind),
-                    characterCount: _editorController.document
-                        .toPlainText()
-                        .trim()
-                        .length,
+                    characterCount: _editorSession.characterCount,
                     characterLimit: 10000,
                     toolbarController: _toolbarController,
                   ),
@@ -431,53 +418,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     );
   }
 
-  void _onEditorFocusChanged() {
+  void _onEditorSessionChanged() {
     if (mounted) setState(() {});
   }
 
-  void _scheduleDocumentSync(PostComposerState state) {
-    if (state.documentRevision == _scheduledRevision) return;
-    _scheduledRevision = state.documentRevision;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _applyingDocument = true;
-      try {
-        final decoded = MarkdownDeltaCodec.decode(state.content);
-        _issues = decoded.issues;
-        final document = Document.fromDelta(decoded.delta);
-        _editorController.document = document;
-        _editorController.updateSelection(
-          TextSelection.collapsed(offset: document.length - 1),
-          ChangeSource.local,
-        );
-        _codecFailure = null;
-      } on Object catch (error) {
-        _codecFailure = '恢复正文时发生错误：$error';
-      } finally {
-        _applyingDocument = false;
-      }
-      setState(() {});
-    });
-  }
-
-  void _onDocumentChanged() {
-    if (_applyingDocument) return;
-    try {
-      final markdown = MarkdownDeltaCodec.encode(
-        _editorController.document.toDelta(),
-      );
-      ref
-          .read(postComposerControllerProvider(widget.target).notifier)
-          .updateContent(markdown);
-      if (_codecFailure != null && mounted) {
-        setState(() => _codecFailure = null);
-      }
-    } on MarkdownCodecException catch (error) {
-      if (mounted) setState(() => _codecFailure = error.message);
-    }
-  }
-
   Future<void> _submit() async {
+    if (!_editorSession.flush()) return;
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
         .submit();
@@ -487,6 +433,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   Future<void> _confirmConflictRetry() async {
+    if (!_editorSession.flush()) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -519,6 +466,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
         .cancel();
+    _editorSession.flush();
     final current = ref.read(postComposerControllerProvider(widget.target));
     var confirmed = true;
     if (current.content != widget.target.initialContent &&
@@ -552,6 +500,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   Future<void> _openContentDrafts() async {
+    if (!_editorSession.flush()) return;
     final state = ref.read(postComposerControllerProvider(widget.target));
     await showContentDraftsSheet(
       context: context,
@@ -583,58 +532,15 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   void _insertBlockImage(UploadedEditorImage image) {
-    var selection = _editorController.selection;
-    if (!selection.isCollapsed) {
-      _editorController.replaceText(
-        selection.start,
-        selection.end - selection.start,
-        '',
-        TextSelection.collapsed(offset: selection.start),
-      );
-      selection = TextSelection.collapsed(offset: selection.start);
-    }
-    _editorController.replaceText(
-      selection.start,
-      0,
-      Embeddable(MarkdownDeltaCodec.imageEmbed, {
-        'version': 1,
-        'url': image.url,
-        'alt': '图片',
-        'title': null,
-      }),
-      TextSelection.collapsed(offset: selection.start + 1),
-    );
-    _editorController.replaceText(
-      selection.start + 1,
-      0,
-      '\n',
-      TextSelection.collapsed(offset: selection.start + 2),
-    );
+    _editorSession.insertBlockImage(url: image.url);
   }
 
   Future<void> _insertSticker() async {
     final sticker = await showStickerPicker(context);
     if (!mounted || sticker == null) return;
-    var selection = _editorController.selection;
-    if (!selection.isCollapsed) {
-      _editorController.replaceText(
-        selection.start,
-        selection.end - selection.start,
-        '',
-        TextSelection.collapsed(offset: selection.start),
-      );
-      selection = TextSelection.collapsed(offset: selection.start);
-    }
-    _editorController.replaceText(
-      selection.start,
-      0,
-      Embeddable(MarkdownDeltaCodec.stickerEmbed, {
-        'version': 1,
-        'assetId': sticker.asset.id,
-        'url': sticker.asset.url,
-        'alt': '表情',
-      }),
-      TextSelection.collapsed(offset: selection.start + 1),
+    _editorSession.insertSticker(
+      assetId: sticker.asset.id,
+      url: sticker.asset.url,
     );
   }
 }

@@ -6,9 +6,9 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/editor/application/editor_snapshot_store_ports.dart';
-import 'package:wenyousite_mobile/features/editor/application/thread_compose_repository_ports.dart';
-import 'package:wenyousite_mobile/features/editor/domain/thread_compose_models.dart';
+import 'package:wenyousite_mobile/features/editor/editor_persistence.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_compose_repository_ports.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 enum ThreadComposePhase { loading, ready, failed, published }
 
@@ -176,9 +176,11 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   Future<void> _snapshotQueue = Future.value();
   PendingCreateOperation? _pendingCreate;
   int _loadEpoch = 0;
+  int _snapshotRevision = 0;
 
   Future<void> load() async {
     final epoch = ++_loadEpoch;
+    _snapshotRevision = 0;
     _snapshotTimer?.cancel();
     state = const ThreadComposeState();
     var ownerId = _knownOwnerId;
@@ -270,6 +272,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       successMessage: '已恢复正文草稿；标题、分类和标签保持不变。',
       localSnapshotStatus: LocalSnapshotStatus.idle,
     );
+    _snapshotRevision += 1;
     _snapshotTimer?.cancel();
     _snapshotTimer = Timer(_snapshotDebounce, () {
       unawaited(flushLocalSnapshot());
@@ -286,17 +289,26 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
     _snapshotTimer = null;
     if (state.phase != ThreadComposePhase.ready) return Future.value();
     final snapshot = _buildSnapshot(state);
+    final revision = _snapshotRevision;
     state = state.copyWith(localSnapshotStatus: LocalSnapshotStatus.saving);
     _snapshotQueue = _snapshotQueue.then((_) async {
       try {
         await _snapshotStore.saveThreadSnapshot(snapshot);
-        if (!mounted || state.phase != ThreadComposePhase.ready) return;
+        if (!mounted ||
+            state.phase != ThreadComposePhase.ready ||
+            revision != _snapshotRevision) {
+          return;
+        }
         state = state.copyWith(
           localSnapshotStatus: LocalSnapshotStatus.saved,
           lastLocalSaveAt: snapshot.updatedAt,
         );
       } on Object {
-        if (!mounted || state.phase != ThreadComposePhase.ready) return;
+        if (!mounted ||
+            state.phase != ThreadComposePhase.ready ||
+            revision != _snapshotRevision) {
+          return;
+        }
         state = state.copyWith(localSnapshotStatus: LocalSnapshotStatus.failed);
       }
     });
@@ -365,6 +377,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         lastLocalSaveAt: null,
         successMessage: '已打开服务端草稿。',
       );
+      _snapshotRevision += 1;
       await flushLocalSnapshot();
       return true;
     } on Object catch (error) {
@@ -448,6 +461,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         documentRevision: state.documentRevision + 1,
         successMessage: '主题草稿已保存到服务端。',
       );
+      _snapshotRevision += 1;
       await flushLocalSnapshot();
       return remote.id;
     } on Object catch (error) {
@@ -501,6 +515,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       await _snapshotStore.deletePendingCreate(payload.clientRequestId);
       _pendingCreate = null;
       state = state.copyWith(remoteDraft: remote);
+      _snapshotRevision += 1;
       await flushLocalSnapshot();
       return remote;
     } on Object catch (error) {
@@ -520,6 +535,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         _pendingCreate = null;
         if (failure.businessCode == 40912) {
           state = state.copyWith(clientRequestId: _createRequestId());
+          _snapshotRevision += 1;
           await flushLocalSnapshot();
         }
       }
@@ -627,6 +643,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       successMessage: null,
       localSnapshotStatus: LocalSnapshotStatus.idle,
     );
+    _snapshotRevision += 1;
     _snapshotTimer?.cancel();
     _snapshotTimer = Timer(_snapshotDebounce, () {
       unawaited(flushLocalSnapshot());
