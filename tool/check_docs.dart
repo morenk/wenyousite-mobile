@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import 'docs/module_status.dart';
+
 const requiredHeadings = <String>[
   '## 1. 模块目标与非目标',
   '## 2. 用户角色与使用场景',
@@ -47,6 +49,7 @@ void main() {
             .toList()
           ..sort())
       : <String>[];
+  final moduleStatuses = <String, List<ModuleStatusDeclaration>>{};
 
   for (final module in modules) {
     final doc = File(p.join(root.path, 'docs', 'modules', '$module.md'));
@@ -54,13 +57,21 @@ void main() {
       errors.add('功能模块 $module 缺少 docs/modules/$module.md。');
       continue;
     }
-    if (!RegExp('\\|\\s*${RegExp.escape(module)}\\s*\\|').hasMatch(indexText)) {
-      errors.add('模块 $module 未出现在 docs/modules/README.md 表格中。');
-    }
+    moduleStatuses[module] = parseModuleStatusDeclarations(
+      doc.readAsStringSync(),
+    );
     _checkModuleDoc(doc, operationIds, metadata);
   }
 
   if (indexFile.existsSync()) {
+    final index = parseModuleIndex(indexText);
+    errors.addAll(
+      validateModuleStatusIndex(
+        modules: modules.toSet(),
+        documents: moduleStatuses,
+        index: index,
+      ),
+    );
     _checkLinks(indexFile, root.path);
   }
   final architectureDir = Directory(p.join(root.path, 'docs', 'architecture'));

@@ -18,14 +18,14 @@ go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `return
 
 0.3 的全站搜索页使用 `/search`，“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab 按需加载并在 360dp 全部可见。动态进入 `/moments/:momentId`，主题帖进入 `/threads/:threadId`，楼层内容进入同一主题详情的 `post` 定位。公开用户资料使用命名路由 `/users/:userId`；搜索用户结果和 Markdown `/users/{id}` 站内链接只传稳定用户 ID，由资料页重新读取权限与可见性。公开统计进入 `/users/:userId/following` 与 `/users/:userId/followers`，列表项再以 userId 返回同一资料路由。公开用户内容里的主题卡片继续进入 `/threads/:threadId`，最近回复则使用同一 `post` 查询参数约定，不建立用户页专属临时目标。
 
-正文搜索结果与 post 通知目标使用 `/threads/:threadId?post=:postId`。`post` 是服务端稳定帖子 ID，不是本地页码：主题详情先读取帖子所属子贴；目标为楼中楼时再补取父楼层，然后自动切换子贴、将目标上下文置顶并以强调底色展示，其余已加载楼层保持服务端顺序。目标不存在、无权访问或属于其他主题时显示安全错误，不猜测位置。
+正文搜索结果与 post 通知目标使用 `/threads/:threadId?post=:postId`。`post` 是服务端稳定帖子 ID，不是本地页码：主题详情先读取帖子所属子贴；目标为楼中楼时再补取父楼层，然后自动切换子贴并将目标上下文置顶，其余已加载楼层保持服务端顺序。目标只显示 1dp Foundation 淡粉边框，不铺底色、不扩大到整组上下文，也不展示“已定位到”可见说明；边框在 1.2 秒后按 slow motion 淡出，减少动态效果时直接复原。无障碍定位提示可通过语义公告提供，不增加页面说明文字。目标不存在、无权访问或属于其他主题时显示安全错误，不猜测位置。
 
 楼中楼使用公开命名路由 `/threads/:threadId/posts/:postId/replies`，其中 `postId` 必须是普通主楼层；可选 `?post=:replyId` 补取并强调首屏外回复。独立页重新校验楼层与主题关系，排序、作者筛选和 cursor 只作为页面状态，不写入临时路径。游客可阅读，发表入口在登录后恢复到同一路由。
 
 通知导航只读取服务端 `target.kind` 与对应稳定 ID：post 进入上述精确位置，thread 进入主题详情，user 进入公开用户页，moment 进入 `/moments/:momentId`，none/unknown 不导航；服务端关联对象已删除时同样不导航。
 
-站内私聊使用受保护命名路由 `/messages`、`/messages/new/:userId` 与 `/messages/:conversationId`，游客访问时完整保留原目标进入登录。通知页只导航到中心，用户主页只把稳定 userId 交给新私聊页；新私聊页通过 `directConversationsFindByUser` 决定替换到已有 ACCEPTED/PENDING 会话、允许重建或显示受限状态。会话 ID、消息 ID、cursor 和增量 after 都是不透明服务端标识，页面不从用户名、正文预览或关系标记推导目标。
+站内私聊的新建页和会话详情使用受保护命名路由 `/messages/new/:userId` 与 `/messages/:conversationId`，游客访问时完整保留原目标进入登录。根路径 `/messages` 只是旧消息中心兼容入口，必须重定向到 `/notifications?section=directMessages`，不能作为第二个私聊列表事实源。通知页只导航到统一消息中心，用户主页只把稳定 userId 交给新私聊页；新私聊页通过 `directConversationsFindByUser` 决定替换到已有 ACCEPTED/PENDING 会话、允许重建或显示受限状态。会话 ID、消息 ID、cursor 和增量 after 都是不透明服务端标识，页面不从用户名、正文预览或关系标记推导目标。
 
-V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。Markdown 中的相对站内路径以及 `wenyou.site`、`www.wenyou.site` 绝对链接由移动端自动识别并交给应用路由；动态纯文本则严格按 `wenyousite-internal-reference` v1 只识别生产域主题、子贴、楼层和讨论坐标，普通 Markdown 与外链保持字面文本。公开 `/appeals` 不要求普通会话，避免受处罚账号被守卫循环拦截；其专用凭据不进入其他路由。站内目标如果当前移动端没有对应页面，会保留在应用内并提示暂不支持。
+V1 不配置 Android App Links。应用内部仍使用稳定路径，给后续深链留下兼容边界。Markdown 中的相对站内路径以及 `wenyou.site`、`www.wenyou.site` 绝对链接由移动端自动识别并交给应用路由；动态纯文本则严格按 `wenyousite-internal-reference` v1 只识别生产域主题、子贴、楼层、讨论和 `/join/:token` 私密邀请坐标，普通 Markdown 与外链保持字面文本。邀请能力以 `contracts/internal-reference-v1-fixtures.json` 和实现测试为当前事实；同步客户端指南遗漏邀请的差异记录在[上游文档漂移](../upstream-documentation-drift.md)。公开 `/appeals` 不要求普通会话，避免受处罚账号被守卫循环拦截；其专用凭据不进入其他路由。站内目标如果当前移动端没有对应页面，会保留在应用内并提示暂不支持。
 
 参见：[应用壳](../modules/app-shell.md)、[认证](../modules/auth.md)、[动态](../modules/moments.md)、[主题与子贴](../modules/threads.md)、[标签](../modules/tags.md)、[楼层与回复](../modules/posts.md)、[站内私聊](../modules/direct-messages.md)。

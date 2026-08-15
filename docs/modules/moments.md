@@ -27,7 +27,7 @@
 - 内容写入：`momentsCreate`、`momentsUpdate`、`momentsRemove`。
 - 互动：`momentsLike`、`momentsUnlike`、`momentsBookmark`、`momentsUnbookmark`。
 - 评论：`momentsCommentAuthors`、`momentsCommentsList`、`momentsReplies`、`momentsCreateComment`、`momentsRemoveComment`。
-- 定位上下文：契约已提供 `momentsCommentContext`；当前登记为待接入切片，尚未从通知路由调用。
+- 定位上下文：契约已提供第 17 个相关端点 `momentsCommentContext`；当前登记为待接入切片，尚未从通知路由调用。其余 16 个 Moments operationId 已接入移动端主闭环。
 - 社区举报：reports 模块调用 `reportsCreate`，分别提交 `MOMENT` 或 `MOMENT_COMMENT` 目标。
 - 主要生成类型：`MomentCardResponseDto`、`MomentDetailResponseDto`、`MomentMediaResponseDto`、`MomentRootCommentResponseDto`、`MomentCommentResponseDto`、`MomentStickerResponseDto`、`CreateMomentDto`、`UpdateMomentDto` 与 `CreateMomentCommentDto`。
 
@@ -55,7 +55,7 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 
 ## 11. 测试场景与验收条件
 
-- [x] 16 个 operationId 的分页、DTO、幂等、版本与删除确认有仓储测试。
+- [x] 已接入的 16 个 operationId 的分页、DTO、幂等、版本与删除确认有仓储测试。
 - [x] 未知枚举、不安全 URL、重复 ID、异常计数/层级和图片/表情互斥采用 fail-closed。
 - [x] 信息流 `40007` 重置、服务端互动计数、评论幂等重试、楼中楼分页/筛选和删除校准有控制器测试。
 - [x] 发现/关注游客边界、纯文字发布、详情/评论和 360/400/600dp 布局有 Widget 测试。
@@ -71,6 +71,7 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 - [x] 非本人动态可进入加油，累计金额保持十进制整数字符串且成功后重读详情。
 - [x] 非本人动态、根评论与回复可举报；本人及已删除内容隐藏入口，游客保留完整登录回跳。
 - [x] v1 黄金 fixture 的 10 个坐标与 4 个渲染用例全部消费；正文/评论传送门进入应用路由，普通 Markdown 和外链保持字面文本。
+- [ ] 第 17 个相关端点 `momentsCommentContext` 从通知导航接入，覆盖上下文补取、目标滚动、1dp 淡粉边框短时提示和失效目标。
 - [ ] 使用公网专用账号完成发现/关注、九图发布编辑、原图、点赞收藏、图片/表情评论和删除真机联调。
 
 ## 12. 已知限制和后续功能

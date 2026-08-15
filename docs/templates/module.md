@@ -2,6 +2,8 @@
 
 状态：`planned`
 
+状态只允许 `planned`、`in_progress`、`implemented`、`deferred`，并必须与 `docs/modules/README.md` 中同名模块一致。
+
 ## 1. 模块目标与非目标
 
 ## 2. 用户角色与使用场景
