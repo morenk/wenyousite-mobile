@@ -466,6 +466,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('目标楼层内容'), findsOneWidget);
+    expect(find.textContaining('已定位到'), findsNothing);
+    expect(find.textContaining('强调底色'), findsNothing);
+    expect(find.byType(AnimatedContainer), findsOneWidget);
     expect(repository.targetPostIds, ['floor-target']);
     expect(repository.requestedSubthreads.last, 'subthread-2');
     expect(
@@ -1415,6 +1418,10 @@ class _FakeHomeRepository implements HomeRepository {
   }
 }
 
+final _recentFixtureTime = DateTime.now().subtract(
+  const Duration(days: 5, hours: 1),
+);
+
 final _detail = ThreadDetailModel(
   id: 'thread-1',
   title: '星海旅团',
@@ -1461,7 +1468,7 @@ final _detail = ThreadDetailModel(
   ],
   defaultSubthreadId: 'subthread-1',
   createdAt: DateTime.utc(2026, 8, 1),
-  updatedAt: DateTime.utc(2026, 8, 9, 12),
+  updatedAt: _recentFixtureTime,
 );
 
 ThreadDetailModel _detailWithTags(List<ThreadTagModel> tags) {
@@ -1551,7 +1558,7 @@ final _managerDetail = ThreadDetailModel(
   hasAutomaticUpdates: true,
   currentUserId: 'user-1',
   createdAt: DateTime.utc(2026, 8, 1),
-  updatedAt: DateTime.utc(2026, 8, 9, 12),
+  updatedAt: _recentFixtureTime,
 );
 
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);
@@ -1728,7 +1735,7 @@ final _mainFloor = ThreadFloorModel(
   floorNumber: 1,
   author: _author,
   body: const ThreadBodyModel(markdown: '第一层内容'),
-  createdAt: DateTime.utc(2026, 8, 9, 12, 10),
+  createdAt: _recentFixtureTime,
   isDeleted: false,
   replyCount: 1,
   replies: [
@@ -1736,7 +1743,7 @@ final _mainFloor = ThreadFloorModel(
       id: 'reply-1',
       author: _author,
       body: const ThreadBodyModel(markdown: '收到，准备出发。'),
-      createdAt: DateTime.utc(2026, 8, 9, 12, 20),
+      createdAt: _recentFixtureTime,
       isDeleted: false,
       replyToUsername: '温柔测试员',
     ),
@@ -1756,7 +1763,7 @@ final _longMainFloor = ThreadFloorModel(
 
 远处的信标终于亮起，新的章节也在这一刻展开。''',
   ),
-  createdAt: DateTime.utc(2026, 8, 9, 12, 10),
+  createdAt: _recentFixtureTime,
   isDeleted: false,
   replyCount: 1,
   replies: [
@@ -1764,7 +1771,7 @@ final _longMainFloor = ThreadFloorModel(
       id: 'reply-long',
       author: _author,
       body: const ThreadBodyModel(markdown: '收到，准备出发。'),
-      createdAt: DateTime.utc(2026, 8, 9, 12, 20),
+      createdAt: _recentFixtureTime,
       isDeleted: false,
       replyToUsername: '温柔测试员',
     ),
@@ -1780,7 +1787,7 @@ final _longSecondFloor = ThreadFloorModel(
 
 舱门在身后合拢。下一位接力者没有解释来意，只把一页写满坐标的纸放在桌上。''',
   ),
-  createdAt: DateTime.utc(2026, 8, 9, 12, 30),
+  createdAt: _recentFixtureTime,
   isDeleted: false,
   replyCount: 2,
   replies: [
@@ -1788,7 +1795,7 @@ final _longSecondFloor = ThreadFloorModel(
       id: 'reply-long-2',
       author: _author,
       body: const ThreadBodyModel(markdown: '这条讨论不应插进接力正文。'),
-      createdAt: DateTime.utc(2026, 8, 9, 12, 40),
+      createdAt: _recentFixtureTime,
       isDeleted: false,
       replyToUsername: '下一位接力者',
     ),
@@ -1800,7 +1807,7 @@ final _sideFloor = ThreadFloorModel(
   floorNumber: 1,
   author: _author,
   body: const ThreadBodyModel(markdown: '支线楼层'),
-  createdAt: DateTime.utc(2026, 8, 9, 13),
+  createdAt: _recentFixtureTime,
   isDeleted: false,
   replyCount: 0,
   replies: const [],
@@ -1811,7 +1818,7 @@ final _paginatedFloor = ThreadFloorModel(
   floorNumber: 2,
   author: _author,
   body: const ThreadBodyModel(markdown: '分页新增内容'),
-  createdAt: DateTime.utc(2026, 8, 9, 13, 30),
+  createdAt: _recentFixtureTime,
   isDeleted: false,
   replyCount: 0,
   replies: const [],
@@ -1822,7 +1829,7 @@ final _targetFloor = ThreadFloorModel(
   floorNumber: 9,
   author: _author,
   body: const ThreadBodyModel(markdown: '目标楼层内容'),
-  createdAt: DateTime.utc(2026, 8, 10, 8),
+  createdAt: _recentFixtureTime,
   isDeleted: false,
   replyCount: 0,
   replies: const [],

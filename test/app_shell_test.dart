@@ -20,6 +20,7 @@ import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 import 'package:wenyousite_mobile/features/users/data/me_profile_repository.dart';
@@ -830,7 +831,7 @@ class _EmptyNotificationRepository implements NotificationRepository {
 
   @override
   Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilter.all,
+    NotificationFilter filter = NotificationFilters.all,
     String? cursor,
   }) async {
     fetchCalls += 1;

@@ -1,17 +1,3 @@
-enum NotificationFilter {
-  all(null, '全部'),
-  replies('reply,mention', '回复与提及'),
-  updates('new_post,thread_created', '主题更新'),
-  social('follow,like', '关注与点赞'),
-  rewards('tip,level_up', '温油与等级'),
-  system('system', '系统');
-
-  const NotificationFilter(this.wireValue, this.label);
-
-  final String? wireValue;
-  final String label;
-}
-
 enum NotificationKind {
   reply,
   mention,
@@ -68,6 +54,7 @@ class NotificationTarget {
     required this.kind,
     this.threadId,
     this.postId,
+    this.parentPostId,
     this.momentId,
     this.momentCommentId,
     this.userId,
@@ -77,6 +64,7 @@ class NotificationTarget {
   final NotificationTargetKind kind;
   final String? threadId;
   final String? postId;
+  final String? parentPostId;
   final String? momentId;
   final String? momentCommentId;
   final String? userId;
@@ -126,49 +114,4 @@ class NotificationListItem {
       createdAt: createdAt,
     );
   }
-
-  String get displayText {
-    final structured = _structuredText;
-    if (structured != null) return structured;
-    final sanitized = sanitizeNotificationText(content, payload?.preview);
-    return sanitized.isEmpty ? '（图片内容）' : sanitized;
-  }
-
-  String? get _structuredText {
-    final data = payload;
-    final actorName = data?.actorName?.trim() ?? '';
-    final action = data?.action;
-    if (actorName.isEmpty || data == null) return null;
-    final subthreadTitle = data.subthreadTitle?.trim() ?? '';
-    final actionText = switch (action) {
-      'reply' => '回复了你',
-      'mention' => subthreadTitle.isEmpty ? '提到了你' : '在「$subthreadTitle」提到了你',
-      'new_post' =>
-        subthreadTitle.isEmpty ? '发布了新楼层' : '创建了新子贴「$subthreadTitle」',
-      'moment_reply' => '回复了你在动态中的评论',
-      'moment_comment' => '评论了你的动态',
-      _ => null,
-    };
-    if (actionText == null) return null;
-    final preview = sanitizeNotificationText(data.preview ?? '');
-    return preview.isEmpty
-        ? '$actorName $actionText'
-        : '$actorName $actionText：$preview';
-  }
-}
-
-String sanitizeNotificationText(String raw, [String? payloadPreview]) {
-  var value = raw
-      .replaceAll(RegExp(r'!\[[^\]]*\]\([^)]*\)'), '')
-      .replaceAllMapped(
-        RegExp(r'\\([!-/:-@\[-`{-~])'),
-        (match) => match.group(1)!,
-      )
-      .replaceAll(RegExp(r'\\\r?\n'), '\n')
-      .replaceAll(RegExp(r'\n{3,}'), '\n\n')
-      .trim();
-  if (payloadPreview?.trim() == '1.00') {
-    value = value.replaceFirst(RegExp(r'1\.00\s*$'), '').trimRight();
-  }
-  return value;
 }

@@ -4,6 +4,7 @@
 
 ### Added
 
+- 开发版本进入 `0.3.0-dev.76+82`；通知系统按 Foundation v2.4.2 合并为“全部 / 互动 / 订阅 / 系统”，消息中心统一承载通知与私聊并兼容旧 `/messages`；楼中楼通知直达回复页，目标仅以短暂淡粉边框提示。删除通知增加不可恢复确认，未读轮询收敛到应用壳单一定时器，通知文案与跨模块组合职责从 domain/notifications 中拆出。
 - 开发版本进入 `0.3.0-dev.75+81`；继续按职责拆分个人中心资料/头像编辑、动态评论编辑器、主题创作辅助区、楼层回复筛选器和私信消息时间线，清空全部 5 项大文件债务。所有非生成 Dart 文件现均不超过 900 行，`largeFileDebt` 归零。
 - 开发版本进入 `0.3.0-dev.74+80`；拆分私信组合组件与主题详情展示区，将 `direct_message_widgets.dart` 从 1132 行降至 817 行、`thread_detail_sections.dart` 从 1278 行降至 854 行。架构门禁新增非生成 Dart 文件 900 行上限，现有 5 项超限文件按精确行数冻结，只能缩减，不能新增或增长。
 - 开发版本进入 `0.3.0-dev.73+79`；将草稿、通知、帖子、搜索、设置、社交、贴纸、标签和公开用户的加载/提交状态从 domain 迁入 application，举报与温油金额使用领域校验异常并在边界映射 `ApiFailure`，清空全部 16 项 domain 反向依赖债务。退出会话与资料缓存失效提升为 core application 协作能力，用户页直接消费全局 capability，解除 `auth/users` 与 `direct_messages/users` 循环；架构门禁新增 domain 状态所有权检查，`domainBoundaryDebt` 与 `featureCycleDebt` 均归零。

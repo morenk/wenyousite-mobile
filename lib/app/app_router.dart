@@ -6,13 +6,13 @@ import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/message_center_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/email_verification_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/registration_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/reset_password_page.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_page.dart';
-import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
@@ -20,7 +20,6 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
-import 'package:wenyousite_mobile/features/notifications/presentation/notifications_page.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/thread_post_search_page.dart';
@@ -83,7 +82,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/notifications',
                 name: 'notifications',
-                builder: (context, state) => const NotificationsPage(),
+                builder: (context, state) => MessageCenterPage(
+                  requestedSection: state.uri.queryParameters['section'],
+                ),
               ),
             ],
           ),
@@ -145,7 +146,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/messages',
         name: 'direct-messages',
-        builder: (context, state) => const DirectMessagesPage(),
+        redirect: (context, state) => AppRouteLocations.messageCenter(
+          section: MessageCenterSections.directMessages,
+        ),
       ),
       GoRoute(
         path: '/messages/new/:userId',

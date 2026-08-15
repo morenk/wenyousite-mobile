@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
+import 'package:wenyousite_mobile/features/notifications/presentation/notification_copy.dart';
 
 void main() {
   setUpAll(() {
@@ -16,12 +18,12 @@ void main() {
     when(
       () => api.notificationsFindAll(
         cursor: 'notification-cursor',
-        type: 'reply,mention',
+        type: 'reply,mention,follow,like',
       ),
     ).thenAnswer((_) async => _listResponse());
 
     final page = await ApiNotificationRepository(api).fetchPage(
-      filter: NotificationFilter.replies,
+      filter: NotificationFilters.byId('interaction'),
       cursor: 'notification-cursor',
     );
 
@@ -29,11 +31,12 @@ void main() {
     expect(page.hasMore, isTrue);
     final item = page.items.single;
     expect(item.kind, NotificationKind.reply);
-    expect(item.displayText, '骰子猫 回复了你：雾港见');
+    expect(formatNotificationCopy(item).plainText, '骰子猫 回复了你：雾港见');
     expect(item.actor?.username, '骰子猫');
     expect(item.target.kind, NotificationTargetKind.post);
     expect(item.target.threadId, 'thread-1');
     expect(item.target.postId, 'post-7');
+    expect(item.target.parentPostId, isNull);
     expect(item.target.canOpen, isTrue);
   });
 

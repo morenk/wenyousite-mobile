@@ -1,5 +1,7 @@
 # 导航
 
+消息列表的规范入口是 `/notifications`；私聊页签使用 `/notifications?section=directMessages`，旧 `/messages` 只负责兼容重定向。`/messages/new/:userId` 与 `/messages/:conversationId` 仍分别承载新私聊和会话详情。
+
 go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `returnTo` 编码，页面使用命名路由或位置构造器，不直接拼接路径；`AppRouteAccessPolicy` 以纯 Dart 访问级别决定登录守卫，router 只负责组合与重定向。根级兼容检查先于业务路由；未知契约主版本进入升级提示页，网络失败进入可重试页。
 
 主导航使用保留状态的四分支壳：首页 `/home`、动态 `/moments`、消息 `/notifications`、我的 `/me`；底栏中央是粉色发布动作，不占用独立路由分支。全站搜索 `/search` 由首页和动态顶栏的搜索按钮进入。消息分支在 capability 开启时以“通知 / 私信”同级页签组合两类独立状态。`/me` 对游客提供登录入口，登录后展示本人摘要与内容捷径；`/me/edit` 编辑资料，`/me/settings` 汇总账号设置，并可进入 `/users/:userId` 预览自己的公开主页，或进入 `/me/bookmarks` 管理本人私有主题收藏夹，进入 `/me/following`、`/me/followers`、`/me/blocks` 管理关系；收藏夹筛选与移动只改变页面内状态，不产生临时子路由。用户还可通过 `/me/security/sessions`、`/me/security/password`、`/me/security/email`、`/me/security/verify-email`、`/me/security/delete-account` 管理登录终端、密码、更换邮箱、验证当前邮箱与账号注销；这些私有路径与 `/compose/thread`、`/compose/moment`、`/threads/:threadId/manage`、`/join/:token` 一样，未登录时先去 `/auth/login?returnTo=...`。登录页、`/auth/register`、`/auth/forgot-password` 与 `/auth/reset-password` 透传同一个 `returnTo`；注册或登录成功后恢复原目标，重置密码成功则回登录页并保留目标。找回到重置只用路由内存 `extra` 传递规范化邮箱，不把邮箱、验证码或密码写入查询参数；重置页也允许独立进入并重新发码。创建页进入邮箱验证前先保存本地快照，验证页只把仓库内原目标写入 `returnTo`，不把当前邮箱或验证码写入路径；成功返回后重新读取发布资格。改密和换邮箱成功会清除本机会话并进入 `/auth/login?returnTo=/me`。注销成功会归一为游客态并进入 `/home`，不返回或保留破坏性表单目标；远端已完成但本地清理失败时停留原页，只允许重试本机清理。会话失效时统一跳转登录页并保留安全的仓库内目标，但找回/重置公开路由保持可达；用户可重新登录或将 invalidated 状态归一为 guest 后返回首页。回跳只接受仓库内绝对路径并拒绝认证页自循环；主题、动态、楼层、用户、邀请和通知目标使用命名路由，禁止页面自行拼接不透明参数。

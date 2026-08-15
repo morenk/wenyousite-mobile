@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -382,9 +383,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (!mounted || targetContext == null) return;
       Scrollable.ensureVisible(
         targetContext,
-        duration: context.wenyouTokens.feedbackDuration,
+        duration: Duration.zero,
         alignment: 0.12,
-        curve: Curves.easeOutCubic,
       );
     });
   }
@@ -546,7 +546,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               final floor = displayedFloors[index];
-              final focused = usableTarget?.floor.id == floor.id;
+              final focused =
+                  usableTarget?.focusedReplyId == null &&
+                  usableTarget?.floor.id == floor.id;
               return _DetailContent(
                 top: index == 0 ? 12 : 0,
                 child: Column(

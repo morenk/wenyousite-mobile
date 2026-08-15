@@ -5,25 +5,17 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_states.dart';
-import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
 export 'package:wenyousite_mobile/features/notifications/application/notification_states.dart';
 
 class NotificationUnreadController
     extends StateNotifier<NotificationUnreadState> {
-  NotificationUnreadController(
-    this._repository, {
-    bool autoStart = true,
-    Duration refreshInterval = const Duration(seconds: 30),
-  }) : super(const NotificationUnreadState()) {
-    if (autoStart) {
-      refresh();
-      _timer = Timer.periodic(refreshInterval, (_) => refresh());
-    }
+  NotificationUnreadController(this._repository, {bool autoStart = true})
+    : super(const NotificationUnreadState()) {
+    if (autoStart) unawaited(refresh());
   }
 
   final NotificationRepository _repository;
-  Timer? _timer;
 
   Future<void> refresh() async {
     if (state.isLoading) return;
@@ -47,12 +39,6 @@ class NotificationUnreadController
 
   void _setCount(int value) {
     state = NotificationUnreadState(count: value < 0 ? 0 : value);
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 }
 
@@ -222,9 +208,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
   }
 
   Future<bool> markAllRead() async {
-    if (state.phase != NotificationListPhase.ready ||
-        state.isMutating ||
-        !state.hasUnread) {
+    if (state.phase != NotificationListPhase.ready || state.isMutating) {
       return false;
     }
     final before = state;

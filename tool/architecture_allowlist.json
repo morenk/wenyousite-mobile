@@ -11,7 +11,6 @@
     "moments->reports",
     "moments->stickers",
     "moments->wallet",
-    "notifications->direct_messages",
     "posts->drafts",
     "posts->editor",
     "posts->media",

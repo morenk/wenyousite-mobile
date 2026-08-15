@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
 enum NotificationListPhase { loading, ready, failed }
@@ -8,7 +9,7 @@ enum NotificationPendingAction { markRead, remove, markAllRead }
 class NotificationListState {
   const NotificationListState({
     required this.phase,
-    this.filter = NotificationFilter.all,
+    this.filter = NotificationFilters.all,
     this.items = const [],
     this.cursor,
     this.hasMore = false,
@@ -20,7 +21,7 @@ class NotificationListState {
     this.actionFailure,
   });
 
-  const NotificationListState.loading({this.filter = NotificationFilter.all})
+  const NotificationListState.loading({this.filter = NotificationFilters.all})
     : phase = NotificationListPhase.loading,
       items = const [],
       cursor = null,

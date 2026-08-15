@@ -30,7 +30,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('私信功能当前未开放'), findsOneWidget);
+    expect(find.text('私聊功能当前未开放'), findsOneWidget);
     expect(repository.lookupCalls, 0);
   });
 

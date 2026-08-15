@@ -17,7 +17,7 @@ class ApiNotificationRepository implements NotificationRepository {
 
   @override
   Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilter.all,
+    NotificationFilter filter = NotificationFilters.all,
     String? cursor,
   }) async {
     try {
@@ -139,6 +139,7 @@ class ApiNotificationRepository implements NotificationRepository {
         },
         threadId: target.threadId,
         postId: target.postId,
+        parentPostId: dto.post?.parentPostId,
         momentId: target.momentId,
         momentCommentId: target.momentCommentId,
         userId: target.userId,

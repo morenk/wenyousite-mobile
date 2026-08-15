@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -21,7 +22,7 @@ import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets
 
 part 'post_reply_filters.dart';
 
-class PostRepliesPage extends ConsumerWidget {
+class PostRepliesPage extends ConsumerStatefulWidget {
   const PostRepliesPage({
     required this.threadId,
     required this.rootPostId,
@@ -36,7 +37,28 @@ class PostRepliesPage extends ConsumerWidget {
   final bool reportsEnabled;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PostRepliesPage> createState() => _PostRepliesPageState();
+}
+
+class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
+  final _targetKey = GlobalKey();
+  String? _lastRevealedReplyId;
+
+  String get threadId => widget.threadId;
+  String get rootPostId => widget.rootPostId;
+  String? get focusedReplyId => widget.focusedReplyId;
+  bool get reportsEnabled => widget.reportsEnabled;
+
+  @override
+  void didUpdateWidget(covariant PostRepliesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusedReplyId != widget.focusedReplyId) {
+      _lastRevealedReplyId = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final target = (rootPostId: rootPostId, focusedReplyId: focusedReplyId);
     final provider = postDiscussionControllerProvider(target);
     final actionsProvider = postActionControllerProvider(threadId);
@@ -58,6 +80,7 @@ class PostRepliesPage extends ConsumerWidget {
             state.root?.threadId == threadId
         ? state.root
         : null;
+    _revealReplyWhenReady(state);
     return Scaffold(
       appBar: AppBar(
         title: readyRoot == null
@@ -84,6 +107,7 @@ class PostRepliesPage extends ConsumerWidget {
                     viewerId: viewerId,
                     authenticated: session.isAuthenticated,
                     focusedReplyId: focusedReplyId,
+                    targetKey: _targetKey,
                     reportsEnabled: reportsEnabled,
                     onOrder: (order) =>
                         ref.read(provider.notifier).setOrder(order),
@@ -125,6 +149,26 @@ class PostRepliesPage extends ConsumerWidget {
             ),
       floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
     );
+  }
+
+  void _revealReplyWhenReady(PostDiscussionState state) {
+    final replyId = focusedReplyId;
+    if (replyId == null ||
+        state.phase != PostDiscussionPhase.ready ||
+        !state.replies.any((reply) => reply.id == replyId) ||
+        _lastRevealedReplyId == replyId) {
+      return;
+    }
+    _lastRevealedReplyId = replyId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetContext = _targetKey.currentContext;
+      if (!mounted || targetContext == null) return;
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: Duration.zero,
+        alignment: 0.12,
+      );
+    });
   }
 
   Widget _returnToRootAction(BuildContext context) {
@@ -214,6 +258,7 @@ class _DiscussionList extends StatelessWidget {
     required this.viewerId,
     required this.authenticated,
     required this.focusedReplyId,
+    required this.targetKey,
     required this.reportsEnabled,
     required this.onOrder,
     required this.onAuthor,
@@ -227,6 +272,7 @@ class _DiscussionList extends StatelessWidget {
   final String? viewerId;
   final bool authenticated;
   final String? focusedReplyId;
+  final GlobalKey targetKey;
   final bool reportsEnabled;
   final ValueChanged<PostReplyOrder> onOrder;
   final ValueChanged<String?> onAuthor;
@@ -336,6 +382,9 @@ class _DiscussionList extends StatelessWidget {
                         key: Key('post-reply-${reply.id}'),
                         post: reply,
                         focused: reply.id == focusedReplyId,
+                        targetFrameKey: reply.id == focusedReplyId
+                            ? targetKey
+                            : null,
                         canEdit: reply.isAuthoredBy(viewerId),
                         canDelete: reply.isAuthoredBy(viewerId),
                         pending: actions.pendingPostId == reply.id,
@@ -404,6 +453,7 @@ class _PostCard extends ConsumerWidget {
     this.onEdit,
     this.onDelete,
     this.reportReturnTo,
+    this.targetFrameKey,
     super.key,
   });
 
@@ -417,44 +467,47 @@ class _PostCard extends ConsumerWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final String? reportReturnTo;
+  final Key? targetFrameKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     final canTapReply = onReply != null && !pending && !post.isDeleted;
-    final card = Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: tokens.space4,
-        vertical: tokens.space12,
-      ),
-      decoration: BoxDecoration(
-        color: focused ? tokens.accentedBackground : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _PostAuthorLine(post: post, root: root),
-          SizedBox(height: root ? tokens.space12 : tokens.space8),
-          if (post.isDeleted)
-            Text(
-              root ? '该楼层已删除。' : '该回复已删除。',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-            )
-          else
-            StickerPostMarkdown(
-              postId: post.id,
-              data: post.content,
-              diceLabels: {
-                for (final roll in post.diceRolls)
-                  roll.nodeId: '${roll.notation} = ${roll.total}',
-              },
-              bodyFontSize: root ? 17 : 16,
-              bodyHeight: root ? 1.8 : 1.75,
-              onTapText: canTapReply ? onReply : null,
-            ),
-        ],
+    final card = WenyouTransientTargetFrame(
+      key: targetFrameKey,
+      targetId: focused ? post.id : null,
+      announcement: '已定位到目标回复',
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.space4,
+          vertical: tokens.space12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _PostAuthorLine(post: post, root: root),
+            SizedBox(height: root ? tokens.space12 : tokens.space8),
+            if (post.isDeleted)
+              Text(
+                root ? '该楼层已删除。' : '该回复已删除。',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+              )
+            else
+              StickerPostMarkdown(
+                postId: post.id,
+                data: post.content,
+                diceLabels: {
+                  for (final roll in post.diceRolls)
+                    roll.nodeId: '${roll.notation} = ${roll.total}',
+                },
+                bodyFontSize: root ? 17 : 16,
+                bodyHeight: root ? 1.8 : 1.75,
+                onTapText: canTapReply ? onReply : null,
+              ),
+          ],
+        ),
       ),
     );
     return Semantics(

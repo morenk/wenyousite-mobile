@@ -8,11 +8,11 @@
 
 ## 2. 用户角色与使用场景
 
-登录用户可从其他用户公开主页发起私聊，在通知页进入私信中心，处理收到的消息请求并查看会话。互相关注时首条消息直接建立会话，否则作为只能发送一次的消息请求；请求接收方接受后双方继续发送，拒绝会删除首条消息。游客和服务端未开放 capability 时只能看到安全收敛状态，不读取私聊数据。
+登录用户可从其他用户公开主页发起私聊，在消息中心进入私聊页签，处理收到的消息请求并查看会话。互相关注时首条消息直接建立会话，否则作为只能发送一次的消息请求；请求接收方接受后双方继续发送，拒绝会删除首条消息。游客和服务端未开放 capability 时只能看到安全收敛状态，不读取私聊数据。
 
 ## 3. 页面、入口和导航关系
 
-私信中心使用受保护路径 `/messages`，也可作为底部“消息”分支内“私信”页签的嵌入内容；新私聊使用 `/messages/new/:userId`，会话使用 `/messages/:conversationId`。其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。
+私聊列表的规范路径是底部“消息”分支内的 `/notifications?section=directMessages`；旧 `/messages` 兼容重定向到该地址。新私聊继续使用 `/messages/new/:userId`，会话继续使用 `/messages/:conversationId`。其他用户主页在确认当前登录身份且 capability 开启后展示“发私聊”。已有 ACCEPTED/PENDING 联系从新私聊页替换到原会话；DECLINED/CANCELED/UNAVAILABLE 按服务端 `canInitiate` 展示重新建立或受限说明，不猜测新目标。
 
 ## 4. 用户操作流程
 
@@ -26,6 +26,8 @@
 - 主要生成类型：`DirectConversationResponseDto`、`DirectMessageResponseDto`、`DirectConversationLookupResponseDto`、`DirectUnreadCountResponseDto`、`CreateDirectConversationDto`、`CreateDirectMessageDto`、`HandleDirectRequestDto`、`SetDirectConversationArchiveDto`、`MarkDirectConversationReadDto`、`DirectMessageRecallResponseDto`。
 
 ## 6. 状态模型和数据流
+
+未读控制器只负责单次读取；应用壳在认证且前台时用唯一的 30 秒定时器统一触发通知、未读消息与待处理请求刷新，进入后台或退出登录立即停止。
 
 会话列表按 view 使用独立 autoDispose family；未读消息与待处理请求由进程内控制器每 30 秒读取。会话详情维护升序消息、历史 cursor、服务端增量 anchor 与本地发送状态；本地消息使用 `optimistic:<clientRequestId>` 标识和 `sending / failed / sent` 状态，服务端回包原位替换，增量 anchor 永远跳过本地消息。历史分页、最近窗口刷新、增量轮询和乐观消息按 ID 去重并用 `createdAt + id` 排序，最近窗口对账不会丢弃已经加载的历史。私聊读写端口位于 `direct_messages/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。图片选择、进度、失败、同文件重试和取消由 `media/application` 按输入器实例管理；私聊状态只接收上传完成后的 `mediaId`，不持有原始字节、Dio 取消令牌或预签名 URL。新私聊目标解析使用独立控制器文件并通过 `users/application` 公共端口读取目标资料，保持原 provider 接口且不依赖 users data。加载、提交与失败状态位于 application，domain 只保留业务模型和草稿校验。data 适配器拒绝重复 ID、异常游标、会话 ID/目标用户不匹配、撤回后仍携带正文/媒体、非安全 URL、状态与权限矛盾以及未读总数不一致；控制器额外确认每条消息包含当前会话的另一位参与者，异常时整页停止展示。接受、拒绝、已读和撤回成功后重新校准角标，角标刷新失败不回滚已确认的业务结果。
 

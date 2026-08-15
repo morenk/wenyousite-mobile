@@ -219,11 +219,7 @@ class _TargetPostStatus extends StatelessWidget {
             ),
           );
         }
-        return WenyouStatusBanner(
-          tone: WenyouStatusTone.accent,
-          message: target.focusedReplyId == null ? '已定位到匹配楼层' : '已定位到匹配的楼中楼回复',
-          detail: '目标上下文使用强调底色；已加载楼层保持原有顺序。',
-        );
+        return const SizedBox.shrink();
       },
     );
   }
@@ -293,116 +289,123 @@ class _FloorCard extends ConsumerWidget {
         behavior: HitTestBehavior.opaque,
         onTap: pending || floor.isDeleted ? null : onReply,
         onLongPress: () => _showActions(context, ref),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: tokens.space4,
-            vertical: tokens.space12,
-          ),
-          decoration: BoxDecoration(
-            color: isFocused ? tokens.accentedBackground : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _AuthorLine(
-                      key: Key('thread-floor-author-${floor.id}'),
-                      author: floor.author,
-                      time: floor.createdAt,
-                      compact: true,
+        child: WenyouTransientTargetFrame(
+          targetId: isFocused ? floor.id : null,
+          announcement: '已定位到目标楼层',
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space4,
+              vertical: tokens.space12,
+            ),
+            decoration: const BoxDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AuthorLine(
+                        key: Key('thread-floor-author-${floor.id}'),
+                        author: floor.author,
+                        time: floor.createdAt,
+                        compact: true,
+                      ),
                     ),
+                    SizedBox(width: tokens.space8),
+                    Tooltip(
+                      message: '楼层操作',
+                      child: TextButton(
+                        key: Key('thread-floor-actions-${floor.id}'),
+                        onPressed: pending
+                            ? null
+                            : () => _showActions(context, ref),
+                        style: TextButton.styleFrom(
+                          foregroundColor: tokens.mutedText,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: tokens.space4,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              floor.floorNumber == null
+                                  ? '楼层'
+                                  : '#${floor.floorNumber}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            SizedBox(width: tokens.space4),
+                            const WenyouIcon(
+                              WenyouIconIds.actionMore,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: tokens.space8),
+                if (floor.isDeleted)
+                  Text(
+                    '该楼层已删除。',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  )
+                else
+                  StickerPostMarkdown(
+                    postId: floor.id,
+                    data: floor.body.markdown,
+                    diceLabels: _diceLabels(floor.body.diceRolls),
+                    onInternalLink: (uri) =>
+                        _showInternalLinkNotice(context, uri),
+                    onTapText: pending ? null : onReply,
                   ),
-                  SizedBox(width: tokens.space8),
-                  Tooltip(
-                    message: '楼层操作',
+                if (floor.replyCount > 0) ...[
+                  SizedBox(height: tokens.space4),
+                  Align(
+                    alignment: Alignment.centerRight,
                     child: TextButton(
-                      key: Key('thread-floor-actions-${floor.id}'),
-                      onPressed: pending
-                          ? null
-                          : () => _showActions(context, ref),
+                      key: Key('thread-floor-discussion-${floor.id}'),
+                      onPressed: pending ? null : onDiscussion,
                       style: TextButton.styleFrom(
                         foregroundColor: tokens.mutedText,
                         padding: EdgeInsets.symmetric(
-                          horizontal: tokens.space4,
+                          horizontal: tokens.space8,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          WenyouIcon(WenyouIconIds.metricComments, size: 16),
+                          SizedBox(width: tokens.space4),
                           Text(
-                            floor.floorNumber == null
-                                ? '楼层'
-                                : '#${floor.floorNumber}',
+                            '${floor.replyCount} 条回复',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           SizedBox(width: tokens.space4),
-                          const WenyouIcon(WenyouIconIds.actionMore, size: 18),
+                          const WenyouIcon(
+                            WenyouIconIds.navigationNext,
+                            size: 16,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: tokens.space8),
-              if (floor.isDeleted)
-                Text(
-                  '该楼层已删除。',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                )
-              else
-                StickerPostMarkdown(
-                  postId: floor.id,
-                  data: floor.body.markdown,
-                  diceLabels: _diceLabels(floor.body.diceRolls),
-                  onInternalLink: (uri) =>
-                      _showInternalLinkNotice(context, uri),
-                  onTapText: pending ? null : onReply,
-                ),
-              if (floor.replyCount > 0) ...[
-                SizedBox(height: tokens.space4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    key: Key('thread-floor-discussion-${floor.id}'),
-                    onPressed: pending ? null : onDiscussion,
-                    style: TextButton.styleFrom(
-                      foregroundColor: tokens.mutedText,
-                      padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+                  if (floor.replies.isNotEmpty) ...[
+                    SizedBox(height: tokens.space4),
+                    _FloorInlineReplyPreview(
+                      floorId: floor.id,
+                      replies: floor.replies,
+                      replyCount: floor.replyCount,
+                      pending: pending,
+                      onDiscussion: onDiscussion,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        WenyouIcon(WenyouIconIds.metricComments, size: 16),
-                        SizedBox(width: tokens.space4),
-                        Text(
-                          '${floor.replyCount} 条回复',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        SizedBox(width: tokens.space4),
-                        const WenyouIcon(
-                          WenyouIconIds.navigationNext,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (floor.replies.isNotEmpty) ...[
-                  SizedBox(height: tokens.space4),
-                  _FloorInlineReplyPreview(
-                    floorId: floor.id,
-                    replies: floor.replies,
-                    replyCount: floor.replyCount,
-                    pending: pending,
-                    onDiscussion: onDiscussion,
-                  ),
+                  ],
                 ],
               ],
-            ],
+            ),
           ),
         ),
       ),

@@ -44,5 +44,13 @@ void main() {
       ),
       '/auth/login?returnTo=%2Fthreads%2Fthread-1%3Fpost%3Dpost-1',
     );
+    expect(
+      AppRouteLocations.messageCenter(section: 'directMessages'),
+      '/notifications?section=directMessages',
+    );
+    expect(
+      AppRouteLocations.postReplies('thread/1', 'floor/2', postId: 'reply&9'),
+      '/threads/thread%2F1/posts/floor%2F2/replies?post=reply%269',
+    );
   });
 }

@@ -114,7 +114,7 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
     return AppBar(
       titleSpacing: 0,
       title: conversation == null
-          ? const Text('私信')
+          ? const Text('私聊')
           : InkWell(
               key: const Key('direct-conversation-open-user'),
               onTap: () => context.pushNamed(
@@ -529,13 +529,13 @@ class _DirectConversationUnavailablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('私信')),
+      appBar: AppBar(title: const Text('私聊')),
       body: const WenyouPageBody(
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
-            title: '私信功能当前未开放',
+            title: '私聊功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),
         ),

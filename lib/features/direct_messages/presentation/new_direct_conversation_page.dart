@@ -316,7 +316,7 @@ class _NewConversationUnavailablePage extends StatelessWidget {
         child: WenyouPanel(
           child: WenyouEmptyState(
             icon: WenyouIconIds.statusMessagesDisabled,
-            title: '私信功能当前未开放',
+            title: '私聊功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),
         ),

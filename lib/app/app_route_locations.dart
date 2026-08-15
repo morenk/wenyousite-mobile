@@ -4,6 +4,7 @@ abstract final class AppRouteLocations {
   static const meEdit = '/me/edit';
   static const meSettings = '/me/settings';
   static const moments = '/moments';
+  static const notifications = '/notifications';
   static const search = '/search';
   static const moderationAppeals = '/appeals';
   static const composeThread = '/compose/thread';
@@ -20,6 +21,18 @@ abstract final class AppRouteLocations {
 
   static String thread(String threadId, {String? postId}) =>
       _fromSegments(['threads', threadId], {'post': ?postId});
+
+  static String messageCenter({String? section}) =>
+      _withQuery(notifications, {'section': ?section});
+
+  static String postReplies(
+    String threadId,
+    String parentPostId, {
+    String? postId,
+  }) => _fromSegments(
+    ['threads', threadId, 'posts', parentPostId, 'replies'],
+    {'post': ?postId},
+  );
 
   static String threadManagement(String threadId) =>
       '${thread(threadId)}/manage';

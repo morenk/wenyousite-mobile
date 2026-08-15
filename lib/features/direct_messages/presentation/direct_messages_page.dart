@@ -63,7 +63,7 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
     );
     if (widget.embedded) return body;
     return Scaffold(
-      appBar: AppBar(title: const Text('私信')),
+      appBar: AppBar(title: const Text('私聊')),
       body: body,
     );
   }
@@ -381,13 +381,13 @@ class _DirectMessagesUnavailablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('私信')),
+      appBar: AppBar(title: const Text('私聊')),
       body: const WenyouPageBody(
         maxWidth: 600,
         child: WenyouPanel(
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
-            title: '私信功能当前未开放',
+            title: '私聊功能当前未开放',
             message: '服务端暂未启用此能力，请稍后再试。',
           ),
         ),

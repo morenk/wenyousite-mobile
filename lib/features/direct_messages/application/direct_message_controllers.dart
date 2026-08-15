@@ -29,19 +29,12 @@ final directMessagesEnabledProvider = Provider<bool>(
 );
 
 class DirectUnreadController extends StateNotifier<DirectUnreadState> {
-  DirectUnreadController(
-    this._repository, {
-    bool autoStart = true,
-    Duration refreshInterval = const Duration(seconds: 30),
-  }) : super(const DirectUnreadState()) {
-    if (autoStart) {
-      unawaited(refresh());
-      _timer = Timer.periodic(refreshInterval, (_) => unawaited(refresh()));
-    }
+  DirectUnreadController(this._repository, {bool autoStart = true})
+    : super(const DirectUnreadState()) {
+    if (autoStart) unawaited(refresh());
   }
 
   final DirectMessageRepository _repository;
-  Timer? _timer;
 
   Future<void> refresh() async {
     if (state.isLoading) return;
@@ -57,12 +50,6 @@ class DirectUnreadController extends StateNotifier<DirectUnreadState> {
         failure: _asFailure(error, '私聊未读数没有同步完成。'),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 }
 
