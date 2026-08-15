@@ -277,6 +277,7 @@ Serializers _$serializers =
           ..add(MomentCardResponseDto.serializer)
           ..add(MomentCardResponseDtoCoverTypeEnum.serializer)
           ..add(MomentCardResponseDtoTextCoverThemeEnum.serializer)
+          ..add(MomentCommentContextResponseDto.serializer)
           ..add(MomentCommentResponseDto.serializer)
           ..add(MomentDeleteResponseDto.serializer)
           ..add(MomentDetailResponseDto.serializer)
@@ -292,6 +293,7 @@ Serializers _$serializers =
           ..add(MomentsBookmark201Response.serializer)
           ..add(MomentsBookmarks200Response.serializer)
           ..add(MomentsCommentAuthors200Response.serializer)
+          ..add(MomentsCommentContext200Response.serializer)
           ..add(MomentsCommentsList200Response.serializer)
           ..add(MomentsCreate201Response.serializer)
           ..add(MomentsCreateComment201Response.serializer)
@@ -407,10 +409,10 @@ Serializers _$serializers =
           ..add(SearchSearchThreads200Response.serializer)
           ..add(SearchSearchUsers200Response.serializer)
           ..add(SearchSubthreadReferenceResponseDto.serializer)
-          ..add(SearchThreadCountResponseDto.serializer)
-          ..add(SearchThreadOwnerResponseDto.serializer)
           ..add(SearchThreadReferenceResponseDto.serializer)
           ..add(SearchThreadResponseDto.serializer)
+          ..add(SearchThreadResponseDtoStatusEnum.serializer)
+          ..add(SearchThreadResponseDtoVisibilityEnum.serializer)
           ..add(SearchUserResponseDto.serializer)
           ..add(SendSystemNotificationDto.serializer)
           ..add(SessionResponseDto.serializer)
@@ -969,10 +971,6 @@ Serializers _$serializers =
             () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(String)]),
-            () => ListBuilder<String>(),
-          )
-          ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(SubscriptionResponseDto),
             ]),
@@ -1051,6 +1049,16 @@ Serializers _$serializers =
               const FullType(ThreadTagRelationResponseDto),
             ]),
             () => ListBuilder<ThreadTagRelationResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ThreadTagRelationResponseDto),
+            ]),
+            () => ListBuilder<ThreadTagRelationResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

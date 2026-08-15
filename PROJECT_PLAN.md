@@ -12,8 +12,8 @@
 
 ## 工程不变量
 
-- `contracts/openapi.json` 是 API 机器事实源，Markdown v2 黄金语料是正文跨端事实源。
-- Flutter Quill Delta 仅存在于编辑器内存；自研 Codec 与 Markdown v2 双向转换，所有快照仍是完整 Markdown。
+- `contracts/openapi.json` 是 API 机器事实源，Markdown v3 黄金语料是正文跨端事实源。
+- Flutter Quill Delta 仅存在于编辑器内存；自研 Codec 与 Markdown v3 双向转换，所有快照仍是完整 Markdown。
 - 每请求 UUID v4 `X-Request-ID`；登录/完成注册携带 mobile 头；并发 `40101` 只刷新一次。
 - 创建主题、子贴、楼层和回复使用稳定 `clientRequestId`，超时重试不换键。
 - Cursor 不解码、不计算；`40007` 清空并从第一页加载。

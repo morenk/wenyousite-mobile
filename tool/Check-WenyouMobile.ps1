@@ -39,6 +39,10 @@ function Invoke-WenyouCheckStep {
 
 Invoke-WenyouCheckStep 'Validate OpenAPI' $npmCommand @('run', 'api:validate')
 Invoke-WenyouCheckStep 'Regenerate and verify API client' $npmCommand @('run', 'api:check')
+Invoke-WenyouCheckStep 'Verify production contract and Markdown compatibility' $npmCommand @(
+  'run',
+  'api:verify:production'
+)
 Invoke-WenyouCheckStep 'Check Dart formatting' $dartCommand @(
   'format',
   '--output=none',

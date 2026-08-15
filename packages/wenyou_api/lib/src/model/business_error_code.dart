@@ -42,6 +42,9 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40008)
   static const BusinessErrorCode INVALID_WENYOU_AMOUNT = _$INVALID_WENYOU_AMOUNT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40009)
+  static const BusinessErrorCode UNSUPPORTED_MARKDOWN_FORMAT = _$UNSUPPORTED_MARKDOWN_FORMAT;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40100)
   static const BusinessErrorCode UNAUTHORIZED = _$UNAUTHORIZED;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

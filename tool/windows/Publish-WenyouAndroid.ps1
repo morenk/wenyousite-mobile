@@ -16,6 +16,7 @@ if ([string]::IsNullOrWhiteSpace($SshAlias)) {
 $sshPath = Join-Path $config.gitSshDirectory 'ssh.exe'
 $releaseWrapper = Join-Path $PSScriptRoot 'Invoke-WenyouAndroidRelease.ps1'
 $version = Get-WenyouPubspecVersion -ProjectPath $projectPath
+$dartPath = (Get-Command dart -ErrorAction Stop).Source
 
 $changes = @(& git -C $projectPath status --porcelain --untracked-files=normal)
 if ($LASTEXITCODE -ne 0) {
@@ -34,6 +35,23 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($upstream)) {
 }
 if ($head -ne $upstream) {
   throw 'Local HEAD does not match its upstream. Push or pull before publishing.'
+}
+
+Push-Location $projectPath
+try {
+  & $dartPath run tool/verify_production_api.dart
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Production contract preflight failed. Sync the backend contract before publishing.'
+  }
+} finally {
+  Pop-Location
+}
+
+$liveMeta = Invoke-RestMethod -Uri 'https://wenyou.site/api/v1/meta' -Method Get
+$liveAndroid = $liveMeta.data.mobileCompatibility.android
+if ($null -ne $liveAndroid.recommendedBuild -and
+    [int]$liveAndroid.recommendedBuild -ge $version.Build) {
+  throw "Build $($version.Build) must be greater than live recommended build $($liveAndroid.recommendedBuild)."
 }
 
 $preflight = Invoke-WenyouSshPreflight -SshPath $sshPath -SshAlias $SshAlias

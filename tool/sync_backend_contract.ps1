@@ -79,11 +79,52 @@ if ($revision -notmatch '^[0-9a-f]{40}$') {
   throw "Cannot resolve $contractRef to a full backend commit."
 }
 
+$backendContractPaths = @(Invoke-BackendGit @(
+  'ls-tree',
+  '-r',
+  '--name-only',
+  $revision,
+  '--',
+  'contracts'
+))
+
+function Resolve-UniqueBackendContract {
+  param(
+    [string]$Pattern,
+    [string]$Description
+  )
+
+  $matches = @($backendContractPaths | Where-Object { $_ -match $Pattern })
+  if ($matches.Count -ne 1) {
+    throw "Expected exactly one $Description contract at $revision, found $($matches.Count)."
+  }
+  return $matches[0]
+}
+
+$markdownNodesSource = Resolve-UniqueBackendContract `
+  '^contracts/markdown-v[0-9]+-nodes-fixtures\.json$' `
+  'Markdown nodes'
+$markdownVersionMatch = [regex]::Match(
+  $markdownNodesSource,
+  '^contracts/markdown-v([0-9]+)-nodes-fixtures\.json$'
+)
+if (-not $markdownVersionMatch.Success) {
+  throw "Cannot read the Markdown version from $markdownNodesSource."
+}
+$markdownFixtureSource =
+  "contracts/markdown-v$($markdownVersionMatch.Groups[1].Value)-fixtures.json"
+if ($markdownFixtureSource -notin $backendContractPaths) {
+  throw "The active Markdown content contract is missing: $markdownFixtureSource"
+}
+$markdownEditorSource = Resolve-UniqueBackendContract `
+  '^contracts/markdown-editor-roundtrip-v[0-9]+-fixtures\.json$' `
+  'Markdown editor round-trip'
+
 $contractFiles = @(
   @{ Source = 'contracts/openapi.json'; Destination = 'openapi.json' },
-  @{ Source = 'contracts/markdown-v2-fixtures.json'; Destination = 'markdown-v2-fixtures.json' },
-  @{ Source = 'contracts/markdown-v2-nodes-fixtures.json'; Destination = 'markdown-v2-nodes-fixtures.json' },
-  @{ Source = 'contracts/markdown-editor-roundtrip-v1-fixtures.json'; Destination = 'markdown-editor-roundtrip-v1-fixtures.json' },
+  @{ Source = $markdownFixtureSource; Destination = (Split-Path -Leaf $markdownFixtureSource) },
+  @{ Source = $markdownNodesSource; Destination = (Split-Path -Leaf $markdownNodesSource) },
+  @{ Source = $markdownEditorSource; Destination = (Split-Path -Leaf $markdownEditorSource) },
   @{ Source = 'contracts/mobile-push-v1-fixtures.json'; Destination = 'mobile-push-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1.schema.json'; Destination = 'mobile-push-v1.schema.json' },
   @{ Source = 'contracts/mobile-v1-golden-fixtures.json'; Destination = 'mobile-v1-golden-fixtures.json' },
@@ -95,6 +136,17 @@ $contractFiles = @(
 )
 
 New-Item -ItemType Directory -Force -Path $contractDirectory | Out-Null
+$desiredMarkdownFiles = @(
+  Split-Path -Leaf $markdownFixtureSource
+  Split-Path -Leaf $markdownNodesSource
+  Split-Path -Leaf $markdownEditorSource
+)
+Get-ChildItem -LiteralPath $contractDirectory -File |
+  Where-Object {
+    $_.Name -match '^markdown-(?:v[0-9]+(?:-nodes)?|editor-roundtrip-v[0-9]+)-fixtures\.json$' -and
+    $_.Name -notin $desiredMarkdownFiles
+  } |
+  Remove-Item -Force
 foreach ($contractFile in $contractFiles) {
   $source = [string]$contractFile.Source
   $destination = Join-Path $contractDirectory ([string]$contractFile.Destination)
@@ -119,10 +171,31 @@ if ($null -eq $contractVersionLine) {
   throw 'Cannot read the contract version from contracts/CHANGELOG.md.'
 }
 $contractVersion = $contractVersionLine.Matches[0].Groups[1].Value
+$markdownFixture = Get-Content `
+  -LiteralPath (Join-Path $contractDirectory (Split-Path -Leaf $markdownFixtureSource)) `
+  -Encoding UTF8 `
+  -Raw |
+  ConvertFrom-Json
+$markdownNodes = Get-Content `
+  -LiteralPath (Join-Path $contractDirectory (Split-Path -Leaf $markdownNodesSource)) `
+  -Encoding UTF8 `
+  -Raw |
+  ConvertFrom-Json
+$markdownEditor = Get-Content `
+  -LiteralPath (Join-Path $contractDirectory (Split-Path -Leaf $markdownEditorSource)) `
+  -Encoding UTF8 `
+  -Raw |
+  ConvertFrom-Json
+$markdownContractVersion = [int]$markdownNodes.markdownContractVersion
+if ($markdownContractVersion -lt 1 -or
+    [int]$markdownFixture.version -ne $markdownContractVersion -or
+    [int]$markdownEditor.markdownContractVersion -ne $markdownContractVersion) {
+  throw 'Synced Markdown contracts disagree about markdownContractVersion.'
+}
 $metadata = @(
   "backendRevision=$revision"
   "contractVersion=$contractVersion"
-  'markdownContractVersion=2'
+  "markdownContractVersion=$markdownContractVersion"
   'internalReferenceContractVersion=1'
 ) -join "`n"
 [System.IO.File]::WriteAllText(

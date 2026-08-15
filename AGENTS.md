@@ -36,7 +36,7 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 
 1. 后端运行时代码与 DTO 定义真实行为。
 2. `contracts/openapi.json` 是 Flutter API/model 生成的固定机器契约。
-3. `contracts/markdown-v2-fixtures.json` 与 `contracts/markdown-v2-nodes-fixtures.json` 分别固定 Markdown 规范化/可见性和扩展节点往返语义。
+3. `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v2-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点和编辑器往返语义。
 4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
 5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
@@ -48,8 +48,9 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 
 - `contracts/openapi.json`
 - `contracts/CHANGELOG.md`
-- `contracts/markdown-v2-fixtures.json`
-- `contracts/markdown-v2-nodes-fixtures.json`
+- `contracts/markdown-v3-fixtures.json`
+- `contracts/markdown-v3-nodes-fixtures.json`
+- `contracts/markdown-editor-roundtrip-v2-fixtures.json`
 - `contracts/mobile-push-v1.schema.json`
 - `contracts/mobile-push-v1-fixtures.json`
 - `docs/mobile-client-guide.md`
@@ -77,7 +78,7 @@ lib/
     config/             # AppEnvironment
     network/            # Dio、错误、请求追踪、刷新锁
     storage/            # Token 与本地数据库
-    markdown/           # Markdown v2、Quill Delta Codec 与协议节点
+    markdown/           # Markdown v3、Quill Delta Codec 与协议节点
     widgets/            # 无业务归属的通用组件
   features/
     app_shell/
@@ -108,7 +109,7 @@ packages/
 - feature 之间通过明确的 repository/service 接口协作，不直接读取其他 feature 的页面状态。
 - `core` 只放无业务归属的横切能力，不成为杂物目录。
 - API 传输模型不得直接承担复杂 UI 状态；需要时在 feature 内映射为展示模型。
-- 编辑器使用 Flutter Quill；Delta 只存在于编辑会话内存。后端、云草稿和 Drift 快照始终保存完整 Markdown v2。
+- 编辑器使用 Flutter Quill；Delta 只存在于编辑会话内存。后端、云草稿和 Drift 快照始终保存完整 Markdown v3。
 - Markdown ↔ Delta 使用自研可测试 Codec；不得依赖 `markdown_quill` 充当事实转换层，mention/dice/sticker/image/独占 `<br />` 必须无损往返。
 - 优先使用 Dart 语言能力，避免为简单状态额外引入代码生成框架。
 - 注释解释权限、重试、生命周期和兼容原因，不复述显然代码。

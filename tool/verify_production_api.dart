@@ -8,9 +8,15 @@ Future<void> main(List<String> arguments) async {
   final metadata = _readContractMetadata();
   final expectedRevision = metadata['backendRevision'];
   final expectedContract = metadata['contractVersion'];
-  if (expectedRevision == null || expectedContract == null) {
+  final expectedMarkdown = int.tryParse(
+    metadata['markdownContractVersion'] ?? '',
+  );
+  if (expectedRevision == null ||
+      expectedContract == null ||
+      expectedMarkdown == null) {
     stderr.writeln(
-      'contracts/backend-contract.properties 缺少 backendRevision 或 contractVersion。',
+      'contracts/backend-contract.properties 缺少 backendRevision、'
+      'contractVersion 或 markdownContractVersion。',
     );
     exitCode = 2;
     return;
@@ -36,12 +42,16 @@ Future<void> main(List<String> arguments) async {
     final metaData = _asMap(meta['data'], 'GET /meta data');
     final actualContract = metaData['contractVersion'];
     final actualRevision = metaData['buildSha'];
+    final actualMarkdown = metaData['markdownContractVersion'];
     if (actualContract != expectedContract ||
-        actualRevision != expectedRevision) {
+        actualRevision != expectedRevision ||
+        actualMarkdown != expectedMarkdown) {
       throw FormatException(
         '生产 API 与本地契约来源不一致：'
-        'expected contract=$expectedContract build=$expectedRevision; '
-        'actual contract=$actualContract build=$actualRevision',
+        'expected contract=$expectedContract build=$expectedRevision '
+        'markdown=$expectedMarkdown; '
+        'actual contract=$actualContract build=$actualRevision '
+        'markdown=$actualMarkdown',
       );
     }
 
@@ -75,7 +85,8 @@ Future<void> main(List<String> arguments) async {
 
     stdout.writeln(
       'Production API verified: contract=$actualContract '
-      'build=$actualRevision; GET /threads schema compatible.',
+      'build=$actualRevision markdown=$actualMarkdown; '
+      'GET /threads schema compatible.',
     );
   } on Object catch (error) {
     stderr.writeln('生产 API 校验失败：$error');

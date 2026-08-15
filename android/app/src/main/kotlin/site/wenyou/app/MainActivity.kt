@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.WindowManager
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
@@ -23,6 +24,7 @@ class MainActivity : FlutterActivity() {
         const val UPDATE_CHANNEL = "site.wenyou.app/app_update"
         const val KEYBOARD_INSETS_CHANNEL = "site.wenyou.app/keyboard_insets"
         const val APK_MIME_TYPE = "application/vnd.android.package-archive"
+        const val UPDATE_LOG_TAG = "WenyouUpdate"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -186,6 +188,7 @@ class MainActivity : FlutterActivity() {
             startActivity(installIntent)
             result.success("installerOpened")
         } catch (error: Exception) {
+            Log.e(UPDATE_LOG_TAG, "Native APK validation or installer launch failed.", error)
             result.error("installer_failed", "无法打开系统安装器。", error.javaClass.simpleName)
         }
     }

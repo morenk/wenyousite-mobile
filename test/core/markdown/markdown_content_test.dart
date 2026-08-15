@@ -6,13 +6,13 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 
 void main() {
   final contract =
-      jsonDecode(File('contracts/markdown-v2-fixtures.json').readAsStringSync())
+      jsonDecode(File('contracts/markdown-v3-fixtures.json').readAsStringSync())
           as Map<String, dynamic>;
   final cases = (contract['cases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
 
-  test('加载的是 Markdown v2 黄金语料', () {
-    expect(contract['version'], 2);
+  test('加载的是 Markdown v3 黄金语料', () {
+    expect(contract['version'], 3);
     expect(cases, isNotEmpty);
   });
 

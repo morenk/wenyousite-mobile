@@ -3,13 +3,14 @@ import 'dart:io';
 
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
 void main() {
   final editorRoundTripContract =
       jsonDecode(
             File(
-              'contracts/markdown-editor-roundtrip-v1-fixtures.json',
+              'contracts/markdown-editor-roundtrip-v2-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -17,9 +18,9 @@ void main() {
       (editorRoundTripContract['cases'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
-  test('消费后端编辑器往返黄金语料 v1', () {
-    expect(editorRoundTripContract['version'], 1);
-    expect(editorRoundTripContract['markdownContractVersion'], 2);
+  test('消费后端编辑器往返黄金语料 v2', () {
+    expect(editorRoundTripContract['version'], 2);
+    expect(editorRoundTripContract['markdownContractVersion'], 3);
     expect(editorRoundTripCases, isNotEmpty);
   });
 
@@ -41,16 +42,16 @@ void main() {
   final nodeContract =
       jsonDecode(
             File(
-              'contracts/markdown-v2-nodes-fixtures.json',
+              'contracts/markdown-v3-nodes-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
   final nodeCases = (nodeContract['cases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
 
-  test('加载的是 Markdown v2 扩展节点黄金语料', () {
+  test('加载的是 Markdown v3 扩展节点黄金语料', () {
     expect(nodeContract['version'], 1);
-    expect(nodeContract['markdownContractVersion'], 2);
+    expect(nodeContract['markdownContractVersion'], 3);
     expect(nodeCases, isNotEmpty);
   });
 
@@ -79,7 +80,7 @@ void main() {
   }
 
   final markdownContract =
-      jsonDecode(File('contracts/markdown-v2-fixtures.json').readAsStringSync())
+      jsonDecode(File('contracts/markdown-v3-fixtures.json').readAsStringSync())
           as Map<String, dynamic>;
   final markdownCases = (markdownContract['cases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
@@ -87,15 +88,17 @@ void main() {
   for (final fixture in markdownCases) {
     final id = fixture['id'] as String;
     final canonical = fixture['canonical'] as String;
+    final supported = fixture['supported'] as bool;
+    final expected = supported ? canonical : fixture['literal'] as String;
 
-    test('$id canonical Markdown 经 Delta 往返不变', () {
+    test('$id canonical Markdown 经 Delta 按 v3 能力白名单往返', () {
       final document = MarkdownDeltaCodec.decode(canonical);
 
-      expect(MarkdownDeltaCodec.encode(document.delta), canonical);
+      expect(MarkdownDeltaCodec.encode(document.delta), expected);
     });
   }
 
-  test('独占 br 映射为空段元数据且不把内联 br 当协议', () {
+  test('独占 br 映射为空段元数据且内联 br 按 v3 字面降级', () {
     final document = MarkdownDeltaCodec.decode('第一段\n<br />\n正文 <br> 示例');
 
     expect(
@@ -108,26 +111,23 @@ void main() {
     );
     expect(
       MarkdownDeltaCodec.encode(document.delta),
-      '第一段\n<br />\n正文 <br> 示例',
+      '第一段\n<br />\n\n正文 \\<br\\> 示例',
     );
   });
 
-  test('未知协议、非法骰子与不安全图片进入只读兼容节点并保留原文', () {
+  test('未知协议所在行按 v3 整行字面降级且不激活扩展节点', () {
     const source =
         '[[dice:v2:raw-node:1d20]] '
         '[[dice:v1:550e8400-e29b-41d4-a716-446655440000:1d1]] '
         '![风险](javascript:alert "说明")';
 
     final document = MarkdownDeltaCodec.decode(source);
+    final literal = MarkdownContent.literalizeUnsupported(source);
 
-    expect(document.isSourceCompatible, isTrue);
-    expect(document.issues.map((issue) => issue.kind), [
-      MarkdownCodecIssueKind.unknownProtocol,
-      MarkdownCodecIssueKind.invalidDice,
-      MarkdownCodecIssueKind.unsafeImage,
-    ]);
+    expect(document.isSourceCompatible, isFalse);
+    expect(document.issues, isEmpty);
     expect(MarkdownDeltaCodec.extractExtensionNodes(document.delta), isEmpty);
-    expect(MarkdownDeltaCodec.encode(document.delta), source);
+    expect(MarkdownDeltaCodec.encode(document.delta), literal);
   });
 
   test('重复骰子节点不丢原文且只暴露第一个可编辑节点', () {
@@ -312,12 +312,12 @@ void main() {
     expect(MarkdownDeltaCodec.encode(document.delta), source);
   });
 
-  test('未支持的任务列表继续保留源码模式', () {
+  test('未支持的任务列表按 v3 转为安全字面文本', () {
     final document = MarkdownDeltaCodec.decode('- [ ] 待处理');
 
     expect(document.delta.operations.first.data, '- [ ] 待处理');
     expect(document.delta.operations.first.attributes, isNull);
-    expect(MarkdownDeltaCodec.encode(document.delta), '- [ ] 待处理');
+    expect(MarkdownDeltaCodec.encode(document.delta), r'\- \[ \] 待处理');
   });
 
   test('分隔线使用本地原子节点往返且不改变其他主题分隔线写法', () {

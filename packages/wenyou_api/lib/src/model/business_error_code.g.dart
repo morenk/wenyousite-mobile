@@ -34,6 +34,8 @@ const BusinessErrorCode _$INVALID_CURSOR = const BusinessErrorCode._(
 const BusinessErrorCode _$INVALID_WENYOU_AMOUNT = const BusinessErrorCode._(
   'INVALID_WENYOU_AMOUNT',
 );
+const BusinessErrorCode _$UNSUPPORTED_MARKDOWN_FORMAT =
+    const BusinessErrorCode._('UNSUPPORTED_MARKDOWN_FORMAT');
 const BusinessErrorCode _$UNAUTHORIZED = const BusinessErrorCode._(
   'UNAUTHORIZED',
 );
@@ -278,6 +280,8 @@ BusinessErrorCode _$valueOf(String name) {
       return _$INVALID_CURSOR;
     case 'INVALID_WENYOU_AMOUNT':
       return _$INVALID_WENYOU_AMOUNT;
+    case 'UNSUPPORTED_MARKDOWN_FORMAT':
+      return _$UNSUPPORTED_MARKDOWN_FORMAT;
     case 'UNAUTHORIZED':
       return _$UNAUTHORIZED;
     case 'TOKEN_EXPIRED':
@@ -455,6 +459,7 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$INVALID_STICKER,
       _$INVALID_CURSOR,
       _$INVALID_WENYOU_AMOUNT,
+      _$UNSUPPORTED_MARKDOWN_FORMAT,
       _$UNAUTHORIZED,
       _$TOKEN_EXPIRED,
       _$TOKEN_INVALID,
@@ -549,6 +554,8 @@ class _$BusinessErrorCodeMeta {
   BusinessErrorCode get INVALID_STICKER => _$INVALID_STICKER;
   BusinessErrorCode get INVALID_CURSOR => _$INVALID_CURSOR;
   BusinessErrorCode get INVALID_WENYOU_AMOUNT => _$INVALID_WENYOU_AMOUNT;
+  BusinessErrorCode get UNSUPPORTED_MARKDOWN_FORMAT =>
+      _$UNSUPPORTED_MARKDOWN_FORMAT;
   BusinessErrorCode get UNAUTHORIZED => _$UNAUTHORIZED;
   BusinessErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
   BusinessErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
@@ -668,6 +675,7 @@ class _$BusinessErrorCodeSerializer
     'INVALID_STICKER': 40006,
     'INVALID_CURSOR': 40007,
     'INVALID_WENYOU_AMOUNT': 40008,
+    'UNSUPPORTED_MARKDOWN_FORMAT': 40009,
     'UNAUTHORIZED': 40100,
     'TOKEN_EXPIRED': 40101,
     'TOKEN_INVALID': 40102,
@@ -760,6 +768,7 @@ class _$BusinessErrorCodeSerializer
     40006: 'INVALID_STICKER',
     40007: 'INVALID_CURSOR',
     40008: 'INVALID_WENYOU_AMOUNT',
+    40009: 'UNSUPPORTED_MARKDOWN_FORMAT',
     40100: 'UNAUTHORIZED',
     40101: 'TOKEN_EXPIRED',
     40102: 'TOKEN_INVALID',

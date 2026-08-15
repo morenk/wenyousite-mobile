@@ -15,6 +15,7 @@ import 'package:wenyou_api/src/model/create_moment_dto.dart';
 import 'package:wenyou_api/src/model/moments_bookmark201_response.dart';
 import 'package:wenyou_api/src/model/moments_bookmarks200_response.dart';
 import 'package:wenyou_api/src/model/moments_comment_authors200_response.dart';
+import 'package:wenyou_api/src/model/moments_comment_context200_response.dart';
 import 'package:wenyou_api/src/model/moments_comments_list200_response.dart';
 import 'package:wenyou_api/src/model/moments_create201_response.dart';
 import 'package:wenyou_api/src/model/moments_create_comment201_response.dart';
@@ -278,6 +279,89 @@ class MomentsApi {
     }
 
     return Response<MomentsCommentAuthors200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 按评论 ID 获取动态主评论与精确定位目标
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [commentId]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [MomentsCommentContext200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<MomentsCommentContext200Response>> momentsCommentContext({
+    required String id,
+    required String commentId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/moments/{id}/comments/{commentId}/context'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(String)).toString()).replaceAll('{' r'commentId' '}', encodeQueryParameter(_serializers, commentId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    MomentsCommentContext200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(MomentsCommentContext200Response),
+      ) as MomentsCommentContext200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<MomentsCommentContext200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

@@ -101,7 +101,7 @@ class RichEditorSession extends ChangeNotifier {
 
   /// Encodes the current Delta immediately and publishes Markdown upstream.
   /// Returns false when the document contains a construct that cannot be
-  /// represented safely by the Markdown v2 contract.
+  /// represented safely by the Markdown v3 contract.
   bool flush() {
     _codecTimer?.cancel();
     _codecTimer = null;

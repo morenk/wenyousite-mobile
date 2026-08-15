@@ -40,7 +40,7 @@ class MarkdownCodecException implements Exception {
   String toString() => 'MarkdownCodecException: $message';
 }
 
-/// Markdown v2 扩展节点与 Quill Delta 之间的无损协议层。
+/// Markdown v3 扩展节点与 Quill Delta 之间的无损协议层。
 ///
 /// 受支持的普通 Markdown 先解析为中立富文本行模型，再映射为 Quill 属性；
 /// 需要稳定身份的扩展节点提升为原子 embed。无法证明精确往返的语法继续保留
@@ -57,6 +57,7 @@ class MarkdownDeltaCodec {
 
   static const emptyParagraphAttribute = 'wenyou_empty_paragraph';
   static const sourceBreakAttribute = 'wenyou_source_break';
+  static const literalLineAttribute = 'wenyou_literal_line';
 
   static const _allPlayersLabel = '@全体玩家';
   static const _stickerPrefix = 'wenyousite-sticker:v1:';
@@ -94,6 +95,7 @@ class MarkdownDeltaCodec {
     final issues = <MarkdownCodecIssue>[];
     final diceNodeIds = <String>{};
     final lines = source.split('\n');
+    final literalLines = MarkdownContent.unsupportedLineIndexes(source);
     _Fence? fence;
 
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -101,7 +103,10 @@ class MarkdownDeltaCodec {
       final opening = _openingFence.firstMatch(line)?.group(1);
       var isProtocolEmptyParagraph = false;
       Map<String, dynamic>? richLineAttributes;
-      if (fence != null) {
+      if (literalLines.contains(lineIndex)) {
+        delta.insert(line);
+        richLineAttributes = const {literalLineAttribute: true};
+      } else if (fence != null) {
         delta.insert(line);
         final closing = _closingFence.firstMatch(line)?.group(1);
         if (closing != null &&
@@ -442,9 +447,18 @@ class MarkdownDeltaCodec {
         );
       }
       if (!isLineBreak) break;
-      output.write(_encodeLine(line.toString(), attributes));
+      final encodedLine = _encodeLine(line.toString(), attributes);
+      final isLiteral = attributes?[literalLineAttribute] == true;
+      if (isLiteral &&
+          output.isNotEmpty &&
+          !output.toString().endsWith('\n\n')) {
+        output.write('\n');
+      }
+      output.write(encodedLine);
       line.clear();
-      if (attributes?[sourceBreakAttribute] != false) output.write('\n');
+      if (attributes?[sourceBreakAttribute] != false) {
+        output.write(isLiteral ? '\n\n' : '\n');
+      }
       start = index + 1;
     }
   }
@@ -462,6 +476,7 @@ class MarkdownDeltaCodec {
       'link',
       emptyParagraphAttribute,
       sourceBreakAttribute,
+      literalLineAttribute,
       'header',
       'list',
       'blockquote',
@@ -509,11 +524,21 @@ class MarkdownDeltaCodec {
       'link',
       emptyParagraphAttribute,
       sourceBreakAttribute,
+      literalLineAttribute,
       'header',
       'list',
       'blockquote',
       'indent',
     });
+    if (attributes[literalLineAttribute] == true) {
+      final incompatible = attributes.keys.where(
+        (key) => key != literalLineAttribute && key != sourceBreakAttribute,
+      );
+      if (incompatible.isNotEmpty) {
+        throw const MarkdownCodecException('字面源码行不能携带其他富文本属性');
+      }
+      return MarkdownContent.literalizeLine(content);
+    }
     if (attributes[emptyParagraphAttribute] == true) {
       if (content.isNotEmpty) {
         throw const MarkdownCodecException('协议空段不能同时包含正文');

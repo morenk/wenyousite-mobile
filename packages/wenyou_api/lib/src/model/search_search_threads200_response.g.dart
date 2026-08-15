@@ -77,6 +77,8 @@ class _$SearchSearchThreads200Response extends SearchSearchThreads200Response {
   @override
   final BuiltList<SearchThreadResponseDto> data;
   @override
+  final ApiPaginationMeta meta;
+  @override
   final ApiSuccessEnvelopeCodeEnum code;
   @override
   final String message;
@@ -87,6 +89,7 @@ class _$SearchSearchThreads200Response extends SearchSearchThreads200Response {
 
   _$SearchSearchThreads200Response._({
     required this.data,
+    required this.meta,
     required this.code,
     required this.message,
   }) : super._();
@@ -104,6 +107,7 @@ class _$SearchSearchThreads200Response extends SearchSearchThreads200Response {
     if (identical(other, this)) return true;
     return other is SearchSearchThreads200Response &&
         data == other.data &&
+        meta == other.meta &&
         code == other.code &&
         message == other.message;
   }
@@ -112,6 +116,7 @@ class _$SearchSearchThreads200Response extends SearchSearchThreads200Response {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, data.hashCode);
+    _$hash = $jc(_$hash, meta.hashCode);
     _$hash = $jc(_$hash, code.hashCode);
     _$hash = $jc(_$hash, message.hashCode);
     _$hash = $jf(_$hash);
@@ -122,6 +127,7 @@ class _$SearchSearchThreads200Response extends SearchSearchThreads200Response {
   String toString() {
     return (newBuiltValueToStringHelper(r'SearchSearchThreads200Response')
           ..add('data', data)
+          ..add('meta', meta)
           ..add('code', code)
           ..add('message', message))
         .toString();
@@ -134,7 +140,7 @@ class SearchSearchThreads200ResponseBuilder
           SearchSearchThreads200Response,
           SearchSearchThreads200ResponseBuilder
         >,
-        ApiSuccessEnvelopeBuilder {
+        ApiPaginatedSuccessEnvelopeBuilder {
   _$SearchSearchThreads200Response? _$v;
 
   ListBuilder<SearchThreadResponseDto>? _data;
@@ -142,6 +148,11 @@ class SearchSearchThreads200ResponseBuilder
       _$this._data ??= ListBuilder<SearchThreadResponseDto>();
   set data(covariant ListBuilder<SearchThreadResponseDto>? data) =>
       _$this._data = data;
+
+  ApiPaginationMetaBuilder? _meta;
+  ApiPaginationMetaBuilder get meta =>
+      _$this._meta ??= ApiPaginationMetaBuilder();
+  set meta(covariant ApiPaginationMetaBuilder? meta) => _$this._meta = meta;
 
   ApiSuccessEnvelopeCodeEnum? _code;
   ApiSuccessEnvelopeCodeEnum? get code => _$this._code;
@@ -159,6 +170,7 @@ class SearchSearchThreads200ResponseBuilder
     final $v = _$v;
     if ($v != null) {
       _data = $v.data.toBuilder();
+      _meta = $v.meta.toBuilder();
       _code = $v.code;
       _message = $v.message;
       _$v = null;
@@ -186,6 +198,7 @@ class SearchSearchThreads200ResponseBuilder
           _$v ??
           _$SearchSearchThreads200Response._(
             data: data.build(),
+            meta: meta.build(),
             code: BuiltValueNullFieldError.checkNotNull(
               code,
               r'SearchSearchThreads200Response',
@@ -202,6 +215,8 @@ class SearchSearchThreads200ResponseBuilder
       try {
         _$failedField = 'data';
         data.build();
+        _$failedField = 'meta';
+        meta.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'SearchSearchThreads200Response',

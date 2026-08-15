@@ -13359,15 +13359,54 @@
               "maxLength": 100,
               "type": "string"
             }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "上一页返回的不透明游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页条数；旧客户端省略时保持最多 50 条，新客户端建议显式传 20",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50,
+              "type": "number"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "主题帖结果，最多 50 条",
+            "description": "完整主题帖列表卡片，按标题相关度游标分页；meta 含 cursor/hasMore",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SearchSearchThreads200Response"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "400": {
+            "description": "搜索游标无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
                 }
               }
             },
@@ -13404,6 +13443,7 @@
           "Search"
         ],
         "x-auth-mode": "public",
+        "x-pagination": "cursor",
         "security": []
       }
     },
@@ -14739,6 +14779,96 @@
           }
         },
         "summary": "获取当前可见动态回复串中的作者候选",
+        "tags": [
+          "Moments"
+        ],
+        "x-auth-mode": "optional",
+        "security": [
+          {
+            "bearer": []
+          },
+          {}
+        ]
+      }
+    },
+    "/api/v1/moments/{id}/comments/{commentId}/context": {
+      "get": {
+        "operationId": "momentsCommentContext",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MomentsCommentContext200Response"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "404": {
+            "description": "动态或目标评论不存在、已删除或因拉黑不可见",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "未在此操作中单独列出的错误响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-API-Contract-Version": {
+                "$ref": "#/components/headers/XApiContractVersion"
+              }
+            }
+          }
+        },
+        "summary": "按评论 ID 获取动态主评论与精确定位目标",
         "tags": [
           "Moments"
         ],
@@ -17011,7 +17141,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "4.10.0-dev.20260814.1",
+    "version": "4.13.0-dev.20260815.1",
     "contact": {}
   },
   "tags": [
@@ -23987,61 +24117,14 @@
           "updatedAt"
         ]
       },
-      "SearchThreadOwnerResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "用户 ID"
-          },
-          "username": {
-            "type": "string",
-            "description": "用户名"
-          },
-          "avatar": {
-            "type": "string",
-            "nullable": true,
-            "description": "头像 URL"
-          }
-        },
-        "required": [
-          "id",
-          "username",
-          "avatar"
-        ]
-      },
-      "SearchThreadCountResponseDto": {
-        "type": "object",
-        "properties": {
-          "members": {
-            "type": "number",
-            "description": "参与人数"
-          },
-          "posts": {
-            "type": "number",
-            "description": "帖子数"
-          },
-          "players": {
-            "type": "number",
-            "description": "已标记玩家数"
-          }
-        },
-        "required": [
-          "members",
-          "posts",
-          "players"
-        ]
-      },
       "SearchThreadResponseDto": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "description": "主题帖 ID"
+            "type": "string"
           },
           "title": {
-            "type": "string",
-            "description": "主题帖标题"
+            "type": "string"
           },
           "category": {
             "type": "string",
@@ -24049,26 +24132,69 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
-          "createdAt": {
-            "format": "date-time",
+          "status": {
             "type": "string",
-            "description": "创建时间"
+            "enum": [
+              "RECRUITING",
+              "CLOSED",
+              "FINISHED"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "PRIVATE"
+            ]
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "tipTotal": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "用户投入的累计打赏升数"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           },
           "owner": {
-            "description": "楼主信息",
+            "$ref": "#/components/schemas/PostAuthorResponseDto"
+          },
+          "defaultSubthread": {
+            "nullable": true,
+            "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchThreadOwnerResponseDto"
+                "$ref": "#/components/schemas/ThreadListDefaultSubthreadResponseDto"
               }
             ]
           },
+          "topicTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadTagRelationResponseDto"
+            }
+          },
           "_count": {
-            "description": "主题帖统计",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchThreadCountResponseDto"
-              }
-            ]
+            "$ref": "#/components/schemas/ThreadListCountResponseDto"
+          },
+          "preview": {
+            "type": "string",
+            "description": "首页列表正文预览"
           },
           "coverImages": {
             "maxItems": 1,
@@ -24077,14 +24203,27 @@
             "items": {
               "type": "string"
             }
+          },
+          "relevance": {
+            "type": "number",
+            "description": "仅说明本次查询的标题相关度；客户端不得作为稳定业务字段依赖"
           }
         },
         "required": [
           "id",
           "title",
           "category",
+          "status",
+          "visibility",
+          "published",
+          "pinned",
+          "tipTotal",
           "createdAt",
+          "updatedAt",
+          "deletedAt",
           "owner",
+          "defaultSubthread",
+          "topicTags",
           "_count",
           "coverImages"
         ]
@@ -24848,6 +24987,37 @@
           "clientRequestId"
         ]
       },
+      "MomentCommentContextResponseDto": {
+        "type": "object",
+        "properties": {
+          "root": {
+            "description": "目标所在的主评论；主评论已删除但仍有可见回复时返回墓碑内容",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MomentCommentResponseDto"
+              }
+            ]
+          },
+          "target": {
+            "description": "需要精确定位的可见主评论或楼中楼回复",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MomentCommentResponseDto"
+              }
+            ]
+          },
+          "replyCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "该主评论下当前查看者可见的楼中楼回复数"
+          }
+        },
+        "required": [
+          "root",
+          "target",
+          "replyCount"
+        ]
+      },
       "CreateUploadUrlDto": {
         "type": "object",
         "properties": {
@@ -25562,7 +25732,7 @@
           },
           "markdownContractVersion": {
             "type": "number",
-            "example": 2
+            "example": 3
           },
           "capabilities": {
             "$ref": "#/components/schemas/ApiCapabilitiesResponseDto"
@@ -28939,7 +29109,7 @@
       "SearchSearchThreads200Response": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/ApiSuccessEnvelope"
+            "$ref": "#/components/schemas/ApiPaginatedSuccessEnvelope"
           },
           {
             "type": "object",
@@ -29279,6 +29449,24 @@
                 "items": {
                   "$ref": "#/components/schemas/PostAuthorResponseDto"
                 }
+              }
+            }
+          }
+        ]
+      },
+      "MomentsCommentContext200Response": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiSuccessEnvelope"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/MomentCommentContextResponseDto"
               }
             }
           }
@@ -29744,6 +29932,7 @@
           40006,
           40007,
           40008,
+          40009,
           40100,
           40101,
           40102,
@@ -29836,6 +30025,7 @@
           "INVALID_STICKER",
           "INVALID_CURSOR",
           "INVALID_WENYOU_AMOUNT",
+          "UNSUPPORTED_MARKDOWN_FORMAT",
           "UNAUTHORIZED",
           "TOKEN_EXPIRED",
           "TOKEN_INVALID",

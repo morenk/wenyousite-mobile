@@ -10,6 +10,7 @@ Flutter 检查、正式签名、APK 验收与 RainS3 上传始终在 Windows 开
 - VPS 使用无密码专用用户 `wenyou-release`。它只能通过 sudo 调用 `/usr/local/sbin/wenyousite-promote-android`，不能读取后端 `.env` 或执行任意 root 命令。
 - SSH 主机密钥必须与 VPS 控制台的 ED25519 指纹独立比较；禁止使用 `StrictHostKeyChecking=no`、`accept-new` 或空 `known_hosts` 绕过校验。
 - `Wenyou-Publish-Android.cmd` 只发布干净且 `HEAD` 等于上游分支的提交，防止无法追溯的本机代码进入安装包。
+- Debug 构建固定使用 `site.wenyou.app.debug` 与“温油站 Debug”，不得再用调试或临时签名占用正式包名；真机上的正式包只允许由同一正式证书覆盖。
 
 仓库内 [`tool/windows`](../tool/windows/README.md) 只保存可审计程序。以下机器私有文件不进入 Git：
 
@@ -106,8 +107,8 @@ wenyou-release ALL=(root) NOPASSWD: /usr/local/sbin/wenyousite-promote-android *
 
 1. 读取 `pubspec.yaml` 的 versionName 与 versionCode。
 2. 检查 Git 工作树为空且 `HEAD` 等于上游提交。
-3. 通过 SSH 预检确认专用用户、主机指纹和 sudo 规则仍有效。
-4. 运行 Flutter 依赖、静态分析与完整测试，构建正式签名 APK。
+3. 在连接 VPS 前读取公网 `/meta`，强制核对本地契约版本、完整后端 revision、Markdown 版本，并拒绝不高于当前推荐值的 build。
+4. 运行唯一完整门禁 `npm run check`（含 OpenAPI 再生成、线上契约、架构/文档/API 覆盖、分析与完整测试），再构建正式签名 APK。
 5. 校验 zipalign、签名、`site.wenyou.app`、版本和构建号。
 6. 生成版本化 APK、`.apk.sha256` 与 JSON 构建摘要。
 7. 上传 `wenyou-apk/mobile/android/`；同名对象内容不同则拒绝覆盖。

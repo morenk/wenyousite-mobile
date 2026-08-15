@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.3.0-dev.76+82`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.3.0-dev.77+83`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -11,7 +11,7 @@
 - Dio：请求追踪、双 Token 刷新锁、安全重试与上传
 - OpenAPI Generator `dart-dio`：固定契约客户端，输出在 `packages/wenyou_api`
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
-- Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v2
+- Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v3
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
 - wenyousite-foundation v2.4.2：跨端语义 Token、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
@@ -47,7 +47,7 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 
 ## 契约同步
 
-后端契约只在 API、Markdown 语料、移动推送协议或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。同步脚本会固定 OpenAPI、两层 Markdown v2 语料、mobile push v1 Schema/样例、移动 V1 黄金旅程与 operationId 分类、动态分类 fixture、合同变更记录和接入指南。
+后端契约只在 API、Markdown 语料、移动推送协议或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。同步脚本会动态固定当前版本的 Markdown 规范化、节点和编辑器往返语料，以及 OpenAPI、mobile push v1 Schema/样例、移动 V1 黄金旅程与 operationId 分类、动态分类 fixture、合同变更记录和接入指南。
 
 ```bash
 powershell.exe -NoProfile -File tool/sync_backend_contract.ps1
@@ -65,7 +65,7 @@ npm run api:generate
 npm run check
 ```
 
-需要 Debug APK 时运行 `npm run check:apk`；仅在可访问公网、准备声明公网 API 已同步时额外运行 `npm run api:verify:production`。
+需要 Debug APK 时运行 `npm run check:apk`。完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
 
 GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后默认原子提交并推送 `dev`；`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 

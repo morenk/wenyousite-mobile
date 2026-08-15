@@ -1,8 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
@@ -85,6 +85,30 @@ void main() {
     expect(adapter.getCalls, 1);
     expect(secondStages, const [MobileUpdateStage.installing]);
     expect(bridge.filePaths.toSet(), hasLength(1));
+    dio.close(force: true);
+  });
+
+  test('原生安装器异常映射为可操作错误而不是逃逸成通用失败', () async {
+    final adapter = _ReleaseAdapter(_apkBytes);
+    final dio = Dio()..httpClientAdapter = adapter;
+    final bridge = _FakePlatformBridge(
+      installError: PlatformException(
+        code: 'installer_failed',
+        message: '无法打开系统安装器。',
+      ),
+    );
+    final service = _service(dio, bridge, temporaryDirectory);
+
+    await expectLater(
+      service.launchUpdate(_update, onStage: (_) {}, onProgress: (_) {}),
+      throwsA(
+        isA<MobileUpdateException>().having(
+          (error) => error.userMessage,
+          'message',
+          '无法打开系统安装器。',
+        ),
+      ),
+    );
     dio.close(force: true);
   });
 
@@ -201,10 +225,11 @@ final _update = MobileUpdateInfo(
 );
 
 class _FakePlatformBridge implements MobileUpdatePlatformBridge {
-  _FakePlatformBridge({List<String>? installResults})
+  _FakePlatformBridge({List<String>? installResults, this.installError})
     : _installResults = installResults ?? ['installerOpened'];
 
   final List<String> _installResults;
+  final PlatformException? installError;
   final List<String> filePaths = [];
   final List<int> expectedBuilds = [];
   int _installIndex = 0;
@@ -216,6 +241,8 @@ class _FakePlatformBridge implements MobileUpdatePlatformBridge {
   }) async {
     filePaths.add(filePath);
     expectedBuilds.add(expectedBuild);
+    final error = installError;
+    if (error != null) throw error;
     final result = _installResults[_installIndex];
     _installIndex += 1;
     return result;

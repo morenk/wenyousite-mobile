@@ -3,9 +3,11 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/api_success_envelope.dart';
 import 'package:wenyou_api/src/model/search_thread_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:wenyou_api/src/model/api_success_envelope.dart';
+import 'package:wenyou_api/src/model/api_pagination_meta.dart';
+import 'package:wenyou_api/src/model/api_paginated_success_envelope.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -16,9 +18,10 @@ part 'search_search_threads200_response.g.dart';
 /// Properties:
 /// * [code]
 /// * [message]
+/// * [meta]
 /// * [data]
 @BuiltValue()
-abstract class SearchSearchThreads200Response implements ApiSuccessEnvelope, Built<SearchSearchThreads200Response, SearchSearchThreads200ResponseBuilder> {
+abstract class SearchSearchThreads200Response implements ApiPaginatedSuccessEnvelope, Built<SearchSearchThreads200Response, SearchSearchThreads200ResponseBuilder> {
   @BuiltValueField(wireName: r'data')
   BuiltList<SearchThreadResponseDto> get data;
 
@@ -45,6 +48,11 @@ class _$SearchSearchThreads200ResponseSerializer implements PrimitiveSerializer<
     SearchSearchThreads200Response object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    yield r'code';
+    yield serializers.serialize(
+      object.code,
+      specifiedType: const FullType(ApiSuccessEnvelopeCodeEnum),
+    );
     yield r'data';
     yield serializers.serialize(
       object.data,
@@ -55,10 +63,10 @@ class _$SearchSearchThreads200ResponseSerializer implements PrimitiveSerializer<
       object.message,
       specifiedType: const FullType(String),
     );
-    yield r'code';
+    yield r'meta';
     yield serializers.serialize(
-      object.code,
-      specifiedType: const FullType(ApiSuccessEnvelopeCodeEnum),
+      object.meta,
+      specifiedType: const FullType(ApiPaginationMeta),
     );
   }
 
@@ -83,6 +91,13 @@ class _$SearchSearchThreads200ResponseSerializer implements PrimitiveSerializer<
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'code':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(ApiSuccessEnvelopeCodeEnum),
+          ) as ApiSuccessEnvelopeCodeEnum;
+          result.code = valueDes;
+          break;
         case r'data':
           final valueDes = serializers.deserialize(
             value,
@@ -97,12 +112,12 @@ class _$SearchSearchThreads200ResponseSerializer implements PrimitiveSerializer<
           ) as String;
           result.message = valueDes;
           break;
-        case r'code':
+        case r'meta':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(ApiSuccessEnvelopeCodeEnum),
-          ) as ApiSuccessEnvelopeCodeEnum;
-          result.code = valueDes;
+            specifiedType: const FullType(ApiPaginationMeta),
+          ) as ApiPaginationMeta;
+          result.meta.replace(valueDes);
           break;
         default:
           unhandled.add(key);

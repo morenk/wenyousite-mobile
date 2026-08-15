@@ -27,6 +27,7 @@
 - 内容写入：`momentsCreate`、`momentsUpdate`、`momentsRemove`。
 - 互动：`momentsLike`、`momentsUnlike`、`momentsBookmark`、`momentsUnbookmark`。
 - 评论：`momentsCommentAuthors`、`momentsCommentsList`、`momentsReplies`、`momentsCreateComment`、`momentsRemoveComment`。
+- 定位上下文：契约已提供 `momentsCommentContext`；当前登记为待接入切片，尚未从通知路由调用。
 - 社区举报：reports 模块调用 `reportsCreate`，分别提交 `MOMENT` 或 `MOMENT_COMMENT` 目标。
 - 主要生成类型：`MomentCardResponseDto`、`MomentDetailResponseDto`、`MomentMediaResponseDto`、`MomentRootCommentResponseDto`、`MomentCommentResponseDto`、`MomentStickerResponseDto`、`CreateMomentDto`、`UpdateMomentDto` 与 `CreateMomentCommentDto`。
 
@@ -74,11 +75,11 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 
 ## 12. 已知限制和后续功能
 
-相册当前一次选择并上传一张，不做并发九图选择；本机草稿不跨设备同步，也不后台自动发布。全屏图库具备规范核心手势，但暂不显示下载/分享入口。动态加油已由 wallet 接入；当前不在信息流卡片直接弹出写入，以详情作为稳定确认上下文。传送门 v1 只做语法识别，不预取目标标题或权限，最终可见性由目标页面服务端请求决定。
+相册当前一次选择并上传一张，不做并发九图选择；本机草稿不跨设备同步，也不后台自动发布。全屏图库具备规范核心手势，但暂不显示下载/分享入口。动态加油已由 wallet 接入；当前不在信息流卡片直接弹出写入，以详情作为稳定确认上下文。传送门 v1 只做语法识别，不预取目标标题或权限，最终可见性由目标页面服务端请求决定。动态评论通知目前只进入详情；`momentsCommentContext`、目标滚动和短时淡粉边框需作为同一切片接入，不能只拼接一个可能尚未加载的评论 ID。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.10.0-dev.20260814.1`；Markdown v2（动态正文不消费）；后端 `90a33279f6f786685567a27ced11dd7470620cad`；Foundation `v2.4.2`（`7e7d863`）。
+契约 `4.13.0-dev.20260815.1`；Markdown v3（动态正文不消费）；后端 `8c82f3551f58b2060f602802e84893ac7b8d8b78`；Foundation `v2.4.2`（`7e7d863`）。
 
 ## 14. 相关代码与架构文档
 

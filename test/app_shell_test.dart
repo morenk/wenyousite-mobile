@@ -599,7 +599,7 @@ class _CompatibleMetaRepository implements MetaRepository {
   Future<ContractInfo> fetch() async {
     return const ContractInfo(
       contractVersion: '4.4.0-dev.test',
-      markdownContractVersion: 2,
+      markdownContractVersion: 3,
     );
   }
 }
@@ -663,7 +663,7 @@ class _FixedMetaRepository implements MetaRepository {
   Future<ContractInfo> fetch() async {
     return ContractInfo(
       contractVersion: contractVersion,
-      markdownContractVersion: 2,
+      markdownContractVersion: 3,
       android: android,
       ios: ios,
     );
@@ -736,7 +736,7 @@ class _RetryMetaRepository implements MetaRepository {
     }
     return const ContractInfo(
       contractVersion: '4.4.0-dev.test',
-      markdownContractVersion: 2,
+      markdownContractVersion: 3,
     );
   }
 }

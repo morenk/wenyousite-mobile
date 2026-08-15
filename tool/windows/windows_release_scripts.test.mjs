@@ -50,8 +50,18 @@ test('一键发布读取 pubspec 并阻止脏或未推送仓库', async () => {
   assert.match(source, /status --porcelain/);
   assert.match(source, /rev-parse '@\{u\}'/);
   assert.match(source, /Invoke-WenyouSshPreflight/);
+  assert.match(source, /verify_production_api\.dart/);
+  assert.match(source, /recommendedBuild.+-ge \$version\.Build/s);
   assert.match(source, /-Mode Publish/);
   assert.match(source, /mobileCompatibility\.android/);
+});
+
+test('正式发布在构建前运行唯一完整门禁', async () => {
+  const source = await readFile(
+    path.resolve(directory, '../release-mobile-from-local.sh'),
+    'utf8',
+  );
+  assert.match(source, /npm run check/);
 });
 
 test('发布包装器仅在进程环境解密凭据并始终清理', async () => {

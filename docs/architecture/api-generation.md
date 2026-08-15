@@ -23,7 +23,7 @@ dart run tool/audit_api_coverage.dart
 dart run tool/audit_api_coverage.dart --require-complete
 ```
 
-`api:check` 重新生成并检查 Git diff。契约变化先独立同步：运行 `tool/sync_backend_contract.ps1`，审查 OpenAPI、Markdown v2 规范化/可见性语料、扩展节点往返语料、mobile push v1 Schema/样例、移动 V1 状态旅程与 operationId 分类、动态分类 fixture、后端移动指南和契约 CHANGELOG，再生成、测试并更新所有模块的第 13 节。
+`api:check` 重新生成并检查 Git diff。契约变化先独立同步：运行 `tool/sync_backend_contract.ps1`，审查 OpenAPI、脚本自动发现的当前版本 Markdown 规范化/可见性语料、扩展节点与编辑器往返语料、mobile push v1 Schema/样例、移动 V1 状态旅程与 operationId 分类、动态分类 fixture、后端移动指南和契约 CHANGELOG，再生成、测试并更新所有模块的第 13 节。
 
 业务仓储引用 operationId 和生成类型；模块文档不复制请求/响应 Schema。
 

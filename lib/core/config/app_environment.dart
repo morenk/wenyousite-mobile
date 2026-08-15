@@ -2,7 +2,7 @@ class AppEnvironment {
   const AppEnvironment({
     required this.apiBaseUrl,
     this.supportedContractMajor = 4,
-    this.supportedMarkdownContractVersion = 2,
+    this.supportedMarkdownContractVersion = 3,
   });
 
   factory AppEnvironment.fromDefines() {

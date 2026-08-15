@@ -139,9 +139,7 @@ PROJECT_DIR=$(cd -- "$PROJECT_DIR" && pwd)
 if [ "$SKIP_CHECKS" != true ]; then
   (
     cd "$PROJECT_DIR"
-    flutter pub get
-    flutter analyze --fatal-infos --fatal-warnings
-    flutter test
+    npm run check
   )
 fi
 

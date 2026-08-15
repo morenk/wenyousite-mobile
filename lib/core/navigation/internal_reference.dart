@@ -1,7 +1,14 @@
 const internalReferenceDefaultLabel = '传送门';
 const internalReferenceProductionOrigin = 'https://wenyou.site';
 
-enum InternalReferenceKind { thread, subthread, floor, discussion, reply }
+enum InternalReferenceKind {
+  thread,
+  subthread,
+  floor,
+  discussion,
+  reply,
+  invite,
+}
 
 class InternalReference {
   const InternalReference({required this.kind, required this.location});
@@ -28,13 +35,15 @@ class InternalReferencePortal extends InternalReferenceTextSegment {
 }
 
 final _idPattern = RegExp(r'^[a-z0-9]{20,32}$', unicode: true);
+final _inviteTokenPattern = RegExp(r'^[A-Za-z0-9_-]{16}$', unicode: true);
 final _threadPathPattern = RegExp(r'^/threads/([^/]+)$', unicode: true);
 final _discussionPathPattern = RegExp(
   r'^/threads/([^/]+)/posts/([^/]+)/replies$',
   unicode: true,
 );
+final _invitePathPattern = RegExp(r'^/join/([^/]+)$', unicode: true);
 final _candidatePattern = RegExp(
-  r'\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|https://wenyou\.site/threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?|/threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?',
+  r'\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|https://wenyou\.site/(?:threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?|join/[a-z0-9_-]+)(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?|/(?:threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?|join/[a-z0-9_-]+)(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?',
   caseSensitive: false,
   unicode: true,
 );
@@ -100,6 +109,16 @@ InternalReference? parseInternalReference(String input) {
     return InternalReference(
       kind: InternalReferenceKind.thread,
       location: Uri(path: '/threads/$threadId'),
+    );
+  }
+
+  final inviteMatch = _invitePathPattern.firstMatch(uri.path);
+  if (inviteMatch != null) {
+    final token = _decodedInviteToken(inviteMatch.group(1));
+    if (token == null || !_hasOnlyQuery(uri, null)) return null;
+    return InternalReference(
+      kind: InternalReferenceKind.invite,
+      location: Uri(path: '/join/$token'),
     );
   }
 
@@ -191,6 +210,16 @@ String? _decodedId(String? value) {
   try {
     final decoded = Uri.decodeComponent(value);
     return _idPattern.hasMatch(decoded) ? decoded : null;
+  } on FormatException {
+    return null;
+  }
+}
+
+String? _decodedInviteToken(String? value) {
+  if (value == null) return null;
+  try {
+    final decoded = Uri.decodeComponent(value);
+    return _inviteTokenPattern.hasMatch(decoded) ? decoded : null;
   } on FormatException {
     return null;
   }

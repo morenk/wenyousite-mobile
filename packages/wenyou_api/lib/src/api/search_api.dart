@@ -288,6 +288,8 @@ class SearchApi {
   ///
   /// Parameters:
   /// * [q] - 搜索关键词，首尾空白会被移除
+  /// * [cursor] - 上一页返回的不透明游标
+  /// * [limit] - 每页条数；旧客户端省略时保持最多 50 条，新客户端建议显式传 20
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -299,6 +301,8 @@ class SearchApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SearchSearchThreads200Response>> searchSearchThreads({
     required String q,
+    String? cursor,
+    num? limit = 50,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -321,6 +325,8 @@ class SearchApi {
 
     final _queryParameters = <String, dynamic>{
       r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
     };
 
     final _response = await _dio.request<Object>(

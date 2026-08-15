@@ -147,7 +147,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
       final reusable = await _reusableArtifact(update);
       if (reusable != null) {
         onProgress(1);
-        return _install(reusable, onStage);
+        return await _install(reusable, onStage);
       }
 
       onStage(MobileUpdateStage.checking);
@@ -195,7 +195,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
         metadata: metadata,
       );
       _verifiedArtifact = artifact;
-      return _install(artifact, onStage);
+      return await _install(artifact, onStage);
     } on MobileUpdateException {
       rethrow;
     } on DioException catch (error) {

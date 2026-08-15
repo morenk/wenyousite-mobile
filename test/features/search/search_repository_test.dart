@@ -117,6 +117,11 @@ Response<SearchSearchThreads200Response> _threadsResponse() {
       (response) => response
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
+        ..meta.update(
+          (meta) => meta
+            ..cursor = null
+            ..hasMore = false,
+        )
         ..data.add(_threadDto()),
     ),
   );
@@ -255,12 +260,19 @@ SearchThreadResponseDto _threadDto() {
       ..id = 'thread-1'
       ..title = '  星海旅团  '
       ..category = 'RPG'
+      ..status = SearchThreadResponseDtoStatusEnum.RECRUITING
+      ..visibility = SearchThreadResponseDtoVisibilityEnum.PUBLIC
+      ..published = true
+      ..pinned = false
+      ..tipTotal = '0'
       ..createdAt = DateTime.utc(2026, 8, 10)
+      ..updatedAt = DateTime.utc(2026, 8, 10)
       ..owner.update(
         (owner) => owner
           ..id = 'user-1'
           ..username = '已注销用户'
-          ..avatar = 'javascript:alert(1)',
+          ..avatar = 'javascript:alert(1)'
+          ..level = 1,
       )
       ..count.update(
         (count) => count

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/config/app_environment.dart';
 
@@ -11,6 +13,18 @@ void main() {
     expect(environment.apiOrigin, 'https://wenyou.site');
     expect(environment.supportsContract('4.4.0'), isTrue);
     expect(environment.supportsContract('5.0.0'), isFalse);
-    expect(environment.supportsMarkdown(2), isTrue);
+    final metadata = <String, String>{
+      for (final line in File(
+        'contracts/backend-contract.properties',
+      ).readAsLinesSync())
+        if (line.contains('='))
+          line.substring(0, line.indexOf('=')): line.substring(
+            line.indexOf('=') + 1,
+          ),
+    };
+    final markdownVersion = int.parse(metadata['markdownContractVersion']!);
+    expect(environment.supportedMarkdownContractVersion, markdownVersion);
+    expect(environment.supportsMarkdown(3), isTrue);
+    expect(environment.supportsMarkdown(2), isFalse);
   });
 }
