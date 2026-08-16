@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
@@ -203,6 +204,70 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('独立讨论中的头像进入个人主页且不会打开回复栏', (tester) async {
+    final repository = _FakePostRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+    final router = GoRouter(
+      initialLocation: '/discussion',
+      routes: [
+        GoRoute(
+          path: '/discussion',
+          builder: (context, state) =>
+              const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+        GoRoute(
+          path: '/users/:userId',
+          builder: (context, state) => Scaffold(
+            appBar: AppBar(
+              leading: const BackButton(key: Key('avatar-user-back')),
+            ),
+            body: Text(
+              state.pathParameters['userId']!,
+              key: const Key('avatar-user-destination'),
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final rootAvatar = find.byKey(const Key('post-author-avatar-root'));
+    expect(tester.getSize(rootAvatar).height, greaterThanOrEqualTo(48));
+    await tester.tap(rootAvatar);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('avatar-user-destination')), findsOneWidget);
+    expect(find.text('root-author'), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('avatar-user-back')));
+    await tester.pumpAndSettle();
+    final replyAvatar = find.byKey(const Key('post-author-avatar-reply-other'));
+    await tester.ensureVisible(replyAvatar);
+    await tester.tap(replyAvatar);
+    await tester.pumpAndSettle();
+    expect(find.text('author-2'), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+  });
+
   testWidgets('点击别人的楼中楼回复会把回复目标指向该回复', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
@@ -290,6 +355,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+    expect(tester.getTopLeft(find.byType(AppBar)).dy, 0);
+    expect(tester.getTopLeft(find.text('远行主题')).dy, greaterThan(0));
     await expectLater(
       find.byKey(const Key('post-composer-sheet')),
       matchesGoldenFile('goldens/post_composer_text_first_360.png'),

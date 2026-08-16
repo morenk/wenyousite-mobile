@@ -13,78 +13,101 @@ class BookmarkListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    return const Scaffold(
+      appBar: _BookmarkListAppBar(),
+      body: BookmarkListView(),
+    );
+  }
+}
+
+class _BookmarkListAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _BookmarkListAppBar();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(title: const Text('我的收藏'));
+  }
+}
+
+class BookmarkListView extends ConsumerWidget {
+  const BookmarkListView({this.additionalRefresh, super.key});
+
+  final Future<void> Function()? additionalRefresh;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookmarkListControllerProvider);
     final notifier = ref.read(bookmarkListControllerProvider.notifier);
-    return Scaffold(
-      appBar: AppBar(title: const Text('我的收藏')),
-      body: switch (state.phase) {
-        BookmarkListPhase.loading => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        BookmarkListPhase.failed => WenyouPageBody(
-          maxWidth: 600,
-          child: WenyouPanel(
-            child: WenyouEmptyState(
-              icon: WenyouIconIds.statusOffline,
-              title: '收藏列表没有加载完成',
-              message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: _requestDetail(state.failure?.requestId),
-              action: OutlinedButton.icon(
-                key: const Key('bookmark-list-retry'),
-                onPressed: notifier.load,
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重新加载'),
-              ),
+    return switch (state.phase) {
+      BookmarkListPhase.loading => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      BookmarkListPhase.failed => WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouPanel(
+          child: WenyouEmptyState(
+            icon: WenyouIconIds.statusOffline,
+            title: '收藏列表没有加载完成',
+            message: state.failure?.userMessage ?? '请稍后重试。',
+            detail: _requestDetail(state.failure?.requestId),
+            action: OutlinedButton.icon(
+              key: const Key('bookmark-list-retry'),
+              onPressed: notifier.load,
+              icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+              label: const Text('重新加载'),
             ),
           ),
         ),
-        BookmarkListPhase.ready => _ReadyBookmarkList(
-          state: state,
-          onRefresh: notifier.refresh,
-          onRetryFolders: notifier.reloadFolders,
-          onRetryList: notifier.retrySelectedFolder,
-          onSelectFolder: notifier.selectFolder,
-          onCreateFolder: () async {
-            notifier.clearActionFailure();
-            final folder = await _showCreateFolderDialog(
-              context,
-              ref,
-              notifier,
-            );
-            if (!context.mounted || folder == null) return;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('已新建“${folder.name}”。')));
-          },
-          onMove: (item) async {
-            final folderId = await _showMoveFolderSheet(
-              context,
-              item,
-              state.folders,
-            );
-            if (!context.mounted || folderId == null) return;
-            final folder = state.folderById(folderId);
-            final succeeded = await notifier.moveBookmark(
-              item.bookmarkId,
-              folderId,
-            );
-            if (!context.mounted || !succeeded) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('已移动到“${folder?.name ?? '收藏夹'}”。')),
-            );
-          },
-          onLoadMore: notifier.loadMore,
-          onRemove: (bookmarkId) async {
-            final succeeded = await notifier.removeBookmark(bookmarkId);
-            if (!context.mounted || !succeeded) return;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('已取消收藏。')));
-          },
-          onDismissFailure: notifier.clearActionFailure,
-        ),
-      },
-    );
+      ),
+      BookmarkListPhase.ready => _ReadyBookmarkList(
+        state: state,
+        onRefresh: () => Future.wait([
+          notifier.refresh(),
+          if (additionalRefresh case final refresh?) refresh(),
+        ]),
+        onRetryFolders: notifier.reloadFolders,
+        onRetryList: notifier.retrySelectedFolder,
+        onSelectFolder: notifier.selectFolder,
+        onCreateFolder: () async {
+          notifier.clearActionFailure();
+          final folder = await _showCreateFolderDialog(context, ref, notifier);
+          if (!context.mounted || folder == null) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('已新建“${folder.name}”。')));
+        },
+        onMove: (item) async {
+          final folderId = await _showMoveFolderSheet(
+            context,
+            item,
+            state.folders,
+          );
+          if (!context.mounted || folderId == null) return;
+          final folder = state.folderById(folderId);
+          final succeeded = await notifier.moveBookmark(
+            item.bookmarkId,
+            folderId,
+          );
+          if (!context.mounted || !succeeded) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('已移动到“${folder?.name ?? '收藏夹'}”。')),
+          );
+        },
+        onLoadMore: notifier.loadMore,
+        onRemove: (bookmarkId) async {
+          final succeeded = await notifier.removeBookmark(bookmarkId);
+          if (!context.mounted || !succeeded) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('已取消收藏。')));
+        },
+        onDismissFailure: notifier.clearActionFailure,
+      ),
+    };
   }
 }
 

@@ -92,7 +92,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutePaths.me,
                 name: AppRouteNames.me,
-                builder: (context, state) => const MePage(),
+                builder: (context, state) => MePage(
+                  userMomentsBuilder: (userId, additionalRefresh) =>
+                      MomentFeedList(
+                        target: MomentFeedTarget.user(userId),
+                        emptyTitle: '还没有发布动态',
+                        emptyMessage: '你发布的动态会直接显示在这里。',
+                        additionalRefresh: additionalRefresh,
+                      ),
+                  momentBookmarksBuilder: (additionalRefresh) => MomentFeedList(
+                    target: const MomentFeedTarget.bookmarks(),
+                    emptyTitle: '还没有收藏动态',
+                    emptyMessage: '在动态列表或详情点击收藏后，会集中显示在这里。',
+                    additionalRefresh: additionalRefresh,
+                  ),
+                ),
               ),
             ],
           ),

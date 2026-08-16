@@ -62,6 +62,7 @@ class UserProfileHeader extends StatelessWidget {
       width: double.infinity,
       child: WenyouPanel(
         padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

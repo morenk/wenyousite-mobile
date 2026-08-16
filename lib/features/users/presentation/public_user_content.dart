@@ -53,32 +53,63 @@ class PublicUserContentArea extends ConsumerWidget {
           ),
         ),
         SizedBox(height: tokens.space12),
-        switch (state.activeTab) {
-          PublicUserContentTab.created => _ThreadSection(
-            tab: state.activeTab,
-            section: state.created,
-            onRetry: notifier.retryActive,
-            onLoadMore: notifier.loadMoreActive,
-          ),
-          PublicUserContentTab.played => _ThreadSection(
-            tab: state.activeTab,
-            section: state.played,
-            onRetry: notifier.retryActive,
-            onLoadMore: notifier.loadMoreActive,
-          ),
-          PublicUserContentTab.replies => _ReplySection(
-            section: state.replies,
-            onRetry: notifier.retryActive,
-          ),
-          PublicUserContentTab.bookmarks => _ThreadSection(
-            tab: state.activeTab,
-            section: state.bookmarks,
-            onRetry: notifier.retryActive,
-            onLoadMore: notifier.loadMoreActive,
-          ),
-        },
+        PublicUserContentSectionView(
+          tab: state.activeTab,
+          state: state,
+          onRetry: notifier.retryActive,
+          onLoadMore: notifier.loadMoreActive,
+        ),
       ],
     );
+  }
+}
+
+class PublicUserContentSectionView extends StatelessWidget {
+  const PublicUserContentSectionView({
+    required this.tab,
+    required this.state,
+    required this.onRetry,
+    required this.onLoadMore,
+    this.isSelf = false,
+    super.key,
+  });
+
+  final PublicUserContentTab tab;
+  final PublicUserState state;
+  final VoidCallback onRetry;
+  final VoidCallback onLoadMore;
+  final bool isSelf;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (tab) {
+      PublicUserContentTab.created => _ThreadSection(
+        tab: tab,
+        section: state.created,
+        onRetry: onRetry,
+        onLoadMore: onLoadMore,
+        isSelf: isSelf,
+      ),
+      PublicUserContentTab.played => _ThreadSection(
+        tab: tab,
+        section: state.played,
+        onRetry: onRetry,
+        onLoadMore: onLoadMore,
+        isSelf: isSelf,
+      ),
+      PublicUserContentTab.replies => _ReplySection(
+        section: state.replies,
+        onRetry: onRetry,
+        isSelf: isSelf,
+      ),
+      PublicUserContentTab.bookmarks => _ThreadSection(
+        tab: tab,
+        section: state.bookmarks,
+        onRetry: onRetry,
+        onLoadMore: onLoadMore,
+        isSelf: isSelf,
+      ),
+    };
   }
 }
 
@@ -138,12 +169,14 @@ class _ThreadSection extends StatelessWidget {
     required this.section,
     required this.onRetry,
     required this.onLoadMore,
+    this.isSelf = false,
   });
 
   final PublicUserContentTab tab;
   final PublicUserContentSection<PublicUserThreadModel> section;
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
+  final bool isSelf;
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +189,11 @@ class _ThreadSection extends StatelessWidget {
         tab: tab,
         failure: section.failure,
         onRetry: onRetry,
+        isSelf: isSelf,
       );
     }
     if (section.items.isEmpty) {
-      return _ContentEmptyState(tab: tab);
+      return _ContentEmptyState(tab: tab, isSelf: isSelf);
     }
     final tokens = context.wenyouTokens;
     return Column(
@@ -196,10 +230,15 @@ class _ThreadSection extends StatelessWidget {
 }
 
 class _ReplySection extends StatelessWidget {
-  const _ReplySection({required this.section, required this.onRetry});
+  const _ReplySection({
+    required this.section,
+    required this.onRetry,
+    this.isSelf = false,
+  });
 
   final PublicUserContentSection<PublicUserReplyModel> section;
   final VoidCallback onRetry;
+  final bool isSelf;
 
   @override
   Widget build(BuildContext context) {
@@ -212,10 +251,14 @@ class _ReplySection extends StatelessWidget {
         tab: PublicUserContentTab.replies,
         failure: section.failure,
         onRetry: onRetry,
+        isSelf: isSelf,
       );
     }
     if (section.items.isEmpty) {
-      return const _ContentEmptyState(tab: PublicUserContentTab.replies);
+      return _ContentEmptyState(
+        tab: PublicUserContentTab.replies,
+        isSelf: isSelf,
+      );
     }
     final tokens = context.wenyouTokens;
     return Column(
@@ -406,9 +449,10 @@ class _ContentLoadingState extends StatelessWidget {
 }
 
 class _ContentEmptyState extends StatelessWidget {
-  const _ContentEmptyState({required this.tab});
+  const _ContentEmptyState({required this.tab, this.isSelf = false});
 
   final PublicUserContentTab tab;
+  final bool isSelf;
 
   @override
   Widget build(BuildContext context) {
@@ -416,7 +460,7 @@ class _ContentEmptyState extends StatelessWidget {
       child: WenyouEmptyState(
         icon: _emptyIcon(tab),
         title: _emptyTitle(tab),
-        message: '这里只展示服务端允许公开的内容。',
+        message: isSelf ? _selfEmptyMessage(tab) : '这里只展示服务端允许公开的内容。',
       ),
     );
   }
@@ -427,11 +471,13 @@ class _ContentFailureState extends StatelessWidget {
     required this.tab,
     required this.failure,
     required this.onRetry,
+    this.isSelf = false,
   });
 
   final PublicUserContentTab tab;
   final ApiFailure? failure;
   final VoidCallback onRetry;
+  final bool isSelf;
 
   @override
   Widget build(BuildContext context) {
@@ -439,8 +485,12 @@ class _ContentFailureState extends StatelessWidget {
     return WenyouPanel(
       child: WenyouEmptyState(
         icon: hidden ? WenyouIconIds.actionHide : WenyouIconIds.statusOffline,
-        title: hidden ? '该用户未公开${tab.description}' : '${tab.description}没有加载完成',
-        message: hidden ? '隐私设置可能刚刚发生变化。' : (failure?.userMessage ?? '请稍后重试。'),
+        title: hidden && !isSelf
+            ? '该用户未公开${tab.description}'
+            : '${tab.description}没有加载完成',
+        message: hidden && !isSelf
+            ? '隐私设置可能刚刚发生变化。'
+            : (failure?.userMessage ?? '请稍后重试。'),
         detail: failure?.requestId == null
             ? null
             : '请求 ID：${failure!.requestId}',
@@ -487,6 +537,13 @@ String _emptyTitle(PublicUserContentTab tab) => switch (tab) {
   PublicUserContentTab.played => '还没有参与过主题',
   PublicUserContentTab.replies => '还没有发布过回复',
   PublicUserContentTab.bookmarks => '还没有公开收藏',
+};
+
+String _selfEmptyMessage(PublicUserContentTab tab) => switch (tab) {
+  PublicUserContentTab.created => '你创建的主题会直接显示在这里。',
+  PublicUserContentTab.played => '加入主题后，会集中显示在这里。',
+  PublicUserContentTab.replies => '发布回复后，会集中显示在这里。',
+  PublicUserContentTab.bookmarks => '收藏主题后，会集中显示在这里。',
 };
 
 String _emptyIcon(PublicUserContentTab tab) => switch (tab) {

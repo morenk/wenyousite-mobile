@@ -17,29 +17,42 @@ class WenyouInstantKeyboardInsets extends StatefulWidget {
 }
 
 class _WenyouInstantKeyboardInsetsState
-    extends State<WenyouInstantKeyboardInsets> {
+    extends State<WenyouInstantKeyboardInsets>
+    with WidgetsBindingObserver {
   static const _channel = MethodChannel(
     WenyouInstantKeyboardInsets.channelName,
   );
 
   double? _targetBottomPhysicalPixels;
+  AppLifecycleState _lifecycleState =
+      WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _channel.setMethodCallHandler(_handlePlatformCall);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _channel.setMethodCallHandler(null);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleState = state;
+    if (_targetBottomPhysicalPixels == null) return;
+    setState(() => _targetBottomPhysicalPixels = null);
   }
 
   Future<void> _handlePlatformCall(MethodCall call) async {
     if (call.method != 'keyboardInsetTargetChanged') return;
     final arguments = call.arguments;
     if (arguments is! Map) return;
+    if (_lifecycleState != AppLifecycleState.resumed) return;
     final bottom = arguments['bottomPhysicalPixels'];
     if (bottom is! num || !bottom.isFinite || bottom < 0 || !mounted) return;
     final target = bottom.toDouble();

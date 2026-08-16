@@ -124,12 +124,14 @@ class MomentFeedList extends ConsumerStatefulWidget {
     required this.target,
     required this.emptyTitle,
     required this.emptyMessage,
+    this.additionalRefresh,
     super.key,
   });
 
   final MomentFeedTarget target;
   final String emptyTitle;
   final String emptyMessage;
+  final Future<void> Function()? additionalRefresh;
 
   @override
   ConsumerState<MomentFeedList> createState() => _MomentFeedListState();
@@ -178,7 +180,10 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       container: true,
       label: '动态瀑布流',
       child: RefreshIndicator(
-        onRefresh: () => ref.read(provider.notifier).refresh(),
+        onRefresh: () => Future.wait([
+          ref.read(provider.notifier).refresh(),
+          if (widget.additionalRefresh case final refresh?) refresh(),
+        ]),
         child: CustomScrollView(
           key: PageStorageKey('moment-feed-${widget.target.hashCode}'),
           controller: _scrollController,

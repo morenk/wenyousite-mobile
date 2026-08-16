@@ -14,18 +14,33 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/profile_cover_controller.dart';
+import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
+import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class MePage extends ConsumerWidget {
-  const MePage({super.key});
+  const MePage({
+    this.userMomentsBuilder,
+    this.momentBookmarksBuilder,
+    super.key,
+  });
+
+  final MeUserMomentsBuilder? userMomentsBuilder;
+  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
     if (!session.isAuthenticated) return const _GuestMePage();
-    return const _AuthenticatedMePage();
+    return _AuthenticatedMePage(
+      userMomentsBuilder: userMomentsBuilder,
+      momentBookmarksBuilder: momentBookmarksBuilder,
+    );
   }
 }
 
@@ -62,16 +77,42 @@ class _GuestMePage extends StatelessWidget {
 }
 
 class _AuthenticatedMePage extends ConsumerWidget {
-  const _AuthenticatedMePage();
+  const _AuthenticatedMePage({
+    required this.userMomentsBuilder,
+    required this.momentBookmarksBuilder,
+  });
+
+  final MeUserMomentsBuilder? userMomentsBuilder;
+  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(meProfileControllerProvider);
     final notifier = ref.read(meProfileControllerProvider.notifier);
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
+    final profile = state.profile;
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的'),
         actions: [
+          if (profile != null)
+            IconButton(
+              key: const Key('me-open-public-profile'),
+              tooltip: '预览公开主页',
+              onPressed: () => context.pushNamed(
+                'user-profile',
+                pathParameters: {'userId': profile.id},
+                queryParameters: const {'mode': 'preview'},
+              ),
+              icon: const WenyouIcon(WenyouIconIds.actionShow),
+            ),
+          if (profile != null && stickersEnabled)
+            IconButton(
+              key: const Key('me-open-stickers'),
+              tooltip: '管理表情包',
+              onPressed: () => context.pushNamed('me-stickers'),
+              icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
+            ),
           IconButton(
             key: const Key('me-open-settings'),
             tooltip: '账号设置',
@@ -115,9 +156,10 @@ class _AuthenticatedMePage extends ConsumerWidget {
             const _LogoutPanel(),
           ],
         ),
-        MeProfilePhase.ready => RefreshIndicator(
-          onRefresh: state.isSubmitting ? () async {} : notifier.load,
-          child: _MePageList(children: [_MeDashboard(profile: state.profile!)]),
+        MeProfilePhase.ready => _MeDashboard(
+          profile: state.profile!,
+          userMomentsBuilder: userMomentsBuilder,
+          momentBookmarksBuilder: momentBookmarksBuilder,
         ),
       },
     );
@@ -266,95 +308,140 @@ class _MePageList extends StatelessWidget {
   }
 }
 
-class _MeDashboard extends ConsumerWidget {
-  const _MeDashboard({required this.profile});
+class _MeDashboard extends ConsumerStatefulWidget {
+  const _MeDashboard({
+    required this.profile,
+    required this.userMomentsBuilder,
+    required this.momentBookmarksBuilder,
+  });
 
   final MeProfileModel profile;
+  final MeUserMomentsBuilder? userMomentsBuilder;
+  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MeDashboard> createState() => _MeDashboardState();
+}
+
+class _MeDashboardState extends ConsumerState<_MeDashboard>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final Set<int> _visitedTabs = {0};
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: MeContentTab.values.length,
+      vsync: this,
+    )..addListener(_handleTabChanged);
+  }
+
+  @override
+  void dispose() {
+    _tabController
+      ..removeListener(_handleTabChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleTabChanged() {
+    final index = _tabController.index;
+    if (_visitedTabs.add(index)) setState(() {});
+    final tab = MeContentTab.values[index].publicUserTab;
+    if (tab != null) {
+      unawaited(
+        ref
+            .read(meUserContentControllerProvider(widget.profile.id).notifier)
+            .selectTab(tab),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final stickersEnabled = ref.watch(stickersEnabledProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _ProfileOverview(profile: profile),
-        SizedBox(height: tokens.space12),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                key: const Key('me-open-edit-profile'),
-                onPressed: () => context.pushNamed('me-edit'),
-                icon: const WenyouIcon(WenyouIconIds.actionEdit),
-                label: const Text('编辑资料'),
+    final walletProvider = walletControllerProvider(walletSessionKey(ref));
+    final walletState = ref.watch(walletProvider);
+    final horizontal = wenyouHorizontalPagePadding(context);
+    return NestedScrollView(
+      key: const PageStorageKey('me-dashboard-scroll'),
+      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              tokens.space16,
+              horizontal,
+              tokens.space12,
+            ),
+            child: WenyouConstrainedWidth(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _ProfileOverview(profile: widget.profile),
+                  SizedBox(height: tokens.space12),
+                  _WalletBalanceStrip(state: walletState),
+                  SizedBox(height: tokens.space20),
+                  const WenyouSectionHeader(
+                    title: '我的内容',
+                    subtitle: '创建的主题会直接显示在这里，无需进入公开主页预览。',
+                  ),
+                ],
               ),
             ),
-            SizedBox(width: tokens.space12),
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('me-open-public-profile'),
-                onPressed: () => context.pushNamed(
-                  'user-profile',
-                  pathParameters: {'userId': profile.id},
-                  queryParameters: const {'mode': 'preview'},
-                ),
-                icon: const WenyouIcon(WenyouIconIds.actionShow),
-                label: const Text('预览公开主页'),
-              ),
-            ),
-          ],
+          ),
         ),
-        SizedBox(height: tokens.space12),
-        WenyouPanel(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              ListTile(
-                key: const Key('me-open-moments'),
-                leading: const WenyouIcon(WenyouIconIds.navigationMoments),
-                title: const Text('我的动态'),
-                subtitle: const Text('查看已发布的公开动态'),
-                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-                onTap: () => context.pushNamed(
-                  'user-moments',
-                  pathParameters: {'userId': profile.id},
+        SliverToBoxAdapter(
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontal),
+              child: WenyouConstrainedWidth(
+                child: TabBar(
+                  key: const Key('me-content-tabs'),
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  tabs: [
+                    for (final tab in MeContentTab.values)
+                      Tab(
+                        key: Key('me-content-${tab.name}-tab'),
+                        text: tab.label,
+                        height: tokens.minimumTouchTarget,
+                      ),
+                  ],
                 ),
               ),
-              const Divider(height: 1),
-              ListTile(
-                key: const Key('me-open-bookmarks'),
-                leading: const WenyouIcon(WenyouIconIds.actionBookmark),
-                title: const Text('我的收藏'),
-                subtitle: const Text('主题帖与动态收藏'),
-                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-                onTap: () => context.pushNamed('me-bookmarks'),
-              ),
-              if (stickersEnabled) ...[
-                const Divider(height: 1),
-                ListTile(
-                  key: const Key('me-open-stickers'),
-                  leading: const WenyouIcon(WenyouIconIds.actionAddReaction),
-                  title: const Text('表情包'),
-                  subtitle: const Text('添加、排序和移除表情'),
-                  trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-                  onTap: () => context.pushNamed('me-stickers'),
-                ),
-              ],
-              const Divider(height: 1),
-              ListTile(
-                key: const Key('me-open-settings-tile'),
-                leading: const WenyouIcon(WenyouIconIds.actionSettings),
-                title: const Text('账号设置'),
-                subtitle: const Text('邮箱、密码、终端、黑名单与退出'),
-                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-                onTap: () => context.pushNamed('me-settings'),
-              ),
-            ],
+            ),
           ),
         ),
       ],
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          for (var index = 0; index < MeContentTab.values.length; index++)
+            _visitedTabs.contains(index)
+                ? MeContentTabBody(
+                    key: PageStorageKey('me-content-tab-$index'),
+                    tab: MeContentTab.values[index],
+                    userId: widget.profile.id,
+                    onRefreshChrome: _refreshChrome,
+                    userMomentsBuilder: widget.userMomentsBuilder,
+                    momentBookmarksBuilder: widget.momentBookmarksBuilder,
+                  )
+                : const SizedBox.expand(),
+        ],
+      ),
     );
+  }
+
+  Future<void> _refreshChrome() {
+    final walletProvider = walletControllerProvider(walletSessionKey(ref));
+    return Future.wait([
+      ref.read(meProfileControllerProvider.notifier).load(),
+      ref.read(walletProvider.notifier).refresh(),
+    ]);
   }
 }
 
@@ -462,6 +549,15 @@ class _ProfileOverview extends StatelessWidget {
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'
           : '${profile.experience} / ${profile.nextLevelExperience} 经验',
+      actions: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          key: const Key('me-open-edit-profile'),
+          onPressed: () => context.pushNamed('me-edit'),
+          icon: const WenyouIcon(WenyouIconIds.actionEdit),
+          label: const Text('编辑资料'),
+        ),
+      ),
       stats: [
         UserProfileStatItem(
           key: const Key('me-open-following'),
@@ -475,13 +571,77 @@ class _ProfileOverview extends StatelessWidget {
           value: '${profile.followerCount}',
           onTap: () => context.pushNamed('me-followers'),
         ),
-        UserProfileStatItem(
-          key: const Key('me-open-wallet'),
-          label: '温油',
-          value: '${profile.receivedTipTotal}L',
-          onTap: () => context.pushNamed('wallet'),
-        ),
       ],
+    );
+  }
+}
+
+class _WalletBalanceStrip extends StatelessWidget {
+  const _WalletBalanceStrip({required this.state});
+
+  final WalletState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final balance = state.summary?.balance;
+    final formatted = balance == null
+        ? '—'
+        : '${WenyouAmount.format(balance)} L';
+    final subtitle = state.summaryFailure != null
+        ? '余额暂未同步，点按进入钱包重试'
+        : state.isLoadingSummary
+        ? '正在同步钱包余额…'
+        : '与钱包详情使用同一份实时余额';
+    return Semantics(
+      button: true,
+      label: '打开我的温油，当前余额 $formatted',
+      child: WenyouPanel(
+        key: const Key('me-open-wallet'),
+        onTap: () => context.pushNamed('wallet'),
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.space16,
+          vertical: tokens.space12,
+        ),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: tokens.accentedBackground,
+                borderRadius: BorderRadius.circular(tokens.radius12),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(tokens.space12),
+                child: const WenyouIcon(WenyouIconIds.economyTransaction),
+              ),
+            ),
+            SizedBox(width: tokens.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('钱包余额'),
+                  SizedBox(height: tokens.space4),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: tokens.space12),
+            Text(
+              formatted,
+              key: const Key('me-wallet-balance'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            SizedBox(width: tokens.space4),
+            const WenyouIcon(WenyouIconIds.navigationNext, size: 18),
+          ],
+        ),
+      ),
     );
   }
 }

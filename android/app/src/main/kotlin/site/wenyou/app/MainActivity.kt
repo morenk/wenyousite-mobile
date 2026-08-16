@@ -27,6 +27,8 @@ class MainActivity : FlutterActivity() {
         const val UPDATE_LOG_TAG = "WenyouUpdate"
     }
 
+    private var keyboardInsetsChannel: MethodChannel? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
@@ -71,12 +73,28 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
-        val keyboardInsetsChannel =
+        keyboardInsetsChannel =
             MethodChannel(
                 flutterEngine.dartExecutor.binaryMessenger,
                 KEYBOARD_INSETS_CHANNEL,
             )
-        installInstantKeyboardInsets(keyboardInsetsChannel)
+        installInstantKeyboardInsets(keyboardInsetsChannel!!)
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        dispatchCurrentKeyboardInsetAfterLayout()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) dispatchCurrentKeyboardInsetAfterLayout()
+    }
+
+    private fun dispatchCurrentKeyboardInsetAfterLayout() {
+        window.decorView.post {
+            keyboardInsetsChannel?.let(::dispatchKeyboardInsetTarget)
+        }
     }
 
     private fun installInstantKeyboardInsets(channel: MethodChannel) {

@@ -121,7 +121,7 @@ void main() {
       tester
           .getSize(find.byKey(const Key('thread-floor-author-floor-1')))
           .height,
-      lessThanOrEqualTo(36),
+      greaterThanOrEqualTo(48),
     );
     expect(find.byKey(const Key('thread-floor-actions-floor-1')), findsNothing);
     expect(
@@ -145,6 +145,27 @@ void main() {
     final discussionSemantics = tester.getSemantics(discussion);
     expect(discussionSemantics.label, contains('1 条回复'));
     expect(tester.widget<TextButton>(discussion).onPressed, isNotNull);
+
+    final floorAvatar = find.byKey(
+      const Key('thread-floor-author-avatar-floor-1'),
+    );
+    expect(tester.getSize(floorAvatar).height, greaterThanOrEqualTo(48));
+    await tester.tap(floorAvatar);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('test-user-destination')), findsOneWidget);
+    expect(find.text('user-1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('test-user-back')));
+    await tester.pumpAndSettle();
+
+    final replyAvatar = find.byKey(
+      const Key('thread-floor-reply-author-avatar-reply-1'),
+    );
+    await tester.ensureVisible(replyAvatar);
+    await tester.tap(replyAvatar);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('test-user-destination')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('test-user-back')));
+    await tester.pumpAndSettle();
 
     await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
     await tester.pumpAndSettle();
@@ -313,6 +334,8 @@ void main() {
       findsNothing,
     );
     expect(find.text('主线正文'), findsOneWidget);
+    expect(tester.getTopLeft(find.byType(AppBar)).dy, 0);
+    expect(tester.getTopLeft(find.text('主题详情')).dy, greaterThan(0));
 
     await expectLater(
       find.byKey(visualKey),
@@ -1330,6 +1353,18 @@ Widget _detailRouterApp(
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/users/:userId',
+        builder: (context, state) => Scaffold(
+          appBar: AppBar(leading: const BackButton(key: Key('test-user-back'))),
+          body: Center(
+            child: Text(
+              state.pathParameters['userId']!,
+              key: const Key('test-user-destination'),
+            ),
+          ),
+        ),
       ),
     ],
   );

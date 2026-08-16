@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
@@ -17,7 +18,10 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
+import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
+import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
+import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 void main() {
   testWidgets('游客我的页提供登录入口且不读取私有资料', (tester) async {
@@ -55,14 +59,49 @@ void main() {
     expect(find.byKey(const Key('me-open-following')), findsOneWidget);
     expect(find.byKey(const Key('me-open-followers')), findsOneWidget);
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
-    expect(find.text('预览公开主页'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-public-profile')), findsOneWidget);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
-    expect(find.text('我的动态'), findsOneWidget);
-    expect(find.text('我的收藏'), findsOneWidget);
-    expect(find.text('账号设置'), findsWidgets);
+    await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
+    await tester.pumpAndSettle();
+    expect(find.text('创建'), findsOneWidget);
+    expect(find.text('参与'), findsOneWidget);
+    expect(find.text('回复'), findsOneWidget);
+    expect(find.text('动态'), findsOneWidget);
+    expect(find.text('收藏'), findsOneWidget);
+    expect(find.text('我的内容'), findsOneWidget);
     expect(find.text('注销账号'), findsNothing);
     expect(find.text('公开最近回复'), findsNothing);
     expect(repository.fetchCalls, 1);
+  });
+
+  testWidgets('本人中心默认直接展示创建主题并与钱包详情共用余额', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final publicRepository = _FakePublicUserRepository();
+    final walletRepository = _FakeWalletRepository(balance: '41');
+    final container = await _authenticatedContainer(
+      repository,
+      publicUserRepository: publicRepository,
+      walletRepository: walletRepository,
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我创建的星海主题'), findsOneWidget);
+    expect(find.text('41 L'), findsOneWidget);
+    expect(find.text('18 L'), findsNothing);
+    expect(publicRepository.createdCalls, 1);
+    expect(publicRepository.fetchUserCalls, 0);
+    expect(walletRepository.walletCalls, 1);
   });
 
   testWidgets('服务端开启表情能力时我的页展示管理入口', (tester) async {
@@ -81,7 +120,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('me-open-stickers')));
-    expect(find.text('表情包'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-stickers')), findsOneWidget);
   });
 
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {
@@ -336,6 +375,8 @@ Future<ProviderContainer> _authenticatedContainer(
   AvatarImagePicker? avatarPicker,
   MediaUploadGateway? mediaRepository,
   AvatarRepository? avatarRepository,
+  PublicUserRepository? publicUserRepository,
+  WalletRepository? walletRepository,
   bool stickersEnabled = false,
 }) async {
   final container = ProviderContainer(
@@ -344,6 +385,12 @@ Future<ProviderContainer> _authenticatedContainer(
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       stickersEnabledProvider.overrideWithValue(stickersEnabled),
       meProfileRepositoryProvider.overrideWithValue(repository),
+      publicUserRepositoryProvider.overrideWithValue(
+        publicUserRepository ?? _FakePublicUserRepository(),
+      ),
+      walletRepositoryProvider.overrideWithValue(
+        walletRepository ?? _FakeWalletRepository(),
+      ),
       avatarImagePickerPortProvider.overrideWithValue(
         avatarPicker ?? _FakeAvatarPicker(null),
       ),
@@ -507,6 +554,98 @@ class _FakeMeProfileRepository implements MeProfileRepository {
     profile = profile.apply(result);
     return result;
   }
+}
+
+class _FakePublicUserRepository implements PublicUserRepository {
+  int fetchUserCalls = 0;
+  int createdCalls = 0;
+
+  @override
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<CursorPage<PublicUserThreadModel>> fetchBookmarks(
+    String userId, {
+    String? cursor,
+    int limit = 10,
+  }) async => const CursorPage(items: [], hasMore: false);
+
+  @override
+  Future<CursorPage<PublicUserThreadModel>> fetchCreatedThreads(
+    String userId, {
+    String? cursor,
+    int limit = 10,
+  }) async {
+    createdCalls += 1;
+    return CursorPage(
+      items: [
+        PublicUserThreadModel(
+          id: 'thread-mine',
+          title: '我创建的星海主题',
+          status: PublicUserThreadStatus.recruiting,
+          isPrivate: false,
+          ownerName: _profile.username,
+          ownerLevel: _profile.level,
+          createdAt: DateTime.utc(2026, 8, 15),
+          memberCount: 3,
+          postCount: 8,
+        ),
+      ],
+      hasMore: false,
+    );
+  }
+
+  @override
+  Future<CursorPage<PublicUserThreadModel>> fetchPlayedThreads(
+    String userId, {
+    String? cursor,
+    int limit = 10,
+  }) async => const CursorPage(items: [], hasMore: false);
+
+  @override
+  Future<List<PublicUserReplyModel>> fetchRecentReplies(String userId) async =>
+      const [];
+
+  @override
+  Future<PublicUserProfileModel> fetchUser(String userId) {
+    fetchUserCalls += 1;
+    throw UnimplementedError();
+  }
+}
+
+class _FakeWalletRepository implements WalletRepository {
+  _FakeWalletRepository({this.balance = '41'});
+
+  final String balance;
+  int walletCalls = 0;
+
+  @override
+  Future<WalletSummary> fetchWallet() async {
+    walletCalls += 1;
+    return WalletSummary(
+      balance: balance,
+      receivedTipTotal: '18',
+      receivedTipCount: 6,
+    );
+  }
+
+  @override
+  Future<CursorPage<WalletTransaction>> fetchTransactions({
+    String? cursor,
+    int limit = 20,
+  }) async => const CursorPage(items: [], hasMore: false);
+
+  @override
+  Future<DailyCheckInResult> checkIn() => throw UnimplementedError();
+
+  @override
+  Future<TipResult> tip(
+    TipTarget target, {
+    required String amount,
+    required String clientRequestId,
+  }) => throw UnimplementedError();
 }
 
 final _profile = MeProfileModel(

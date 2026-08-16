@@ -8,7 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
@@ -592,24 +592,14 @@ class _PostAuthorLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final avatarSize = root ? 36.0 : 28.0;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
-    );
     return Row(
       children: [
-        ClipOval(
-          child: SizedBox.square(
-            dimension: avatarSize,
-            child: post.author.avatarUrl == null
-                ? fallback
-                : WenyouCachedImage(
-                    imageUrl: post.author.avatarUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (_, _) => fallback,
-                    errorWidget: (_, _, _) => fallback,
-                  ),
-          ),
+        WenyouAvatarButton(
+          key: Key('post-author-avatar-${post.id}'),
+          username: post.author.username,
+          avatarUrl: post.author.avatarUrl,
+          visualSize: avatarSize,
+          onTap: () => context.push(AppRouteLocations.user(post.author.id)),
         ),
         SizedBox(width: tokens.space8),
         Expanded(

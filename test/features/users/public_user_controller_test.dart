@@ -55,6 +55,34 @@ void main() {
     expect(repository.replyCalls, 0);
   });
 
+  test('本人内容模式不读取公开资料并允许按需加载全部内容', () async {
+    final repository = _FakePublicUserRepository(
+      profile: _profile(
+        showRecentReplies: false,
+        showPlayedThreads: false,
+        showBookmarks: false,
+      ),
+    );
+    final controller = PublicUserController(
+      repository,
+      'user-1',
+      selfContentOnly: true,
+      autoStart: false,
+    );
+
+    await controller.load();
+    await controller.selectTab(PublicUserContentTab.played);
+    await controller.selectTab(PublicUserContentTab.replies);
+    await controller.selectTab(PublicUserContentTab.bookmarks);
+
+    expect(controller.state.availableTabs, PublicUserContentTab.values);
+    expect(repository.fetchUserCalls, 0);
+    expect(repository.createdCalls, 1);
+    expect(repository.playedCalls, 1);
+    expect(repository.replyCalls, 1);
+    expect(repository.bookmarkCalls, 1);
+  });
+
   test('主题分页按 ID 去重，cursor 失效后重新加载第一页', () async {
     var firstPageCalls = 0;
     final repository = _FakePublicUserRepository(
@@ -104,6 +132,7 @@ class _FakePublicUserRepository implements PublicUserRepository {
   int playedCalls = 0;
   int replyCalls = 0;
   int bookmarkCalls = 0;
+  int fetchUserCalls = 0;
 
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
@@ -116,7 +145,10 @@ class _FakePublicUserRepository implements PublicUserRepository {
   }
 
   @override
-  Future<PublicUserProfileModel> fetchUser(String userId) async => profile;
+  Future<PublicUserProfileModel> fetchUser(String userId) async {
+    fetchUserCalls += 1;
+    return profile;
+  }
 
   @override
   Future<CursorPage<PublicUserThreadModel>> fetchCreatedThreads(

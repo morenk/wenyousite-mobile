@@ -28,6 +28,7 @@ class PublicUserState {
     this.played = const PublicUserContentSection(),
     this.replies = const PublicUserContentSection(),
     this.bookmarks = const PublicUserContentSection(),
+    this.showAllContent = false,
   });
 
   final PublicUserPhase phase;
@@ -41,9 +42,11 @@ class PublicUserState {
   final PublicUserContentSection<PublicUserThreadModel> played;
   final PublicUserContentSection<PublicUserReplyModel> replies;
   final PublicUserContentSection<PublicUserThreadModel> bookmarks;
+  final bool showAllContent;
 
-  List<PublicUserContentTab> get availableTabs =>
-      profile?.availableContentTabs ?? const [PublicUserContentTab.created];
+  List<PublicUserContentTab> get availableTabs => showAllContent
+      ? PublicUserContentTab.values
+      : profile?.availableContentTabs ?? const [PublicUserContentTab.created];
 
   PublicUserState copyWith({
     PublicUserPhase? phase,
@@ -57,6 +60,7 @@ class PublicUserState {
     PublicUserContentSection<PublicUserThreadModel>? played,
     PublicUserContentSection<PublicUserReplyModel>? replies,
     PublicUserContentSection<PublicUserThreadModel>? bookmarks,
+    bool? showAllContent,
   }) {
     return PublicUserState(
       phase: phase ?? this.phase,
@@ -70,25 +74,43 @@ class PublicUserState {
       played: played ?? this.played,
       replies: replies ?? this.replies,
       bookmarks: bookmarks ?? this.bookmarks,
+      showAllContent: showAllContent ?? this.showAllContent,
     );
   }
 }
 
 class PublicUserController extends StateNotifier<PublicUserState> {
-  PublicUserController(this._repository, this.userId, {bool autoStart = true})
-    : super(const PublicUserState()) {
+  PublicUserController(
+    this._repository,
+    this.userId, {
+    this.selfContentOnly = false,
+    bool autoStart = true,
+  }) : super(PublicUserState(showAllContent: selfContentOnly)) {
     if (autoStart) unawaited(load());
   }
 
   final PublicUserRepository _repository;
   final String userId;
+  final bool selfContentOnly;
   int _profileEpoch = 0;
   final _sectionEpochs = <PublicUserContentTab, int>{};
 
   Future<void> load() async {
     final epoch = ++_profileEpoch;
     final previousTab = state.activeTab;
-    state = PublicUserState(activeTab: previousTab);
+    state = PublicUserState(
+      activeTab: previousTab,
+      showAllContent: selfContentOnly,
+    );
+    if (selfContentOnly) {
+      state = PublicUserState(
+        phase: PublicUserPhase.ready,
+        activeTab: previousTab,
+        showAllContent: true,
+      );
+      await _loadTab(previousTab, epoch);
+      return;
+    }
     try {
       final profile = await _repository.fetchUser(userId);
       if (!_isProfileCurrent(epoch)) return;
@@ -390,5 +412,14 @@ final publicUserControllerProvider = StateNotifierProvider.autoDispose
       return PublicUserController(
         ref.watch(publicUserRepositoryProvider),
         userId,
+      );
+    }, dependencies: [publicUserRepositoryProvider]);
+
+final meUserContentControllerProvider = StateNotifierProvider.autoDispose
+    .family<PublicUserController, PublicUserState, String>((ref, userId) {
+      return PublicUserController(
+        ref.watch(publicUserRepositoryProvider),
+        userId,
+        selfContentOnly: true,
       );
     }, dependencies: [publicUserRepositoryProvider]);

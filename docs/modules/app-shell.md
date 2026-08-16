@@ -18,7 +18,7 @@
 
 ## 4. 用户操作流程
 
-冷启动调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v3、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。
+冷启动调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v3、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。Android 进入后台时立即丢弃 Dart 侧缓存的 IME 目标高度；恢复或重新取得窗口焦点后，由原生活动在布局完成时回传当前真实键盘高度，避免旧键盘 inset 把页面下半部分持续挤出视口。
 
 ## 5. API operationId 与生成类型
 
@@ -27,6 +27,8 @@
 ## 6. 状态模型和数据流
 
 启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+
+全局 `WenyouInstantKeyboardInsets` 观察应用生命周期，只在 resumed 状态接受 Android IME 目标高度；`MainActivity` 在 IME 动画端点、`onPostResume` 和窗口重新聚焦后统一发布根视图的当前 inset。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -55,6 +57,7 @@
 - [x] 私聊 capability 映射到业务入口，登录用户回前台时同步私聊未读与请求角标。
 - [x] 四分支使用 IndexedStack 保留页面状态；底栏中央发布动作在任一分支打开稳定类型选择，首页与动态顶栏可进入全站搜索。
 - [x] 登录会话就绪后自动签到，同一会话重复构建不重复触发且失败不阻断应用壳。
+- [x] Android 带键盘或不带键盘切到后台再返回时清除陈旧 IME 目标，后台迟到回调不会导致页面下半部分消失。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
 - [ ] Android 8+ 模拟器通过启动冒烟。

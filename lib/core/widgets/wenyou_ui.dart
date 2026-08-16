@@ -123,6 +123,7 @@ class WenyouPanel extends StatelessWidget {
     this.padding,
     this.color,
     this.onTap,
+    this.clipBehavior,
     super.key,
   });
 
@@ -130,6 +131,7 @@ class WenyouPanel extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final Color? color;
   final VoidCallback? onTap;
+  final Clip? clipBehavior;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +142,8 @@ class WenyouPanel extends StatelessWidget {
     );
     return Card(
       color: color ?? tokens.panel,
-      clipBehavior: onTap == null ? Clip.none : Clip.antiAlias,
+      clipBehavior:
+          clipBehavior ?? (onTap == null ? Clip.none : Clip.antiAlias),
       child: onTap == null ? content : InkWell(onTap: onTap, child: content),
     );
   }

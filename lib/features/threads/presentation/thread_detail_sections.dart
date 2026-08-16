@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
@@ -352,6 +354,9 @@ class ThreadFloorCard extends ConsumerWidget {
                           author: floor.author,
                           time: floor.createdAt,
                           compact: true,
+                          avatarKey: Key(
+                            'thread-floor-author-avatar-${floor.id}',
+                          ),
                         ),
                       ),
                       SizedBox(width: tokens.space8),
@@ -590,6 +595,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
             author: reply.author,
             time: reply.createdAt,
             compact: true,
+            avatarKey: Key('thread-floor-reply-author-avatar-${reply.id}'),
           ),
           if (reply.replyToUsername case final username?) ...[
             SizedBox(height: tokens.space4),
@@ -676,39 +682,27 @@ class _AuthorLine extends StatelessWidget {
     required this.author,
     required this.time,
     this.compact = false,
+    this.avatarKey,
     super.key,
   });
 
   final ThreadAuthorModel author;
   final DateTime time;
   final bool compact;
+  final Key? avatarKey;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final size = compact ? 32.0 : 36.0;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
-    );
     return Row(
       children: [
-        Semantics(
-          image: true,
-          label: '${author.username} 的头像',
-          child: ClipOval(
-            child: SizedBox.square(
-              dimension: size,
-              child: author.avatarUrl == null
-                  ? fallback
-                  : WenyouCachedImage(
-                      imageUrl: author.avatarUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) => fallback,
-                      errorWidget: (_, _, _) => fallback,
-                    ),
-            ),
-          ),
+        WenyouAvatarButton(
+          key: avatarKey,
+          username: author.username,
+          avatarUrl: author.avatarUrl,
+          visualSize: size,
+          onTap: () => context.push(AppRouteLocations.user(author.id)),
         ),
         SizedBox(width: tokens.space8),
         Expanded(

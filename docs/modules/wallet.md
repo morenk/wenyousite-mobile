@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-“我的”通过受保护的 `/me/wallet` 进入钱包页。页面流水中的主题、用户和动态目标分别回到 `/threads/:threadId`、`/users/:userId` 与 `/moments/:momentId`；签到流水没有目标跳转。公开用户、主题和动态详情在顶栏提供加油图标，自我目标隐藏。游客点击加油时使用当前稳定路径进入 `/auth/login?returnTo=...`。
+“我的”资料卡下方直接展示钱包余额条，点按后通过受保护的 `/me/wallet` 进入钱包页；余额条与详情页读取同一个当前会话 `WalletController`，不会显示用户资料中的累计收到加油。页面流水中的主题、用户和动态目标分别回到 `/threads/:threadId`、`/users/:userId` 与 `/moments/:momentId`；签到流水没有目标跳转。公开用户、主题和动态详情在顶栏提供加油图标，自我目标隐藏。游客点击加油时使用当前稳定路径进入 `/auth/login?returnTo=...`。
 
 ## 4. 用户操作流程
 
@@ -28,7 +28,7 @@
 
 ## 6. 状态模型和数据流
 
-`WalletController` 按当前会话 key 隔离余额、流水、首屏/刷新/分页和三类局部失败；余额与流水并发加载，任一失败不会遮挡另一部分。`DailyCheckInController` 串行执行全局签到，启动组件按登录会话防止重复触发。`TipController` 按目标 family 隔离弹窗写入，保存待确认金额、稳定请求 ID、提交状态和失败详情。钱包仓储接口位于 `wallet/application`，`main.dart` 组合根绑定 data 适配器；data 边界应用钱包专属错误目录，把生成 DTO 映射为 feature 模型，并对金额、枚举、计数、目标、分页和安全头像 URL fail-closed。
+`WalletController` 按当前会话 key 隔离余额、流水、首屏/刷新/分页和三类局部失败；“我的”余额条和钱包详情观察同一实例的 `summary.balance`，余额加载或失败时显示占位而不回退累计收款。余额与流水并发加载，任一失败不会遮挡另一部分。`DailyCheckInController` 串行执行全局签到，启动组件按登录会话防止重复触发。`TipController` 按目标 family 隔离弹窗写入，保存待确认金额、稳定请求 ID、提交状态和失败详情。钱包仓储接口位于 `wallet/application`，`main.dart` 组合根绑定 data 适配器；data 边界应用钱包专属错误目录，把生成 DTO 映射为 feature 模型，并对金额、枚举、计数、目标、分页和安全头像 URL fail-closed。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -56,6 +56,7 @@ app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通
 - [x] 金额、小数、前导零、bigint 溢出、未知枚举、重复流水和缺失 cursor 均 fail-closed。
 - [x] 余额/流水局部失败、分页、`40007` 恢复、三类业务错误和空响应有自动测试。
 - [x] 钱包页在 360dp、400dp、600dp 展示长金额和流水无横向溢出。
+- [x] “我的”余额条与钱包详情共享余额事实；`receivedTipTotal` 与余额不同时仍只展示 `summary.balance`。
 - [ ] 公网专用账号完成签到、三类加油、余额变化、实际到账和流水目标真机联调。
 
 ## 12. 已知限制和后续功能
