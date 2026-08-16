@@ -15,13 +15,13 @@ void main() {
     final mobileTask = _FakeUploadTask([_uploaded('mobile-media')]);
     final repository = _FakeProfileCoverRepository();
     final controller = ProfileCoverController(
-      _FakePicker(_selection),
+      const _FakePicker(null),
       webTask,
       mobileTask,
       repository,
     );
 
-    final result = await controller.chooseAndSet();
+    final result = await controller.setSelection(_selection);
 
     expect(result?.profileCover?.mobile, isNotNull);
     expect(webTask.inputs.single.filename, 'web.png');
@@ -39,13 +39,13 @@ void main() {
     ]);
     final repository = _FakeProfileCoverRepository();
     final controller = ProfileCoverController(
-      _FakePicker(_selection),
+      const _FakePicker(null),
       webTask,
       mobileTask,
       repository,
     );
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await controller.setSelection(_selection), isNull);
     expect(controller.state.pendingWebMediaId, 'web-media');
     expect(controller.state.failure?.userMessage, '移动背景上传失败');
 
@@ -59,13 +59,13 @@ void main() {
     final mobileTask = _FakeUploadTask([_uploaded('mobile-media')]);
     final repository = _FakeProfileCoverRepository(failSetOnce: true);
     final controller = ProfileCoverController(
-      _FakePicker(_selection),
+      const _FakePicker(null),
       webTask,
       mobileTask,
       repository,
     );
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await controller.setSelection(_selection), isNull);
     expect(controller.state.pendingMobileMediaId, 'mobile-media');
 
     expect(await controller.retry(), isNotNull);
@@ -95,11 +95,10 @@ void main() {
 class _FakePicker implements ProfileCoverImagePicker {
   const _FakePicker(this.selection);
 
-  final ProfileCoverImageSelection? selection;
+  final MediaUploadInput? selection;
 
   @override
-  Future<ProfileCoverImageSelection?> pickProfileCoverFromGallery() async =>
-      selection;
+  Future<MediaUploadInput?> pickProfileCoverFromGallery() async => selection;
 }
 
 class _FakeUploadTask implements MediaUploadTask {

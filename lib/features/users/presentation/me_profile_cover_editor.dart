@@ -6,7 +6,9 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/profile_cover_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -55,7 +57,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
         ),
         SizedBox(height: tokens.space4),
         Text(
-          '支持 JPG、PNG、WebP，最大 10MB；将自动居中生成电脑端 3:1 与移动端 2:1 画幅。',
+          '支持 JPG、PNG、WebP，最大 10MB；上传前可分别调整电脑端 3:1 与移动端 2:1 取景。',
           style: Theme.of(context).textTheme.bodySmall,
           textAlign: TextAlign.center,
         ),
@@ -113,9 +115,16 @@ class MeProfileCoverEditor extends ConsumerWidget {
   }
 
   Future<void> _chooseAndSet(BuildContext context, WidgetRef ref) async {
-    final result = await ref
-        .read(profileCoverControllerProvider.notifier)
-        .chooseAndSet();
+    final controller = ref.read(profileCoverControllerProvider.notifier);
+    final input = await controller.pickImage();
+    if (!context.mounted || input == null) return;
+    final selection = await showProfileCoverCropDialog(
+      context,
+      input: input,
+      processor: ref.read(imageCropProcessorPortProvider),
+    );
+    if (!context.mounted || selection == null) return;
+    final result = await controller.setSelection(selection);
     if (!context.mounted || result == null) return;
     _applyResult(context, ref, result, '主页背景已更新。');
   }
@@ -148,9 +157,14 @@ class MeProfileCoverEditor extends ConsumerWidget {
   }
 
   Future<void> _retry(BuildContext context, WidgetRef ref) async {
-    final removing =
-        ref.read(profileCoverControllerProvider).failedOperation ==
-        ProfileCoverOperation.remove;
+    final state = ref.read(profileCoverControllerProvider);
+    final removing = state.failedOperation == ProfileCoverOperation.remove;
+    if (!removing &&
+        !state.hasPendingSelection &&
+        (state.pendingWebMediaId == null ||
+            state.pendingMobileMediaId == null)) {
+      return _chooseAndSet(context, ref);
+    }
     final result = await ref
         .read(profileCoverControllerProvider.notifier)
         .retry();
@@ -179,7 +193,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
 
   String _progressMessage(ProfileCoverState state) {
     return switch (state.phase) {
-      ProfileCoverPhase.picking => '正在打开相册并生成双画幅…',
+      ProfileCoverPhase.picking => '正在打开系统相册…',
       ProfileCoverPhase.uploadingWeb => _uploadMessage(
         '正在上传电脑端背景',
         state.progress,

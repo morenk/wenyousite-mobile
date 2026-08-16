@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image;
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -10,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
@@ -209,6 +211,10 @@ void main() {
     await tester.tap(find.byKey(const Key('me-avatar-change')));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('avatar-crop-dialog')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+
     expect(media.uploadCalls, 1);
     expect(avatar.setCalls, 1);
     expect(avatar.lastMediaId, 'media-avatar-1');
@@ -250,6 +256,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('me-avatar-change')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
     expect(find.text('请求 ID：avatar-widget-request-id'), findsOneWidget);
     expect(find.text('重试设置'), findsOneWidget);
 
@@ -258,6 +266,58 @@ void main() {
     expect(media.uploadCalls, 1);
     expect(avatar.setCalls, 2);
     expect(find.text('头像已更新。'), findsOneWidget);
+  });
+
+  testWidgets('主页背景可分别调整电脑端与移动端取景后再上传', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final media = _FakeMediaRepository();
+    final coverRepository = _FakeProfileCoverRepository();
+    final cropProcessor = _FakeImageCropProcessor();
+    final container = await _authenticatedContainer(
+      repository,
+      profileCoverPicker: _FakeProfileCoverPicker(_avatarInput),
+      profileCoverRepository: coverRepository,
+      imageCropProcessor: cropProcessor,
+      mediaRepository: media,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('me-profile-cover-change')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('me-profile-cover-change')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile-cover-crop-dialog')), findsOneWidget);
+    expect(find.text('电脑端 3:1'), findsOneWidget);
+    expect(find.text('移动端 2:1'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('image-crop-zoom')),
+      const Offset(120, 0),
+    );
+    await tester.pump();
+    await tester.tap(find.text('移动端 2:1'));
+    await tester.pump();
+    expect(find.byKey(const Key('profile-cover-crop-mobile')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(cropProcessor.coverCropCalls, 1);
+    expect(
+      cropProcessor.lastWebCrop!.width,
+      lessThan(cropProcessor.lastMobileCrop!.width),
+    );
+    expect(media.uploadCalls, 2);
+    expect(coverRepository.setCalls, 1);
+    expect(find.text('主页背景已更新。'), findsOneWidget);
   });
 
   testWidgets('已有头像二次确认后移除并回到默认占位', (tester) async {
@@ -373,6 +433,9 @@ void main() {
 Future<ProviderContainer> _authenticatedContainer(
   MeProfileRepository repository, {
   AvatarImagePicker? avatarPicker,
+  ProfileCoverImagePicker? profileCoverPicker,
+  ProfileCoverRepository? profileCoverRepository,
+  ImageCropProcessor? imageCropProcessor,
   MediaUploadGateway? mediaRepository,
   AvatarRepository? avatarRepository,
   PublicUserRepository? publicUserRepository,
@@ -395,10 +458,13 @@ Future<ProviderContainer> _authenticatedContainer(
         avatarPicker ?? _FakeAvatarPicker(null),
       ),
       profileCoverImagePickerPortProvider.overrideWithValue(
-        const _FakeProfileCoverPicker(),
+        profileCoverPicker ?? const _FakeProfileCoverPicker(null),
       ),
       profileCoverRepositoryProvider.overrideWithValue(
-        const _FakeProfileCoverRepository(),
+        profileCoverRepository ?? _FakeProfileCoverRepository(),
+      ),
+      imageCropProcessorPortProvider.overrideWithValue(
+        imageCropProcessor ?? _FakeImageCropProcessor(),
       ),
       mediaUploadGatewayPortProvider.overrideWithValue(
         mediaRepository ?? _FakeMediaRepository(),
@@ -414,27 +480,73 @@ Future<ProviderContainer> _authenticatedContainer(
 }
 
 class _FakeProfileCoverPicker implements ProfileCoverImagePicker {
-  const _FakeProfileCoverPicker();
+  const _FakeProfileCoverPicker(this.input);
+
+  final MediaUploadInput? input;
 
   @override
-  Future<ProfileCoverImageSelection?> pickProfileCoverFromGallery() async =>
-      null;
+  Future<MediaUploadInput?> pickProfileCoverFromGallery() async => input;
 }
 
 class _FakeProfileCoverRepository implements ProfileCoverRepository {
-  const _FakeProfileCoverRepository();
+  int setCalls = 0;
 
   @override
-  Future<ProfileCoverUpdateResult> removeProfileCover() {
-    throw UnimplementedError();
-  }
+  Future<ProfileCoverUpdateResult> removeProfileCover() async =>
+      ProfileCoverUpdateResult(
+        profileCover: null,
+        updatedAt: DateTime.utc(2026, 8, 16),
+      );
 
   @override
   Future<ProfileCoverUpdateResult> setProfileCover({
     required String webMediaId,
     required String mobileMediaId,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    setCalls += 1;
+    return ProfileCoverUpdateResult(
+      profileCover: const ProfileCoverModel(
+        web: ProfileCoverVariant(url: 'https://cdn.example.com/cover-web.webp'),
+        mobile: ProfileCoverVariant(
+          url: 'https://cdn.example.com/cover-mobile.webp',
+        ),
+      ),
+      updatedAt: DateTime.utc(2026, 8, 16),
+    );
+  }
+}
+
+class _FakeImageCropProcessor implements ImageCropProcessor {
+  int coverCropCalls = 0;
+  NormalizedCropRect? lastWebCrop;
+  NormalizedCropRect? lastMobileCrop;
+
+  @override
+  Future<CropImageSource> prepare(MediaUploadInput input) async {
+    return CropImageSource(
+      original: input,
+      previewBytes: _previewBytes,
+      width: 160,
+      height: 90,
+    );
+  }
+
+  @override
+  Future<MediaUploadInput> cropAvatar(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  ) async => _avatarInput;
+
+  @override
+  Future<ProfileCoverImageSelection> cropProfileCover(
+    CropImageSource source, {
+    required NormalizedCropRect webCrop,
+    required NormalizedCropRect mobileCrop,
+  }) async {
+    coverCropCalls += 1;
+    lastWebCrop = webCrop;
+    lastMobileCrop = mobileCrop;
+    return ProfileCoverImageSelection(web: _avatarInput, mobile: _avatarInput);
   }
 }
 
@@ -696,6 +808,8 @@ final _avatarInput = MediaUploadInput(
   declaredContentType: 'image/jpeg',
   bytes: Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0, 0, 1]),
 );
+
+final _previewBytes = image.encodePng(image.Image(width: 160, height: 90));
 
 final _avatarSetResult = AvatarUpdateResult(
   avatarUrl: 'https://cdn.example.com/avatar.webp',

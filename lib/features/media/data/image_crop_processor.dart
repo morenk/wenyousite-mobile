@@ -1,0 +1,142 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image/image.dart' as image;
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+
+class IsolateImageCropProcessor implements ImageCropProcessor {
+  const IsolateImageCropProcessor();
+
+  @override
+  Future<CropImageSource> prepare(MediaUploadInput input) {
+    return compute(_prepareCropSource, input);
+  }
+
+  @override
+  Future<MediaUploadInput> cropAvatar(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  ) {
+    return compute(_cropAvatar, (source, crop));
+  }
+
+  @override
+  Future<ProfileCoverImageSelection> cropProfileCover(
+    CropImageSource source, {
+    required NormalizedCropRect webCrop,
+    required NormalizedCropRect mobileCrop,
+  }) {
+    return compute(_cropProfileCover, (source, webCrop, mobileCrop));
+  }
+}
+
+CropImageSource _prepareCropSource(MediaUploadInput input) {
+  final oriented = _decodeOrThrow(input);
+  const maxPreviewEdge = 1280;
+  final longestEdge = oriented.width > oriented.height
+      ? oriented.width
+      : oriented.height;
+  final preview = longestEdge <= maxPreviewEdge
+      ? oriented
+      : image.copyResize(
+          oriented,
+          width: oriented.width >= oriented.height ? maxPreviewEdge : null,
+          height: oriented.height > oriented.width ? maxPreviewEdge : null,
+          interpolation: image.Interpolation.cubic,
+        );
+  return CropImageSource(
+    original: input,
+    previewBytes: image.encodePng(preview),
+    width: oriented.width,
+    height: oriented.height,
+  );
+}
+
+MediaUploadInput _cropAvatar((CropImageSource, NormalizedCropRect) request) {
+  final (source, crop) = request;
+  return _renderCrop(
+    source,
+    crop,
+    outputWidth: 512,
+    outputHeight: 512,
+    filename: 'avatar.png',
+  );
+}
+
+ProfileCoverImageSelection _cropProfileCover(
+  (CropImageSource, NormalizedCropRect, NormalizedCropRect) request,
+) {
+  final (source, webCrop, mobileCrop) = request;
+  return ProfileCoverImageSelection(
+    web: _renderCrop(
+      source,
+      webCrop,
+      outputWidth: 1920,
+      outputHeight: 640,
+      filename: 'profile-cover-web.png',
+    ),
+    mobile: _renderCrop(
+      source,
+      mobileCrop,
+      outputWidth: 1600,
+      outputHeight: 800,
+      filename: 'profile-cover-mobile.png',
+    ),
+  );
+}
+
+MediaUploadInput _renderCrop(
+  CropImageSource source,
+  NormalizedCropRect crop, {
+  required int outputWidth,
+  required int outputHeight,
+  required String filename,
+}) {
+  final oriented = _decodeOrThrow(source.original);
+  final left = (crop.left.clamp(0, 1) * oriented.width).floor();
+  final top = (crop.top.clamp(0, 1) * oriented.height).floor();
+  final right = (crop.right.clamp(0, 1) * oriented.width).ceil();
+  final bottom = (crop.bottom.clamp(0, 1) * oriented.height).ceil();
+  final cropWidth = (right - left).clamp(1, oriented.width - left);
+  final cropHeight = (bottom - top).clamp(1, oriented.height - top);
+  final cropped = image.copyCrop(
+    oriented,
+    x: left,
+    y: top,
+    width: cropWidth,
+    height: cropHeight,
+  );
+  final resized = image.copyResize(
+    cropped,
+    width: outputWidth,
+    height: outputHeight,
+    interpolation: image.Interpolation.cubic,
+  );
+  final bytes = image.encodePng(resized);
+  if (bytes.length > maxMediaImageBytes) {
+    throw const ApiFailure(userMessage: '裁剪后的图片超过 10MB，请更换图片。');
+  }
+  return MediaUploadInput(
+    filename: filename,
+    declaredContentType: 'image/png',
+    bytes: bytes,
+  );
+}
+
+image.Image _decodeOrThrow(MediaUploadInput input) {
+  final decoded = image.decodeImage(input.bytes);
+  if (decoded == null) {
+    throw const ApiFailure(userMessage: '图片无法解析，请选择其他图片。');
+  }
+  final oriented = image.bakeOrientation(decoded);
+  if (oriented.width < 2 || oriented.height < 2) {
+    throw const ApiFailure(userMessage: '图片尺寸无效，请选择其他图片。');
+  }
+  return oriented;
+}
+
+final imageCropProcessorProvider = Provider<ImageCropProcessor>((ref) {
+  return const IsolateImageCropProcessor();
+});

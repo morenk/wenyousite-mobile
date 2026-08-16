@@ -6,7 +6,9 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -52,7 +54,7 @@ class MeAvatarEditor extends ConsumerWidget {
         ),
         SizedBox(height: tokens.space4),
         Text(
-          '支持 JPG、PNG、WebP，最大 10MB',
+          '支持 JPG、PNG、WebP，最大 10MB；上传前可拖动和缩放取景。',
           style: Theme.of(context).textTheme.bodySmall,
           textAlign: TextAlign.center,
         ),
@@ -96,6 +98,8 @@ class MeAvatarEditor extends ConsumerWidget {
                 state.pendingMediaId == null
                     ? state.failedOperation == AvatarOperation.remove
                           ? '重试移除'
+                          : state.hasPendingInput
+                          ? '重试上传'
                           : '重新选择'
                     : '重试设置',
               ),
@@ -107,9 +111,16 @@ class MeAvatarEditor extends ConsumerWidget {
   }
 
   Future<void> _chooseAndSet(BuildContext context, WidgetRef ref) async {
-    final result = await ref
-        .read(avatarControllerProvider.notifier)
-        .chooseAndSet();
+    final controller = ref.read(avatarControllerProvider.notifier);
+    final input = await controller.pickImage();
+    if (!context.mounted || input == null) return;
+    final cropped = await showAvatarCropDialog(
+      context,
+      input: input,
+      processor: ref.read(imageCropProcessorPortProvider),
+    );
+    if (!context.mounted || cropped == null) return;
+    final result = await controller.setImage(cropped);
     if (!context.mounted || result == null) return;
     _applyResult(context, ref, result, '头像已更新。');
   }
@@ -140,7 +151,13 @@ class MeAvatarEditor extends ConsumerWidget {
   }
 
   Future<void> _retry(BuildContext context, WidgetRef ref) async {
-    final operation = ref.read(avatarControllerProvider).failedOperation;
+    final state = ref.read(avatarControllerProvider);
+    final operation = state.failedOperation;
+    if (operation == AvatarOperation.set &&
+        state.pendingMediaId == null &&
+        !state.hasPendingInput) {
+      return _chooseAndSet(context, ref);
+    }
     final result = await ref.read(avatarControllerProvider.notifier).retry();
     if (!context.mounted || result == null) return;
     _applyResult(

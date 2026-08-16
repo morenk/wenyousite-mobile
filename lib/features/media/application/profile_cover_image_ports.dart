@@ -9,7 +9,7 @@ class ProfileCoverImageSelection {
 }
 
 abstract interface class ProfileCoverImagePicker {
-  Future<ProfileCoverImageSelection?> pickProfileCoverFromGallery();
+  Future<MediaUploadInput?> pickProfileCoverFromGallery();
 }
 
 final profileCoverImagePickerPortProvider = Provider<ProfileCoverImagePicker>((

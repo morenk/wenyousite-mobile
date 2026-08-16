@@ -15,9 +15,11 @@ import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dar
 import 'package:wenyousite_mobile/features/editor/data/mention_candidate_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/editor_image_picker.dart';
+import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
@@ -170,6 +172,9 @@ List<Override> productionProviderOverrides() => [
   ),
   avatarImagePickerPortProvider.overrideWith(
     (ref) => ref.watch(avatarImagePickerProvider),
+  ),
+  imageCropProcessorPortProvider.overrideWith(
+    (ref) => ref.watch(imageCropProcessorProvider),
   ),
   profileCoverImagePickerPortProvider.overrideWith(
     (ref) => ref.watch(profileCoverImagePickerProvider),

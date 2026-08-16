@@ -27,6 +27,7 @@ class ProfileCoverState {
     this.failedOperation,
     this.pendingWebMediaId,
     this.pendingMobileMediaId,
+    this.hasPendingSelection = false,
   });
 
   final ProfileCoverPhase phase;
@@ -35,6 +36,7 @@ class ProfileCoverState {
   final ProfileCoverOperation? failedOperation;
   final String? pendingWebMediaId;
   final String? pendingMobileMediaId;
+  final bool hasPendingSelection;
 
   bool get isBusy => switch (phase) {
     ProfileCoverPhase.picking ||
@@ -60,18 +62,20 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
   final ProfileCoverRepository _repository;
   ProfileCoverImageSelection? _selection;
 
-  Future<ProfileCoverUpdateResult?> chooseAndSet() async {
+  Future<MediaUploadInput?> pickImage() async {
     if (state.isBusy) return null;
+    _selection = null;
     _resetTasks();
     state = const ProfileCoverState(phase: ProfileCoverPhase.picking);
     try {
-      _selection = await _picker.pickProfileCoverFromGallery();
+      final selected = await _picker.pickProfileCoverFromGallery();
       if (!mounted) return null;
-      if (_selection == null) {
+      if (selected == null) {
         state = const ProfileCoverState();
         return null;
       }
-      return _continueSet();
+      state = const ProfileCoverState();
+      return selected;
     } on Object catch (error) {
       if (!mounted) return null;
       _resetTasks();
@@ -84,8 +88,18 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
     }
   }
 
+  Future<ProfileCoverUpdateResult?> setSelection(
+    ProfileCoverImageSelection selection,
+  ) {
+    if (state.isBusy) return Future.value();
+    _selection = selection;
+    _resetTasks();
+    return _continueSet();
+  }
+
   Future<ProfileCoverUpdateResult?> remove() async {
     if (state.isBusy) return null;
+    _selection = null;
     state = const ProfileCoverState(phase: ProfileCoverPhase.removing);
     try {
       final result = await _repository.removeProfileCover();
@@ -109,7 +123,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
     if (_selection == null &&
         (state.pendingWebMediaId == null ||
             state.pendingMobileMediaId == null)) {
-      return chooseAndSet();
+      return Future.value();
     }
     return _continueSet(
       webMediaId: state.pendingWebMediaId,
@@ -138,6 +152,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
       progress: uploadState.progress,
       pendingWebMediaId: state.pendingWebMediaId,
       pendingMobileMediaId: state.pendingMobileMediaId,
+      hasPendingSelection: _selection != null,
     );
   }
 
@@ -150,10 +165,11 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
     try {
       if (webId == null) {
         final input = _selection?.web;
-        if (input == null) return chooseAndSet();
+        if (input == null) return null;
         state = ProfileCoverState(
           phase: ProfileCoverPhase.uploadingWeb,
           pendingMobileMediaId: mobileId,
+          hasPendingSelection: true,
         );
         final uploaded = await _webUploadTask.uploadInput(input);
         if (!mounted) return null;
@@ -168,10 +184,11 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
       }
       if (mobileId == null) {
         final input = _selection?.mobile;
-        if (input == null) return chooseAndSet();
+        if (input == null) return null;
         state = ProfileCoverState(
           phase: ProfileCoverPhase.uploadingMobile,
           pendingWebMediaId: webId,
+          hasPendingSelection: true,
         );
         final uploaded = await _mobileUploadTask.uploadInput(input);
         if (!mounted) return null;
@@ -205,6 +222,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
         failedOperation: ProfileCoverOperation.set,
         pendingWebMediaId: webId,
         pendingMobileMediaId: mobileId,
+        hasPendingSelection: _selection != null,
         failure: _asFailure(error, '背景图没有设置成功，请稍后重试。'),
       );
       return null;
@@ -224,6 +242,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
             failedOperation: ProfileCoverOperation.set,
             pendingWebMediaId: webMediaId,
             pendingMobileMediaId: mobileMediaId,
+            hasPendingSelection: _selection != null,
             failure: ApiFailure(
               userMessage: failure.userMessage,
               businessCode: failure.businessCode,

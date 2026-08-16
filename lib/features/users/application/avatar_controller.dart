@@ -19,6 +19,7 @@ class AvatarState {
     this.failure,
     this.failedOperation,
     this.pendingMediaId,
+    this.hasPendingInput = false,
   });
 
   final AvatarPhase phase;
@@ -26,6 +27,7 @@ class AvatarState {
   final ApiFailure? failure;
   final AvatarOperation? failedOperation;
   final String? pendingMediaId;
+  final bool hasPendingInput;
 
   bool get isBusy => switch (phase) {
     AvatarPhase.picking ||
@@ -43,9 +45,11 @@ class AvatarController extends StateNotifier<AvatarState> {
   final AvatarImagePicker _picker;
   final MediaUploadTask _uploadTask;
   final AvatarRepository _avatarRepository;
+  MediaUploadInput? _pendingInput;
 
-  Future<AvatarUpdateResult?> chooseAndSet() async {
+  Future<MediaUploadInput?> pickImage() async {
     if (state.isBusy) return null;
+    _pendingInput = null;
     _uploadTask.reset();
     state = const AvatarState(phase: AvatarPhase.picking);
     try {
@@ -56,19 +60,59 @@ class AvatarController extends StateNotifier<AvatarState> {
         return null;
       }
       final input = validateAvatarImageInput(selected);
-      state = const AvatarState(phase: AvatarPhase.uploading);
+      state = const AvatarState();
+      return input;
+    } on Object catch (error) {
+      if (!mounted) return null;
+      _uploadTask.reset();
+      state = AvatarState(
+        phase: AvatarPhase.failed,
+        failedOperation: AvatarOperation.set,
+        failure: _asFailure(error, '头像没有准备成功，请稍后重试。'),
+      );
+      return null;
+    }
+  }
+
+  Future<AvatarUpdateResult?> setImage(MediaUploadInput input) async {
+    if (state.isBusy) return null;
+    _pendingInput = null;
+    try {
+      _pendingInput = validateAvatarImageInput(input);
+    } on Object catch (error) {
+      state = AvatarState(
+        phase: AvatarPhase.failed,
+        failedOperation: AvatarOperation.set,
+        failure: _asFailure(error, '头像没有准备成功，请稍后重试。'),
+      );
+      return null;
+    }
+    _uploadTask.reset();
+    return _uploadPendingInput();
+  }
+
+  Future<AvatarUpdateResult?> _uploadPendingInput() async {
+    final input = _pendingInput;
+    if (input == null) return null;
+    state = const AvatarState(
+      phase: AvatarPhase.uploading,
+      hasPendingInput: true,
+    );
+    try {
       final image = await _uploadTask.uploadInput(input);
       if (!mounted) return null;
       if (image == null) {
         final failure = _uploadTask.state.failure;
         _uploadTask.reset();
         if (failure == null) {
+          _pendingInput = null;
           state = const AvatarState();
           return null;
         }
         state = AvatarState(
           phase: AvatarPhase.failed,
           failedOperation: AvatarOperation.set,
+          hasPendingInput: true,
           failure: ApiFailure(
             userMessage: failure.userMessage,
             businessCode: failure.businessCode,
@@ -77,6 +121,7 @@ class AvatarController extends StateNotifier<AvatarState> {
         );
         return null;
       }
+      _pendingInput = null;
       return _setUploadedMedia(image.mediaId);
     } on Object catch (error) {
       if (!mounted) return null;
@@ -84,6 +129,7 @@ class AvatarController extends StateNotifier<AvatarState> {
       state = AvatarState(
         phase: AvatarPhase.failed,
         failedOperation: AvatarOperation.set,
+        hasPendingInput: true,
         failure: _asFailure(error, '头像没有上传成功，请稍后重试。'),
       );
       return null;
@@ -114,17 +160,20 @@ class AvatarController extends StateNotifier<AvatarState> {
     if (state.failedOperation == AvatarOperation.remove) return remove();
     final mediaId = state.pendingMediaId;
     if (mediaId != null) return _setUploadedMedia(mediaId);
-    return chooseAndSet();
+    if (_pendingInput != null) return _uploadPendingInput();
+    return Future<AvatarUpdateResult?>.value();
   }
 
   void cancelUpload() {
     if (state.phase != AvatarPhase.uploading) return;
     _uploadTask.cancel();
+    _pendingInput = null;
     state = const AvatarState();
   }
 
   void clearFailure() {
     if (state.phase != AvatarPhase.failed) return;
+    _pendingInput = null;
     state = const AvatarState();
   }
 
@@ -133,6 +182,7 @@ class AvatarController extends StateNotifier<AvatarState> {
     try {
       final result = await _avatarRepository.setAvatar(mediaId);
       if (!mounted) return null;
+      _pendingInput = null;
       state = const AvatarState();
       return result;
     } on Object catch (error) {
@@ -156,6 +206,7 @@ class AvatarController extends StateNotifier<AvatarState> {
     state = AvatarState(
       phase: AvatarPhase.uploading,
       progress: uploadState.progress,
+      hasPendingInput: _pendingInput != null,
     );
   }
 

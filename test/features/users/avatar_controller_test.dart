@@ -19,7 +19,7 @@ void main() {
     final avatar = _FakeAvatarRepository();
     final controller = AvatarController(_FakeAvatarPicker(), upload, avatar);
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await _pickAndSet(controller), isNull);
 
     expect(controller.state.phase, AvatarPhase.idle);
     expect(upload.uploadCalls, 0);
@@ -35,7 +35,7 @@ void main() {
       avatar,
     );
 
-    final result = await controller.chooseAndSet();
+    final result = await _pickAndSet(controller);
 
     expect(result?.avatarUrl, _newAvatarUrl);
     expect(upload.uploadCalls, 1);
@@ -68,7 +68,7 @@ void main() {
     expect(controller.state.progress?.fraction, .5);
   });
 
-  test('上传失败保留业务码与请求 ID，重试要求重新选择', () async {
+  test('上传失败保留业务码、请求 ID 与裁剪结果，重试不重新选择', () async {
     final upload = _FakeMediaUploadTask(
       onUpload: (_) async => null,
       failure: const MediaUploadTaskState(
@@ -88,14 +88,16 @@ void main() {
       _FakeAvatarRepository(),
     );
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await _pickAndSet(controller), isNull);
 
     expect(controller.state.phase, AvatarPhase.failed);
     expect(controller.state.pendingMediaId, isNull);
+    expect(controller.state.hasPendingInput, isTrue);
     expect(controller.state.failure?.businessCode, 42900);
     expect(controller.state.failure?.requestId, 'upload-request-id');
     await controller.retry();
-    expect(picker.calls, 2);
+    expect(picker.calls, 1);
+    expect(upload.uploadCalls, 2);
   });
 
   test('设置端点失败保留 mediaId，重试不重复上传', () async {
@@ -119,7 +121,7 @@ void main() {
       avatar,
     );
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await _pickAndSet(controller), isNull);
     expect(controller.state.phase, AvatarPhase.failed);
     expect(controller.state.pendingMediaId, 'media-1');
     expect(controller.state.failure?.requestId, 'avatar-request-id');
@@ -166,7 +168,7 @@ void main() {
       _FakeAvatarRepository(),
     );
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await _pickAndSet(controller), isNull);
 
     expect(controller.state.phase, AvatarPhase.failed);
     expect(controller.state.failure?.userMessage, contains('JPG、PNG 和 WebP'));
@@ -187,7 +189,7 @@ void main() {
       _FakeAvatarRepository(),
     );
 
-    expect(await controller.chooseAndSet(), isNull);
+    expect(await _pickAndSet(controller), isNull);
     expect(controller.state.failure?.userMessage, contains('JPG、PNG 和 WebP'));
     expect(upload.uploadCalls, 0);
   });
@@ -205,7 +207,8 @@ void main() {
       avatar,
     );
 
-    final pending = controller.chooseAndSet();
+    final input = await controller.pickImage();
+    final pending = controller.setImage(input!);
     await Future<void>.delayed(Duration.zero);
     controller.cancelUpload();
 
@@ -251,10 +254,16 @@ class _AvatarProviderProbe extends ConsumerWidget {
     final state = ref.watch(avatarControllerProvider);
     return TextButton(
       key: const Key('set-avatar'),
-      onPressed: ref.read(avatarControllerProvider.notifier).chooseAndSet,
+      onPressed: () => _pickAndSet(ref.read(avatarControllerProvider.notifier)),
       child: Text(state.phase.name),
     );
   }
+}
+
+Future<AvatarUpdateResult?> _pickAndSet(AvatarController controller) async {
+  final input = await controller.pickImage();
+  if (input == null) return null;
+  return controller.setImage(input);
 }
 
 class _FakeAvatarPicker implements AvatarImagePicker {
