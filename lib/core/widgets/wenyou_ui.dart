@@ -1,6 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+
+double wenyouHorizontalPagePadding(
+  BuildContext context, {
+  double? availableWidth,
+}) {
+  final tokens = context.wenyouTokens;
+  final width = availableWidth ?? MediaQuery.sizeOf(context).width;
+  return width < tokens.regularHorizontalPaddingFrom
+      ? tokens.compactHorizontalPadding
+      : tokens.regularHorizontalPadding;
+}
+
+String? wenyouRequestDetail(ApiFailure? failure) {
+  final requestId = failure?.requestId;
+  return requestId == null ? null : '请求 ID：$requestId';
+}
 
 class WenyouConstrainedWidth extends StatelessWidget {
   const WenyouConstrainedWidth({required this.child, this.maxWidth, super.key});
@@ -40,10 +57,10 @@ class WenyouPageBody extends StatelessWidget {
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final horizontalPadding =
-              constraints.maxWidth < tokens.regularHorizontalPaddingFrom
-              ? tokens.compactHorizontalPadding
-              : tokens.regularHorizontalPadding;
+          final horizontalPadding = wenyouHorizontalPagePadding(
+            context,
+            availableWidth: constraints.maxWidth,
+          );
           return SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
@@ -255,6 +272,23 @@ class WenyouStatusBanner extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class WenyouFailureBanner extends StatelessWidget {
+  const WenyouFailureBanner({required this.failure, this.action, super.key});
+
+  final ApiFailure failure;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return WenyouStatusBanner(
+      message: failure.userMessage,
+      detail: wenyouRequestDetail(failure),
+      tone: WenyouStatusTone.error,
+      action: action,
     );
   }
 }

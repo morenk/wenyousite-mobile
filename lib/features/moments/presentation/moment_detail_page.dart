@@ -9,26 +9,17 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
-import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
-import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
-
-part 'moment_comment_composer.dart';
-part 'moment_detail_comment_body.dart';
 
 class MomentDetailPage extends ConsumerStatefulWidget {
   const MomentDetailPage({required this.momentId, super.key});
@@ -311,7 +302,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: SizedBox(
                     width: double.infinity,
-                    child: _MomentCommentComposer(
+                    child: MomentCommentComposer(
                       replyTo: currentReplyTo,
                       isSending: state.isSendingComment,
                       onCancelReply: () =>
@@ -660,7 +651,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _MomentCommentBody(
+        MomentCommentBody(
           comment: root,
           busy: busyCommentIds.contains(root.id),
           onReply: () => onReply(root),
@@ -679,7 +670,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
               child: Column(
                 children: [
                   for (var index = 0; index < replies.length; index++) ...[
-                    _MomentCommentBody(
+                    MomentCommentBody(
                       comment: replies[index],
                       compact: true,
                       busy: busyCommentIds.contains(replies[index].id),

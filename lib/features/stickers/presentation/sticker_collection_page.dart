@@ -180,7 +180,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                _uploadProgressLabel(uploadState),
+                                uploadState.progressLabel,
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
@@ -302,19 +302,6 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     await ref
         .read(stickerCollectionControllerProvider.notifier)
         .remove(sticker.id);
-  }
-
-  String _uploadProgressLabel(MediaUploadTaskState state) {
-    return switch (state.phase) {
-      MediaUploadTaskPhase.picking => '正在打开相册…',
-      MediaUploadTaskPhase.preparing => '正在准备图片…',
-      MediaUploadTaskPhase.uploading when state.progress?.fraction != null =>
-        '正在上传 ${(state.progress!.fraction! * 100).round()}%',
-      MediaUploadTaskPhase.uploading => '正在上传图片…',
-      MediaUploadTaskPhase.confirming => '正在确认图片…',
-      MediaUploadTaskPhase.processing => '图片正在安全处理中…',
-      MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
-    };
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_state.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
@@ -81,9 +82,7 @@ class LoginSessionsController extends StateNotifier<LoginSessionsState> {
   }
 
   ApiFailure _asFailure(Object error, String fallback) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: fallback, cause: error);
+    return mapApplicationFailure(error, fallback);
   }
 }
 

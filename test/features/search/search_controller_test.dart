@@ -149,6 +149,71 @@ void main() {
     expect(threadFirstPageCalls, 2);
     expect(threadSearch.state.results.items.single.id, 'thread-post-2');
   });
+
+  test('正文分页晚返回时不会覆盖已经完成的刷新结果', () async {
+    final stalePage = Completer<CursorPage<SearchPostResult>>();
+    var firstPageCalls = 0;
+    final repository = _FakeSearchRepository(
+      onPosts: (query, cursor) {
+        if (cursor == 'next') return stalePage.future;
+        firstPageCalls += 1;
+        return Future.value(
+          CursorPage(
+            items: [_post(firstPageCalls == 1 ? 'initial' : 'refreshed', '正文')],
+            cursor: 'next',
+            hasMore: true,
+          ),
+        );
+      },
+    );
+    final controller = SearchController(repository);
+    await controller.selectTab(SearchResultTab.posts);
+    await controller.submit('星海');
+
+    final loadMore = controller.loadMorePosts();
+    await Future<void>.delayed(Duration.zero);
+    await controller.refreshActive();
+    stalePage.complete(
+      CursorPage(items: [_post('stale-page', '旧分页')], hasMore: false),
+    );
+    await loadMore;
+
+    expect(controller.state.posts.items.single.id, 'refreshed');
+    expect(controller.state.posts.isLoadingMore, isFalse);
+  });
+
+  test('主题内分页晚返回时不会覆盖已经完成的重试结果', () async {
+    final stalePage = Completer<CursorPage<SearchPostResult>>();
+    var firstPageCalls = 0;
+    final repository = _FakeSearchRepository(
+      onThreadPosts: (threadId, query, cursor) {
+        if (cursor == 'next') return stalePage.future;
+        firstPageCalls += 1;
+        return Future.value(
+          CursorPage(
+            items: [
+              _post(firstPageCalls == 1 ? 'initial' : 'retried', '主题内正文'),
+            ],
+            cursor: 'next',
+            hasMore: true,
+          ),
+        );
+      },
+    );
+    final controller = ThreadPostSearchController(repository, 'thread-1');
+    await controller.submit('星海');
+
+    final loadMore = controller.loadMore();
+    await Future<void>.delayed(Duration.zero);
+    await controller.retry();
+    stalePage.complete(
+      CursorPage(items: [_post('stale-page', '旧分页')], hasMore: false),
+    );
+    await loadMore;
+
+    expect(controller.state.results.items.single.id, 'retried');
+    expect(controller.state.results.isLoadingMore, isFalse);
+  });
 }
 
 class _FakeSearchRepository implements SearchRepository {

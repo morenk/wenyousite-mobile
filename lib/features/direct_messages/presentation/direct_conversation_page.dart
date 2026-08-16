@@ -3,15 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_timeline.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
-
-part 'direct_conversation_timeline.dart';
 
 class DirectConversationPage extends ConsumerStatefulWidget {
   const DirectConversationPage({required this.conversationId, super.key});
@@ -333,7 +331,7 @@ class _ReadyConversation extends StatelessWidget {
         Expanded(
           child: RefreshIndicator(
             onRefresh: onRefresh,
-            child: _MessageTimeline(
+            child: DirectMessageTimeline(
               state: state,
               now: now,
               controller: scrollController,
@@ -521,16 +519,4 @@ String _sendingDisabledReason(DirectConversation conversation) {
     DirectConversationStatus.unknown => '会话状态暂不受当前版本支持。',
     _ => '当前无法发送消息。',
   };
-}
-
-String _formatMessageTime(DateTime createdAt, DateTime now) {
-  final local = createdAt.toLocal();
-  final today = DateUtils.dateOnly(now);
-  final day = DateUtils.dateOnly(local);
-  if (day == today) return DateFormat('HH:mm').format(local);
-  if (day == today.subtract(const Duration(days: 1))) {
-    return '昨天 ${DateFormat('HH:mm').format(local)}';
-  }
-  if (local.year == now.year) return DateFormat('MM月dd日 HH:mm').format(local);
-  return DateFormat('yyyy年MM月dd日 HH:mm').format(local);
 }

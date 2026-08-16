@@ -1,9 +1,21 @@
-part of 'me_page.dart';
+import 'dart:async';
 
-class _AvatarEditor extends ConsumerWidget {
-  const _AvatarEditor({
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
+import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
+import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
+
+class MeAvatarEditor extends ConsumerWidget {
+  const MeAvatarEditor({
     required this.profile,
     required this.profileWriteDisabled,
+    super.key,
   });
 
   final MeProfileModel profile;

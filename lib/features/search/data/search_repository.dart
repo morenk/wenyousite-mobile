@@ -1,8 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/network/api_call.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -20,8 +20,8 @@ class ApiSearchRepository implements SearchRepository {
   final SearchApi _api;
 
   @override
-  Future<SearchOverviewResult> searchOverview(String query) async {
-    try {
+  Future<SearchOverviewResult> searchOverview(String query) {
+    return runApiCall(() async {
       final data = (await _api.searchSearch(
         q: _query(query),
         extra: ApiRequestPolicy.public.extra,
@@ -34,9 +34,7 @@ class ApiSearchRepository implements SearchRepository {
         users: List.unmodifiable(data.users.map(_mapUser)),
         posts: List.unmodifiable(data.posts.map(_mapPost)),
       );
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
+    });
   }
 
   @override
@@ -44,9 +42,9 @@ class ApiSearchRepository implements SearchRepository {
     String query, {
     String? cursor,
     int limit = 20,
-  }) async {
+  }) {
     _validatePage(limit);
-    try {
+    return runApiCall(() async {
       final envelope = (await _api.searchSearchMoments(
         q: _contentQuery(query),
         cursor: _optionalText(cursor),
@@ -64,14 +62,12 @@ class ApiSearchRepository implements SearchRepository {
         cursor: _pageCursor(envelope.meta.cursor, envelope.meta.hasMore),
         hasMore: envelope.meta.hasMore,
       );
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
+    });
   }
 
   @override
-  Future<List<SearchThreadResult>> searchThreads(String query) async {
-    try {
+  Future<List<SearchThreadResult>> searchThreads(String query) {
+    return runApiCall(() async {
       final response = await _api.searchSearchThreads(
         q: _query(query),
         extra: ApiRequestPolicy.public.extra,
@@ -81,14 +77,12 @@ class ApiSearchRepository implements SearchRepository {
         throw const ApiFailure(userMessage: '主题搜索返回不完整，请稍后重试。');
       }
       return List.unmodifiable(data.map(_mapThread));
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
+    });
   }
 
   @override
-  Future<List<SearchUserResult>> searchUsers(String query) async {
-    try {
+  Future<List<SearchUserResult>> searchUsers(String query) {
+    return runApiCall(() async {
       final response = await _api.searchSearchUsers(
         q: _query(query),
         extra: ApiRequestPolicy.public.extra,
@@ -98,9 +92,7 @@ class ApiSearchRepository implements SearchRepository {
         throw const ApiFailure(userMessage: '用户搜索返回不完整，请稍后重试。');
       }
       return List.unmodifiable(data.map(_mapUser));
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
+    });
   }
 
   @override
@@ -108,9 +100,9 @@ class ApiSearchRepository implements SearchRepository {
     String query, {
     String? cursor,
     int limit = 20,
-  }) async {
+  }) {
     _validatePage(limit);
-    try {
+    return runApiCall(() async {
       final response = await _api.searchSearchPosts(
         q: _contentQuery(query),
         cursor: _optionalText(cursor),
@@ -128,9 +120,7 @@ class ApiSearchRepository implements SearchRepository {
         cursor: _pageCursor(envelope.meta.cursor, envelope.meta.hasMore),
         hasMore: envelope.meta.hasMore,
       );
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
+    });
   }
 
   @override
@@ -139,10 +129,10 @@ class ApiSearchRepository implements SearchRepository {
     String query, {
     String? cursor,
     int limit = 20,
-  }) async {
+  }) {
     final id = _requiredText(threadId, '主题 ID');
     _validatePage(limit);
-    try {
+    return runApiCall(() async {
       final envelope = (await _api.threadSearchSearchPosts(
         threadId: id,
         q: _contentQuery(query),
@@ -162,9 +152,7 @@ class ApiSearchRepository implements SearchRepository {
         cursor: _pageCursor(envelope.meta.cursor, envelope.meta.hasMore),
         hasMore: envelope.meta.hasMore,
       );
-    } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
-    }
+    });
   }
 
   SearchThreadResult _mapThread(SearchThreadResponseDto dto) {

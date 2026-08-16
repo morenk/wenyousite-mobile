@@ -5,17 +5,16 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
-import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
-import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
 import 'direct_message_states.dart';
-export 'direct_message_states.dart';
 
-part 'direct_conversation_target_controller.dart';
+export 'direct_conversation_target_controller.dart';
+export 'direct_message_states.dart';
 
 typedef DirectMessageRequestIdFactory = String Function();
 
@@ -155,14 +154,14 @@ class DirectConversationListController
         cursor: before.cursor,
       );
       if (!mounted || epoch != _epoch) return;
-      final seen = before.items.map((item) => item.id).toSet();
       state = DirectConversationListState(
         phase: DirectConversationListPhase.ready,
         view: _view,
-        items: List.unmodifiable([
-          ...before.items,
-          ...page.items.where((item) => seen.add(item.id)),
-        ]),
+        items: mergeUniqueBy(
+          before.items,
+          page.items,
+          keyOf: (item) => item.id,
+        ),
         cursor: page.cursor,
         hasMore: page.hasMore,
       );
@@ -840,3 +839,7 @@ final directConversationControllerProvider = StateNotifierProvider.autoDispose
             ref.read(directUnreadControllerProvider.notifier).refresh(),
       );
     }, dependencies: [directMessageRepositoryProvider]);
+
+ApiFailure _asFailure(Object error, String fallback) {
+  return mapApplicationFailure(error, fallback);
+}

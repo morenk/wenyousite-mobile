@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
-class SecurityPasswordField extends StatefulWidget {
-  const SecurityPasswordField({
+class WenyouPasswordField extends StatefulWidget {
+  const WenyouPasswordField({
     required this.textFieldKey,
     required this.controller,
     required this.label,
@@ -12,6 +12,7 @@ class SecurityPasswordField extends StatefulWidget {
     this.textInputAction,
     this.validator,
     this.onFieldSubmitted,
+    this.prefixIcon = WenyouIconIds.actionLock,
     super.key,
   });
 
@@ -24,12 +25,13 @@ class SecurityPasswordField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final String? Function(String? value)? validator;
   final ValueChanged<String>? onFieldSubmitted;
+  final String prefixIcon;
 
   @override
-  State<SecurityPasswordField> createState() => _SecurityPasswordFieldState();
+  State<WenyouPasswordField> createState() => _WenyouPasswordFieldState();
 }
 
-class _SecurityPasswordFieldState extends State<SecurityPasswordField> {
+class _WenyouPasswordFieldState extends State<WenyouPasswordField> {
   var _obscureText = true;
 
   @override
@@ -46,7 +48,7 @@ class _SecurityPasswordFieldState extends State<SecurityPasswordField> {
       decoration: InputDecoration(
         labelText: widget.label,
         helperText: widget.helperText,
-        prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
+        prefixIcon: WenyouIcon(widget.prefixIcon),
         suffixIcon: IconButton(
           onPressed: widget.enabled
               ? () => setState(() => _obscureText = !_obscureText)

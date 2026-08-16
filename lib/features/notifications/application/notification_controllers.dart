@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
@@ -289,7 +290,5 @@ final notificationListControllerProvider =
     );
 
 ApiFailure _asFailure(Object error, String fallback) {
-  return error is ApiFailure
-      ? error
-      : ApiFailure(userMessage: fallback, cause: error);
+  return mapApplicationFailure(error, fallback);
 }

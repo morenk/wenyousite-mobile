@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/app/app_route_locations.dart';
+
 enum AppRouteAccess { public, authenticated, guestOnly }
 
 abstract final class AppRouteAccessPolicy {
@@ -16,28 +18,28 @@ abstract final class AppRouteAccessPolicy {
   }
 
   static const _guestOnlyLocations = <String>{
-    '/auth/login',
-    '/auth/register',
-    '/auth/forgot-password',
-    '/auth/reset-password',
+    AppRoutePaths.login,
+    AppRoutePaths.register,
+    AppRoutePaths.forgotPassword,
+    AppRoutePaths.resetPassword,
   };
 
   static const _authenticatedLocations = <String>{
-    '/compose/thread',
-    '/compose/moment',
-    '/moments/bookmarks',
-    '/me/edit',
-    '/me/settings',
-    '/me/following',
-    '/me/wallet',
-    '/me/followers',
-    '/me/blocks',
-    '/me/bookmarks',
-    '/me/stickers',
-    '/me/security/sessions',
-    '/me/security/password',
-    '/me/security/email',
-    '/me/security/delete-account',
+    AppRoutePaths.composeThread,
+    AppRoutePaths.composeMoment,
+    AppRoutePaths.momentBookmarks,
+    AppRoutePaths.meEdit,
+    AppRoutePaths.meSettings,
+    AppRoutePaths.meFollowing,
+    AppRoutePaths.wallet,
+    AppRoutePaths.meFollowers,
+    AppRoutePaths.meBlocks,
+    AppRoutePaths.meBookmarks,
+    AppRoutePaths.meStickers,
+    AppRoutePaths.loginSessions,
+    AppRoutePaths.changePassword,
+    AppRoutePaths.changeEmail,
+    AppRoutePaths.deleteAccount,
   };
 
   static final _momentEditPattern = RegExp(

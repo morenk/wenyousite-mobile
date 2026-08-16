@@ -8,22 +8,15 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/profile_cover_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
-import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
-
-part 'me_avatar_editor.dart';
-part 'me_profile_cover_editor.dart';
-part 'me_profile_editor.dart';
 
 class MePage extends ConsumerWidget {
   const MePage({super.key});
@@ -182,7 +175,7 @@ class MeEditPage extends ConsumerWidget {
                   profileCoverState.isBusy
               ? () async {}
               : notifier.load,
-          child: _MePageList(children: [_MeProfileContent(state: state)]),
+          child: _MePageList(children: [MeProfileEditor(state: state)]),
         ),
       },
     );
@@ -256,7 +249,10 @@ class _MePageList extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final width = MediaQuery.sizeOf(context).width;
-    final horizontal = width <= 400 ? tokens.space12 : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(
+      context,
+      availableWidth: width,
+    );
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(horizontal, tokens.space16, horizontal, 112),
@@ -490,51 +486,6 @@ class _ProfileOverview extends StatelessWidget {
   }
 }
 
-class _PrivacySwitch extends StatelessWidget {
-  const _PrivacySwitch({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-    super.key,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SwitchListTile.adaptive(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      subtitle: Text(subtitle),
-      value: value,
-      onChanged: enabled ? onChanged : null,
-    );
-  }
-}
-
-class _SubmissionFailure extends StatelessWidget {
-  const _SubmissionFailure({required this.failure});
-
-  final ApiFailure failure;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: failure.businessCode == 40900
-          ? '该用户名已被使用，请换一个。'
-          : failure.userMessage,
-      detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
-    );
-  }
-}
-
 class _LogoutPanel extends StatelessWidget {
   const _LogoutPanel();
 
@@ -660,26 +611,6 @@ class _LogoutAction extends ConsumerWidget {
       ).showSnackBar(const SnackBar(content: Text('本机登录信息已清除。')));
     }
   }
-}
-
-String? _validateUsername(String? value) {
-  final username = value?.trim() ?? '';
-  if (username.length < 2 || username.length > 24) {
-    return '用户名需要 2–24 个字符';
-  }
-  if (!RegExp(r'^[A-Za-z0-9\u4E00-\u9FFF]+$').hasMatch(username)) {
-    return '用户名只能包含字母、数字和中文';
-  }
-  return null;
-}
-
-String? _validateBio(String? value, String? currentBio) {
-  final bio = value?.trim() ?? '';
-  if (bio.length > 255) return '简介最多 255 个字符';
-  if (bio.isEmpty && (currentBio?.isNotEmpty ?? false)) {
-    return '当前接口暂不支持清空已有简介，请保留至少 1 个字符';
-  }
-  return null;
 }
 
 String _maskEmail(String email) {

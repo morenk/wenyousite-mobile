@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -641,9 +642,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   bool _isCurrent(int epoch) => mounted && epoch == _loadEpoch;
 
   ApiFailure _asFailure(Object error, String fallback) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: fallback, cause: error);
+    return mapApplicationFailure(error, fallback);
   }
 
   @override

@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/request_epoch.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
@@ -14,6 +17,9 @@ class SearchController extends StateNotifier<SearchState> {
 
   final SearchRepository _repository;
   int _queryEpoch = 0;
+  final Map<SearchResultTab, RequestEpoch> _sectionEpochs = {
+    for (final tab in SearchResultTab.values) tab: RequestEpoch(),
+  };
 
   Future<void> submit(String rawQuery) async {
     final query = rawQuery.trim();
@@ -45,7 +51,8 @@ class SearchController extends StateNotifier<SearchState> {
         !section.hasMore) {
       return;
     }
-    final epoch = _queryEpoch;
+    final queryEpoch = _queryEpoch;
+    final requestEpoch = _sectionEpochs[SearchResultTab.posts]!.current;
     final query = state.query;
     state = state.copyWith(
       posts: SearchSectionState(
@@ -58,23 +65,27 @@ class SearchController extends StateNotifier<SearchState> {
     );
     try {
       final page = await _repository.searchPosts(query, cursor: section.cursor);
-      if (!_isCurrent(epoch, query)) return;
-      final seen = section.items.map((item) => item.id).toSet();
+      if (!_isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         posts: SearchSectionState(
           phase: SearchSectionPhase.ready,
-          items: List.unmodifiable([
-            ...section.items,
-            ...page.items.where((item) => seen.add(item.id)),
-          ]),
+          items: mergeUniqueBy(
+            section.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
           cursor: page.cursor,
           hasMore: page.hasMore,
         ),
       );
     } on ApiFailure catch (failure) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch)) {
+        return;
+      }
       if (failure.isInvalidCursor) {
-        await _loadPosts(query, epoch);
+        await _loadPosts(query, queryEpoch);
         return;
       }
       state = state.copyWith(
@@ -87,7 +98,9 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(queryEpoch, query, SearchResultTab.posts, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         posts: SearchSectionState(
           phase: section.phase,
@@ -108,7 +121,8 @@ class SearchController extends StateNotifier<SearchState> {
         !section.hasMore) {
       return;
     }
-    final epoch = _queryEpoch;
+    final queryEpoch = _queryEpoch;
+    final requestEpoch = _sectionEpochs[SearchResultTab.moments]!.current;
     final query = state.query;
     state = state.copyWith(
       moments: SearchSectionState(
@@ -124,23 +138,37 @@ class SearchController extends StateNotifier<SearchState> {
         query,
         cursor: section.cursor,
       );
-      if (!_isCurrent(epoch, query)) return;
-      final seen = section.items.map((item) => item.id).toSet();
+      if (!_isCurrent(
+        queryEpoch,
+        query,
+        SearchResultTab.moments,
+        requestEpoch,
+      )) {
+        return;
+      }
       state = state.copyWith(
         moments: SearchSectionState(
           phase: SearchSectionPhase.ready,
-          items: List.unmodifiable([
-            ...section.items,
-            ...page.items.where((item) => seen.add(item.id)),
-          ]),
+          items: mergeUniqueBy(
+            section.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
           cursor: page.cursor,
           hasMore: page.hasMore,
         ),
       );
     } on ApiFailure catch (failure) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(
+        queryEpoch,
+        query,
+        SearchResultTab.moments,
+        requestEpoch,
+      )) {
+        return;
+      }
       if (failure.isInvalidCursor) {
-        await _loadMoments(query, epoch);
+        await _loadMoments(query, queryEpoch);
         return;
       }
       state = state.copyWith(
@@ -153,7 +181,14 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(
+        queryEpoch,
+        query,
+        SearchResultTab.moments,
+        requestEpoch,
+      )) {
+        return;
+      }
       state = state.copyWith(
         moments: SearchSectionState(
           phase: section.phase,
@@ -182,12 +217,15 @@ class SearchController extends StateNotifier<SearchState> {
   }
 
   Future<void> _loadOverview(String query, int epoch) async {
+    final requestEpoch = _sectionEpochs[SearchResultTab.overview]!.begin();
     state = state.copyWith(
       overview: const SearchSectionState(phase: SearchSectionPhase.loading),
     );
     try {
       final result = await _repository.searchOverview(query);
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.overview, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         overview: SearchSectionState(
           phase: SearchSectionPhase.ready,
@@ -195,7 +233,9 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.overview, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         overview: SearchSectionState(
           phase: SearchSectionPhase.failed,
@@ -207,12 +247,15 @@ class SearchController extends StateNotifier<SearchState> {
 
   Future<void> _loadMoments(String query, int epoch) async {
     if (query.runes.length < 2) return;
+    final requestEpoch = _sectionEpochs[SearchResultTab.moments]!.begin();
     state = state.copyWith(
       moments: const SearchSectionState(phase: SearchSectionPhase.loading),
     );
     try {
       final page = await _repository.searchMoments(query);
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.moments, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         moments: SearchSectionState(
           phase: SearchSectionPhase.ready,
@@ -222,7 +265,9 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.moments, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         moments: SearchSectionState(
           phase: SearchSectionPhase.failed,
@@ -233,12 +278,15 @@ class SearchController extends StateNotifier<SearchState> {
   }
 
   Future<void> _loadThreads(String query, int epoch) async {
+    final requestEpoch = _sectionEpochs[SearchResultTab.threads]!.begin();
     state = state.copyWith(
       threads: const SearchSectionState(phase: SearchSectionPhase.loading),
     );
     try {
       final items = await _repository.searchThreads(query);
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.threads, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         threads: SearchSectionState(
           phase: SearchSectionPhase.ready,
@@ -246,7 +294,9 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.threads, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         threads: SearchSectionState(
           phase: SearchSectionPhase.failed,
@@ -257,12 +307,15 @@ class SearchController extends StateNotifier<SearchState> {
   }
 
   Future<void> _loadUsers(String query, int epoch) async {
+    final requestEpoch = _sectionEpochs[SearchResultTab.users]!.begin();
     state = state.copyWith(
       users: const SearchSectionState(phase: SearchSectionPhase.loading),
     );
     try {
       final items = await _repository.searchUsers(query);
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.users, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         users: SearchSectionState(
           phase: SearchSectionPhase.ready,
@@ -270,7 +323,9 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.users, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         users: SearchSectionState(
           phase: SearchSectionPhase.failed,
@@ -282,12 +337,15 @@ class SearchController extends StateNotifier<SearchState> {
 
   Future<void> _loadPosts(String query, int epoch) async {
     if (query.runes.length < 2) return;
+    final requestEpoch = _sectionEpochs[SearchResultTab.posts]!.begin();
     state = state.copyWith(
       posts: const SearchSectionState(phase: SearchSectionPhase.loading),
     );
     try {
       final page = await _repository.searchPosts(query);
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.posts, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         posts: SearchSectionState(
           phase: SearchSectionPhase.ready,
@@ -297,7 +355,9 @@ class SearchController extends StateNotifier<SearchState> {
         ),
       );
     } on Object catch (error) {
-      if (!_isCurrent(epoch, query)) return;
+      if (!_isCurrent(epoch, query, SearchResultTab.posts, requestEpoch)) {
+        return;
+      }
       state = state.copyWith(
         posts: SearchSectionState(
           phase: SearchSectionPhase.failed,
@@ -318,13 +378,19 @@ class SearchController extends StateNotifier<SearchState> {
     };
   }
 
-  bool _isCurrent(int epoch, String query) =>
-      mounted && epoch == _queryEpoch && query == state.query;
+  bool _isCurrent(
+    int queryEpoch,
+    String query,
+    SearchResultTab tab,
+    int requestEpoch,
+  ) =>
+      mounted &&
+      queryEpoch == _queryEpoch &&
+      query == state.query &&
+      _sectionEpochs[tab]!.isCurrent(requestEpoch);
 
   ApiFailure _asFailure(Object error, String message) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: message, cause: error);
+    return mapApplicationFailure(error, message);
   }
 }
 
@@ -346,19 +412,18 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
 
   final SearchRepository _repository;
   final String _threadId;
-  int _queryEpoch = 0;
+  final _requestEpoch = RequestEpoch();
 
   Future<void> submit(String rawQuery) async {
     final query = rawQuery.trim();
-    final epoch = ++_queryEpoch;
     state = ThreadPostSearchState(query: query);
     if (query.runes.length < 2) return;
-    await _loadFirstPage(query, epoch);
+    await _loadFirstPage(query);
   }
 
   Future<void> retry() {
     if (!state.isQueryValid) return Future.value();
-    return _loadFirstPage(state.query, _queryEpoch);
+    return _loadFirstPage(state.query);
   }
 
   Future<void> loadMore() async {
@@ -369,7 +434,7 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
         !section.hasMore) {
       return;
     }
-    final epoch = _queryEpoch;
+    final epoch = _requestEpoch.current;
     final query = state.query;
     state = ThreadPostSearchState(
       query: query,
@@ -388,15 +453,15 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
         cursor: section.cursor,
       );
       if (!_isCurrent(epoch, query)) return;
-      final seen = section.items.map((item) => item.id).toSet();
       state = ThreadPostSearchState(
         query: query,
         results: SearchSectionState(
           phase: SearchSectionPhase.ready,
-          items: List.unmodifiable([
-            ...section.items,
-            ...page.items.where((item) => seen.add(item.id)),
-          ]),
+          items: mergeUniqueBy(
+            section.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
           cursor: page.cursor,
           hasMore: page.hasMore,
         ),
@@ -404,7 +469,7 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
     } on ApiFailure catch (failure) {
       if (!_isCurrent(epoch, query)) return;
       if (failure.isInvalidCursor) {
-        await _loadFirstPage(query, epoch);
+        await _loadFirstPage(query);
         return;
       }
       state = ThreadPostSearchState(
@@ -433,11 +498,12 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
   }
 
   void clear() {
-    _queryEpoch += 1;
+    _requestEpoch.invalidate();
     state = const ThreadPostSearchState();
   }
 
-  Future<void> _loadFirstPage(String query, int epoch) async {
+  Future<void> _loadFirstPage(String query) async {
+    final epoch = _requestEpoch.begin();
     state = ThreadPostSearchState(
       query: query,
       results: const SearchSectionState(phase: SearchSectionPhase.loading),
@@ -467,12 +533,10 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
   }
 
   bool _isCurrent(int epoch, String query) =>
-      mounted && epoch == _queryEpoch && query == state.query;
+      mounted && _requestEpoch.isCurrent(epoch) && query == state.query;
 
   ApiFailure _asFailure(Object error, String message) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: message, cause: error);
+    return mapApplicationFailure(error, message);
   }
 }
 

@@ -1,7 +1,14 @@
-part of 'direct_message_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 
-class _OptimisticMediaPlaceholder extends StatelessWidget {
-  const _OptimisticMediaPlaceholder({required this.isSticker});
+class DirectMessageOptimisticMediaPlaceholder extends StatelessWidget {
+  const DirectMessageOptimisticMediaPlaceholder({
+    required this.isSticker,
+    super.key,
+  });
 
   final bool isSticker;
 
@@ -26,8 +33,8 @@ class _OptimisticMediaPlaceholder extends StatelessWidget {
   }
 }
 
-class _MessageImage extends StatelessWidget {
-  const _MessageImage({required this.media});
+class DirectMessageImage extends StatelessWidget {
+  const DirectMessageImage({required this.media, super.key});
 
   final DirectMessageMedia media;
 

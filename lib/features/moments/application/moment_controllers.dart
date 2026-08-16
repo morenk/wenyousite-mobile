@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
-part 'moment_composer_controller.dart';
+export 'moment_composer_controller.dart';
 
 enum MomentLoadPhase { loading, ready, failed }
 
@@ -102,12 +103,8 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
     try {
       final page = await _fetch(cursor: state.cursor);
       if (!mounted || epoch != _epoch) return;
-      final seen = state.items.map((item) => item.id).toSet();
       state = state.copyWith(
-        items: List.unmodifiable([
-          ...state.items,
-          ...page.items.where((item) => seen.add(item.id)),
-        ]),
+        items: mergeUniqueBy(state.items, page.items, keyOf: (item) => item.id),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingMore: false,
@@ -458,12 +455,12 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         cursor: state.commentCursor,
       );
       if (!mounted || epoch != _epoch) return;
-      final seen = state.comments.map((item) => item.id).toSet();
       state = state.copyWith(
-        comments: List.unmodifiable([
-          ...state.comments,
-          ...page.items.where((item) => seen.add(item.id)),
-        ]),
+        comments: mergeUniqueBy(
+          state.comments,
+          page.items,
+          keyOf: (item) => item.id,
+        ),
         commentCursor: page.cursor,
         hasMoreComments: page.hasMore,
         isLoadingMoreComments: false,
@@ -488,6 +485,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   }
 
   Future<void> loadReplies(String rootCommentId) async {
+    final epoch = _epoch;
     final before = state.replyPages[rootCommentId];
     if (before?.isLoading ?? false) return;
     final loadMore = before != null && before.items.isNotEmpty;
@@ -506,22 +504,20 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         authorId: state.commentAuthorId,
         cursor: loadMore ? before.cursor : null,
       );
-      if (!mounted) return;
-      final seen = (loadMore ? before.items : const <MomentComment>[])
-          .map((item) => item.id)
-          .toSet();
+      if (!mounted || epoch != _epoch) return;
       final updated = {...state.replyPages};
       updated[rootCommentId] = MomentReplyPageState(
-        items: List.unmodifiable([
-          if (loadMore) ...before.items,
-          ...page.items.where((item) => seen.add(item.id)),
-        ]),
+        items: mergeUniqueBy(
+          loadMore ? before.items : const <MomentComment>[],
+          page.items,
+          keyOf: (item) => item.id,
+        ),
         cursor: page.cursor,
         hasMore: page.hasMore,
       );
       state = state.copyWith(replyPages: Map.unmodifiable(updated));
     } on ApiFailure catch (failure) {
-      if (!mounted) return;
+      if (!mounted || epoch != _epoch) return;
       if (failure.isInvalidCursor) {
         final reset = {...state.replyPages}..remove(rootCommentId);
         state = state.copyWith(replyPages: Map.unmodifiable(reset));
@@ -530,7 +526,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       }
       _setReplyFailure(rootCommentId, failure);
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || epoch != _epoch) return;
       _setReplyFailure(rootCommentId, _asFailure(error, '楼中楼没有加载完成，请重试。'));
     }
   }

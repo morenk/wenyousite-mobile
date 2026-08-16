@@ -84,13 +84,9 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
         addAutomaticKeepAlives: false,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          MediaQuery.sizeOf(context).width <= 400
-              ? tokens.space12
-              : tokens.space24,
+          wenyouHorizontalPagePadding(context),
           tokens.space16,
-          MediaQuery.sizeOf(context).width <= 400
-              ? tokens.space12
-              : tokens.space24,
+          wenyouHorizontalPagePadding(context),
           tokens.space32,
         ),
         itemCount: 1 + transientCount + contentCount + footerCount,

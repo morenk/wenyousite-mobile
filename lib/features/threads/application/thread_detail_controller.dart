@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
@@ -250,11 +252,11 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         cursor: state.cursor,
       );
       if (!_isCurrent(epoch) || state.selectedSubthreadId != selectedId) return;
-      final seen = state.floors.map((item) => item.id).toSet();
-      final merged = [
-        ...state.floors,
-        ...page.items.where((item) => seen.add(item.id)),
-      ];
+      final merged = mergeUniqueBy(
+        state.floors,
+        page.items,
+        keyOf: (item) => item.id,
+      );
       state = state.copyWith(
         floors: _sortFloors(merged),
         cursor: page.cursor,
@@ -353,9 +355,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   }
 
   ApiFailure _asFailure(Object error, String fallback) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: fallback, cause: error);
+    return mapApplicationFailure(error, fallback);
   }
 }
 

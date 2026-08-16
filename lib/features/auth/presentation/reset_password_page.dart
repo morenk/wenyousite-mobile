@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/password_recovery_controller.dart';
 
@@ -45,7 +46,6 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   late final PasswordRecoverySeed _providerSeed;
-  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -182,40 +182,24 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     ),
                   ),
                   SizedBox(height: tokens.space16),
-                  TextFormField(
-                    key: const Key('reset-password-new'),
+                  WenyouPasswordField(
+                    textFieldKey: const Key('reset-password-new'),
                     controller: _newPasswordController,
                     enabled: !state.isBusy,
                     autofillHints: const [AutofillHints.newPassword],
-                    obscureText: _obscurePassword,
+                    label: '新密码',
+                    helperText: '8–100 位，至少包含一个字母和一个数字',
                     textInputAction: TextInputAction.next,
                     validator: _validateNewPassword,
-                    decoration: InputDecoration(
-                      labelText: '新密码',
-                      helperText: '8–100 位，至少包含一个字母和一个数字',
-                      prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
-                      suffixIcon: IconButton(
-                        onPressed: state.isBusy
-                            ? null
-                            : () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                        tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                        icon: WenyouIcon(
-                          _obscurePassword
-                              ? WenyouIconIds.actionShow
-                              : WenyouIconIds.actionHide,
-                        ),
-                      ),
-                    ),
                   ),
                   SizedBox(height: tokens.space16),
-                  TextFormField(
-                    key: const Key('reset-password-confirm'),
+                  WenyouPasswordField(
+                    textFieldKey: const Key('reset-password-confirm'),
                     controller: _confirmPasswordController,
                     enabled: !state.isBusy,
                     autofillHints: const [AutofillHints.newPassword],
-                    obscureText: _obscurePassword,
+                    label: '确认新密码',
+                    prefixIcon: WenyouIconIds.actionResetPassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: state.isBusy
                         ? null
@@ -223,19 +207,11 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     validator: (value) => value == _newPasswordController.text
                         ? null
                         : '两次输入的新密码不一致',
-                    decoration: const InputDecoration(
-                      labelText: '确认新密码',
-                      prefixIcon: WenyouIcon(WenyouIconIds.actionResetPassword),
-                    ),
                   ),
                   if (state.failure != null) ...[
                     SizedBox(height: tokens.space16),
-                    WenyouStatusBanner(
-                      tone: WenyouStatusTone.error,
-                      message: state.failure!.userMessage,
-                      detail: state.failure!.requestId == null
-                          ? null
-                          : '请求 ID：${state.failure!.requestId}',
+                    WenyouFailureBanner(
+                      failure: state.failure!,
                       action: TextButton(
                         key: const Key('reset-password-error-dismiss'),
                         onPressed: ref

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -161,9 +162,7 @@ class EmailChangeController extends StateNotifier<EmailChangeState> {
 }
 
 ApiFailure _asFailure(Object error, String fallback) {
-  return error is ApiFailure
-      ? error
-      : ApiFailure(userMessage: fallback, cause: error);
+  return mapApplicationFailure(error, fallback);
 }
 
 final passwordChangeControllerProvider =

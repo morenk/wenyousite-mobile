@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_states.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
@@ -167,15 +169,15 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     try {
       final page = await _fetchThreadPage(tab, cursor: section.cursor);
       if (!_isSectionCurrent(epoch, tab, sectionEpoch)) return;
-      final seen = section.items.map((item) => item.id).toSet();
       _setThreadSection(
         tab,
         PublicUserContentSection(
           phase: PublicUserContentPhase.ready,
-          items: List.unmodifiable([
-            ...section.items,
-            ...page.items.where((item) => seen.add(item.id)),
-          ]),
+          items: mergeUniqueBy(
+            section.items,
+            page.items,
+            keyOf: (item) => item.id,
+          ),
           cursor: page.cursor,
           hasMore: page.hasMore,
         ),
@@ -372,9 +374,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
   }
 
   ApiFailure _asFailure(Object error, String message) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: message, cause: error);
+    return mapApplicationFailure(error, message);
   }
 
   String _failureMessage(PublicUserContentTab tab) => switch (tab) {

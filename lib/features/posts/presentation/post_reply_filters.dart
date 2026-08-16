@@ -1,12 +1,17 @@
-part of 'post_replies_page.dart';
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
-class _ReplyFilters extends StatelessWidget {
-  const _ReplyFilters({
+class PostReplyFilters extends StatelessWidget {
+  const PostReplyFilters({
     required this.state,
     required this.replyCount,
     required this.authors,
     required this.onOrder,
     required this.onAuthor,
+    super.key,
   });
 
   final PostDiscussionState state;
@@ -90,8 +95,8 @@ class _ReplyFilters extends StatelessWidget {
   }
 }
 
-class _DiscussionTitle extends StatelessWidget {
-  const _DiscussionTitle({required this.root});
+class PostDiscussionTitle extends StatelessWidget {
+  const PostDiscussionTitle({required this.root, super.key});
 
   final PostItem root;
 

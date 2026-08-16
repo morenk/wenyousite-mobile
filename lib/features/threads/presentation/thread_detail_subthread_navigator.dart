@@ -1,11 +1,15 @@
-part of 'thread_detail_page.dart';
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-class _SubthreadNavigator extends StatefulWidget {
-  const _SubthreadNavigator({
+class ThreadSubthreadNavigator extends StatefulWidget {
+  const ThreadSubthreadNavigator({
     required this.subthreads,
     required this.selectedSubthreadId,
     required this.onSelected,
     required this.trailing,
+    super.key,
   });
 
   final List<ThreadSubthreadModel> subthreads;
@@ -14,10 +18,11 @@ class _SubthreadNavigator extends StatefulWidget {
   final Widget trailing;
 
   @override
-  State<_SubthreadNavigator> createState() => _SubthreadNavigatorState();
+  State<ThreadSubthreadNavigator> createState() =>
+      _ThreadSubthreadNavigatorState();
 }
 
-class _SubthreadNavigatorState extends State<_SubthreadNavigator> {
+class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
   var _menuOpen = false;
 
   @override

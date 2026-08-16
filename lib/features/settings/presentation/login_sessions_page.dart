@@ -97,9 +97,7 @@ class _ReadyLoginSessions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(context);
     return RefreshIndicator(
       onRefresh: state.isMutating ? () async {} : onRefresh,
       child: ListView(
@@ -115,12 +113,8 @@ class _ReadyLoginSessions extends StatelessWidget {
           if (state.actionFailure != null) ...[
             SizedBox(height: tokens.space12),
             _CenteredContent(
-              child: WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.actionFailure!.userMessage,
-                detail: state.actionFailure!.requestId == null
-                    ? null
-                    : '请求 ID：${state.actionFailure!.requestId}',
+              child: WenyouFailureBanner(
+                failure: state.actionFailure!,
                 action: TextButton(
                   key: const Key('login-session-error-dismiss'),
                   onPressed: onDismissFailure,

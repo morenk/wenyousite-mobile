@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -85,6 +87,31 @@ void main() {
     expect(controller.state.phase, MomentLoadPhase.ready);
   });
 
+  test('评论筛选变化后忽略旧筛选条件下晚返回的楼中楼', () async {
+    final staleReplies = Completer<CursorPage<MomentComment>>();
+    final repository = _DetailRepository(
+      onReplies: ({required authorId}) => staleReplies.future,
+    );
+    final controller = MomentDetailController(
+      repository,
+      'moment-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    final loadReplies = controller.loadReplies('comment-root');
+    await Future<void>.delayed(Duration.zero);
+    await controller.selectCommentAuthor('user-1');
+    staleReplies.complete(
+      CursorPage(items: [_reply()], cursor: null, hasMore: false),
+    );
+    await loadReplies;
+
+    expect(controller.state.commentAuthorId, 'user-1');
+    expect(controller.state.replyPages, isEmpty);
+  });
+
   test('新动态提交失败复用幂等请求，确认成功后才轮换请求 ID', () async {
     final repository = _ComposerRepository();
     var requestIndex = 0;
@@ -143,9 +170,11 @@ class _FeedRepository extends Fake implements MomentRepository {
 }
 
 class _DetailRepository extends Fake implements MomentRepository {
-  _DetailRepository({this.failFirstComment = false});
+  _DetailRepository({this.failFirstComment = false, this.onReplies});
 
   final bool failFirstComment;
+  final Future<CursorPage<MomentComment>> Function({required String? authorId})?
+  onReplies;
   final commentRequestIds = <String>[];
   final orders = <MomentCommentOrder>[];
   final authorIds = <String?>[];
@@ -184,6 +213,9 @@ class _DetailRepository extends Fake implements MomentRepository {
     String? cursor,
     int limit = 20,
   }) async {
+    if (onReplies case final callback?) {
+      return callback(authorId: authorId);
+    }
     return CursorPage(items: [_reply()], cursor: null, hasMore: false);
   }
 

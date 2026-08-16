@@ -1,4 +1,13 @@
-part of 'moment_controllers.dart';
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+
+typedef MomentComposerRequestIdFactory = String Function();
 
 enum MomentComposerPhase { loading, editing, submitting, succeeded, failed }
 
@@ -23,7 +32,7 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
     this._repository, {
     this.momentId,
     bool autoStart = true,
-    MomentRequestIdFactory? requestIdFactory,
+    MomentComposerRequestIdFactory? requestIdFactory,
   }) : _requestIdFactory = requestIdFactory ?? const Uuid().v4,
        _createRequestId = (requestIdFactory ?? const Uuid().v4)(),
        super(
@@ -38,7 +47,7 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
 
   final MomentRepository _repository;
   final String? momentId;
-  final MomentRequestIdFactory _requestIdFactory;
+  final MomentComposerRequestIdFactory _requestIdFactory;
   String _createRequestId;
 
   Future<void> load() async {

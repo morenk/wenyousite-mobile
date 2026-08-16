@@ -1,7 +1,31 @@
-part of 'thread_detail_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-class _DetailContent extends StatelessWidget {
-  const _DetailContent({required this.child, this.top = 0, this.bottom = 0});
+class ThreadDetailContent extends StatelessWidget {
+  const ThreadDetailContent({
+    required this.child,
+    this.top = 0,
+    this.bottom = 0,
+    super.key,
+  });
 
   final Widget child;
   final double top;
@@ -9,10 +33,7 @@ class _DetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
       child: WenyouConstrainedWidth(child: child),
@@ -20,15 +41,15 @@ class _DetailContent extends StatelessWidget {
   }
 }
 
-class _DetailLoadingState extends StatelessWidget {
-  const _DetailLoadingState();
+class ThreadDetailLoadingState extends StatelessWidget {
+  const ThreadDetailLoadingState({super.key});
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Align(
       alignment: Alignment.topCenter,
-      child: _DetailContent(
+      child: ThreadDetailContent(
         top: 16,
         child: WenyouPanel(
           child: Column(
@@ -50,8 +71,12 @@ class _DetailLoadingState extends StatelessWidget {
   }
 }
 
-class _DetailFatalState extends StatelessWidget {
-  const _DetailFatalState({required this.failure, required this.onRetry});
+class ThreadDetailFatalState extends StatelessWidget {
+  const ThreadDetailFatalState({
+    required this.failure,
+    required this.onRetry,
+    super.key,
+  });
 
   final ApiFailure? failure;
   final VoidCallback onRetry;
@@ -61,7 +86,7 @@ class _DetailFatalState extends StatelessWidget {
     final notFound = failure?.httpStatus == 404;
     return Align(
       alignment: Alignment.topCenter,
-      child: _DetailContent(
+      child: ThreadDetailContent(
         top: 16,
         child: WenyouPanel(
           child: WenyouEmptyState(
@@ -88,8 +113,12 @@ class _DetailFatalState extends StatelessWidget {
   }
 }
 
-class _DetailTransientFailure extends StatelessWidget {
-  const _DetailTransientFailure({required this.failure, required this.onRetry});
+class ThreadDetailTransientFailure extends StatelessWidget {
+  const ThreadDetailTransientFailure({
+    required this.failure,
+    required this.onRetry,
+    super.key,
+  });
 
   final ApiFailure failure;
   final VoidCallback onRetry;
@@ -110,8 +139,8 @@ class _DetailTransientFailure extends StatelessWidget {
   }
 }
 
-class _SubthreadBody extends StatelessWidget {
-  const _SubthreadBody({required this.subthread});
+class ThreadSubthreadBody extends StatelessWidget {
+  const ThreadSubthreadBody({required this.subthread, super.key});
 
   final ThreadSubthreadModel subthread;
 
@@ -156,12 +185,13 @@ class _SubthreadBody extends StatelessWidget {
   }
 }
 
-class _TargetPostStatus extends StatelessWidget {
-  const _TargetPostStatus({
+class ThreadTargetPostStatus extends StatelessWidget {
+  const ThreadTargetPostStatus({
     required this.targetState,
     required this.expectedThreadId,
     required this.availableSubthreadIds,
     required this.onRetry,
+    super.key,
   });
 
   final AsyncValue<ThreadPostTargetModel> targetState;
@@ -225,8 +255,8 @@ class _TargetPostStatus extends StatelessWidget {
   }
 }
 
-class _FloorsLoadingState extends StatelessWidget {
-  const _FloorsLoadingState();
+class ThreadFloorsLoadingState extends StatelessWidget {
+  const ThreadFloorsLoadingState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -247,8 +277,8 @@ class _FloorsLoadingState extends StatelessWidget {
   }
 }
 
-class _FloorCard extends ConsumerWidget {
-  const _FloorCard({
+class ThreadFloorCard extends ConsumerWidget {
+  const ThreadFloorCard({
     required this.threadId,
     required this.floor,
     required this.canEdit,
@@ -594,8 +624,12 @@ class _FloorInlineReplyCard extends StatelessWidget {
   }
 }
 
-class _FloorsFooter extends StatelessWidget {
-  const _FloorsFooter({required this.state, required this.onLoadMore});
+class ThreadFloorsFooter extends StatelessWidget {
+  const ThreadFloorsFooter({
+    required this.state,
+    required this.onLoadMore,
+    super.key,
+  });
 
   final ThreadDetailState state;
   final VoidCallback onLoadMore;
@@ -608,7 +642,7 @@ class _FloorsFooter extends StatelessWidget {
     }
     if (state.transientFailure != null &&
         state.retryAction == ThreadDetailRetryAction.loadMore) {
-      return _DetailTransientFailure(
+      return ThreadDetailTransientFailure(
         failure: state.transientFailure!,
         onRetry: onLoadMore,
       );
@@ -706,7 +740,7 @@ class _AuthorLine extends StatelessWidget {
   }
 }
 
-PostComposerTarget _bodyTarget(
+PostComposerTarget threadDetailBodyTarget(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
 ) {
@@ -724,7 +758,7 @@ PostComposerTarget _bodyTarget(
   );
 }
 
-PostComposerTarget _replyFloorTarget(
+PostComposerTarget threadDetailReplyFloorTarget(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
   ThreadFloorModel floor,
@@ -742,7 +776,7 @@ PostComposerTarget _replyFloorTarget(
   );
 }
 
-PostComposerTarget _floorTarget(
+PostComposerTarget threadDetailFloorTarget(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
 ) {
@@ -759,7 +793,7 @@ PostComposerTarget _floorTarget(
   );
 }
 
-PostComposerTarget _editFloorTarget(
+PostComposerTarget threadDetailEditFloorTarget(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
   ThreadFloorModel floor,
@@ -777,7 +811,7 @@ PostComposerTarget _editFloorTarget(
   );
 }
 
-PostItem _floorAsPost(
+PostItem threadFloorAsPost(
   ThreadDetailModel detail,
   ThreadSubthreadModel subthread,
   ThreadFloorModel floor,

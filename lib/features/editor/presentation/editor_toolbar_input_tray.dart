@@ -1,7 +1,9 @@
-part of 'editor_toolbar.dart';
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
-class _InlineInputTray extends StatelessWidget {
-  const _InlineInputTray({
+class EditorInlineInputTray extends StatelessWidget {
+  const EditorInlineInputTray({
     required this.primaryController,
     required this.primaryHint,
     required this.error,

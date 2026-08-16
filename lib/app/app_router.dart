@@ -61,8 +61,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/home',
-                name: 'home',
+                path: AppRoutePaths.home,
+                name: AppRouteNames.home,
                 builder: (context, state) => const HomePage(),
               ),
             ],
@@ -70,8 +70,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/moments',
-                name: 'moments',
+                path: AppRoutePaths.moments,
+                name: AppRouteNames.moments,
                 builder: (context, state) => const MomentFeedPage(),
               ),
             ],
@@ -79,8 +79,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/notifications',
-                name: 'notifications',
+                path: AppRoutePaths.notifications,
+                name: AppRouteNames.notifications,
                 builder: (context, state) => MessageCenterPage(
                   requestedSection: state.uri.queryParameters['section'],
                 ),
@@ -90,8 +90,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/me',
-                name: 'me',
+                path: AppRoutePaths.me,
+                name: AppRouteNames.me,
                 builder: (context, state) => const MePage(),
               ),
             ],
@@ -100,17 +100,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRouteLocations.search,
-        name: 'search',
+        name: AppRouteNames.search,
         builder: (context, state) => const SearchPage(),
       ),
       GoRoute(
         path: AppRouteLocations.moderationAppeals,
-        name: 'moderation-appeals',
+        name: AppRouteNames.moderationAppeals,
         builder: (context, state) => const ModerationAppealPage(),
       ),
       GoRoute(
-        path: '/moments/bookmarks',
-        name: 'moment-bookmarks',
+        path: AppRoutePaths.momentBookmarks,
+        name: AppRouteNames.momentBookmarks,
         builder: (context, state) => const MomentCollectionPage(
           target: MomentFeedTarget.bookmarks(),
           title: '动态收藏',
@@ -119,22 +119,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/moments/:momentId/edit',
-        name: 'moment-edit',
+        path: AppRoutePaths.momentEdit,
+        name: AppRouteNames.momentEdit,
         builder: (context, state) =>
             MomentComposePage(momentId: state.pathParameters['momentId']!),
       ),
       GoRoute(
-        path: '/moments/:momentId',
-        name: 'moment-detail',
+        path: AppRoutePaths.momentDetail,
+        name: AppRouteNames.momentDetail,
         pageBuilder: (context, state) => NoTransitionPage<void>(
           key: state.pageKey,
           child: MomentDetailPage(momentId: state.pathParameters['momentId']!),
         ),
       ),
       GoRoute(
-        path: '/users/:userId/moments',
-        name: 'user-moments',
+        path: AppRoutePaths.userMoments,
+        name: AppRouteNames.userMoments,
         builder: (context, state) => MomentCollectionPage(
           target: MomentFeedTarget.user(state.pathParameters['userId']!),
           title: '用户动态',
@@ -143,15 +143,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/messages',
-        name: 'direct-messages',
+        path: AppRoutePaths.directMessages,
+        name: AppRouteNames.directMessages,
         redirect: (context, state) => AppRouteLocations.messageCenter(
           section: MessageCenterSections.directMessages,
         ),
       ),
       GoRoute(
-        path: '/messages/new/:userId',
-        name: 'direct-message-new',
+        path: AppRoutePaths.directMessageNew,
+        name: AppRouteNames.directMessageNew,
         builder: (context, state) {
           return NewDirectConversationPage(
             userId: state.pathParameters['userId']!,
@@ -159,8 +159,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/messages/:conversationId',
-        name: 'direct-conversation',
+        path: AppRoutePaths.directConversation,
+        name: AppRouteNames.directConversation,
         builder: (context, state) {
           return DirectConversationPage(
             conversationId: state.pathParameters['conversationId']!,
@@ -168,22 +168,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/join/:token',
-        name: 'thread-invitation',
+        path: AppRoutePaths.threadInvitation,
+        name: AppRouteNames.threadInvitation,
         builder: (context, state) {
           return ThreadInvitationPage(token: state.pathParameters['token']!);
         },
       ),
       GoRoute(
-        path: '/tags/:tagId',
-        name: 'tag-threads',
+        path: AppRoutePaths.tagThreads,
+        name: AppRouteNames.tagThreads,
         builder: (context, state) {
           return TagThreadsPage(tagId: state.pathParameters['tagId']!);
         },
       ),
       GoRoute(
-        path: '/threads/:threadId/posts/:postId/replies',
-        name: 'post-replies',
+        path: AppRoutePaths.postReplies,
+        name: AppRouteNames.postReplies,
         pageBuilder: (context, state) {
           return NoTransitionPage<void>(
             key: state.pageKey,
@@ -197,8 +197,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/threads/:threadId/manage/members',
-        name: 'thread-member-management',
+        path: AppRoutePaths.threadMemberManagement,
+        name: AppRouteNames.threadMemberManagement,
         builder: (context, state) {
           return ThreadMemberManagementPage(
             threadId: state.pathParameters['threadId']!,
@@ -206,8 +206,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/threads/:threadId/manage/tags',
-        name: 'thread-tag-management',
+        path: AppRoutePaths.threadTagManagement,
+        name: AppRouteNames.threadTagManagement,
         builder: (context, state) {
           return ThreadTagManagementPage(
             threadId: state.pathParameters['threadId']!,
@@ -215,8 +215,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/threads/:threadId/manage/subthreads',
-        name: 'subthread-management',
+        path: AppRoutePaths.subthreadManagement,
+        name: AppRouteNames.subthreadManagement,
         builder: (context, state) {
           return SubthreadManagementPage(
             threadId: state.pathParameters['threadId']!,
@@ -224,8 +224,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/threads/:threadId/manage',
-        name: 'thread-management',
+        path: AppRoutePaths.threadManagement,
+        name: AppRouteNames.threadManagement,
         builder: (context, state) {
           return ThreadManagementPage(
             threadId: state.pathParameters['threadId']!,
@@ -233,14 +233,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/threads/:threadId/search',
-        name: 'thread-post-search',
+        path: AppRoutePaths.threadPostSearch,
+        name: AppRouteNames.threadPostSearch,
         builder: (context, state) =>
             ThreadPostSearchPage(threadId: state.pathParameters['threadId']!),
       ),
       GoRoute(
-        path: '/threads/:threadId',
-        name: 'thread-detail',
+        path: AppRoutePaths.threadDetail,
+        name: AppRouteNames.threadDetail,
         pageBuilder: (context, state) {
           final extra = state.extra;
           return NoTransitionPage<void>(
@@ -255,8 +255,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/users/:userId',
-        name: 'user-profile',
+        path: AppRoutePaths.userProfile,
+        name: AppRouteNames.userProfile,
         builder: (context, state) {
           return PublicUserPage(
             userId: state.pathParameters['userId']!,
@@ -265,8 +265,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/users/:userId/following',
-        name: 'user-following',
+        path: AppRoutePaths.userFollowing,
+        name: AppRouteNames.userFollowing,
         builder: (context, state) {
           return UserRelationListPage(
             target: UserRelationListTarget.public(
@@ -277,8 +277,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/users/:userId/followers',
-        name: 'user-followers',
+        path: AppRoutePaths.userFollowers,
+        name: AppRouteNames.userFollowers,
         builder: (context, state) {
           return UserRelationListPage(
             target: UserRelationListTarget.public(
@@ -289,23 +289,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/me/edit',
-        name: 'me-edit',
+        path: AppRoutePaths.meEdit,
+        name: AppRouteNames.meEdit,
         builder: (context, state) => const MeEditPage(),
       ),
       GoRoute(
-        path: '/me/settings',
-        name: 'me-settings',
+        path: AppRoutePaths.meSettings,
+        name: AppRouteNames.meSettings,
         builder: (context, state) => const MeSettingsPage(),
       ),
       GoRoute(
-        path: '/me/wallet',
-        name: 'wallet',
+        path: AppRoutePaths.wallet,
+        name: AppRouteNames.wallet,
         builder: (context, state) => const WalletPage(),
       ),
       GoRoute(
-        path: '/me/following',
-        name: 'me-following',
+        path: AppRoutePaths.meFollowing,
+        name: AppRouteNames.meFollowing,
         builder: (context, state) => const UserRelationListPage(
           target: UserRelationListTarget.current(
             kind: UserRelationListKind.following,
@@ -313,8 +313,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/me/followers',
-        name: 'me-followers',
+        path: AppRoutePaths.meFollowers,
+        name: AppRouteNames.meFollowers,
         builder: (context, state) => const UserRelationListPage(
           target: UserRelationListTarget.current(
             kind: UserRelationListKind.followers,
@@ -322,8 +322,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/me/blocks',
-        name: 'me-blocks',
+        path: AppRoutePaths.meBlocks,
+        name: AppRouteNames.meBlocks,
         builder: (context, state) => const UserRelationListPage(
           target: UserRelationListTarget.current(
             kind: UserRelationListKind.blocks,
@@ -331,48 +331,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/me/bookmarks',
-        name: 'me-bookmarks',
+        path: AppRoutePaths.meBookmarks,
+        name: AppRouteNames.meBookmarks,
         builder: (context, state) => const BookmarkListPage(),
       ),
       GoRoute(
-        path: '/me/stickers',
-        name: 'me-stickers',
+        path: AppRoutePaths.meStickers,
+        name: AppRouteNames.meStickers,
         builder: (context, state) => const StickerCollectionPage(),
       ),
       GoRoute(
-        path: '/me/security/sessions',
-        name: 'login-sessions',
+        path: AppRoutePaths.loginSessions,
+        name: AppRouteNames.loginSessions,
         builder: (context, state) => const LoginSessionsPage(),
       ),
       GoRoute(
-        path: '/me/security/password',
-        name: 'change-password',
+        path: AppRoutePaths.changePassword,
+        name: AppRouteNames.changePassword,
         builder: (context, state) => const ChangePasswordPage(),
       ),
       GoRoute(
-        path: '/me/security/email',
-        name: 'change-email',
+        path: AppRoutePaths.changeEmail,
+        name: AppRouteNames.changeEmail,
         builder: (context, state) => const ChangeEmailPage(),
       ),
       GoRoute(
-        path: '/me/security/delete-account',
-        name: 'delete-account',
+        path: AppRoutePaths.deleteAccount,
+        name: AppRouteNames.deleteAccount,
         builder: (context, state) => const DeleteAccountPage(),
       ),
       GoRoute(
-        path: '/compose/moment',
-        name: 'compose-moment',
+        path: AppRoutePaths.composeMoment,
+        name: AppRouteNames.composeMoment,
         builder: (context, state) => const MomentComposePage(),
       ),
       GoRoute(
-        path: '/compose/thread',
-        name: 'compose-thread',
+        path: AppRoutePaths.composeThread,
+        name: AppRouteNames.composeThread,
         builder: (context, state) => const ThreadComposePage(),
       ),
       GoRoute(
-        path: '/auth/login',
-        name: 'login',
+        path: AppRoutePaths.login,
+        name: AppRouteNames.login,
         builder: (context, state) {
           return LoginPage(
             returnTo: state.uri.queryParameters['returnTo'],
@@ -381,8 +381,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/auth/register',
-        name: 'register',
+        path: AppRoutePaths.register,
+        name: AppRouteNames.register,
         builder: (context, state) {
           return RegistrationPage(
             returnTo: state.uri.queryParameters['returnTo'],
@@ -390,8 +390,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/auth/forgot-password',
-        name: 'forgot-password',
+        path: AppRoutePaths.forgotPassword,
+        name: AppRouteNames.forgotPassword,
         builder: (context, state) {
           return ForgotPasswordPage(
             returnTo: state.uri.queryParameters['returnTo'],
@@ -399,8 +399,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/auth/reset-password',
-        name: 'reset-password',
+        path: AppRoutePaths.resetPassword,
+        name: AppRouteNames.resetPassword,
         builder: (context, state) {
           final routeData = state.extra;
           return ResetPasswordPage(

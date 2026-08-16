@@ -159,13 +159,9 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                     ),
                     if (state.failure != null) ...[
                       SizedBox(height: tokens.space16),
-                      WenyouStatusBanner(
+                      WenyouFailureBanner(
                         key: const Key('delete-account-failure'),
-                        tone: WenyouStatusTone.error,
-                        message: state.failure!.userMessage,
-                        detail: state.failure!.requestId == null
-                            ? null
-                            : '请求 ID：${state.failure!.requestId}',
+                        failure: state.failure!,
                         action: state.remoteDeletionConfirmed
                             ? TextButton(
                                 key: const Key(

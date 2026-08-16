@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
@@ -388,9 +389,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
   }
 
   ApiFailure _asFailure(Object error, String fallback) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: fallback, cause: error);
+    return mapApplicationFailure(error, fallback);
   }
 }
 

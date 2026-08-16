@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_session_bootstrap.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -17,54 +18,9 @@ String walletSessionKey(WidgetRef ref) {
       'authenticated-session';
 }
 
-class DailyCheckInBootstrap extends ConsumerStatefulWidget {
-  const DailyCheckInBootstrap({required this.child, super.key});
-
-  final Widget child;
-
-  @override
-  ConsumerState<DailyCheckInBootstrap> createState() =>
-      _DailyCheckInBootstrapState();
-}
-
-class _DailyCheckInBootstrapState extends ConsumerState<DailyCheckInBootstrap> {
-  String? _attemptedSession;
-
-  @override
-  Widget build(BuildContext context) {
-    final session = ref.watch(sessionControllerProvider);
-    if (!session.isAuthenticated) {
-      _attemptedSession = null;
-    } else {
-      final sessionKey = walletSessionKey(ref);
-      if (_attemptedSession != sessionKey) {
-        _attemptedSession = sessionKey;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) unawaited(_checkIn(sessionKey));
-        });
-      }
-    }
-    return widget.child;
-  }
-
-  Future<void> _checkIn(String sessionKey) async {
-    final result = await ref
-        .read(dailyCheckInControllerProvider.notifier)
-        .checkIn();
-    if (!mounted || result == null) return;
-    ref.invalidate(walletControllerProvider(sessionKey));
-    final userId = ref.read(sessionControllerProvider.notifier).currentUserId;
-    ref.read(profileCacheInvalidatorProvider)(userId);
-    if (!result.claimedNow) return;
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(
-          '今日签到获得 ${result.rewardAmount} 升温油和 '
-          '${result.experienceAwarded} 经验。',
-        ),
-      ),
-    );
-  }
+@Deprecated('Use AppSessionBootstrap at the app composition boundary.')
+class DailyCheckInBootstrap extends AppSessionBootstrap {
+  const DailyCheckInBootstrap({required super.child, super.key});
 }
 
 class WenyouTipButton extends ConsumerWidget {

@@ -326,9 +326,10 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
 
   double _feedHorizontalPadding(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final basePadding = width <= 400
-        ? context.wenyouTokens.space12
-        : context.wenyouTokens.space24;
+    final basePadding = wenyouHorizontalPagePadding(
+      context,
+      availableWidth: width,
+    );
     final availableWidth = width - basePadding * 2;
     final contentWidth = availableWidth < 600 ? availableWidth : 600.0;
     return (width - contentWidth) / 2;

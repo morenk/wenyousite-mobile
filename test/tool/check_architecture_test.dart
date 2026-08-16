@@ -106,6 +106,24 @@ void main() {
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
+  test(
+    'handwritten part libraries are rejected while generated parts remain allowed',
+    () {
+      const source = 'lib/features/alpha/presentation/page.dart';
+      const fragment = 'lib/features/alpha/presentation/page_fragment.dart';
+      _write(root, source, "part 'page_fragment.dart';\npart 'page.g.dart';\n");
+      _write(root, fragment, "part of 'page.dart';\n");
+
+      expect(
+        collectArchitectureFailures(root),
+        containsAll(<String>[
+          '$source uses handwritten part; use an explicit library',
+          '$fragment uses handwritten part-of; use an explicit library',
+        ]),
+      );
+    },
+  );
+
   test('detects a new layered dependency beside existing debt', () {
     const page = 'lib/features/alpha/presentation/page.dart';
     const first = 'lib/features/alpha/data/first_repository.dart';
@@ -263,6 +281,19 @@ void main() {
     expect(
       collectArchitectureFailures(root),
       contains('$path uses golden files without loading Foundation test fonts'),
+    );
+  });
+
+  test('router definitions use centralized path and name constants', () {
+    const path = 'lib/app/app_router.dart';
+    _write(root, path, "final route = (path: '/home', name: 'home');\n");
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path defines a raw route path; use AppRoutePaths constants',
+        '$path defines a raw route name; use AppRouteNames constants',
+      ]),
     );
   });
 

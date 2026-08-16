@@ -1,12 +1,26 @@
-part of 'moment_detail_page.dart';
+import 'dart:async';
 
-class _MomentCommentComposer extends ConsumerStatefulWidget {
-  const _MomentCommentComposer({
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+
+class MomentCommentComposer extends ConsumerStatefulWidget {
+  const MomentCommentComposer({
     required this.replyTo,
     required this.isSending,
     required this.onCancelReply,
     required this.onClose,
     required this.onSend,
+    super.key,
   });
 
   final MomentComment? replyTo;
@@ -16,12 +30,11 @@ class _MomentCommentComposer extends ConsumerStatefulWidget {
   final Future<bool> Function(MomentCommentInput input) onSend;
 
   @override
-  ConsumerState<_MomentCommentComposer> createState() =>
+  ConsumerState<MomentCommentComposer> createState() =>
       _MomentCommentComposerState();
 }
 
-class _MomentCommentComposerState
-    extends ConsumerState<_MomentCommentComposer> {
+class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   final _textController = TextEditingController();
   UploadedEditorImage? _image;
   UserSticker? _sticker;
@@ -81,7 +94,7 @@ class _MomentCommentComposerState
             SizedBox(height: tokens.space4),
             Row(
               children: [
-                Expanded(child: Text(_uploadProgressLabel(uploadState))),
+                Expanded(child: Text(uploadState.progressLabel)),
                 TextButton(
                   key: const Key('moment-comment-cancel-upload'),
                   onPressed: () => ref
@@ -273,18 +286,4 @@ class _SelectedCommentAsset extends StatelessWidget {
       ),
     );
   }
-}
-
-String _uploadProgressLabel(MediaUploadTaskState state) {
-  final progress = state.progress;
-  return switch (state.phase) {
-    MediaUploadTaskPhase.picking => '正在打开相册…',
-    MediaUploadTaskPhase.preparing => '正在准备图片…',
-    MediaUploadTaskPhase.uploading when progress?.fraction != null =>
-      '正在上传 ${(progress!.fraction! * 100).round()}%',
-    MediaUploadTaskPhase.uploading => '正在上传图片…',
-    MediaUploadTaskPhase.confirming => '正在确认图片…',
-    MediaUploadTaskPhase.processing => '图片正在安全处理中…',
-    MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
-  };
 }

@@ -1,25 +1,35 @@
-part of 'thread_compose_page.dart';
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 
-enum _RemoteDraftAction { save, open }
+enum ThreadRemoteDraftAction { save, open }
 
-enum _ComposeMetadataPanel { category, visibility, tags }
+enum ThreadComposeMetadataPanel { category, visibility, tags }
 
-class _ComposeMetadataBar extends StatelessWidget {
-  const _ComposeMetadataBar({
+class ThreadComposeMetadataBar extends StatelessWidget {
+  const ThreadComposeMetadataBar({
     required this.categoryValue,
     required this.visibilityValue,
     required this.tagsValue,
     required this.activePanel,
     required this.enabled,
     required this.onPanelChanged,
+    super.key,
   });
 
   final String categoryValue;
   final String visibilityValue;
   final String tagsValue;
-  final _ComposeMetadataPanel? activePanel;
+  final ThreadComposeMetadataPanel? activePanel;
   final bool enabled;
-  final ValueChanged<_ComposeMetadataPanel> onPanelChanged;
+  final ValueChanged<ThreadComposeMetadataPanel> onPanelChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +49,10 @@ class _ComposeMetadataBar extends StatelessWidget {
               icon: WenyouIconIds.contentCategory,
               title: '分类',
               value: categoryValue,
-              selected: activePanel == _ComposeMetadataPanel.category,
+              selected: activePanel == ThreadComposeMetadataPanel.category,
               enabled: enabled,
-              onPressed: () => onPanelChanged(_ComposeMetadataPanel.category),
+              onPressed: () =>
+                  onPanelChanged(ThreadComposeMetadataPanel.category),
             ),
           ),
           Expanded(
@@ -50,9 +61,10 @@ class _ComposeMetadataBar extends StatelessWidget {
               icon: WenyouIconIds.actionShow,
               title: '可见性',
               value: visibilityValue,
-              selected: activePanel == _ComposeMetadataPanel.visibility,
+              selected: activePanel == ThreadComposeMetadataPanel.visibility,
               enabled: enabled,
-              onPressed: () => onPanelChanged(_ComposeMetadataPanel.visibility),
+              onPressed: () =>
+                  onPanelChanged(ThreadComposeMetadataPanel.visibility),
             ),
           ),
           Expanded(
@@ -60,9 +72,9 @@ class _ComposeMetadataBar extends StatelessWidget {
               icon: WenyouIconIds.contentTag,
               title: '标签',
               value: tagsValue,
-              selected: activePanel == _ComposeMetadataPanel.tags,
+              selected: activePanel == ThreadComposeMetadataPanel.tags,
               enabled: enabled,
-              onPressed: () => onPanelChanged(_ComposeMetadataPanel.tags),
+              onPressed: () => onPanelChanged(ThreadComposeMetadataPanel.tags),
             ),
           ),
         ],
@@ -133,8 +145,8 @@ class _MetadataButton extends StatelessWidget {
   }
 }
 
-class _ComposeStatusArea extends StatelessWidget {
-  const _ComposeStatusArea({
+class ThreadComposeStatusArea extends StatelessWidget {
+  const ThreadComposeStatusArea({
     required this.state,
     required this.documentIssues,
     required this.codecFailure,
@@ -144,6 +156,7 @@ class _ComposeStatusArea extends StatelessWidget {
     required this.onCancelUpload,
     required this.onRetryUpload,
     required this.onRefreshBootstrap,
+    super.key,
   });
 
   final ThreadComposeState state;
@@ -172,7 +185,7 @@ class _ComposeStatusArea extends StatelessWidget {
       if (state.bootstrapFailure != null)
         WenyouStatusBanner(
           message: state.bootstrapFailure!.userMessage,
-          detail: _requestDetail(state.bootstrapFailure),
+          detail: wenyouRequestDetail(state.bootstrapFailure),
           tone: WenyouStatusTone.error,
           action: TextButton(
             onPressed: state.bootstrapLoading ? null : onRefreshBootstrap,
@@ -194,7 +207,7 @@ class _ComposeStatusArea extends StatelessWidget {
         WenyouStatusBanner(
           key: const Key('compose-action-failure'),
           message: state.actionFailure!.userMessage,
-          detail: _requestDetail(state.actionFailure),
+          detail: wenyouRequestDetail(state.actionFailure),
           tone: WenyouStatusTone.error,
         ),
       if (state.successMessage != null)
@@ -241,7 +254,7 @@ class _ComposeStatusArea extends StatelessWidget {
   }
 }
 
-bool _hasMeaningfulContent(ThreadComposeState state) {
+bool hasMeaningfulThreadComposeContent(ThreadComposeState state) {
   return state.title.trim().isNotEmpty ||
       state.categorySlug != null ||
       state.tags.isNotEmpty ||
@@ -249,18 +262,17 @@ bool _hasMeaningfulContent(ThreadComposeState state) {
       state.remoteDraft != null;
 }
 
-String? _requestDetail(ApiFailure? failure) {
-  final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
-}
-
 String? _uploadRequestDetail(MediaUploadFailure? failure) {
   final requestId = failure?.requestId;
   return requestId == null ? null : '请求 ID：$requestId';
 }
 
-class _LoadFailure extends StatelessWidget {
-  const _LoadFailure({required this.failure, required this.onRetry});
+class ThreadComposeLoadFailure extends StatelessWidget {
+  const ThreadComposeLoadFailure({
+    required this.failure,
+    required this.onRetry,
+    super.key,
+  });
 
   final ApiFailure? failure;
   final VoidCallback onRetry;
@@ -273,7 +285,7 @@ class _LoadFailure extends StatelessWidget {
           icon: WenyouIconIds.actionDisableEdit,
           title: '创作空间没有准备完成',
           message: failure?.userMessage ?? '请重试；原有本地数据不会被覆盖。',
-          detail: _requestDetail(failure),
+          detail: wenyouRequestDetail(failure),
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
         ),
       ),
@@ -313,8 +325,8 @@ class _UploadStatus extends StatelessWidget {
   }
 }
 
-class _LocalSaveStatus extends StatelessWidget {
-  const _LocalSaveStatus({required this.state});
+class ThreadComposeLocalSaveStatus extends StatelessWidget {
+  const ThreadComposeLocalSaveStatus({required this.state, super.key});
 
   final ThreadComposeState state;
 

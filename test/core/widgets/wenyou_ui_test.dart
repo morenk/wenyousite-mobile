@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 import '../../support/foundation_icon_finder.dart';
@@ -210,5 +211,25 @@ void main() {
     expect(findFoundationIcon(WenyouIconIds.statusError), findsOneWidget);
     expect(find.text('暂时无法提交'), findsOneWidget);
     expect(find.text('请求 ID：request-id'), findsOneWidget);
+  });
+
+  testWidgets('失败提示统一从 ApiFailure 展示信息和请求 ID', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouFailureBanner(
+            failure: ApiFailure(
+              userMessage: '加载没有完成',
+              requestId: 'failure-request-id',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('加载没有完成'), findsOneWidget);
+    expect(find.text('请求 ID：failure-request-id'), findsOneWidget);
+    expect(findFoundationIcon(WenyouIconIds.statusError), findsOneWidget);
   });
 }

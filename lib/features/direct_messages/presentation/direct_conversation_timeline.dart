@@ -1,7 +1,14 @@
-part of 'direct_conversation_page.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 
-class _MessageTimeline extends StatefulWidget {
-  const _MessageTimeline({
+class DirectMessageTimeline extends StatefulWidget {
+  const DirectMessageTimeline({
     required this.state,
     required this.now,
     required this.controller,
@@ -9,6 +16,7 @@ class _MessageTimeline extends StatefulWidget {
     required this.onRecall,
     required this.onRetryMessage,
     required this.onAbandonFailedMessage,
+    super.key,
   });
 
   final DirectConversationState state;
@@ -20,10 +28,10 @@ class _MessageTimeline extends StatefulWidget {
   final ValueChanged<String> onAbandonFailedMessage;
 
   @override
-  State<_MessageTimeline> createState() => _MessageTimelineState();
+  State<DirectMessageTimeline> createState() => _DirectMessageTimelineState();
 }
 
-class _MessageTimelineState extends State<_MessageTimeline> {
+class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
   static const _followThreshold = 96.0;
 
   var _isNearBottom = true;
@@ -39,7 +47,7 @@ class _MessageTimelineState extends State<_MessageTimeline> {
   }
 
   @override
-  void didUpdateWidget(covariant _MessageTimeline oldWidget) {
+  void didUpdateWidget(covariant DirectMessageTimeline oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != controller) {
       oldWidget.controller.removeListener(_handleScroll);
@@ -312,4 +320,16 @@ class _MessageTimelineState extends State<_MessageTimeline> {
       ],
     );
   }
+}
+
+String _formatMessageTime(DateTime createdAt, DateTime now) {
+  final local = createdAt.toLocal();
+  final today = DateUtils.dateOnly(now);
+  final day = DateUtils.dateOnly(local);
+  if (day == today) return DateFormat('HH:mm').format(local);
+  if (day == today.subtract(const Duration(days: 1))) {
+    return '昨天 ${DateFormat('HH:mm').format(local)}';
+  }
+  if (local.year == now.year) return DateFormat('MM月dd日 HH:mm').format(local);
+  return DateFormat('yyyy年MM月dd日 HH:mm').format(local);
 }

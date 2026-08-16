@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/login_controller.dart';
 
@@ -28,7 +29,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _accountController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -120,29 +120,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       : null,
                 ),
                 SizedBox(height: tokens.space16),
-                TextFormField(
-                  key: const Key('login-password'),
+                WenyouPasswordField(
+                  textFieldKey: const Key('login-password'),
                   controller: _passwordController,
                   enabled: !state.isSubmitting,
                   autofillHints: const [AutofillHints.password],
-                  decoration: InputDecoration(
-                    labelText: '密码',
-                    prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
-                    suffixIcon: IconButton(
-                      onPressed: state.isSubmitting
-                          ? null
-                          : () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                      tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                      icon: WenyouIcon(
-                        _obscurePassword
-                            ? WenyouIconIds.actionShow
-                            : WenyouIconIds.actionHide,
-                      ),
-                    ),
-                  ),
-                  obscureText: _obscurePassword,
+                  label: '密码',
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: state.isSubmitting
                       ? null
@@ -152,13 +135,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 if (state.failure != null) ...[
                   SizedBox(height: tokens.space16),
-                  WenyouStatusBanner(
-                    message: state.failure!.userMessage,
-                    detail: state.failure!.requestId == null
-                        ? null
-                        : '请求 ID：${state.failure!.requestId}',
-                    tone: WenyouStatusTone.error,
-                  ),
+                  WenyouFailureBanner(failure: state.failure!),
                 ],
                 SizedBox(height: tokens.space24),
                 WenyouAsyncPrimaryButton(

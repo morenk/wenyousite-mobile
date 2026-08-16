@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
@@ -98,9 +99,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
   }
 
   ApiFailure _asFailure(Object error) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: '关系操作没有完成，请稍后重试。', cause: error);
+    return mapApplicationFailure(error, '关系操作没有完成，请稍后重试。');
   }
 }
 

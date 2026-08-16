@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/registration_controller.dart';
 
@@ -26,7 +27,6 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -108,13 +108,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           ),
           if (state.failure != null) ...[
             SizedBox(height: tokens.space16),
-            WenyouStatusBanner(
-              message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '请求 ID：${state.failure!.requestId}',
-              tone: WenyouStatusTone.error,
-            ),
+            WenyouFailureBanner(failure: state.failure!),
           ],
           SizedBox(height: tokens.space24),
           WenyouAsyncPrimaryButton(
@@ -204,43 +198,23 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               validator: _validateUsername,
             ),
             SizedBox(height: tokens.space16),
-            TextFormField(
-              key: const Key('register-password'),
+            WenyouPasswordField(
+              textFieldKey: const Key('register-password'),
               controller: _passwordController,
               enabled: !state.isBusy,
               autofillHints: const [AutofillHints.newPassword],
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: '密码',
-                helperText: '8–100 位，至少包含一个字母和一个数字',
-                prefixIcon: const WenyouIcon(WenyouIconIds.actionLock),
-                suffixIcon: IconButton(
-                  onPressed: state.isBusy
-                      ? null
-                      : () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                  tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-                  icon: WenyouIcon(
-                    _obscurePassword
-                        ? WenyouIconIds.actionShow
-                        : WenyouIconIds.actionHide,
-                  ),
-                ),
-              ),
+              label: '密码',
+              helperText: '8–100 位，至少包含一个字母和一个数字',
               textInputAction: TextInputAction.next,
               validator: _validatePassword,
             ),
             SizedBox(height: tokens.space16),
-            TextFormField(
-              key: const Key('register-confirm-password'),
+            WenyouPasswordField(
+              textFieldKey: const Key('register-confirm-password'),
               controller: _confirmPasswordController,
               enabled: !state.isBusy,
-              obscureText: _obscurePassword,
-              decoration: const InputDecoration(
-                labelText: '确认密码',
-                prefixIcon: WenyouIcon(WenyouIconIds.actionResetPassword),
-              ),
+              label: '确认密码',
+              prefixIcon: WenyouIconIds.actionResetPassword,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: state.isBusy ? null : (_) => _complete(),
               validator: (value) =>
@@ -248,13 +222,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             ),
             if (state.failure != null) ...[
               SizedBox(height: tokens.space16),
-              WenyouStatusBanner(
-                message: state.failure!.userMessage,
-                detail: state.failure!.requestId == null
-                    ? null
-                    : '请求 ID：${state.failure!.requestId}',
-                tone: WenyouStatusTone.error,
-              ),
+              WenyouFailureBanner(failure: state.failure!),
             ],
             SizedBox(height: tokens.space20),
             Row(

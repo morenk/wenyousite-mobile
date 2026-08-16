@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_composer_support.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_media.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -20,9 +22,6 @@ import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
 export 'direct_message_avatar.dart';
-
-part 'direct_message_composer_support.dart';
-part 'direct_message_media.dart';
 
 class DirectMessageComposer extends ConsumerStatefulWidget {
   const DirectMessageComposer({
@@ -110,21 +109,21 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     );
     final supporting = <Widget>[
       if (widget.requestHint != null) ...[
-        _ComposerStatusLine(
+        DirectMessageComposerStatusLine(
           icon: WenyouIconIds.statusInfo,
           message: widget.requestHint!,
         ),
         SizedBox(height: tokens.space8),
       ],
       if (_uploadedImage != null) ...[
-        _ImagePreview(
+        DirectMessageImagePreview(
           image: _uploadedImage!,
           onRemove: _disabled ? null : _removeImage,
         ),
         SizedBox(height: tokens.space8),
       ],
       if (uploadState.isBusy) ...[
-        _UploadProgress(
+        DirectMessageUploadProgress(
           state: uploadState,
           onCancel: () => ref
               .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
@@ -133,7 +132,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         SizedBox(height: tokens.space8),
       ],
       if (uploadState.failure case final uploadFailure?) ...[
-        _ComposerStatusLine(
+        DirectMessageComposerStatusLine(
           key: const Key('direct-message-composer-upload-failure'),
           icon: WenyouIconIds.statusError,
           message: uploadFailure.requestId == null
@@ -148,7 +147,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         SizedBox(height: tokens.space8),
       ],
       if (failure != null) ...[
-        _ComposerStatusLine(
+        DirectMessageComposerStatusLine(
           key: const Key('direct-message-composer-failure'),
           icon: WenyouIconIds.statusError,
           message: failure.userMessage,
@@ -722,12 +721,12 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                       label: const Text('点击查看陌生人图片'),
                                     )
                                   else
-                                    _MessageImage(media: media),
+                                    DirectMessageImage(media: media),
                                 ],
                                 if (media == null &&
                                     widget.message.content == null &&
                                     widget.message.localDraft != null)
-                                  _OptimisticMediaPlaceholder(
+                                  DirectMessageOptimisticMediaPlaceholder(
                                     isSticker:
                                         widget
                                             .message
@@ -807,7 +806,5 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
 }
 
 ApiFailure _asFailure(Object error, String fallback) {
-  return error is ApiFailure
-      ? error
-      : ApiFailure(userMessage: fallback, cause: error);
+  return mapApplicationFailure(error, fallback);
 }

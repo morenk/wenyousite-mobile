@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
@@ -269,9 +270,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
   }
 
   ApiFailure _asFailure(Object error, String message) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: message, cause: error);
+    return mapApplicationFailure(error, message);
   }
 }
 

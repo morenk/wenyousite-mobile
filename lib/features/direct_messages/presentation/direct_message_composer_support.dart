@@ -1,7 +1,12 @@
-part of 'direct_message_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
-class _ComposerStatusLine extends StatelessWidget {
-  const _ComposerStatusLine({
+class DirectMessageComposerStatusLine extends StatelessWidget {
+  const DirectMessageComposerStatusLine({
     required this.icon,
     required this.message,
     this.error = false,
@@ -61,8 +66,12 @@ class _ComposerStatusLine extends StatelessWidget {
   }
 }
 
-class _ImagePreview extends StatelessWidget {
-  const _ImagePreview({required this.image, this.onRemove});
+class DirectMessageImagePreview extends StatelessWidget {
+  const DirectMessageImagePreview({
+    required this.image,
+    this.onRemove,
+    super.key,
+  });
 
   final UploadedEditorImage image;
   final VoidCallback? onRemove;
@@ -110,8 +119,12 @@ class _ImagePreview extends StatelessWidget {
   }
 }
 
-class _UploadProgress extends StatelessWidget {
-  const _UploadProgress({required this.state, required this.onCancel});
+class DirectMessageUploadProgress extends StatelessWidget {
+  const DirectMessageUploadProgress({
+    required this.state,
+    required this.onCancel,
+    super.key,
+  });
 
   final MediaUploadTaskState state;
   final VoidCallback onCancel;
@@ -131,17 +144,7 @@ class _UploadProgress extends StatelessWidget {
         SizedBox(width: tokens.space8),
         Expanded(
           child: Text(
-            switch (state.phase) {
-              MediaUploadTaskPhase.picking => '正在打开相册…',
-              MediaUploadTaskPhase.preparing => '正在准备图片…',
-              MediaUploadTaskPhase.uploading
-                  when state.progress?.fraction != null =>
-                '正在上传 ${(state.progress!.fraction! * 100).round()}%',
-              MediaUploadTaskPhase.uploading => '正在上传图片…',
-              MediaUploadTaskPhase.confirming => '正在确认图片…',
-              MediaUploadTaskPhase.processing => '正在处理图片…',
-              MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
-            },
+            state.progressLabel,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall,

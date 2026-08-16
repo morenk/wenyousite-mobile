@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
@@ -238,9 +239,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
   }
 
   ApiFailure _asFailure(Object error, String fallback) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: fallback, cause: error);
+    return mapApplicationFailure(error, fallback);
   }
 
   @override

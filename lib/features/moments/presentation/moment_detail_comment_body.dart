@@ -1,7 +1,16 @@
-part of 'moment_detail_page.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 
-class _MomentCommentBody extends StatelessWidget {
-  const _MomentCommentBody({
+class MomentCommentBody extends StatelessWidget {
+  const MomentCommentBody({
     required this.comment,
     required this.busy,
     this.onReply,
@@ -9,6 +18,7 @@ class _MomentCommentBody extends StatelessWidget {
     this.onReport,
     this.reportReturnTo,
     this.compact = false,
+    super.key,
   });
 
   final MomentComment comment;

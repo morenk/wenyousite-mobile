@@ -398,9 +398,7 @@ class _DirectMessagesUnavailablePage extends StatelessWidget {
 
 EdgeInsets _pagePadding(BuildContext context) {
   final tokens = context.wenyouTokens;
-  final horizontal = MediaQuery.sizeOf(context).width <= 400
-      ? tokens.space12
-      : tokens.space24;
+  final horizontal = wenyouHorizontalPagePadding(context);
   return EdgeInsets.fromLTRB(
     horizontal,
     tokens.space12,

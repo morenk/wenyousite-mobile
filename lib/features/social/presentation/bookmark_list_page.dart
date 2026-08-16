@@ -117,7 +117,10 @@ class _ReadyBookmarkList extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final width = MediaQuery.sizeOf(context).width;
-    final horizontal = width <= 400 ? tokens.space12 : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(
+      context,
+      availableWidth: width,
+    );
     return RefreshIndicator(
       onRefresh: state.isBusy ? () async {} : onRefresh,
       child: ListView(

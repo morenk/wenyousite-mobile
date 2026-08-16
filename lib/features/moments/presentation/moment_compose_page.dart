@@ -127,9 +127,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     provider,
   ) {
     final tokens = context.wenyouTokens;
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(context);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -555,9 +553,7 @@ class _MomentPublishBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(context);
     return Material(
       color: tokens.background,
       child: SafeArea(
@@ -654,7 +650,7 @@ class _MomentImagesEditor extends StatelessWidget {
             LinearProgressIndicator(value: uploadState.progress?.fraction),
             Row(
               children: [
-                Expanded(child: Text(_uploadProgressLabel(uploadState))),
+                Expanded(child: Text(uploadState.progressLabel)),
                 TextButton(
                   key: const Key('moment-compose-cancel-upload'),
                   onPressed: onCancelUpload,
@@ -749,20 +745,6 @@ class _MomentImagesEditor extends StatelessWidget {
       ),
     );
   }
-}
-
-String _uploadProgressLabel(MediaUploadTaskState state) {
-  final progress = state.progress;
-  return switch (state.phase) {
-    MediaUploadTaskPhase.picking => '正在打开相册…',
-    MediaUploadTaskPhase.preparing => '正在准备图片…',
-    MediaUploadTaskPhase.uploading when progress?.fraction != null =>
-      '正在上传 ${(progress!.fraction! * 100).round()}%',
-    MediaUploadTaskPhase.uploading => '正在上传图片…',
-    MediaUploadTaskPhase.confirming => '正在确认图片…',
-    MediaUploadTaskPhase.processing => '图片正在安全处理中…',
-    MediaUploadTaskPhase.idle || MediaUploadTaskPhase.failed => '',
-  };
 }
 
 class _ComposeFailure extends StatelessWidget {

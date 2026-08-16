@@ -52,6 +52,7 @@ List<String> collectArchitectureFailures(Directory root) {
   );
   _checkDomainStateOwnership(dartFiles, failures, root);
   _checkDartFileSizes(dartFiles, allowlist.largeFileDebt, failures, root);
+  _checkHandwrittenParts(dartFiles, failures, root);
   _checkLayerDependencies(
     dartFiles,
     allowlist.layerDependencyDebt,
@@ -71,10 +72,35 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkDirectDependencies(dartFiles, failures, root);
   _checkRawRequestFlags(dartFiles, failures, root);
   _checkRawRouteNavigation(dartFiles, failures, root);
+  _checkRawRouteDefinitions(dartFiles, failures, root);
   _checkGoldenTestSetup(testDartFiles, failures, root);
 
   failures.sort();
   return failures;
+}
+
+void _checkHandwrittenParts(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  final partOf = RegExp(r'^\s*part\s+of\b', multiLine: true);
+  final partDirective = RegExp(
+    r'''^\s*part\s+['"]([^'"]+)['"]\s*;''',
+    multiLine: true,
+  );
+  for (final file in files.where((file) => !file.path.endsWith('.g.dart'))) {
+    final source = file.readAsStringSync();
+    final path = _relative(file.path, root);
+    if (partOf.hasMatch(source)) {
+      failures.add('$path uses handwritten part-of; use an explicit library');
+    }
+    for (final match in partDirective.allMatches(source)) {
+      if (!match.group(1)!.endsWith('.g.dart')) {
+        failures.add('$path uses handwritten part; use an explicit library');
+      }
+    }
+  }
 }
 
 void _checkDartFileSizes(
@@ -528,6 +554,28 @@ void _checkRawRouteNavigation(
       failures.add(
         '$path navigates with a raw path; use a named route or '
         'AppRouteLocations',
+      );
+    }
+  }
+}
+
+void _checkRawRouteDefinitions(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (path != 'lib/app/app_router.dart') continue;
+    final source = file.readAsStringSync();
+    if (RegExp(r'''\bpath:\s*["']''').hasMatch(source)) {
+      failures.add(
+        '$path defines a raw route path; use AppRoutePaths constants',
+      );
+    }
+    if (RegExp(r'''\bname:\s*["']''').hasMatch(source)) {
+      failures.add(
+        '$path defines a raw route name; use AppRouteNames constants',
       );
     }
   }

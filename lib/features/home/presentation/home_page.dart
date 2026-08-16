@@ -204,10 +204,7 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
       child: WenyouConstrainedWidth(child: child),

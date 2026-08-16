@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
@@ -193,9 +194,7 @@ class MeProfileController extends StateNotifier<MeProfileState> {
   bool _isCurrent(int epoch) => mounted && epoch == _epoch;
 
   ApiFailure _asFailure(Object error, String message) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: message, cause: error);
+    return mapApplicationFailure(error, message);
   }
 }
 

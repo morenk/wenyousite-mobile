@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
-import 'package:wenyousite_mobile/features/settings/presentation/security_password_field.dart';
 
 class ChangePasswordPage extends ConsumerStatefulWidget {
   const ChangePasswordPage({super.key});
@@ -69,7 +69,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     subtitle: '修改成功后，当前账号在所有 Web 和移动终端都会退出。',
                   ),
                   SizedBox(height: tokens.space24),
-                  SecurityPasswordField(
+                  WenyouPasswordField(
                     textFieldKey: const Key('change-password-old'),
                     controller: _oldPasswordController,
                     label: '当前密码',
@@ -79,7 +79,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     validator: _validateCurrentPassword,
                   ),
                   SizedBox(height: tokens.space16),
-                  SecurityPasswordField(
+                  WenyouPasswordField(
                     textFieldKey: const Key('change-password-new'),
                     controller: _newPasswordController,
                     label: '新密码',
@@ -96,7 +96,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     },
                   ),
                   SizedBox(height: tokens.space16),
-                  SecurityPasswordField(
+                  WenyouPasswordField(
                     textFieldKey: const Key('change-password-confirm'),
                     controller: _confirmPasswordController,
                     label: '确认新密码',
@@ -112,13 +112,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                   ),
                   if (state.failure != null) ...[
                     SizedBox(height: tokens.space16),
-                    WenyouStatusBanner(
-                      tone: WenyouStatusTone.error,
-                      message: state.failure!.userMessage,
-                      detail: state.failure!.requestId == null
-                          ? null
-                          : '请求 ID：${state.failure!.requestId}',
-                    ),
+                    WenyouFailureBanner(failure: state.failure!),
                   ],
                   SizedBox(height: tokens.space24),
                   WenyouAsyncPrimaryButton(

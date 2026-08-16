@@ -16,11 +16,10 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
-
-part 'post_reply_filters.dart';
 
 class PostRepliesPage extends ConsumerStatefulWidget {
   const PostRepliesPage({
@@ -85,7 +84,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       appBar: AppBar(
         title: readyRoot == null
             ? const Text('楼中楼讨论')
-            : _DiscussionTitle(root: readyRoot),
+            : PostDiscussionTitle(root: readyRoot),
         actions: [_returnToRootAction(context)],
       ),
       body: switch (state.phase) {
@@ -288,9 +287,7 @@ class _DiscussionList extends StatelessWidget {
       root.author.id: root.author,
       for (final reply in state.replies) reply.author.id: reply.author,
     };
-    final horizontal = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontal = wenyouHorizontalPagePadding(context);
     final leadingWidgets = <Widget>[
       if (actions.failure != null) ...[
         WenyouStatusBanner(
@@ -317,7 +314,7 @@ class _DiscussionList extends StatelessWidget {
         onDelete: () => onDelete(root, true),
       ),
       SizedBox(height: tokens.space12),
-      _ReplyFilters(
+      PostReplyFilters(
         state: state,
         replyCount: root.replyCount,
         authors: authors.values.toList(growable: false),

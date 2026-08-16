@@ -1,13 +1,25 @@
-part of 'thread_detail_page.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
+import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
+import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
+import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_subthread_navigator.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
 
-class _ThreadOverview extends StatelessWidget {
-  const _ThreadOverview({
+class ThreadDetailOverview extends StatelessWidget {
+  const ThreadDetailOverview({
     required this.detail,
     required this.categoryName,
     required this.selectedSubthreadId,
     required this.onSubthreadSelected,
     required this.onRequireAuthentication,
     required this.onPlayerExited,
+    super.key,
   });
 
   final ThreadDetailModel detail;
@@ -93,7 +105,7 @@ class _ThreadOverview extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(vertical: tokens.space4),
           child: detail.subthreads.isNotEmpty && selectedSubthreadId != null
-              ? _SubthreadNavigator(
+              ? ThreadSubthreadNavigator(
                   subthreads: detail.subthreads,
                   selectedSubthreadId: selectedSubthreadId!,
                   onSelected: onSubthreadSelected,

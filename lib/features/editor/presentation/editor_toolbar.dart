@@ -8,8 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-
-part 'editor_toolbar_input_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
 enum WenyouComposerSurface { page, expandableSheet, inline }
 
@@ -482,7 +481,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildLinkTray(BuildContext context) {
-    return _InlineInputTray(
+    return EditorInlineInputTray(
       key: const Key('editor-link-tray'),
       primaryController: _linkLabelController,
       primaryHint: '显示文字',
@@ -495,7 +494,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildDiceTray(BuildContext context) {
-    return _InlineInputTray(
+    return EditorInlineInputTray(
       key: const Key('editor-dice-tray'),
       primaryController: _diceController,
       primaryHint: '例如 1d20 或 2d6+3',

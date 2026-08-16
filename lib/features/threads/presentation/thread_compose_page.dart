@@ -7,9 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
@@ -22,8 +19,7 @@ import 'package:wenyousite_mobile/features/threads/application/remote_thread_dra
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/remote_thread_drafts_sheet.dart';
-
-part 'thread_compose_support.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_support.dart';
 
 class ThreadComposePage extends ConsumerStatefulWidget {
   const ThreadComposePage({super.key});
@@ -44,7 +40,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   bool _applyingInputs = false;
   bool _allowPop = false;
   bool _preparingPop = false;
-  _ComposeMetadataPanel? _metadataPanel;
+  ThreadComposeMetadataPanel? _metadataPanel;
   int _scheduledDocumentRevision = -1;
   bool get _uploading =>
       ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy;
@@ -112,17 +108,17 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           actions: [
             if (state.phase == ThreadComposePhase.ready ||
                 state.phase == ThreadComposePhase.published)
-              WenyouAnchoredActionBubble<_RemoteDraftAction>(
+              WenyouAnchoredActionBubble<ThreadRemoteDraftAction>(
                 actions: const [
                   WenyouPopoverAction(
-                    value: _RemoteDraftAction.save,
+                    value: ThreadRemoteDraftAction.save,
                     icon: WenyouIconIds.statusSyncing,
                     label: '保存',
                     semanticsLabel: '保存当前主题到云端草稿',
                     key: Key('compose-save-draft'),
                   ),
                   WenyouPopoverAction(
-                    value: _RemoteDraftAction.open,
+                    value: ThreadRemoteDraftAction.open,
                     icon: WenyouIconIds.contentFolderOpen,
                     label: '打开',
                     semanticsLabel: '打开云端草稿',
@@ -179,7 +175,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           ThreadComposePhase.loading => const Center(
             child: CircularProgressIndicator(),
           ),
-          ThreadComposePhase.failed => _LoadFailure(
+          ThreadComposePhase.failed => ThreadComposeLoadFailure(
             failure: state.failure,
             onRetry: () =>
                 ref.read(threadComposeControllerProvider.notifier).load(),
@@ -202,9 +198,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final selectedCategory = state.categories
         .where((category) => category.slug == state.categorySlug)
         .firstOrNull;
-    final horizontalPadding = MediaQuery.sizeOf(context).width <= 400
-        ? tokens.space12
-        : tokens.space24;
+    final horizontalPadding = wenyouHorizontalPagePadding(context);
     return SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -212,7 +206,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ComposeStatusArea(
+              ThreadComposeStatusArea(
                 state: state,
                 documentIssues: _editorSession.issues,
                 codecFailure: _editorSession.codecFailure,
@@ -248,7 +242,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                   ),
                 ),
               ),
-              _ComposeMetadataBar(
+              ThreadComposeMetadataBar(
                 categoryValue: selectedCategory?.name ?? '未选择',
                 visibilityValue: state.visibility.label,
                 tagsValue: state.tags.isEmpty
@@ -301,7 +295,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: _LocalSaveStatus(state: state),
+                child: ThreadComposeLocalSaveStatus(state: state),
               ),
               WenyouComposerDock(
                 key: const Key('compose-toolbar'),
@@ -338,7 +332,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
         border: Border(bottom: BorderSide(color: tokens.border)),
       ),
       child: switch (panel) {
-        _ComposeMetadataPanel.category => SingleChildScrollView(
+        ThreadComposeMetadataPanel.category => SingleChildScrollView(
           child: Wrap(
             spacing: tokens.space8,
             runSpacing: tokens.space8,
@@ -361,7 +355,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 .toList(growable: false),
           ),
         ),
-        _ComposeMetadataPanel.visibility => Wrap(
+        ThreadComposeMetadataPanel.visibility => Wrap(
           spacing: tokens.space8,
           children: ThreadComposeVisibility.values
               .map(
@@ -381,7 +375,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               )
               .toList(growable: false),
         ),
-        _ComposeMetadataPanel.tags => TextField(
+        ThreadComposeMetadataPanel.tags => TextField(
           key: const Key('compose-tags'),
           controller: _tagsController,
           enabled: !locked,
@@ -494,11 +488,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     ).showSnackBar(const SnackBar(content: Text('已保存到云端草稿')));
   }
 
-  Future<void> _handleRemoteDraftAction(_RemoteDraftAction action) async {
+  Future<void> _handleRemoteDraftAction(ThreadRemoteDraftAction action) async {
     switch (action) {
-      case _RemoteDraftAction.save:
+      case ThreadRemoteDraftAction.save:
         await _saveThreadDraft();
-      case _RemoteDraftAction.open:
+      case ThreadRemoteDraftAction.open:
         await _openRemoteDrafts();
     }
   }
@@ -513,7 +507,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (!mounted || selected == null) return;
     final latest = ref.read(threadComposeControllerProvider);
     if (latest.remoteDraft?.id != selected.id &&
-        _hasMeaningfulContent(latest)) {
+        hasMeaningfulThreadComposeContent(latest)) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(

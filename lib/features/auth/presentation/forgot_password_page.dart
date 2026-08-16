@@ -83,16 +83,18 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 ),
                 if (state.failure != null) ...[
                   SizedBox(height: tokens.space16),
-                  _RecoveryFailureBanner(
-                    failureMessage: state.failure!.userMessage,
-                    requestId: state.failure!.requestId,
-                    onDismiss: ref
-                        .read(
-                          passwordRecoveryControllerProvider(
-                            _providerSeed,
-                          ).notifier,
-                        )
-                        .clearFailure,
+                  WenyouFailureBanner(
+                    failure: state.failure!,
+                    action: TextButton(
+                      onPressed: ref
+                          .read(
+                            passwordRecoveryControllerProvider(
+                              _providerSeed,
+                            ).notifier,
+                          )
+                          .clearFailure,
+                      child: const Text('知道了'),
+                    ),
                   ),
                 ],
                 SizedBox(height: tokens.space24),
@@ -128,28 +130,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       queryParameters: widget.returnTo == null
           ? const {}
           : {'returnTo': widget.returnTo!},
-    );
-  }
-}
-
-class _RecoveryFailureBanner extends StatelessWidget {
-  const _RecoveryFailureBanner({
-    required this.failureMessage,
-    required this.requestId,
-    required this.onDismiss,
-  });
-
-  final String failureMessage;
-  final String? requestId;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: failureMessage,
-      detail: requestId == null ? null : '请求 ID：$requestId',
-      action: TextButton(onPressed: onDismiss, child: const Text('知道了')),
     );
   }
 }

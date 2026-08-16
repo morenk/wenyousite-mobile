@@ -5,18 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
-import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -24,20 +14,13 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_composer_shee
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
-import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
-import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
-import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
-import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
-
-part 'thread_detail_overview.dart';
-part 'thread_detail_sections.dart';
-part 'thread_detail_subthread_navigator.dart';
 
 class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
@@ -158,8 +141,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         actions: _threadAppBarActions(state, provider),
       ),
       body: switch (state.phase) {
-        ThreadDetailPhase.loading => const _DetailLoadingState(),
-        ThreadDetailPhase.failed => _DetailFatalState(
+        ThreadDetailPhase.loading => const ThreadDetailLoadingState(),
+        ThreadDetailPhase.failed => ThreadDetailFatalState(
           failure: state.failure,
           onRetry: () => ref.read(provider.notifier).loadInitial(),
         ),
@@ -195,8 +178,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                   ? WenyouIconIds.actionAddComment
                   : WenyouIconIds.actionLogin,
               onPressed: session.isAuthenticated
-                  ? () =>
-                        _compose(_floorTarget(state.detail!, selectedSubthread))
+                  ? () => _compose(
+                      threadDetailFloorTarget(state.detail!, selectedSubthread),
+                    )
                   : _requireLogin,
             ),
       floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
@@ -317,7 +301,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     switch (action) {
       case _ThreadDetailAction.editBody:
         if (selectedSubthread != null) {
-          await _compose(_bodyTarget(detail, selectedSubthread));
+          await _compose(threadDetailBodyTarget(detail, selectedSubthread));
         }
       case _ThreadDetailAction.manage:
         await _openManagement();
@@ -428,9 +412,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final displayedFloors = _floorsWithTarget(state.floors, usableTarget);
     return [
       SliverToBoxAdapter(
-        child: _DetailContent(
+        child: ThreadDetailContent(
           top: 16,
-          child: _ThreadOverview(
+          child: ThreadDetailOverview(
             detail: detail,
             categoryName: widget.categoryNameHint ?? '未分类',
             selectedSubthreadId: state.selectedSubthreadId,
@@ -447,9 +431,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (state.transientFailure != null &&
           state.retryAction == ThreadDetailRetryAction.refresh)
         SliverToBoxAdapter(
-          child: _DetailContent(
+          child: ThreadDetailContent(
             top: 12,
-            child: _DetailTransientFailure(
+            child: ThreadDetailTransientFailure(
               failure: state.transientFailure!,
               onRetry: () => ref.read(provider.notifier).refresh(),
             ),
@@ -458,7 +442,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (detail.subthreads.isEmpty)
         SliverFillRemaining(
           hasScrollBody: false,
-          child: _DetailContent(
+          child: ThreadDetailContent(
             top: 12,
             bottom: 40,
             child: const WenyouPanel(
@@ -472,14 +456,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         )
       else ...[
         SliverToBoxAdapter(
-          child: _DetailContent(
+          child: ThreadDetailContent(
             top: 12,
-            child: _SubthreadBody(subthread: selected!),
+            child: ThreadSubthreadBody(subthread: selected!),
           ),
         ),
         if (actions.failure != null)
           SliverToBoxAdapter(
-            child: _DetailContent(
+            child: ThreadDetailContent(
               top: 12,
               child: WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
@@ -492,9 +476,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         if (targetState != null)
           SliverToBoxAdapter(
-            child: _DetailContent(
+            child: ThreadDetailContent(
               top: 12,
-              child: _TargetPostStatus(
+              child: ThreadTargetPostStatus(
                 targetState: targetState,
                 expectedThreadId: widget.threadId,
                 availableSubthreadIds: {
@@ -508,14 +492,17 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         if (state.isLoadingFloors)
           const SliverToBoxAdapter(
-            child: _DetailContent(top: 12, child: _FloorsLoadingState()),
+            child: ThreadDetailContent(
+              top: 12,
+              child: ThreadFloorsLoadingState(),
+            ),
           )
         else if (state.transientFailure != null &&
             state.retryAction == ThreadDetailRetryAction.floors)
           SliverToBoxAdapter(
-            child: _DetailContent(
+            child: ThreadDetailContent(
               top: 12,
-              child: _DetailTransientFailure(
+              child: ThreadDetailTransientFailure(
                 failure: state.transientFailure!,
                 onRetry: () => ref.read(provider.notifier).retryFloors(),
               ),
@@ -523,7 +510,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           )
         else if (displayedFloors.isEmpty)
           const SliverToBoxAdapter(
-            child: _DetailContent(
+            child: ThreadDetailContent(
               top: 12,
               child: WenyouPanel(
                 child: WenyouEmptyState(
@@ -541,12 +528,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               final focused =
                   usableTarget?.focusedReplyId == null &&
                   usableTarget?.floor.id == floor.id;
-              return _DetailContent(
+              return ThreadDetailContent(
                 top: index == 0 ? 12 : 0,
                 child: Column(
                   children: [
                     if (index > 0) const Divider(height: 24),
-                    _FloorCard(
+                    ThreadFloorCard(
                       key: focused ? _targetKey : null,
                       threadId: widget.threadId,
                       floor: floor,
@@ -557,7 +544,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                       pending: actions.pendingPostId == floor.id,
                       onReply: authenticated
                           ? () => _compose(
-                              _replyFloorTarget(detail, selected, floor),
+                              threadDetailReplyFloorTarget(
+                                detail,
+                                selected,
+                                floor,
+                              ),
                             )
                           : _requireLogin,
                       onDiscussion: () => _openDiscussion(
@@ -571,8 +562,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                           !detail.isPrivate && floor.author.id != viewerId
                           ? _postLocation(floor.id)
                           : null,
-                      onEdit: () =>
-                          _compose(_editFloorTarget(detail, selected, floor)),
+                      onEdit: () => _compose(
+                        threadDetailEditFloorTarget(detail, selected, floor),
+                      ),
                       onDelete: () => _deleteFloor(floor),
                     ),
                   ],
@@ -581,13 +573,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             }, childCount: displayedFloors.length),
           ),
         SliverToBoxAdapter(
-          child: _DetailContent(
+          child: ThreadDetailContent(
             top: 12,
             bottom:
                 context.wenyouTokens.minimumTouchTarget +
                 context.wenyouTokens.space32 +
                 context.wenyouTokens.space16,
-            child: _FloorsFooter(
+            child: ThreadFloorsFooter(
               state: state,
               onLoadMore: () => ref.read(provider.notifier).loadMore(),
             ),
@@ -664,7 +656,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (confirmed != true || !mounted) return;
     final removed = await ref
         .read(postActionControllerProvider(widget.threadId).notifier)
-        .remove(_floorAsPost(detail, subthread, floor));
+        .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
     ScaffoldMessenger.of(
       context,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
@@ -164,9 +165,7 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
 String _normalizeEmail(String email) => email.trim().toLowerCase();
 
 ApiFailure _asFailure(Object error, String fallback) {
-  return error is ApiFailure
-      ? error
-      : ApiFailure(userMessage: fallback, cause: error);
+  return mapApplicationFailure(error, fallback);
 }
 
 final passwordRecoveryControllerProvider = StateNotifierProvider.autoDispose

@@ -1,4 +1,16 @@
-part of 'direct_message_controllers.dart';
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_states.dart';
+import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
+import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+
+typedef DirectConversationRequestIdFactory = String Function();
 
 class DirectConversationTargetController
     extends StateNotifier<DirectConversationTargetState> {
@@ -7,7 +19,7 @@ class DirectConversationTargetController
     this._repository,
     this._userRepository, {
     bool autoStart = true,
-    DirectMessageRequestIdFactory? requestIdFactory,
+    DirectConversationRequestIdFactory? requestIdFactory,
   }) : _requestIdFactory = requestIdFactory ?? const Uuid().v4,
        super(const DirectConversationTargetState.loading()) {
     if (autoStart) unawaited(load());
@@ -16,7 +28,7 @@ class DirectConversationTargetController
   final String _userId;
   final DirectMessageRepository _repository;
   final PublicUserRepository _userRepository;
-  final DirectMessageRequestIdFactory _requestIdFactory;
+  final DirectConversationRequestIdFactory _requestIdFactory;
   var _epoch = 0;
 
   Future<void> load() async {

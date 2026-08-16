@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -112,12 +114,12 @@ class WalletController extends StateNotifier<WalletState> {
     try {
       final page = await _repository.fetchTransactions(cursor: state.cursor);
       if (!_isCurrent(epoch)) return;
-      final seen = state.transactions.map((item) => item.id).toSet();
       state = state.copyWith(
-        transactions: List.unmodifiable([
-          ...state.transactions,
-          ...page.items.where((item) => seen.add(item.id)),
-        ]),
+        transactions: mergeUniqueBy(
+          state.transactions,
+          page.items,
+          keyOf: (item) => item.id,
+        ),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingMore: false,
@@ -188,9 +190,7 @@ class WalletController extends StateNotifier<WalletState> {
   bool _isCurrent(int epoch) => mounted && epoch == _epoch;
 
   ApiFailure _asFailure(Object error, String message) {
-    return error is ApiFailure
-        ? error
-        : ApiFailure(userMessage: message, cause: error);
+    return mapApplicationFailure(error, message);
   }
 }
 

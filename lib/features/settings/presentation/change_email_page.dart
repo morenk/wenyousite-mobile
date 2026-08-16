@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
-import 'package:wenyousite_mobile/features/settings/presentation/security_password_field.dart';
 
 class ChangeEmailPage extends ConsumerStatefulWidget {
   const ChangeEmailPage({super.key});
@@ -95,7 +95,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               subtitle: '先用当前密码确认身份，再向新邮箱发送 6 位验证码。',
             ),
             SizedBox(height: tokens.space24),
-            SecurityPasswordField(
+            WenyouPasswordField(
               textFieldKey: const Key('change-email-password'),
               controller: _oldPasswordController,
               label: '当前密码',
@@ -232,12 +232,8 @@ class _FailureBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return WenyouStatusBanner(
-      tone: WenyouStatusTone.error,
-      message: state.failure!.userMessage,
-      detail: state.failure!.requestId == null
-          ? null
-          : '请求 ID：${state.failure!.requestId}',
+    return WenyouFailureBanner(
+      failure: state.failure!,
       action: TextButton(
         key: const Key('change-email-error-dismiss'),
         onPressed: ref
