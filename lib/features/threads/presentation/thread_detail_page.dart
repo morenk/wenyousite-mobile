@@ -410,7 +410,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             target.subthreadId == state.selectedSubthreadId
         ? target
         : null;
-    final displayedFloors = _floorsWithTarget(state.floors, usableTarget);
+    final displayedFloors = _floorsWithTarget(
+      state.floors,
+      usableTarget,
+      state.floorOrder,
+    );
     return [
       SliverToBoxAdapter(
         child: ThreadDetailContent(
@@ -491,6 +495,47 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               ),
             ),
           ),
+        SliverToBoxAdapter(
+          child: ThreadDetailContent(
+            top: 12,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '楼层',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                PopupMenuButton<ThreadFloorOrder>(
+                  key: const Key('thread-floor-order'),
+                  enabled: !state.isLoadingFloors && !state.isLoadingMore,
+                  initialValue: state.floorOrder,
+                  tooltip: '切换楼层顺序',
+                  onSelected: (order) =>
+                      ref.read(provider.notifier).setFloorOrder(order),
+                  itemBuilder: (context) => [
+                    for (final order in ThreadFloorOrder.values)
+                      PopupMenuItem(value: order, child: Text(order.label)),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const WenyouIcon(WenyouIconIds.actionFilter, size: 18),
+                        const SizedBox(width: 6),
+                        Text(state.floorOrder.label),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         if (state.isLoadingFloors)
           const SliverToBoxAdapter(
             child: ThreadDetailContent(
@@ -696,14 +741,26 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   List<ThreadFloorModel> _floorsWithTarget(
     List<ThreadFloorModel> floors,
     ThreadPostTargetModel? target,
+    ThreadFloorOrder order,
   ) {
     if (target == null) return floors;
     final index = floors.indexWhere((floor) => floor.id == target.floor.id);
-    if (index == -1) return [...floors, target.floor];
-    return [
-      for (var floorIndex = 0; floorIndex < floors.length; floorIndex++)
-        floorIndex == index ? target.floor : floors[floorIndex],
-    ];
+    final merged = index == -1
+        ? [...floors, target.floor]
+        : [
+            for (var floorIndex = 0; floorIndex < floors.length; floorIndex++)
+              floorIndex == index ? target.floor : floors[floorIndex],
+          ];
+    merged.sort((left, right) {
+      final leftNumber = left.floorNumber;
+      final rightNumber = right.floorNumber;
+      if (leftNumber == null && rightNumber == null) return 0;
+      if (leftNumber == null) return 1;
+      if (rightNumber == null) return -1;
+      final comparison = leftNumber.compareTo(rightNumber);
+      return order == ThreadFloorOrder.oldest ? comparison : -comparison;
+    });
+    return merged;
   }
 }
 

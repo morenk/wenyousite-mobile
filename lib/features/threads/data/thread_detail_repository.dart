@@ -78,12 +78,14 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     required String subthreadId,
     String? cursor,
     int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
   }) async {
     try {
       final response = await _postsApi.postsFindFloors(
         subthreadId: subthreadId,
         cursor: cursor,
         limit: limit,
+        order: order.apiValue,
       );
       final envelope = response.data;
       if (envelope == null) {

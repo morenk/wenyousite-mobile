@@ -49,7 +49,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   void initState() {
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
-    _normalizedData = MarkdownContent.normalize(widget.data);
+    _normalizedData = MarkdownContent.literalizeUnsupported(widget.data);
   }
 
   @override
@@ -65,7 +65,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       _diceLabels.value = Map.unmodifiable(widget.diceLabels);
     }
     if (oldWidget.data != widget.data) {
-      _normalizedData = MarkdownContent.normalize(widget.data);
+      _normalizedData = MarkdownContent.literalizeUnsupported(widget.data);
     }
     if (oldWidget.bodyFontSize != widget.bodyFontSize ||
         oldWidget.bodyHeight != widget.bodyHeight) {
@@ -163,12 +163,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
         fontFamily: 'monospace',
         fontWeight: FontWeight.w500,
       ),
-      codeblockPadding: EdgeInsets.all(tokens.space12),
-      codeblockDecoration: BoxDecoration(
-        color: tokens.softPanel,
-        border: Border.all(color: tokens.border),
-        borderRadius: BorderRadius.circular(tokens.radius12),
-      ),
       blockquote: bodyStyle?.copyWith(fontStyle: FontStyle.italic),
       blockquotePadding: EdgeInsets.all(tokens.space12),
       blockquoteDecoration: BoxDecoration(
@@ -180,10 +174,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
           right: Radius.circular(tokens.radius12),
         ),
       ),
-      tableHead: compactBody?.copyWith(fontWeight: FontWeight.w700),
-      tableBody: compactBody,
-      tableBorder: TableBorder.all(color: tokens.border),
-      tableCellsPadding: EdgeInsets.all(tokens.space8),
       horizontalRuleDecoration: BoxDecoration(
         border: Border(top: BorderSide(color: tokens.border)),
       ),

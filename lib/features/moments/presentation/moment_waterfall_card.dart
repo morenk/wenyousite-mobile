@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 
@@ -14,7 +14,7 @@ class MomentWaterfallCard extends StatelessWidget {
     required this.onTap,
     this.onAuthorTap,
     this.onLike,
-    this.busy = false,
+    this.pendingAction,
     super.key,
   });
 
@@ -22,7 +22,7 @@ class MomentWaterfallCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onAuthorTap;
   final VoidCallback? onLike;
-  final bool busy;
+  final MomentInteractionAction? pendingAction;
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +124,8 @@ class MomentWaterfallCard extends StatelessWidget {
                   key: Key('moment-like-${moment.id}'),
                   count: moment.likeCount,
                   selected: moment.viewerLiked,
-                  busy: busy,
-                  onPressed: onLike,
+                  pending: pendingAction == MomentInteractionAction.like,
+                  onPressed: pendingAction == null ? onLike : null,
                 ),
               ],
             ),
@@ -194,61 +194,31 @@ class _MomentWaterfallLikeButton extends StatelessWidget {
   const _MomentWaterfallLikeButton({
     required this.count,
     required this.selected,
-    required this.busy,
+    required this.pending,
     this.onPressed,
     super.key,
   });
 
   final int count;
   final bool selected;
-  final bool busy;
+  final bool pending;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     final label = selected ? '取消点赞' : '点赞';
     final countLabel = count > 0 ? '，$count' : '';
-    return Semantics(
-      button: true,
-      enabled: !busy && onPressed != null,
-      toggled: selected,
-      label: '$label$countLabel',
-      child: InkWell(
-        onTap: busy ? null : onPressed,
-        borderRadius: BorderRadius.circular(tokens.radius12),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: tokens.minimumTouchTarget,
-            minHeight: tokens.minimumTouchTarget,
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                WenyouIcon(
-                  selected
-                      ? WenyouIconIds.actionLike
-                      : WenyouIconIds.actionLike,
-                  size: 18,
-                  color: selected ? tokens.focus : tokens.mutedText,
-                ),
-                if (count > 0) ...[
-                  SizedBox(width: tokens.space4),
-                  Text(
-                    '$count',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: selected ? tokens.focus : tokens.mutedText,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+    return WenyouInteractionToggle(
+      kind: WenyouInteractionKind.like,
+      selected: selected,
+      pending: pending,
+      onPressed: onPressed,
+      semanticLabel: '$label$countLabel',
+      iconSize: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      supporting: count > 0
+          ? Text('$count', style: Theme.of(context).textTheme.labelSmall)
+          : null,
     );
   }
 }

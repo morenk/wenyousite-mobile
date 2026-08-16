@@ -20,7 +20,7 @@
 
 阅读时调用主题详情接口加载元数据、标签、登录态互动与 capability 投影；排头直接铺在阅读画布，不再使用圆角 Card。顶部把分类、状态、置顶/私密和标签合并为无底色的单行弱化语境，最多五标签横向浏览而不增加高度；标题下把作者、内容宽度等级、时间和无图标统计压在同一行，底部细分隔工具栏承载子贴切换和互动，不再为每组按钮套独立卡片。题头在 360/400/600dp 均小于 190dp，使首屏同时出现标题、子贴正文和第一楼；窄屏子贴按钮按可用宽度隐藏目录图标和楼数，仍保留标题、展开入口和所有 48dp 触控目标，600dp 恢复完整信息。选中子贴正文直接铺在阅读画布上，不再套第二层面板；正文基线为约 17sp、1.8 行高、轻微字距，标题层级限制在 1.65/1.35/1.12 倍，引用使用柔和底色与单侧细线，分隔线保持 1px，避免装饰压过长篇文字。楼层使用分隔线形成连续文本流，32dp 紧凑头像视觉置于 48dp 点击区内，用户名、内容宽度等级和时间保持同一行；头像直接进入作者主页。每层右侧只显示弱化楼层号；点击楼层非交互正文或元信息区域直接回复该层，长按在楼层上方打开完整锚点操作气泡，头像、链接、图片与回复数保持各自行为。零回复不显示重复按钮；已有回复始终保留弱化的“N 条回复”入口，并按 Web 规则预览服务端内嵌的前五条回复：五条正文合计不超过 500 个 Dart/JS 字符时完整显示，超过时使用固定高度渐变折叠并提供展开完整讨论按钮。主题列表和详情标签继续使用行内 `#标签` 链接；只有标签管理工作台使用编辑 Chip。按 `sortOrder` 排列子贴并加载对应正文/楼层，带 `subthread` 目标直接选择有效子贴，带 `post` 楼层目标解析所属子贴并在原顺序中定位；目标不在当前楼层窗口时追加为独立上下文，不再移到列表最上方。发表楼层成功后只刷新主题元信息，保留当前楼层窗口与滚动位置，用 `replace` 更新 `post` 坐标并平滑定位到新楼层；回复成功进入对应独立讨论。具体回复目标直接打开并精确定位独立讨论。主题内搜索要求至少两个 Unicode 字符，按相关度跨全部子贴分页。点赞采用服务端计数，收藏按记录 ID 删除；非楼主可从“更多主题操作”经 wallet 向楼主加油，成功后重读累计值。公开楼层可通过长按进入完整举报/编辑/删除菜单，回复操作集中在独立讨论页。普通登录用户并发读取本人订阅和成员候选；选中有效子贴后，以不占正文布局高度的紧凑悬浮入口打开 Quill 编辑器，列表末尾保留安全留白。详情顶栏和发表入口始终固定显示，不随滚动播放收起、恢复、缩放或淡入动画；新增分页正文直接进入最终位置。
 
-创建时先恢复按账号隔离的本地 Markdown 快照并加载动态分类；创作页顶栏使用明确的“发布”主按钮，分类、可见性和标签在正文前以带标题的元信息按钮呈现，正文草稿从格式工具栏中独立出来，不夹在样式按钮之间；首次保存/发布用稳定 `clientRequestId` 调用 `threadsCreate` 建立未发布主题，再携带主题、默认子贴与正文版本调用 `threadsSaveAggregate`。保存保持 `published=false`，发布必须由响应明确确认 `published=true`。
+创建时先恢复按账号隔离的本地 Markdown 快照并加载动态分类；分类只消费 ID、标识、名称、描述、图标、排序和可用状态，不读取或提交颜色；创作页顶栏使用明确的“发布”主按钮，分类、可见性和标签在正文前以带标题的元信息按钮呈现，正文草稿从格式工具栏中独立出来，不夹在样式按钮之间；首次保存/发布用稳定 `clientRequestId` 调用 `threadsCreate` 建立未发布主题，再携带主题、默认子贴与正文版本调用 `threadsSaveAggregate`。保存保持 `published=false`，发布必须由响应明确确认 `published=true`。
 
 管理已有主题时并发读取详情与动态分区，以 capability 和成员角色决定页面入口；更新只发送已变化字段并携带详情 `version`。协作者不发送可见范围字段，楼主删除必须再次确认且只有非空服务端响应才视为成功。表单变化后离页要求明确放弃。
 
@@ -33,6 +33,8 @@
 管理主题标签时并发读取主题 capability、完整关联和全局候选；最多保留五个标签，添加已有候选前读取单条标签事实，新建遇到同名竞态时只解析唯一精确结果。移除只解除当前主题关联，标签仍可供其他主题使用；搜索、防抖和公开标签聚合由 tags 模块维护。
 
 ## 5. API operationId 与生成类型
+
+主楼层列表的 `postsFindFloors` 向后端传入 `order=OLDEST|NEWEST`，默认 `OLDEST`。读者用“最早在前 / 最新在前”弱化入口切换时，客户端清空当前 cursor 并从所选子贴首页重载；加载更多、cursor 失效恢复、刷新和子贴切换都保留同一顺序。
 
 - 当前读取：`threadsFindById`、用于目标定位的 `postsFindById`；普通详情响应已经包含子贴集合、子贴正文 ID/版本、主题标签、统计、互动状态和 capability 等可选登录态投影，不额外请求子贴列表。独立管理工作台使用 `subthreadsFindAll` 取得规范目录，并在编辑前使用 `subthreadsFindById` 取得最新版和所属主题事实。
 - 当前主题内搜索：search 模块调用 `threadSearchSearchPosts`，使用 `ThreadSearchSearchPosts200Response` 与 `SearchPostResponseDto`。
@@ -83,6 +85,7 @@
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
 - [x] 楼层连续列表以分隔线代替逐条卡片，点击非交互正文/元信息直接回复且不吞链接、图片、回复数、更多菜单或长按；主题流预览回复与 48dp 回复数入口保持独立点击行为，楼层与独立讨论回复保留完整操作菜单。
 - [x] 发表楼层后不重新加载首屏楼层，原楼层窗口和顺序保持稳定；新楼层追加到窗口末尾并通过 `post` 坐标平滑定位。
+- [x] 主楼层支持 `OLDEST/NEWEST` 稳定游标分页；切换顺序重置 cursor，后续分页和失效 cursor 重载不会退回默认顺序。
 - [x] 正文搜索目标能自动切换所属子贴并展示目标楼层，具体回复直接进入独立讨论上下文。
 - [x] 详情入口可搜索全部子贴正文；短词、空错重试、分页、失效 cursor、跨主题响应和 360/400/600dp 页面有测试。
 - [x] 点赞/取消点赞使用服务端计数，收藏/取消收藏使用稳定记录 ID，失败保留旧状态。
@@ -111,8 +114,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.14.0-dev.20260815.1`；Markdown v3；后端 `9752c2289acb0db19af7d91d98978adb558991bf`；Foundation `v2.4.2`（`7e7d863`）。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`；Foundation `v3.1.0`（`d60df368`）。
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)。

@@ -73,6 +73,25 @@ void main() {
     expect(repository.createdDrafts, isEmpty);
   });
 
+  testWidgets('已互关用户直接建立私聊且不显示消息请求提示', (tester) async {
+    final repository = _FakeDirectMessageRepository();
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      _app(
+        repository,
+        router,
+        publicUserRepository: _FakePublicUserRepository(mutual: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('你们已互相关注'), findsWidgets);
+    expect(find.text('这会先作为消息请求'), findsNothing);
+    expect(find.textContaining('不会作为消息请求'), findsOneWidget);
+  });
+
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 新私聊页面无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -91,14 +110,18 @@ void main() {
   }
 }
 
-Widget _app(_FakeDirectMessageRepository repository, GoRouter router) {
+Widget _app(
+  _FakeDirectMessageRepository repository,
+  GoRouter router, {
+  PublicUserRepository? publicUserRepository,
+}) {
   return ProviderScope(
     overrides: [
       directMessagesEnabledProvider.overrideWithValue(true),
       stickersEnabledProvider.overrideWithValue(false),
       directMessageRepositoryProvider.overrideWithValue(repository),
       publicUserRepositoryProvider.overrideWithValue(
-        _FakePublicUserRepository(),
+        publicUserRepository ?? _FakePublicUserRepository(),
       ),
       directConversationTargetControllerProvider.overrideWith((ref, userId) {
         return DirectConversationTargetController(
@@ -224,6 +247,10 @@ class _FakeDirectMessageRepository implements DirectMessageRepository {
 }
 
 class _FakePublicUserRepository implements PublicUserRepository {
+  _FakePublicUserRepository({this.mutual = false});
+
+  final bool mutual;
+
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) =>
       throw UnimplementedError();
@@ -241,8 +268,8 @@ class _FakePublicUserRepository implements PublicUserRepository {
       showRecentReplies: false,
       showPlayedThreads: false,
       showBookmarks: false,
-      isFollowing: false,
-      isFollowedBy: false,
+      isFollowing: mutual,
+      isFollowedBy: mutual,
       isBlocked: false,
       isBlockedBy: false,
       isDeactivated: false,

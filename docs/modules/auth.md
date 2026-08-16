@@ -20,11 +20,11 @@
 
 ## 4. 用户操作流程
 
-注册第一步调用 `authRequestCode` 发送邮箱验证码，使用固定 60 秒重发冷却和响应中的有效期；429 按 `Retry-After` 禁用重试。第二步本地校验 6 位验证码、2–24 位用户名及 8–100 位字母数字密码，调用 `authVerifyAndComplete` 并显式发送 mobile 头，只有同时返回 access/refresh token 才建立会话并恢复目标。
+注册第一步调用 `authRequestCode` 发送邮箱验证码，使用固定 60 秒重发冷却和明确成功响应中的有效期。发码不自动重放；超时、断线、429 或 5xx 造成结果不明时，直接进入验证步骤并显示“邮件可能已发出”、60 秒冷却和请求 ID，不猜测有效期。第二步本地校验 6 位验证码、2–24 位用户名及 8–100 位字母数字密码，调用 `authVerifyAndComplete` 并显式发送 mobile 头，只有同时返回 access/refresh token 才建立会话并恢复目标。
 
 登录表单校验账号与密码，防止重复提交；`authLogin` 显式发送 mobile 头，响应必须同时含 access/refresh token 才原子保存并恢复目标。并发 `40101` 共享一次 `authRefresh`，双 Token 原子轮转后原请求只重放一次；再次过期进入失效登录页。
 
-忘记密码先规范化邮箱并调用 `authForgotPassword`，无论邮箱是否注册都只展示相同的安全提示；成功后进入重置页并开始固定 60 秒重发冷却，429 再按 `Retry-After` 延长。重置页本地校验邮箱、6 位数字验证码和 8–100 位字母数字密码，调用 `authResetPassword`；后端确认后所有 refresh 会话均被撤销，客户端不建立会话，只返回登录页提示使用新密码。失效会话可进入找回和重置公开路由，不会被守卫循环送回登录。
+忘记密码先规范化邮箱并调用 `authForgotPassword`，无论邮箱是否注册都只展示相同的安全提示；明确成功或发码结果不明都进入重置页并开始固定 60 秒重发冷却，后者保留请求 ID 并使用中性“可能已发出”文案。重置页本地校验邮箱、6 位数字验证码和 8–100 位字母数字密码，调用 `authResetPassword`；后端确认后所有 refresh 会话均被撤销，客户端不建立会话，只返回登录页提示使用新密码。失效会话可进入找回和重置公开路由，不会被守卫循环送回登录。
 
 修改密码调用 `authChangePassword`；更换邮箱先调用 `authRequestChangeEmailCode`，再用 6 位验证码调用 `authVerifyChangeEmail`。两类凭据变更成功后后端都会撤销全部 refresh 会话，移动端随即原子清除本机双 Token 并进入带 `/me` 回跳的登录页。登录终端页调用 `authListSessions`，当前终端不可远程撤销，其他终端确认后调用 `authRevokeSession`。用户从“我的”确认退出后调用 `authLogout` 撤销当前 refresh token，Access Token 已过期时先刷新再重试一次。
 
@@ -58,7 +58,7 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -82,8 +82,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.14.0-dev.20260815.1`；Markdown v3；后端 `9752c2289acb0db19af7d91d98978adb558991bf`。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

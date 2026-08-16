@@ -7,6 +7,25 @@ import { fileURLToPath } from 'node:url';
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const read = (name) => readFile(path.join(directory, name), 'utf8');
 
+test('仓库自动化入口统一使用 PowerShell 7', async () => {
+  const packageJson = await readFile(
+    path.resolve(directory, '../../package.json'),
+    'utf8',
+  );
+  assert.match(packageJson, /"contract:sync": "pwsh /);
+  assert.match(packageJson, /"check": "pwsh /);
+  assert.match(packageJson, /"check:apk": "pwsh /);
+  assert.doesNotMatch(packageJson, /powershell\.exe/i);
+  assert.match(packageJson, /dart run build_runner build/);
+  assert.doesNotMatch(packageJson, /build_runner clean/);
+  const syncScript = await readFile(
+    path.resolve(directory, '../sync_backend_contract.ps1'),
+    'utf8',
+  );
+  assert.match(syncScript, /thread-category-v\[0-9\]\+-fixtures/);
+  assert.doesNotMatch(syncScript, /thread-category-v1-fixtures/);
+});
+
 test('Windows 发布工具包含可重复安装的完整入口', async () => {
   const installer = await read('Install-WenyouReleaseTools.ps1');
   for (const name of [

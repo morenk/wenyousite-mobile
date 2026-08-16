@@ -58,8 +58,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.14.0-dev.20260815.1`；Markdown v3；后端 `9752c2289acb0db19af7d91d98978adb558991bf`。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`。
 
 ## 14. 相关代码与架构文档
 
-端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v2.4.2](https://github.com/morenk/wenyousite-foundation/tree/v2.4.2)。
+端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v3.1.0](https://github.com/morenk/wenyousite-foundation/tree/v3.1.0)。

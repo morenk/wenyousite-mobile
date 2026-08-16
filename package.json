@@ -4,15 +4,16 @@
   "scripts": {
     "api:generate:source": "openapi-generator-cli generate -i contracts/openapi.json -g dart-dio -o packages/wenyou_api -c tool/openapi-generator-config.yaml --global-property apiDocs=false,modelDocs=false,apiTests=false,modelTests=false",
     "api:normalize": "dart run tool/normalize_generated_api.dart",
-    "api:generate": "npm run api:generate:source && npm run api:normalize && cd packages/wenyou_api && dart pub get && dart run build_runner clean && dart run build_runner build && cd ../.. && flutter pub get",
+    "api:generate": "npm run api:generate:source && npm run api:normalize && cd packages/wenyou_api && dart pub get && dart run build_runner build && cd ../.. && flutter pub get",
     "api:validate": "openapi-generator-cli validate -i contracts/openapi.json",
     "api:check": "npm run api:generate && git diff --exit-code -- packages/wenyou_api",
     "api:verify:production": "dart run tool/verify_production_api.dart",
+    "contract:sync": "pwsh -NoProfile -File tool/sync_backend_contract.ps1",
     "docs:check": "dart run tool/check_docs.dart",
     "architecture:check": "dart run tool/check_architecture.dart",
     "test:release-tool": "node --test tool/upload_android_release.test.mjs tool/windows/windows_release_scripts.test.mjs",
-    "check": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tool/Check-WenyouMobile.ps1",
-    "check:apk": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tool/Check-WenyouMobile.ps1 -BuildDebugApk"
+    "check": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1",
+    "check:apk": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1 -BuildDebugApk"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1106.0",

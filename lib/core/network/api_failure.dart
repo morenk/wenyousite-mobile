@@ -57,6 +57,20 @@ class ApiFailure implements Exception {
 
   bool get isExpiredAccessToken => businessCode == 40101;
 
+  bool get hasUnknownWriteOutcome {
+    final dio = cause;
+    final transientTransport =
+        dio is DioException &&
+        (dio.type == DioExceptionType.connectionTimeout ||
+            dio.type == DioExceptionType.sendTimeout ||
+            dio.type == DioExceptionType.receiveTimeout ||
+            dio.type == DioExceptionType.connectionError);
+    return transientTransport ||
+        httpStatus == 429 ||
+        businessCode == 42900 ||
+        (httpStatus ?? 0) >= 500;
+  }
+
   bool get invalidatesSession =>
       businessCode != null && businessCode! >= 40103 && businessCode! <= 40106;
 
@@ -64,6 +78,8 @@ class ApiFailure implements Exception {
 
   static String _messageFor(DioException exception, int? businessCode) {
     switch (businessCode) {
+      case 40101:
+        return '登录状态已续期，请手动重试这次操作。';
       case 40007:
         return '列表位置已失效，正在重新加载。';
       case 40002:

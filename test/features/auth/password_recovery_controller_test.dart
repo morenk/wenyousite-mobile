@@ -6,6 +6,18 @@ import 'package:wenyousite_mobile/features/auth/application/password_recovery_co
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
 
 void main() {
+  test('投递结果恢复确定后清除旧请求 ID', () {
+    const uncertain = PasswordRecoveryState(
+      codeDeliveryUncertain: true,
+      codeDeliveryRequestId: 'old-request-id',
+    );
+
+    final resolved = uncertain.copyWith(codeDeliveryUncertain: false);
+
+    expect(resolved.codeDeliveryUncertain, isFalse);
+    expect(resolved.codeDeliveryRequestId, isNull);
+  });
+
   test('请求重置验证码规范化邮箱并建立 60 秒反枚举冷却', () async {
     final repository = _FakePasswordRecoveryRepository();
     final controller = PasswordRecoveryController(
@@ -42,7 +54,7 @@ void main() {
     expect(repository.codeRequests, hasLength(1));
   });
 
-  test('429 按 Retry-After 冷却并保留安全错误与请求 ID', () async {
+  test('429 视为投递结果不确定并保留邮箱与请求 ID', () async {
     final repository = _FakePasswordRecoveryRepository(
       onRequestCode: (_) => throw const ApiFailure(
         userMessage: '操作太频繁，请稍后再试。',
@@ -57,11 +69,13 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    expect(await controller.requestCode('user@example.com'), isFalse);
+    expect(await controller.requestCode('user@example.com'), isTrue);
 
+    expect(controller.state.codeDeliveryUncertain, isTrue);
+    expect(controller.state.lastRequestedEmail, 'user@example.com');
     expect(controller.state.failure?.businessCode, 42900);
     expect(controller.state.failure?.requestId, 'recovery-rate-id');
-    expect(controller.state.resendSecondsRemaining, 41);
+    expect(controller.state.resendSecondsRemaining, 60);
   });
 
   test('重置密码规范化邮箱和验证码且提交期间拒绝重复请求', () async {

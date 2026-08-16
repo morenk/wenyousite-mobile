@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/settings/application/settings_repository_ports.dart';
 
@@ -41,6 +42,7 @@ class ApiCredentialSecurityRepository implements CredentialSecurityRepository {
   }) async {
     try {
       final data = (await _api.authRequestChangeEmailCode(
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         changeEmailRequestDto: ChangeEmailRequestDto(
           (dto) => dto
             ..newEmail = newEmail

@@ -67,6 +67,14 @@ class RequestContextInterceptor extends Interceptor {
       handler.next(err);
       return;
     }
+    if (err.requestOptions.extra[ApiRequestExtraKeys.noAutomaticReplay] ==
+        true) {
+      _sessionController.refresh().then(
+        (_) => handler.next(err),
+        onError: (_) => handler.next(err),
+      );
+      return;
+    }
     _retryAfterRefresh(err).then(
       handler.resolve,
       onError: (_) {
@@ -177,6 +185,10 @@ class SafeRetryInterceptor extends Interceptor {
   }
 
   bool _isRetryable(DioException error) {
+    if (error.requestOptions.extra[ApiRequestExtraKeys.noAutomaticReplay] ==
+        true) {
+      return false;
+    }
     final method = error.requestOptions.method.toUpperCase();
     final safeMethod =
         method == 'GET' ||

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
@@ -32,67 +32,38 @@ class ThreadInteractionActions extends ConsumerWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Semantics(
-            button: true,
-            label: state.isLiked
+          WenyouInteractionToggle(
+            key: const Key('thread-interaction-like'),
+            kind: WenyouInteractionKind.like,
+            selected: state.isLiked,
+            pending: state.pendingAction == ThreadInteractionAction.like,
+            onPressed: state.isPending
+                ? null
+                : authenticated
+                ? () => _toggleLike(context, notifier, compact: true)
+                : onRequireAuthentication,
+            semanticLabel: state.isLiked
                 ? '取消喜欢，当前 ${state.likeCount} 个喜欢'
                 : '喜欢，当前 ${state.likeCount} 个喜欢',
-            excludeSemantics: true,
-            child: TextButton(
-              key: const Key('thread-interaction-like'),
-              onPressed: state.isPending
-                  ? null
-                  : authenticated
-                  ? () => _toggleLike(context, notifier, compact: true)
-                  : onRequireAuthentication,
-              style: TextButton.styleFrom(
-                minimumSize: Size(
-                  tokens.minimumTouchTarget,
-                  tokens.minimumTouchTarget,
-                ),
-                padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-                foregroundColor: state.isLiked
-                    ? tokens.brandForeground
-                    : tokens.mutedText,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _actionIcon(
-                    pending:
-                        state.pendingAction == ThreadInteractionAction.like,
-                    fallback: state.isLiked
-                        ? WenyouIconIds.actionLike
-                        : WenyouIconIds.actionLike,
-                  ),
-                  SizedBox(width: tokens.space4),
-                  Text(
-                    '${state.likeCount}',
-                    style: const TextStyle(
-                      fontFeatures: [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
+            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+            supporting: Text(
+              '${state.likeCount}',
+              style: const TextStyle(
+                fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
           ),
           if (authenticated)
-            IconButton(
+            WenyouInteractionToggle(
               key: const Key('thread-interaction-bookmark'),
+              kind: WenyouInteractionKind.bookmark,
+              selected: state.isBookmarked,
+              pending: state.pendingAction == ThreadInteractionAction.bookmark,
               onPressed: state.isPending
                   ? null
                   : () => _toggleBookmark(context, notifier, compact: true),
-              tooltip: state.isBookmarked ? '取消收藏' : '收藏主题',
-              color: state.isBookmarked
-                  ? tokens.brandForeground
-                  : tokens.mutedText,
-              icon: _actionIcon(
-                pending:
-                    state.pendingAction == ThreadInteractionAction.bookmark,
-                fallback: state.isBookmarked
-                    ? WenyouIconIds.actionBookmark
-                    : WenyouIconIds.actionBookmark,
-              ),
+              semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
+              padding: EdgeInsets.symmetric(horizontal: tokens.space4),
             ),
         ],
       );
@@ -104,39 +75,35 @@ class ThreadInteractionActions extends ConsumerWidget {
           spacing: tokens.space8,
           runSpacing: tokens.space8,
           children: [
-            OutlinedButton.icon(
+            WenyouInteractionToggle(
               key: const Key('thread-interaction-like'),
+              kind: WenyouInteractionKind.like,
+              selected: state.isLiked,
+              pending: state.pendingAction == ThreadInteractionAction.like,
               onPressed: state.isPending
                   ? null
                   : authenticated
                   ? () => _toggleLike(context, notifier)
                   : onRequireAuthentication,
-              icon: _actionIcon(
-                pending: state.pendingAction == ThreadInteractionAction.like,
-                fallback: state.isLiked
-                    ? WenyouIconIds.actionLike
-                    : WenyouIconIds.actionLike,
-              ),
-              label: Text(
+              semanticLabel: state.isLiked ? '取消喜欢' : '喜欢',
+              supporting: Text(
                 state.isLiked
                     ? '已喜欢 ${state.likeCount}'
                     : '喜欢 ${state.likeCount}',
               ),
             ),
             if (authenticated)
-              OutlinedButton.icon(
+              WenyouInteractionToggle(
                 key: const Key('thread-interaction-bookmark'),
+                kind: WenyouInteractionKind.bookmark,
+                selected: state.isBookmarked,
+                pending:
+                    state.pendingAction == ThreadInteractionAction.bookmark,
                 onPressed: state.isPending
                     ? null
                     : () => _toggleBookmark(context, notifier),
-                icon: _actionIcon(
-                  pending:
-                      state.pendingAction == ThreadInteractionAction.bookmark,
-                  fallback: state.isBookmarked
-                      ? WenyouIconIds.actionBookmark
-                      : WenyouIconIds.actionBookmark,
-                ),
-                label: Text(state.isBookmarked ? '已收藏' : '收藏'),
+                semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
+                supporting: Text(state.isBookmarked ? '已收藏' : '收藏'),
               ),
           ],
         ),
@@ -152,15 +119,6 @@ class ThreadInteractionActions extends ConsumerWidget {
         ],
       ],
     );
-  }
-
-  Widget _actionIcon({required bool pending, required String fallback}) {
-    return pending
-        ? const SizedBox.square(
-            dimension: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : WenyouIcon(fallback);
   }
 
   Future<void> _toggleLike(

@@ -1,7 +1,7 @@
 class AppEnvironment {
   const AppEnvironment({
     required this.apiBaseUrl,
-    this.supportedContractMajor = 4,
+    this.supportedContractMajor = 5,
     this.supportedMarkdownContractVersion = 3,
   });
 

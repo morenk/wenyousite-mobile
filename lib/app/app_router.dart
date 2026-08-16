@@ -425,6 +425,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             codeRecentlySent:
                 routeData is PasswordResetRouteData &&
                 routeData.codeRecentlySent,
+            codeDeliveryUncertain:
+                routeData is PasswordResetRouteData &&
+                routeData.codeDeliveryUncertain,
+            codeDeliveryRequestId: routeData is PasswordResetRouteData
+                ? routeData.codeDeliveryRequestId
+                : null,
           );
         },
       ),

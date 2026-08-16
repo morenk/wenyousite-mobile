@@ -285,7 +285,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
               return MomentWaterfallCard(
                 key: Key('moment-card-${moment.id}'),
                 moment: moment,
-                busy: state.busyMomentIds.contains(moment.id),
+                pendingAction: state.pendingMomentActions[moment.id],
                 onTap: () => context.pushNamed(
                   'moment-detail',
                   pathParameters: {'momentId': moment.id},

@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
@@ -85,7 +86,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   top: context.wenyouTokens.space16,
                   child: _MomentDetailPanel(
                     detail: state.detail!,
-                    busy: state.busyMomentAction,
+                    pendingAction: state.pendingMomentAction,
                     onLike: () => _authenticated(
                       () => ref.read(provider.notifier).toggleLike(),
                     ),
@@ -383,13 +384,13 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
 class _MomentDetailPanel extends StatelessWidget {
   const _MomentDetailPanel({
     required this.detail,
-    required this.busy,
+    required this.pendingAction,
     required this.onLike,
     required this.onBookmark,
   });
 
   final MomentDetail detail;
-  final bool busy;
+  final MomentInteractionAction? pendingAction;
   final VoidCallback onLike;
   final VoidCallback onBookmark;
 
@@ -453,7 +454,9 @@ class _MomentDetailPanel extends StatelessWidget {
                     : WenyouIconIds.actionLike,
                 label: '${card.likeCount} 点赞',
                 selected: card.viewerLiked,
-                onPressed: busy ? null : onLike,
+                kind: WenyouInteractionKind.like,
+                pending: pendingAction == MomentInteractionAction.like,
+                onPressed: pendingAction == null ? onLike : null,
               ),
             ),
             Expanded(
@@ -464,7 +467,9 @@ class _MomentDetailPanel extends StatelessWidget {
                     : WenyouIconIds.actionBookmark,
                 label: '${card.bookmarkCount} 收藏',
                 selected: card.viewerBookmarked,
-                onPressed: busy ? null : onBookmark,
+                kind: WenyouInteractionKind.bookmark,
+                pending: pendingAction == MomentInteractionAction.bookmark,
+                onPressed: pendingAction == null ? onBookmark : null,
               ),
             ),
             Expanded(
@@ -496,6 +501,8 @@ class _DetailAction extends StatelessWidget {
     required this.icon,
     required this.label,
     this.selected = false,
+    this.kind,
+    this.pending = false,
     this.onPressed,
     super.key,
   });
@@ -503,10 +510,25 @@ class _DetailAction extends StatelessWidget {
   final String icon;
   final String label;
   final bool selected;
+  final WenyouInteractionKind? kind;
+  final bool pending;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
+    if (kind case final interactionKind?) {
+      return WenyouInteractionToggle(
+        kind: interactionKind,
+        selected: selected,
+        pending: pending,
+        onPressed: onPressed,
+        semanticLabel: label,
+        supporting: Flexible(
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        expand: true,
+      );
+    }
     return TextButton.icon(
       onPressed: onPressed,
       icon: WenyouIcon(

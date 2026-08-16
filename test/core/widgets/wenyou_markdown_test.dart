@@ -90,6 +90,26 @@ void main() {
     expect(find.text('1d20 = 16'), findsOneWidget);
   });
 
+  testWidgets('Markdown v3 不支持的表格按可读原文展示', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: WenyouMarkdown(data: '| 名称 | 数量 |\n| --- | --- |\n| 骰子 | 2 |'),
+        ),
+      ),
+    );
+
+    expect(find.byType(Table), findsNothing);
+    expect(
+      find.textContaining('| 名称 | 数量 |', findRichText: true),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('| 骰子 | 2 |', findRichText: true),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('代码与转义内容中的骰子表达式保持原文', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

@@ -26,7 +26,7 @@ class MomentFeedState {
     this.hasMore = false,
     this.isRefreshing = false,
     this.isLoadingMore = false,
-    this.busyMomentIds = const {},
+    this.pendingMomentActions = const {},
     this.failure,
     this.transientFailure,
     this.retryAction = MomentFeedRetryAction.refresh,
@@ -39,7 +39,7 @@ class MomentFeedState {
   final bool hasMore;
   final bool isRefreshing;
   final bool isLoadingMore;
-  final Set<String> busyMomentIds;
+  final Map<String, MomentInteractionAction> pendingMomentActions;
   final ApiFailure? failure;
   final ApiFailure? transientFailure;
   final MomentFeedRetryAction retryAction;
@@ -51,7 +51,7 @@ class MomentFeedState {
     bool? hasMore,
     bool? isRefreshing,
     bool? isLoadingMore,
-    Set<String>? busyMomentIds,
+    Map<String, MomentInteractionAction>? pendingMomentActions,
     Object? failure = _unset,
     Object? transientFailure = _unset,
     MomentFeedRetryAction? retryAction,
@@ -64,7 +64,7 @@ class MomentFeedState {
       hasMore: hasMore ?? this.hasMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      busyMomentIds: busyMomentIds ?? this.busyMomentIds,
+      pendingMomentActions: pendingMomentActions ?? this.pendingMomentActions,
       failure: identical(failure, _unset)
           ? this.failure
           : failure as ApiFailure?,
@@ -139,9 +139,12 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
   }
 
   Future<bool> _runAction(MomentCard card, {required bool bookmark}) async {
-    if (state.busyMomentIds.contains(card.id)) return false;
+    if (state.pendingMomentActions.containsKey(card.id)) return false;
+    final action = bookmark
+        ? MomentInteractionAction.bookmark
+        : MomentInteractionAction.like;
     state = state.copyWith(
-      busyMomentIds: {...state.busyMomentIds, card.id},
+      pendingMomentActions: {...state.pendingMomentActions, card.id: action},
       transientFailure: null,
     );
     try {
@@ -168,13 +171,13 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
           .toList(growable: false);
       state = state.copyWith(
         items: List.unmodifiable(updated),
-        busyMomentIds: {...state.busyMomentIds}..remove(card.id),
+        pendingMomentActions: {...state.pendingMomentActions}..remove(card.id),
       );
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
       state = state.copyWith(
-        busyMomentIds: {...state.busyMomentIds}..remove(card.id),
+        pendingMomentActions: {...state.pendingMomentActions}..remove(card.id),
         transientFailure: _asFailure(
           error,
           bookmark ? '收藏状态没有更新，请重试。' : '点赞状态没有更新，请重试。',
@@ -294,7 +297,7 @@ class MomentDetailState {
     this.isRefreshing = false,
     this.isLoadingMoreComments = false,
     this.replyPages = const {},
-    this.busyMomentAction = false,
+    this.pendingMomentAction,
     this.busyCommentIds = const {},
     this.isSendingComment = false,
     this.failure,
@@ -312,7 +315,7 @@ class MomentDetailState {
   final bool isRefreshing;
   final bool isLoadingMoreComments;
   final Map<String, MomentReplyPageState> replyPages;
-  final bool busyMomentAction;
+  final MomentInteractionAction? pendingMomentAction;
   final Set<String> busyCommentIds;
   final bool isSendingComment;
   final ApiFailure? failure;
@@ -330,7 +333,7 @@ class MomentDetailState {
     bool? isRefreshing,
     bool? isLoadingMoreComments,
     Map<String, MomentReplyPageState>? replyPages,
-    bool? busyMomentAction,
+    Object? pendingMomentAction = _unset,
     Set<String>? busyCommentIds,
     bool? isSendingComment,
     Object? failure = _unset,
@@ -353,7 +356,9 @@ class MomentDetailState {
       isLoadingMoreComments:
           isLoadingMoreComments ?? this.isLoadingMoreComments,
       replyPages: replyPages ?? this.replyPages,
-      busyMomentAction: busyMomentAction ?? this.busyMomentAction,
+      pendingMomentAction: identical(pendingMomentAction, _unset)
+          ? this.pendingMomentAction
+          : pendingMomentAction as MomentInteractionAction?,
       busyCommentIds: busyCommentIds ?? this.busyCommentIds,
       isSendingComment: isSendingComment ?? this.isSendingComment,
       failure: identical(failure, _unset)
@@ -537,8 +542,13 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
 
   Future<bool> _runMomentAction({required bool bookmark}) async {
     final detail = state.detail;
-    if (detail == null || state.busyMomentAction) return false;
-    state = state.copyWith(busyMomentAction: true, transientFailure: null);
+    if (detail == null || state.pendingMomentAction != null) return false;
+    state = state.copyWith(
+      pendingMomentAction: bookmark
+          ? MomentInteractionAction.bookmark
+          : MomentInteractionAction.like,
+      transientFailure: null,
+    );
     try {
       final card = detail.card;
       final result = bookmark
@@ -556,13 +566,13 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
           : card.copyWith(likeCount: result.count, viewerLiked: result.active);
       state = state.copyWith(
         detail: detail.copyWith(card: updatedCard),
-        busyMomentAction: false,
+        pendingMomentAction: null,
       );
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
       state = state.copyWith(
-        busyMomentAction: false,
+        pendingMomentAction: null,
         transientFailure: _asFailure(
           error,
           bookmark ? '收藏状态没有更新，请重试。' : '点赞状态没有更新，请重试。',

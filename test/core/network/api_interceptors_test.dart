@@ -89,6 +89,29 @@ void main() {
     verifyNever(() => dio.fetch<Object?>(any()));
   });
 
+  test('不可重放写请求遇到 40101 只续期会话并交还原错误', () async {
+    final dio = _MockDio();
+    final handler = _MockErrorInterceptorHandler();
+    final remote = _FakeSessionRemote();
+    final store = _MemoryTokenStore();
+    final session = SessionController(store, remote);
+    await session.authenticate(_oldTokens);
+    final options = RequestOptions(
+      path: '/api/v1/auth/request-change-email-code',
+      method: 'POST',
+      extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+    );
+    final error = _businessError(options, 40101);
+
+    RequestContextInterceptor(dio, session).onError(error, handler);
+    await untilCalled(() => handler.next(error));
+
+    expect(remote.refreshCalls, 1);
+    expect(store.value?.accessToken, 'new-access');
+    verifyNever(() => dio.fetch<Object?>(any()));
+    verify(() => handler.next(error)).called(1);
+  });
+
   test('40103 立即清除会话并记录撤销原因', () async {
     final dio = _MockDio();
     final handler = _MockErrorInterceptorHandler();
@@ -157,6 +180,25 @@ void main() {
       dio.post<Object?>(
         '/api/v1/actions',
         options: Options(extra: ApiRequestPolicy.standard.extra),
+      ),
+      throwsA(isA<DioException>()),
+    );
+    expect(adapter.attempts, 1);
+  });
+
+  test('显式不可重放策略覆盖幂等 HTTP 方法', () async {
+    final adapter = _TransientThenSuccessAdapter(failures: 1);
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    dio.interceptors.add(SafeRetryInterceptor(dio, wait: (_) async {}));
+    addTearDown(dio.close);
+
+    await expectLater(
+      dio.put<Object?>(
+        '/api/v1/auth/request-change-email-code',
+        options: Options(
+          extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+        ),
       ),
       throwsA(isA<DioException>()),
     );

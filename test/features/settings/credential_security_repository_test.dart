@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/settings/data/credential_security_repository.dart';
 
 void main() {
@@ -57,6 +58,7 @@ void main() {
     final api = _MockAuthApi();
     when(
       () => api.authRequestChangeEmailCode(
+        extra: any(named: 'extra'),
         changeEmailRequestDto: any(named: 'changeEmailRequestDto'),
       ),
     ).thenAnswer((_) async => _requestEmailResponse());
@@ -66,17 +68,19 @@ void main() {
       oldPassword: 'current123',
     );
 
-    final dto =
-        verify(
-              () => api.authRequestChangeEmailCode(
-                changeEmailRequestDto: captureAny(
-                  named: 'changeEmailRequestDto',
-                ),
-              ),
-            ).captured.single
-            as ChangeEmailRequestDto;
-    expect(dto.newEmail, 'next@example.com');
-    expect(dto.oldPassword, 'current123');
+    final dto = verify(
+      () => api.authRequestChangeEmailCode(
+        extra: captureAny(named: 'extra'),
+        changeEmailRequestDto: captureAny(named: 'changeEmailRequestDto'),
+      ),
+    ).captured;
+    expect(
+      dto.whereType<Map<String, dynamic>>().single,
+      ApiRequestPolicy.authenticatedNonReplayable.extra,
+    );
+    final request = dto.whereType<ChangeEmailRequestDto>().single;
+    expect(request.newEmail, 'next@example.com');
+    expect(request.oldPassword, 'current123');
   });
 
   test('确认换绑映射新邮箱与验证码', () async {

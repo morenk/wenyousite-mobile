@@ -30,7 +30,7 @@ V1 包含认证、公开浏览、搜索、动态、主题/子贴/楼层、创作
 
 V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、离线自动发帖、暗色主题、阅读进度、子贴标签和 Android App Links。
 
-共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的已发布版本；当前由 `pubspec.yaml` 锁定 Foundation v2.4.2。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的已发布版本；当前由 `pubspec.yaml` 锁定 Foundation v3.1.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 
@@ -60,7 +60,7 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 同步命令：
 
 ```powershell
-powershell.exe -NoProfile -File tool/sync_backend_contract.ps1
+pwsh -NoProfile -File tool/sync_backend_contract.ps1
 npm ci
 npm run api:validate
 npm run api:generate
@@ -124,6 +124,7 @@ packages/
 - 日志禁止记录 Token、验证码、密码、完整私信正文、FCM token 和预签名 URL 查询参数。
 - 并发 `40101 TOKEN_EXPIRED` 只允许一个 refresh 在途；其余请求等待同一结果。
 - 刷新成功后原子替换双 Token，每个请求最多重放一次。
+- 验证码发送等不可安全重放的写请求必须标记 `noAutomaticReplay`；遇到 `40101` 只刷新会话并由用户明确重试，超时/429/5xx 结果不明时不得在后台重发。
 - `40103`～`40106` 清除本地会话；业务逻辑按错误码分支，不解析中文 message。
 - Cursor 是不透明字符串；筛选变化时清空，`40007 INVALID_CURSOR` 从首页重载。
 - 仅 GET、幂等方法和携带稳定 `clientRequestId` 的创建请求可自动重试。

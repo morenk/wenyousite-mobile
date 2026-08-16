@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
@@ -41,6 +42,7 @@ class ApiAuthRepository implements AuthRepository {
   }) async {
     try {
       final response = await _api.authRequestCode(
+        extra: ApiRequestPolicy.publicNonReplayable.extra,
         requestCodeDto: RequestCodeDto((builder) => builder.email = email),
       );
       final data = response.data?.data;

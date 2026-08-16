@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v3
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v2.4.2：跨端语义 Token、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
+- wenyousite-foundation v3.1.0：跨端语义 Token、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v2.4.2) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v3.1.0) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 
@@ -50,7 +50,7 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 后端契约只在 API、Markdown 语料、移动推送协议或移动端接入指南变化时同步，不需要为普通后端实现提交机械拉取。同步脚本会动态固定当前版本的 Markdown 规范化、节点和编辑器往返语料，以及 OpenAPI、mobile push v1 Schema/样例、移动 V1 黄金旅程与 operationId 分类、动态分类 fixture、合同变更记录和接入指南。
 
 ```bash
-powershell.exe -NoProfile -File tool/sync_backend_contract.ps1
+pwsh -NoProfile -File tool/sync_backend_contract.ps1
 npm run api:validate
 npm run api:generate
 ```

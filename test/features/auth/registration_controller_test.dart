@@ -43,7 +43,7 @@ void main() {
     expect(repository.requestCodeCalls, 1);
   });
 
-  test('429 使用 Retry-After 建立重试冷却并保留请求 ID', () async {
+  test('429 视为投递结果不确定并固定冷却 60 秒', () async {
     final repository = _FakeAuthRepository(
       onRequestCode: (_) => throw const ApiFailure(
         userMessage: '操作太频繁，请稍后再试。',
@@ -55,11 +55,13 @@ void main() {
     final controller = _controller(repository);
     addTearDown(controller.dispose);
 
-    expect(await controller.requestCode('new@example.com'), isFalse);
+    expect(await controller.requestCode('new@example.com'), isTrue);
 
-    expect(controller.state.status, RegistrationStatus.failed);
+    expect(controller.state.status, RegistrationStatus.idle);
+    expect(controller.state.step, RegistrationStep.verify);
+    expect(controller.state.codeDeliveryUncertain, isTrue);
     expect(controller.state.failure?.requestId, 'rate-limit-request-id');
-    expect(controller.state.resendSecondsRemaining, 37);
+    expect(controller.state.resendSecondsRemaining, 60);
   });
 
   test('完成注册保存双 Token 并规范化验证码和用户名', () async {

@@ -119,6 +119,9 @@ if ($markdownFixtureSource -notin $backendContractPaths) {
 $markdownEditorSource = Resolve-UniqueBackendContract `
   '^contracts/markdown-editor-roundtrip-v[0-9]+-fixtures\.json$' `
   'Markdown editor round-trip'
+$threadCategorySource = Resolve-UniqueBackendContract `
+  '^contracts/thread-category-v[0-9]+-fixtures\.json$' `
+  'thread category'
 
 $contractFiles = @(
   @{ Source = 'contracts/openapi.json'; Destination = 'openapi.json' },
@@ -129,7 +132,7 @@ $contractFiles = @(
   @{ Source = 'contracts/mobile-push-v1.schema.json'; Destination = 'mobile-push-v1.schema.json' },
   @{ Source = 'contracts/mobile-v1-golden-fixtures.json'; Destination = 'mobile-v1-golden-fixtures.json' },
   @{ Source = 'contracts/mobile-v1-operation-coverage.json'; Destination = 'mobile-v1-operation-coverage.json' },
-  @{ Source = 'contracts/thread-category-v1-fixtures.json'; Destination = 'thread-category-v1-fixtures.json' },
+  @{ Source = $threadCategorySource; Destination = (Split-Path -Leaf $threadCategorySource) },
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' }
@@ -145,6 +148,13 @@ Get-ChildItem -LiteralPath $contractDirectory -File |
   Where-Object {
     $_.Name -match '^markdown-(?:v[0-9]+(?:-nodes)?|editor-roundtrip-v[0-9]+)-fixtures\.json$' -and
     $_.Name -notin $desiredMarkdownFiles
+  } |
+  Remove-Item -Force
+$desiredThreadCategoryFile = Split-Path -Leaf $threadCategorySource
+Get-ChildItem -LiteralPath $contractDirectory -File |
+  Where-Object {
+    $_.Name -match '^thread-category-v[0-9]+-fixtures\.json$' -and
+    $_.Name -ne $desiredThreadCategoryFile
   } |
   Remove-Item -Force
 foreach ($contractFile in $contractFiles) {

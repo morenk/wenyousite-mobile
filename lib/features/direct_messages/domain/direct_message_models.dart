@@ -123,12 +123,18 @@ class DirectMessageUser {
     required this.username,
     required this.isDeactivated,
     this.avatarUrl,
+    this.isFollowing = false,
+    this.isFollowedBy = false,
   });
 
   final String id;
   final String username;
   final String? avatarUrl;
   final bool isDeactivated;
+  final bool isFollowing;
+  final bool isFollowedBy;
+
+  bool get isMutualFollow => isFollowing && isFollowedBy;
 }
 
 class DirectMessageMedia {

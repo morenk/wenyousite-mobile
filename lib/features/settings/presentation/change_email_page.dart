@@ -150,8 +150,20 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
         children: [
           WenyouSectionHeader(
             title: '查收新邮箱验证码',
-            subtitle: '验证码已发送至 ${state.email}。确认后所有终端都会退出。',
+            subtitle: state.codeDeliveryUncertain
+                ? '邮件可能已经发出，请在 ${state.email} 查收并继续输入验证码。'
+                : '验证码已发送至 ${state.email}。确认后所有终端都会退出。',
           ),
+          if (state.codeDeliveryUncertain) ...[
+            SizedBox(height: tokens.space12),
+            WenyouStatusBanner(
+              key: const Key('change-email-code-delivery-uncertain'),
+              message: '邮件可能已经发出',
+              detail: state.failure?.requestId == null
+                  ? '请保留当前验证码输入；为避免重复邮件，60 秒内不会重发。'
+                  : '请保留当前输入；请求 ID：${state.failure!.requestId}',
+            ),
+          ],
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
@@ -188,7 +200,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
             ),
           ),
-          if (state.failure != null) ...[
+          if (state.failure != null && !state.codeDeliveryUncertain) ...[
             SizedBox(height: tokens.space16),
             _FailureBanner(state: state),
           ],

@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_timeline.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 
 class DirectConversationPage extends ConsumerStatefulWidget {
@@ -181,9 +182,7 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
     final archived = conversation.archivedAt == null;
     final succeeded = await notifier.toggleArchive();
     if (!context.mounted || !succeeded) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(archived ? '会话已归档。' : '会话已移回主列表。')));
+    showDirectMessageNotice(context, archived ? '会话已归档。' : '会话已移回主列表。');
   }
 
   Future<void> _handleRequest(
@@ -214,9 +213,7 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
     }
     final succeeded = await notifier.handleRequest(accept: accept);
     if (!context.mounted || !succeeded) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(accept ? '已接受消息请求。' : '已拒绝消息请求。')));
+    showDirectMessageNotice(context, accept ? '已接受消息请求。' : '已拒绝消息请求。');
   }
 
   Future<void> _recall(
@@ -255,15 +252,11 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
         .read(directConversationControllerProvider(widget.conversationId))
         .conversationCanceled;
     if (canceled) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('消息请求已取消。')));
+      showDirectMessageNotice(context, '消息请求已取消。');
       context.pop();
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('消息已撤回。')));
+    showDirectMessageNotice(context, '消息已撤回。');
   }
 }
 

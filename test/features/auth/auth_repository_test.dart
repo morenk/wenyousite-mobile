@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
 
@@ -91,7 +92,10 @@ void main() {
   test('请求注册验证码映射邮箱与服务端有效期', () async {
     final api = _MockAuthApi();
     when(
-      () => api.authRequestCode(requestCodeDto: any(named: 'requestCodeDto')),
+      () => api.authRequestCode(
+        extra: any(named: 'extra'),
+        requestCodeDto: any(named: 'requestCodeDto'),
+      ),
     ).thenAnswer((_) async => _requestCodeResponse());
 
     final info = await ApiAuthRepository(
@@ -99,14 +103,18 @@ void main() {
     ).requestRegistrationCode(email: 'new@example.com');
 
     expect(info.expiresIn, const Duration(minutes: 15));
-    final dto =
-        verify(
-              () => api.authRequestCode(
-                requestCodeDto: captureAny(named: 'requestCodeDto'),
-              ),
-            ).captured.single
-            as RequestCodeDto;
-    expect(dto.email, 'new@example.com');
+    final dto = verify(
+      () => api.authRequestCode(
+        extra: captureAny(named: 'extra'),
+        requestCodeDto: captureAny(named: 'requestCodeDto'),
+      ),
+    ).captured;
+    expect(
+      dto.whereType<Map<String, dynamic>>().single,
+      ApiRequestPolicy.publicNonReplayable.extra,
+    );
+    final requestCode = dto.whereType<RequestCodeDto>().single;
+    expect(requestCode.email, 'new@example.com');
   });
 
   test('完成注册显式声明 mobile 并返回双 Token', () async {
@@ -173,6 +181,7 @@ void main() {
     final api = _MockAuthApi();
     when(
       () => api.authForgotPassword(
+        extra: any(named: 'extra'),
         forgotPasswordDto: any(named: 'forgotPasswordDto'),
       ),
     ).thenAnswer((_) async => _forgotPasswordResponse());
@@ -190,14 +199,18 @@ void main() {
       newPassword: 'next-pass9',
     );
 
-    final forgotDto =
-        verify(
-              () => api.authForgotPassword(
-                forgotPasswordDto: captureAny(named: 'forgotPasswordDto'),
-              ),
-            ).captured.single
-            as ForgotPasswordDto;
-    expect(forgotDto.email, 'user@example.com');
+    final forgotDto = verify(
+      () => api.authForgotPassword(
+        extra: captureAny(named: 'extra'),
+        forgotPasswordDto: captureAny(named: 'forgotPasswordDto'),
+      ),
+    ).captured;
+    expect(
+      forgotDto.whereType<Map<String, dynamic>>().single,
+      ApiRequestPolicy.publicNonReplayable.extra,
+    );
+    final forgotPassword = forgotDto.whereType<ForgotPasswordDto>().single;
+    expect(forgotPassword.email, 'user@example.com');
     final resetDto =
         verify(
               () => api.authResetPassword(
@@ -214,6 +227,7 @@ void main() {
     final api = _MockAuthApi();
     when(
       () => api.authForgotPassword(
+        extra: any(named: 'extra'),
         forgotPasswordDto: any(named: 'forgotPasswordDto'),
       ),
     ).thenAnswer(

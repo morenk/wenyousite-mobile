@@ -76,19 +76,24 @@ void main() {
         subthreadId: 'subthread-early',
         cursor: 'cursor-1',
         limit: 7,
+        order: 'NEWEST',
       ),
     ).thenAnswer((_) async => _floorsResponse());
 
-    final page = await ApiThreadDetailRepository(
-      threadsApi,
-      postsApi,
-    ).fetchFloors(subthreadId: 'subthread-early', cursor: 'cursor-1', limit: 7);
+    final page = await ApiThreadDetailRepository(threadsApi, postsApi)
+        .fetchFloors(
+          subthreadId: 'subthread-early',
+          cursor: 'cursor-1',
+          limit: 7,
+          order: ThreadFloorOrder.newest,
+        );
 
     verify(
       () => postsApi.postsFindFloors(
         subthreadId: 'subthread-early',
         cursor: 'cursor-1',
         limit: 7,
+        order: 'NEWEST',
       ),
     ).called(1);
     expect(page.cursor, 'cursor-2');

@@ -51,11 +51,12 @@ dependencies:
   url_launcher: ^6.3.2
   mime: ^2.0.0
   flutter_markdown_plus: ^1.0.12
+  flutter_svg: 2.3.0
   markdown: ^7.3.1
   wenyousite_foundation:
     git:
       url: https://github.com/morenk/wenyousite-foundation.git
-      ref: v2.4.2
+      ref: v3.1.0
       path: packages/flutter
   wenyou_api:
     path: packages/wenyou_api

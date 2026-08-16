@@ -52,6 +52,8 @@ class DirectConversationTargetController
           username: profile.username,
           avatarUrl: profile.avatarUrl,
           isDeactivated: profile.isDeactivated,
+          isFollowing: profile.isFollowing,
+          isFollowedBy: profile.isFollowedBy,
         ),
         lookup: lookup,
       );

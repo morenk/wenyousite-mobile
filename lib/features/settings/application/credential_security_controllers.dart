@@ -80,17 +80,30 @@ class EmailChangeController extends StateNotifier<EmailChangeState> {
         step: EmailChangeStep.verifyCode,
         email: normalizedEmail,
         resendSecondsRemaining: resendCooldown.inSeconds,
+        codeDeliveryUncertain: false,
       );
       _startCooldown(resendCooldown.inSeconds);
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
       final failure = _asFailure(error, '验证码发送没有完成，请稍后重试。');
+      if (failure.hasUnknownWriteOutcome) {
+        state = EmailChangeState(
+          step: EmailChangeStep.verifyCode,
+          email: normalizedEmail,
+          resendSecondsRemaining: resendCooldown.inSeconds,
+          failure: failure,
+          codeDeliveryUncertain: true,
+        );
+        _startCooldown(resendCooldown.inSeconds);
+        return true;
+      }
       final retrySeconds = failure.retryAfter?.inSeconds ?? 0;
       state = state.copyWith(
         clearAction: true,
         failure: failure,
         resendSecondsRemaining: retrySeconds,
+        codeDeliveryUncertain: false,
       );
       if (retrySeconds > 0) _startCooldown(retrySeconds);
       return false;

@@ -27,6 +27,7 @@ class ThreadDetailState {
     this.failure,
     this.transientFailure,
     this.retryAction = ThreadDetailRetryAction.refresh,
+    this.floorOrder = ThreadFloorOrder.oldest,
   });
 
   final ThreadDetailPhase phase;
@@ -41,6 +42,7 @@ class ThreadDetailState {
   final ApiFailure? failure;
   final ApiFailure? transientFailure;
   final ThreadDetailRetryAction retryAction;
+  final ThreadFloorOrder floorOrder;
 
   ThreadSubthreadModel? get selectedSubthread =>
       detail?.subthreadById(selectedSubthreadId);
@@ -58,6 +60,7 @@ class ThreadDetailState {
     Object? failure = _unset,
     Object? transientFailure = _unset,
     ThreadDetailRetryAction? retryAction,
+    ThreadFloorOrder? floorOrder,
   }) {
     return ThreadDetailState(
       phase: phase ?? this.phase,
@@ -80,6 +83,7 @@ class ThreadDetailState {
           ? this.transientFailure
           : transientFailure as ApiFailure?,
       retryAction: retryAction ?? this.retryAction,
+      floorOrder: floorOrder ?? this.floorOrder,
     );
   }
 }
@@ -220,6 +224,26 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     await _loadFirstFloors(epoch, subthreadId);
   }
 
+  Future<void> setFloorOrder(ThreadFloorOrder order) async {
+    final selectedId = state.selectedSubthreadId;
+    if (state.floorOrder == order ||
+        selectedId == null ||
+        state.phase != ThreadDetailPhase.ready) {
+      return;
+    }
+    final epoch = ++_requestEpoch;
+    state = state.copyWith(
+      floorOrder: order,
+      floors: const [],
+      cursor: null,
+      hasMore: false,
+      isLoadingFloors: true,
+      isLoadingMore: false,
+      transientFailure: null,
+    );
+    await _loadFirstFloors(epoch, selectedId);
+  }
+
   Future<void> retryFloors() async {
     final selectedId = state.selectedSubthreadId;
     if (selectedId == null) return;
@@ -250,6 +274,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       final page = await _repository.fetchFloors(
         subthreadId: selectedId,
         cursor: state.cursor,
+        order: state.floorOrder,
       );
       if (!_isCurrent(epoch) || state.selectedSubthreadId != selectedId) return;
       final merged = mergeUniqueBy(
@@ -258,7 +283,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         keyOf: (item) => item.id,
       );
       state = state.copyWith(
-        floors: _sortFloors(merged),
+        floors: _sortFloors(merged, state.floorOrder),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingMore: false,
@@ -290,12 +315,15 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   Future<void> _loadFirstFloors(int epoch, String subthreadId) async {
     try {
-      final page = await _repository.fetchFloors(subthreadId: subthreadId);
+      final page = await _repository.fetchFloors(
+        subthreadId: subthreadId,
+        order: state.floorOrder,
+      );
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;
       }
       state = state.copyWith(
-        floors: _sortFloors(page.items),
+        floors: _sortFloors(page.items, state.floorOrder),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isRefreshing: false,
@@ -341,7 +369,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     );
   }
 
-  List<ThreadFloorModel> _sortFloors(Iterable<ThreadFloorModel> floors) {
+  List<ThreadFloorModel> _sortFloors(
+    Iterable<ThreadFloorModel> floors,
+    ThreadFloorOrder order,
+  ) {
     final sorted = floors.toList()
       ..sort((left, right) {
         final leftNumber = left.floorNumber;
@@ -349,7 +380,8 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         if (leftNumber == null && rightNumber == null) return 0;
         if (leftNumber == null) return 1;
         if (rightNumber == null) return -1;
-        return leftNumber.compareTo(rightNumber);
+        final comparison = leftNumber.compareTo(rightNumber);
+        return order == ThreadFloorOrder.oldest ? comparison : -comparison;
       });
     return List.unmodifiable(sorted);
   }

@@ -30,6 +30,7 @@ class EmailChangeState {
     this.email,
     this.resendSecondsRemaining = 0,
     this.failure,
+    this.codeDeliveryUncertain = false,
   });
 
   final EmailChangeStep step;
@@ -37,6 +38,7 @@ class EmailChangeState {
   final String? email;
   final int resendSecondsRemaining;
   final ApiFailure? failure;
+  final bool codeDeliveryUncertain;
 
   bool get isBusy => action != null;
   bool get isRequestingCode => action == EmailChangeAction.requestingCode;
@@ -50,6 +52,7 @@ class EmailChangeState {
     ApiFailure? failure,
     bool clearAction = false,
     bool clearFailure = false,
+    bool? codeDeliveryUncertain,
   }) {
     return EmailChangeState(
       step: step ?? this.step,
@@ -58,6 +61,8 @@ class EmailChangeState {
       resendSecondsRemaining:
           resendSecondsRemaining ?? this.resendSecondsRemaining,
       failure: clearFailure ? null : failure ?? this.failure,
+      codeDeliveryUncertain:
+          codeDeliveryUncertain ?? this.codeDeliveryUncertain,
     );
   }
 }

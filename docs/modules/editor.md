@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。首屏按标题 → 固定元信息栏 → 剩余正文画布 → 本地保存状态 → 键盘 dock 排列，正文不套装饰卡片或使用固定整机高度推算。编辑态正文统一为 17sp、1.8 行高，H2/H3、引用、代码、链接和协议节点保持与成稿等价的 WYSIWYG 层级。发布始终从紧凑顶栏提交。工具栏消费 Foundation v2.4.2：正文/H2/H3、粗体、斜体、图片和更多固定在主栏，发送场景最右固定发送；再按可用宽度和 48dp 最小命中区依次提升草稿、引用、分隔线和表情包，已提升动作不在“更多”中重复。标题选择与更多能力在编辑器内部展开，不打开独立格式 Bottom Sheet，也不横向滚动；链接和骰子参数就地输入，异步图片/表情/草稿返回后恢复选区、焦点和键盘。
+打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。首屏按标题 → 固定元信息栏 → 剩余正文画布 → 本地保存状态 → 键盘 dock 排列，正文不套装饰卡片或使用固定整机高度推算。编辑态正文统一为 17sp、1.8 行高，H2/H3、引用、行内代码、链接和协议节点保持与成稿等价的 WYSIWYG 层级。发布始终从紧凑顶栏提交。工具栏消费 Foundation v3.1.0：正文/H2/H3、粗体、斜体、图片和更多固定在主栏，发送场景最右固定发送；再按可用宽度和 48dp 最小命中区依次提升草稿、引用、分隔线和表情包，已提升动作不在“更多”中重复。标题选择与更多能力在编辑器内部展开，不打开独立格式 Bottom Sheet，也不横向滚动；链接和骰子参数就地输入，异步图片/表情/草稿返回后恢复选区、焦点和键盘。
 
 在已有主题上下文输入 `@` 会于 180ms 防抖后读取关注用户和帖内标记玩家；继续输入非空用户名时，再合并服务端确认的全站用户名结果，主题关系候选优先且按稳定 ID 去重，关系外候选标记为普通用户。服务端确认楼主或协作者权限时额外展示 `@全体玩家`。候选以根浮层靠近软键盘展示，不参与主题或帖子正文布局；浮层宽度随 320～600dp 视口收束、总高最多 200dp 并在内部滚动，窄屏键盘态额外避开 48dp 格式工具入口。关闭或选择候选都把焦点还给正文且不改变画布尺寸和当前选区；选择后以原子 Quill embed 替换当前 `@关键词` 并补一个分隔空格，Codec 固定序列化为 `[@用户名](/users/:userId)` 或 `@全体玩家`。全新主题必须先保存为服务端草稿取得真实 `threadId`，否则浮层只说明前置条件且不发请求。
 
@@ -73,7 +73,7 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 - [x] 阅读态与 Quill 编辑态的骰子表达式/结果均为正文基线上的行内原子节点；混排、换行第二行、Codec 往返和 360dp 视觉基线均有回归。
 - [x] 已有内容中可精确往返的粗斜体、删除线、行内代码、安全链接、H2/H3、引用和 0～3 级列表恢复为 Quill 属性。
 - [ ] 完整消费站内引用 fixture 的 7 个 `editorPasteCases`，合法主题/邀请坐标规范化为传送门，非法邀请、混合文本和站外链接保持普通粘贴。
-- [ ] 任务列表、表格、围栏代码等复杂结构的 WYSIWYG 与正文预览完成。
+- [x] 任务列表、表格、围栏代码、H1/H4+、显式硬换行、原始 HTML、未知协议和超过三层列表按 Markdown v3 契约显示为可读字面文本，不声称结构化 WYSIWYG 支持。
 
 ## 12. 已知限制和后续功能
 
@@ -81,8 +81,8 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.14.0-dev.20260815.1`；Markdown v3；后端 `9752c2289acb0db19af7d91d98978adb558991bf`；Foundation `v2.4.2`（`7e7d863`）。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`；Foundation `v3.1.0`（`d60df368`）。
 
 ## 14. 相关代码与架构文档
 
-通用会话、工具栏、提及和快照端口：`lib/features/editor/`；跨 feature 只通过根级 `editor.dart` / `editor_persistence.dart` façade 消费。主题创作页面、控制器与 API 适配器：`lib/features/threads/`；帖子工作流：`lib/features/posts/`；普通 Markdown 中立解析与 Delta Codec：`lib/core/markdown/`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[草稿](drafts.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)、[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)。
+通用会话、工具栏、提及和快照端口：`lib/features/editor/`；跨 feature 只通过根级 `editor.dart` / `editor_persistence.dart` façade 消费。主题创作页面、控制器与 API 适配器：`lib/features/threads/`；帖子工作流：`lib/features/posts/`；普通 Markdown 中立解析与 Delta Codec：`lib/core/markdown/`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[草稿](drafts.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)、[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)。

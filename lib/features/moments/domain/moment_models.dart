@@ -376,3 +376,5 @@ class MomentCommentInput {
     replyToCommentId?.trim() ?? '',
   ].join('|');
 }
+
+enum MomentInteractionAction { like, bookmark }

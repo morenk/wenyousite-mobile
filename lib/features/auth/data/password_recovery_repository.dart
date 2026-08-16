@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 
@@ -17,6 +18,7 @@ class ApiPasswordRecoveryRepository implements PasswordRecoveryRepository {
   Future<void> requestCode({required String email}) async {
     try {
       final data = (await _api.authForgotPassword(
+        extra: ApiRequestPolicy.publicNonReplayable.extra,
         forgotPasswordDto: ForgotPasswordDto(
           (builder) => builder.email = email,
         ),

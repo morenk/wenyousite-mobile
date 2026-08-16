@@ -17,6 +17,7 @@ class RegistrationState {
     this.email,
     this.codeExpiresInSeconds,
     this.resendSecondsRemaining = 0,
+    this.codeDeliveryUncertain = false,
     this.failure,
   });
 
@@ -25,6 +26,7 @@ class RegistrationState {
   final String? email;
   final int? codeExpiresInSeconds;
   final int resendSecondsRemaining;
+  final bool codeDeliveryUncertain;
   final ApiFailure? failure;
 
   bool get isBusy =>
@@ -37,6 +39,7 @@ class RegistrationState {
     String? email,
     int? codeExpiresInSeconds,
     int? resendSecondsRemaining,
+    bool? codeDeliveryUncertain,
     ApiFailure? failure,
     bool clearFailure = false,
   }) {
@@ -47,6 +50,8 @@ class RegistrationState {
       codeExpiresInSeconds: codeExpiresInSeconds ?? this.codeExpiresInSeconds,
       resendSecondsRemaining:
           resendSecondsRemaining ?? this.resendSecondsRemaining,
+      codeDeliveryUncertain:
+          codeDeliveryUncertain ?? this.codeDeliveryUncertain,
       failure: clearFailure ? null : failure ?? this.failure,
     );
   }
@@ -89,16 +94,30 @@ class RegistrationController extends StateNotifier<RegistrationState> {
         email: email,
         codeExpiresInSeconds: info.expiresIn.inSeconds,
         resendSecondsRemaining: resendCooldown.inSeconds,
+        codeDeliveryUncertain: false,
         clearFailure: true,
       );
       _startCooldown(resendCooldown.inSeconds);
       return true;
     } on ApiFailure catch (failure) {
+      if (failure.hasUnknownWriteOutcome) {
+        state = state.copyWith(
+          step: RegistrationStep.verify,
+          status: RegistrationStatus.idle,
+          email: email,
+          resendSecondsRemaining: resendCooldown.inSeconds,
+          codeDeliveryUncertain: true,
+          failure: failure,
+        );
+        _startCooldown(resendCooldown.inSeconds);
+        return true;
+      }
       final retrySeconds = failure.retryAfter?.inSeconds ?? 0;
       state = state.copyWith(
         status: RegistrationStatus.failed,
         failure: failure,
         resendSecondsRemaining: retrySeconds,
+        codeDeliveryUncertain: false,
       );
       if (retrySeconds > 0) _startCooldown(retrySeconds);
       return false;

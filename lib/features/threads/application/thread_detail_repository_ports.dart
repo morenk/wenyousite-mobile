@@ -11,6 +11,7 @@ abstract interface class ThreadDetailRepository {
     required String subthreadId,
     String? cursor,
     int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
   });
 }
 
@@ -36,6 +37,7 @@ class _UnboundThreadDetailRepository implements ThreadDetailRepository {
     required String subthreadId,
     String? cursor,
     int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
   }) => Future.error(_error());
 }
 

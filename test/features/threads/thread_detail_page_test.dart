@@ -32,7 +32,8 @@ void main() {
   setUpAll(loadFoundationTestFonts);
 
   testWidgets('公开主题详情连续展示正文，并由克制入口进入楼中楼', (tester) async {
-    await tester.pumpWidget(_detailRouterApp(_FakeThreadDetailRepository()));
+    final repository = _FakeThreadDetailRepository();
+    await tester.pumpWidget(_detailRouterApp(repository));
     await tester.pumpAndSettle();
 
     expect(find.text('星海旅团'), findsOneWidget);
@@ -95,6 +96,13 @@ void main() {
     expect(find.text('参与者发言'), findsNothing);
     expect(find.text('8 条内容'), findsNothing);
     expect(find.text('12 楼层'), findsNothing);
+    expect(find.byKey(const Key('thread-floor-order')), findsOneWidget);
+    expect(find.text('最早在前'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-floor-order')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('最新在前').last);
+    await tester.pumpAndSettle();
+    expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
     expect(find.text('128 浏览 · 2 玩家 · 12 楼 · 8 升温油'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('主线正文'),
@@ -1407,6 +1415,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final List<ThreadFloorModel> mainFloors;
   final List<ThreadFloorModel>? nextFloors;
   final List<String> requestedSubthreads = [];
+  final List<ThreadFloorOrder> requestedOrders = [];
   final List<String> targetPostIds = [];
   int threadCalls = 0;
 
@@ -1428,8 +1437,10 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     required String subthreadId,
     String? cursor,
     int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
   }) async {
     requestedSubthreads.add(subthreadId);
+    requestedOrders.add(order);
     if (cursor != null && loadMoreFailure != null) {
       throw loadMoreFailure!;
     }

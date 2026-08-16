@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -38,7 +39,7 @@ class MomentCardTile extends StatelessWidget {
     this.onAuthorTap,
     this.onLike,
     this.onBookmark,
-    this.busy = false,
+    this.pendingAction,
     super.key,
   });
 
@@ -47,7 +48,7 @@ class MomentCardTile extends StatelessWidget {
   final VoidCallback? onAuthorTap;
   final VoidCallback? onLike;
   final VoidCallback? onBookmark;
-  final bool busy;
+  final MomentInteractionAction? pendingAction;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +135,10 @@ class MomentCardTile extends StatelessWidget {
                       : WenyouIconIds.actionLike,
                   label: '${moment.likeCount}',
                   selected: moment.viewerLiked,
-                  onPressed: busy ? null : onLike,
+                  kind: WenyouInteractionKind.like,
+                  pending: pendingAction == MomentInteractionAction.like,
+                  onPressed: pendingAction == null ? onLike : null,
+                  interactive: onLike != null,
                   tooltip: moment.viewerLiked ? '取消点赞' : '点赞',
                 ),
                 _MomentCountAction(
@@ -143,16 +147,15 @@ class MomentCardTile extends StatelessWidget {
                   onPressed: onTap,
                   tooltip: '查看评论',
                 ),
-                IconButton(
+                WenyouInteractionToggle(
                   key: Key('moment-bookmark-${moment.id}'),
-                  onPressed: busy ? null : onBookmark,
-                  tooltip: moment.viewerBookmarked ? '取消收藏' : '收藏',
-                  icon: WenyouIcon(
-                    moment.viewerBookmarked
-                        ? WenyouIconIds.actionBookmark
-                        : WenyouIconIds.actionBookmark,
-                    color: moment.viewerBookmarked ? tokens.focus : null,
-                  ),
+                  kind: WenyouInteractionKind.bookmark,
+                  selected: moment.viewerBookmarked,
+                  pending: pendingAction == MomentInteractionAction.bookmark,
+                  onPressed: pendingAction == null ? onBookmark : null,
+                  interactive: onBookmark != null,
+                  semanticLabel: moment.viewerBookmarked ? '取消收藏' : '收藏',
+                  padding: EdgeInsets.symmetric(horizontal: tokens.space4),
                 ),
               ],
             ),
@@ -753,7 +756,10 @@ class _MomentCountAction extends StatelessWidget {
     required this.label,
     required this.tooltip,
     this.selected = false,
+    this.kind,
+    this.pending = false,
     this.onPressed,
+    this.interactive = true,
     super.key,
   });
 
@@ -761,11 +767,25 @@ class _MomentCountAction extends StatelessWidget {
   final String label;
   final String tooltip;
   final bool selected;
+  final WenyouInteractionKind? kind;
+  final bool pending;
   final VoidCallback? onPressed;
+  final bool interactive;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    if (kind case final interactionKind?) {
+      return WenyouInteractionToggle(
+        kind: interactionKind,
+        selected: selected,
+        pending: pending,
+        onPressed: onPressed,
+        interactive: interactive,
+        semanticLabel: '$tooltip，$label',
+        supporting: Text(label),
+      );
+    }
     return Semantics(
       button: true,
       label: '$tooltip，$label',

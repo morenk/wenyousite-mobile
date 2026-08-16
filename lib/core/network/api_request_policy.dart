@@ -6,7 +6,9 @@
 enum ApiRequestPolicy {
   standard,
   public,
-  idempotentCreate;
+  idempotentCreate,
+  publicNonReplayable,
+  authenticatedNonReplayable;
 
   Map<String, dynamic> get extra => switch (this) {
     ApiRequestPolicy.standard => const <String, dynamic>{},
@@ -16,10 +18,18 @@ enum ApiRequestPolicy {
     ApiRequestPolicy.idempotentCreate => const <String, dynamic>{
       ApiRequestExtraKeys.idempotentCreate: true,
     },
+    ApiRequestPolicy.publicNonReplayable => const <String, dynamic>{
+      ApiRequestExtraKeys.skipAuth: true,
+      ApiRequestExtraKeys.noAutomaticReplay: true,
+    },
+    ApiRequestPolicy.authenticatedNonReplayable => const <String, dynamic>{
+      ApiRequestExtraKeys.noAutomaticReplay: true,
+    },
   };
 }
 
 abstract final class ApiRequestExtraKeys {
   static const skipAuth = 'skipAuth';
   static const idempotentCreate = 'idempotentCreate';
+  static const noAutomaticReplay = 'noAutomaticReplay';
 }

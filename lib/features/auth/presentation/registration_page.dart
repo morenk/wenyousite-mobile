@@ -145,8 +145,20 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           children: [
             WenyouSectionHeader(
               title: '查收邮箱验证码',
-              subtitle: '验证码已发送至 ${state.email}，有效期约 $expiryMinutes 分钟。',
+              subtitle: state.codeDeliveryUncertain
+                  ? '邮件可能已经发出，请在 ${state.email} 查收并继续输入验证码。'
+                  : '验证码已发送至 ${state.email}，有效期约 $expiryMinutes 分钟。',
             ),
+            if (state.codeDeliveryUncertain) ...[
+              SizedBox(height: tokens.space12),
+              WenyouStatusBanner(
+                key: const Key('register-code-delivery-uncertain'),
+                message: '邮件可能已经发出',
+                detail: state.failure?.requestId == null
+                    ? '请检查收件箱和垃圾邮件；为避免重复邮件，60 秒内不会自动或手动重发。'
+                    : '请检查收件箱和垃圾邮件；请求 ID：${state.failure!.requestId}',
+              ),
+            ],
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
@@ -220,7 +232,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               validator: (value) =>
                   value == _passwordController.text ? null : '两次输入的密码不一致',
             ),
-            if (state.failure != null) ...[
+            if (state.failure != null && !state.codeDeliveryUncertain) ...[
               SizedBox(height: tokens.space16),
               WenyouFailureBanner(failure: state.failure!),
             ],

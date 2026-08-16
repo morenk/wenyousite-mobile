@@ -209,3 +209,13 @@ class ThreadPostTargetModel {
   final ThreadFloorModel floor;
   final String? focusedReplyId;
 }
+
+enum ThreadFloorOrder {
+  oldest('OLDEST', '最早在前'),
+  newest('NEWEST', '最新在前');
+
+  const ThreadFloorOrder(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+}

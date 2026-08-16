@@ -99,11 +99,12 @@ void main() {
     expect(controller.state.resendSecondsRemaining, 0);
   });
 
-  test('验证码请求限流按 Retry-After 锁定重发并保留错误', () async {
+  test('验证码请求 429 视为投递结果不确定并进入验证步骤', () async {
     final session = await _authenticatedSession(_MemoryTokenStore());
     final repository = _FakeRepository(
       requestEmailCodeFailure: const ApiFailure(
         userMessage: '操作太频繁，请稍后再试。',
+        businessCode: 42900,
         requestId: 'rate-request-id',
         retryAfter: Duration(seconds: 7),
       ),
@@ -117,12 +118,13 @@ void main() {
         newEmail: 'next@example.com',
         oldPassword: 'current123',
       ),
-      isFalse,
+      isTrue,
     );
 
     expect(controller.state.failure?.requestId, 'rate-request-id');
-    expect(controller.state.resendSecondsRemaining, 7);
-    expect(controller.state.step, EmailChangeStep.requestCode);
+    expect(controller.state.resendSecondsRemaining, 60);
+    expect(controller.state.step, EmailChangeStep.verifyCode);
+    expect(controller.state.codeDeliveryUncertain, isTrue);
   });
 
   test('确认换绑失败保留目标邮箱，成功后清除本地会话', () async {

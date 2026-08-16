@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 
 class NewDirectConversationPage extends ConsumerStatefulWidget {
@@ -90,14 +91,11 @@ class _NewDirectConversationPageState
       stickerAssetId: stickerAssetId,
     );
     if (!context.mounted || result == null) return false;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result.conversation.status == DirectConversationStatus.accepted
-              ? '私聊已建立。'
-              : '消息请求已发送。',
-        ),
-      ),
+    showDirectMessageNotice(
+      context,
+      result.conversation.status == DirectConversationStatus.accepted
+          ? '私聊已建立。'
+          : '消息请求已发送。',
     );
     context.replaceNamed(
       'direct-conversation',
@@ -329,9 +327,17 @@ _EntryCopy _entryCopy(DirectConversationLookup lookup, DirectMessageUser user) {
       submitLabel: '建立私聊',
     );
   }
+  if (user.isMutualFollow) {
+    return const _EntryCopy.enabled(
+      title: '你们已互相关注',
+      description: '发送后会直接建立私聊，不会作为消息请求。',
+      headerSubtitle: '已互相关注',
+      submitLabel: '发送',
+    );
+  }
   return const _EntryCopy.enabled(
     title: '这会先作为消息请求',
-    description: '若你们尚未互相关注，对方接受前只能发送这一条消息。',
+    description: '你们尚未互相关注，对方接受前只能发送这一条消息。',
     submitLabel: '发送',
   );
 }

@@ -11,10 +11,14 @@ class PasswordRecoverySeed {
   const PasswordRecoverySeed({
     this.initialEmail,
     this.codeRecentlySent = false,
+    this.codeDeliveryUncertain = false,
+    this.codeDeliveryRequestId,
   });
 
   final String? initialEmail;
   final bool codeRecentlySent;
+  final bool codeDeliveryUncertain;
+  final String? codeDeliveryRequestId;
 }
 
 class PasswordRecoveryState {
@@ -23,12 +27,16 @@ class PasswordRecoveryState {
     this.lastRequestedEmail,
     this.resendSecondsRemaining = 0,
     this.failure,
+    this.codeDeliveryUncertain = false,
+    this.codeDeliveryRequestId,
   });
 
   final PasswordRecoveryAction? action;
   final String? lastRequestedEmail;
   final int resendSecondsRemaining;
   final ApiFailure? failure;
+  final bool codeDeliveryUncertain;
+  final String? codeDeliveryRequestId;
 
   bool get isBusy => action != null;
   bool get isRequestingCode => action == PasswordRecoveryAction.requestingCode;
@@ -41,6 +49,8 @@ class PasswordRecoveryState {
     ApiFailure? failure,
     bool clearAction = false,
     bool clearFailure = false,
+    bool? codeDeliveryUncertain,
+    String? codeDeliveryRequestId,
   }) {
     return PasswordRecoveryState(
       action: clearAction ? null : action ?? this.action,
@@ -48,6 +58,11 @@ class PasswordRecoveryState {
       resendSecondsRemaining:
           resendSecondsRemaining ?? this.resendSecondsRemaining,
       failure: clearFailure ? null : failure ?? this.failure,
+      codeDeliveryUncertain:
+          codeDeliveryUncertain ?? this.codeDeliveryUncertain,
+      codeDeliveryRequestId: codeDeliveryUncertain == false
+          ? null
+          : codeDeliveryRequestId ?? this.codeDeliveryRequestId,
     );
   }
 }
@@ -62,6 +77,8 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
           resendSecondsRemaining: seed.codeRecentlySent
               ? resendCooldown.inSeconds
               : 0,
+          codeDeliveryUncertain: seed.codeDeliveryUncertain,
+          codeDeliveryRequestId: seed.codeDeliveryRequestId,
         ),
       ) {
     if (seed.codeRecentlySent) {
@@ -89,17 +106,31 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
         clearFailure: true,
         lastRequestedEmail: normalizedEmail,
         resendSecondsRemaining: resendCooldown.inSeconds,
+        codeDeliveryUncertain: false,
       );
       _startCooldown(resendCooldown.inSeconds);
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
       final failure = _asFailure(error, '重置验证码发送没有完成，请稍后重试。');
+      if (failure.hasUnknownWriteOutcome) {
+        state = state.copyWith(
+          clearAction: true,
+          lastRequestedEmail: normalizedEmail,
+          resendSecondsRemaining: resendCooldown.inSeconds,
+          codeDeliveryUncertain: true,
+          codeDeliveryRequestId: failure.requestId,
+          failure: failure,
+        );
+        _startCooldown(resendCooldown.inSeconds);
+        return true;
+      }
       final retrySeconds = failure.retryAfter?.inSeconds ?? 0;
       state = state.copyWith(
         clearAction: true,
         failure: failure,
         resendSecondsRemaining: retrySeconds,
+        codeDeliveryUncertain: false,
       );
       if (retrySeconds > 0) _startCooldown(retrySeconds);
       return false;

@@ -62,6 +62,40 @@ void main() {
     expect(controller.state.hasMore, isFalse);
   });
 
+  test('切换楼层顺序重置游标并以同一顺序请求分页', () async {
+    final repository = _FakeThreadDetailRepository(
+      onFloors: (subthreadId, cursor) async => CursorPage(
+        items: cursor == null
+            ? [_floor('floor-1', number: 1), _floor('floor-3', number: 3)]
+            : [_floor('floor-2', number: 2)],
+        cursor: cursor == null ? 'cursor-1' : null,
+        hasMore: cursor == null,
+      ),
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    expect(controller.state.floors.map((item) => item.floorNumber), [1, 3]);
+
+    await controller.setFloorOrder(ThreadFloorOrder.newest);
+    expect(controller.state.floorOrder, ThreadFloorOrder.newest);
+    expect(controller.state.floors.map((item) => item.floorNumber), [3, 1]);
+    expect(repository.floorRequests, ['subthread-2:null', 'subthread-2:null']);
+    expect(repository.floorOrders, [
+      ThreadFloorOrder.oldest,
+      ThreadFloorOrder.newest,
+    ]);
+
+    await controller.loadMore();
+    expect(controller.state.floors.map((item) => item.floorNumber), [3, 2, 1]);
+    expect(repository.floorOrders.last, ThreadFloorOrder.newest);
+  });
+
   test('分页 cursor 失效时自动从当前子贴第一页重载', () async {
     var firstPageCalls = 0;
     final repository = _FakeThreadDetailRepository(
@@ -314,6 +348,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   )?
   onFloors;
   final List<String> floorRequests = [];
+  final List<ThreadFloorOrder> floorOrders = [];
 
   @override
   Future<ThreadDetailModel> fetchThread(String threadId) {
@@ -330,8 +365,10 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     required String subthreadId,
     String? cursor,
     int limit = 20,
+    ThreadFloorOrder order = ThreadFloorOrder.oldest,
   }) {
     floorRequests.add('$subthreadId:$cursor');
+    floorOrders.add(order);
     return onFloors?.call(subthreadId, cursor) ??
         Future.value(
           CursorPage(items: [_floor('floor-$subthreadId')], hasMore: false),
@@ -377,10 +414,10 @@ final _detail = ThreadDetailModel(
 
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);
 
-ThreadFloorModel _floor(String id) {
+ThreadFloorModel _floor(String id, {int number = 1}) {
   return ThreadFloorModel(
     id: id,
-    floorNumber: 1,
+    floorNumber: number,
     author: _author,
     body: const ThreadBodyModel(markdown: '楼层正文'),
     createdAt: DateTime.utc(2026, 8, 9),

@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-首次并行加载服务端分类和推荐流；首屏常驻区域把分类、排序和状态收敛为同一行、同一圆角与选中反馈的三个紧凑下拉菜单，所有选项都在锚点下方展开，不为状态筛选打开底部抽屉。首页发现中的每个主题都是独立内容单元，使用占满内容列的细边框圆角卡片，卡片之间保留 12dp 间距且不叠加永久阴影；40dp 头像仅占题头，作者/等级/时间在首行，分类/状态/置顶在第二行，随后依次展示标题、整宽 16:9 封面和最多两行摘要。有安全首图时只消费服务端唯一首图并以 `cover` 裁切，无图不预留图片区。固定 48dp 页脚左侧使用 Foundation 语义图标展示玩家、回复与加油，右侧按卡片内宽显示一至三个标签，其余以不可点击的 `+N` 汇总，避免标签与状态挤占正文。下拉刷新重置 cursor，接近列表尾部或点击“加载更多”时按原筛选继续；改变分类、状态或排序先清空数据与 cursor，再请求第一页。点击主题条目后进入对应公开主题详情，点击可见标签则由 tags 模块按稳定 ID 精确聚合主题。
+首次并行加载服务端分类和推荐流；首屏常驻区域把分类、排序和状态收敛为同一行、同一圆角与选中反馈的三个紧凑下拉菜单，所有选项都在锚点下方展开，不为状态筛选打开底部抽屉。分类不再消费服务端颜色字段，未选中与选中态统一使用 Foundation 中性表面和语义前景。首页发现中的每个主题都是独立内容单元，使用占满内容列的细边框圆角卡片，卡片之间保留 12dp 间距且不叠加永久阴影；40dp 头像仅占题头，作者/等级/时间在首行，分类/状态/置顶在第二行，随后依次展示标题、整宽 16:9 封面和最多两行摘要。有安全首图时只消费服务端唯一首图并以 `cover` 裁切，无图不预留图片区。固定 48dp 页脚左侧使用 Foundation 语义图标展示玩家、回复与加油，右侧按卡片内宽显示一至三个标签，其余以不可点击的 `+N` 汇总，避免标签与状态挤占正文。下拉刷新重置 cursor，接近列表尾部或点击“加载更多”时按原筛选继续；改变分类、状态或排序先清空数据与 cursor，再请求第一页。点击主题条目后进入对应公开主题详情，点击可见标签则由 tags 模块按稳定 ID 精确聚合主题。
 
 ## 5. API operationId 与生成类型
 
@@ -59,8 +59,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `4.14.0-dev.20260815.1`；Markdown v3；后端 `9752c2289acb0db19af7d91d98978adb558991bf`。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v2.4.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v2.4.2/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。

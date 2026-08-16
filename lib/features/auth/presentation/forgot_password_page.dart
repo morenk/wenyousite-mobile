@@ -44,6 +44,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       extra: PasswordResetRouteData(
         initialEmail: normalizedEmail,
         codeRecentlySent: true,
+        codeDeliveryUncertain: ref
+            .read(passwordRecoveryControllerProvider(_providerSeed))
+            .codeDeliveryUncertain,
+        codeDeliveryRequestId: ref
+            .read(passwordRecoveryControllerProvider(_providerSeed))
+            .codeDeliveryRequestId,
       ),
     );
   }
