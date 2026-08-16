@@ -14,7 +14,6 @@ part 'create_thread_category_dto.g.dart';
 /// * [slug] - 稳定机器标识，创建后不可修改
 /// * [name]
 /// * [description]
-/// * [color]
 /// * [icon]
 /// * [sortOrder]
 /// * [isActive]
@@ -30,9 +29,6 @@ abstract class CreateThreadCategoryDto implements Built<CreateThreadCategoryDto,
 
   @BuiltValueField(wireName: r'description')
   String? get description;
-
-  @BuiltValueField(wireName: r'color')
-  String? get color;
 
   @BuiltValueField(wireName: r'icon')
   String? get icon;
@@ -86,13 +82,6 @@ class _$CreateThreadCategoryDtoSerializer implements PrimitiveSerializer<CreateT
       yield r'description';
       yield serializers.serialize(
         object.description,
-        specifiedType: const FullType(String),
-      );
-    }
-    if (object.color != null) {
-      yield r'color';
-      yield serializers.serialize(
-        object.color,
         specifiedType: const FullType(String),
       );
     }
@@ -167,13 +156,6 @@ class _$CreateThreadCategoryDtoSerializer implements PrimitiveSerializer<CreateT
             specifiedType: const FullType(String),
           ) as String;
           result.description = valueDes;
-          break;
-        case r'color':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.color = valueDes;
           break;
         case r'icon':
           final valueDes = serializers.deserialize(

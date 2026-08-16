@@ -42,6 +42,10 @@ OpenAPI 为兼容 Web 把该头标为 optional；省略或传未知值会创建 
 - 多个请求同时收到 `TOKEN_EXPIRED` 时只允许一个 refresh 在途，其余请求等待结果。
 - 刷新成功后原子替换两个 token，并只重放一次原请求；刷新失败或重放仍为 401 时停止自动重试。
 
+### 邮箱验证码发送
+
+注册、找回密码和换绑邮箱的发码 POST 不得自动重放。请求成功后进入 60 秒冷却；网络超时、5xx 或 429 也视为投递结果不明，提示“邮件可能已经发出”，保留验证码输入流程并进入同样的 60 秒冷却。服务端会按规范化邮箱/用户与验证码用途原子去重，但客户端冷却仍用于避免在连接断开时持续制造在途请求。客户端不得把邮箱、验证码或凭证写入日志；本规则需在本地 Windows 的 Flutter 实现与测试中落地，VPS 上的移动端仓库保持只读。
+
 ### 被处罚账号申诉
 
 普通 access token 在账号暂停或封禁后会返回 `ACCOUNT_SUSPENDED` / `ACCOUNT_BANNED`，不得再用它直接请求申诉接口。申诉流程使用独立且受限的凭据：
@@ -99,7 +103,7 @@ OpenAPI 为兼容 Web 把该头标为 optional；省略或传未知值会创建 
 - 动态最多九张图片；评论可使用文字、单张图片或单个收藏表情，图片与表情互斥。
 - 动态楼中楼只有两层视觉结构；筛选回复者时仍保留所属主评论上下文。未知作者、删除媒体和未知枚举都必须安全降级。
 - 动态通知目标携带 `momentCommentId` 时，详情页调用 `momentsCommentContext` 直接取得 `root`、`target` 和当前可见 `replyCount`。主评论目标直接注入并定位；楼中楼目标同时注入所属主评论和目标回复、展开后定位，不扫描评论或回复分页。主评论已删除但目标回复仍可见时保留服务端墓碑；404 保留动态详情与普通评论且不自动重试，临时失败保留内容并允许重试。客户端必须消费 `mobile-v1-golden-fixtures.json` 的 `momentCommentNavigation` 旅程。
-- 主题帖分类来自 `GET /thread-categories`，保存稳定 `slug`；草稿可为空，发布前选择启用项。Flutter 必须消费 [`thread-category-v1-fixtures.json`](../contracts/thread-category-v1-fixtures.json)：重命名后按注册表当前名称展示，未知或停用 slug 显示原值且不可新选，空值显示“未分类”。任何现有 slug、名称、颜色和分类数量都不得复制为客户端枚举或回退常量。
+- 主题帖分类来自 `GET /thread-categories`，保存稳定 `slug`；草稿可为空，发布前选择启用项。Flutter 必须消费 [`thread-category-v2-fixtures.json`](../contracts/thread-category-v2-fixtures.json)：分类没有颜色字段，使用 Foundation 中性呈现；重命名后按注册表当前名称展示，未知或停用 slug 显示原值且不可新选，空值显示“未分类”。任何现有 slug、名称和分类数量都不得复制为客户端枚举或回退常量。
 - 每日启动可调用 `POST /wallet/check-in`；只有 `claimedNow=true` 时展示本次领取。所有温油金额都是十进制整数字符串，不转换为浮点数；打赏继续复用稳定幂等键。
 
 ## FCM 设备与消息生命周期

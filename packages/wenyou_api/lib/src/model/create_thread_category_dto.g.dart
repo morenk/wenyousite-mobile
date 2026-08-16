@@ -14,8 +14,6 @@ class _$CreateThreadCategoryDto extends CreateThreadCategoryDto {
   @override
   final String? description;
   @override
-  final String? color;
-  @override
   final String? icon;
   @override
   final num? sortOrder;
@@ -32,7 +30,6 @@ class _$CreateThreadCategoryDto extends CreateThreadCategoryDto {
     required this.slug,
     required this.name,
     this.description,
-    this.color,
     this.icon,
     this.sortOrder,
     this.isActive,
@@ -54,7 +51,6 @@ class _$CreateThreadCategoryDto extends CreateThreadCategoryDto {
         slug == other.slug &&
         name == other.name &&
         description == other.description &&
-        color == other.color &&
         icon == other.icon &&
         sortOrder == other.sortOrder &&
         isActive == other.isActive &&
@@ -67,7 +63,6 @@ class _$CreateThreadCategoryDto extends CreateThreadCategoryDto {
     _$hash = $jc(_$hash, slug.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, description.hashCode);
-    _$hash = $jc(_$hash, color.hashCode);
     _$hash = $jc(_$hash, icon.hashCode);
     _$hash = $jc(_$hash, sortOrder.hashCode);
     _$hash = $jc(_$hash, isActive.hashCode);
@@ -82,7 +77,6 @@ class _$CreateThreadCategoryDto extends CreateThreadCategoryDto {
           ..add('slug', slug)
           ..add('name', name)
           ..add('description', description)
-          ..add('color', color)
           ..add('icon', icon)
           ..add('sortOrder', sortOrder)
           ..add('isActive', isActive)
@@ -107,10 +101,6 @@ class CreateThreadCategoryDtoBuilder
   String? _description;
   String? get description => _$this._description;
   set description(String? description) => _$this._description = description;
-
-  String? _color;
-  String? get color => _$this._color;
-  set color(String? color) => _$this._color = color;
 
   String? _icon;
   String? get icon => _$this._icon;
@@ -138,7 +128,6 @@ class CreateThreadCategoryDtoBuilder
       _slug = $v.slug;
       _name = $v.name;
       _description = $v.description;
-      _color = $v.color;
       _icon = $v.icon;
       _sortOrder = $v.sortOrder;
       _isActive = $v.isActive;
@@ -176,7 +165,6 @@ class CreateThreadCategoryDtoBuilder
             'name',
           ),
           description: description,
-          color: color,
           icon: icon,
           sortOrder: sortOrder,
           isActive: isActive,

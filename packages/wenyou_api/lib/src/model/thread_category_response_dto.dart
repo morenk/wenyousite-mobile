@@ -15,7 +15,6 @@ part 'thread_category_response_dto.g.dart';
 /// * [slug]
 /// * [name]
 /// * [description]
-/// * [color]
 /// * [icon]
 /// * [sortOrder]
 /// * [isActive]
@@ -35,9 +34,6 @@ abstract class ThreadCategoryResponseDto implements Built<ThreadCategoryResponse
 
   @BuiltValueField(wireName: r'description')
   String? get description;
-
-  @BuiltValueField(wireName: r'color')
-  String? get color;
 
   @BuiltValueField(wireName: r'icon')
   String? get icon;
@@ -99,11 +95,6 @@ class _$ThreadCategoryResponseDtoSerializer implements PrimitiveSerializer<Threa
     yield r'description';
     yield object.description == null ? null : serializers.serialize(
       object.description,
-      specifiedType: const FullType.nullable(String),
-    );
-    yield r'color';
-    yield object.color == null ? null : serializers.serialize(
-      object.color,
       specifiedType: const FullType.nullable(String),
     );
     yield r'icon';
@@ -187,14 +178,6 @@ class _$ThreadCategoryResponseDtoSerializer implements PrimitiveSerializer<Threa
           ) as String?;
           if (valueDes == null) continue;
           result.description = valueDes;
-          break;
-        case r'color':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(String),
-          ) as String?;
-          if (valueDes == null) continue;
-          result.color = valueDes;
           break;
         case r'icon':
           final valueDes = serializers.deserialize(

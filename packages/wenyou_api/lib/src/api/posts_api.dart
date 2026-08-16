@@ -220,6 +220,7 @@ class PostsApi {
   /// * [subthreadId]
   /// * [cursor] - 分页游标
   /// * [limit] - 每页条数
+  /// * [order] - 主楼层顺序，默认 OLDEST
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -233,6 +234,7 @@ class PostsApi {
     required String subthreadId,
     String? cursor,
     num? limit = 20,
+    String? order,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -262,6 +264,7 @@ class PostsApi {
     final _queryParameters = <String, dynamic>{
       if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
       if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (order != null) r'order': encodeQueryParameter(_serializers, order, const FullType(String)),
     };
 
     final _response = await _dio.request<Object>(

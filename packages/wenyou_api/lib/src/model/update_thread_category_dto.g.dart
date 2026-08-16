@@ -12,8 +12,6 @@ class _$UpdateThreadCategoryDto extends UpdateThreadCategoryDto {
   @override
   final String? description;
   @override
-  final String? color;
-  @override
   final String? icon;
   @override
   final num? sortOrder;
@@ -29,7 +27,6 @@ class _$UpdateThreadCategoryDto extends UpdateThreadCategoryDto {
   _$UpdateThreadCategoryDto._({
     this.name,
     this.description,
-    this.color,
     this.icon,
     this.sortOrder,
     this.isActive,
@@ -50,7 +47,6 @@ class _$UpdateThreadCategoryDto extends UpdateThreadCategoryDto {
     return other is UpdateThreadCategoryDto &&
         name == other.name &&
         description == other.description &&
-        color == other.color &&
         icon == other.icon &&
         sortOrder == other.sortOrder &&
         isActive == other.isActive &&
@@ -62,7 +58,6 @@ class _$UpdateThreadCategoryDto extends UpdateThreadCategoryDto {
     var _$hash = 0;
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, description.hashCode);
-    _$hash = $jc(_$hash, color.hashCode);
     _$hash = $jc(_$hash, icon.hashCode);
     _$hash = $jc(_$hash, sortOrder.hashCode);
     _$hash = $jc(_$hash, isActive.hashCode);
@@ -76,7 +71,6 @@ class _$UpdateThreadCategoryDto extends UpdateThreadCategoryDto {
     return (newBuiltValueToStringHelper(r'UpdateThreadCategoryDto')
           ..add('name', name)
           ..add('description', description)
-          ..add('color', color)
           ..add('icon', icon)
           ..add('sortOrder', sortOrder)
           ..add('isActive', isActive)
@@ -97,10 +91,6 @@ class UpdateThreadCategoryDtoBuilder
   String? _description;
   String? get description => _$this._description;
   set description(String? description) => _$this._description = description;
-
-  String? _color;
-  String? get color => _$this._color;
-  set color(String? color) => _$this._color = color;
 
   String? _icon;
   String? get icon => _$this._icon;
@@ -127,7 +117,6 @@ class UpdateThreadCategoryDtoBuilder
     if ($v != null) {
       _name = $v.name;
       _description = $v.description;
-      _color = $v.color;
       _icon = $v.icon;
       _sortOrder = $v.sortOrder;
       _isActive = $v.isActive;
@@ -156,7 +145,6 @@ class UpdateThreadCategoryDtoBuilder
         _$UpdateThreadCategoryDto._(
           name: name,
           description: description,
-          color: color,
           icon: icon,
           sortOrder: sortOrder,
           isActive: isActive,
