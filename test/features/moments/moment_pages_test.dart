@@ -337,15 +337,16 @@ void main() {
       find.byKey(const Key('moment-comment-input')),
       '暂时不发送的草稿',
     );
-    await tester.tap(find.byKey(const Key('moment-comment-close')));
+    await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
-    expect(find.text('放弃这条评论？'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, '继续编辑'));
+    expect(find.byKey(const Key('moment-comment-input')), findsNothing);
+    expect(find.text('放弃这条评论？'), findsNothing);
+
+    await tester.ensureVisible(rootCommentText);
+    await tester.tap(rootCommentText);
     await tester.pumpAndSettle();
     expect(find.text('暂时不发送的草稿'), findsOneWidget);
     await tester.tap(find.byKey(const Key('moment-comment-close')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, '放弃评论'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
   });

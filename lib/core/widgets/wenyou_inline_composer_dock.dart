@@ -49,93 +49,104 @@ class WenyouInlineComposerDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: Material(
-        color: tokens.panel,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.space12,
-              tokens.space8,
-              tokens.space12,
-              tokens.space8,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...supporting,
-                DecoratedBox(
-                  key: dockKey,
-                  decoration: BoxDecoration(
-                    color: tokens.softPanel,
-                    borderRadius: BorderRadius.circular(tokens.radius20),
-                    border: Border.all(color: tokens.border),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      ...leadingActions,
-                      Expanded(
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            TextField(
-                              key: fieldKey,
-                              controller: controller,
-                              focusNode: focusNode,
-                              enabled: enabled,
-                              autofocus: autofocus,
-                              minLines: minLines,
-                              maxLines: maxLines,
-                              maxLength: maxLength,
-                              textCapitalization: TextCapitalization.sentences,
-                              textInputAction: TextInputAction.newline,
-                              decoration: InputDecoration(
-                                hintText: placeholder,
-                                counterText: '',
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                filled: false,
-                                contentPadding: EdgeInsets.fromLTRB(
-                                  tokens.space4,
-                                  tokens.space12,
-                                  characterCountText == null
-                                      ? 0
-                                      : tokens.minimumTouchTarget,
-                                  tokens.space12,
+    return TextFieldTapRegion(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Material(
+          color: tokens.panel,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.space12,
+                tokens.space8,
+                tokens.space12,
+                tokens.space8,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...supporting,
+                  DecoratedBox(
+                    key: dockKey,
+                    decoration: BoxDecoration(
+                      color: tokens.softPanel,
+                      borderRadius: BorderRadius.circular(tokens.radius20),
+                      border: Border.all(color: tokens.border),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        ...leadingActions,
+                        Expanded(
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              TextField(
+                                key: fieldKey,
+                                controller: controller,
+                                focusNode: focusNode,
+                                enabled: enabled,
+                                autofocus: autofocus,
+                                minLines: minLines,
+                                maxLines: maxLines,
+                                maxLength: maxLength,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                textInputAction: TextInputAction.newline,
+                                decoration: InputDecoration(
+                                  hintText: placeholder,
+                                  counterText: '',
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  filled: false,
+                                  contentPadding: EdgeInsets.fromLTRB(
+                                    tokens.space4,
+                                    tokens.space12,
+                                    characterCountText == null
+                                        ? 0
+                                        : tokens.minimumTouchTarget,
+                                    tokens.space12,
+                                  ),
                                 ),
+                                onTapOutside: (_) => FocusManager
+                                    .instance
+                                    .primaryFocus
+                                    ?.unfocus(),
+                                onChanged: onChanged,
                               ),
-                              onChanged: onChanged,
-                            ),
-                            if (characterCountText != null)
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  right: tokens.space4,
-                                  bottom: tokens.space4,
+                              if (characterCountText != null)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    right: tokens.space4,
+                                    bottom: tokens.space4,
+                                  ),
+                                  child: Text(
+                                    characterCountText!,
+                                    key: characterCountKey,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(color: tokens.mutedText),
+                                  ),
                                 ),
-                                child: Text(
-                                  characterCountText!,
-                                  key: characterCountKey,
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(color: tokens.mutedText),
-                                ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      ...trailingActions,
-                      Padding(
-                        padding: EdgeInsets.all(tokens.space4),
-                        child: submitAction,
-                      ),
-                    ],
+                        ...trailingActions,
+                        Padding(
+                          padding: EdgeInsets.all(tokens.space4),
+                          child: submitAction,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

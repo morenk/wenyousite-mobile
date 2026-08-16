@@ -34,6 +34,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
   static const _contentCacheExtent = 4000.0;
 
   var _commentComposerOpen = false;
+  MomentCommentDraft? _commentDraft;
+  MomentComment? _commentDraftReplyTo;
 
   @override
   Widget build(BuildContext context) {
@@ -279,13 +281,13 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       return;
     }
     final provider = momentDetailControllerProvider(widget.momentId);
-    var currentReplyTo = replyTo;
+    var currentReplyTo = replyTo ?? _commentDraftReplyTo;
     setState(() => _commentComposerOpen = true);
     try {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        isDismissible: false,
+        isDismissible: true,
         enableDrag: false,
         useSafeArea: false,
         backgroundColor: Colors.transparent,
@@ -304,6 +306,10 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                     width: double.infinity,
                     child: MomentCommentComposer(
                       replyTo: currentReplyTo,
+                      initialDraft: _commentDraft ?? const MomentCommentDraft(),
+                      onDraftChanged: (draft) {
+                        _commentDraft = draft.isEmpty ? null : draft;
+                      },
                       isSending: state.isSendingComment,
                       onCancelReply: () =>
                           setSheetState(() => currentReplyTo = null),
@@ -312,6 +318,10 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                         final created = await sheetRef
                             .read(provider.notifier)
                             .sendComment(input);
+                        if (created != null) {
+                          _commentDraft = null;
+                          _commentDraftReplyTo = null;
+                        }
                         return created != null;
                       },
                     ),
@@ -324,6 +334,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       );
     } finally {
       if (mounted) {
+        _commentDraftReplyTo = _commentDraft == null ? null : currentReplyTo;
         setState(() => _commentComposerOpen = false);
       }
     }

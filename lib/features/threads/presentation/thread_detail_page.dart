@@ -46,6 +46,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   final _scrollController = ScrollController();
   final _targetKey = GlobalKey();
+  final _composerDrafts = <String, String>{};
   String? _lastRevealedTargetId;
   String? _lastOpenedReplyTargetId;
 
@@ -590,11 +591,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _compose(PostComposerTarget target) async {
+    final draftKey = postComposerDraftKey(target);
     final result = await showPostComposerSheet(
       context: context,
       target: target,
+      initialDraft: _composerDrafts[draftKey],
+      onDraftChanged: (content) {
+        if (content == target.initialContent) {
+          _composerDrafts.remove(draftKey);
+        } else {
+          _composerDrafts[draftKey] = content;
+        }
+      },
     );
     if (result == null || !mounted) return;
+    _composerDrafts.remove(draftKey);
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refreshMetadata();

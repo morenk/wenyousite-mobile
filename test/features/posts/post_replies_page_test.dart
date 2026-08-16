@@ -158,6 +158,22 @@ void main() {
       'thread',
     );
     await _replaceComposerText(tester, '新发表的回复');
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-body')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .controller
+          .document
+          .toPlainText()
+          .trim(),
+      '新发表的回复',
+    );
     await tester.tap(find.byKey(const Key('editor-submit')));
     await tester.pumpAndSettle();
 

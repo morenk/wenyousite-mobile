@@ -20,6 +20,8 @@ class MomentCommentComposer extends ConsumerStatefulWidget {
     required this.onCancelReply,
     required this.onClose,
     required this.onSend,
+    this.initialDraft = const MomentCommentDraft(),
+    this.onDraftChanged,
     super.key,
   });
 
@@ -28,18 +30,40 @@ class MomentCommentComposer extends ConsumerStatefulWidget {
   final VoidCallback onCancelReply;
   final VoidCallback onClose;
   final Future<bool> Function(MomentCommentInput input) onSend;
+  final MomentCommentDraft initialDraft;
+  final ValueChanged<MomentCommentDraft>? onDraftChanged;
 
   @override
   ConsumerState<MomentCommentComposer> createState() =>
       _MomentCommentComposerState();
 }
 
+@immutable
+class MomentCommentDraft {
+  const MomentCommentDraft({this.content = '', this.image, this.sticker});
+
+  final String content;
+  final UploadedEditorImage? image;
+  final UserSticker? sticker;
+
+  bool get isEmpty =>
+      content.trim().isEmpty && image == null && sticker == null;
+}
+
 class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
-  final _textController = TextEditingController();
+  late final TextEditingController _textController;
   UploadedEditorImage? _image;
   UserSticker? _sticker;
   final Object _uploadTaskId = Object();
   var _closing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController(text: widget.initialDraft.content);
+    _image = widget.initialDraft.image;
+    _sticker = widget.initialDraft.sticker;
+  }
 
   @override
   void dispose() {
@@ -66,7 +90,10 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
         placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
         maxLength: 500,
         autofocus: true,
-        onChanged: (_) => setState(() {}),
+        onChanged: (_) {
+          setState(() {});
+          _notifyDraftChanged();
+        },
         supporting: [
           if (widget.replyTo != null) ...[
             Align(
@@ -82,10 +109,13 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
             _SelectedCommentAsset(
               image: _image,
               sticker: _sticker,
-              onRemove: () => setState(() {
-                _image = null;
-                _sticker = null;
-              }),
+              onRemove: () {
+                setState(() {
+                  _image = null;
+                  _sticker = null;
+                });
+                _notifyDraftChanged();
+              },
             ),
             SizedBox(height: tokens.space8),
           ],
@@ -172,33 +202,8 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
       uploadController.cancel();
       if (!mounted) return;
     }
-    var confirmed = true;
-    final hasDraft =
-        _textController.text.trim().isNotEmpty ||
-        _image != null ||
-        _sticker != null;
-    if (hasDraft) {
-      confirmed =
-          await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('放弃这条评论？'),
-              content: const Text('尚未发送的文字、图片或表情会丢失。'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('继续编辑'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('放弃评论'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-    }
-    if (!confirmed || !mounted) return;
+    _notifyDraftChanged();
+    if (!mounted) return;
     setState(() => _closing = true);
     widget.onClose();
   }
@@ -219,6 +224,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
       _sticker = null;
       _image = image;
     });
+    _notifyDraftChanged();
   }
 
   Future<void> _pickSticker() async {
@@ -229,6 +235,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
       _image = null;
       _sticker = sticker;
     });
+    _notifyDraftChanged();
   }
 
   Future<void> _send() async {
@@ -247,7 +254,18 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
       _sticker = null;
       _closing = true;
     });
+    _notifyDraftChanged();
     widget.onClose();
+  }
+
+  void _notifyDraftChanged() {
+    widget.onDraftChanged?.call(
+      MomentCommentDraft(
+        content: _textController.text,
+        image: _image,
+        sticker: _sticker,
+      ),
+    );
   }
 }
 

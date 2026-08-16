@@ -19,24 +19,57 @@ import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets
 Future<PostItem?> showPostComposerSheet({
   required BuildContext context,
   required PostComposerTarget target,
+  String? initialDraft,
+  ValueChanged<String>? onDraftChanged,
 }) {
+  final effectiveTarget = initialDraft == null
+      ? target
+      : _targetWithInitialContent(target, initialDraft);
   return showModalBottomSheet<PostItem>(
     context: context,
     isScrollControlled: true,
-    isDismissible: false,
+    isDismissible: true,
     enableDrag: false,
     useSafeArea: false,
     sheetAnimationStyle: AnimationStyle.noAnimation,
     backgroundColor: Colors.transparent,
     constraints: const BoxConstraints(maxWidth: double.infinity),
-    builder: (context) => _ExpandablePostComposer(target: target),
+    builder: (context) => _ExpandablePostComposer(
+      target: effectiveTarget,
+      onDraftChanged: onDraftChanged,
+    ),
   );
 }
 
+String postComposerDraftKey(PostComposerTarget target) => [
+  target.kind.name,
+  target.threadId,
+  target.subthreadId,
+  target.postId ?? '',
+  target.parentPostId ?? '',
+  target.replyToPostId ?? '',
+].join(':');
+
+PostComposerTarget _targetWithInitialContent(
+  PostComposerTarget target,
+  String content,
+) => (
+  kind: target.kind,
+  threadId: target.threadId,
+  subthreadId: target.subthreadId,
+  postId: target.postId,
+  parentPostId: target.parentPostId,
+  replyToPostId: target.replyToPostId,
+  version: target.version,
+  initialContent: content,
+  label: target.label,
+);
+
 class _ExpandablePostComposer extends StatefulWidget {
-  const _ExpandablePostComposer({required this.target});
+  const _ExpandablePostComposer({required this.target, this.onDraftChanged});
 
   final PostComposerTarget target;
+  final ValueChanged<String>? onDraftChanged;
 
   @override
   State<_ExpandablePostComposer> createState() =>
@@ -84,6 +117,7 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
                   color: Theme.of(context).scaffoldBackgroundColor,
                   child: PostComposerSheet(
                     target: widget.target,
+                    onDraftChanged: widget.onDraftChanged,
                     expanded: _extent >= _maximumExtent - .01,
                     onResize: (delta) {
                       setState(() {
@@ -114,6 +148,7 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
 class PostComposerSheet extends ConsumerStatefulWidget {
   const PostComposerSheet({
     required this.target,
+    this.onDraftChanged,
     this.expanded = false,
     this.onResize,
     this.onToggleExpanded,
@@ -121,6 +156,7 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   });
 
   final PostComposerTarget target;
+  final ValueChanged<String>? onDraftChanged;
   final bool expanded;
   final ValueChanged<double>? onResize;
   final VoidCallback? onToggleExpanded;
@@ -146,9 +182,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       initialSelection: RichEditorSelectionPlacement.end,
-      onMarkdownChanged: (markdown) => ref
-          .read(postComposerControllerProvider(widget.target).notifier)
-          .updateContent(markdown),
+      onMarkdownChanged: (markdown) {
+        ref
+            .read(postComposerControllerProvider(widget.target).notifier)
+            .updateContent(markdown);
+        widget.onDraftChanged?.call(markdown);
+      },
     )..addListener(_onEditorSessionChanged);
   }
 
@@ -428,6 +467,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         .read(postComposerControllerProvider(widget.target).notifier)
         .submit();
     if (!mounted || result == null) return;
+    widget.onDraftChanged?.call('');
     setState(() => _closing = true);
     Navigator.pop(context, result);
   }
@@ -466,35 +506,13 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
         .cancel();
-    _editorSession.flush();
-    final current = ref.read(postComposerControllerProvider(widget.target));
-    var confirmed = true;
-    if (current.content != widget.target.initialContent &&
-        current.content.trim().isNotEmpty) {
-      confirmed =
-          await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('放弃当前修改？'),
-              content: const Text('尚未提交的正文会丢失；可先使用工具栏“正文草稿”保存到云端槽位。'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('继续编辑'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('放弃修改'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-    }
-    if (!confirmed || !mounted) {
+    if (!_editorSession.flush()) {
       _preparingClose = false;
       return;
     }
+    final current = ref.read(postComposerControllerProvider(widget.target));
+    widget.onDraftChanged?.call(current.content);
+    if (!mounted) return;
     setState(() => _closing = true);
     Navigator.pop(context);
   }

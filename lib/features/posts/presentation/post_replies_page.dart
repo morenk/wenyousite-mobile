@@ -41,6 +41,7 @@ class PostRepliesPage extends ConsumerStatefulWidget {
 
 class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
+  final _composerDrafts = <String, String>{};
   String? _lastRevealedReplyId;
 
   String get threadId => widget.threadId;
@@ -200,11 +201,23 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     provider,
     PostComposerTarget target,
   ) async {
+    final draftKey = postComposerDraftKey(target);
     final result = await showPostComposerSheet(
       context: context,
       target: target,
+      initialDraft: _composerDrafts[draftKey],
+      onDraftChanged: (content) {
+        if (content == target.initialContent) {
+          _composerDrafts.remove(draftKey);
+        } else {
+          _composerDrafts[draftKey] = content;
+        }
+      },
     );
-    if (result != null) await ref.read(provider.notifier).refresh();
+    if (result != null) {
+      _composerDrafts.remove(draftKey);
+      await ref.read(provider.notifier).refresh();
+    }
   }
 
   Future<void> _delete(

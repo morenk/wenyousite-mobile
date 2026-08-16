@@ -42,6 +42,15 @@ void main() {
       '发送内容',
     );
     await tester.pump();
+    final composerField = tester.widget<TextField>(
+      find.byKey(const Key('direct-message-composer-field')),
+    );
+    expect(composerField.focusNode?.hasFocus, isTrue);
+    await tester.tap(find.text('你好'));
+    await tester.pump();
+    expect(composerField.focusNode?.hasFocus, isFalse);
+    expect(composerField.controller?.text, '发送内容');
+
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));

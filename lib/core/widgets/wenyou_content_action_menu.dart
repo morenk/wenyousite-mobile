@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_modal_action_menu.dart';
 
 enum PostCardAction { copyText, copyLink, reply, edit, delete, report }
 
@@ -21,7 +22,6 @@ class PostCardActionMenu extends StatelessWidget {
     this.copyLinkLabel = '复制链接',
     this.replyLabel = '回复',
     this.semanticLabel = '内容操作',
-    this.alignment = WenyouPopoverAlignment.start,
     this.actionKeyPrefix,
     super.key,
   });
@@ -38,7 +38,6 @@ class PostCardActionMenu extends StatelessWidget {
   final String copyLinkLabel;
   final String replyLabel;
   final String semanticLabel;
-  final WenyouPopoverAlignment alignment;
   final String? actionKeyPrefix;
 
   Key? _actionKey(String action) =>
@@ -108,10 +107,8 @@ class PostCardActionMenu extends StatelessWidget {
         ),
       );
     }
-    return WenyouAnchoredActionBubble<PostCardAction>(
+    return WenyouModalActionMenu<PostCardAction>(
       actions: actions,
-      placement: WenyouPopoverPlacement.above,
-      alignment: alignment,
       semanticLabel: semanticLabel,
       onSelected: onSelected,
       anchorBuilder: anchorBuilder,

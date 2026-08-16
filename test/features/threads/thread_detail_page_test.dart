@@ -169,6 +169,15 @@ void main() {
 
     await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
     await tester.pumpAndSettle();
+    final modalMenu = find.byKey(const Key('wenyou-modal-action-menu'));
+    expect(modalMenu, findsOneWidget);
+    expect(tester.getCenter(modalMenu), const Offset(400, 300));
+    expect(
+      tester
+          .widgetList<ModalBarrier>(find.byType(ModalBarrier))
+          .any((barrier) => (barrier.color?.a ?? 0) > 0),
+      isTrue,
+    );
     expect(
       find.byKey(const Key('thread-floor-action-floor-1-link')),
       findsOneWidget,
