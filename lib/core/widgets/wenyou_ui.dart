@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
 double wenyouHorizontalPagePadding(
@@ -292,6 +293,45 @@ class WenyouFailureBanner extends StatelessWidget {
       detail: wenyouRequestDetail(failure),
       tone: WenyouStatusTone.error,
       action: action,
+    );
+  }
+}
+
+class WenyouWriteOutcomeBanner extends StatelessWidget {
+  const WenyouWriteOutcomeBanner({
+    required this.status,
+    required this.confirmingMessage,
+    required this.indeterminateMessage,
+    this.requestId,
+    this.onRefresh,
+    this.refreshKey,
+    super.key,
+  }) : assert(
+         status == WriteOutcomeStatus.confirming ||
+             status == WriteOutcomeStatus.indeterminate,
+       );
+
+  final WriteOutcomeStatus status;
+  final String confirmingMessage;
+  final String indeterminateMessage;
+  final String? requestId;
+  final VoidCallback? onRefresh;
+  final Key? refreshKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final confirming = status == WriteOutcomeStatus.confirming;
+    return WenyouStatusBanner(
+      tone: WenyouStatusTone.neutral,
+      message: confirming ? confirmingMessage : indeterminateMessage,
+      detail: requestId == null ? null : '问题编号：$requestId',
+      action: confirming || onRefresh == null
+          ? null
+          : TextButton(
+              key: refreshKey,
+              onPressed: onRefresh,
+              child: const Text('刷新查看'),
+            ),
     );
   }
 }
