@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 
 abstract interface class ThreadInteractionRepository {
   Future<int> like(String threadId);
@@ -8,6 +9,10 @@ abstract interface class ThreadInteractionRepository {
   Future<String> createBookmark(String threadId);
 
   Future<void> removeBookmark(String bookmarkId);
+}
+
+abstract interface class ThreadInteractionProjectionReader {
+  Future<ThreadInteractionProjection> fetchInteraction(String threadId);
 }
 
 final threadInteractionRepositoryProvider =

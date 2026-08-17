@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
@@ -15,6 +16,8 @@ class UserRelationState {
     required this.followerCount,
     this.pendingAction,
     this.failure,
+    this.outcomeStatus,
+    this.outcomeRequestId,
     this.successMessage,
   });
 
@@ -33,6 +36,8 @@ class UserRelationState {
   final int followerCount;
   final UserRelationAction? pendingAction;
   final ApiFailure? failure;
+  final WriteOutcomeStatus? outcomeStatus;
+  final String? outcomeRequestId;
   final String? successMessage;
 
   bool get isPending => pendingAction != null;
@@ -44,6 +49,8 @@ class UserRelationState {
     int? followerCount,
     UserRelationAction? pendingAction,
     ApiFailure? failure,
+    WriteOutcomeStatus? outcomeStatus,
+    String? outcomeRequestId,
     String? successMessage,
     bool clearPending = false,
     bool clearFeedback = false,
@@ -57,6 +64,12 @@ class UserRelationState {
           ? null
           : (pendingAction ?? this.pendingAction),
       failure: clearFeedback ? null : (failure ?? this.failure),
+      outcomeStatus: clearFeedback
+          ? null
+          : (outcomeStatus ?? this.outcomeStatus),
+      outcomeRequestId: clearFeedback
+          ? null
+          : (outcomeRequestId ?? this.outcomeRequestId),
       successMessage: clearFeedback
           ? null
           : (successMessage ?? this.successMessage),
@@ -119,6 +132,8 @@ class ThreadInteractionState {
     this.bookmarkId,
     this.pendingAction,
     this.failure,
+    this.outcomeStatus,
+    this.outcomeRequestId,
     this.successMessage,
   });
 
@@ -137,6 +152,8 @@ class ThreadInteractionState {
   final String? bookmarkId;
   final ThreadInteractionAction? pendingAction;
   final ApiFailure? failure;
+  final WriteOutcomeStatus? outcomeStatus;
+  final String? outcomeRequestId;
   final String? successMessage;
 
   bool get isPending => pendingAction != null;
@@ -148,6 +165,8 @@ class ThreadInteractionState {
     Object? bookmarkId = _unset,
     ThreadInteractionAction? pendingAction,
     ApiFailure? failure,
+    WriteOutcomeStatus? outcomeStatus,
+    String? outcomeRequestId,
     String? successMessage,
     bool clearPending = false,
     bool clearFeedback = false,
@@ -163,6 +182,12 @@ class ThreadInteractionState {
           ? null
           : (pendingAction ?? this.pendingAction),
       failure: clearFeedback ? null : (failure ?? this.failure),
+      outcomeStatus: clearFeedback
+          ? null
+          : (outcomeStatus ?? this.outcomeStatus),
+      outcomeRequestId: clearFeedback
+          ? null
+          : (outcomeRequestId ?? this.outcomeRequestId),
       successMessage: clearFeedback
           ? null
           : (successMessage ?? this.successMessage),
@@ -181,6 +206,8 @@ class ThreadSubscriptionState {
     this.pendingType,
     this.pendingTargetUserId,
     this.actionFailure,
+    this.actionOutcome,
+    this.actionRequestId,
     this.successMessage,
   });
 
@@ -194,6 +221,8 @@ class ThreadSubscriptionState {
   final ThreadSubscriptionType? pendingType;
   final String? pendingTargetUserId;
   final ApiFailure? actionFailure;
+  final WriteOutcomeStatus? actionOutcome;
+  final String? actionRequestId;
   final String? successMessage;
 
   bool get isPending => pendingType != null;

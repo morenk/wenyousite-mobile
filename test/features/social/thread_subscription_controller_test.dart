@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
@@ -74,6 +76,92 @@ void main() {
     );
   });
 
+  test('创建超时但重新读取已有记录时校准为订阅成功', () async {
+    final repository = _FakeRepository(
+      subscriptionReads: [
+        const [],
+        [_record(id: 'official-after-timeout')],
+      ],
+      failure: _timeoutFailure('timeout-request-id'),
+    );
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    final future = controller.toggleThread();
+    await _settle();
+    expect(
+      controller.state.actionOutcome,
+      anyOf(WriteOutcomeStatus.confirming, isNull),
+    );
+    expect(await future, isTrue);
+
+    expect(controller.state.threadSubscription?.id, 'official-after-timeout');
+    expect(controller.takeSuccessMessage(), '已订阅帖子官方更新。');
+    expect(repository.createCalls, 1);
+  });
+
+  test('40904 只在重新读取到完全匹配记录后校准为成功', () async {
+    final repository = _FakeRepository(
+      subscriptionReads: [
+        const [],
+        [
+          _record(id: 'other-player', targetUserId: 'player-1'),
+          _record(id: 'official-existing'),
+        ],
+      ],
+      failure: const ApiFailure(
+        userMessage: '已订阅',
+        httpStatus: 409,
+        businessCode: 40904,
+        requestId: 'duplicate-request-id',
+      ),
+    );
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(await controller.toggleThread(), isTrue);
+    expect(controller.state.threadSubscription?.id, 'official-existing');
+    expect(repository.fetchSubscriptionCalls, 2);
+  });
+
+  test('超时后读取到相反状态时显示暂时无法确定且不宣告失败', () async {
+    final repository = _FakeRepository(
+      subscriptionReads: const [[], []],
+      failure: _timeoutFailure('unknown-request-id'),
+    );
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(await controller.toggleThread(), isFalse);
+
+    expect(controller.state.threadSubscription, isNull);
+    expect(controller.state.actionOutcome, WriteOutcomeStatus.indeterminate);
+    expect(controller.state.actionFailure, isNull);
+    expect(controller.state.actionRequestId, 'unknown-request-id');
+    expect(repository.createCalls, 1);
+  });
+
+  test('明确权限失败不读取订阅状态进行校准', () async {
+    final repository = _FakeRepository(
+      failure: const ApiFailure(
+        userMessage: '当前账号没有执行这项操作的权限。',
+        httpStatus: 403,
+        businessCode: 40300,
+      ),
+    );
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(await controller.toggleThread(), isFalse);
+
+    expect(controller.state.actionFailure?.businessCode, 40300);
+    expect(repository.fetchSubscriptionCalls, 1);
+  });
+
   test('已失效玩家候选不发送创建请求', () async {
     final repository = _FakeRepository();
     final controller = ThreadSubscriptionController(repository, _target);
@@ -89,21 +177,29 @@ void main() {
 class _FakeRepository implements ThreadSubscriptionRepository {
   _FakeRepository({
     this.subscriptions = const [],
+    this.subscriptionReads,
     this.failure,
     this.createCompleter,
   });
 
   final List<ThreadSubscriptionRecord> subscriptions;
+  final List<List<ThreadSubscriptionRecord>>? subscriptionReads;
   final ApiFailure? failure;
   final Completer<ThreadSubscriptionRecord>? createCompleter;
   String? viewerUserId;
   int createCalls = 0;
+  int fetchSubscriptionCalls = 0;
   final List<String> removedIds = [];
 
   @override
   Future<List<ThreadSubscriptionRecord>> fetchSubscriptions(
     String threadId,
-  ) async => subscriptions;
+  ) async {
+    final index = fetchSubscriptionCalls++;
+    final reads = subscriptionReads;
+    if (reads == null || reads.isEmpty) return subscriptions;
+    return reads[index.clamp(0, reads.length - 1)];
+  }
 
   @override
   Future<List<ThreadSubscriptionCandidate>> fetchCandidates(
@@ -162,3 +258,14 @@ ThreadSubscriptionRecord _record({required String id, String? targetUserId}) {
 }
 
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
+
+ApiFailure _timeoutFailure(String requestId) {
+  return ApiFailure(
+    userMessage: '连接超时，请检查网络后重试。',
+    requestId: requestId,
+    cause: DioException(
+      requestOptions: RequestOptions(path: '/subscriptions'),
+      type: DioExceptionType.receiveTimeout,
+    ),
+  );
+}

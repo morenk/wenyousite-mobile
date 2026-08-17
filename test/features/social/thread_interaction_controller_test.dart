@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
@@ -96,6 +98,47 @@ void main() {
     expect(controller.state.likeCount, 12);
     expect(controller.state.failure?.requestId, 'interaction-request-id');
   });
+
+  test('点赞超时后读取到目标状态即采用最新互动投影', () async {
+    final repository = _FakeRepository(
+      failure: _timeoutFailure('like-timeout'),
+      projection: const ThreadInteractionProjection(
+        isLiked: true,
+        likeCount: 14,
+        isBookmarked: true,
+        bookmarkId: 'bookmark-latest',
+      ),
+    );
+    final controller = ThreadInteractionController(repository, _target);
+    addTearDown(controller.dispose);
+
+    expect(await controller.toggleLike(), isTrue);
+
+    expect(controller.state.isLiked, isTrue);
+    expect(controller.state.likeCount, 14);
+    expect(controller.state.bookmarkId, 'bookmark-latest');
+    expect(repository.projectionReads, 1);
+  });
+
+  test('收藏超时且投影相反时进入中性待刷新状态', () async {
+    final repository = _FakeRepository(
+      failure: _timeoutFailure('bookmark-timeout'),
+      projection: const ThreadInteractionProjection(
+        isLiked: false,
+        likeCount: 13,
+        isBookmarked: false,
+      ),
+    );
+    final controller = ThreadInteractionController(repository, _target);
+    addTearDown(controller.dispose);
+
+    expect(await controller.toggleBookmark(), isFalse);
+
+    expect(controller.state.failure, isNull);
+    expect(controller.state.outcomeStatus, WriteOutcomeStatus.indeterminate);
+    expect(controller.state.outcomeRequestId, 'bookmark-timeout');
+    expect(controller.state.likeCount, 13);
+  });
 }
 
 const _target = ThreadInteractionTarget(
@@ -105,21 +148,25 @@ const _target = ThreadInteractionTarget(
   isBookmarked: false,
 );
 
-class _FakeRepository implements ThreadInteractionRepository {
+class _FakeRepository
+    implements ThreadInteractionRepository, ThreadInteractionProjectionReader {
   _FakeRepository({
     this.likeFuture,
     this.unlikeCount = 11,
     this.createdBookmarkId = 'bookmark-1',
     this.failure,
+    this.projection,
   });
 
   final Future<int>? likeFuture;
   final int unlikeCount;
   final String createdBookmarkId;
   final ApiFailure? failure;
+  final ThreadInteractionProjection? projection;
   int likeCalls = 0;
   int unlikeCalls = 0;
   int createBookmarkCalls = 0;
+  int projectionReads = 0;
   final List<String> removedBookmarkIds = [];
 
   @override
@@ -148,4 +195,26 @@ class _FakeRepository implements ThreadInteractionRepository {
     if (failure != null) throw failure!;
     removedBookmarkIds.add(bookmarkId);
   }
+
+  @override
+  Future<ThreadInteractionProjection> fetchInteraction(String threadId) async {
+    projectionReads += 1;
+    return projection ??
+        const ThreadInteractionProjection(
+          isLiked: false,
+          likeCount: 12,
+          isBookmarked: false,
+        );
+  }
+}
+
+ApiFailure _timeoutFailure(String requestId) {
+  return ApiFailure(
+    userMessage: '连接超时，请检查网络后重试。',
+    requestId: requestId,
+    cause: DioException(
+      requestOptions: RequestOptions(path: '/threads/thread-1/like'),
+      type: DioExceptionType.receiveTimeout,
+    ),
+  );
 }

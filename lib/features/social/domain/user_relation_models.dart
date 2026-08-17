@@ -36,3 +36,17 @@ class UserRelationTarget {
     followerCount,
   );
 }
+
+class UserRelationProjection {
+  const UserRelationProjection({
+    required this.isFollowing,
+    required this.isBlocked,
+    required this.isBlockedBy,
+    required this.followerCount,
+  });
+
+  final bool isFollowing;
+  final bool isBlocked;
+  final bool isBlockedBy;
+  final int followerCount;
+}

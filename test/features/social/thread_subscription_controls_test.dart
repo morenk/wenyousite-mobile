@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
@@ -77,6 +79,43 @@ void main() {
     expect(find.text('问题编号：write-request-id'), findsOneWidget);
   });
 
+  testWidgets('订阅结果无法确认时使用中性提示并只提供刷新查看', (tester) async {
+    final repository = _FakeRepository(uncertainWrite: true);
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订阅结果暂时无法确定，请稍后刷新查看。'), findsOneWidget);
+    expect(find.text('问题编号：uncertain-request-id'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-subscription-refresh-result')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('客户端'), findsNothing);
+    expect(find.textContaining('服务端'), findsNothing);
+    expect(find.textContaining('HTTP'), findsNothing);
+    expect(find.textContaining('错误码'), findsNothing);
+    final banner = tester.widget<WenyouStatusBanner>(
+      find.descendant(
+        of: find.byKey(const Key('thread-subscription-indeterminate')),
+        matching: find.byType(WenyouStatusBanner),
+      ),
+    );
+    expect(banner.tone, WenyouStatusTone.neutral);
+    expect(repository.createCalls, 1);
+
+    await tester.tap(
+      find.byKey(const Key('thread-subscription-refresh-result')),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.createCalls, 1);
+    expect(repository.loadCalls, 3);
+  });
+
   for (final width in [360.0, 400.0, 600.0]) {
     testWidgets('$width dp 订阅控件与玩家面板无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -144,11 +183,17 @@ Future<ProviderContainer> _authenticatedContainer(
 }
 
 class _FakeRepository implements ThreadSubscriptionRepository {
-  _FakeRepository({this.failLoad = false, this.failWrite = false});
+  _FakeRepository({
+    this.failLoad = false,
+    this.failWrite = false,
+    this.uncertainWrite = false,
+  });
 
   final bool failLoad;
   final bool failWrite;
+  final bool uncertainWrite;
   int loadCalls = 0;
+  int createCalls = 0;
   final List<String?> createdTargets = [];
 
   @override
@@ -179,6 +224,17 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     required ThreadSubscriptionType type,
     String? targetUserId,
   }) async {
+    createCalls += 1;
+    if (uncertainWrite) {
+      throw ApiFailure(
+        userMessage: '连接超时，请检查网络后重试。',
+        requestId: 'uncertain-request-id',
+        cause: DioException(
+          requestOptions: RequestOptions(path: '/subscriptions'),
+          type: DioExceptionType.receiveTimeout,
+        ),
+      );
+    }
     if (failWrite) {
       throw const ApiFailure(
         userMessage: '订阅写入失败',

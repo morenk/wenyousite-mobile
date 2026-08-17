@@ -117,6 +117,18 @@ class ThreadInteractionActions extends ConsumerWidget {
                 : '问题编号：${state.failure!.requestId}',
           ),
         ],
+        if (state.outcomeStatus != null) ...[
+          SizedBox(height: tokens.space12),
+          WenyouWriteOutcomeBanner(
+            key: const Key('thread-interaction-write-outcome'),
+            status: state.outcomeStatus!,
+            confirmingMessage: '正在确认主题互动状态…',
+            indeterminateMessage: '主题互动结果暂时无法确定，请稍后刷新查看。',
+            requestId: state.outcomeRequestId,
+            onRefresh: notifier.refresh,
+            refreshKey: const Key('thread-interaction-refresh-result'),
+          ),
+        ],
       ],
     );
   }
@@ -154,7 +166,15 @@ class ThreadInteractionActions extends ConsumerWidget {
     ThreadInteractionController notifier,
   ) {
     final failure = notifier.takeFailure();
-    if (failure == null) return;
+    if (failure == null) {
+      final message = notifier.takeIndeterminateNotice();
+      if (message != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+      return;
+    }
     final requestId = failure.requestId;
     final message = requestId == null
         ? failure.userMessage

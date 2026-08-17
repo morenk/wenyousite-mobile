@@ -80,6 +80,18 @@ class UserRelationActions extends ConsumerWidget {
                 : '问题编号：${state.failure!.requestId}',
           ),
         ],
+        if (state.outcomeStatus != null) ...[
+          SizedBox(height: tokens.space12),
+          WenyouWriteOutcomeBanner(
+            key: const Key('user-relation-write-outcome'),
+            status: state.outcomeStatus!,
+            confirmingMessage: '正在确认关系状态…',
+            indeterminateMessage: '关系操作结果暂时无法确定，请稍后刷新查看。',
+            requestId: state.outcomeRequestId,
+            onRefresh: notifier.refresh,
+            refreshKey: const Key('user-relation-refresh-result'),
+          ),
+        ],
       ],
     );
   }

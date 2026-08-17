@@ -123,6 +123,20 @@ class _ReadyLoginSessions extends StatelessWidget {
               ),
             ),
           ],
+          if (state.actionOutcome != null) ...[
+            SizedBox(height: tokens.space12),
+            _CenteredContent(
+              child: WenyouWriteOutcomeBanner(
+                key: const Key('login-session-write-outcome'),
+                status: state.actionOutcome!,
+                confirmingMessage: '正在确认终端退出状态…',
+                indeterminateMessage: '终端退出结果暂时无法确定，请稍后刷新查看。',
+                requestId: state.actionRequestId,
+                onRefresh: onRefresh,
+                refreshKey: const Key('login-session-refresh-result'),
+              ),
+            ),
+          ],
           SizedBox(height: tokens.space12),
           if (state.sessions.isEmpty)
             const _CenteredContent(

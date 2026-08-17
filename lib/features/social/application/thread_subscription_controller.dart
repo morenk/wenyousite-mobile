@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
@@ -9,14 +10,19 @@ export 'package:wenyousite_mobile/features/social/application/social_states.dart
 
 class ThreadSubscriptionController
     extends StateNotifier<ThreadSubscriptionState> {
-  ThreadSubscriptionController(this._repository, this.target)
-    : super(const ThreadSubscriptionState.loading()) {
+  ThreadSubscriptionController(
+    this._repository,
+    this.target, {
+    this._reconciler = const WriteReconciler(),
+  }) : super(const ThreadSubscriptionState.loading()) {
     load();
   }
 
   final ThreadSubscriptionRepository _repository;
   final ThreadSubscriptionTarget target;
+  final WriteReconciler _reconciler;
   var _loadEpoch = 0;
+  var _actionEpoch = 0;
 
   Future<void> load() async {
     final epoch = ++_loadEpoch;
@@ -55,28 +61,12 @@ class ThreadSubscriptionController
       return false;
     }
     final existing = state.threadSubscription;
-    _beginAction(ThreadSubscriptionType.thread);
-    try {
-      final updated = List<ThreadSubscriptionRecord>.of(state.subscriptions);
-      if (existing == null) {
-        updated.add(
-          await _repository.create(
-            threadId: target.threadId,
-            type: ThreadSubscriptionType.thread,
-          ),
-        );
-      } else {
-        await _repository.remove(existing.id);
-        updated.removeWhere((item) => item.id == existing.id);
-      }
-      if (!mounted) return false;
-      _completeAction(updated, existing == null ? '已订阅帖子官方更新。' : '已取消官方更新订阅。');
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      _failAction(error, '官方更新订阅失败，请稍后重试。');
-      return false;
-    }
+    return _toggle(
+      type: ThreadSubscriptionType.thread,
+      existing: existing,
+      completedMessage: existing == null ? '已订阅帖子官方更新。' : '已取消官方更新订阅。',
+      failureMessage: '官方更新订阅失败，请稍后重试。',
+    );
   }
 
   Future<bool> toggleUser(String userId) async {
@@ -93,36 +83,104 @@ class ThreadSubscriptionController
       return false;
     }
     final existing = state.userSubscriptionFor(userId);
-    _beginAction(ThreadSubscriptionType.user, targetUserId: userId);
-    try {
-      final updated = List<ThreadSubscriptionRecord>.of(state.subscriptions);
-      if (existing == null) {
-        updated.add(
-          await _repository.create(
-            threadId: target.threadId,
-            type: ThreadSubscriptionType.user,
-            targetUserId: userId,
-          ),
+    return _toggle(
+      type: ThreadSubscriptionType.user,
+      targetUserId: userId,
+      existing: existing,
+      completedMessage: existing == null ? '已订阅这名玩家的新发言。' : '已取消这名玩家的发言订阅。',
+      failureMessage: '玩家发言订阅失败，请稍后重试。',
+    );
+  }
+
+  Future<bool> _toggle({
+    required ThreadSubscriptionType type,
+    required ThreadSubscriptionRecord? existing,
+    required String completedMessage,
+    required String failureMessage,
+    String? targetUserId,
+  }) async {
+    final desiredSubscribed = existing == null;
+    final epoch = ++_actionEpoch;
+    _beginAction(type, targetUserId: targetUserId);
+    final before = state.subscriptions;
+    final outcome = await _reconciler
+        .run<ThreadSubscriptionRecord?, List<ThreadSubscriptionRecord>>(
+          write: () async {
+            if (desiredSubscribed) {
+              return _repository.create(
+                threadId: target.threadId,
+                type: type,
+                targetUserId: targetUserId,
+              );
+            }
+            await _repository.remove(existing.id);
+            return null;
+          },
+          read: () => _repository.fetchSubscriptions(target.threadId),
+          targetReached: (subscriptions) {
+            final found = subscriptions.any(
+              (item) =>
+                  item.threadId == target.threadId &&
+                  item.type == type &&
+                  item.targetUserId == targetUserId,
+            );
+            return found == desiredSubscribed;
+          },
+          failureMessage: failureMessage,
+          convergentBusinessCodes: desiredSubscribed
+              ? const {40904}
+              : const {40407},
+          isCurrent: () => mounted && epoch == _actionEpoch,
+          onProgress: (progress) {
+            if (!mounted || epoch != _actionEpoch) return;
+            state = ThreadSubscriptionState(
+              phase: ThreadSubscriptionPhase.ready,
+              subscriptions: state.subscriptions,
+              candidates: state.candidates,
+              pendingType: type,
+              pendingTargetUserId: targetUserId,
+              actionOutcome: WriteOutcomeStatus.confirming,
+              actionRequestId: progress.requestId,
+            );
+          },
         );
-      } else {
-        await _repository.remove(existing.id);
-        updated.removeWhere((item) => item.id == existing.id);
-      }
-      if (!mounted) return false;
-      _completeAction(
-        updated,
-        existing == null ? '已订阅这名玩家的新发言。' : '已取消这名玩家的发言订阅。',
-      );
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      _failAction(error, '玩家发言订阅失败，请稍后重试。');
-      return false;
+    if (outcome.isDiscarded || !mounted || epoch != _actionEpoch) return false;
+
+    switch (outcome.status) {
+      case WriteOutcomeStatus.completed:
+        final projection = outcome.projection;
+        if (projection != null) {
+          _completeAction(projection, completedMessage);
+        } else {
+          final updated = List<ThreadSubscriptionRecord>.of(before);
+          if (desiredSubscribed) {
+            final created = outcome.writeValue;
+            if (created != null) updated.add(created);
+          } else {
+            updated.removeWhere((item) => item.id == existing.id);
+          }
+          _completeAction(updated, completedMessage);
+        }
+        return true;
+      case WriteOutcomeStatus.failed:
+        _failAction(outcome.failure!, failureMessage);
+        return false;
+      case WriteOutcomeStatus.indeterminate:
+        state = ThreadSubscriptionState(
+          phase: ThreadSubscriptionPhase.ready,
+          subscriptions: outcome.projection ?? before,
+          candidates: state.candidates,
+          actionOutcome: WriteOutcomeStatus.indeterminate,
+          actionRequestId: outcome.requestId,
+        );
+        return false;
+      case WriteOutcomeStatus.confirming:
+        return false;
     }
   }
 
-  void clearActionFailure() {
-    if (state.actionFailure == null) return;
+  void clearActionFeedback() {
+    if (state.actionFailure == null && state.actionOutcome == null) return;
     state = ThreadSubscriptionState(
       phase: state.phase,
       subscriptions: state.subscriptions,
@@ -133,6 +191,8 @@ class ThreadSubscriptionController
       successMessage: state.successMessage,
     );
   }
+
+  void clearActionFailure() => clearActionFeedback();
 
   String? takeSuccessMessage() {
     final message = state.successMessage;
@@ -145,6 +205,8 @@ class ThreadSubscriptionController
       pendingType: state.pendingType,
       pendingTargetUserId: state.pendingTargetUserId,
       actionFailure: state.actionFailure,
+      actionOutcome: state.actionOutcome,
+      actionRequestId: state.actionRequestId,
     );
     return message;
   }

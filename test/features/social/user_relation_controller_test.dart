@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
@@ -63,17 +65,56 @@ void main() {
     expect(controller.state.isBlockedBy, isTrue);
     expect(controller.state.failure?.requestId, 'block-request-id');
   });
+
+  test('关注超时后采用最新关系投影并按成功处理', () async {
+    final repository = _FakeUserRelationRepository(
+      onFollow: () => Future.error(_timeoutFailure('follow-timeout')),
+      projection: const UserRelationProjection(
+        isFollowing: true,
+        isBlocked: false,
+        isBlockedBy: false,
+        followerCount: 10,
+      ),
+    );
+    final controller = UserRelationController(repository, _target);
+
+    expect(await controller.toggleFollow(), isTrue);
+    expect(controller.state.isFollowing, isTrue);
+    expect(controller.state.followerCount, 10);
+    expect(repository.projectionReads, 1);
+  });
+
+  test('关系投影仍相反时不宣告失败或成功', () async {
+    final repository = _FakeUserRelationRepository(
+      onFollow: () => Future.error(_timeoutFailure('follow-unknown')),
+      projection: const UserRelationProjection(
+        isFollowing: false,
+        isBlocked: false,
+        isBlockedBy: false,
+        followerCount: 9,
+      ),
+    );
+    final controller = UserRelationController(repository, _target);
+
+    expect(await controller.toggleFollow(), isFalse);
+    expect(controller.state.failure, isNull);
+    expect(controller.state.outcomeStatus, WriteOutcomeStatus.indeterminate);
+    expect(controller.state.outcomeRequestId, 'follow-unknown');
+  });
 }
 
-class _FakeUserRelationRepository implements UserRelationRepository {
-  _FakeUserRelationRepository({this.onFollow, this.onBlock});
+class _FakeUserRelationRepository
+    implements UserRelationRepository, UserRelationProjectionReader {
+  _FakeUserRelationRepository({this.onFollow, this.onBlock, this.projection});
 
   final Future<void> Function()? onFollow;
   final Future<void> Function()? onBlock;
+  final UserRelationProjection? projection;
   int followCalls = 0;
   int unfollowCalls = 0;
   int blockCalls = 0;
   int unblockCalls = 0;
+  int projectionReads = 0;
 
   @override
   Future<void> follow(String userId) {
@@ -96,6 +137,29 @@ class _FakeUserRelationRepository implements UserRelationRepository {
   Future<void> unblock(String userId) async {
     unblockCalls += 1;
   }
+
+  @override
+  Future<UserRelationProjection> fetchRelation(String userId) async {
+    projectionReads += 1;
+    return projection ??
+        const UserRelationProjection(
+          isFollowing: false,
+          isBlocked: false,
+          isBlockedBy: false,
+          followerCount: 9,
+        );
+  }
+}
+
+ApiFailure _timeoutFailure(String requestId) {
+  return ApiFailure(
+    userMessage: '连接超时，请检查网络后重试。',
+    requestId: requestId,
+    cause: DioException(
+      requestOptions: RequestOptions(path: '/users/user-1/follow'),
+      type: DioExceptionType.receiveTimeout,
+    ),
+  );
 }
 
 const _target = UserRelationTarget(

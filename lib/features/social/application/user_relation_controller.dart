@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_repository_ports.dart';
@@ -8,87 +9,200 @@ import 'package:wenyousite_mobile/features/social/domain/user_relation_models.da
 export 'package:wenyousite_mobile/features/social/application/social_states.dart';
 
 class UserRelationController extends StateNotifier<UserRelationState> {
-  UserRelationController(this._repository, this.target)
-    : super(UserRelationState.fromTarget(target));
+  UserRelationController(
+    this._repository,
+    this.target, {
+    this._reconciler = const WriteReconciler(),
+  }) : super(UserRelationState.fromTarget(target));
 
   final UserRelationRepository _repository;
   final UserRelationTarget target;
+  final WriteReconciler _reconciler;
+  var _actionEpoch = 0;
 
   Future<bool> toggleFollow() async {
     if (state.isPending) return false;
-    final wasFollowing = state.isFollowing;
+    final before = state;
+    final wasFollowing = before.isFollowing;
+    final epoch = ++_actionEpoch;
     state = state.copyWith(
       pendingAction: UserRelationAction.follow,
       clearFeedback: true,
     );
-    try {
-      if (wasFollowing) {
-        await _repository.unfollow(target.userId);
-      } else {
-        await _repository.follow(target.userId);
-      }
-      if (!mounted) return false;
-      final followerCount = wasFollowing
-          ? (state.followerCount - 1).clamp(0, 1 << 31)
-          : state.followerCount + 1;
-      state = UserRelationState(
-        isFollowing: !wasFollowing,
-        isBlocked: state.isBlocked,
-        isBlockedBy: state.isBlockedBy,
-        followerCount: followerCount,
-        successMessage: wasFollowing ? '已取消关注。' : '关注成功。',
-      );
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      state = UserRelationState(
-        isFollowing: state.isFollowing,
-        isBlocked: state.isBlocked,
-        isBlockedBy: state.isBlockedBy,
-        followerCount: state.followerCount,
-        failure: _asFailure(error),
-      );
-      return false;
-    }
+    return _runToggle(
+      action: UserRelationAction.follow,
+      before: before,
+      epoch: epoch,
+      write: () => wasFollowing
+          ? _repository.unfollow(target.userId)
+          : _repository.follow(target.userId),
+      targetReached: (projection) => projection.isFollowing != wasFollowing,
+      directState: () {
+        final followerCount = wasFollowing
+            ? (before.followerCount - 1).clamp(0, 1 << 31)
+            : before.followerCount + 1;
+        return UserRelationState(
+          isFollowing: !wasFollowing,
+          isBlocked: before.isBlocked,
+          isBlockedBy: before.isBlockedBy,
+          followerCount: followerCount,
+          successMessage: wasFollowing ? '已取消关注。' : '关注成功。',
+        );
+      },
+      successMessage: wasFollowing ? '已取消关注。' : '关注成功。',
+    );
   }
 
   Future<bool> toggleBlock() async {
     if (state.isPending) return false;
-    final wasBlocked = state.isBlocked;
+    final before = state;
+    final wasBlocked = before.isBlocked;
+    final epoch = ++_actionEpoch;
     state = state.copyWith(
       pendingAction: UserRelationAction.block,
       clearFeedback: true,
     );
-    try {
-      if (wasBlocked) {
-        await _repository.unblock(target.userId);
-      } else {
-        await _repository.block(target.userId);
-      }
-      if (!mounted) return false;
-      state = UserRelationState(
-        isFollowing: state.isFollowing,
+    return _runToggle(
+      action: UserRelationAction.block,
+      before: before,
+      epoch: epoch,
+      write: () => wasBlocked
+          ? _repository.unblock(target.userId)
+          : _repository.block(target.userId),
+      targetReached: (projection) => projection.isBlocked != wasBlocked,
+      directState: () => UserRelationState(
+        isFollowing: before.isFollowing,
         isBlocked: !wasBlocked,
-        isBlockedBy: state.isBlockedBy,
-        followerCount: state.followerCount,
+        isBlockedBy: before.isBlockedBy,
+        followerCount: before.followerCount,
         successMessage: wasBlocked ? '已取消拉黑。' : '已拉黑该用户。',
-      );
-      return true;
-    } on Object catch (error) {
-      if (!mounted) return false;
-      state = UserRelationState(
-        isFollowing: state.isFollowing,
-        isBlocked: state.isBlocked,
-        isBlockedBy: state.isBlockedBy,
-        followerCount: state.followerCount,
-        failure: _asFailure(error),
-      );
-      return false;
+      ),
+      successMessage: wasBlocked ? '已取消拉黑。' : '已拉黑该用户。',
+    );
+  }
+
+  Future<bool> _runToggle({
+    required UserRelationAction action,
+    required UserRelationState before,
+    required int epoch,
+    required Future<void> Function() write,
+    required bool Function(UserRelationProjection projection) targetReached,
+    required UserRelationState Function() directState,
+    required String successMessage,
+  }) async {
+    final outcome = await _reconciler.run<void, UserRelationProjection>(
+      write: write,
+      read: _readProjection,
+      targetReached: targetReached,
+      failureMessage: '关系操作失败，请稍后重试。',
+      isCurrent: () => mounted && epoch == _actionEpoch,
+      onProgress: (progress) {
+        if (!mounted || epoch != _actionEpoch) return;
+        state = state.copyWith(
+          pendingAction: action,
+          outcomeStatus: WriteOutcomeStatus.confirming,
+          outcomeRequestId: progress.requestId,
+        );
+      },
+    );
+    if (outcome.isDiscarded || !mounted || epoch != _actionEpoch) return false;
+    switch (outcome.status) {
+      case WriteOutcomeStatus.completed:
+        state = outcome.projection == null
+            ? directState()
+            : _fromProjection(
+                outcome.projection!,
+                successMessage: successMessage,
+              );
+        return true;
+      case WriteOutcomeStatus.failed:
+        state = _fromBefore(before, failure: outcome.failure);
+        return false;
+      case WriteOutcomeStatus.indeterminate:
+        state = outcome.projection == null
+            ? _fromBefore(
+                before,
+                outcomeStatus: WriteOutcomeStatus.indeterminate,
+                outcomeRequestId: outcome.requestId,
+              )
+            : _fromProjection(
+                outcome.projection!,
+                outcomeStatus: WriteOutcomeStatus.indeterminate,
+                outcomeRequestId: outcome.requestId,
+              );
+        return false;
+      case WriteOutcomeStatus.confirming:
+        return false;
     }
   }
 
+  Future<UserRelationProjection> _readProjection() {
+    final repository = _repository;
+    if (repository is UserRelationProjectionReader) {
+      return (repository as UserRelationProjectionReader).fetchRelation(
+        target.userId,
+      );
+    }
+    return Future.error(const ApiFailure(userMessage: '关系结果暂时无法确定，请稍后刷新查看。'));
+  }
+
+  Future<void> refresh() async {
+    if (state.isPending) return;
+    final before = state;
+    final epoch = ++_actionEpoch;
+    try {
+      final projection = await _readProjection();
+      if (!mounted || epoch != _actionEpoch) return;
+      state = _fromProjection(projection);
+    } on Object catch (error) {
+      if (!mounted || epoch != _actionEpoch) return;
+      state = _fromBefore(
+        before,
+        failure: mapApplicationFailure(error, '关系状态刷新失败，请稍后重试。'),
+      );
+    }
+  }
+
+  UserRelationState _fromBefore(
+    UserRelationState before, {
+    ApiFailure? failure,
+    WriteOutcomeStatus? outcomeStatus,
+    String? outcomeRequestId,
+  }) {
+    return UserRelationState(
+      isFollowing: before.isFollowing,
+      isBlocked: before.isBlocked,
+      isBlockedBy: before.isBlockedBy,
+      followerCount: before.followerCount,
+      failure: failure,
+      outcomeStatus: outcomeStatus,
+      outcomeRequestId: outcomeRequestId,
+    );
+  }
+
+  UserRelationState _fromProjection(
+    UserRelationProjection projection, {
+    String? successMessage,
+    WriteOutcomeStatus? outcomeStatus,
+    String? outcomeRequestId,
+  }) {
+    return UserRelationState(
+      isFollowing: projection.isFollowing,
+      isBlocked: projection.isBlocked,
+      isBlockedBy: projection.isBlockedBy,
+      followerCount: projection.followerCount,
+      successMessage: successMessage,
+      outcomeStatus: outcomeStatus,
+      outcomeRequestId: outcomeRequestId,
+    );
+  }
+
   void clearFeedback() {
-    if (state.failure == null && state.successMessage == null) return;
+    if (state.failure == null &&
+        state.successMessage == null &&
+        state.outcomeStatus == null) {
+      return;
+    }
     state = state.copyWith(clearFeedback: true);
   }
 
@@ -96,10 +210,6 @@ class UserRelationController extends StateNotifier<UserRelationState> {
     final message = state.successMessage;
     if (message != null) clearFeedback();
     return message;
-  }
-
-  ApiFailure _asFailure(Object error) {
-    return mapApplicationFailure(error, '关系操作失败，请稍后重试。');
   }
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
@@ -148,6 +149,14 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                 onDismiss: notifier.clearActionFailure,
               ),
             ],
+            if (state.actionOutcome != null) ...[
+              SizedBox(height: tokens.space12),
+              _ActionOutcome(
+                outcome: state.actionOutcome!,
+                requestId: state.actionRequestId,
+                onRefresh: notifier.load,
+              ),
+            ],
           ],
         ),
       },
@@ -229,6 +238,14 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                 message: state.actionFailure!.userMessage,
                 requestId: state.actionFailure!.requestId,
                 onDismiss: notifier.clearActionFailure,
+              ),
+            ],
+            if (state.actionOutcome != null) ...[
+              SizedBox(height: tokens.space12),
+              _ActionOutcome(
+                outcome: state.actionOutcome!,
+                requestId: state.actionRequestId,
+                onRefresh: notifier.load,
               ),
             ],
             SizedBox(height: tokens.space12),
@@ -370,6 +387,36 @@ class _ActionFailure extends StatelessWidget {
         onPressed: onDismiss,
         child: const Text('知道了'),
       ),
+    );
+  }
+}
+
+class _ActionOutcome extends StatelessWidget {
+  const _ActionOutcome({
+    required this.outcome,
+    required this.onRefresh,
+    this.requestId,
+  });
+
+  final WriteOutcomeStatus outcome;
+  final String? requestId;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final confirming = outcome == WriteOutcomeStatus.confirming;
+    return WenyouWriteOutcomeBanner(
+      key: Key(
+        confirming
+            ? 'thread-subscription-confirming'
+            : 'thread-subscription-indeterminate',
+      ),
+      status: outcome,
+      confirmingMessage: '正在确认订阅状态…',
+      indeterminateMessage: '订阅结果暂时无法确定，请稍后刷新查看。',
+      requestId: requestId,
+      onRefresh: onRefresh,
+      refreshKey: const Key('thread-subscription-refresh-result'),
     );
   }
 }

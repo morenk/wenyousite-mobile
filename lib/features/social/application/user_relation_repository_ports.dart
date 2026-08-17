@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
 
 abstract interface class UserRelationRepository {
   Future<void> follow(String userId);
@@ -8,6 +9,10 @@ abstract interface class UserRelationRepository {
   Future<void> block(String userId);
 
   Future<void> unblock(String userId);
+}
+
+abstract interface class UserRelationProjectionReader {
+  Future<UserRelationProjection> fetchRelation(String userId);
 }
 
 final userRelationRepositoryProvider = Provider<UserRelationRepository>((ref) {

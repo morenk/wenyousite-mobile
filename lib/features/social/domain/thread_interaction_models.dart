@@ -27,3 +27,17 @@ class ThreadInteractionTarget {
   int get hashCode =>
       Object.hash(threadId, isLiked, likeCount, isBookmarked, bookmarkId);
 }
+
+class ThreadInteractionProjection {
+  const ThreadInteractionProjection({
+    required this.isLiked,
+    required this.likeCount,
+    required this.isBookmarked,
+    this.bookmarkId,
+  });
+
+  final bool isLiked;
+  final int likeCount;
+  final bool isBookmarked;
+  final String? bookmarkId;
+}

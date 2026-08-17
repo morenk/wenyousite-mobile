@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
 
@@ -10,6 +11,8 @@ class LoginSessionsState {
     this.failure,
     this.pendingSessionId,
     this.actionFailure,
+    this.actionOutcome,
+    this.actionRequestId,
   });
 
   const LoginSessionsState.loading() : this(phase: LoginSessionsPhase.loading);
@@ -19,6 +22,8 @@ class LoginSessionsState {
   final ApiFailure? failure;
   final String? pendingSessionId;
   final ApiFailure? actionFailure;
+  final WriteOutcomeStatus? actionOutcome;
+  final String? actionRequestId;
 
   bool get isMutating => pendingSessionId != null;
 }
