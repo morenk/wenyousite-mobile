@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：`0.3.0-dev.80+86`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
-- 后端契约：`5.0.0-dev.20260816.1`，revision `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`。
+- 后端契约：`5.0.0-dev.20260816.1`，revision `e1b6bc3a288104488944ecfcd417a623daa82099`。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v5.1.0`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
