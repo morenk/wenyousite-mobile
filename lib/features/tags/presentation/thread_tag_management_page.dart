@@ -98,7 +98,7 @@ class _ThreadTagManagementPageState
                 SizedBox(height: tokens.space8),
                 if (bootstrap.tags.isEmpty)
                   Text(
-                    '尚未添加标签。可以从下方搜索已有标签，或创建一个新标签。',
+                    '尚未添加标签。搜索或输入名称即可添加；同名标签会自动复用。',
                     style: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
@@ -188,14 +188,14 @@ class _ThreadTagManagementPageState
                     key: const Key('thread-tag-create'),
                     onPressed: state.isBusy
                         ? null
-                        : () => _createAndAdd(normalizedQuery),
-                    icon: state.mutatingTagId == 'create:$normalizedQuery'
+                        : () => _addByName(normalizedQuery),
+                    icon: state.mutatingTagId == 'add:$normalizedQuery'
                         ? const SizedBox.square(
                             dimension: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const WenyouIcon(WenyouIconIds.actionAddTag),
-                    label: Text('新建并添加 #$normalizedQuery'),
+                    label: Text('添加 #$normalizedQuery'),
                   ),
                 ],
                 SizedBox(height: tokens.space12),
@@ -251,6 +251,18 @@ class _ThreadTagManagementPageState
               ),
             ),
           ],
+          if (state.actionOutcome != null) ...[
+            SizedBox(height: tokens.space12),
+            WenyouWriteOutcomeBanner(
+              key: const Key('thread-tag-write-outcome'),
+              status: state.actionOutcome!,
+              confirmingMessage: '正在确认标签状态…',
+              indeterminateMessage: '标签操作结果暂时无法确定，请稍后刷新查看。',
+              requestId: state.actionRequestId,
+              onRefresh: () => ref.read(provider.notifier).load(),
+              refreshKey: const Key('thread-tag-refresh-result'),
+            ),
+          ],
         ],
       ),
     );
@@ -276,16 +288,16 @@ class _ThreadTagManagementPageState
     ).showSnackBar(SnackBar(content: Text('已添加 #${tag.name}。')));
   }
 
-  Future<void> _createAndAdd(String name) async {
+  Future<void> _addByName(String name) async {
     final succeeded = await ref
         .read(threadTagManagementControllerProvider(widget.threadId).notifier)
-        .createAndAdd(name);
+        .addByName(name);
     if (!succeeded || !mounted) return;
     _searchController.clear();
     setState(() {});
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('已新建并添加 #$name。')));
+    ).showSnackBar(SnackBar(content: Text('已添加 #$name。')));
   }
 
   Future<void> _confirmRemove(TopicTagModel tag) async {

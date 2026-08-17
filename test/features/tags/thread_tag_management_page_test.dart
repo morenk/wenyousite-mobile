@@ -24,7 +24,7 @@ void main() {
     expect(find.byKey(const Key('thread-tag-selected-tag-2')), findsOneWidget);
   });
 
-  testWidgets('有效新名称显式创建后添加到主题', (tester) async {
+  testWidgets('有效新名称通过统一入口复用或创建后关联主题', (tester) async {
     final repository = _FakeTagRepository();
     await _pumpPage(tester, repository);
 
@@ -36,7 +36,7 @@ void main() {
     await tester.tap(create);
     await tester.pumpAndSettle();
 
-    expect(repository.createdNames, ['新标签']);
+    expect(repository.createdNames, isEmpty);
     expect(repository.addedNames, ['新标签']);
     expect(
       find.byKey(const Key('thread-tag-selected-created')),

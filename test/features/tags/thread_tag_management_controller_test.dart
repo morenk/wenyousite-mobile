@@ -52,14 +52,8 @@ void main() {
     expect(controller.state.bootstrap!.tags.last.id, 'tag-2');
   });
 
-  test('创建遇到 40905 时解析唯一同名标签并继续添加', () async {
-    final repository = _FakeTagRepository(
-      createFailure: const ApiFailure(
-        userMessage: '标签已存在',
-        businessCode: 40905,
-        httpStatus: 409,
-      ),
-    );
+  test('输入名称时由统一关联入口复用或创建规范标签', () async {
+    final repository = _FakeTagRepository();
     final controller = ThreadTagManagementController(
       'thread-1',
       repository,
@@ -67,11 +61,9 @@ void main() {
     );
     await controller.load();
 
-    final succeeded = await controller.createAndAdd(' 群像 ');
+    final succeeded = await controller.addByName(' 群像 ');
 
     expect(succeeded, isTrue);
-    expect(repository.searches.last, '群像');
-    expect(repository.findIds, ['tag-2']);
     expect(repository.addedNames, ['群像']);
   });
 
@@ -122,13 +114,11 @@ class _FakeTagRepository implements TagRepository {
   _FakeTagRepository({
     ThreadTagManagementBootstrap? bootstrap,
     this.onSearch,
-    this.createFailure,
     this.removeFailure,
   }) : bootstrap = bootstrap ?? _bootstrap();
 
   final ThreadTagManagementBootstrap bootstrap;
   final Future<List<TopicTagModel>> Function(String query)? onSearch;
-  final ApiFailure? createFailure;
   final ApiFailure? removeFailure;
   final searches = <String>[];
   final findIds = <String>[];
@@ -145,7 +135,6 @@ class _FakeTagRepository implements TagRepository {
 
   @override
   Future<TopicTagModel> create(String name) async {
-    if (createFailure != null) throw createFailure!;
     return _tag(id: 'created', name: name);
   }
 

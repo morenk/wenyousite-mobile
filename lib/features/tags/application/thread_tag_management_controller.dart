@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_states.dart';
@@ -15,14 +16,17 @@ class ThreadTagManagementController
     this._threadId,
     this._repository, {
     bool autoStart = true,
+    this._reconciler = const WriteReconciler(),
   }) : super(const ThreadTagManagementState.loading()) {
     if (autoStart) unawaited(load());
   }
 
   final String _threadId;
   final TagRepository _repository;
+  final WriteReconciler _reconciler;
   int _loadEpoch = 0;
   int _searchEpoch = 0;
+  int _mutationEpoch = 0;
 
   Future<void> load() async {
     final epoch = ++_loadEpoch;
@@ -75,18 +79,23 @@ class ThreadTagManagementController
         bootstrap!.tags.any((item) => item.id == candidate.id)) {
       return false;
     }
-    state = state.copyWith(mutatingTagId: candidate.id, failure: null);
+    state = state.copyWith(
+      mutatingTagId: candidate.id,
+      failure: null,
+      actionOutcome: null,
+      actionRequestId: null,
+    );
     try {
       final latest = await _repository.findById(candidate.id);
       if (latest.name != candidate.name) {
         throw const ApiFailure(userMessage: '标签已经变化，请重新搜索后再添加。');
       }
-      final added = await _repository.addToThread(
-        threadId: _threadId,
-        name: latest.name,
+      return _addWithReconciliation(
+        write: () =>
+            _repository.addToThread(threadId: _threadId, name: latest.name),
+        targetReached: (value) => value.id == latest.id,
+        fallback: '标签添加失败，请重试。',
       );
-      _commitAdded(added);
-      return true;
     } on Object catch (error) {
       state = state.copyWith(
         mutatingTagId: null,
@@ -96,7 +105,7 @@ class ThreadTagManagementController
     }
   }
 
-  Future<bool> createAndAdd(String name) async {
+  Future<bool> addByName(String name) async {
     final bootstrap = state.bootstrap;
     final normalized = normalizeTagName(name);
     final validation = validateTagName(normalized);
@@ -107,30 +116,23 @@ class ThreadTagManagementController
       return false;
     }
     if (bootstrap!.tags.any((item) => item.name == normalized)) return false;
-    state = state.copyWith(mutatingTagId: 'create:$normalized', failure: null);
+    state = state.copyWith(
+      mutatingTagId: 'add:$normalized',
+      failure: null,
+      actionOutcome: null,
+      actionRequestId: null,
+    );
     try {
-      TopicTagModel tag;
-      try {
-        tag = await _repository.create(normalized);
-      } on ApiFailure catch (failure) {
-        if (failure.businessCode != 40905) rethrow;
-        final matches = await _repository.search(normalized);
-        final exact = matches.where((item) => item.name == normalized).toList();
-        if (exact.length != 1) {
-          throw const ApiFailure(userMessage: '同名标签已经存在，请重新搜索后添加。');
-        }
-        tag = await _repository.findById(exact.single.id);
-      }
-      final added = await _repository.addToThread(
-        threadId: _threadId,
-        name: tag.name,
+      return _addWithReconciliation(
+        write: () =>
+            _repository.addToThread(threadId: _threadId, name: normalized),
+        targetReached: (value) => value.name == normalized,
+        fallback: '标签添加失败，请重试。',
       );
-      _commitAdded(added);
-      return true;
     } on Object catch (error) {
       state = state.copyWith(
         mutatingTagId: null,
-        failure: _asFailure(error, '标签创建失败，请重试。'),
+        failure: _asFailure(error, '标签添加失败，请重试。'),
       );
       return false;
     }
@@ -140,29 +142,130 @@ class ThreadTagManagementController
     final bootstrap = state.bootstrap;
     if (bootstrap == null || state.isBusy) return false;
     if (!bootstrap.tags.any((item) => item.id == tag.id)) return false;
-    state = state.copyWith(mutatingTagId: tag.id, failure: null);
-    try {
-      await _repository.removeFromThread(threadId: _threadId, tagId: tag.id);
-      final next = bootstrap.tags
-          .where((item) => item.id != tag.id)
-          .toList(growable: false);
-      state = state.copyWith(
-        bootstrap: bootstrap.copyWith(tags: next),
-        mutatingTagId: null,
-      );
-      return true;
-    } on Object catch (error) {
-      state = state.copyWith(
-        mutatingTagId: null,
-        failure: _asFailure(error, '标签移除失败，请重试。'),
-      );
+    state = state.copyWith(
+      mutatingTagId: tag.id,
+      failure: null,
+      actionOutcome: null,
+      actionRequestId: null,
+    );
+    final epoch = ++_mutationEpoch;
+    final outcome = await _reconciler.run<void, ThreadTagManagementBootstrap>(
+      write: () =>
+          _repository.removeFromThread(threadId: _threadId, tagId: tag.id),
+      read: () => _repository.loadManagement(_threadId),
+      targetReached: (latest) => !latest.tags.any((item) => item.id == tag.id),
+      failureMessage: '标签移除失败，请重试。',
+      isCurrent: () => mounted && epoch == _mutationEpoch,
+      onProgress: (progress) => _showConfirming(epoch, progress.requestId),
+    );
+    if (outcome.isDiscarded || !mounted || epoch != _mutationEpoch) {
       return false;
     }
+    switch (outcome.status) {
+      case WriteOutcomeStatus.completed:
+        final next = bootstrap.tags
+            .where((item) => item.id != tag.id)
+            .toList(growable: false);
+        state = state.copyWith(
+          bootstrap: outcome.projection ?? bootstrap.copyWith(tags: next),
+          mutatingTagId: null,
+          failure: null,
+          actionOutcome: null,
+          actionRequestId: null,
+        );
+        return true;
+      case WriteOutcomeStatus.failed:
+        state = state.copyWith(
+          mutatingTagId: null,
+          failure: outcome.failure,
+          actionOutcome: null,
+          actionRequestId: null,
+        );
+        return false;
+      case WriteOutcomeStatus.indeterminate:
+        state = state.copyWith(
+          bootstrap: outcome.projection ?? bootstrap,
+          mutatingTagId: null,
+          failure: null,
+          actionOutcome: WriteOutcomeStatus.indeterminate,
+          actionRequestId: outcome.requestId,
+        );
+        return false;
+      case WriteOutcomeStatus.confirming:
+        return false;
+    }
+  }
+
+  Future<bool> _addWithReconciliation({
+    required Future<TopicTagModel> Function() write,
+    required bool Function(TopicTagModel value) targetReached,
+    required String fallback,
+  }) async {
+    final before = state.bootstrap!;
+    final epoch = ++_mutationEpoch;
+    final outcome = await _reconciler
+        .run<TopicTagModel, ThreadTagManagementBootstrap>(
+          write: write,
+          read: () => _repository.loadManagement(_threadId),
+          targetReached: (latest) => latest.tags.any(targetReached),
+          failureMessage: fallback,
+          isCurrent: () => mounted && epoch == _mutationEpoch,
+          onProgress: (progress) => _showConfirming(epoch, progress.requestId),
+        );
+    if (outcome.isDiscarded || !mounted || epoch != _mutationEpoch) {
+      return false;
+    }
+    switch (outcome.status) {
+      case WriteOutcomeStatus.completed:
+        if (outcome.projection != null) {
+          state = state.copyWith(
+            bootstrap: outcome.projection,
+            mutatingTagId: null,
+            failure: null,
+            actionOutcome: null,
+            actionRequestId: null,
+          );
+        } else {
+          _commitAdded(outcome.writeValue!);
+        }
+        return true;
+      case WriteOutcomeStatus.failed:
+        state = state.copyWith(
+          mutatingTagId: null,
+          failure: outcome.failure,
+          actionOutcome: null,
+          actionRequestId: null,
+        );
+        return false;
+      case WriteOutcomeStatus.indeterminate:
+        state = state.copyWith(
+          bootstrap: outcome.projection ?? before,
+          mutatingTagId: null,
+          failure: null,
+          actionOutcome: WriteOutcomeStatus.indeterminate,
+          actionRequestId: outcome.requestId,
+        );
+        return false;
+      case WriteOutcomeStatus.confirming:
+        return false;
+    }
+  }
+
+  void _showConfirming(int epoch, String? requestId) {
+    if (!mounted || epoch != _mutationEpoch) return;
+    state = state.copyWith(
+      actionOutcome: WriteOutcomeStatus.confirming,
+      actionRequestId: requestId,
+    );
   }
 
   void clearFailure() {
     if (state.isMutating) return;
-    state = state.copyWith(failure: null);
+    state = state.copyWith(
+      failure: null,
+      actionOutcome: null,
+      actionRequestId: null,
+    );
   }
 
   bool _canAdd(ThreadTagManagementBootstrap? bootstrap) {

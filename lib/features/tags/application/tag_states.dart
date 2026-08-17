@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
@@ -12,6 +13,8 @@ class ThreadTagManagementState {
     this.failure,
     this.isSearching = false,
     this.mutatingTagId,
+    this.actionOutcome,
+    this.actionRequestId,
   });
 
   const ThreadTagManagementState.loading()
@@ -23,6 +26,8 @@ class ThreadTagManagementState {
   final ApiFailure? failure;
   final bool isSearching;
   final String? mutatingTagId;
+  final WriteOutcomeStatus? actionOutcome;
+  final String? actionRequestId;
 
   bool get isMutating => mutatingTagId != null;
   bool get isBusy => isSearching || isMutating;
@@ -34,6 +39,8 @@ class ThreadTagManagementState {
     Object? failure = _unset,
     bool? isSearching,
     Object? mutatingTagId = _unset,
+    Object? actionOutcome = _unset,
+    Object? actionRequestId = _unset,
   }) {
     return ThreadTagManagementState(
       phase: phase ?? this.phase,
@@ -48,6 +55,12 @@ class ThreadTagManagementState {
       mutatingTagId: identical(mutatingTagId, _unset)
           ? this.mutatingTagId
           : mutatingTagId as String?,
+      actionOutcome: identical(actionOutcome, _unset)
+          ? this.actionOutcome
+          : actionOutcome as WriteOutcomeStatus?,
+      actionRequestId: identical(actionRequestId, _unset)
+          ? this.actionRequestId
+          : actionRequestId as String?,
     );
   }
 }
