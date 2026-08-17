@@ -18,7 +18,7 @@ class ApiAccountDeletionRepository implements AccountDeletionRepository {
     try {
       final response = await _api.usersDeleteMe();
       if ((response.data?.data.message.trim() ?? '').isEmpty) {
-        throw const ApiFailure(userMessage: '账号注销结果不完整，请重新确认账号状态。');
+        throw const ApiFailure(userMessage: '账号注销失败，请重新确认账号状态。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

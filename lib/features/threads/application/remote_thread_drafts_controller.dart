@@ -80,7 +80,7 @@ class RemoteThreadDraftsController
       state = RemoteThreadDraftsState(
         phase: RemoteThreadDraftsPhase.failed,
         drafts: state.drafts,
-        failure: _asFailure(error, '服务端草稿箱没有加载完成，请重试。'),
+        failure: _asFailure(error, '云端草稿加载失败，请重试。'),
       );
     }
   }
@@ -104,7 +104,7 @@ class RemoteThreadDraftsController
       if (!mounted) return false;
       state = state.copyWith(
         removingId: null,
-        removeFailure: _asFailure(error, '服务端草稿没有删除成功，请重试。'),
+        removeFailure: _asFailure(error, '云端草稿没有删除成功，请重试。'),
       );
       return false;
     }

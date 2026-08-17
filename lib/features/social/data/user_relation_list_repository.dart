@@ -21,7 +21,7 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
           ? (await _api.usersFollowFollowing()).data?.data
           : (await _api.usersFollowUserFollowing(id: userId)).data?.data;
       if (records == null) {
-        throw const ApiFailure(userMessage: '关注列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '关注列表加载失败，请稍后重试。');
       }
       return List.unmodifiable(
         records
@@ -40,7 +40,7 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
           ? (await _api.usersFollowFollowers()).data?.data
           : (await _api.usersFollowUserFollowers(id: userId)).data?.data;
       if (records == null) {
-        throw const ApiFailure(userMessage: '粉丝列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '粉丝列表加载失败，请稍后重试。');
       }
       return List.unmodifiable(
         records
@@ -57,7 +57,7 @@ class ApiUserRelationListRepository implements UserRelationListRepository {
     try {
       final records = (await _api.usersFollowBlocks()).data?.data;
       if (records == null) {
-        throw const ApiFailure(userMessage: '黑名单返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '黑名单加载失败，请稍后重试。');
       }
       return List.unmodifiable(
         records.map((record) => _mapAuthor(record.blocked, record.createdAt)),

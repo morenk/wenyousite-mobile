@@ -200,7 +200,7 @@ class _DirectConversationList extends StatelessWidget {
               message: state.transientFailure!.userMessage,
               detail: state.transientFailure!.requestId == null
                   ? null
-                  : '请求 ID：${state.transientFailure!.requestId}',
+                  : '问题编号：${state.transientFailure!.requestId}',
               action: TextButton.icon(
                 key: const Key('direct-messages-load-more-retry'),
                 onPressed: onLoadMore,
@@ -358,11 +358,11 @@ class _DirectListFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.statusOffline,
-          title: '私聊会话没有加载完成',
+          title: '私聊会话加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
               ? null
-              : '请求 ID：${state.failure!.requestId}',
+              : '问题编号：${state.failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('direct-messages-retry'),
             onPressed: onRetry,
@@ -388,7 +388,7 @@ class _DirectMessagesUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
             title: '私聊功能当前未开放',
-            message: '服务端暂未启用此能力，请稍后再试。',
+            message: '私聊暂不可用，请稍后再试。',
           ),
         ),
       ),

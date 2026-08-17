@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_compose_repositor
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 void main() {
-  test('服务端草稿箱加载并仅在删除确认后移除权威记录', () async {
+  test('云端草稿箱加载并仅在删除确认后移除权威记录', () async {
     final repository = _FakeRepository(drafts: [_summary('draft-one')]);
     final controller = RemoteThreadDraftsController(
       repository,

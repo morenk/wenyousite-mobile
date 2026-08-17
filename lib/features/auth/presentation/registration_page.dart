@@ -89,7 +89,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         children: [
           const WenyouSectionHeader(
             title: '创建温油站账号',
-            subtitle: '先验证邮箱，再设置用户名和密码。验证码不会保存在本机。',
+            subtitle: '先验证邮箱，再设置用户名和密码。验证码不会保存在这台设备上。',
           ),
           SizedBox(height: tokens.space24),
           TextFormField(
@@ -156,7 +156,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                 message: '邮件可能已经发出',
                 detail: state.failure?.requestId == null
                     ? '请检查收件箱和垃圾邮件；为避免重复邮件，60 秒内不会自动或手动重发。'
-                    : '请检查收件箱和垃圾邮件；请求 ID：${state.failure!.requestId}',
+                    : '请检查收件箱和垃圾邮件；问题编号：${state.failure!.requestId}',
               ),
             ],
             Align(

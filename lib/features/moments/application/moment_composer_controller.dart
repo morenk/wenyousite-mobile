@@ -72,7 +72,7 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
       if (!mounted) return;
       state = MomentComposerState(
         phase: MomentComposerPhase.failed,
-        failure: _asFailure(error, '动态没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '动态加载失败，请稍后重试。'),
       );
     }
   }

@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
@@ -32,10 +33,7 @@ class PublicUserContentArea extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              WenyouSectionHeader(
-                title: '公开内容',
-                subtitle: state.activeTab.description,
-              ),
+              const WenyouSectionHeader(title: '公开内容'),
               SizedBox(height: tokens.space12),
               Row(
                 children: [
@@ -193,7 +191,7 @@ class _ThreadSection extends StatelessWidget {
       );
     }
     if (section.items.isEmpty) {
-      return _ContentEmptyState(tab: tab, isSelf: isSelf);
+      return _ContentEmptyState(tab: tab);
     }
     final tokens = context.wenyouTokens;
     return Column(
@@ -201,7 +199,19 @@ class _ThreadSection extends StatelessWidget {
       children: [
         for (var index = 0; index < section.items.length; index++) ...[
           if (index > 0) SizedBox(height: tokens.space12),
-          _UserThreadCard(item: section.items[index]),
+          ThreadFeedCard(
+            key: Key('user-thread-${section.items[index].id}'),
+            thread: section.items[index],
+            categoryName: null,
+            onTap: () => context.pushNamed(
+              'thread-detail',
+              pathParameters: {'threadId': section.items[index].id},
+            ),
+            onTagTap: (tag) => context.pushNamed(
+              'tag-threads',
+              pathParameters: {'tagId': tag.id},
+            ),
+          ),
         ],
         if (section.failure != null) ...[
           SizedBox(height: tokens.space12),
@@ -255,10 +265,7 @@ class _ReplySection extends StatelessWidget {
       );
     }
     if (section.items.isEmpty) {
-      return _ContentEmptyState(
-        tab: PublicUserContentTab.replies,
-        isSelf: isSelf,
-      );
+      return const _ContentEmptyState(tab: PublicUserContentTab.replies);
     }
     final tokens = context.wenyouTokens;
     return Column(
@@ -269,66 +276,6 @@ class _ReplySection extends StatelessWidget {
           _UserReplyCard(item: section.items[index]),
         ],
       ],
-    );
-  }
-}
-
-class _UserThreadCard extends StatelessWidget {
-  const _UserThreadCard({required this.item});
-
-  final PublicUserThreadModel item;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Semantics(
-      button: true,
-      label: '打开主题 ${item.title}',
-      child: WenyouPanel(
-        onTap: () => context.pushNamed(
-          'thread-detail',
-          pathParameters: {'threadId': item.id},
-        ),
-        padding: EdgeInsets.all(tokens.space16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: tokens.space8,
-              runSpacing: tokens.space4,
-              children: [
-                _ContentPill(
-                  label: item.status.label,
-                  accent: item.status == PublicUserThreadStatus.recruiting,
-                ),
-                if (item.isPrivate)
-                  const _ContentPill(
-                    label: '私密',
-                    icon: WenyouIconIds.actionLock,
-                  ),
-              ],
-            ),
-            SizedBox(height: tokens.space12),
-            Text(
-              item.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(height: tokens.space8),
-            Text(
-              '${item.ownerName} · Lv.${item.ownerLevel} · '
-              '${DateFormat('yyyy-MM-dd').format(item.createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            SizedBox(height: tokens.space4),
-            Text(
-              '${item.memberCount} 成员 · ${item.postCount} 条内容',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -385,19 +332,16 @@ class _UserReplyCard extends StatelessWidget {
 }
 
 class _ContentPill extends StatelessWidget {
-  const _ContentPill({required this.label, this.icon, this.accent = false});
+  const _ContentPill({required this.label});
 
   final String label;
-  final String? icon;
-  final bool accent;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final color = accent ? tokens.brandForeground : tokens.mutedText;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: accent ? tokens.accentedBackground : tokens.softPanel,
+        color: tokens.softPanel,
         border: Border.all(color: tokens.border),
         borderRadius: BorderRadius.circular(tokens.radiusPill),
       ),
@@ -406,20 +350,11 @@ class _ContentPill extends StatelessWidget {
           horizontal: tokens.space8,
           vertical: tokens.space4,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              WenyouIcon(icon!, size: 14, color: color),
-              SizedBox(width: tokens.space4),
-            ],
-            Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: color),
-            ),
-          ],
+        child: Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
         ),
       ),
     );
@@ -449,10 +384,9 @@ class _ContentLoadingState extends StatelessWidget {
 }
 
 class _ContentEmptyState extends StatelessWidget {
-  const _ContentEmptyState({required this.tab, this.isSelf = false});
+  const _ContentEmptyState({required this.tab});
 
   final PublicUserContentTab tab;
-  final bool isSelf;
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +394,7 @@ class _ContentEmptyState extends StatelessWidget {
       child: WenyouEmptyState(
         icon: _emptyIcon(tab),
         title: _emptyTitle(tab),
-        message: isSelf ? _selfEmptyMessage(tab) : '这里只展示服务端允许公开的内容。',
+        message: '',
       ),
     );
   }
@@ -487,13 +421,13 @@ class _ContentFailureState extends StatelessWidget {
         icon: hidden ? WenyouIconIds.actionHide : WenyouIconIds.statusOffline,
         title: hidden && !isSelf
             ? '该用户未公开${tab.description}'
-            : '${tab.description}没有加载完成',
+            : '${tab.description}加载失败',
         message: hidden && !isSelf
             ? '隐私设置可能刚刚发生变化。'
             : (failure?.userMessage ?? '请稍后重试。'),
         detail: failure?.requestId == null
             ? null
-            : '请求 ID：${failure!.requestId}',
+            : '问题编号：${failure!.requestId}',
         action: OutlinedButton.icon(
           key: Key('public-user-${tab.name}-retry'),
           onPressed: onRetry,
@@ -516,7 +450,7 @@ class _ContentInlineFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
+      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
       action: TextButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
@@ -537,13 +471,6 @@ String _emptyTitle(PublicUserContentTab tab) => switch (tab) {
   PublicUserContentTab.played => '还没有参与过主题',
   PublicUserContentTab.replies => '还没有发布过回复',
   PublicUserContentTab.bookmarks => '还没有公开收藏',
-};
-
-String _selfEmptyMessage(PublicUserContentTab tab) => switch (tab) {
-  PublicUserContentTab.created => '你创建的主题会直接显示在这里。',
-  PublicUserContentTab.played => '加入主题后，会集中显示在这里。',
-  PublicUserContentTab.replies => '发布回复后，会集中显示在这里。',
-  PublicUserContentTab.bookmarks => '收藏主题后，会集中显示在这里。',
 };
 
 String _emptyIcon(PublicUserContentTab tab) => switch (tab) {

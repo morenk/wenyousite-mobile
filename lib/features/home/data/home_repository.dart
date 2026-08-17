@@ -26,7 +26,7 @@ class ApiHomeRepository implements HomeRepository {
       );
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '主题分类返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题分类加载失败，请稍后重试。');
       }
       final categories =
           data
@@ -66,7 +66,7 @@ class ApiHomeRepository implements HomeRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '主题列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题列表加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
@@ -23,7 +24,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       final response = await _api.usersGetUser(id: userId);
       final dto = response.data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '用户资料返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '用户资料加载失败，请稍后重试。');
       }
       final bio = dto.bio?.trim();
       return PublicUserProfileModel(
@@ -58,7 +59,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       final response = await _api.usersGetUserActivitySummary(id: userId);
       final dto = response.data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '创作活动汇总返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '创作活动加载失败，请稍后重试。');
       }
       return PublicUserActivitySummary(
         momentCount: _nonNegativeCount(dto.momentCount, '动态数'),
@@ -89,7 +90,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '创建主题列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '创建的主题加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data.map(_mapThread).toList(growable: false),
@@ -115,7 +116,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '参与主题列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '参与的主题加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data.map(_mapThread).toList(growable: false),
@@ -133,7 +134,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       final response = await _api.usersGetUserRecentReplies(id: userId);
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '最近回复返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '最近回复加载失败，请稍后重试。');
       }
       return List.unmodifiable(data.map(_mapReply));
     } on DioException catch (error) {
@@ -155,7 +156,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '收藏列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '收藏加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data.map(_mapBookmark).toList(growable: false),
@@ -173,13 +174,27 @@ class ApiPublicUserRepository implements PublicUserRepository {
       title: _safeTitle(dto.title),
       categorySlug: dto.category,
       status: _mapThreadStatus(dto.status),
+      isPinned: dto.pinned,
       isPrivate:
           dto.visibility == ThreadListItemResponseDtoVisibilityEnum.PRIVATE,
+      isPublished: dto.published,
+      ownerId: dto.owner.id,
       ownerName: dto.owner.username,
+      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
+      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      preview: _optionalText(dto.preview),
+      tags: dto.topicTags
+          .map(
+            (relation) =>
+                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+          )
+          .toList(growable: false),
       memberCount: dto.count.members.toInt(),
+      playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
+      tipTotal: dto.tipTotal,
     );
   }
 
@@ -189,13 +204,19 @@ class ApiPublicUserRepository implements PublicUserRepository {
       title: _safeTitle(dto.title),
       categorySlug: dto.category,
       status: _mapBookmarkStatus(dto.status),
+      isPinned: dto.pinned,
       isPrivate:
           dto.visibility == BookmarkThreadResponseDtoVisibilityEnum.PRIVATE,
+      isPublished: dto.published,
+      ownerId: dto.owner.id,
       ownerName: dto.owner.username,
+      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
+      lastActivityAt: dto.updatedAt,
       memberCount: dto.count.members.toInt(),
       postCount: dto.count.posts.toInt(),
+      tipTotal: dto.tipTotal,
     );
   }
 
@@ -249,9 +270,14 @@ class ApiPublicUserRepository implements PublicUserRepository {
     return trimmed.isEmpty ? '未命名主题' : trimmed;
   }
 
+  String? _optionalText(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
   int _nonNegativeCount(num value, String field) {
     if (!value.isFinite || value < 0 || value % 1 != 0) {
-      throw ApiFailure(userMessage: '$field返回不正确，请稍后重试。');
+      throw ApiFailure(userMessage: '$field暂时无法显示，请稍后重试。');
     }
     return value.toInt();
   }

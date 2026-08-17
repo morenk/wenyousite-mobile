@@ -30,7 +30,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         limit: limit.clamp(1, 50),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '私聊会话列表响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '私聊会话加载失败，请稍后重试。');
       }
       return _conversationPage(
         envelope.data,
@@ -50,7 +50,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     try {
       final dto = (await _api.directConversationsUnread()).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '私聊未读数响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '私聊未读数加载失败，请稍后重试。');
       }
       final unread = _nonNegativeInteger(dto.unreadMessageCount, '未读消息数');
       final pending = _nonNegativeInteger(dto.pendingRequestCount, '消息请求数');
@@ -78,14 +78,14 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         userId: targetId,
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '联系状态响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '联系状态加载失败，请稍后重试。');
       }
       final state = _contactState(dto.contactState);
       final conversation = dto.conversation == null
           ? null
           : _conversation(dto.conversation!);
       if (conversation != null && conversation.otherUser.id != targetId) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的私聊对象，请重新打开。');
+        throw const ApiFailure(userMessage: '私聊对象已经发生变化，请重新打开。');
       }
       if (state == DirectContactState.fresh && conversation != null) {
         throw const ApiFailure(userMessage: '联系状态与会话信息不一致，请重新加载。');
@@ -131,7 +131,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         }),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认首条消息，请使用原请求重试。');
+        throw const ApiFailure(userMessage: '首条消息失败，请重试。');
       }
       final conversation = _conversation(dto.conversation);
       final message = _message(dto.message);
@@ -158,11 +158,11 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     try {
       final dto = (await _api.directConversationsFindById(id: id)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '私聊会话响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '私聊会话加载失败，请稍后重试。');
       }
       final conversation = _conversation(dto);
       if (conversation.id != id) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的私聊会话，请重新打开。');
+        throw const ApiFailure(userMessage: '私聊会话已经发生变化，请重新打开。');
       }
       return conversation;
     } on DioException catch (error) {
@@ -192,7 +192,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         limit: limit.clamp(1, 50),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '私聊消息响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '私聊消息加载失败，请稍后重试。');
       }
       final ids = <String>{};
       final items = envelope.data
@@ -202,14 +202,14 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
               throw const ApiFailure(userMessage: '消息不属于当前会话，请重新加载。');
             }
             if (!ids.add(message.id)) {
-              throw const ApiFailure(userMessage: '私聊消息列表包含重复条目，请重新加载。');
+              throw const ApiFailure(userMessage: '私聊消息暂时无法显示，请重新加载。');
             }
             return message;
           })
           .toList(growable: false);
       for (var index = 1; index < items.length; index++) {
         if (_compareMessages(items[index - 1], items[index]) > 0) {
-          throw const ApiFailure(userMessage: '私聊消息顺序异常，请重新加载。');
+          throw const ApiFailure(userMessage: '私聊消息暂时无法显示，请重新加载。');
         }
       }
       final pageCursor = _pageCursor(
@@ -250,11 +250,11 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         }),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认消息已发送，请使用原请求重试。');
+        throw const ApiFailure(userMessage: '发送失败，请重试。');
       }
       final message = _message(dto);
       if (message.conversationId != id) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的私聊消息，请重新加载。');
+        throw const ApiFailure(userMessage: '私聊消息已经发生变化，请重新加载。');
       }
       return message;
     } on DioException catch (error) {
@@ -281,7 +281,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         ),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认消息请求处理结果，请重新加载。');
+        throw const ApiFailure(userMessage: '消息请求失败，请重新加载。');
       }
       final result = _conversation(dto);
       if (result.id != id ||
@@ -289,7 +289,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
               (accept
                   ? DirectConversationStatus.accepted
                   : DirectConversationStatus.declined)) {
-        throw const ApiFailure(userMessage: '消息请求处理结果不匹配，请重新加载。');
+        throw const ApiFailure(userMessage: '消息请求已经发生变化，请重新加载。');
       }
       return result;
     } on DioException catch (error) {
@@ -314,11 +314,11 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         ),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认会话归档状态，请重新加载。');
+        throw const ApiFailure(userMessage: '归档失败，请重新加载。');
       }
       final result = _conversation(dto);
       if (result.id != id || (result.archivedAt != null) != archived) {
-        throw const ApiFailure(userMessage: '会话归档结果不匹配，请重新加载。');
+        throw const ApiFailure(userMessage: '会话归档状态已经发生变化，请重新加载。');
       }
       return result;
     } on DioException catch (error) {
@@ -344,7 +344,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         ),
       )).data?.data;
       if (result == null || result.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有确认消息已读，请重新加载。');
+        throw const ApiFailure(userMessage: '已读状态更新失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(
@@ -360,7 +360,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     try {
       final result = (await _api.directMessagesRecall(id: id)).data?.data;
       if (result == null || result.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有确认消息撤回结果，请重新加载。');
+        throw const ApiFailure(userMessage: '撤回失败，请重新加载。');
       }
       return DirectRecallResult(
         conversationCanceled: result.conversationCanceled,
@@ -383,7 +383,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         .map((dto) {
           final item = _conversation(dto);
           if (!ids.add(item.id)) {
-            throw const ApiFailure(userMessage: '私聊会话列表包含重复条目，请重新加载。');
+            throw const ApiFailure(userMessage: '私聊会话暂时无法显示，请重新加载。');
           }
           return item;
         })
@@ -479,7 +479,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     final senderId = _requiredText(dto.senderId, '消息发送者 ID');
     final recipientId = _requiredText(dto.recipientId, '消息接收者 ID');
     if (senderId == recipientId) {
-      throw const ApiFailure(userMessage: '私聊消息参与者异常，请重新加载。');
+      throw const ApiFailure(userMessage: '消息加载失败，请重新打开会话。');
     }
     final content = _optionalText(dto.content);
     final sticker = dto.sticker;
@@ -489,7 +489,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         ? null
         : _media(dto.media!);
     if (sticker != null && dto.media != null && dto.media!.id != sticker.id) {
-      throw const ApiFailure(userMessage: '私聊表情兼容图片不匹配，请重新加载。');
+      throw const ApiFailure(userMessage: '这条表情消息暂时无法显示，请重新加载。');
     }
     if (dto.recalledAt != null &&
         (content != null || dto.media != null || sticker != null)) {
@@ -618,14 +618,14 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         message.conversationId != conversation.id ||
         message.recipientId != targetUserId ||
         message.senderId == targetUserId) {
-      throw const ApiFailure(userMessage: '首条私聊响应目标不匹配，请重新加载确认。');
+      throw const ApiFailure(userMessage: '首条消息已经发生变化，请重新加载。');
     }
   }
 
   String? _pageCursor(String? value, bool hasMore) {
     final normalized = _optionalText(value);
     if (hasMore && normalized == null) {
-      throw const ApiFailure(userMessage: '私聊分页位置缺失，请重新加载。');
+      throw const ApiFailure(userMessage: '会话位置已失效，请重新加载。');
     }
     return normalized;
   }
@@ -653,7 +653,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
   String _requiredText(String? value, String field) {
     final normalized = value?.trim() ?? '';
     if (normalized.isEmpty) {
-      throw ApiFailure(userMessage: '$field 返回为空，请重新加载。');
+      throw ApiFailure(userMessage: '$field暂时无法显示，请重新加载。');
     }
     return normalized;
   }

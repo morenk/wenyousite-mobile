@@ -88,7 +88,7 @@ void main() {
 
     expect(controller.state.phase, DirectConversationPhase.failed);
     expect(controller.state.messages, isEmpty);
-    expect(controller.state.failure?.userMessage, contains('参与者'));
+    expect(controller.state.failure?.userMessage, contains('会话成员'));
   });
 
   test('发送失败保留同一 clientRequestId，重试成功后才清草稿', () async {

@@ -146,7 +146,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
               message: failure.userMessage,
               detail: failure.requestId == null
                   ? null
-                  : '请求 ID：${failure.requestId}',
+                  : '问题编号：${failure.requestId}',
               tone: WenyouStatusTone.error,
               action: failure.canRetry
                   ? TextButton(

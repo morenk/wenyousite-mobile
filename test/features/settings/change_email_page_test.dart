@@ -85,7 +85,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('验证码发送没有完成。'), findsOneWidget);
-    expect(find.text('请求 ID：email-request-id'), findsOneWidget);
+    expect(find.text('问题编号：email-request-id'), findsOneWidget);
     expect(find.text('next@example.com'), findsOneWidget);
     expect(harness.tokenStore.value, isNotNull);
 
@@ -113,7 +113,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('验证码不正确。'), findsOneWidget);
-    expect(find.text('请求 ID：verify-request-id'), findsOneWidget);
+    expect(find.text('问题编号：verify-request-id'), findsOneWidget);
     expect(find.textContaining('next@example.com'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('change-email-edit-address')));

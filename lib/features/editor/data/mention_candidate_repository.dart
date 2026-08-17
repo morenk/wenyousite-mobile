@@ -34,7 +34,7 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
       );
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '可提及用户响应不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '可提及用户加载失败，请稍后重试。');
       }
       final seen = <String>{};
       final users = data.users
@@ -61,7 +61,7 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
       if (normalizedQuery.isNotEmpty) {
         final global = (await _api.usersSearch(q: normalizedQuery)).data?.data;
         if (global == null) {
-          throw const ApiFailure(userMessage: '全站用户搜索响应不完整，请稍后重试。');
+          throw const ApiFailure(userMessage: '用户搜索失败，请稍后重试。');
         }
         for (final candidate in global) {
           if (users.length >= 20) break;

@@ -124,7 +124,7 @@ class RegistrationController extends StateNotifier<RegistrationState> {
     } on Object catch (error) {
       state = state.copyWith(
         status: RegistrationStatus.failed,
-        failure: ApiFailure(userMessage: '验证码请求没有完成，请稍后重试。', cause: error),
+        failure: ApiFailure(userMessage: '验证码请求失败，请稍后重试。', cause: error),
       );
       return false;
     }
@@ -167,7 +167,7 @@ class RegistrationController extends StateNotifier<RegistrationState> {
     } on Object catch (error) {
       state = state.copyWith(
         status: RegistrationStatus.failed,
-        failure: ApiFailure(userMessage: '注册没有完成，请稍后重试。', cause: error),
+        failure: ApiFailure(userMessage: '注册失败，请稍后重试。', cause: error),
       );
       return false;
     }

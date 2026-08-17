@@ -17,9 +17,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     required this.onAccentedBackground,
     required this.focus,
     required this.like,
-    required this.likeSoft,
     required this.bookmark,
-    required this.bookmarkSoft,
     required this.space4,
     required this.space8,
     required this.space12,
@@ -54,9 +52,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     onAccentedBackground: WenyouFoundationPalette.onAccent,
     focus: WenyouFoundationPalette.brandStrong,
     like: WenyouFoundationPalette.like,
-    likeSoft: WenyouFoundationPalette.likeSoft,
     bookmark: WenyouFoundationPalette.bookmark,
-    bookmarkSoft: WenyouFoundationPalette.bookmarkSoft,
     space4: WenyouFoundationMobile.space4,
     space8: WenyouFoundationMobile.space8,
     space12: WenyouFoundationMobile.space12,
@@ -91,9 +87,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   final Color onAccentedBackground;
   final Color focus;
   final Color like;
-  final Color likeSoft;
   final Color bookmark;
-  final Color bookmarkSoft;
 
   final double space4;
   final double space8;
@@ -130,9 +124,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     Color? onAccentedBackground,
     Color? focus,
     Color? like,
-    Color? likeSoft,
     Color? bookmark,
-    Color? bookmarkSoft,
     double? space4,
     double? space8,
     double? space12,
@@ -166,9 +158,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       onAccentedBackground: onAccentedBackground ?? this.onAccentedBackground,
       focus: focus ?? this.focus,
       like: like ?? this.like,
-      likeSoft: likeSoft ?? this.likeSoft,
       bookmark: bookmark ?? this.bookmark,
-      bookmarkSoft: bookmarkSoft ?? this.bookmarkSoft,
       space4: space4 ?? this.space4,
       space8: space8 ?? this.space8,
       space12: space12 ?? this.space12,
@@ -219,9 +209,7 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       )!,
       focus: Color.lerp(focus, other.focus, t)!,
       like: Color.lerp(like, other.like, t)!,
-      likeSoft: Color.lerp(likeSoft, other.likeSoft, t)!,
       bookmark: Color.lerp(bookmark, other.bookmark, t)!,
-      bookmarkSoft: Color.lerp(bookmarkSoft, other.bookmarkSoft, t)!,
       space4: _lerpDouble(space4, other.space4, t),
       space8: _lerpDouble(space8, other.space8, t),
       space12: _lerpDouble(space12, other.space12, t),

@@ -64,7 +64,7 @@ class _StartupGateState extends ConsumerState<StartupGate>
         onUpdate: () => _startUpdate(state.update!),
       ),
       StartupStatus.incompatible => _IncompatiblePage(
-        reason: state.reason ?? '服务端契约与当前应用不兼容。',
+        reason: state.reason ?? '当前版本需要更新后继续使用。',
         contractVersion: state.contract?.contractVersion,
         update: state.update,
         action: state.update == null
@@ -109,7 +109,7 @@ class _CheckingPage extends StatelessWidget {
         maxWidth: 420,
         child: WenyouPanel(
           child: Semantics(
-            label: '正在检查服务端兼容性和应用版本',
+            label: '正在准备温油站',
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -118,7 +118,7 @@ class _CheckingPage extends StatelessWidget {
                 Text('正在连接温油站', style: Theme.of(context).textTheme.titleMedium),
                 SizedBox(height: tokens.space8),
                 Text(
-                  '正在检查公网服务、应用版本与客户端兼容性。',
+                  '正在确认是否可以正常使用。',
                   textAlign: TextAlign.center,
                   style: Theme.of(
                     context,
@@ -219,7 +219,7 @@ class _UpdatePage extends StatelessWidget {
               if (!update.canStartUpdate) ...[
                 SizedBox(height: tokens.space16),
                 const WenyouStatusBanner(
-                  message: '新版本地址尚未就绪',
+                  message: '获取新版本下载地址失败',
                   detail: '请稍后重新打开应用；若持续出现，请联系开发者。',
                   tone: WenyouStatusTone.error,
                 ),
@@ -328,7 +328,7 @@ class _IncompatiblePage extends StatelessWidget {
       icon: WenyouIconIds.actionUpdate,
       title: '需要升级温油站',
       message: reason,
-      detail: contractVersion == null ? null : '服务端契约：$contractVersion',
+      detail: contractVersion == null ? null : '兼容信息：$contractVersion',
       action: update == null || action == null || onUpdate == null
           ? null
           : SizedBox(
@@ -376,7 +376,7 @@ class _FailurePage extends StatelessWidget {
       icon: WenyouIconIds.statusOffline,
       title: '暂时连不上温油站',
       message: message,
-      detail: requestId == null ? null : '请求 ID：$requestId',
+      detail: requestId == null ? null : '问题编号：$requestId',
       action: FilledButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh),
@@ -442,7 +442,7 @@ String? _statusMessage(MobileUpdateActionState action) {
     MobileUpdateActionStatus.installerOpened => '系统安装器已打开，请按提示完成更新。',
     MobileUpdateActionStatus.externalPageOpened =>
       'TestFlight 已打开，请在那里完成更新后返回。',
-    MobileUpdateActionStatus.failed => action.message ?? '更新没有完成，请重试。',
+    MobileUpdateActionStatus.failed => action.message ?? '更新失败，请重试。',
   };
 }
 

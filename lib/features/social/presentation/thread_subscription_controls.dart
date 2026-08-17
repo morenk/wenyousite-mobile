@@ -91,10 +91,10 @@ class ThreadSubscriptionControls extends ConsumerWidget {
         ),
         ThreadSubscriptionPhase.failed => WenyouStatusBanner(
           tone: WenyouStatusTone.error,
-          message: state.failure?.userMessage ?? '订阅状态没有加载完成。',
+          message: state.failure?.userMessage ?? '订阅状态加载失败。',
           detail: state.failure?.requestId == null
               ? null
-              : '请求 ID：${state.failure!.requestId}',
+              : '问题编号：${state.failure!.requestId}',
           action: TextButton(
             key: const Key('thread-subscription-retry'),
             onPressed: notifier.load,
@@ -364,7 +364,7 @@ class _ActionFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: message,
-      detail: requestId == null ? null : '请求 ID：$requestId',
+      detail: requestId == null ? null : '问题编号：$requestId',
       action: TextButton(
         key: const Key('thread-subscription-error-dismiss'),
         onPressed: onDismiss,

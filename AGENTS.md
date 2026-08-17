@@ -6,7 +6,7 @@
 - 在 Linux、VPS 或非 Windows CI 环境发现本仓库时，只允许阅读；必须停止源码修改、Flutter/Gradle 构建、签名和发布。
 - Windows 工作区中的 `wenyousite-frontend` 与 `wenyousite-backend` 只是只读参考镜像。移动端任务只允许对它们执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
 - Web 与后端只能在 VPS 的 `/root/wenyousite` 工作区开发和切换服务。需要修改 Web 或后端时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改。
-- `wenyousite-foundation` 对移动端而言是已发布依赖。移动端切片只消费固定 Tag；需要修改 Foundation 时必须另开独立任务并在其授权环境发布新 Tag，再由本仓库独立升级。
+- `wenyousite-foundation` 对移动端而言是已发布依赖。开始任何 Foundation 相关实现前，必须在只读镜像执行 `git fetch origin --tags`，以远端最新正式发布 Tag 为准，并把 `pubspec.yaml` 锁定到该 Tag；若本仓库版本落后，必须先在当前切片同步依赖和迁移变更，禁止继续按旧版规范实现，也禁止直接跟随浮动分支。需要修改 Foundation 源码时必须另开独立任务并在其授权环境发布新 Tag。
 - GitHub Actions 若保留，只能使用 Windows runner 在临时 checkout 内复核质量或 Debug 构建；CI 对仓库和外部系统只读，不拥有部署、签名、制品上传或发布权限，也不能替代 Windows 本地验收。
 
 ## 1. 项目定位
@@ -30,7 +30,7 @@ V1 包含认证、公开浏览、搜索、动态、主题/子贴/楼层、创作
 
 V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、离线自动发帖、暗色主题、阅读进度、子贴标签和 Android App Links。
 
-共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的已发布版本；当前由 `pubspec.yaml` 锁定 Foundation v3.1.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v5.1.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 
@@ -40,9 +40,9 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
 5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
-视觉实现以锁定版本的 Foundation `contracts/foundation.v1.json`、Flutter profile、图片契约和生成常量为唯一事实源。视觉契约不得覆盖接口与业务契约，但所有页面、共享组件和视觉验收必须遵循中央颜色、字体、密度、状态、图片与无障碍规则。
+视觉实现以远端最新正式发布 Tag 的 Foundation `contracts/foundation.v1.json`、Flutter profile、元素/图片契约和生成常量为唯一事实源。视觉契约不得覆盖接口与业务契约，但所有页面、共享组件和视觉验收必须遵循中央颜色、字体、密度、状态、图片与无障碍规则。
 
-视觉切片开始前还要 fetch Foundation，确认 `pubspec.yaml` 的 tag 仍是目标版本并阅读该版本 CHANGELOG；需要升级时先做独立 `chore`，不得直接跟随主分支。
+视觉切片开始前必须 fetch Foundation 远端与 tags，确认最新正式发布 Tag，阅读该版本 CHANGELOG 和受影响契约，并核对 `pubspec.yaml`；发现新 Tag 时先升级固定版本、迁移破坏性变化并更新锁文件，再继续页面实现。`origin/main` 只用于确认最新发布位置，构建始终锁定明确 Tag。
 
 每个切片开始先比较已记录后端 revision、`origin/dev` 与公网 `/meta`；仅在契约 revision 变化或明确同步契约时 fetch 后端只读镜像并比较：
 
@@ -109,6 +109,10 @@ packages/
 - feature 之间通过明确的 repository/service 接口协作，不直接读取其他 feature 的页面状态。
 - `core` 只放无业务归属的横切能力，不成为杂物目录。
 - API 传输模型不得直接承担复杂 UI 状态；需要时在 feature 内映射为展示模型。
+- 所有 label、说明、空状态和错误文案必须从用户视角描述当前对象、可执行动作或结果；禁止向用户解释服务端/客户端、接口/响应、协议/兼容节点、跨端状态共享等实现细节。
+- 页面结构已能表达含义时，不再用“将显示在这里”“与某页共用数据”等文案重复解释界面。只保留用户做决定所需的输入约束、权限/隐私影响、不可逆风险和恢复方式。
+- 面向用户的错误统一使用“加载失败 / 操作失败”等明确结果，不使用“响应不完整”“结果尚未确认”等开发语义；需要诊断时仅次要展示“问题编号”。
+- 用户可见的业务状态使用产品语义而非存储枚举直译；主题 `CLOSED` 固定显示为“已停招”。
 - 编辑器使用 Flutter Quill；Delta 只存在于编辑会话内存。后端、云草稿和 Drift 快照始终保存完整 Markdown v3。
 - Markdown ↔ Delta 使用自研可测试 Codec；不得依赖 `markdown_quill` 充当事实转换层，mention/dice/sticker/image/独占 `<br />` 必须无损往返。
 - 优先使用 Dart 语言能力，避免为简单状态额外引入代码生成框架。

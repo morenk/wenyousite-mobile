@@ -103,7 +103,7 @@ class MobileUpdateController extends StateNotifier<MobileUpdateActionState> {
       state = MobileUpdateActionState(
         status: MobileUpdateActionStatus.failed,
         targetBuild: update.targetBuild,
-        message: '更新没有完成，请稍后重试。',
+        message: '更新失败，请稍后重试。',
       );
     }
   }

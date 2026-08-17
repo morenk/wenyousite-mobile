@@ -46,7 +46,7 @@ class DirectUnreadController extends StateNotifier<DirectUnreadState> {
       if (!mounted) return;
       state = DirectUnreadState(
         counts: state.counts,
-        failure: _asFailure(error, '私聊未读数没有同步完成。'),
+        failure: _asFailure(error, '私聊未读数同步失败。'),
       );
     }
   }
@@ -107,7 +107,7 @@ class DirectConversationListController
       state = DirectConversationListState(
         phase: DirectConversationListPhase.failed,
         view: _view,
-        failure: _asFailure(error, '私聊会话列表没有加载完成。'),
+        failure: _asFailure(error, '私聊会话列表加载失败。'),
       );
     }
   }
@@ -176,7 +176,7 @@ class DirectConversationListController
       if (!mounted || epoch != _epoch) return;
       state = before.copyWith(
         isLoadingMore: false,
-        transientFailure: _asFailure(error, '更多私聊会话没有加载完成。'),
+        transientFailure: _asFailure(error, '更多私聊会话加载失败。'),
       );
     }
   }
@@ -250,7 +250,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       state = DirectConversationState(
         phase: DirectConversationPhase.failed,
-        failure: _asFailure(error, '私聊会话没有加载完成。'),
+        failure: _asFailure(error, '私聊会话加载失败。'),
       );
     }
   }
@@ -314,7 +314,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       final conversation = before.conversation;
       if (conversation == null) {
-        throw const ApiFailure(userMessage: '私聊会话参与者缺失，请重新加载。');
+        throw const ApiFailure(userMessage: '会话加载失败，请重新打开。');
       }
       _validateParticipants(conversation, page.items);
       final current = state;
@@ -335,7 +335,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
         isLoadingOlder: false,
-        transientFailure: _asFailure(error, '更早消息没有加载完成。'),
+        transientFailure: _asFailure(error, '更早消息加载失败。'),
       );
     }
   }
@@ -485,7 +485,7 @@ class DirectConversationController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      final failure = _asFailure(error, '消息发送失败，请使用原请求重试。');
+      final failure = _asFailure(error, '消息发送失败，请重试。');
       final failures = Map<String, ApiFailure>.of(state.sendFailures)
         ..[optimisticMessageId] = failure;
       state = state.copyWith(
@@ -815,7 +815,7 @@ class DirectConversationController
           message.senderId == otherUserId || message.recipientId == otherUserId;
       final isOutgoing = message.recipientId == otherUserId;
       if (!includesOther || (requireOutgoing && !isOutgoing)) {
-        throw const ApiFailure(userMessage: '消息参与者与当前会话不匹配，已停止展示。');
+        throw const ApiFailure(userMessage: '会话成员已经发生变化，请重新打开。');
       }
     }
   }

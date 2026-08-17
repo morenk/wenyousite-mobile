@@ -50,7 +50,7 @@ void main() {
       find.byKey(const Key('thread-invite-link-generate-confirm')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('请求 ID：invite-request-id'), findsOneWidget);
+    expect(find.text('问题编号：invite-request-id'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const Key('thread-invite-link-dismiss-failure')),

@@ -29,7 +29,7 @@ void main() {
       await _pumpPage(tester, _FakeTagRepository());
 
       expect(tester.takeException(), isNull);
-      expect(find.text('浏览使用这个标签的公开主题。'), findsOneWidget);
+      expect(find.text('已加载 1 个主题'), findsOneWidget);
     });
   }
 }

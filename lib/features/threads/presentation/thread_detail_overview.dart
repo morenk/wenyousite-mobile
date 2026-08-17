@@ -84,9 +84,13 @@ class ThreadDetailOverview extends StatelessWidget {
               SizedBox(height: tokens.space4),
               Semantics(
                 header: true,
-                child: Text(
-                  detail.title,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    detail.title,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
                 ),
               ),
               SizedBox(height: tokens.space8),
@@ -188,37 +192,41 @@ class _ThreadMetadata extends StatelessWidget {
       '${detail.postCount} 楼',
       if (detail.tipTotal != '0') '${detail.tipTotal} 升温油',
     ].join(' · ');
-    return Row(
-      children: [
-        Flexible(
-          child: Text(
-            detail.owner.username,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                detail.owner.username,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              SizedBox(width: tokens.space4),
+              WenyouLevelBadge(level: detail.owner.level),
+              SizedBox(width: tokens.space8),
+              Text(
+                formatWenyouRelativeTime(detail.updatedAt),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ),
+              SizedBox(width: tokens.space8),
+              Text(
+                metrics,
+                maxLines: 1,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ),
+            ],
           ),
         ),
-        SizedBox(width: tokens.space4),
-        WenyouLevelBadge(level: detail.owner.level),
-        SizedBox(width: tokens.space8),
-        Text(
-          formatWenyouRelativeTime(detail.updatedAt),
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-        ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          child: Text(
-            metrics,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

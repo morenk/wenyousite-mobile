@@ -29,7 +29,7 @@ class ApiThreadMemberManagementRepository
       final membersEnvelope =
           (responses[1] as Response<ThreadMembersFindAll200Response>).data;
       if (detailEnvelope == null || membersEnvelope == null) {
-        throw const ApiFailure(userMessage: '成员管理信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '成员管理信息加载失败，请稍后重试。');
       }
       final detail = detailEnvelope.data;
       final membershipRole = detail.currentMembership?.role;
@@ -92,7 +92,7 @@ class ApiThreadMemberManagementRepository
       );
       final dto = response.data?.data;
       if (dto == null || dto.threadId != threadId || dto.userId != userId) {
-        throw const ApiFailure(userMessage: '成员修改结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '成员修改失败，请重试。');
       }
       return _mapMember(dto);
     } on DioException catch (error) {
@@ -107,7 +107,7 @@ class ApiThreadMemberManagementRepository
         threadId: threadId,
       );
       if (response.data == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认已退出玩家身份，请重新加载确认。');
+        throw const ApiFailure(userMessage: '退出失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

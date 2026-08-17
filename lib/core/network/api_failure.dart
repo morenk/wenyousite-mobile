@@ -138,9 +138,9 @@ class ApiFailure implements Exception {
       return '暂时无法连接温油站，请检查网络。';
     }
     if ((exception.response?.statusCode ?? 0) >= 500) {
-      return '服务器暂时开小差了，请稍后重试。';
+      return '温油站暂时不可用，请稍后重试。';
     }
-    return '请求没有完成，请稍后重试。';
+    return '请求失败，请稍后重试。';
   }
 
   @override

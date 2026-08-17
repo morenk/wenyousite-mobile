@@ -38,7 +38,7 @@ class TagThreadsController extends StateNotifier<TagThreadsState> {
       if (!_requestEpoch.isCurrent(epoch)) return;
       state = TagThreadsState(
         phase: TagThreadsPhase.failed,
-        failure: _asFailure(error, '标签主题没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '标签主题加载失败，请稍后重试。'),
       );
     }
   }

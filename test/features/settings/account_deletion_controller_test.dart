@@ -53,7 +53,7 @@ void main() {
 
     expect(await controller.submit(), isFalse);
     expect(controller.state.remoteDeletionConfirmed, isTrue);
-    expect(controller.state.failure?.userMessage, contains('本机登录信息'));
+    expect(controller.state.failure?.userMessage, contains('登录信息失败'));
     expect(await controller.submit(), isFalse);
     expect(repository.calls, 1);
 

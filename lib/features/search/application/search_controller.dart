@@ -239,7 +239,7 @@ class SearchController extends StateNotifier<SearchState> {
       state = state.copyWith(
         overview: SearchSectionState(
           phase: SearchSectionPhase.failed,
-          failure: _asFailure(error, '综合搜索没有完成，请稍后重试。'),
+          failure: _asFailure(error, '综合搜索失败，请稍后重试。'),
         ),
       );
     }
@@ -271,7 +271,7 @@ class SearchController extends StateNotifier<SearchState> {
       state = state.copyWith(
         moments: SearchSectionState(
           phase: SearchSectionPhase.failed,
-          failure: _asFailure(error, '动态搜索没有完成，请稍后重试。'),
+          failure: _asFailure(error, '动态搜索失败，请稍后重试。'),
         ),
       );
     }
@@ -300,7 +300,7 @@ class SearchController extends StateNotifier<SearchState> {
       state = state.copyWith(
         threads: SearchSectionState(
           phase: SearchSectionPhase.failed,
-          failure: _asFailure(error, '主题搜索没有完成，请稍后重试。'),
+          failure: _asFailure(error, '主题搜索失败，请稍后重试。'),
         ),
       );
     }
@@ -329,7 +329,7 @@ class SearchController extends StateNotifier<SearchState> {
       state = state.copyWith(
         users: SearchSectionState(
           phase: SearchSectionPhase.failed,
-          failure: _asFailure(error, '用户搜索没有完成，请稍后重试。'),
+          failure: _asFailure(error, '用户搜索失败，请稍后重试。'),
         ),
       );
     }
@@ -361,7 +361,7 @@ class SearchController extends StateNotifier<SearchState> {
       state = state.copyWith(
         posts: SearchSectionState(
           phase: SearchSectionPhase.failed,
-          failure: _asFailure(error, '正文搜索没有完成，请稍后重试。'),
+          failure: _asFailure(error, '正文搜索失败，请稍后重试。'),
         ),
       );
     }
@@ -526,7 +526,7 @@ class ThreadPostSearchController extends StateNotifier<ThreadPostSearchState> {
         query: query,
         results: SearchSectionState(
           phase: SearchSectionPhase.failed,
-          failure: _asFailure(error, '主题内搜索没有完成，请稍后重试。'),
+          failure: _asFailure(error, '主题内搜索失败，请稍后重试。'),
         ),
       );
     }

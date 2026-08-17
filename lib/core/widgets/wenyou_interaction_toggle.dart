@@ -1,9 +1,4 @@
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
@@ -44,11 +39,6 @@ class WenyouInteractionToggle extends StatelessWidget {
               ? tokens.like
               : tokens.bookmark
         : tokens.mutedText;
-    final surface = visualSelected
-        ? kind == WenyouInteractionKind.like
-              ? tokens.likeSoft
-              : tokens.bookmarkSoft
-        : Colors.transparent;
     final enabled = interactive && onPressed != null && !pending;
     final content = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -99,11 +89,25 @@ class WenyouInteractionToggle extends StatelessWidget {
             ? WenyouIconControlContract.disabledContentOpacity
             : 1,
         child: Material(
-          color: surface,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(tokens.radius12),
           child: InkWell(
             onTap: enabled ? onPressed : null,
             borderRadius: BorderRadius.circular(tokens.radius12),
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.pressed)) {
+                return foreground.withValues(
+                  alpha: WenyouIconControlContract.pressedStateLayerOpacity,
+                );
+              }
+              if (states.contains(WidgetState.hovered) ||
+                  states.contains(WidgetState.focused)) {
+                return foreground.withValues(
+                  alpha: WenyouIconControlContract.hoverStateLayerOpacity,
+                );
+              }
+              return null;
+            }),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minWidth: tokens.minimumTouchTarget,
@@ -142,53 +146,11 @@ class WenyouInteractionIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!selected) {
-      return WenyouIcon(semanticId, size: size, color: color);
-    }
-    return SvgPicture(
-      _FilledFoundationSvgLoader(
-        WenyouIconContract.assetName(semanticId),
-        packageName: 'wenyousite_foundation',
-      ),
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-      excludeFromSemantics: true,
+    return WenyouIcon(
+      semanticId,
+      size: size,
+      color: color,
+      variant: selected ? WenyouIconVariant.filled : WenyouIconVariant.outline,
     );
   }
-}
-
-@immutable
-class _FilledFoundationSvgLoader extends SvgLoader<ByteData> {
-  const _FilledFoundationSvgLoader(this.assetName, {required this.packageName});
-
-  final String assetName;
-  final String packageName;
-
-  @override
-  Future<ByteData?> prepareMessage(BuildContext? context) {
-    final bundle = context == null
-        ? rootBundle
-        : DefaultAssetBundle.of(context);
-    return bundle.load('packages/$packageName/$assetName');
-  }
-
-  @override
-  String provideSvg(ByteData? message) {
-    final source = utf8.decode(
-      Uint8List.sublistView(message!),
-      allowMalformed: true,
-    );
-    return source.replaceFirst('fill="none"', 'fill="currentColor"');
-  }
-
-  @override
-  int get hashCode => Object.hash(assetName, packageName);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _FilledFoundationSvgLoader &&
-      other.assetName == assetName &&
-      other.packageName == packageName;
 }

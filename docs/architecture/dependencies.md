@@ -6,7 +6,7 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 
 非生成 Dart 文件以 900 行为硬上限。`largeFileDebt` 只允许冻结门禁启用时已经超限的文件及其精确行数：行数下降后必须同步收紧，降到上限内必须删除记录；禁止新增超限文件、提高基线或用新的超大 `part` 文件搬运复杂度。当前 `largeFileDebt` 已清空，所有非生成 Dart 文件均在上限内。
 
-跨 feature 的 UI 读模型归属其核心业务资源：主题信息流模型、映射和卡片位于 threads，home、tags 与 search 只保存各自查询和页面状态；`search->threads` 仅用于把搜索投影适配到同一只读主题卡片，不读取 threads controller 或 data。capability、会话退出、资料缓存失效等跨 feature 契约位于 `app` 或 `core/application`，由应用根组合具体 provider；feature 不反向导入 app-shell，也不直接失效另一个 feature 的 provider。
+跨 feature 的 UI 读模型归属其核心业务资源：主题信息流模型、映射和卡片位于 threads，home、tags、search、users 与 social 只保存各自查询和页面状态；`search->threads`、`users->threads` 与 `social->threads` 仅用于把各自主题投影适配到同一只读主题卡片，不读取 threads controller 或 data。capability、会话退出、资料缓存失效等跨 feature 契约位于 `app` 或 `core/application`，由应用根组合具体 provider；feature 不反向导入 app-shell，也不直接失效另一个 feature 的 provider。
 
 ## 可复用生命周期
 

@@ -29,11 +29,11 @@ class UserRelationListPage extends ConsumerWidget {
           child: WenyouPanel(
             child: WenyouEmptyState(
               icon: WenyouIconIds.statusOffline,
-              title: '${_title(target.kind)}没有加载完成',
+              title: '${_title(target.kind)}加载失败',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: state.failure?.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: OutlinedButton.icon(
                 key: const Key('user-relation-list-retry'),
                 onPressed: notifier.load,
@@ -101,7 +101,7 @@ class _ReadyRelationList extends StatelessWidget {
                 message: state.actionFailure!.userMessage,
                 detail: state.actionFailure!.requestId == null
                     ? null
-                    : '请求 ID：${state.actionFailure!.requestId}',
+                    : '问题编号：${state.actionFailure!.requestId}',
                 tone: WenyouStatusTone.error,
                 action: TextButton(
                   key: const Key('user-relation-action-error-dismiss'),
@@ -247,9 +247,9 @@ String _emptyTitle(UserRelationListKind kind) => switch (kind) {
 };
 
 String _emptyMessage(UserRelationListKind kind) => switch (kind) {
-  UserRelationListKind.following => '关注后，对方会出现在这里。',
-  UserRelationListKind.followers => '有人关注后，会出现在这里。',
-  UserRelationListKind.blocks => '被你拉黑的用户会出现在这里。',
+  UserRelationListKind.following => '',
+  UserRelationListKind.followers => '',
+  UserRelationListKind.blocks => '',
 };
 
 String _emptyIcon(UserRelationListKind kind) => switch (kind) {

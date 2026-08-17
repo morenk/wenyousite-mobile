@@ -39,11 +39,11 @@ class ApiTagRepository implements TagRepository {
       if (tagEnvelope == null ||
           categoryEnvelope == null ||
           threadEnvelope == null) {
-        throw const ApiFailure(userMessage: '标签主题信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '标签主题加载失败，请稍后重试。');
       }
       final tag = _mapTag(tagEnvelope.data);
       if (tag.id != tagId) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的标签，请重新打开。');
+        throw const ApiFailure(userMessage: '标签已经发生变化，请重新打开。');
       }
       return TagThreadsBootstrap(
         tag: tag,
@@ -68,7 +68,7 @@ class ApiTagRepository implements TagRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '标签主题列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '标签主题加载失败，请稍后重试。');
       }
       return _mapThreadPage(envelope);
     } on DioException catch (error) {
@@ -93,11 +93,11 @@ class ApiTagRepository implements TagRepository {
       if (threadEnvelope == null ||
           relationEnvelope == null ||
           suggestionEnvelope == null) {
-        throw const ApiFailure(userMessage: '主题标签信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题标签加载失败，请稍后重试。');
       }
       final thread = threadEnvelope.data;
       if (thread.id != threadId) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的主题，请重新加载。');
+        throw const ApiFailure(userMessage: '主题已经发生变化，请重新加载。');
       }
       final membershipRole = thread.currentMembership?.role;
       final canManage =
@@ -133,7 +133,7 @@ class ApiTagRepository implements TagRepository {
         q: normalized.isEmpty ? null : normalized,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '标签搜索结果不完整，请重试。');
+        throw const ApiFailure(userMessage: '标签搜索失败，请重试。');
       }
       return _mapTagList(envelope.data);
     } on DioException catch (error) {
@@ -146,11 +146,11 @@ class ApiTagRepository implements TagRepository {
     try {
       final envelope = (await _tagsApi.tagsGetById(id: tagId)).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '标签详情返回不完整，请重试。');
+        throw const ApiFailure(userMessage: '标签加载失败，请重试。');
       }
       final tag = _mapTag(envelope.data);
       if (tag.id != tagId) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的标签，请重新搜索。');
+        throw const ApiFailure(userMessage: '标签已经发生变化，请重新搜索。');
       }
       return tag;
     } on DioException catch (error) {
@@ -168,11 +168,11 @@ class ApiTagRepository implements TagRepository {
         createTagDto: CreateTagDto((builder) => builder.name = normalized),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认标签已创建，请重新搜索确认。');
+        throw const ApiFailure(userMessage: '创建失败，请重新搜索。');
       }
       final tag = _mapTag(envelope.data);
       if (tag.name != normalized) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的标签，请重新搜索。');
+        throw const ApiFailure(userMessage: '标签已经发生变化，请重新搜索。');
       }
       return tag;
     } on DioException catch (error) {
@@ -196,11 +196,11 @@ class ApiTagRepository implements TagRepository {
         ),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认标签已添加，请重新加载确认。');
+        throw const ApiFailure(userMessage: '添加失败，请重新加载。');
       }
       final tag = _mapThreadTag(envelope.data);
       if (tag.name != normalized) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的标签，请重新加载。');
+        throw const ApiFailure(userMessage: '标签已经发生变化，请重新加载。');
       }
       return tag;
     } on DioException catch (error) {
@@ -219,7 +219,7 @@ class ApiTagRepository implements TagRepository {
         tagId: tagId,
       )).data;
       if (envelope == null || envelope.data.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有确认标签已移除，请重新加载确认。');
+        throw const ApiFailure(userMessage: '移除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -252,7 +252,7 @@ class ApiTagRepository implements TagRepository {
     final ids = <String>{};
     final categories = values.where((item) => item.isActive).map((item) {
       if (!ids.add(item.id)) {
-        throw const ApiFailure(userMessage: '主题分类返回了重复条目，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题分类暂时无法显示，请稍后重试。');
       }
       return HomeCategory(
         id: _requiredText(item.id, '分类 ID'),
@@ -273,11 +273,11 @@ class ApiTagRepository implements TagRepository {
     final ids = <String>{};
     final tags = values.map((relation) {
       if (relation.threadId != threadId || relation.tagId != relation.tag.id) {
-        throw const ApiFailure(userMessage: '主题标签关联不匹配，请重新加载。');
+        throw const ApiFailure(userMessage: '主题标签已经发生变化，请重新加载。');
       }
       final tag = _mapThreadTag(relation.tag);
       if (!ids.add(tag.id)) {
-        throw const ApiFailure(userMessage: '主题标签列表包含重复条目，请重新加载。');
+        throw const ApiFailure(userMessage: '主题标签暂时无法显示，请重新加载。');
       }
       return tag;
     }).toList();
@@ -290,7 +290,7 @@ class ApiTagRepository implements TagRepository {
     final tags = values.where((item) => item.isActive).map((item) {
       final tag = _mapTag(item);
       if (!ids.add(tag.id)) {
-        throw const ApiFailure(userMessage: '标签列表包含重复条目，请重新搜索。');
+        throw const ApiFailure(userMessage: '标签暂时无法显示，请重新搜索。');
       }
       return tag;
     }).toList();
@@ -357,7 +357,7 @@ class ApiTagRepository implements TagRepository {
   String _requiredText(String? value, String field) {
     final normalized = value?.trim() ?? '';
     if (normalized.isEmpty) {
-      throw ApiFailure(userMessage: '$field 返回为空，请重新加载。');
+      throw ApiFailure(userMessage: '$field暂时无法显示，请重新加载。');
     }
     return normalized;
   }

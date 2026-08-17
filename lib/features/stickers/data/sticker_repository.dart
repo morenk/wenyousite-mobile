@@ -21,7 +21,7 @@ class ApiStickerRepository implements StickerRepository {
     try {
       final dto = (await _api.stickersGetCollection()).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '表情收藏响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '表情收藏加载失败，请稍后重试。');
       }
       return _collection(dto);
     } on DioException catch (error) {
@@ -35,11 +35,11 @@ class ApiStickerRepository implements StickerRepository {
     try {
       final dto = (await _api.stickersGetImport(id: importId)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '表情处理状态响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '表情处理进度加载失败，请稍后重试。');
       }
       final result = _import(dto);
       if (result.id != importId) {
-        throw const ApiFailure(userMessage: '表情处理状态与当前任务不匹配，请重新加载。');
+        throw const ApiFailure(userMessage: '表情处理进度已经发生变化，请重新加载。');
       }
       return result;
     } on DioException catch (error) {
@@ -52,7 +52,7 @@ class ApiStickerRepository implements StickerRepository {
     StickerImportSource source, {
     required String clientRequestId,
   }) async {
-    final requestId = _requiredText(clientRequestId, '导入请求 ID');
+    final requestId = _requiredText(clientRequestId, '导入信息');
     try {
       final StickerImportResponseDto? dto;
       switch (source) {
@@ -87,7 +87,7 @@ class ApiStickerRepository implements StickerRepository {
           )).data?.data;
       }
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认表情导入，请使用原请求重试。');
+        throw const ApiFailure(userMessage: '表情导入失败，请重试。');
       }
       return _import(dto);
     } on DioException catch (error) {
@@ -107,7 +107,7 @@ class ApiStickerRepository implements StickerRepository {
         .map((id) => _requiredText(id, '收藏表情 ID'))
         .toList(growable: false);
     if (ids.toSet().length != ids.length) {
-      throw const ApiFailure(userMessage: '表情排序包含重复项目，请重新加载。');
+      throw const ApiFailure(userMessage: '表情顺序暂时无法显示，请重新加载。');
     }
     try {
       final dto = (await _api.stickersReorder(
@@ -118,7 +118,7 @@ class ApiStickerRepository implements StickerRepository {
         ),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '表情排序响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '表情顺序加载失败，请重新加载。');
       }
       return _collection(dto);
     } on DioException catch (error) {
@@ -132,7 +132,7 @@ class ApiStickerRepository implements StickerRepository {
     try {
       final dto = (await _api.stickersRemove(favoriteId: id)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '移除表情响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '移除失败，请重新加载。');
       }
       return _collection(dto);
     } on DioException catch (error) {
@@ -145,13 +145,13 @@ class ApiStickerRepository implements StickerRepository {
     final limit = _positiveInteger(dto.limit, '收藏夹上限');
     final items = dto.items.map(_favorite).toList(growable: false);
     if (items.length > limit) {
-      throw const ApiFailure(userMessage: '表情收藏数量超过服务端声明上限，请重新加载。');
+      throw const ApiFailure(userMessage: '表情收藏数量超过上限，请重新加载。');
     }
     final ids = <String>{};
     for (var index = 0; index < items.length; index++) {
       final item = items[index];
       if (!ids.add(item.id) || item.position != index) {
-        throw const ApiFailure(userMessage: '表情收藏顺序异常，请重新加载。');
+        throw const ApiFailure(userMessage: '表情顺序暂时无法显示，请重新加载。');
       }
     }
     final recent = dto.recent.map(_favorite).toList(growable: false);
@@ -201,12 +201,12 @@ class ApiStickerRepository implements StickerRepository {
       StickerImportResponseDtoStatusEnum.COMPLETED =>
         StickerImportStatus.completed,
       StickerImportResponseDtoStatusEnum.FAILED => StickerImportStatus.failed,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持服务端返回的表情处理状态。'),
+      _ => throw const ApiFailure(userMessage: '这个表情暂时无法处理。'),
     };
     final favorite = dto.favorite == null ? null : _favorite(dto.favorite!);
     if ((status == StickerImportStatus.completed && favorite == null) ||
         (status != StickerImportStatus.completed && favorite != null)) {
-      throw const ApiFailure(userMessage: '表情处理结果不完整，请重新加载。');
+      throw const ApiFailure(userMessage: '表情处理失败，请重新加载。');
     }
     return StickerImport(
       id: _requiredText(dto.id, '导入记录 ID'),

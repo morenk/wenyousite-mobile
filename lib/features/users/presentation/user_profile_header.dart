@@ -8,13 +8,15 @@ import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dar
 class UserProfileStatItem {
   const UserProfileStatItem({
     required this.label,
-    required this.value,
+    this.value,
+    this.icon,
     this.onTap,
     this.key,
-  });
+  }) : assert(value != null || icon != null);
 
   final String label;
-  final String value;
+  final String? value;
+  final String? icon;
   final VoidCallback? onTap;
   final Key? key;
 }
@@ -66,47 +68,23 @@ class UserProfileHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (profileCover case final cover?)
-              _ProfileCover(cover: cover, username: username)
-            else
-              Container(height: 4, color: tokens.brandSurface),
+            _ProfileIdentity(
+              username: username,
+              avatarUrl: avatarUrl,
+              profileCover: profileCover,
+              level: level,
+            ),
             Padding(
               padding: EdgeInsets.fromLTRB(
                 tokens.space16,
-                tokens.space20,
+                tokens.space8,
                 tokens.space16,
                 tokens.space16,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _ProfileAvatar(username: username, avatarUrl: avatarUrl),
-                      SizedBox(width: tokens.space16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              username,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            SizedBox(height: tokens.space8),
-                            _ProfileBadge(
-                              icon: WenyouIconIds.navigationMoments,
-                              label: 'Lv.$level',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                   if (normalizedBio?.isNotEmpty == true) ...[
-                    SizedBox(height: tokens.space16),
                     Text(
                       normalizedBio!,
                       style: Theme.of(
@@ -188,16 +166,80 @@ class UserProfileHeader extends StatelessWidget {
   }
 }
 
+class _ProfileIdentity extends StatelessWidget {
+  const _ProfileIdentity({
+    required this.username,
+    required this.avatarUrl,
+    required this.profileCover,
+    required this.level,
+  });
+
+  final String username;
+  final String? avatarUrl;
+  final ProfileCoverModel? profileCover;
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    const avatarSize = 72.0;
+    const avatarOverlap = avatarSize / 2;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final coverHeight = constraints.maxWidth / 2;
+        return SizedBox(
+          height: coverHeight + avatarOverlap + tokens.space12,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                bottom: avatarOverlap + tokens.space12,
+                child: _ProfileCover(cover: profileCover, username: username),
+              ),
+              Positioned(
+                left: tokens.space16,
+                top: coverHeight - avatarOverlap,
+                child: _ProfileAvatar(username: username, avatarUrl: avatarUrl),
+              ),
+              Positioned(
+                top: coverHeight + tokens.space8,
+                right: tokens.space16,
+                left: tokens.space16 + avatarSize + tokens.space12,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    SizedBox(width: tokens.space8),
+                    _ProfileBadge(
+                      icon: WenyouIconIds.navigationMoments,
+                      label: 'Lv.$level',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _ProfileCover extends StatelessWidget {
   const _ProfileCover({required this.cover, required this.username});
 
-  final ProfileCoverModel cover;
+  final ProfileCoverModel? cover;
   final String username;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final variant = cover.preferredForMobile;
     final fallback = ColoredBox(
       color: tokens.brandSurface,
       child: Center(
@@ -208,21 +250,21 @@ class _ProfileCover extends StatelessWidget {
         ),
       ),
     );
+    final variant = cover?.preferredForMobile;
     return Semantics(
       image: true,
       label: '$username 的主页背景图',
-      child: AspectRatio(
-        aspectRatio: 2,
-        child: WenyouCachedImage(
-          imageUrl: variant.url,
-          width: double.infinity,
-          fit: BoxFit.cover,
-          cacheWidth: 1200,
-          cacheHeight: 600,
-          placeholder: (_, _) => fallback,
-          errorWidget: (_, _, _) => fallback,
-        ),
-      ),
+      child: variant == null
+          ? fallback
+          : WenyouCachedImage(
+              imageUrl: variant.url,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              cacheWidth: 1200,
+              cacheHeight: 600,
+              placeholder: (_, _) => fallback,
+              errorWidget: (_, _, _) => fallback,
+            ),
     );
   }
 }
@@ -240,24 +282,31 @@ class _ProfileAvatar extends StatelessWidget {
       color: tokens.softPanel,
       child: WenyouIcon(
         WenyouIconIds.identityMember,
-        size: 44,
+        size: 34,
         color: tokens.mutedText,
       ),
     );
     return Semantics(
       image: true,
       label: '$username 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: 88,
+      child: Container(
+        width: 72,
+        height: 72,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          shape: BoxShape.circle,
+          border: Border.all(color: tokens.border),
+        ),
+        child: ClipOval(
           child: avatarUrl == null
               ? fallback
               : WenyouCachedImage(
                   imageUrl: avatarUrl!,
-                  width: 88,
-                  height: 88,
-                  cacheWidth: 176,
-                  cacheHeight: 176,
+                  width: 66,
+                  height: 66,
+                  cacheWidth: 132,
+                  cacheHeight: 132,
                   fit: BoxFit.cover,
                   placeholder: (_, _) => fallback,
                   errorWidget: (_, _, _) => fallback,
@@ -289,12 +338,15 @@ class _ProfileStat extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                item.value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              if (item.icon case final icon?)
+                WenyouIcon(icon, size: 22, color: tokens.mutedText)
+              else
+                Text(
+                  item.value!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               SizedBox(height: tokens.space4),
               Text(
                 item.label,

@@ -14,7 +14,7 @@ class ThreadAuthorModel {
 
 enum ThreadDetailStatus {
   recruiting('招募中'),
-  closed('已关闭'),
+  closed('已停招'),
   finished('已完结'),
   unknown('状态未知');
 

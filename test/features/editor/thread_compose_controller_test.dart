@@ -205,7 +205,7 @@ void main() {
     expect(store.snapshot?.body, '云端\n**正文**');
   });
 
-  test('显式打开服务端草稿会先保存本机内容再采用云端完整版本', () async {
+  test('显式打开云端草稿会先保存这台设备的内容再采用云端版本', () async {
     final store = _MemorySnapshotStore();
     final repository = _FakeRepository(
       onFetchDraft: (id, ownerId) async => ThreadRemoteDraft(

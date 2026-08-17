@@ -100,7 +100,7 @@ class ModerationAppealController extends StateNotifier<ModerationAppealState> {
     } on Object catch (error) {
       if (!mounted) return false;
       state = ModerationAppealState.credential(
-        failure: ApiFailure(userMessage: '账号验证没有完成，请稍后重试。', cause: error),
+        failure: ApiFailure(userMessage: '账号验证失败，请稍后重试。', cause: error),
       );
       return false;
     }
@@ -160,7 +160,7 @@ class ModerationAppealController extends StateNotifier<ModerationAppealState> {
     } on Object catch (error) {
       if (!mounted) return false;
       state = state.copyWith(
-        failure: ApiFailure(userMessage: '申诉提交没有完成，请稍后重试。', cause: error),
+        failure: ApiFailure(userMessage: '申诉提交失败，请稍后重试。', cause: error),
         clearSubmitting: true,
       );
       return false;
@@ -201,7 +201,7 @@ class ModerationAppealController extends StateNotifier<ModerationAppealState> {
       state = ModerationAppealState(
         phase: ModerationAppealPhase.failed,
         decisions: preserveDecisions ? state.decisions : const [],
-        failure: ApiFailure(userMessage: '治理决定没有加载完成，请稍后重试。', cause: error),
+        failure: ApiFailure(userMessage: '治理决定加载失败，请稍后重试。', cause: error),
         credentialExpiresAt: _credential?.expiresAt,
       );
     }

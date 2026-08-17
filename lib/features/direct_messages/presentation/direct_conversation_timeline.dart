@@ -210,7 +210,7 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
                     message: state.transientFailure!.userMessage,
                     detail: state.transientFailure!.requestId == null
                         ? null
-                        : '请求 ID：${state.transientFailure!.requestId}',
+                        : '问题编号：${state.transientFailure!.requestId}',
                     action: TextButton(
                       key: const Key('direct-conversation-load-older-retry'),
                       onPressed: widget.onLoadOlder,

@@ -84,8 +84,14 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     this._repository,
     this.userId, {
     this.selfContentOnly = false,
+    PublicUserContentTab initialTab = PublicUserContentTab.created,
     bool autoStart = true,
-  }) : super(PublicUserState(showAllContent: selfContentOnly)) {
+  }) : super(
+         PublicUserState(
+           activeTab: initialTab,
+           showAllContent: selfContentOnly,
+         ),
+       ) {
     if (autoStart) unawaited(load());
   }
 
@@ -134,7 +140,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       state = PublicUserState(
         phase: PublicUserPhase.failed,
         activeTab: previousTab,
-        failure: _asFailure(error, '用户资料没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '用户资料加载失败，请稍后重试。'),
       );
     }
   }
@@ -259,7 +265,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       if (!_isProfileCurrent(profileEpoch)) return;
       state = state.copyWith(
         activityPhase: PublicUserActivityPhase.failed,
-        activityFailure: _asFailure(error, '创作活动汇总没有加载完成，请稍后重试。'),
+        activityFailure: _asFailure(error, '创作活动汇总加载失败，请稍后重试。'),
       );
     }
   }
@@ -400,10 +406,10 @@ class PublicUserController extends StateNotifier<PublicUserState> {
   }
 
   String _failureMessage(PublicUserContentTab tab) => switch (tab) {
-    PublicUserContentTab.created => '创建的主题没有加载完成，请稍后重试。',
-    PublicUserContentTab.played => '参与的主题没有加载完成，请稍后重试。',
-    PublicUserContentTab.replies => '最近回复没有加载完成，请稍后重试。',
-    PublicUserContentTab.bookmarks => '收藏主题没有加载完成，请稍后重试。',
+    PublicUserContentTab.created => '创建的主题加载失败，请稍后重试。',
+    PublicUserContentTab.played => '参与的主题加载失败，请稍后重试。',
+    PublicUserContentTab.replies => '最近回复加载失败，请稍后重试。',
+    PublicUserContentTab.bookmarks => '收藏主题加载失败，请稍后重试。',
   };
 }
 
@@ -421,5 +427,6 @@ final meUserContentControllerProvider = StateNotifierProvider.autoDispose
         ref.watch(publicUserRepositoryProvider),
         userId,
         selfContentOnly: true,
+        initialTab: PublicUserContentTab.replies,
       );
     }, dependencies: [publicUserRepositoryProvider]);

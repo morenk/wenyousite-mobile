@@ -18,14 +18,14 @@ class MomentSearchMapper {
     final coverType = switch (dto.coverType.name) {
       'IMAGE' => MomentCoverType.image,
       'TEXT' => MomentCoverType.text,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持搜索结果的动态封面类型。'),
+      _ => throw const ApiFailure(userMessage: '这张动态封面暂时无法显示。'),
     };
     final textTheme = switch (dto.textCoverTheme.name) {
       'ROSE' => MomentTextCoverTheme.rose,
       'LILAC' => MomentTextCoverTheme.lilac,
       'MINT' => MomentTextCoverTheme.mint,
       'AMBER' => MomentTextCoverTheme.amber,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持搜索结果的动态封面主题。'),
+      _ => throw const ApiFailure(userMessage: '这张动态封面暂时无法显示。'),
     };
     final imageCount = _nonNegativeInteger(dto.imageCount, '动态图片数量');
     final cover = dto.coverMedia == null ? null : _media(dto.coverMedia!);
@@ -33,7 +33,7 @@ class MomentSearchMapper {
         (coverType == MomentCoverType.text && cover != null) ||
         (cover != null && imageCount < 1) ||
         imageCount > 9) {
-      throw const ApiFailure(userMessage: '搜索结果的动态封面信息不完整，请重新搜索。');
+      throw const ApiFailure(userMessage: '动态封面加载失败，请重新搜索。');
     }
     if (!RegExp(r'^(?:0|[1-9]\d*)$').hasMatch(dto.tipTotal)) {
       throw const ApiFailure(userMessage: '搜索结果的动态加油数值无效，请重新搜索。');
@@ -75,7 +75,7 @@ class MomentSearchMapper {
     final width = _optionalPositiveInteger(dto.width, '图片宽度');
     final height = _optionalPositiveInteger(dto.height, '图片高度');
     if ((width == null) != (height == null)) {
-      throw const ApiFailure(userMessage: '搜索结果的图片尺寸信息不完整，请重新搜索。');
+      throw const ApiFailure(userMessage: '图片加载失败，请重新搜索。');
     }
     return MomentMedia(
       id: _requiredText(dto.id, '图片 ID'),

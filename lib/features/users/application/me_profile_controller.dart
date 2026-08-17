@@ -80,7 +80,7 @@ class MeProfileController extends StateNotifier<MeProfileState> {
       if (!_isCurrent(epoch)) return;
       state = MeProfileState(
         phase: MeProfilePhase.failed,
-        failure: _asFailure(error, '本人资料没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '本人资料加载失败，请稍后重试。'),
       );
     }
   }

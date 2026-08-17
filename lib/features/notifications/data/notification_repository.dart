@@ -26,7 +26,7 @@ class ApiNotificationRepository implements NotificationRepository {
         type: filter.wireValue,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '通知列表响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '通知加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data.map(_mapItem).toList(growable: false),
@@ -43,7 +43,7 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       final data = (await _api.notificationsUnreadCount()).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '未读通知数响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '未读通知数加载失败，请稍后重试。');
       }
       return data.unreadCount.toInt();
     } on DioException catch (error) {
@@ -59,7 +59,7 @@ class ApiNotificationRepository implements NotificationRepository {
         setReadStatusDto: SetReadStatusDto((dto) => dto.isRead = isRead),
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '通知状态响应不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '通知状态更新失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -71,7 +71,7 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       final data = (await _api.notificationsRemove(id: id)).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '删除通知响应不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -83,7 +83,7 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       final data = (await _api.notificationsMarkAllAsRead()).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '全部已读响应不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '全部已读失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

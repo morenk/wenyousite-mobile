@@ -5,12 +5,15 @@ HomeThreadCardModel mapHomeThreadCardResponse(
   HomeThreadListItemResponseDto item,
 ) {
   final preview = item.preview?.trim();
-  return HomeThreadCardModel(
+  return ThreadFeedCardModel(
     id: item.id,
     title: item.title,
     categorySlug: item.category,
     status: _mapHomeThreadStatus(item.status),
     isPinned: item.pinned,
+    isPrivate:
+        item.visibility == HomeThreadListItemResponseDtoVisibilityEnum.PRIVATE,
+    isPublished: item.published,
     ownerId: item.owner.id,
     ownerName: item.owner.username,
     ownerAvatarUrl: _safeHttpUrl(item.owner.avatar),

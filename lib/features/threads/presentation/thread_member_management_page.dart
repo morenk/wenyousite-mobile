@@ -82,7 +82,7 @@ class _MembersReadyState extends ConsumerWidget {
               message: state.failure!.userMessage,
               detail: state.failure!.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: TextButton(
                 key: const Key('thread-members-dismiss-failure'),
                 onPressed: state.isUpdating
@@ -104,7 +104,7 @@ class _MembersReadyState extends ConsumerWidget {
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusGroupUnavailable,
                 title: '还没有参与人',
-                message: '用户回复主题后，会自动进入这里的候选池。',
+                message: '回复过主题的用户可设为玩家或协作者。',
               ),
             )
           else
@@ -412,11 +412,11 @@ class _MembersFatalState extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.statusGroupUnavailable,
-          title: '成员列表没有加载完成',
+          title: '成员列表加载失败',
           message: failure?.userMessage ?? '请检查网络或管理权限后重试。',
           detail: failure?.requestId == null
               ? null
-              : '请求 ID：${failure!.requestId}',
+              : '问题编号：${failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('thread-members-load-retry'),
             onPressed: onRetry,

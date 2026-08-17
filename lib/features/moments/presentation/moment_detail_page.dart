@@ -774,13 +774,13 @@ class _MomentDetailFailure extends StatelessWidget {
           icon: notFound
               ? WenyouIconIds.navigationMoments
               : WenyouIconIds.statusOffline,
-          title: notFound ? '动态不存在' : '动态详情没有加载完成',
+          title: notFound ? '动态不存在' : '动态详情加载失败',
           message: notFound
               ? '这条动态可能已被删除或不可见。'
               : (failure?.userMessage ?? '请稍后重试。'),
           detail: failure?.requestId == null
               ? null
-              : '请求 ID：${failure!.requestId}',
+              : '问题编号：${failure!.requestId}',
           action: notFound
               ? null
               : OutlinedButton.icon(

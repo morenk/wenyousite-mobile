@@ -29,7 +29,7 @@ class NotificationUnreadController
       if (!mounted) return;
       state = NotificationUnreadState(
         count: state.count,
-        failure: _asFailure(error, '未读通知数没有同步完成。'),
+        failure: _asFailure(error, '未读通知数同步失败。'),
       );
     }
   }
@@ -91,7 +91,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       state = NotificationListState(
         phase: NotificationListPhase.failed,
         filter: nextFilter,
-        failure: _asFailure(error, '通知列表没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '通知列表加载失败，请稍后重试。'),
       );
     }
   }
@@ -122,7 +122,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       if (!mounted || epoch != _loadEpoch) return;
       state = _readyFrom(
         before,
-        loadMoreFailure: _asFailure(error, '更多通知没有加载完成，请稍后重试。'),
+        loadMoreFailure: _asFailure(error, '更多通知加载失败，请稍后重试。'),
         clearFailures: true,
       );
     }
@@ -234,7 +234,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       if (!mounted) return false;
       state = _readyFrom(
         before,
-        actionFailure: _asFailure(error, '全部已读没有完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '全部标为已读失败，请稍后重试。'),
       );
       unawaited(_unread.refresh());
       return false;

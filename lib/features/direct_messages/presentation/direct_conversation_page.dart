@@ -318,7 +318,7 @@ class _ReadyConversation extends StatelessWidget {
               message: state.transientFailure!.userMessage,
               detail: state.transientFailure!.requestId == null
                   ? null
-                  : '请求 ID：${state.transientFailure!.requestId}',
+                  : '问题编号：${state.transientFailure!.requestId}',
             ),
           ),
         Expanded(
@@ -453,11 +453,11 @@ class _ConversationFailure extends StatelessWidget {
           icon: state.failure?.httpStatus == 404
               ? WenyouIconIds.navigationMessages
               : WenyouIconIds.statusOffline,
-          title: state.failure?.httpStatus == 404 ? '会话不可访问' : '私聊会话没有加载完成',
+          title: state.failure?.httpStatus == 404 ? '会话不可访问' : '私聊会话加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
               ? null
-              : '请求 ID：${state.failure!.requestId}',
+              : '问题编号：${state.failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('direct-conversation-retry'),
             onPressed: onRetry,
@@ -483,7 +483,7 @@ class _DirectConversationUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
             title: '私聊功能当前未开放',
-            message: '服务端暂未启用此能力，请稍后再试。',
+            message: '私聊暂不可用，请稍后再试。',
           ),
         ),
       ),
@@ -509,7 +509,7 @@ String _sendingDisabledReason(DirectConversation conversation) {
   return switch (conversation.status) {
     DirectConversationStatus.declined => '该消息请求已被拒绝。',
     DirectConversationStatus.canceled => '该消息请求已取消。',
-    DirectConversationStatus.unknown => '会话状态暂不受当前版本支持。',
+    DirectConversationStatus.unknown => '这段会话暂时无法显示。',
     _ => '当前无法发送消息。',
   };
 }

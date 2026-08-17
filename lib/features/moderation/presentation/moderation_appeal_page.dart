@@ -133,7 +133,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
                 message: state.failure!.userMessage,
                 detail: state.failure!.requestId == null
                     ? null
-                    : '请求 ID：${state.failure!.requestId}',
+                    : '问题编号：${state.failure!.requestId}',
               ),
             ],
             SizedBox(height: tokens.space20),
@@ -196,11 +196,11 @@ class _FailureState extends ConsumerWidget {
     return WenyouPanel(
       child: WenyouEmptyState(
         icon: WenyouIconIds.statusOffline,
-        title: '治理决定没有加载完成',
+        title: '治理决定加载失败',
         message: state.failure?.userMessage ?? '请稍后重试。',
         detail: state.failure?.requestId == null
             ? null
-            : '请求 ID：${state.failure!.requestId}',
+            : '问题编号：${state.failure!.requestId}',
         action: OutlinedButton.icon(
           key: const Key('appeal-retry'),
           onPressed: ref
@@ -250,7 +250,7 @@ class _DecisionList extends ConsumerWidget {
             message: state.failure!.userMessage,
             detail: state.failure!.requestId == null
                 ? null
-                : '请求 ID：${state.failure!.requestId}',
+                : '问题编号：${state.failure!.requestId}',
             action: TextButton(
               onPressed: ref
                   .read(moderationAppealControllerProvider.notifier)

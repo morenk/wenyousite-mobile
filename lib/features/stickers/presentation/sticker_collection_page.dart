@@ -39,11 +39,11 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
           child: WenyouPanel(
             child: WenyouEmptyState(
               icon: WenyouIconIds.statusOffline,
-              title: '表情收藏没有加载完成',
+              title: '表情收藏加载失败',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: state.failure?.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: OutlinedButton.icon(
                 key: const Key('stickers-retry'),
                 onPressed: notifier.load,
@@ -99,7 +99,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                     message: state.transientFailure!.userMessage,
                     detail: state.transientFailure!.requestId == null
                         ? null
-                        : '请求 ID：${state.transientFailure!.requestId}',
+                        : '问题编号：${state.transientFailure!.requestId}',
                     action: state.retrySource == null
                         ? TextButton(
                             onPressed: state.isBusy ? null : notifier.load,
@@ -110,7 +110,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                             onPressed: state.isBusy
                                 ? null
                                 : notifier.retryImport,
-                            child: const Text('使用原请求重试'),
+                            child: const Text('重试'),
                           ),
                   ),
                   SizedBox(height: tokens.space12),
@@ -122,7 +122,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                     message: uploadFailure.userMessage,
                     detail: uploadFailure.requestId == null
                         ? null
-                        : '请求 ID：${uploadFailure.requestId}',
+                        : '问题编号：${uploadFailure.requestId}',
                     action: uploadFailure.canRetry
                         ? TextButton(
                             key: const Key('stickers-retry-upload'),
@@ -389,7 +389,7 @@ class _StickersUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.actionAddReaction,
             title: '表情包功能当前未开放',
-            message: '服务端暂未启用此能力，请稍后再试。',
+            message: '表情包暂不可用，请稍后再试。',
           ),
         ),
       ),

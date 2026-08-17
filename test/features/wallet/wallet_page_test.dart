@@ -28,7 +28,7 @@ void main() {
     await tester.pumpWidget(_walletApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('钱包余额没有加载完成'), findsOneWidget);
+    expect(find.text('钱包余额加载失败'), findsOneWidget);
     expect(find.text('每日在线签到'), findsOneWidget);
     await tester.tap(find.byKey(const Key('wallet-summary-retry')));
     await tester.pumpAndSettle();

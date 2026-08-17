@@ -44,11 +44,11 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           WenyouSectionHeader(
-            title: '服务端主题草稿',
-            subtitle: '跨设备保存的完整主题；打开时会再读取最新版正文和版本。',
+            title: '云端主题草稿',
+            subtitle: '可在其他设备上继续编辑。',
             trailing: IconButton(
               key: const Key('remote-drafts-refresh'),
-              tooltip: '刷新服务端草稿',
+              tooltip: '刷新云端草稿',
               onPressed: state.isRemoving
                   ? null
                   : () => ref
@@ -84,7 +84,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
       ),
       RemoteThreadDraftsPhase.failed => WenyouEmptyState(
         icon: WenyouIconIds.statusOffline,
-        title: '服务端草稿没有加载完成',
+        title: '云端草稿加载失败',
         message: state.failure?.userMessage ?? '请检查网络后重试。',
         detail: _requestDetail(state.failure),
         action: FilledButton.icon(
@@ -97,8 +97,8 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
       RemoteThreadDraftsPhase.ready when state.drafts.isEmpty =>
         const WenyouEmptyState(
           icon: WenyouIconIds.statusSynced,
-          title: '还没有服务端主题草稿',
-          message: '在创作页顶栏的云端草稿入口选择“保存当前主题”后，会出现在这里。',
+          title: '还没有云端主题草稿',
+          message: '',
         ),
       RemoteThreadDraftsPhase.ready => ListView.separated(
         key: const Key('remote-drafts-list'),
@@ -131,7 +131,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除服务端草稿？'),
+        title: const Text('删除云端草稿？'),
         content: Text('“${draft.displayTitle}”删除后无法恢复，其他设备也将无法继续编辑。'),
         actions: [
           TextButton(
@@ -152,7 +152,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
     if (removed && context.mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('服务端草稿已删除。')));
+      ).showSnackBar(const SnackBar(content: Text('云端草稿已删除。')));
     }
   }
 }
@@ -243,7 +243,7 @@ class _DraftCard extends StatelessWidget {
               SizedBox(width: tokens.space8),
               IconButton(
                 key: Key('remote-draft-remove-${draft.id}'),
-                tooltip: isCurrent ? '当前编辑中的草稿不能删除' : '删除服务端草稿',
+                tooltip: isCurrent ? '当前编辑中的草稿不能删除' : '删除云端草稿',
                 onPressed: actionsLocked ? null : onRemove,
                 icon: removing
                     ? const SizedBox.square(
@@ -262,5 +262,5 @@ class _DraftCard extends StatelessWidget {
 
 String? _requestDetail(ApiFailure? failure) {
   final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }

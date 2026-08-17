@@ -57,7 +57,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
         ),
         SizedBox(height: tokens.space4),
         Text(
-          '支持 JPG、PNG、WebP，最大 10MB；上传前可分别调整电脑端 3:1 与移动端 2:1 取景。',
+          '支持 JPG、PNG、WebP，最大 10MB；上传前可分别调整网页端 3:1 与手机端 2:1 取景。',
           style: Theme.of(context).textTheme.bodySmall,
           textAlign: TextAlign.center,
         ),
@@ -95,7 +95,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
             message: state.failure!.userMessage,
             detail: state.failure!.requestId == null
                 ? null
-                : '请求 ID：${state.failure!.requestId}',
+                : '问题编号：${state.failure!.requestId}',
             action: TextButton(
               key: const Key('me-profile-cover-retry'),
               onPressed: () => _retry(context, ref),
@@ -134,7 +134,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('移除当前主页背景？'),
-        content: const Text('电脑端与移动端背景会同时移除，之后仍可重新上传。'),
+        content: const Text('网页端与手机端背景会同时移除，之后仍可重新上传。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -195,15 +195,15 @@ class MeProfileCoverEditor extends ConsumerWidget {
     return switch (state.phase) {
       ProfileCoverPhase.picking => '正在打开系统相册…',
       ProfileCoverPhase.uploadingWeb => _uploadMessage(
-        '正在上传电脑端背景',
+        '正在上传网页端背景',
         state.progress,
       ),
       ProfileCoverPhase.uploadingMobile => _uploadMessage(
-        '正在上传移动端背景',
+        '正在上传手机端背景',
         state.progress,
       ),
       ProfileCoverPhase.setting => '双画幅已上传，正在原子更新主页背景…',
-      ProfileCoverPhase.removing => '正在移除电脑端与移动端背景…',
+      ProfileCoverPhase.removing => '正在移除网页端与手机端背景…',
       ProfileCoverPhase.idle || ProfileCoverPhase.failed => '',
     };
   }

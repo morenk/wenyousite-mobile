@@ -59,7 +59,7 @@ class StickerCollectionController
       _syncPolling();
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      final failure = _asFailure(error, '表情收藏没有加载完成，请稍后重试。');
+      final failure = _asFailure(error, '表情收藏加载失败，请稍后重试。');
       if (before.collection == null) {
         state = StickerCollectionState(
           phase: StickerCollectionPhase.failed,
@@ -139,7 +139,7 @@ class StickerCollectionController
       state = state.copyWith(
         action: null,
         actionTarget: null,
-        transientFailure: _asFailure(error, '表情没有添加成功，请使用原请求重试。'),
+        transientFailure: _asFailure(error, '表情添加失败，请重试。'),
         retrySource: source,
       );
       return null;
@@ -242,7 +242,7 @@ class StickerCollectionController
     } on Object catch (error) {
       if (!mounted) return;
       state = state.copyWith(
-        transientFailure: _asFailure(error, '操作已经提交，但收藏夹没有刷新完成，请手动刷新。'),
+        transientFailure: _asFailure(error, '操作已完成，但刷新收藏夹失败，请手动刷新。'),
       );
     }
   }

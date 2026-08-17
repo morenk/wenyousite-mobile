@@ -29,11 +29,11 @@ class ApiSubthreadManagementRepository
       final listEnvelope =
           (responses[1] as Response<SubthreadsFindAll200Response>).data;
       if (threadEnvelope == null || listEnvelope == null) {
-        throw const ApiFailure(userMessage: '子贴管理信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '子贴管理信息加载失败，请稍后重试。');
       }
       final thread = threadEnvelope.data;
       if (thread.id != threadId) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的主题，请重新加载。');
+        throw const ApiFailure(userMessage: '主题已经发生变化，请重新加载。');
       }
       final membershipRole = thread.currentMembership?.role;
       final canManage =
@@ -59,12 +59,12 @@ class ApiSubthreadManagementRepository
           )
           .toList();
       if (items.map((item) => item.id).toSet().length != items.length) {
-        throw const ApiFailure(userMessage: '服务端返回了重复的子贴，请重新加载。');
+        throw const ApiFailure(userMessage: '子贴暂时无法显示，请重新加载。');
       }
       items.sort((left, right) => left.sortOrder.compareTo(right.sortOrder));
       if (items.isNotEmpty &&
           (defaultId == null || !items.any((item) => item.isDefault))) {
-        throw const ApiFailure(userMessage: '服务端没有返回有效的默认子贴，请稍后重试。');
+        throw const ApiFailure(userMessage: '默认子贴加载失败，请稍后重试。');
       }
       if (items.isNotEmpty && !items.first.isDefault) {
         throw const ApiFailure(userMessage: '默认子贴排序异常，请稍后重试。');
@@ -92,7 +92,7 @@ class ApiSubthreadManagementRepository
         id: subthreadId,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '子贴详情返回为空，请重新加载。');
+        throw const ApiFailure(userMessage: '子贴加载失败，请重新加载。');
       }
       return _mapItem(
         envelope.data,
@@ -155,7 +155,7 @@ class ApiSubthreadManagementRepository
         }),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '子贴更新结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '子贴更新失败，请重试。');
       }
       return _mapItem(
         envelope.data,
@@ -178,7 +178,7 @@ class ApiSubthreadManagementRepository
         id: item.id,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认子贴已删除，请重新加载确认。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -201,7 +201,7 @@ class ApiSubthreadManagementRepository
         ),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '子贴排序结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '子贴排序失败，请重试。');
       }
       final currentById = {for (final item in items) item.id: item};
       final seen = <String>{};
@@ -209,7 +209,7 @@ class ApiSubthreadManagementRepository
       for (final dto in envelope.data) {
         final current = currentById[dto.id];
         if (current == null || !seen.add(dto.id)) {
-          throw const ApiFailure(userMessage: '服务端返回了不匹配的子贴排序，请重新加载。');
+          throw const ApiFailure(userMessage: '子贴顺序已经发生变化，请重新加载。');
         }
         reordered.add(
           current.copyWith(title: dto.title, sortOrder: dto.sortOrder.toInt()),
@@ -221,7 +221,7 @@ class ApiSubthreadManagementRepository
       if (reordered.length != items.length ||
           reordered.isEmpty ||
           !reordered.first.isDefault) {
-        throw const ApiFailure(userMessage: '服务端返回的子贴排序不完整，请重新加载。');
+        throw const ApiFailure(userMessage: '子贴顺序加载失败，请重新加载。');
       }
       return List.unmodifiable(reordered);
     } on DioException catch (error) {
@@ -237,7 +237,7 @@ class ApiSubthreadManagementRepository
   }) {
     if (dto.threadId != expectedThreadId ||
         (expectedId != null && dto.id != expectedId)) {
-      throw const ApiFailure(userMessage: '服务端返回了不匹配的子贴，请重新加载。');
+      throw const ApiFailure(userMessage: '子贴已经发生变化，请重新加载。');
     }
     return SubthreadManagementItem(
       id: dto.id,

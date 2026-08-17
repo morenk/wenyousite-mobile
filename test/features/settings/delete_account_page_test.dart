@@ -46,15 +46,15 @@ void main() {
   testWidgets('服务端失败保留确认文字、会话和请求 ID', (tester) async {
     final repository = _FakeAccountDeletionRepository(
       failure: const ApiFailure(
-        userMessage: '账号注销没有完成，请稍后重试。',
+        userMessage: '账号注销失败，请稍后重试。',
         requestId: 'delete-account-id',
       ),
     );
     final harness = await _pumpPage(tester, repository);
     await _confirmDeletion(tester);
 
-    expect(find.text('账号注销没有完成，请稍后重试。'), findsOneWidget);
-    expect(find.text('请求 ID：delete-account-id'), findsOneWidget);
+    expect(find.text('账号注销失败，请稍后重试。'), findsOneWidget);
+    expect(find.text('问题编号：delete-account-id'), findsOneWidget);
     expect(
       tester
           .widget<TextFormField>(find.byKey(const Key('delete-account-phrase')))

@@ -32,7 +32,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
       final categoryEnvelope =
           (responses[1] as Response<ThreadCategoriesList200Response>).data;
       if (meEnvelope == null || categoryEnvelope == null) {
-        throw const ApiFailure(userMessage: '创建主题所需信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '创建主题所需信息加载失败，请稍后重试。');
       }
       final me = meEnvelope.data;
       final categories =
@@ -62,7 +62,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
     try {
       final envelope = (await _threadsApi.threadsFindDrafts()).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '服务端草稿箱返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '云端草稿加载失败，请稍后重试。');
       }
       final seenIds = <String>{};
       final drafts = <ThreadRemoteDraftSummary>[];
@@ -78,13 +78,13 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
             postCount < 0 ||
             dto.count.subthreads != subthreadCount ||
             dto.count.posts != postCount) {
-          throw const ApiFailure(userMessage: '服务端草稿箱包含无法安全识别的记录。');
+          throw const ApiFailure(userMessage: '部分云端草稿暂时无法打开。');
         }
         final tags = <String>[];
         for (final relation in dto.topicTags) {
           final tag = relation.tag.name.trim();
           if (relation.threadId != id || tag.isEmpty) {
-            throw const ApiFailure(userMessage: '服务端草稿标签信息不完整。');
+            throw const ApiFailure(userMessage: '云端草稿的标签加载失败。');
           }
           if (!tags.contains(tag)) tags.add(tag);
         }
@@ -116,7 +116,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
     final normalizedId = id.trim();
     final normalizedOwnerId = ownerId.trim();
     if (normalizedId.isEmpty || normalizedOwnerId.isEmpty) {
-      throw const ApiFailure(userMessage: '草稿目标不完整，无法继续编辑。');
+      throw const ApiFailure(userMessage: '草稿加载失败，无法继续编辑。');
     }
     try {
       final dto = (await _threadsApi.threadsFindById(
@@ -127,7 +127,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           dto.ownerId.trim() != normalizedOwnerId ||
           dto.published ||
           dto.deletedAt != null) {
-        throw const ApiFailure(userMessage: '服务端返回的草稿与当前账号或目标不一致。');
+        throw const ApiFailure(userMessage: '云端草稿已经发生变化，请重新打开。');
       }
       return _mapRemoteDraft(dto);
     } on DioException catch (error) {
@@ -139,11 +139,11 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
   Future<void> removeDraft(String id) async {
     final normalizedId = id.trim();
     if (normalizedId.isEmpty) {
-      throw const ApiFailure(userMessage: '草稿目标不完整，无法删除。');
+      throw const ApiFailure(userMessage: '草稿加载失败，无法删除。');
     }
     try {
       if ((await _threadsApi.threadsRemove(id: normalizedId)).data == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认草稿已删除，请重新加载。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -174,7 +174,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
       );
       final dto = response.data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '主题草稿创建结果不完整，请重试确认。');
+        throw const ApiFailure(userMessage: '主题草稿创建失败，请重试确认。');
       }
       return _mapRemoteDraft(dto);
     } on DioException catch (error) {
@@ -217,9 +217,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
       final dto = response.data?.data;
       if (dto == null || (publish && !dto.published)) {
         throw ApiFailure(
-          userMessage: publish
-              ? '服务端没有确认主题已发布，请保留草稿并重试。'
-              : '主题草稿保存结果不完整，请重新加载确认。',
+          userMessage: publish ? '发布失败，请保留草稿并重试。' : '主题草稿保存失败，请重试。',
         );
       }
       return _mapRemoteDraft(dto);
@@ -258,7 +256,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
           ThreadComposeVisibility.public,
         ThreadDetailResponseDtoVisibilityEnum.PRIVATE =>
           ThreadComposeVisibility.private,
-        _ => throw const ApiFailure(userMessage: '当前版本不支持草稿的可见范围。'),
+        _ => throw const ApiFailure(userMessage: '暂时无法使用这个可见范围。'),
       },
       tags: dto.topicTags
           .map((relation) => relation.tag.name)
@@ -275,7 +273,7 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
         ThreadComposeVisibility.public,
       DraftThreadResponseDtoVisibilityEnum.PRIVATE =>
         ThreadComposeVisibility.private,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持草稿的可见范围。'),
+      _ => throw const ApiFailure(userMessage: '暂时无法使用这个可见范围。'),
     };
   }
 

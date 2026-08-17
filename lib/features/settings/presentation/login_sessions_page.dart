@@ -25,11 +25,11 @@ class LoginSessionsPage extends ConsumerWidget {
           child: WenyouPanel(
             child: WenyouEmptyState(
               icon: WenyouIconIds.actionDevices,
-              title: '登录终端没有加载完成',
+              title: '登录终端加载失败',
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: state.failure?.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: OutlinedButton.icon(
                 key: const Key('login-sessions-retry'),
                 onPressed: notifier.load,
@@ -166,7 +166,7 @@ class _SessionGuidance extends StatelessWidget {
         children: [
           const WenyouSectionHeader(
             title: '账号安全',
-            subtitle: '查看当前活跃的 Web 与移动端登录；发现陌生终端时，可在这里立即退出。',
+            subtitle: '查看当前登录的设备，并退出不认识的登录。',
           ),
           SizedBox(height: tokens.space12),
           Text(
@@ -325,8 +325,8 @@ class _CenteredContent extends StatelessWidget {
 }
 
 String _platformLabel(LoginSessionPlatform platform) => switch (platform) {
-  LoginSessionPlatform.mobile => '移动端登录',
-  LoginSessionPlatform.web => 'Web 端登录',
+  LoginSessionPlatform.mobile => '手机端登录',
+  LoginSessionPlatform.web => '网页端登录',
   LoginSessionPlatform.unknown => '其他终端登录',
 };
 

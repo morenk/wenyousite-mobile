@@ -242,11 +242,11 @@ class _TargetFailure extends StatelessWidget {
           icon: state.failure?.httpStatus == 404
               ? WenyouIconIds.statusUserUnavailable
               : WenyouIconIds.statusOffline,
-          title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态没有加载完成',
+          title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
               ? null
-              : '请求 ID：${state.failure!.requestId}',
+              : '问题编号：${state.failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('direct-message-new-retry'),
             onPressed: onRetry,
@@ -272,7 +272,7 @@ class _NewConversationUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.statusMessagesDisabled,
             title: '私聊功能当前未开放',
-            message: '服务端暂未启用此能力，请稍后再试。',
+            message: '私聊暂不可用，请稍后再试。',
           ),
         ),
       ),

@@ -13,6 +13,54 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  testWidgets('编辑态传送门复用 Foundation 表面且保持不可导航原子节点', (tester) async {
+    const source =
+        '[楼层动态](/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd)';
+    final controller = QuillController(
+      document: Document.fromDelta(MarkdownDeltaCodec.decode(source).delta),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    final focusNode = FocusNode();
+    final scrollController = ScrollController();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('zh', 'CN'),
+        localizationsDelegates:
+            FlutterQuillLocalizations.localizationsDelegates,
+        home: Scaffold(
+          body: QuillEditor(
+            controller: controller,
+            focusNode: focusNode,
+            scrollController: scrollController,
+            config: QuillEditorConfig(
+              scrollable: false,
+              embedBuilders: wenyouEditorEmbedBuilders(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final portal = find.byKey(const Key('editor-internal-reference'));
+    expect(portal, findsOneWidget);
+    expect(find.text('楼层动态'), findsOneWidget);
+    final semantics = tester.getSemantics(portal).getSemanticsData();
+    expect(semantics.label, '站内传送门：楼层动态');
+    expect(semantics.flagsCollection.isLink, isFalse);
+    expect(
+      findFoundationIcon(WenyouIconIds.contentInternalReference),
+      findsOneWidget,
+    );
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Quill 混排和换行后的骰子保持正文基线原子节点', (tester) async {
     const firstId = '550e8400-e29b-41d4-a716-446655440000';
     const secondId = '550e8400-e29b-41d4-a716-446655440001';

@@ -32,7 +32,7 @@ class ApiMomentRepository implements MomentRepository {
         feed: mode == MomentFeedMode.discover ? 'DISCOVER' : 'FOLLOWING',
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '动态列表响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '动态列表加载失败，请稍后重试。');
       }
       return _cardPage(
         envelope.data,
@@ -56,7 +56,7 @@ class ApiMomentRepository implements MomentRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '动态收藏响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '动态收藏加载失败，请稍后重试。');
       }
       return _cardPage(
         envelope.data,
@@ -83,7 +83,7 @@ class ApiMomentRepository implements MomentRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '用户动态响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '用户动态加载失败，请稍后重试。');
       }
       return _cardPage(
         envelope.data,
@@ -101,7 +101,7 @@ class ApiMomentRepository implements MomentRepository {
     try {
       final dto = (await _api.momentsDetail(id: id)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '动态详情响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '动态加载失败，请稍后重试。');
       }
       return _detail(dto, expectedId: id);
     } on DioException catch (error) {
@@ -115,7 +115,7 @@ class ApiMomentRepository implements MomentRepository {
     required String clientRequestId,
   }) async {
     final draft = _validated(input.normalized);
-    final requestId = _requiredText(clientRequestId, '发布请求 ID');
+    final requestId = _requiredText(clientRequestId, '发布信息');
     try {
       final dto = (await _api.momentsCreate(
         extra: ApiRequestPolicy.idempotentCreate.extra,
@@ -129,7 +129,7 @@ class ApiMomentRepository implements MomentRepository {
         ),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认动态发布，请使用原请求重试。');
+        throw const ApiFailure(userMessage: '发布失败，请重试。');
       }
       return _detail(dto);
     } on DioException catch (error) {
@@ -161,7 +161,7 @@ class ApiMomentRepository implements MomentRepository {
         ),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '动态编辑响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '修改失败，请重新加载。');
       }
       return _detail(dto, expectedId: id);
     } on DioException catch (error) {
@@ -175,7 +175,7 @@ class ApiMomentRepository implements MomentRepository {
     try {
       final dto = (await _api.momentsRemove(id: id)).data?.data;
       if (dto == null || _requiredText(dto.message, '删除确认').isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有确认动态删除，请重新加载。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
@@ -193,7 +193,7 @@ class ApiMomentRepository implements MomentRepository {
           ? (await _api.momentsLike(id: id)).data?.data
           : (await _api.momentsUnlike(id: id)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '点赞状态响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '点赞失败，请重新加载。');
       }
       return _action(dto, expectedId: id, expectedActive: active);
     } on DioException catch (error) {
@@ -212,7 +212,7 @@ class ApiMomentRepository implements MomentRepository {
           ? (await _api.momentsBookmark(id: id)).data?.data
           : (await _api.momentsUnbookmark(id: id)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '收藏状态响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '收藏失败，请重新加载。');
       }
       return _action(dto, expectedId: id, expectedActive: active);
     } on DioException catch (error) {
@@ -239,7 +239,7 @@ class ApiMomentRepository implements MomentRepository {
         authorId: _optionalText(authorId),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '评论列表响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '评论加载失败，请稍后重试。');
       }
       final items = envelope.data
           .map((dto) => _rootComment(dto, expectedMomentId: id))
@@ -277,7 +277,7 @@ class ApiMomentRepository implements MomentRepository {
         authorId: _optionalText(authorId),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '楼中楼响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '回复加载失败，请稍后重试。');
       }
       final items = envelope.data
           .map(
@@ -302,7 +302,7 @@ class ApiMomentRepository implements MomentRepository {
     try {
       final data = (await _api.momentsCommentAuthors(id: id)).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '评论作者响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '评论作者加载失败，请稍后重试。');
       }
       final authors = data.map(_author).toList(growable: false);
       _validateUnique(authors.map((item) => item.id), '评论作者列表');
@@ -320,7 +320,7 @@ class ApiMomentRepository implements MomentRepository {
   }) async {
     final id = _requiredText(momentId, '动态 ID');
     final comment = _validated(input.normalized);
-    final requestId = _requiredText(clientRequestId, '评论请求 ID');
+    final requestId = _requiredText(clientRequestId, '评论信息');
     try {
       final dto = (await _api.momentsCreateComment(
         id: id,
@@ -335,7 +335,7 @@ class ApiMomentRepository implements MomentRepository {
         ),
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认评论发布，请使用原请求重试。');
+        throw const ApiFailure(userMessage: '评论失败，请重试。');
       }
       return _comment(dto, expectedMomentId: id);
     } on DioException catch (error) {
@@ -353,7 +353,7 @@ class ApiMomentRepository implements MomentRepository {
         commentId: safeCommentId,
       )).data?.data;
       if (dto == null || _requiredText(dto.message, '删除确认').isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有确认评论删除，请重新加载。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
@@ -417,7 +417,7 @@ class ApiMomentRepository implements MomentRepository {
       updatedAt: dto.updatedAt,
     );
     if (expectedId != null && card.id != expectedId) {
-      throw const ApiFailure(userMessage: '动态详情与当前页面不匹配，请重新加载。');
+      throw const ApiFailure(userMessage: '动态已经发生变化，请重新加载。');
     }
     final images = dto.images.map(_media).toList(growable: false);
     _validateUnique(images.map((item) => item.id), '动态图片');
@@ -465,14 +465,14 @@ class ApiMomentRepository implements MomentRepository {
     final mappedCoverType = switch (coverType) {
       'IMAGE' => MomentCoverType.image,
       'TEXT' => MomentCoverType.text,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持服务端返回的动态封面类型。'),
+      _ => throw const ApiFailure(userMessage: '这张动态封面暂时无法显示。'),
     };
     final mappedTheme = switch (textCoverTheme) {
       'ROSE' => MomentTextCoverTheme.rose,
       'LILAC' => MomentTextCoverTheme.lilac,
       'MINT' => MomentTextCoverTheme.mint,
       'AMBER' => MomentTextCoverTheme.amber,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持服务端返回的动态封面主题。'),
+      _ => throw const ApiFailure(userMessage: '这张动态封面暂时无法显示。'),
     };
     final safeImageCount = _nonNegativeInteger(imageCount, '动态图片数量');
     final mappedCover = coverMedia == null ? null : _media(coverMedia);
@@ -480,7 +480,7 @@ class ApiMomentRepository implements MomentRepository {
         (mappedCoverType == MomentCoverType.text && mappedCover != null) ||
         (mappedCover != null && safeImageCount < 1) ||
         safeImageCount > 9) {
-      throw const ApiFailure(userMessage: '动态封面信息不完整，请重新加载。');
+      throw const ApiFailure(userMessage: '动态封面加载失败，请重试。');
     }
     if (!RegExp(r'^(?:0|[1-9]\d*)$').hasMatch(tipTotal)) {
       throw const ApiFailure(userMessage: '动态加油数值无效，请重新加载。');
@@ -579,7 +579,7 @@ class ApiMomentRepository implements MomentRepository {
       expectedMomentId: expectedMomentId,
     );
     if (expectedRootId != null && comment.parentCommentId != expectedRootId) {
-      throw const ApiFailure(userMessage: '楼中楼层级与主评论不匹配，请重新加载。');
+      throw const ApiFailure(userMessage: '回复已经发生变化，请重新加载。');
     }
     return comment;
   }
@@ -600,7 +600,7 @@ class ApiMomentRepository implements MomentRepository {
   }) {
     final safeMomentId = _requiredText(momentId, '评论动态 ID');
     if (safeMomentId != expectedMomentId) {
-      throw const ApiFailure(userMessage: '评论与当前动态不匹配，请重新加载。');
+      throw const ApiFailure(userMessage: '评论已经发生变化，请重新加载。');
     }
     final text = _optionalText(content);
     final mappedMedia = media == null ? null : _media(media);
@@ -616,7 +616,7 @@ class ApiMomentRepository implements MomentRepository {
         text == null &&
         mappedMedia == null &&
         mappedSticker == null) {
-      throw const ApiFailure(userMessage: '评论内容不完整，请重新加载。');
+      throw const ApiFailure(userMessage: '评论加载失败，请重试。');
     }
     final parentId = _optionalText(parentCommentId);
     final replyTarget = replyToComment == null
@@ -656,7 +656,7 @@ class ApiMomentRepository implements MomentRepository {
     final width = _optionalPositiveInteger(dto.width, '图片宽度');
     final height = _optionalPositiveInteger(dto.height, '图片高度');
     if ((width == null) != (height == null)) {
-      throw const ApiFailure(userMessage: '图片尺寸信息不完整，请重新加载。');
+      throw const ApiFailure(userMessage: '图片加载失败，请重试。');
     }
     return MomentMedia(
       id: _requiredText(dto.id, '图片 ID'),
@@ -673,7 +673,7 @@ class ApiMomentRepository implements MomentRepository {
     final width = _optionalPositiveInteger(dto.width, '表情宽度');
     final height = _optionalPositiveInteger(dto.height, '表情高度');
     if ((width == null) != (height == null)) {
-      throw const ApiFailure(userMessage: '表情尺寸信息不完整，请重新加载。');
+      throw const ApiFailure(userMessage: '表情加载失败，请重试。');
     }
     return MomentSticker(
       id: _requiredText(dto.id, '表情 ID'),
@@ -710,14 +710,14 @@ class ApiMomentRepository implements MomentRepository {
 
   void _validatePage(int limit) {
     if (limit < 1 || limit > 50) {
-      throw const ApiFailure(userMessage: '分页大小无效，请重新加载。');
+      throw const ApiFailure(userMessage: '更多内容加载失败，请重新加载。');
     }
   }
 
   String? _pageCursor(String? cursor, bool hasMore) {
     final safe = _optionalText(cursor);
     if (hasMore && safe == null) {
-      throw const ApiFailure(userMessage: '分页游标缺失，请刷新列表。');
+      throw const ApiFailure(userMessage: '列表位置已失效，请刷新。');
     }
     return safe;
   }
@@ -725,7 +725,7 @@ class ApiMomentRepository implements MomentRepository {
   void _validateUnique(Iterable<String> ids, String label) {
     final list = ids.toList(growable: false);
     if (list.toSet().length != list.length) {
-      throw ApiFailure(userMessage: '$label包含重复内容，请重新加载。');
+      throw ApiFailure(userMessage: '$label暂时无法显示，请重新加载。');
     }
   }
 

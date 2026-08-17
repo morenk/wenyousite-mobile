@@ -140,7 +140,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       detail: state.codeDeliveryUncertain
                           ? state.codeDeliveryRequestId == null
                                 ? '请保留当前验证码输入；为避免重复邮件，60 秒内不会重发。'
-                                : '请保留当前输入；请求 ID：${state.codeDeliveryRequestId}'
+                                : '请保留当前输入；问题编号：${state.codeDeliveryRequestId}'
                           : '请检查收件箱和垃圾邮件；验证码只用于本次密码重置。',
                     ),
                   ],

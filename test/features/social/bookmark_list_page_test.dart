@@ -19,8 +19,10 @@ void main() {
 
     expect(find.text('稍后继续阅读或参与的内容。'), findsNothing);
     expect(find.text('雾港来信'), findsOneWidget);
-    expect(find.textContaining('骰子猫 · Lv.3'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('bookmark-thread-thread-1')));
+    expect(find.text('骰子猫'), findsOneWidget);
+    expect(find.text('Lv.3'), findsOneWidget);
+    expect(find.byKey(const Key('home-thread-card-thread-1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('home-thread-card-thread-1')));
     await tester.pumpAndSettle();
     expect(find.text('主题=thread-1'), findsOneWidget);
 
@@ -121,7 +123,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('主题帖收藏夹'), findsOneWidget);
-    expect(find.bySemanticsLabel('打开收藏主题 雾港来信'), findsOneWidget);
+    expect(find.bySemanticsLabel('打开主题：雾港来信，作者 骰子猫'), findsOneWidget);
     expect(find.bySemanticsLabel('移动“雾港来信”到收藏夹'), findsOneWidget);
     expect(find.bySemanticsLabel('取消收藏“雾港来信”'), findsOneWidget);
     semantics.dispose();
@@ -141,7 +143,32 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('bookmark-list-retry')), findsOneWidget);
-    expect(find.text('请求 ID：bookmark-load-request'), findsOneWidget);
+    expect(find.text('问题编号：bookmark-load-request'), findsOneWidget);
+  });
+
+  testWidgets('收藏页的动态页签复用传入的动态列表', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => BookmarkListPage(
+            momentBookmarksBuilder: () => ListView(
+              key: const Key('standard-moment-bookmarks'),
+              children: const [Text('收藏动态内容')],
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(_app(_FakeRepository(), router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('动态'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('standard-moment-bookmarks')), findsOneWidget);
+    expect(find.text('收藏动态内容'), findsOneWidget);
   });
 
   testWidgets('收藏夹分类失败不遮断收藏列表并提供独立重试', (tester) async {
@@ -156,7 +183,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('bookmark-folders-retry')), findsOneWidget);
-    expect(find.text('请求 ID：bookmark-folders-request'), findsOneWidget);
+    expect(find.text('问题编号：bookmark-folders-request'), findsOneWidget);
     await tester.drag(find.byType(ListView).first, const Offset(0, -300));
     await tester.pumpAndSettle();
     expect(find.text('雾港来信'), findsOneWidget);
@@ -176,12 +203,12 @@ void main() {
 
     await tester.tap(find.byKey(const Key('bookmark-list-load-more')));
     await tester.pumpAndSettle();
-    expect(find.text('请求 ID：bookmark-more-request'), findsOneWidget);
+    expect(find.text('问题编号：bookmark-more-request'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('bookmark-remove-bookmark-1')));
     await tester.pumpAndSettle();
     expect(find.text('雾港来信'), findsOneWidget);
-    expect(find.text('请求 ID：bookmark-remove-request'), findsOneWidget);
+    expect(find.text('问题编号：bookmark-remove-request'), findsOneWidget);
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {

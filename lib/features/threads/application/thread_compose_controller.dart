@@ -205,7 +205,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       if (!_isCurrent(epoch)) return;
       state = ThreadComposeState(
         phase: ThreadComposePhase.failed,
-        failure: _asFailure(error, '本地创作空间没有准备完成，请重试。'),
+        failure: _asFailure(error, '打开本地创作空间失败，请重试。'),
       );
     }
   }
@@ -236,7 +236,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       if (!mounted || state.phase != ThreadComposePhase.ready) return;
       state = state.copyWith(
         bootstrapLoading: false,
-        bootstrapFailure: _asFailure(error, '分类与账号状态没有刷新完成；本地编辑仍会保存。'),
+        bootstrapFailure: _asFailure(error, '刷新分类与账号状态失败；本地编辑仍会保存。'),
       );
     }
   }
@@ -321,7 +321,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
     if (state.remoteDraft?.id == normalizedId) {
       state = state.copyWith(
         actionFailure: null,
-        successMessage: '这个服务端草稿已经在当前编辑器中。',
+        successMessage: '这个云端草稿已经打开。',
       );
       return true;
     }
@@ -338,7 +338,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
     if (!mounted || state.phase != ThreadComposePhase.ready) return false;
     if (state.localSnapshotStatus == LocalSnapshotStatus.failed) {
       state = state.copyWith(
-        actionFailure: const ApiFailure(userMessage: '当前内容未能保存到本机，暂不切换服务端草稿。'),
+        actionFailure: const ApiFailure(userMessage: '当前内容未能保存到这台设备，暂不切换云端草稿。'),
         successMessage: null,
       );
       return false;
@@ -367,7 +367,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         restoredFromLocal: false,
         localSnapshotStatus: LocalSnapshotStatus.idle,
         lastLocalSaveAt: null,
-        successMessage: '已打开服务端草稿。',
+        successMessage: '已打开云端草稿。',
       );
       _snapshotRevision += 1;
       await flushLocalSnapshot();
@@ -376,7 +376,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       if (!mounted || state.phase != ThreadComposePhase.ready) return false;
       state = state.copyWith(
         action: null,
-        actionFailure: _asFailure(error, '服务端草稿没有打开成功，当前内容仍已保留。'),
+        actionFailure: _asFailure(error, '云端草稿没有打开成功，当前内容仍已保留。'),
       );
       return false;
     }
@@ -443,7 +443,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
         tags: remote.tags,
         body: remote.body,
         documentRevision: state.documentRevision + 1,
-        successMessage: '主题草稿已保存到服务端。',
+        successMessage: '主题草稿已保存到云端。',
       );
       _snapshotRevision += 1;
       await flushLocalSnapshot();
@@ -503,7 +503,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       await flushLocalSnapshot();
       return remote;
     } on Object catch (error) {
-      final failure = _asFailure(error, '主题草稿创建结果尚未确认，请重试。');
+      final failure = _asFailure(error, '主题草稿创建失败，请重试。');
       if (_isAmbiguousCreateFailure(failure)) {
         final awaiting = PendingCreateOperation(
           clientRequestId: sending.clientRequestId,
@@ -567,7 +567,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
     }
     final metadata = ThreadSnapshotMetadata.fromJson(snapshot.metadataJson);
     if (metadata == null || metadata.ownerId != ownerId) {
-      throw const ApiFailure(userMessage: '本地草稿元数据无法安全识别，原文件尚未被覆盖。');
+      throw const ApiFailure(userMessage: '读取本地草稿失败，原草稿已保留。');
     }
     final remote = metadata.remoteDraft;
     return ThreadComposeState(

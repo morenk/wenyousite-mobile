@@ -60,7 +60,7 @@ void main() {
     await tester.pumpWidget(_app(loadContainer));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-subscription-retry')), findsOneWidget);
-    expect(find.text('请求 ID：load-request-id'), findsOneWidget);
+    expect(find.text('问题编号：load-request-id'), findsOneWidget);
   });
 
   testWidgets('订阅写入失败保留旧状态并显示请求 ID', (tester) async {
@@ -74,7 +74,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-subscription-official')));
     await tester.pumpAndSettle();
     expect(find.text('订阅官方更新'), findsOneWidget);
-    expect(find.text('请求 ID：write-request-id'), findsOneWidget);
+    expect(find.text('问题编号：write-request-id'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

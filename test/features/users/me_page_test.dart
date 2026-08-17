@@ -55,28 +55,53 @@ void main() {
 
     expect(find.text('温柔测试员'), findsWidgets);
     expect(find.textContaining('o***@example.com'), findsOneWidget);
-    expect(find.text('Lv.4'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('me-profile-header')),
+        matching: find.text('Lv.4'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('150 / 200 经验'), findsOneWidget);
     expect(find.byKey(const Key('me-profile-header')), findsOneWidget);
     expect(find.byKey(const Key('me-open-following')), findsOneWidget);
     expect(find.byKey(const Key('me-open-followers')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-wallet')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-bookmarks')), findsOneWidget);
+    expect(find.text('温油'), findsOneWidget);
+    final followingWidth = tester
+        .getSize(find.byKey(const Key('me-open-following')))
+        .width;
+    expect(
+      tester.getSize(find.byKey(const Key('me-open-followers'))).width,
+      closeTo(followingWidth, 0.01),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('me-open-wallet'))).width,
+      closeTo(followingWidth, 0.01),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('me-open-bookmarks'))).width,
+      closeTo(followingWidth, 0.01),
+    );
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
     expect(find.byKey(const Key('me-open-public-profile')), findsOneWidget);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
+    expect(find.text('我的内容'), findsNothing);
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
     await tester.pumpAndSettle();
-    expect(find.text('创建'), findsOneWidget);
-    expect(find.text('参与'), findsOneWidget);
-    expect(find.text('回复'), findsOneWidget);
+    expect(find.text('概览'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
+    expect(find.text('帖子'), findsOneWidget);
+    expect(find.text('创建的'), findsNothing);
+    expect(find.text('参与的'), findsNothing);
     expect(find.text('收藏'), findsOneWidget);
-    expect(find.text('我的内容'), findsOneWidget);
     expect(find.text('注销账号'), findsNothing);
     expect(find.text('公开最近回复'), findsNothing);
     expect(repository.fetchCalls, 1);
   });
 
-  testWidgets('本人中心默认直接展示创建主题并与钱包详情共用余额', (tester) async {
+  testWidgets('本人中心以同级温油入口展示余额并复用主题卡片', (tester) async {
     final repository = _FakeMeProfileRepository();
     final publicRepository = _FakePublicUserRepository();
     final walletRepository = _FakeWalletRepository(balance: '41');
@@ -95,11 +120,27 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('41 L'), findsOneWidget);
+    expect(find.byKey(const Key('me-open-wallet')), findsOneWidget);
+    expect(find.text('钱包余额'), findsNothing);
+    expect(find.textContaining('同一份实时余额'), findsNothing);
+
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
     await tester.pumpAndSettle();
 
+    expect(publicRepository.replyCalls, 1);
+    expect(publicRepository.createdCalls, 0);
+
+    await tester.tap(find.text('帖子'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('创建的'), findsOneWidget);
+    expect(find.text('参与的'), findsOneWidget);
     expect(find.text('我创建的星海主题'), findsOneWidget);
-    expect(find.text('41 L'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-thread-card-thread-mine')),
+      findsOneWidget,
+    );
     expect(find.text('18 L'), findsNothing);
     expect(publicRepository.createdCalls, 1);
     expect(publicRepository.fetchUserCalls, 0);
@@ -258,7 +299,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('image-crop-confirm')));
     await tester.pumpAndSettle();
-    expect(find.text('请求 ID：avatar-widget-request-id'), findsOneWidget);
+    expect(find.text('问题编号：avatar-widget-request-id'), findsOneWidget);
     expect(find.text('重试设置'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('me-avatar-retry')));
@@ -268,7 +309,7 @@ void main() {
     expect(find.text('头像已更新。'), findsOneWidget);
   });
 
-  testWidgets('主页背景可分别调整电脑端与移动端取景后再上传', (tester) async {
+  testWidgets('主页背景可分别调整网页端与手机端取景后再上传', (tester) async {
     final repository = _FakeMeProfileRepository();
     final media = _FakeMediaRepository();
     final coverRepository = _FakeProfileCoverRepository();
@@ -297,14 +338,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('profile-cover-crop-dialog')), findsOneWidget);
-    expect(find.text('电脑端 3:1'), findsOneWidget);
-    expect(find.text('移动端 2:1'), findsOneWidget);
+    expect(find.text('网页端 3:1'), findsOneWidget);
+    expect(find.text('手机端 2:1'), findsOneWidget);
     await tester.drag(
       find.byKey(const Key('image-crop-zoom')),
       const Offset(120, 0),
     );
     await tester.pump();
-    await tester.tap(find.text('移动端 2:1'));
+    await tester.tap(find.text('手机端 2:1'));
     await tester.pump();
     expect(find.byKey(const Key('profile-cover-crop-mobile')), findsOneWidget);
     await tester.tap(find.byKey(const Key('image-crop-confirm')));
@@ -362,7 +403,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('资料没有加载完成'), findsOneWidget);
+    expect(find.text('资料加载失败'), findsOneWidget);
     expect(find.byKey(const Key('logout-submit')), findsNothing);
     await tester.tap(find.byKey(const Key('me-edit-retry')));
     await tester.pumpAndSettle();
@@ -373,7 +414,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('me-settings-save')));
     await tester.pump();
-    expect(find.textContaining('暂不支持清空已有简介'), findsOneWidget);
+    expect(find.textContaining('暂时不能清空已有简介'), findsOneWidget);
     expect(repository.updateCalls, 0);
   });
 
@@ -671,6 +712,8 @@ class _FakeMeProfileRepository implements MeProfileRepository {
 class _FakePublicUserRepository implements PublicUserRepository {
   int fetchUserCalls = 0;
   int createdCalls = 0;
+  int playedCalls = 0;
+  int replyCalls = 0;
 
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) {
@@ -714,11 +757,16 @@ class _FakePublicUserRepository implements PublicUserRepository {
     String userId, {
     String? cursor,
     int limit = 10,
-  }) async => const CursorPage(items: [], hasMore: false);
+  }) async {
+    playedCalls += 1;
+    return const CursorPage(items: [], hasMore: false);
+  }
 
   @override
-  Future<List<PublicUserReplyModel>> fetchRecentReplies(String userId) async =>
-      const [];
+  Future<List<PublicUserReplyModel>> fetchRecentReplies(String userId) async {
+    replyCalls += 1;
+    return const [];
+  }
 
   @override
   Future<PublicUserProfileModel> fetchUser(String userId) {

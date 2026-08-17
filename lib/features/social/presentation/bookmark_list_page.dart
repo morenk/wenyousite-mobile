@@ -1,21 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
-class BookmarkListPage extends ConsumerWidget {
-  const BookmarkListPage({super.key});
+typedef BookmarkMomentsBuilder = Widget Function();
+
+enum BookmarkContentTab { threads, moments }
+
+extension on BookmarkContentTab {
+  String get label => switch (this) {
+    BookmarkContentTab.threads => '主题帖',
+    BookmarkContentTab.moments => '动态',
+  };
+}
+
+class BookmarkListPage extends StatefulWidget {
+  const BookmarkListPage({
+    this.initialTab = BookmarkContentTab.threads,
+    this.momentBookmarksBuilder,
+    super.key,
+  });
+
+  final BookmarkContentTab initialTab;
+  final BookmarkMomentsBuilder? momentBookmarksBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return const Scaffold(
-      appBar: _BookmarkListAppBar(),
-      body: BookmarkListView(),
+  State<BookmarkListPage> createState() => _BookmarkListPageState();
+}
+
+class _BookmarkListPageState extends State<BookmarkListPage> {
+  late BookmarkContentTab _tab;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = widget.initialTab;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontal = wenyouHorizontalPagePadding(context);
+    return Scaffold(
+      appBar: const _BookmarkListAppBar(),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              context.wenyouTokens.space8,
+              horizontal,
+              0,
+            ),
+            child: WenyouConstrainedWidth(
+              child: WenyouLineFilterBar<BookmarkContentTab>(
+                key: const Key('bookmark-content-filter'),
+                keyPrefix: 'bookmark-content',
+                semanticsLabel: '收藏内容',
+                options: [
+                  for (final tab in BookmarkContentTab.values)
+                    WenyouFilterOption(value: tab, label: tab.label),
+                ],
+                selected: _tab,
+                onSelected: (tab) => setState(() => _tab = tab),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _tab == BookmarkContentTab.threads
+                ? const BookmarkListView()
+                : widget.momentBookmarksBuilder?.call() ??
+                      _MomentBookmarksFallback(
+                        onPressed: () => context.pushNamed('moment-bookmarks'),
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MomentBookmarksFallback extends StatelessWidget {
+  const _MomentBookmarksFallback({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.all(context.wenyouTokens.space16),
+      children: [
+        WenyouConstrainedWidth(
+          child: WenyouEmptyState(
+            icon: WenyouIconIds.navigationMoments,
+            title: '动态收藏',
+            message: '',
+            action: OutlinedButton(
+              onPressed: onPressed,
+              child: const Text('打开列表'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -51,7 +144,7 @@ class BookmarkListView extends ConsumerWidget {
         child: WenyouPanel(
           child: WenyouEmptyState(
             icon: WenyouIconIds.statusOffline,
-            title: '收藏列表没有加载完成',
+            title: '收藏列表加载失败',
             message: state.failure?.userMessage ?? '请稍后重试。',
             detail: _requestDetail(state.failure?.requestId),
             action: OutlinedButton.icon(
@@ -155,8 +248,6 @@ class _ReadyBookmarkList extends StatelessWidget {
           tokens.space32,
         ),
         children: [
-          const _CenteredContent(child: WenyouSectionHeader(title: '主题帖')),
-          SizedBox(height: tokens.space16),
           _CenteredContent(
             child: _BookmarkFolderBar(
               state: state,
@@ -209,7 +300,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               child: WenyouPanel(
                 child: WenyouEmptyState(
                   icon: WenyouIconIds.statusOffline,
-                  title: '这个收藏夹没有加载完成',
+                  title: '这个收藏夹加载失败',
                   message: state.failure!.userMessage,
                   detail: _requestDetail(state.failure!.requestId),
                   action: OutlinedButton.icon(
@@ -249,8 +340,8 @@ class _ReadyBookmarkList extends StatelessWidget {
                         ? '还没有收藏'
                         : '这个收藏夹还是空的',
                     message: state.selectedFolderId == null
-                        ? '在主题详情页点击收藏后，会出现在这里。'
-                        : '可以把“全部”里的其他收藏移动到这里。',
+                        ? ''
+                        : '可从“全部”中移动收藏。',
                   ),
                 ),
               )
@@ -258,7 +349,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               for (var index = 0; index < state.items.length; index++) ...[
                 if (index > 0) SizedBox(height: tokens.space12),
                 _CenteredContent(
-                  child: _BookmarkCard(
+                  child: _BookmarkThreadListItem(
                     item: state.items[index],
                     folderName: state
                         .folderById(state.items[index].folderId)
@@ -434,8 +525,8 @@ class _BookmarkFolderBar extends StatelessWidget {
   }
 }
 
-class _BookmarkCard extends StatelessWidget {
-  const _BookmarkCard({
+class _BookmarkThreadListItem extends StatelessWidget {
+  const _BookmarkThreadListItem({
     required this.item,
     required this.folderName,
     required this.canMove,
@@ -458,198 +549,109 @@ class _BookmarkCard extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final isMoving = pendingAction == BookmarkPendingAction.move;
     final isRemoving = pendingAction == BookmarkPendingAction.remove;
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      child: WenyouPanel(
-        key: ValueKey('bookmark-thread-${item.threadId}'),
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Semantics(
-              button: true,
-              label: '打开收藏主题 ${item.title}',
-              excludeSemantics: true,
-              child: InkWell(
-                onTap: () => context.pushNamed(
-                  'thread-detail',
-                  pathParameters: {'threadId': item.threadId},
-                  extra: item.categorySlug,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    tokens.space16,
-                    tokens.space16,
-                    tokens.space16,
-                    tokens.space8,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: tokens.space8,
-                        runSpacing: tokens.space4,
-                        children: [
-                          if (item.categorySlug != null)
-                            _BookmarkPill(label: item.categorySlug!),
-                          _BookmarkPill(
-                            label: _statusLabel(item.status),
-                            accent:
-                                item.status ==
-                                BookmarkedThreadStatus.recruiting,
-                          ),
-                          if (item.isPinned)
-                            const _BookmarkPill(
-                              label: '置顶',
-                              icon: WenyouIconIds.statusPinned,
-                            ),
-                          if (item.isPrivate)
-                            const _BookmarkPill(
-                              label: '私密',
-                              icon: WenyouIconIds.actionLock,
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: tokens.space12),
-                      Text(
-                        item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      SizedBox(height: tokens.space8),
-                      Text(
-                        '${item.ownerName} · Lv.${item.ownerLevel} · ${DateFormat('yyyy-MM-dd').format(item.createdAt)}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
-                      ),
-                      SizedBox(height: tokens.space4),
-                      Text(
-                        '${item.memberCount} 成员 · ${item.postCount} 条内容 · ${item.tipTotal}L',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space16,
-                tokens.space4,
-                tokens.space8,
-                tokens.space8,
-              ),
-              child: Row(
-                children: [
-                  if (canMove)
-                    Flexible(
-                      child: Semantics(
-                        label: '移动“${item.title}”到收藏夹',
-                        button: true,
-                        enabled: !(disableActions || isMoving || isRemoving),
-                        excludeSemantics: true,
-                        child: OutlinedButton.icon(
-                          key: ValueKey('bookmark-move-${item.bookmarkId}'),
-                          onPressed: disableActions || isMoving || isRemoving
-                              ? null
-                              : onMove,
-                          icon: isMoving
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const WenyouIcon(
-                                  WenyouIconIds.actionMove,
-                                  size: 18,
-                                ),
-                          label: Text(
-                            folderName ?? '选择收藏夹',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ),
-                  const Spacer(),
-                  Semantics(
-                    label: '取消收藏“${item.title}”',
+    return Column(
+      key: ValueKey('bookmark-thread-${item.threadId}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ThreadFeedCard(
+          thread: _threadModel(item),
+          categoryName: item.categorySlug,
+          onTap: () => context.pushNamed(
+            'thread-detail',
+            pathParameters: {'threadId': item.threadId},
+            extra: item.categorySlug,
+          ),
+          onTagTap: (tag) => context.pushNamed(
+            'tag-threads',
+            pathParameters: {'tagId': tag.id},
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            tokens.space16,
+            tokens.space4,
+            tokens.space8,
+            tokens.space8,
+          ),
+          child: Row(
+            children: [
+              if (canMove)
+                Flexible(
+                  child: Semantics(
+                    label: '移动“${item.title}”到收藏夹',
                     button: true,
                     enabled: !(disableActions || isMoving || isRemoving),
                     excludeSemantics: true,
-                    child: IconButton(
-                      key: ValueKey('bookmark-remove-${item.bookmarkId}'),
-                      tooltip: '取消收藏',
+                    child: OutlinedButton.icon(
+                      key: ValueKey('bookmark-move-${item.bookmarkId}'),
                       onPressed: disableActions || isMoving || isRemoving
                           ? null
-                          : onRemove,
-                      icon: isRemoving
+                          : onMove,
+                      icon: isMoving
                           ? const SizedBox.square(
-                              dimension: 20,
+                              dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const WenyouIcon(
-                              WenyouIconIds.actionRemoveBookmark,
+                              WenyouIconIds.actionMove,
+                              size: 18,
                             ),
+                      label: Text(
+                        folderName ?? '选择收藏夹',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
-                ],
+                ),
+              const Spacer(),
+              Semantics(
+                label: '取消收藏“${item.title}”',
+                button: true,
+                enabled: !(disableActions || isMoving || isRemoving),
+                excludeSemantics: true,
+                child: IconButton(
+                  key: ValueKey('bookmark-remove-${item.bookmarkId}'),
+                  tooltip: '取消收藏',
+                  onPressed: disableActions || isMoving || isRemoving
+                      ? null
+                      : onRemove,
+                  icon: isRemoving
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const WenyouIcon(WenyouIconIds.actionRemoveBookmark),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _BookmarkPill extends StatelessWidget {
-  const _BookmarkPill({required this.label, this.icon, this.accent = false});
-
-  final String label;
-  final String? icon;
-  final bool accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final color = accent ? tokens.brandForeground : tokens.mutedText;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: accent ? tokens.accentedBackground : tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radiusPill),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.space8,
-          vertical: tokens.space4,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              WenyouIcon(icon!, size: 14, color: color),
-              SizedBox(width: tokens.space4),
-            ],
-            Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: color),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+ThreadFeedCardModel _threadModel(BookmarkListItem item) {
+  return ThreadFeedCardModel(
+    id: item.threadId,
+    title: item.title,
+    categorySlug: item.categorySlug,
+    status: switch (item.status) {
+      BookmarkedThreadStatus.recruiting => HomeThreadStatus.recruiting,
+      BookmarkedThreadStatus.closed => HomeThreadStatus.closed,
+      BookmarkedThreadStatus.finished => HomeThreadStatus.finished,
+      BookmarkedThreadStatus.unknown => HomeThreadStatus.unknown,
+    },
+    isPinned: item.isPinned,
+    isPrivate: item.isPrivate,
+    ownerName: item.ownerName,
+    ownerLevel: item.ownerLevel,
+    createdAt: item.createdAt,
+    memberCount: item.memberCount,
+    postCount: item.postCount,
+    tipTotal: item.tipTotal,
+  );
 }
 
 class _CenteredContent extends StatelessWidget {
@@ -694,7 +696,7 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
               .actionFailure;
           setState(() {
             submitting = false;
-            submissionError = failure?.userMessage ?? '新建收藏夹没有完成，请稍后重试。';
+            submissionError = failure?.userMessage ?? '新建收藏夹失败，请稍后重试。';
             requestId = failure?.requestId;
           });
         }
@@ -749,7 +751,7 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
                   if (requestId != null) ...[
                     SizedBox(height: tokens.space4),
                     SelectableText(
-                      '请求 ID：$requestId',
+                      '问题编号：$requestId',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -869,11 +871,4 @@ Future<String?> _showMoveFolderSheet(
 }
 
 String? _requestDetail(String? requestId) =>
-    requestId == null ? null : '请求 ID：$requestId';
-
-String _statusLabel(BookmarkedThreadStatus status) => switch (status) {
-  BookmarkedThreadStatus.recruiting => '招募中',
-  BookmarkedThreadStatus.closed => '已关闭',
-  BookmarkedThreadStatus.finished => '已完结',
-  BookmarkedThreadStatus.unknown => '状态未知',
-};
+    requestId == null ? null : '问题编号：$requestId';

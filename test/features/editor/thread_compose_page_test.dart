@@ -532,7 +532,7 @@ class _FakeRepository implements ThreadComposeRepository {
       defaultSubthreadId: 'subthread-cloud',
       defaultSubthreadVersion: 4,
       bodyVersion: 5,
-      title: '服务端草稿',
+      title: '云端草稿',
       categorySlug: 'TRPG',
       visibility: ThreadComposeVisibility.private,
       tags: const ['云端'],

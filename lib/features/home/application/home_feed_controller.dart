@@ -264,7 +264,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
       if (!_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: HomeFeedPhase.failed,
-        failure: _asFailure(error, '主题列表没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '主题列表加载失败，请稍后重试。'),
       );
     }
   }

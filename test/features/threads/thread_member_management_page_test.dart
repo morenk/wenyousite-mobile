@@ -87,7 +87,7 @@ void main() {
       find.byKey(const ValueKey('thread-member-player-player-1')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('请求 ID：member-verify-id'), findsOneWidget);
+    expect(find.text('问题编号：member-verify-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-members-dismiss-failure')));
     await tester.pumpAndSettle();
     expect(
@@ -106,7 +106,7 @@ void main() {
       ),
     );
     await _pumpPage(tester, repository);
-    expect(find.text('请求 ID：members-load-id'), findsOneWidget);
+    expect(find.text('问题编号：members-load-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-members-load-retry')));
     await tester.pumpAndSettle();
     expect(find.text('玩家甲'), findsOneWidget);

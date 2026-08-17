@@ -508,7 +508,7 @@ packages:
     source: hosted
     version: "0.7.0"
   flutter_svg:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: flutter_svg
       sha256: "35882981abcbfb8c15b286f0cd690ff25bac12d95eff3e25ee207f37d4c42e7f"
@@ -1453,11 +1453,11 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/flutter"
-      ref: "v3.1.0"
-      resolved-ref: d60df368089c6c83d7444283f6207b2855e3fb9d
+      ref: "v5.1.0"
+      resolved-ref: f5eb3aa4dffcfb39f8d7c210f3f474d106acefe6
       url: "https://github.com/morenk/wenyousite-foundation.git"
     source: git
-    version: "3.1.0"
+    version: "5.1.0"
   win32:
     dependency: transitive
     description:

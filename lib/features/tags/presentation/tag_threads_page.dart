@@ -100,7 +100,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                   children: [
                     WenyouSectionHeader(
                       title: '#${state.tag!.name}',
-                      subtitle: state.tag!.description ?? '浏览使用这个标签的公开主题。',
+                      subtitle: state.tag!.description,
                     ),
                     SizedBox(height: tokens.space12),
                     WenyouTagChip(
@@ -132,7 +132,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                     message: state.transientFailure!.userMessage,
                     detail: state.transientFailure!.requestId == null
                         ? null
-                        : '请求 ID：${state.transientFailure!.requestId}',
+                        : '问题编号：${state.transientFailure!.requestId}',
                     action: TextButton(
                       onPressed:
                           state.transientRetryAction ==
@@ -240,11 +240,11 @@ class _TagFatalState extends StatelessWidget {
           icon: failure?.httpStatus == 404
               ? WenyouIconIds.actionRemoveTag
               : WenyouIconIds.statusOffline,
-          title: failure?.httpStatus == 404 ? '标签不存在或已停用' : '标签主题没有加载完成',
+          title: failure?.httpStatus == 404 ? '标签不存在或已停用' : '标签主题加载失败',
           message: failure?.userMessage ?? '请检查网络后重试。',
           detail: failure?.requestId == null
               ? null
-              : '请求 ID：${failure!.requestId}',
+              : '问题编号：${failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('tag-threads-retry'),
             onPressed: onRetry,

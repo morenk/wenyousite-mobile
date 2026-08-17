@@ -48,8 +48,8 @@ class AccountDeletionController extends StateNotifier<AccountDeletionState> {
         failure: _asFailure(
           error,
           remoteDeletionConfirmed
-              ? '账号已注销，但本机登录信息没有清理完成。请重试本机清理。'
-              : '账号注销没有完成，请稍后重试。',
+              ? '账号已注销，但清理这台设备的登录信息失败。请重试清理。'
+              : '账号注销失败，请稍后重试。',
         ),
       );
       return false;
@@ -71,7 +71,7 @@ class AccountDeletionController extends StateNotifier<AccountDeletionState> {
       state = AccountDeletionState(
         status: AccountDeletionStatus.failed,
         remoteDeletionConfirmed: true,
-        failure: _asFailure(error, '账号已注销，但本机登录信息没有清理完成。请重试本机清理。'),
+        failure: _asFailure(error, '账号已注销，但清理这台设备的登录信息失败。请重试清理。'),
       );
       return false;
     }

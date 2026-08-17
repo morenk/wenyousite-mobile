@@ -97,15 +97,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       MomentFeedList(
                         target: MomentFeedTarget.user(userId),
                         emptyTitle: '还没有发布动态',
-                        emptyMessage: '你发布的动态会直接显示在这里。',
+                        emptyMessage: '',
                         additionalRefresh: additionalRefresh,
                       ),
-                  momentBookmarksBuilder: (additionalRefresh) => MomentFeedList(
-                    target: const MomentFeedTarget.bookmarks(),
-                    emptyTitle: '还没有收藏动态',
-                    emptyMessage: '在动态列表或详情点击收藏后，会集中显示在这里。',
-                    additionalRefresh: additionalRefresh,
-                  ),
                 ),
               ),
             ],
@@ -125,11 +119,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.momentBookmarks,
         name: AppRouteNames.momentBookmarks,
-        builder: (context, state) => const MomentCollectionPage(
-          target: MomentFeedTarget.bookmarks(),
-          title: '动态收藏',
-          emptyTitle: '还没有收藏动态',
-          emptyMessage: '在动态列表或详情点击收藏后，会集中显示在这里。',
+        builder: (context, state) => BookmarkListPage(
+          initialTab: BookmarkContentTab.moments,
+          momentBookmarksBuilder: () => const MomentFeedList(
+            target: MomentFeedTarget.bookmarks(),
+            emptyTitle: '还没有收藏动态',
+            emptyMessage: '',
+          ),
         ),
       ),
       GoRoute(
@@ -347,7 +343,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.meBookmarks,
         name: AppRouteNames.meBookmarks,
-        builder: (context, state) => const BookmarkListPage(),
+        builder: (context, state) => BookmarkListPage(
+          momentBookmarksBuilder: () => const MomentFeedList(
+            target: MomentFeedTarget.bookmarks(),
+            emptyTitle: '还没有收藏动态',
+            emptyMessage: '',
+          ),
+        ),
       ),
       GoRoute(
         path: AppRoutePaths.meStickers,

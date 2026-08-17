@@ -25,7 +25,7 @@ class ApiThreadInvitationRepository implements ThreadInvitationRepository {
       if (dto == null ||
           dto.threadId != threadId ||
           !_tokenPattern.hasMatch(dto.token)) {
-        throw const ApiFailure(userMessage: '邀请链接生成结果不完整，请重新生成。');
+        throw const ApiFailure(userMessage: '邀请链接生成失败，请重新生成。');
       }
       return ThreadInvitationLink(
         id: dto.id,
@@ -46,7 +46,7 @@ class ApiThreadInvitationRepository implements ThreadInvitationRepository {
       final response = await _threadsApi.threadsPreviewInviteLink(token: token);
       final dto = response.data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '邀请信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '邀请信息加载失败，请稍后重试。');
       }
       final thread = dto.thread;
       return ThreadInvitationPreview(
@@ -81,7 +81,7 @@ class ApiThreadInvitationRepository implements ThreadInvitationRepository {
       final response = await _threadsApi.threadsJoinByInviteLink(token: token);
       final dto = response.data?.data;
       if (dto == null || dto.threadId != dto.thread.id) {
-        throw const ApiFailure(userMessage: '加入结果不完整，请重新打开邀请确认。');
+        throw const ApiFailure(userMessage: '加入失败，请重新打开邀请确认。');
       }
       return ThreadInvitationJoinResult(
         memberId: dto.id,

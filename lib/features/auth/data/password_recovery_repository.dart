@@ -24,7 +24,7 @@ class ApiPasswordRecoveryRepository implements PasswordRecoveryRepository {
         ),
       )).data?.data;
       if (data == null || data.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '重置验证码发送结果不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '重置验证码发送失败，请稍后重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -47,7 +47,7 @@ class ApiPasswordRecoveryRepository implements PasswordRecoveryRepository {
         ),
       )).data?.data;
       if (data == null || data.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '密码重置结果不完整，请稍后重新登录确认。');
+        throw const ApiFailure(userMessage: '密码重置失败，请稍后重新登录确认。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

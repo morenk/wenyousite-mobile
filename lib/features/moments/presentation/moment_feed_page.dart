@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -50,26 +51,19 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
           MomentContentPadding(
             top: context.wenyouTokens.space12,
             bottom: context.wenyouTokens.space12,
-            child: SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<MomentFeedMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: MomentFeedMode.discover,
-                    icon: WenyouIcon(WenyouIconIds.navigationExplore),
-                    label: Text('发现'),
-                  ),
-                  ButtonSegment(
-                    value: MomentFeedMode.following,
-                    icon: WenyouIcon(WenyouIconIds.identityMembers),
-                    label: Text('关注'),
-                  ),
-                ],
-                selected: {_mode},
-                onSelectionChanged: (selection) {
-                  setState(() => _mode = selection.single);
-                },
-              ),
+            child: WenyouLineFilterBar<MomentFeedMode>(
+              key: const Key('moment-feed-filter'),
+              keyPrefix: 'moment-feed',
+              semanticsLabel: '动态信息流',
+              options: const [
+                WenyouFilterOption(value: MomentFeedMode.discover, label: '发现'),
+                WenyouFilterOption(
+                  value: MomentFeedMode.following,
+                  label: '关注',
+                ),
+              ],
+              selected: _mode,
+              onSelected: (mode) => setState(() => _mode = mode),
             ),
           ),
           Expanded(
@@ -230,11 +224,11 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
             child: WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
-                title: '动态列表没有加载完成',
+                title: '动态列表加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
                 detail: state.failure?.requestId == null
                     ? null
-                    : '请求 ID：${state.failure!.requestId}',
+                    : '问题编号：${state.failure!.requestId}',
                 action: OutlinedButton.icon(
                   key: const Key('moment-feed-retry'),
                   onPressed: () => ref.read(provider.notifier).loadInitial(),

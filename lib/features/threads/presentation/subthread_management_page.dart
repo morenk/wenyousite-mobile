@@ -78,7 +78,7 @@ class _SubthreadsReadyState extends ConsumerWidget {
               message: state.failure!.userMessage,
               detail: state.failure!.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: TextButton(
                 key: const Key('subthread-management-dismiss-failure'),
                 onPressed: state.isBusy
@@ -305,7 +305,7 @@ class _SubthreadCard extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('确认删除这个子贴？'),
-        content: Text('“${item.title}”及其正文、楼层和回复会一起删除，移动端无法恢复。'),
+        content: Text('“${item.title}”及其正文、楼层和回复会一起删除，且无法恢复。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -438,7 +438,7 @@ class _SubthreadFormDialogState extends State<_SubthreadFormDialog> {
                     message: _failure!.userMessage,
                     detail: _failure!.requestId == null
                         ? null
-                        : '请求 ID：${_failure!.requestId}',
+                        : '问题编号：${_failure!.requestId}',
                   ),
                 ],
               ],

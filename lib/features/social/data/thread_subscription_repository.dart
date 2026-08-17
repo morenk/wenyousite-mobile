@@ -22,7 +22,7 @@ class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
     try {
       final envelope = (await _subscriptionsApi.subscriptionsFindAll()).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '订阅列表响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '订阅加载失败，请稍后重试。');
       }
       return envelope.data
           .where((item) => item.threadId == threadId)
@@ -44,7 +44,7 @@ class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
         threadId: threadId,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '玩家候选响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '玩家列表加载失败，请稍后重试。');
       }
       return envelope.data
           .where(
@@ -89,7 +89,7 @@ class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
       )).data?.data;
       final record = data == null ? null : _mapSubscription(data);
       if (record == null || record.id.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '创建订阅结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '创建订阅失败，请重试。');
       }
       return record;
     } on DioException catch (error) {
@@ -104,7 +104,7 @@ class ApiThreadSubscriptionRepository implements ThreadSubscriptionRepository {
         id: subscriptionId,
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '取消订阅结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '取消订阅失败，请重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

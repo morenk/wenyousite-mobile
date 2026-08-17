@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/application/home_feed_controller.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -136,7 +137,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.contentThread,
-                title: '这里还没有公开主题',
+                title: '暂无公开主题',
                 message: '可以换一个分类或状态，也可以下拉刷新看看。',
                 action: OutlinedButton.icon(
                   onPressed: () => ref
@@ -242,7 +243,7 @@ class _HomeLoadingState extends StatelessWidget {
           Text('正在整理推荐主题', style: Theme.of(context).textTheme.titleMedium),
           SizedBox(height: tokens.space8),
           Text(
-            '分类和主题列表会一起加载。',
+            '正在加载主题…',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
@@ -264,11 +265,11 @@ class _HomeErrorState extends StatelessWidget {
     return WenyouPanel(
       child: WenyouEmptyState(
         icon: WenyouIconIds.statusOffline,
-        title: '主题列表没有加载完成',
+        title: '主题列表加载失败',
         message: failure?.userMessage ?? '请检查网络后重试。',
         detail: failure?.requestId == null
             ? null
-            : '请求 ID：${failure!.requestId}',
+            : '问题编号：${failure!.requestId}',
         action: FilledButton.icon(
           key: const Key('home-retry'),
           onPressed: onRetry,
@@ -290,7 +291,7 @@ class _HomeTransientError extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouStatusBanner(
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
+      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
       tone: WenyouStatusTone.error,
       action: TextButton.icon(
         onPressed: onRetry,
@@ -323,148 +324,54 @@ class _HomeFilters extends StatelessWidget {
       for (final category in state.categories) category.slug: category.name,
     };
     final selectedCategory = state.query.categorySlug ?? allCategories;
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          flex: 12,
-          child: _HomeFilterMenu<String>(
-            key: const Key('home-category-menu'),
-            label: categoryLabels[selectedCategory] ?? selectedCategory,
-            tooltip: '选择主题分类',
-            values: categoryLabels.keys.toList(growable: false),
-            selected: selectedCategory,
-            labelFor: (value) => categoryLabels[value] ?? value,
-            active: selectedCategory != allCategories,
-            onSelected: (value) =>
-                onCategorySelected(value == allCategories ? null : value),
-          ),
+        WenyouCategoryFilterBar<String>(
+          key: const Key('home-category-menu'),
+          keyPrefix: 'home-category',
+          semanticsLabel: '主题帖分类',
+          options: [
+            for (final entry in categoryLabels.entries)
+              WenyouFilterOption(value: entry.key, label: entry.value),
+          ],
+          selected: selectedCategory,
+          onSelected: (value) =>
+              onCategorySelected(value == allCategories ? null : value),
         ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          flex: 10,
-          child: _HomeFilterMenu<HomeFeedSort>(
-            key: const Key('home-sort-menu'),
-            label: state.query.sort.label,
-            tooltip: '选择主题排序',
-            values: HomeFeedSort.values,
-            selected: state.query.sort,
-            labelFor: (value) => value.label,
-            onSelected: onSortSelected,
-          ),
-        ),
-        SizedBox(width: tokens.space8),
-        Expanded(
-          flex: 11,
-          child: _HomeFilterMenu<HomeThreadStatusFilter>(
-            key: const Key('home-status-menu'),
-            label: state.query.status.label,
-            tooltip: '选择主题状态',
-            values: HomeThreadStatusFilter.values,
-            selected: state.query.status,
-            labelFor: (value) => value.label,
-            active: state.query.status != HomeThreadStatusFilter.all,
-            onSelected: onStatusSelected,
-          ),
+        SizedBox(height: tokens.space8),
+        Row(
+          children: [
+            Expanded(
+              child: WenyouDropdownFilter<HomeFeedSort>(
+                key: const Key('home-sort-menu'),
+                tooltip: '选择主题排序',
+                icon: WenyouIconIds.actionSort,
+                options: [
+                  for (final value in HomeFeedSort.values)
+                    WenyouFilterOption(value: value, label: value.label),
+                ],
+                selected: state.query.sort,
+                onSelected: onSortSelected,
+              ),
+            ),
+            SizedBox(width: tokens.space8),
+            Expanded(
+              child: WenyouDropdownFilter<HomeThreadStatusFilter>(
+                key: const Key('home-status-menu'),
+                tooltip: '选择主题状态',
+                icon: WenyouIconIds.actionFilter,
+                options: [
+                  for (final value in HomeThreadStatusFilter.values)
+                    WenyouFilterOption(value: value, label: value.label),
+                ],
+                selected: state.query.status,
+                onSelected: onStatusSelected,
+              ),
+            ),
+          ],
         ),
       ],
-    );
-  }
-}
-
-class _HomeFilterMenu<T> extends StatelessWidget {
-  const _HomeFilterMenu({
-    required this.label,
-    required this.tooltip,
-    required this.values,
-    required this.selected,
-    required this.labelFor,
-    required this.onSelected,
-    this.active = false,
-    super.key,
-  });
-
-  final String label;
-  final String tooltip;
-  final List<T> values;
-  final T selected;
-  final String Function(T value) labelFor;
-  final ValueChanged<T> onSelected;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return PopupMenuButton<T>(
-      initialValue: selected,
-      tooltip: tooltip,
-      onSelected: onSelected,
-      position: PopupMenuPosition.under,
-      offset: Offset(0, tokens.space4),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radius16),
-        side: BorderSide(color: tokens.border),
-      ),
-      constraints: const BoxConstraints(minWidth: 152, maxWidth: 260),
-      itemBuilder: (context) => [
-        for (final value in values)
-          PopupMenuItem(
-            value: value,
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  child: value == selected
-                      ? WenyouIcon(
-                          WenyouIconIds.actionConfirm,
-                          size: 20,
-                          color: tokens.brandForeground,
-                        )
-                      : null,
-                ),
-                SizedBox(width: tokens.space8),
-                Text(labelFor(value)),
-              ],
-            ),
-          ),
-      ],
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: active ? tokens.accentedBackground : tokens.softPanel,
-          border: Border.all(
-            color: active
-                ? tokens.brandForeground.withValues(alpha: 0.42)
-                : tokens.border,
-          ),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: active ? tokens.brandForeground : null,
-                    ),
-                  ),
-                ),
-                SizedBox(width: tokens.space4),
-                WenyouIcon(
-                  WenyouIconIds.navigationExpand,
-                  size: 20,
-                  color: active ? tokens.brandForeground : tokens.mutedText,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

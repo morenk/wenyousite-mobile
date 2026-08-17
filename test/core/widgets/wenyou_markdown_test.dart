@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import '../../support/foundation_test_fonts.dart';
 
@@ -132,6 +134,48 @@ $diceNode
 
     expect(find.byKey(const ValueKey('wenyou-dice-$nodeId')), findsOneWidget);
     expect(find.text('1d20 = 16'), findsOneWidget);
+  });
+
+  testWidgets('Markdown 站内坐标使用 Foundation 传送门且交给内部导航', (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SizedBox(
+            width: 180,
+            child: WenyouMarkdown(
+              data:
+                  '参见 [很长但不能被截断的设定入口](/threads/cmsewdo0h000x7qv6aa77ll1v)，`[代码](/threads/cmsewdo0h000x7qv6aa77ll1v)`。',
+              onInternalLink: (location) => opened = location,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final portal = find.byKey(const ValueKey('markdown-internal-reference-0'));
+    expect(portal, findsOneWidget);
+    expect(find.byType(WenyouInternalReferenceChip), findsOneWidget);
+    expect(tester.getSize(portal).width, lessThanOrEqualTo(180));
+    expect(tester.getSize(portal).height, greaterThanOrEqualTo(48));
+    final icon = tester.widget<WenyouIcon>(
+      find.descendant(of: portal, matching: find.byType(WenyouIcon)),
+    );
+    expect(icon.semanticId, WenyouIconIds.contentInternalReference);
+    expect(find.textContaining('代码', findRichText: true), findsOneWidget);
+    expect(
+      find.textContaining(
+        '/threads/cmsewdo0h000x7qv6aa77ll1v',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(portal);
+    expect(opened, Uri.parse('/threads/cmsewdo0h000x7qv6aa77ll1v'));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('360dp 长文保持正文、标题、引用和分隔线的克制阅读层级', (tester) async {

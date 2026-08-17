@@ -307,7 +307,7 @@ class _UserActivitySummaryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(title: '创作活动', subtitle: '按你当前可见的公开范围统计'),
+          const WenyouSectionHeader(title: '创作活动'),
           SizedBox(height: tokens.space12),
           switch (state.activityPhase) {
             PublicUserActivityPhase.idle ||
@@ -315,10 +315,10 @@ class _UserActivitySummaryPanel extends StatelessWidget {
             PublicUserActivityPhase.failed => WenyouStatusBanner(
               key: const Key('public-user-activity-failure'),
               tone: WenyouStatusTone.error,
-              message: state.activityFailure?.userMessage ?? '创作活动汇总没有加载完成。',
+              message: state.activityFailure?.userMessage ?? '创作活动汇总加载失败。',
               detail: state.activityFailure?.requestId == null
                   ? null
-                  : '请求 ID：${state.activityFailure!.requestId}',
+                  : '问题编号：${state.activityFailure!.requestId}',
               action: TextButton(
                 key: const Key('public-user-activity-retry'),
                 onPressed: onRetry,
@@ -450,9 +450,9 @@ class _UserFailureState extends StatelessWidget {
           icon: notFound
               ? WenyouIconIds.statusUserUnavailable
               : WenyouIconIds.statusOffline,
-          title: notFound ? '用户不存在' : '用户资料没有加载完成',
+          title: notFound ? '用户不存在' : '用户资料加载失败',
           message: notFound ? '该用户可能已经注销，或账号不存在。' : (message ?? '请稍后重试。'),
-          detail: requestId == null ? null : '请求 ID：$requestId',
+          detail: requestId == null ? null : '问题编号：$requestId',
           action: OutlinedButton.icon(
             key: const Key('public-user-retry'),
             onPressed: onRetry,

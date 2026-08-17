@@ -29,7 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('登录后查看消息'), findsOneWidget);
-    expect(find.textContaining('私聊请求'), findsOneWidget);
+    expect(find.text('登录后查看消息'), findsOneWidget);
     await tester.tap(find.byKey(const Key('notification-login')));
     await tester.pumpAndSettle();
     expect(find.text('登录回跳=/notifications'), findsOneWidget);

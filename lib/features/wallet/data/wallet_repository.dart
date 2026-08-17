@@ -22,7 +22,7 @@ class ApiWalletRepository implements WalletRepository {
     try {
       final dto = (await _api.economyGetWallet()).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '温油钱包响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '温油钱包加载失败，请稍后重试。');
       }
       return WalletSummary(
         balance: _amount(dto.balance, '钱包余额'),
@@ -39,7 +39,7 @@ class ApiWalletRepository implements WalletRepository {
     try {
       final dto = (await _api.economyCheckIn()).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '签到响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '签到失败，请稍后重试。');
       }
       final reward = switch (dto.rewardAmount) {
         DailyCheckInResponseDtoRewardAmountEnum.n1 => '1',
@@ -83,7 +83,7 @@ class ApiWalletRepository implements WalletRepository {
     int limit = 20,
   }) async {
     if (limit < 1 || limit > 50) {
-      throw const ApiFailure(userMessage: '钱包流水分页大小无效。');
+      throw const ApiFailure(userMessage: '温油流水暂时无法加载。');
     }
     try {
       final envelope = (await _api.economyTransactions(
@@ -91,16 +91,16 @@ class ApiWalletRepository implements WalletRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '温油流水响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '温油流水加载失败，请稍后重试。');
       }
       final items = envelope.data.map(_transaction).toList(growable: false);
       final ids = <String>{};
       if (items.any((item) => !ids.add(item.id))) {
-        throw const ApiFailure(userMessage: '温油流水包含重复记录，请重新加载。');
+        throw const ApiFailure(userMessage: '温油流水暂时无法显示，请重新加载。');
       }
       final nextCursor = envelope.meta.cursor?.trim();
       if (envelope.meta.hasMore && (nextCursor == null || nextCursor.isEmpty)) {
-        throw const ApiFailure(userMessage: '温油流水分页信息不完整，请重新加载。');
+        throw const ApiFailure(userMessage: '更多温油流水加载失败，请重新加载。');
       }
       return CursorPage(
         items: List.unmodifiable(items),
@@ -120,7 +120,7 @@ class ApiWalletRepository implements WalletRepository {
   }) async {
     final targetId = _requiredText(target.id, '加油目标 ID');
     final normalizedAmount = _normalizeTip(amount);
-    final requestId = _requiredText(clientRequestId, '加油请求 ID');
+    final requestId = _requiredText(clientRequestId, '加油信息');
     final request = TipRequestDto(
       (builder) => builder
         ..amount = normalizedAmount
@@ -145,7 +145,7 @@ class ApiWalletRepository implements WalletRepository {
         )).data?.data,
       };
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认加油结果，请使用原请求重试。');
+        throw const ApiFailure(userMessage: '加油失败，请重试。');
       }
       return TipResult(
         transactionId: _requiredText(dto.transactionId, '加油流水 ID'),
@@ -175,7 +175,7 @@ class ApiWalletRepository implements WalletRepository {
       WalletTransactionResponseDtoTypeEnum.DAILY_CHECK_IN =>
         WalletTransactionType.dailyCheckIn,
       WalletTransactionResponseDtoTypeEnum.TIP => WalletTransactionType.tip,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持这类温油流水。'),
+      _ => throw const ApiFailure(userMessage: '这类温油流水暂时无法显示。'),
     };
     final direction = switch (dto.direction) {
       WalletTransactionResponseDtoDirectionEnum.INCOME =>
@@ -214,11 +214,11 @@ class ApiWalletRepository implements WalletRepository {
       WalletTransactionTargetResponseDtoTypeEnum.MOMENT =>
         WalletTargetType.moment,
       WalletTransactionTargetResponseDtoTypeEnum.NONE => WalletTargetType.none,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持这类温油目标。'),
+      _ => throw const ApiFailure(userMessage: '这类温油目标暂时无法打开。'),
     };
     final id = _optionalText(dto.id);
     if (type != WalletTargetType.none && id == null) {
-      throw const ApiFailure(userMessage: '温油流水目标不完整，请重新加载。');
+      throw const ApiFailure(userMessage: '温油流水加载失败，请重试。');
     }
     return WalletTransactionTarget(
       type: type,

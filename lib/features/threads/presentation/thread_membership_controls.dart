@@ -49,7 +49,7 @@ class ThreadMembershipControls extends ConsumerWidget {
               message: state.failure!.userMessage,
               detail: state.failure!.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: TextButton(
                 key: const Key('thread-player-exit-retry'),
                 onPressed: state.isSubmitting

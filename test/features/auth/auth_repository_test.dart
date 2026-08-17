@@ -83,7 +83,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'userMessage',
-          contains('移动端登录会话'),
+          contains('登录失败'),
         ),
       ),
     );
@@ -171,7 +171,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'userMessage',
-          contains('移动端注册会话'),
+          contains('注册已完成'),
         ),
       ),
     );
@@ -243,7 +243,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'userMessage',
-          contains('发送结果不完整'),
+          contains('发送失败'),
         ),
       ),
     );

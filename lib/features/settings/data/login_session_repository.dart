@@ -19,7 +19,7 @@ class ApiLoginSessionRepository implements LoginSessionRepository {
     try {
       final envelope = (await _api.authListSessions()).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '登录终端响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '登录设备加载失败，请稍后重试。');
       }
       final sessions = envelope.data.map(_mapSession).toList(growable: false);
       sessions.sort((left, right) {
@@ -37,7 +37,7 @@ class ApiLoginSessionRepository implements LoginSessionRepository {
     try {
       final result = (await _api.authRevokeSession(id: sessionId)).data?.data;
       if (result == null) {
-        throw const ApiFailure(userMessage: '终端退出结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '终端退出失败，请重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

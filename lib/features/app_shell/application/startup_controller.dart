@@ -98,8 +98,7 @@ class StartupController extends StateNotifier<StartupState> {
       if (!_environment.supportsContract(contract.contractVersion)) {
         state = StartupState.incompatible(
           contract,
-          '当前应用支持契约主版本 ${_environment.supportedContractMajor}，'
-          '服务端为 ${contract.contractVersion}。',
+          '当前版本已无法继续使用，请更新应用。',
           update: update,
         );
         return;
@@ -107,8 +106,7 @@ class StartupController extends StateNotifier<StartupState> {
       if (!_environment.supportsMarkdown(contract.markdownContractVersion)) {
         state = StartupState.incompatible(
           contract,
-          '当前应用支持 Markdown v${_environment.supportedMarkdownContractVersion}，'
-          '服务端为 v${contract.markdownContractVersion}。',
+          '当前版本已无法正确显示内容，请更新应用。',
           update: update,
         );
         return;
@@ -123,7 +121,7 @@ class StartupController extends StateNotifier<StartupState> {
       state = StartupState.failed(failure);
     } on Object catch (error) {
       state = StartupState.failed(
-        ApiFailure(userMessage: '启动检查没有完成，请稍后重试。', cause: error),
+        ApiFailure(userMessage: '启动检查失败，请稍后重试。', cause: error),
       );
     }
   }
@@ -160,8 +158,7 @@ class StartupController extends StateNotifier<StartupState> {
       if (!_environment.supportsContract(contract.contractVersion)) {
         state = StartupState.incompatible(
           contract,
-          '当前应用支持契约主版本 ${_environment.supportedContractMajor}，'
-          '服务端为 ${contract.contractVersion}。',
+          '当前版本已无法继续使用，请更新应用。',
           update: update,
         );
         return;
@@ -169,8 +166,7 @@ class StartupController extends StateNotifier<StartupState> {
       if (!_environment.supportsMarkdown(contract.markdownContractVersion)) {
         state = StartupState.incompatible(
           contract,
-          '当前应用支持 Markdown v${_environment.supportedMarkdownContractVersion}，'
-          '服务端为 v${contract.markdownContractVersion}。',
+          '当前版本已无法正确显示内容，请更新应用。',
           update: update,
         );
         return;

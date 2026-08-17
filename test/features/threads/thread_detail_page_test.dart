@@ -235,7 +235,7 @@ void main() {
       find.byKey(const Key('test-post-replies-destination')),
       findsNothing,
     );
-    expect(find.text('主题详情'), findsOneWidget);
+    expect(find.text('主题详情'), findsNothing);
   });
 
   testWidgets('楼层只预览前五条回复且合计正文超过 500 字时折叠', (tester) async {
@@ -316,10 +316,10 @@ void main() {
       find.byKey(const Key('thread-detail-reading-app-bar')),
       findsNothing,
     );
-    expect(find.text('主题详情').hitTestable(), findsOneWidget);
+    expect(find.text('主题详情'), findsNothing);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
     await tester.pumpAndSettle();
-    expect(find.text('主题详情').hitTestable(), findsOneWidget);
+    expect(find.text('主题详情'), findsNothing);
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
     await expectLater(
       find.byKey(visualKey),
@@ -328,7 +328,7 @@ void main() {
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 120));
     await tester.pumpAndSettle();
-    expect(find.text('主题详情').hitTestable(), findsOneWidget);
+    expect(find.text('主题详情'), findsNothing);
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
   });
 
@@ -352,7 +352,13 @@ void main() {
     );
     expect(find.text('主线正文'), findsOneWidget);
     expect(tester.getTopLeft(find.byType(AppBar)).dy, 0);
-    expect(tester.getTopLeft(find.text('主题详情')).dy, greaterThan(0));
+    expect(find.text('主题详情'), findsNothing);
+    final threadTitle = find.text('星海旅团');
+    expect(
+      tester.getTopLeft(threadTitle).dy,
+      greaterThan(tester.getBottomLeft(find.byType(AppBar)).dy),
+    );
+    expect(tester.getCenter(threadTitle).dx, closeTo(180, 1));
 
     await expectLater(
       find.byKey(visualKey),
@@ -630,7 +636,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('楼层暂时无法加载。'), findsOneWidget);
-    expect(find.text('请求 ID：floors-request-id'), findsOneWidget);
+    expect(find.text('问题编号：floors-request-id'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-detail-transient-retry')),
       findsOneWidget,
@@ -652,7 +658,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('加载更多楼层失败。'), findsOneWidget);
-    expect(find.text('请求 ID：load-more-request-id'), findsOneWidget);
+    expect(find.text('问题编号：load-more-request-id'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-detail-transient-retry')),
       findsOneWidget,
@@ -722,7 +728,7 @@ void main() {
 
     expect(find.text('这个主题暂时不可见'), findsOneWidget);
     expect(find.textContaining('删除、设为私密'), findsOneWidget);
-    expect(find.text('请求 ID：missing-request-id'), findsOneWidget);
+    expect(find.text('问题编号：missing-request-id'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -833,7 +839,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('home-thread-thread-1')));
     await tester.pumpAndSettle();
-    expect(find.text('主题详情'), findsOneWidget);
+    expect(find.text('主题详情'), findsNothing);
     expect(find.text('星海旅团'), findsOneWidget);
 
     final handled = await tester.binding.handlePopRoute();
@@ -875,7 +881,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('主题详情'), findsOneWidget);
+    expect(find.text('主题详情'), findsNothing);
     final handled = await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 

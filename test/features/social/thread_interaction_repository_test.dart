@@ -61,7 +61,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'message',
-          contains('重新加载确认'),
+          contains('点赞失败'),
         ),
       ),
     );

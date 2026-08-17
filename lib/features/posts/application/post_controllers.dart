@@ -55,7 +55,7 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
         phase: PostDiscussionPhase.failed,
         order: state.order,
         authorId: state.authorId,
-        failure: _asFailure(error, '楼中楼讨论没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '楼中楼讨论加载失败，请稍后重试。'),
       );
     }
   }
@@ -134,7 +134,7 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
       );
     } on Object catch (error) {
       if (!_isCurrent(epoch)) return;
-      final failure = _asFailure(error, '更多回复没有加载完成，请稍后重试。');
+      final failure = _asFailure(error, '更多回复加载失败，请稍后重试。');
       if (failure.isInvalidCursor) {
         await load();
         return;
@@ -382,7 +382,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       if (!mounted) return;
       state = state.copyWith(
         isSubmitting: false,
-        failure: _asFailure(error, '云端最新版没有读取完成；当前编辑内容仍已保留。'),
+        failure: _asFailure(error, '读取最新版失败；当前编辑内容仍已保留。'),
       );
     }
   }

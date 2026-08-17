@@ -1,6 +1,9 @@
+// ignore_for_file: experimental_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
 void main() {
@@ -69,5 +72,35 @@ void main() {
       url: 'https://cdn.example.com/sticker.png',
     );
     expect(emitted.last, contains('wenyousite-sticker:v1:'));
+  });
+
+  testWidgets('粘贴合法站内链接会替换选区为原子传送门', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '替换这段文字',
+      onMarkdownChanged: emitted.add,
+      readClipboardText: () async =>
+          'https://wenyou.site/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd',
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 6),
+      ChangeSource.local,
+    );
+    expect(await session.controller.clipboardPaste(), isTrue);
+    expect(
+      emitted.last,
+      '[替换这段文字](/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd)',
+    );
+    expect(
+      session.controller.document.toDelta().operations.any(
+        (operation) =>
+            operation.data is Map &&
+            (operation.data as Map).containsKey(
+              MarkdownDeltaCodec.internalReferenceEmbed,
+            ),
+      ),
+      isTrue,
+    );
   });
 }

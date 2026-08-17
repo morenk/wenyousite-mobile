@@ -14,7 +14,7 @@ enum HomeFeedSort {
 enum HomeThreadStatusFilter {
   all(null, '全部状态'),
   recruiting('RECRUITING', '招募中'),
-  closed('CLOSED', '已关闭'),
+  closed('CLOSED', '已停招'),
   finished('FINISHED', '已完结');
 
   const HomeThreadStatusFilter(this.wireValue, this.label);

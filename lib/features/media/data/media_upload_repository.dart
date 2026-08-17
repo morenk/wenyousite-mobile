@@ -76,13 +76,13 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
       );
       final upload = uploadEnvelope.data?.data;
       if (upload == null) {
-        throw const ApiFailure(userMessage: '服务端没有返回图片上传地址，请重试。');
+        throw const ApiFailure(userMessage: '图片上传失败，请重试。');
       }
       final uploadUri = Uri.tryParse(upload.uploadUrl);
       if (uploadUri == null ||
           !uploadUri.hasScheme ||
           (uploadUri.scheme != 'https' && uploadUri.scheme != 'http')) {
-        throw const ApiFailure(userMessage: '服务端返回了不安全的图片上传地址。');
+        throw const ApiFailure(userMessage: '图片上传地址无法安全使用。');
       }
 
       try {
@@ -135,7 +135,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
       );
       final confirmation = confirmEnvelope.data?.data;
       if (confirmation == null) {
-        throw const ApiFailure(userMessage: '图片上传确认结果不完整，请重试。');
+        throw const ApiFailure(userMessage: '图片上传失败，请重试。');
       }
       final confirmed = confirmation.media;
       if (confirmed.status == MediaResponseDtoStatusEnum.COMPLETED) {
@@ -160,7 +160,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
         );
         final media = statusEnvelope.data?.data;
         if (media == null) {
-          throw const ApiFailure(userMessage: '图片处理状态返回不完整，请重试。');
+          throw const ApiFailure(userMessage: '图片处理失败，请重试。');
         }
         if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
           return _completedImage(media);

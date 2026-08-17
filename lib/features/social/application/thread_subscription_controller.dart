@@ -45,7 +45,7 @@ class ThreadSubscriptionController
       if (!mounted || epoch != _loadEpoch) return;
       state = ThreadSubscriptionState(
         phase: ThreadSubscriptionPhase.failed,
-        failure: _asFailure(error, '订阅状态没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '订阅状态加载失败，请稍后重试。'),
       );
     }
   }
@@ -74,7 +74,7 @@ class ThreadSubscriptionController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      _failAction(error, '官方更新订阅没有完成，请稍后重试。');
+      _failAction(error, '官方更新订阅失败，请稍后重试。');
       return false;
     }
   }
@@ -116,7 +116,7 @@ class ThreadSubscriptionController
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      _failAction(error, '玩家发言订阅没有完成，请稍后重试。');
+      _failAction(error, '玩家发言订阅失败，请稍后重试。');
       return false;
     }
   }

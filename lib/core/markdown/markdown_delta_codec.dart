@@ -1,6 +1,7 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 enum MarkdownCodecIssueKind {
   unknownProtocol,
@@ -52,6 +53,7 @@ class MarkdownDeltaCodec {
   static const diceEmbed = 'wenyou_dice';
   static const stickerEmbed = 'wenyou_sticker';
   static const imageEmbed = 'wenyou_image';
+  static const internalReferenceEmbed = 'wenyou_internal_reference';
   static const compatibilityEmbed = 'wenyou_compatibility';
   static const horizontalRuleEmbed = 'wenyou_horizontal_rule';
 
@@ -85,6 +87,9 @@ class MarkdownDeltaCodec {
   );
   static final _image = RegExp(
     r'''^!\[([^\]\n]*)\]\(\s*([^\s)]+)(?:\s+["']([^"'\n]*)["'])?\s*\)''',
+  );
+  static final _internalReferenceMarkdown = RegExp(
+    r'^\[([^\]\r\n]+)\]\(([^)\r\n]+)\)',
   );
   static final _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
   static final _mentionWord = RegExp(r'[a-zA-Z0-9_\u4e00-\u9fff]');
@@ -130,7 +135,18 @@ class MarkdownDeltaCodec {
           _decodeInlineLine(line, delta, issues, diceNodeIds);
         } else {
           for (final span in richLine.spans) {
-            delta.insert(span.text, span.attributes);
+            final portal = span.internalReference;
+            if (portal == null) {
+              delta.insert(span.text, span.attributes);
+            } else {
+              delta.insert({
+                internalReferenceEmbed: {
+                  'version': 1,
+                  'label': portal.label,
+                  'location': portal.reference.location.toString(),
+                },
+              });
+            }
           }
           richLineAttributes = richLine.lineAttributes;
         }
@@ -279,6 +295,23 @@ class MarkdownDeltaCodec {
         continue;
       }
 
+      final portalMatch = _internalReferenceMarkdown.firstMatch(remaining);
+      if (portalMatch != null) {
+        final reference = parseInternalReference(portalMatch.group(2)!);
+        if (reference != null) {
+          flushText();
+          delta.insert({
+            internalReferenceEmbed: {
+              'version': 1,
+              'label': portalMatch.group(1)!,
+              'location': reference.location.toString(),
+            },
+          });
+          index += portalMatch.group(0)!.length;
+          continue;
+        }
+      }
+
       if (_isAllPlayersAt(line, index)) {
         flushText();
         delta.insert({
@@ -337,7 +370,7 @@ class MarkdownDeltaCodec {
                 ? MarkdownCodecIssueKind.invalidDice
                 : MarkdownCodecIssueKind.unknownProtocol,
             raw,
-            '无法安全编辑这个骰子协议节点',
+            '这个骰子内容暂时无法编辑',
           );
           index += raw.length;
           continue;
@@ -370,7 +403,7 @@ class MarkdownDeltaCodec {
               issues,
               MarkdownCodecIssueKind.invalidSticker,
               raw,
-              '表情资源 ID 不符合协议',
+              '这个表情内容暂时无法编辑',
             );
           } else {
             delta.insert({
@@ -388,7 +421,7 @@ class MarkdownDeltaCodec {
             issues,
             MarkdownCodecIssueKind.unknownProtocol,
             raw,
-            '无法安全编辑这个表情协议版本',
+            '这个表情内容暂时无法编辑',
           );
         } else {
           delta.insert({
@@ -417,7 +450,18 @@ class MarkdownDeltaCodec {
 
     final candidate = Delta();
     for (final span in richLine.spans) {
-      candidate.insert(span.text, span.attributes);
+      final portal = span.internalReference;
+      if (portal == null) {
+        candidate.insert(span.text, span.attributes);
+      } else {
+        candidate.insert({
+          internalReferenceEmbed: {
+            'version': 1,
+            'label': portal.label,
+            'location': portal.reference.location.toString(),
+          },
+        });
+      }
     }
     candidate.insert('\n', {
       ...richLine.lineAttributes,
@@ -504,7 +548,7 @@ class MarkdownDeltaCodec {
           !MarkdownContent.isSafeLink(uri) ||
           RegExp(r'[\s)]').hasMatch(link) ||
           value.contains(']')) {
-        throw const MarkdownCodecException('链接属性不符合安全 Markdown 协议');
+        throw const MarkdownCodecException('这个链接暂时无法安全编辑');
       }
       encoded = '[$encoded]($link)';
     }
@@ -541,7 +585,7 @@ class MarkdownDeltaCodec {
     }
     if (attributes[emptyParagraphAttribute] == true) {
       if (content.isNotEmpty) {
-        throw const MarkdownCodecException('协议空段不能同时包含正文');
+        throw const MarkdownCodecException('这段内容暂时无法安全编辑');
       }
       return '<br />';
     }
@@ -613,7 +657,7 @@ class MarkdownDeltaCodec {
     final type = embed.keys.single;
     final payload = _payload(embed[type], type);
     if (payload['version'] != 1) {
-      throw MarkdownCodecException('$type embed 协议版本不受支持');
+      throw MarkdownCodecException('这类$type内容暂时无法编辑');
     }
     switch (type) {
       case mentionEmbed:
@@ -668,9 +712,20 @@ class MarkdownDeltaCodec {
             (title.contains('"') ||
                 title.contains('\n') ||
                 title.contains('\r'))) {
-          throw const MarkdownCodecException('图片 title 包含协议不支持的字符');
+          throw const MarkdownCodecException('图片说明包含暂不支持的字符');
         }
         output.write('![$alt]($url${title == null ? '' : ' "$title"'})');
+      case internalReferenceEmbed:
+        final label = _plainMarkdownLabel(
+          _requiredString(payload, 'label', type),
+          type,
+        );
+        final rawLocation = _requiredString(payload, 'location', type);
+        final reference = parseInternalReference(rawLocation);
+        if (reference == null) {
+          throw const MarkdownCodecException('站内传送门地址不合法');
+        }
+        output.write('[$label](${reference.location})');
       case compatibilityEmbed:
         output.write(_requiredString(payload, 'raw', type));
       case horizontalRuleEmbed:
@@ -753,10 +808,17 @@ class MarkdownDeltaCodec {
     bool allowAtPrefix = false,
   }) {
     if (value.contains(']') || value.contains('\n') || value.contains('\r')) {
-      throw MarkdownCodecException('$type embed 标签包含协议不支持的字符');
+      throw MarkdownCodecException('这类$type内容包含暂不支持的字符');
     }
     if (!allowAtPrefix && !value.startsWith('@')) {
       throw MarkdownCodecException('$type embed 提及标签必须以 @ 开头');
+    }
+    return value;
+  }
+
+  static String _plainMarkdownLabel(String value, String type) {
+    if (value.contains(']') || value.contains('\n') || value.contains('\r')) {
+      throw MarkdownCodecException('这类$type内容包含暂不支持的字符');
     }
     return value;
   }

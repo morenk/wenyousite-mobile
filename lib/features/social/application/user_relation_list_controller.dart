@@ -44,7 +44,7 @@ class UserRelationListController extends StateNotifier<UserRelationListState> {
       if (!mounted || epoch != _loadEpoch) return;
       state = UserRelationListState(
         phase: UserRelationListPhase.failed,
-        failure: _asFailure(error, '关系列表没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '关系列表加载失败，请稍后重试。'),
       );
     }
   }
@@ -70,7 +70,7 @@ class UserRelationListController extends StateNotifier<UserRelationListState> {
     } on Object catch (error) {
       if (!mounted) return false;
       state = state.copyWith(
-        actionFailure: _asFailure(error, '取消拉黑没有完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '取消拉黑失败，请稍后重试。'),
         clearPending: true,
       );
       return false;

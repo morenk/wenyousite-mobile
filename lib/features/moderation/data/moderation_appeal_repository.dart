@@ -42,7 +42,7 @@ class ApiModerationAppealRepository implements ModerationAppealRepository {
       );
       final data = response.data?.data;
       if (data == null || data.appealToken.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有返回可用的申诉凭据，请稍后重试。');
+        throw const ApiFailure(userMessage: '申诉登录失败，请稍后重试。');
       }
       return AppealCredential(
         token: data.appealToken,
@@ -64,7 +64,7 @@ class ApiModerationAppealRepository implements ModerationAppealRepository {
       );
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '治理决定响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '治理决定加载失败，请稍后重试。');
       }
       return data.map(_mapDecision).toList(growable: false);
     } on DioException catch (error) {
@@ -93,7 +93,7 @@ class ApiModerationAppealRepository implements ModerationAppealRepository {
           data.id.trim().isEmpty ||
           data.decision.id != decisionId ||
           data.appellant.id.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '申诉结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '申诉失败，请重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error, featureMessages: _featureMessages);

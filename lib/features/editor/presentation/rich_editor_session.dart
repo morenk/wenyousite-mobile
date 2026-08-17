@@ -1,8 +1,12 @@
+// ignore_for_file: experimental_member_use
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
 
@@ -15,9 +19,10 @@ class RichEditorSession extends ChangeNotifier {
     required String initialMarkdown,
     required this.onMarkdownChanged,
     this.codecDebounce = const Duration(milliseconds: 120),
+    Future<String?> Function()? readClipboardText,
     RichEditorSelectionPlacement initialSelection =
         RichEditorSelectionPlacement.start,
-  }) {
+  }) : _readClipboardText = readClipboardText ?? _readSystemClipboardText {
     final decoded = MarkdownDeltaCodec.decode(initialMarkdown);
     _issues = decoded.issues;
     _lastMarkdown = initialMarkdown;
@@ -25,12 +30,18 @@ class RichEditorSession extends ChangeNotifier {
     controller = QuillController(
       document: document,
       selection: _selectionFor(document, initialSelection, null),
+      config: QuillControllerConfig(
+        clipboardConfig: QuillClipboardConfig(
+          onClipboardPaste: _pasteInternalReference,
+        ),
+      ),
     )..addListener(_onDocumentChanged);
     focusNode.addListener(_onFocusChanged);
   }
 
   final Duration codecDebounce;
   final ValueChanged<String> onMarkdownChanged;
+  final Future<String?> Function() _readClipboardText;
 
   late final QuillController controller;
   final FocusNode focusNode = FocusNode();
@@ -153,6 +164,36 @@ class RichEditorSession extends ChangeNotifier {
       }),
     );
     flush();
+  }
+
+  Future<bool> _pasteInternalReference() async {
+    final clipboardText = await _readClipboardText();
+    final selection = controller.selection;
+    final selectedText = selection.isCollapsed
+        ? ''
+        : controller.document.getPlainText(
+            selection.start,
+            selection.end - selection.start,
+          );
+    final paste = resolveInternalReferencePaste(
+      clipboardText: clipboardText ?? '',
+      selectedText: selectedText,
+    );
+    if (paste == null) return false;
+    _replaceSelectionWithInlineEmbed(
+      Embeddable(MarkdownDeltaCodec.internalReferenceEmbed, {
+        'version': 1,
+        'label': paste.label,
+        'location': paste.reference.location.toString(),
+      }),
+    );
+    flush();
+    return true;
+  }
+
+  static Future<String?> _readSystemClipboardText() async {
+    final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+    return clipboard?.text;
   }
 
   void _replaceSelectionWithBlockEmbed(Embeddable embed) {

@@ -28,7 +28,7 @@ class ApiCredentialSecurityRepository implements CredentialSecurityRepository {
         ),
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '密码修改结果不完整，请重新登录确认。');
+        throw const ApiFailure(userMessage: '密码修改失败，请重新登录确认。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -50,7 +50,7 @@ class ApiCredentialSecurityRepository implements CredentialSecurityRepository {
         ),
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '验证码发送结果不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '验证码发送失败，请稍后重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -71,7 +71,7 @@ class ApiCredentialSecurityRepository implements CredentialSecurityRepository {
         ),
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '邮箱更换结果不完整，请重新登录确认。');
+        throw const ApiFailure(userMessage: '邮箱更换失败，请重新登录确认。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

@@ -21,14 +21,34 @@ void main() {
     await tester.pumpWidget(_userApp(_FakePublicUserRepository()));
     await tester.pumpAndSettle();
 
-    expect(find.text('温柔测试员'), findsOneWidget);
-    expect(find.text('Lv.4'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('public-user-profile-header')),
+        matching: find.text('温柔测试员'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('public-user-profile-header')),
+        matching: find.text('Lv.4'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('home-thread-card-thread-created')),
+      findsOneWidget,
+    );
     expect(find.text('一起写下温柔的故事。'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     expect(find.text('18L'), findsOneWidget);
     expect(find.text('已关注'), findsOneWidget);
     expect(find.text('关注了你'), findsOneWidget);
+    final coverRect = tester.getRect(find.bySemanticsLabel('温柔测试员 的主页背景图'));
+    final avatarRect = tester.getRect(find.bySemanticsLabel('温柔测试员 的头像'));
+    expect(avatarRect.size, const Size.square(72));
+    expect(avatarRect.top, closeTo(coverRect.bottom - 36, 0.01));
   });
 
   testWidgets('公开用户页失败后可重试恢复', (tester) async {
@@ -36,12 +56,18 @@ void main() {
     await tester.pumpWidget(_userApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('用户资料没有加载完成'), findsOneWidget);
-    expect(find.text('请求 ID：user-request-id'), findsOneWidget);
+    expect(find.text('用户资料加载失败'), findsOneWidget);
+    expect(find.text('问题编号：user-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('public-user-retry')));
     await tester.pumpAndSettle();
 
-    expect(find.text('温柔测试员'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('public-user-profile-header')),
+        matching: find.text('温柔测试员'),
+      ),
+      findsOneWidget,
+    );
     expect(repository.calls, 2);
   });
 
@@ -157,9 +183,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.byKey(const Key('public-user-open-direct-message')),
+      300,
+      scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('public-user-open-direct-message')));
     await tester.pumpAndSettle();
     expect(find.text('私聊对象=user-1'), findsOneWidget);
@@ -220,7 +249,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('温柔测试员'), findsOneWidget);
-    expect(find.text('创建的主题没有加载完成'), findsOneWidget);
+    expect(find.text('创建的主题加载失败'), findsOneWidget);
     await tester.ensureVisible(
       find.byKey(const Key('public-user-created-retry')),
     );
@@ -491,7 +520,7 @@ class _FakePublicUserRepository implements PublicUserRepository {
     createdCalls += 1;
     if (failFirstCreated && createdCalls == 1) {
       throw const ApiFailure(
-        userMessage: '创建的主题没有加载完成，请稍后重试。',
+        userMessage: '创建的主题加载失败，请稍后重试。',
         requestId: 'created-request-id',
       );
     }

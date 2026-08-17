@@ -2,7 +2,7 @@
 
 温油站的 Flutter 原生客户端。首发 Android 8+（API 26），手机竖屏优先；共享 Dart 代码保持 iOS 兼容，但当前不做 iOS 验收。
 
-当前版本：`0.3.0-dev.78+84`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
+当前版本：`0.3.0-dev.79+85`。默认连接公网开发 API `https://wenyou.site/api/v1`，请只使用专用测试账号。
 
 ## 技术基线
 
@@ -13,10 +13,10 @@
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
 - Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v3
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
-- wenyousite-foundation v3.1.0：跨端语义 Token、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
+- wenyousite-foundation v5.1.0：跨端语义 Token、元素系统、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层
 
-产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美只以锁定版本的 [`wenyousite-foundation`](https://github.com/morenk/wenyousite-foundation/tree/v3.1.0) 为事实源；协作约束见 [`AGENTS.md`](AGENTS.md)。
+产品与模块事实从 [`docs/README.md`](docs/README.md) 开始阅读；共享审美以 Foundation 远端最新正式发布 Tag 为准，构建锁定当前 [`v5.1.0`](https://github.com/morenk/wenyousite-foundation/tree/v5.1.0)；每次 Foundation 相关实现前必须先检查远端发布并在落后时升级，完整协作约束见 [`AGENTS.md`](AGENTS.md)。
 
 ## 本地环境
 

@@ -147,7 +147,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                     message: state.failure!.userMessage,
                     detail: state.failure!.requestId == null
                         ? null
-                        : '请求 ID：${state.failure!.requestId}',
+                        : '问题编号：${state.failure!.requestId}',
                     tone: WenyouStatusTone.error,
                     action: state.failure!.businessCode == 40002
                         ? TextButton(
@@ -423,9 +423,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('恢复未完成的动态？'),
-        content: Text(
-          '已在本机保存 ${_formatDraftTime(draft.updatedAt)} 的草稿，包含文字和图片顺序。',
-        ),
+        content: Text('已在这台设备上保存 ${_formatDraftTime(draft.updatedAt)} 的草稿。'),
         actions: [
           TextButton(
             key: const Key('moment-draft-discard'),
@@ -666,7 +664,7 @@ class _MomentImagesEditor extends StatelessWidget {
               message: failure.userMessage,
               detail: failure.requestId == null
                   ? null
-                  : '请求 ID：${failure.requestId}',
+                  : '问题编号：${failure.requestId}',
               tone: WenyouStatusTone.error,
               action: failure.canRetry
                   ? TextButton(
@@ -760,11 +758,11 @@ class _ComposeFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.statusOffline,
-          title: '动态没有加载完成',
+          title: '动态加载失败',
           message: failure?.userMessage ?? '请稍后重试。',
           detail: failure?.requestId == null
               ? null
-              : '请求 ID：${failure!.requestId}',
+              : '问题编号：${failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('moment-compose-retry'),
             onPressed: onRetry,

@@ -22,7 +22,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('发现主题'), findsNothing);
-    expect(find.textContaining('角色扮演'), findsOneWidget);
+    expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('向星海出发'), findsOneWidget);
     expect(find.text('#太空歌剧'), findsOneWidget);
@@ -57,9 +57,7 @@ void main() {
     );
     expect(find.byKey(const Key('home-thread-cover-thread-1')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('home-category-menu')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(PopupMenuItem<String>, '角色扮演'));
+    await tester.tap(find.byKey(const Key('home-category-RPG')));
     await tester.pumpAndSettle();
     expect(repository.lastQuery?.categorySlug, 'RPG');
 
@@ -78,8 +76,8 @@ void main() {
     await tester.pumpWidget(_homeApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('主题列表没有加载完成'), findsOneWidget);
-    expect(find.text('请求 ID：home-request-id'), findsOneWidget);
+    expect(find.text('主题列表加载失败'), findsOneWidget);
+    expect(find.text('问题编号：home-request-id'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('home-retry')));
     await tester.pumpAndSettle();

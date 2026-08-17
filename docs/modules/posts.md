@@ -46,7 +46,7 @@
 
 ## 10. 跨模块约束
 
-帖子输入复用 editor 的 Markdown ↔ Delta Codec、协议 embed 和五槽位正文草稿；图片上传任务复用 `media/application` 的共享控制器；服务端生成骰子结果。主题详情提供子贴、capability、楼层和公开举报上下文，posts 不直接读取 threads 页面状态；社区举报的原因、详情、邮箱验证恢复与重复待处理收敛由 reports 管理。视觉只使用 Foundation v3.1.0 Token、语义图标与共享组件，连续楼层/回复不使用逐条装饰面板；楼层与独立讨论复用核心头像按钮的安全图片降级、48dp 命中区和“查看个人主页”语义。
+帖子输入复用 editor 的 Markdown ↔ Delta Codec、协议 embed 和五槽位正文草稿；图片上传任务复用 `media/application` 的共享控制器；服务端生成骰子结果。主题详情提供子贴、capability、楼层和公开举报上下文，posts 不直接读取 threads 页面状态；社区举报的原因、详情、邮箱验证恢复与重复待处理收敛由 reports 管理。视觉只使用 Foundation v5.1.0 Token、语义图标与共享组件，连续楼层/回复不使用逐条装饰面板；楼层与独立讨论复用核心头像按钮的安全图片降级、48dp 命中区和“查看个人主页”语义。
 
 ## 11. 测试场景与验收条件
 
@@ -74,8 +74,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`；Foundation `v3.1.0`（`d60df368`）。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`；Foundation `v5.1.0`（`f5eb3aa`）。
 
 ## 14. 相关代码与架构文档
 
-帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)。
+帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v5.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v5.1.0/docs/platforms/mobile.md)。

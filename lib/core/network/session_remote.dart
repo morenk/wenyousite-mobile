@@ -35,7 +35,7 @@ class ApiSessionRemote implements SessionRemote {
           data.accessToken.isEmpty ||
           nextRefreshToken == null ||
           nextRefreshToken.isEmpty) {
-        throw const ApiFailure(userMessage: '服务端没有返回完整会话，请重新登录。');
+        throw const ApiFailure(userMessage: '登录状态已失效，请重新登录。');
       }
       return SessionTokens(
         accessToken: data.accessToken,

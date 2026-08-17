@@ -39,7 +39,7 @@ void openInternalWenyouLink(BuildContext context, Uri uri) {
   if (location == null || !_isSupportedWenyouPath(location.path)) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('这个站内目标暂时无法在移动端打开。')));
+    ).showSnackBar(const SnackBar(content: Text('这个站内目标暂时无法打开。')));
     return;
   }
   context.push(location.toString());

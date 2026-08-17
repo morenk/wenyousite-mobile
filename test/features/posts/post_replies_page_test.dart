@@ -508,7 +508,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('图片处理失败'), findsOneWidget);
-    expect(find.text('请求 ID：request-one'), findsOneWidget);
+    expect(find.text('问题编号：request-one'), findsOneWidget);
     expect(find.byKey(const Key('post-composer-retry-upload')), findsOneWidget);
     var editor = tester.widget<QuillEditor>(
       find.byKey(const Key('post-composer-body')),

@@ -15,19 +15,19 @@ class ApiUserRelationRepository implements UserRelationRepository {
 
   @override
   Future<void> follow(String userId) =>
-      _run(() => _api.usersFollowFollow(id: userId), '关注结果返回不完整，请重新加载确认。');
+      _run(() => _api.usersFollowFollow(id: userId), '关注失败，请重新加载。');
 
   @override
   Future<void> unfollow(String userId) =>
-      _run(() => _api.usersFollowUnfollow(id: userId), '取消关注结果返回不完整，请重新加载确认。');
+      _run(() => _api.usersFollowUnfollow(id: userId), '取消关注失败，请重新加载。');
 
   @override
   Future<void> block(String userId) =>
-      _run(() => _api.usersFollowBlock(id: userId), '拉黑结果返回不完整，请重新加载确认。');
+      _run(() => _api.usersFollowBlock(id: userId), '拉黑失败，请重新加载。');
 
   @override
   Future<void> unblock(String userId) =>
-      _run(() => _api.usersFollowUnblock(id: userId), '取消拉黑结果返回不完整，请重新加载确认。');
+      _run(() => _api.usersFollowUnblock(id: userId), '取消拉黑失败，请重新加载。');
 
   Future<void> _run(
     Future<Response<Object?>> Function() request,

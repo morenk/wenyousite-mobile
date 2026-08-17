@@ -54,4 +54,29 @@ void main() {
       );
     }
   });
+
+  test('完整消费编辑器粘贴黄金用例', () {
+    final cases = fixture['editorPasteCases']! as List<Object?>;
+    for (final rawCase in cases) {
+      final testCase = rawCase! as Map<String, Object?>;
+      final paste = resolveInternalReferencePaste(
+        clipboardText: testCase['clipboardText']! as String,
+        selectedText: testCase['selectedText']! as String,
+      );
+      final handled = testCase['handled']! as bool;
+      if (!handled) {
+        expect(paste, isNull, reason: testCase['id']! as String);
+        continue;
+      }
+      expect(paste, isNotNull, reason: testCase['id']! as String);
+      expect(
+        paste!.reference.kind.name.toUpperCase(),
+        testCase['kind'],
+        reason: testCase['id']! as String,
+      );
+      expect(paste.reference.location.toString(), testCase['canonical']);
+      expect(paste.label, testCase['label']);
+      expect(paste.serialized, testCase['serialized']);
+    }
+  });
 }

@@ -72,11 +72,11 @@ class _WalletSummaryPanel extends StatelessWidget {
                 ? const _WalletLoading(label: '正在读取温油余额…')
                 : WenyouEmptyState(
                     icon: WenyouIconIds.statusOffline,
-                    title: '钱包余额没有加载完成',
+                    title: '钱包余额加载失败',
                     message: state.summaryFailure?.userMessage ?? '请稍后重试。',
                     detail: state.summaryFailure?.requestId == null
                         ? null
-                        : '请求 ID：${state.summaryFailure!.requestId}',
+                        : '问题编号：${state.summaryFailure!.requestId}',
                     action: OutlinedButton.icon(
                       key: const Key('wallet-summary-retry'),
                       onPressed: onRetry,
@@ -173,7 +173,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                     message: '余额刷新失败，当前仍显示上次结果。',
                     detail: state.summaryFailure!.requestId == null
                         ? null
-                        : '请求 ID：${state.summaryFailure!.requestId}',
+                        : '问题编号：${state.summaryFailure!.requestId}',
                     action: TextButton(
                       onPressed: onRetry,
                       child: const Text('重新刷新'),
@@ -239,11 +239,11 @@ class _WalletTransactionsPanel extends StatelessWidget {
               state.transactionsFailure != null)
             WenyouEmptyState(
               icon: WenyouIconIds.statusOffline,
-              title: '温油流水没有加载完成',
+              title: '温油流水加载失败',
               message: state.transactionsFailure!.userMessage,
               detail: state.transactionsFailure!.requestId == null
                   ? null
-                  : '请求 ID：${state.transactionsFailure!.requestId}',
+                  : '问题编号：${state.transactionsFailure!.requestId}',
               action: OutlinedButton.icon(
                 key: const Key('wallet-transactions-retry'),
                 onPressed: onRetry,
@@ -269,7 +269,7 @@ class _WalletTransactionsPanel extends StatelessWidget {
                 message: state.loadMoreFailure!.userMessage,
                 detail: state.loadMoreFailure!.requestId == null
                     ? null
-                    : '请求 ID：${state.loadMoreFailure!.requestId}',
+                    : '问题编号：${state.loadMoreFailure!.requestId}',
                 action: TextButton(
                   key: const Key('wallet-load-more-retry'),
                   onPressed: onLoadMore,

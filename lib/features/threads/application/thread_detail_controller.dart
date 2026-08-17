@@ -121,7 +121,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       if (!_isCurrent(epoch)) return;
       state = state.copyWith(
         phase: ThreadDetailPhase.failed,
-        failure: _asFailure(error, '主题详情没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '主题详情加载失败，请稍后重试。'),
       );
     }
   }
@@ -334,7 +334,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;
       }
-      final failure = _asFailure(error, '楼层没有加载完成，请稍后重试。');
+      final failure = _asFailure(error, '楼层加载失败，请稍后重试。');
       if (_isRestricted(failure)) {
         _hideRestrictedContent(failure);
         return;

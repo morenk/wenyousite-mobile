@@ -62,4 +62,4 @@
 
 ## 14. 相关代码与架构文档
 
-端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v3.1.0](https://github.com/morenk/wenyousite-foundation/tree/v3.1.0)。
+端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v5.1.0](https://github.com/morenk/wenyousite-foundation/tree/v5.1.0)。

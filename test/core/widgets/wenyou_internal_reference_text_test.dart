@@ -1,8 +1,9 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
 void main() {
@@ -36,14 +37,32 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('参见 设定 A。', findRichText: true), findsOneWidget);
+    expect(find.text('参见 '), findsOneWidget);
+    expect(find.text('设定 A'), findsOneWidget);
+    expect(find.text('。'), findsOneWidget);
     expect(find.byType(SelectionArea), findsOneWidget);
-    final text = tester.widget<Text>(find.byType(Text));
-    final rootSpan = text.textSpan! as TextSpan;
-    final portal = rootSpan.children!.whereType<TextSpan>().singleWhere(
-      (span) => span.text == '设定 A',
+    expect(find.bySemanticsLabel(RegExp('站内传送门：设定 A')), findsOneWidget);
+    final portal = find.byKey(const ValueKey('wenyou-internal-reference-0'));
+    expect(tester.getSize(portal).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(portal).height, greaterThanOrEqualTo(48));
+    final icon = tester.widget<WenyouIcon>(
+      find.descendant(of: portal, matching: find.byType(WenyouIcon)),
     );
-    (portal.recognizer! as TapGestureRecognizer).onTap!();
+    expect(icon.semanticId, WenyouIconIds.contentInternalReference);
+    final label = tester.widget<Text>(find.text('设定 A'));
+    expect(label.style?.fontWeight, FontWeight.w600);
+    expect(label.style?.decoration, TextDecoration.none);
+    final surface = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('wenyou-internal-reference-surface-0')),
+    );
+    expect(
+      (surface.decoration! as BoxDecoration).color,
+      tester.element(portal).wenyouTokens.accentedBackground,
+    );
+    final semantics = tester.getSemantics(portal);
+    expect(semantics.getSemanticsData().flagsCollection.isLink, isTrue);
+
+    await tester.tap(portal);
     await tester.pumpAndSettle();
 
     expect(
@@ -63,14 +82,30 @@ void main() {
       ),
     );
 
-    expect(find.text(source, findRichText: true), findsOneWidget);
-    final text = tester.widget<Text>(find.byType(Text));
-    final rootSpan = text.textSpan! as TextSpan;
-    expect(
-      rootSpan.children!.whereType<TextSpan>().every(
-        (span) => span.recognizer == null,
+    expect(find.text(source), findsOneWidget);
+    expect(find.byType(WenyouInternalReferenceChip), findsNothing);
+  });
+
+  testWidgets('长传送门在窄屏换行且不截断', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: SizedBox(
+            width: 160,
+            child: WenyouInternalReferenceText(
+              content: '[这是一个不会被省略的长传送门名称](/threads/cmsewdo0h000x7qv6aa77ll1v)',
+            ),
+          ),
+        ),
       ),
-      isTrue,
     );
+
+    final portal = find.byKey(const ValueKey('wenyou-internal-reference-0'));
+    expect(tester.getSize(portal).width, lessThanOrEqualTo(160));
+    final label = tester.widget<Text>(find.text('这是一个不会被省略的长传送门名称'));
+    expect(label.maxLines, isNull);
+    expect(label.overflow, isNull);
+    expect(tester.takeException(), isNull);
   });
 }

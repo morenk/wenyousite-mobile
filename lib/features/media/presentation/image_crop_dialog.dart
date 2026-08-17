@@ -217,7 +217,7 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
     return _CropDialogFrame(
       key: const Key('profile-cover-crop-dialog'),
       title: '调整主页背景取景',
-      description: '同一张原图需要分别确认电脑端和移动端的展示范围。',
+      description: '请分别确认网页端和手机端的展示范围。',
       processing: _processing,
       error: _error,
       onCancel: () => Navigator.pop(context),
@@ -232,11 +232,11 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
                   segments: const [
                     ButtonSegment(
                       value: _CoverSurface.web,
-                      label: Text('电脑端 3:1'),
+                      label: Text('网页端 3:1'),
                     ),
                     ButtonSegment(
                       value: _CoverSurface.mobile,
-                      label: Text('移动端 2:1'),
+                      label: Text('手机端 2:1'),
                     ),
                   ],
                   selected: {_surface},
@@ -254,8 +254,8 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
                 SizedBox(height: context.wenyouTokens.space8),
                 Text(
                   _surface == _CoverSurface.web
-                      ? '电脑端会生成 1920 × 640 图片'
-                      : '移动端会生成 1600 × 800 图片',
+                      ? '网页端会生成 1920 × 640 图片'
+                      : '手机端会生成 1600 × 800 图片',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

@@ -42,7 +42,7 @@ class ReportController extends StateNotifier<ReportState> {
       state = ReportState(
         failure: error is ApiFailure
             ? error
-            : ApiFailure(userMessage: '举报没有提交完成，请重试。', cause: error),
+            : ApiFailure(userMessage: '举报提交失败，请重试。', cause: error),
       );
       return null;
     }

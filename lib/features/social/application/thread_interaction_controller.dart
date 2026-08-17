@@ -42,7 +42,7 @@ class ThreadInteractionController
         likeCount: state.likeCount,
         isBookmarked: state.isBookmarked,
         bookmarkId: state.bookmarkId,
-        failure: _asFailure(error, '点赞操作没有完成，请稍后重试。'),
+        failure: _asFailure(error, '点赞失败，请稍后重试。'),
       );
       return false;
     }
@@ -87,7 +87,7 @@ class ThreadInteractionController
         likeCount: state.likeCount,
         isBookmarked: state.isBookmarked,
         bookmarkId: state.bookmarkId,
-        failure: _asFailure(error, '收藏操作没有完成，请稍后重试。'),
+        failure: _asFailure(error, '收藏失败，请稍后重试。'),
       );
       return false;
     }

@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 enum PublicUserContentTab {
@@ -12,16 +13,7 @@ enum PublicUserContentTab {
   final String description;
 }
 
-enum PublicUserThreadStatus {
-  recruiting('招募中'),
-  closed('已关闭'),
-  finished('已完结'),
-  unknown('状态未知');
-
-  const PublicUserThreadStatus(this.label);
-
-  final String label;
-}
+typedef PublicUserThreadStatus = HomeThreadStatus;
 
 class PublicUserProfileModel {
   const PublicUserProfileModel({
@@ -88,31 +80,7 @@ class PublicUserActivitySummary {
   final int? replyCount;
 }
 
-class PublicUserThreadModel {
-  const PublicUserThreadModel({
-    required this.id,
-    required this.title,
-    required this.status,
-    required this.isPrivate,
-    required this.ownerName,
-    required this.ownerLevel,
-    required this.createdAt,
-    required this.memberCount,
-    required this.postCount,
-    this.categorySlug,
-  });
-
-  final String id;
-  final String title;
-  final String? categorySlug;
-  final PublicUserThreadStatus status;
-  final bool isPrivate;
-  final String ownerName;
-  final int ownerLevel;
-  final DateTime createdAt;
-  final int memberCount;
-  final int postCount;
-}
+typedef PublicUserThreadModel = ThreadFeedCardModel;
 
 class PublicUserReplyModel {
   const PublicUserReplyModel({

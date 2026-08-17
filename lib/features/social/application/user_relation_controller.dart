@@ -99,7 +99,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
   }
 
   ApiFailure _asFailure(Object error) {
-    return mapApplicationFailure(error, '关系操作没有完成，请稍后重试。');
+    return mapApplicationFailure(error, '关系操作失败，请稍后重试。');
   }
 }
 

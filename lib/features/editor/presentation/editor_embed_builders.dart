@@ -3,9 +3,12 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
 List<EmbedBuilder> wenyouEditorEmbedBuilders() => const [
+  _InternalReferenceEmbedBuilder(),
   _MentionEmbedBuilder(),
   _DiceEmbedBuilder(),
   _StickerEmbedBuilder(),
@@ -13,6 +16,40 @@ List<EmbedBuilder> wenyouEditorEmbedBuilders() => const [
   _CompatibilityEmbedBuilder(),
   _HorizontalRuleEmbedBuilder(),
 ];
+
+class _InternalReferenceEmbedBuilder extends EmbedBuilder {
+  const _InternalReferenceEmbedBuilder();
+
+  @override
+  String get key => MarkdownDeltaCodec.internalReferenceEmbed;
+
+  @override
+  bool get expanded => false;
+
+  @override
+  String toPlainText(Embed node) {
+    final data = node.value.data;
+    return data is Map
+        ? data['label']?.toString() ?? internalReferenceDefaultLabel
+        : internalReferenceDefaultLabel;
+  }
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) {
+    final label =
+        _payload(embedContext)?['label']?.toString() ??
+        internalReferenceDefaultLabel;
+    return Semantics(
+      key: const Key('editor-internal-reference'),
+      label: '站内传送门：$label',
+      excludeSemantics: true,
+      child: WenyouInternalReferenceSurface(
+        label: label,
+        style: embedContext.textStyle,
+      ),
+    );
+  }
+}
 
 Map<String, dynamic>? _payload(EmbedContext context) {
   final data = context.node.value.data;
@@ -142,7 +179,7 @@ class _ImageEmbedBuilder extends EmbedBuilder {
         ? '查看正文图片原图'
         : '查看正文图片原图：$alt';
     if (url == null) {
-      return const _UnavailableImage(message: '图片节点不完整');
+      return const _UnavailableImage(message: '图片加载失败');
     }
     return Semantics(
       button: true,
@@ -191,7 +228,7 @@ class _CompatibilityEmbedBuilder extends EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     return const Tooltip(
-      message: '此节点来自未知或损坏协议，保存时会保留原文',
+      message: '这段内容暂时无法编辑，保存时会原样保留',
       child: _AtomicNode(
         icon: WenyouIconIds.actionLock,
         label: '只读兼容内容',

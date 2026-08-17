@@ -26,7 +26,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
       final drafts = draftsResponse.data?.data;
       final usage = usageResponse.data?.data;
       if (drafts == null || usage == null) {
-        throw const ApiFailure(userMessage: '正文草稿列表响应不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '正文草稿加载失败，请稍后重试。');
       }
       final mappedDrafts = drafts.map(_mapDraft).toList(growable: false)
         ..sort((left, right) => left.slot.compareTo(right.slot));
@@ -48,7 +48,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
     try {
       final data = (await _api.draftsFindById(id: id)).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '正文草稿详情响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '正文草稿加载失败，请重新加载。');
       }
       return _mapDraft(data);
     } on DioException catch (error) {
@@ -67,7 +67,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
         createDraftDto: payload,
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '正文草稿保存结果为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '正文草稿保存失败，请重试。');
       }
       return _mapDraft(data);
     } on DioException catch (error) {
@@ -92,7 +92,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
         updateDraftDto: payload,
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '正文草稿更新结果为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '正文草稿更新失败，请重试。');
       }
       return _mapDraft(data);
     } on DioException catch (error) {
@@ -105,7 +105,7 @@ class ApiContentDraftRepository implements ContentDraftRepository {
     try {
       final data = (await _api.draftsRemove(id: id)).data?.data;
       if (data == null || data.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '正文草稿删除结果为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '正文草稿删除失败，请重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

@@ -22,7 +22,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       final response = await _threadsApi.threadsFindById(id: threadId);
       final dto = response.data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '主题详情返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题加载失败，请稍后重试。');
       }
       return _mapThread(dto);
     } on DioException catch (error) {
@@ -36,7 +36,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       final targetResponse = await _postsApi.postsFindById(id: postId);
       final target = targetResponse.data?.data;
       if (target == null) {
-        throw const ApiFailure(userMessage: '目标楼层返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '目标楼层加载失败，请稍后重试。');
       }
       if (target.parentPostId == null) {
         return ThreadPostTargetModel(
@@ -51,12 +51,12 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       );
       final parent = parentResponse.data?.data;
       if (parent == null) {
-        throw const ApiFailure(userMessage: '目标楼层上下文返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '目标楼层加载失败，请稍后重试。');
       }
       if (parent.threadId != target.threadId ||
           parent.subthreadId != target.subthreadId ||
           parent.parentPostId != null) {
-        throw const ApiFailure(userMessage: '目标楼层上下文不一致，请返回搜索后重试。');
+        throw const ApiFailure(userMessage: '目标楼层已经发生变化，请返回搜索后重试。');
       }
       return ThreadPostTargetModel(
         requestedPostId: target.id,
@@ -89,7 +89,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '楼层列表返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '楼层加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data.map(_mapFloor).toList(growable: false),

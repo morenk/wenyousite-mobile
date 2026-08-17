@@ -174,14 +174,14 @@ class ThreadComposeStatusArea extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final banners = <Widget>[
       if (state.action == ThreadComposeAction.openRemoteDraft)
-        const WenyouStatusBanner(message: '正在读取服务端草稿最新版…'),
+        const WenyouStatusBanner(message: '正在读取云端草稿…'),
       if (state.restoredFromLocal)
         const WenyouStatusBanner(
           message: '已恢复上次未完成的本地内容。',
           tone: WenyouStatusTone.accent,
         ),
       if (state.bootstrapLoading)
-        const WenyouStatusBanner(message: '正在同步分类与账号发布状态…'),
+        const WenyouStatusBanner(message: '正在准备发布选项…'),
       if (state.bootstrapFailure != null)
         WenyouStatusBanner(
           message: state.bootstrapFailure!.userMessage,
@@ -194,8 +194,8 @@ class ThreadComposeStatusArea extends StatelessWidget {
         ),
       if (documentIssues.isNotEmpty)
         WenyouStatusBanner(
-          message: '正文含有 ${documentIssues.length} 个兼容节点。',
-          detail: '这些内容会锁定显示并原样保存。',
+          message: '正文中有 ${documentIssues.length} 处内容暂时无法编辑。',
+          detail: '这些内容会原样保留。',
         ),
       if (codecFailure != null)
         WenyouStatusBanner(
@@ -264,7 +264,7 @@ bool hasMeaningfulThreadComposeContent(ThreadComposeState state) {
 
 String? _uploadRequestDetail(MediaUploadFailure? failure) {
   final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }
 
 class ThreadComposeLoadFailure extends StatelessWidget {
@@ -283,7 +283,7 @@ class ThreadComposeLoadFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.actionDisableEdit,
-          title: '创作空间没有准备完成',
+          title: '打开创作空间失败',
           message: failure?.userMessage ?? '请重试；原有本地数据不会被覆盖。',
           detail: wenyouRequestDetail(failure),
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
@@ -333,9 +333,12 @@ class ThreadComposeLocalSaveStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, label) = switch (state.localSnapshotStatus) {
-      LocalSnapshotStatus.idle => (WenyouIconIds.actionEdit, '内容有变更，稍后自动保存到本机'),
-      LocalSnapshotStatus.saving => (WenyouIconIds.actionSync, '正在保存到本机…'),
-      LocalSnapshotStatus.saved => (WenyouIconIds.statusSuccess, '已保存到本机'),
+      LocalSnapshotStatus.idle => (
+        WenyouIconIds.actionEdit,
+        '内容有变更，稍后自动保存到这台设备',
+      ),
+      LocalSnapshotStatus.saving => (WenyouIconIds.actionSync, '正在保存到这台设备…'),
+      LocalSnapshotStatus.saved => (WenyouIconIds.statusSuccess, '已保存到这台设备'),
       LocalSnapshotStatus.failed => (
         WenyouIconIds.statusError,
         '本地保存失败，请先不要退出',

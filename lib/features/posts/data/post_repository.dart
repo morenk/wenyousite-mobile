@@ -20,7 +20,7 @@ class ApiPostRepository implements PostRepository {
     try {
       final dto = (await _api.postsFindById(id: postId)).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '帖子详情响应为空，请重新加载。');
+        throw const ApiFailure(userMessage: '帖子加载失败，请重新加载。');
       }
       return _mapDetail(dto);
     } on DioException catch (error) {
@@ -45,7 +45,7 @@ class ApiPostRepository implements PostRepository {
         authorId: authorId,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '楼中楼回复响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '回复加载失败，请稍后重试。');
       }
       return PostReplyPage(
         items: envelope.data.map(_mapReply).toList(growable: false),
@@ -77,7 +77,7 @@ class ApiPostRepository implements PostRepository {
         createPostDto: payload,
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '发帖响应为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '发帖失败，请重新加载。');
       }
       return _mapPost(dto);
     } on DioException catch (error) {
@@ -102,7 +102,7 @@ class ApiPostRepository implements PostRepository {
         updatePostDto: payload,
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '帖子更新响应为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '帖子更新失败，请重新加载。');
       }
       return _mapPost(dto);
     } on DioException catch (error) {
@@ -126,7 +126,7 @@ class ApiPostRepository implements PostRepository {
         upsertBodyDto: payload,
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '子贴正文更新响应为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '正文更新失败，请重新加载。');
       }
       return _mapPost(dto);
     } on DioException catch (error) {
@@ -139,7 +139,7 @@ class ApiPostRepository implements PostRepository {
     try {
       final data = (await _api.postsRemove(id: postId)).data?.data;
       if (data == null || data.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '帖子删除响应为空，请重新加载确认。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

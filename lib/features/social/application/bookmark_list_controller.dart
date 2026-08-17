@@ -42,7 +42,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
             isRefreshingList: false,
             failure: result.error == null
                 ? null
-                : _asFailure(result.error!, '收藏列表没有加载完成，请稍后重试。'),
+                : _asFailure(result.error!, '收藏列表加载失败，请稍后重试。'),
           );
         });
     final foldersTask = _capture(_repository.fetchFolders()).then((result) {
@@ -52,7 +52,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
         isLoadingFolders: false,
         folderFailure: result.error == null
             ? null
-            : _asFailure(result.error!, '收藏夹分类没有加载完成，请稍后重试。'),
+            : _asFailure(result.error!, '收藏夹分类加载失败，请稍后重试。'),
       );
     });
     await Future.wait([pageTask, foldersTask]);
@@ -85,7 +85,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
             isRefreshingList: false,
             failure: result.error == null
                 ? null
-                : _asFailure(result.error!, '收藏列表没有刷新完成，请稍后重试。'),
+                : _asFailure(result.error!, '刷新收藏列表失败，请稍后重试。'),
           );
         });
     final foldersTask = _capture(_repository.fetchFolders()).then((result) {
@@ -95,7 +95,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
         isLoadingFolders: false,
         folderFailure: result.error == null
             ? null
-            : _asFailure(result.error!, '收藏夹数量没有刷新完成，请稍后重试。'),
+            : _asFailure(result.error!, '刷新收藏夹数量失败，请稍后重试。'),
       );
     });
     await Future.wait([pageTask, foldersTask]);
@@ -119,7 +119,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
       if (!mounted || epoch != _folderEpoch) return;
       state = state.copyWith(
         isLoadingFolders: false,
-        folderFailure: _asFailure(error, '收藏夹分类没有加载完成，请稍后重试。'),
+        folderFailure: _asFailure(error, '收藏夹分类加载失败，请稍后重试。'),
       );
     }
   }
@@ -161,7 +161,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
       if (!mounted || epoch != _listEpoch) return;
       state = state.copyWith(
         isRefreshingList: false,
-        failure: _asFailure(error, '这个收藏夹没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '这个收藏夹加载失败，请稍后重试。'),
       );
     }
   }
@@ -189,7 +189,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
       );
     } on Object catch (error) {
       if (!mounted || epoch != _listEpoch) return;
-      final failure = _asFailure(error, '更多收藏没有加载完成，请稍后重试。');
+      final failure = _asFailure(error, '更多收藏加载失败，请稍后重试。');
       if (failure.isInvalidCursor) {
         state = state.copyWith(isLoadingMore: false);
         await _loadSelectedFolder(state.selectedFolderId);
@@ -227,7 +227,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
       if (!mounted) return null;
       state = state.copyWith(
         isCreatingFolder: false,
-        actionFailure: _asFailure(error, '新建收藏夹没有完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '新建收藏夹失败，请稍后重试。'),
       );
       return null;
     }
@@ -251,7 +251,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
         isCreatingFolder: false,
         failure: result.error == null
             ? null
-            : _asFailure(result.error!, '新收藏夹没有刷新完成，请下拉重试。'),
+            : _asFailure(result.error!, '刷新新收藏夹失败，请下拉重试。'),
       );
     });
     final foldersTask = _capture(_repository.fetchFolders()).then((result) {
@@ -261,7 +261,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
         isLoadingFolders: false,
         folderFailure: result.error == null
             ? null
-            : _asFailure(result.error!, '收藏夹数量没有刷新完成，请下拉重试。'),
+            : _asFailure(result.error!, '刷新收藏夹数量失败，请下拉重试。'),
       );
     });
     await Future.wait([pageTask, foldersTask]);
@@ -304,7 +304,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
       state = state.copyWith(
         pendingBookmarkId: null,
         pendingAction: null,
-        actionFailure: _asFailure(error, '移动收藏没有完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '移动收藏失败，请稍后重试。'),
       );
       return false;
     }
@@ -331,7 +331,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
       state = state.copyWith(
         pendingBookmarkId: null,
         pendingAction: null,
-        actionFailure: _asFailure(error, '取消收藏没有完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '取消收藏失败，请稍后重试。'),
       );
       return false;
     }
@@ -367,7 +367,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
             pendingAction: null,
             failure: result.error == null
                 ? null
-                : _asFailure(result.error!, '操作已完成，但收藏列表没有刷新完成。'),
+                : _asFailure(result.error!, '操作已完成，但刷新收藏列表失败。'),
           );
         });
     final foldersTask = _capture(_repository.fetchFolders()).then((result) {
@@ -377,7 +377,7 @@ class BookmarkListController extends StateNotifier<BookmarkListState> {
         isLoadingFolders: false,
         folderFailure: result.error == null
             ? null
-            : _asFailure(result.error!, '操作已完成，但收藏夹数量没有刷新完成。'),
+            : _asFailure(result.error!, '操作已完成，但刷新收藏夹数量失败。'),
       );
     });
     await Future.wait([pageTask, foldersTask]);

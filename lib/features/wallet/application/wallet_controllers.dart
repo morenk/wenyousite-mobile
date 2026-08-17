@@ -157,7 +157,7 @@ class WalletController extends StateNotifier<WalletState> {
       if (!_isCurrent(epoch)) return;
       state = state.copyWith(
         isLoadingSummary: false,
-        summaryFailure: _asFailure(error, '钱包余额没有加载完成，请重试。'),
+        summaryFailure: _asFailure(error, '钱包余额加载失败，请重试。'),
       );
     }
   }
@@ -182,7 +182,7 @@ class WalletController extends StateNotifier<WalletState> {
       if (!_isCurrent(epoch)) return;
       state = state.copyWith(
         isLoadingTransactions: false,
-        transactionsFailure: _asFailure(error, '温油流水没有加载完成，请重试。'),
+        transactionsFailure: _asFailure(error, '温油流水加载失败，请重试。'),
       );
     }
   }
@@ -235,7 +235,7 @@ class DailyCheckInController extends StateNotifier<DailyCheckInState> {
         phase: DailyCheckInPhase.failed,
         failure: error is ApiFailure
             ? error
-            : ApiFailure(userMessage: '每日签到没有完成。', cause: error),
+            : ApiFailure(userMessage: '每日签到失败。', cause: error),
       );
       return null;
     }
@@ -299,7 +299,7 @@ class TipController extends StateNotifier<TipState> {
       if (!mounted) return null;
       final failure = error is ApiFailure
           ? error
-          : ApiFailure(userMessage: '加油没有完成，请重试。', cause: error);
+          : ApiFailure(userMessage: '加油失败，请重试。', cause: error);
       final discardConflictingRequest = failure.businessCode == 40912;
       state = TipState(
         pendingAmount: discardConflictingRequest ? null : amount,

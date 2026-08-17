@@ -25,7 +25,7 @@ class ApiMetaRepository implements MetaRepository {
       );
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '服务端没有返回兼容信息。');
+        throw const ApiFailure(userMessage: '暂时无法确认应用是否可用。');
       }
       return ContractInfo(
         contractVersion: data.contractVersion,

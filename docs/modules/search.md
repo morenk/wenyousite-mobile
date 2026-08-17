@@ -69,4 +69,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v3.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v3.1.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v5.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v5.1.0/docs/platforms/mobile.md)。

@@ -227,10 +227,7 @@ class _MeProfileEditorState extends ConsumerState<MeProfileEditor> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const WenyouSectionHeader(
-                  title: '基本信息',
-                  subtitle: '头像在上方独立管理；这里保存公开文字资料。',
-                ),
+                const WenyouSectionHeader(title: '基本信息'),
                 SizedBox(height: tokens.space16),
                 TextFormField(
                   key: const Key('me-bio-field'),
@@ -422,7 +419,7 @@ String? _validateBio(String? value, String? currentBio) {
   final bio = value?.trim() ?? '';
   if (bio.length > 255) return '简介最多 255 个字符';
   if (bio.isEmpty && (currentBio?.isNotEmpty ?? false)) {
-    return '当前接口暂不支持清空已有简介，请保留至少 1 个字符';
+    return '暂时不能清空已有简介，请保留至少 1 个字符';
   }
   return null;
 }

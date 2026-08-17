@@ -72,8 +72,8 @@ void main() {
     await tester.tap(find.byKey(const Key('search-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('搜索没有完成'), findsOneWidget);
-    expect(find.text('请求 ID：search-request-id'), findsOneWidget);
+    expect(find.text('搜索失败'), findsOneWidget);
+    expect(find.text('问题编号：search-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('search-retry')));
     await tester.pumpAndSettle();
 

@@ -30,7 +30,7 @@ class ApiAuthRepository implements AuthRepository {
         // Flutter 必须显式声明 mobile，不能依赖后端的 Web 兼容默认值。
         xClientPlatform: 'mobile',
       );
-      return _mobileTokens(response.data?.data, '服务端没有返回移动端登录会话，请稍后重试。');
+      return _mobileTokens(response.data?.data, '登录失败，请稍后重试。');
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
@@ -77,7 +77,7 @@ class ApiAuthRepository implements AuthRepository {
         // 完成注册会创建登录终端，原生客户端必须显式声明 mobile。
         xClientPlatform: 'mobile',
       );
-      return _mobileTokens(response.data?.data, '服务端没有返回移动端注册会话，请直接登录。');
+      return _mobileTokens(response.data?.data, '注册已完成，请直接登录。');
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }

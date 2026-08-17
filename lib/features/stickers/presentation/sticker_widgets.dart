@@ -182,7 +182,7 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
     if (state.phase == StickerCollectionPhase.failed) {
       return WenyouEmptyState(
         icon: WenyouIconIds.statusOffline,
-        title: '表情收藏没有加载完成',
+        title: '表情收藏加载失败',
         message: state.failure?.userMessage ?? '请稍后重试。',
         action: OutlinedButton.icon(
           onPressed: () =>
@@ -198,7 +198,7 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
             ? WenyouIconIds.statusHistory
             : WenyouIconIds.actionAddReaction,
         title: _recent ? '还没有最近使用' : '还没有收藏表情',
-        message: _recent ? '发送过的收藏表情会显示在这里。' : '可在“表情包”从相册添加，或收藏站内图片。',
+        message: _recent ? '' : '可从相册添加，或收藏站内图片。',
       );
     }
     return LayoutBuilder(

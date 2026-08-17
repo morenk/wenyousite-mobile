@@ -21,7 +21,7 @@ class ApiMeProfileRepository implements MeProfileRepository {
       final response = await _api.usersGetMe();
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '本人资料返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '个人资料加载失败，请稍后重试。');
       }
       final dto = envelope.data;
       return MeProfileModel(
@@ -65,7 +65,7 @@ class ApiMeProfileRepository implements MeProfileRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '资料保存结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '资料保存失败，请重试。');
       }
       final dto = envelope.data;
       return MeProfileUpdateResult(

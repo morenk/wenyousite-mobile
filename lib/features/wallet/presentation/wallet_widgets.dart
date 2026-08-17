@@ -163,7 +163,7 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
                 message: state.failure!.userMessage,
                 detail: state.failure!.requestId == null
                     ? null
-                    : '请求 ID：${state.failure!.requestId}',
+                    : '问题编号：${state.failure!.requestId}',
               ),
             ],
           ],

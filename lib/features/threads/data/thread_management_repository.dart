@@ -27,7 +27,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
       final categoryEnvelope =
           (responses[1] as Response<ThreadCategoriesList200Response>).data;
       if (threadEnvelope == null || categoryEnvelope == null) {
-        throw const ApiFailure(userMessage: '主题管理信息返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题管理信息加载失败，请稍后重试。');
       }
       final thread = _mapThread(threadEnvelope.data);
       if (!thread.canManage) {
@@ -107,7 +107,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '主题更新结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '主题更新失败，请重试。');
       }
       return _mapThread(envelope.data);
     } on DioException catch (error) {
@@ -120,7 +120,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     try {
       final response = await _threadsApi.threadsRemove(id: threadId);
       if (response.data == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认主题已删除，请重新加载确认。');
+        throw const ApiFailure(userMessage: '删除失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

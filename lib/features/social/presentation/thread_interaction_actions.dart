@@ -114,7 +114,7 @@ class ThreadInteractionActions extends ConsumerWidget {
             message: state.failure!.userMessage,
             detail: state.failure!.requestId == null
                 ? null
-                : '请求 ID：${state.failure!.requestId}',
+                : '问题编号：${state.failure!.requestId}',
           ),
         ],
       ],
@@ -158,7 +158,7 @@ class ThreadInteractionActions extends ConsumerWidget {
     final requestId = failure.requestId;
     final message = requestId == null
         ? failure.userMessage
-        : '${failure.userMessage}（请求 ID：$requestId）';
+        : '${failure.userMessage}（问题编号：$requestId）';
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));

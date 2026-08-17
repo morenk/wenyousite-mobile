@@ -34,7 +34,7 @@ class ApiReportRepository implements ReportRepository {
         createReportDto: request,
       )).data?.data;
       if (dto == null) {
-        throw const ApiFailure(userMessage: '服务端没有确认举报结果，请稍后重试。');
+        throw const ApiFailure(userMessage: '举报失败，请稍后重试。');
       }
       final target = _responseTarget(dto.targetType, dto.targetId);
       final reason = _responseReason(dto.reasonCode);
@@ -45,7 +45,7 @@ class ApiReportRepository implements ReportRepository {
       }
       final id = dto.id.trim();
       if (id.isEmpty) {
-        throw const ApiFailure(userMessage: '举报确认信息不完整，请重新加载。');
+        throw const ApiFailure(userMessage: '举报失败，请重试。');
       }
       return ReportResult(
         id: id,
@@ -98,7 +98,7 @@ class ApiReportRepository implements ReportRepository {
       ReportResponseDtoTargetTypeEnum.MOMENT => ReportTarget.moment(id),
       ReportResponseDtoTargetTypeEnum.MOMENT_COMMENT =>
         ReportTarget.momentComment(id),
-      _ => throw const ApiFailure(userMessage: '当前版本不支持这类举报目标。'),
+      _ => throw const ApiFailure(userMessage: '暂时无法举报这类内容。'),
     };
   }
 
@@ -117,7 +117,7 @@ class ApiReportRepository implements ReportRepository {
       ReportResponseDtoReasonCodeEnum.ILLEGAL_CONTENT =>
         ReportReason.illegalContent,
       ReportResponseDtoReasonCodeEnum.OTHER => ReportReason.other,
-      _ => throw const ApiFailure(userMessage: '当前版本不支持这类举报原因。'),
+      _ => throw const ApiFailure(userMessage: '暂时无法使用这类举报原因。'),
     };
   }
 }

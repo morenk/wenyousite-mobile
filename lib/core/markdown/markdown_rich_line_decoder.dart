@@ -1,5 +1,6 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 class MarkdownRichLine {
   const MarkdownRichLine({required this.spans, required this.lineAttributes});
@@ -9,10 +10,15 @@ class MarkdownRichLine {
 }
 
 class MarkdownRichSpan {
-  const MarkdownRichSpan(this.text, this.attributes);
+  const MarkdownRichSpan(this.text, this.attributes) : internalReference = null;
+
+  const MarkdownRichSpan.internalReference(this.internalReference)
+    : text = '',
+      attributes = null;
 
   final String text;
   final Map<String, dynamic>? attributes;
+  final InternalReferencePortal? internalReference;
 }
 
 /// Parses the deliberately small Markdown subset supported by the editor.
@@ -86,6 +92,23 @@ class MarkdownRichLineDecoder {
         attributes['code'] = true;
       } else if (node.tag == 'a') {
         final href = node.attributes['href'];
+        final reference = href == null ? null : parseInternalReference(href);
+        if (reference != null && inherited.isEmpty) {
+          final label = _plainText(node.children!);
+          if (label == null ||
+              label.isEmpty ||
+              label.contains(']') ||
+              label.contains('\n') ||
+              label.contains('\r')) {
+            return false;
+          }
+          output.add(
+            MarkdownRichSpan.internalReference(
+              InternalReferencePortal(label: label, reference: reference),
+            ),
+          );
+          continue;
+        }
         final uri = href == null ? null : Uri.tryParse(href);
         if (uri == null || !uri.hasScheme || !MarkdownContent.isSafeLink(uri)) {
           return false;
@@ -97,5 +120,14 @@ class MarkdownRichLineDecoder {
       if (!_appendNodes(node.children!, attributes, output)) return false;
     }
     return true;
+  }
+
+  static String? _plainText(List<md.Node> nodes) {
+    final value = StringBuffer();
+    for (final node in nodes) {
+      if (node is! md.Text) return null;
+      value.write(node.text);
+    }
+    return value.toString();
   }
 }

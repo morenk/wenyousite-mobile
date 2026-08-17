@@ -43,7 +43,7 @@ class DirectConversationTargetController
       final lookup = results[0] as DirectConversationLookup;
       final profile = results[1] as PublicUserProfileModel;
       if (profile.id != _userId) {
-        throw const ApiFailure(userMessage: '服务端返回了不匹配的用户资料，请重新打开。');
+        throw const ApiFailure(userMessage: '用户资料已经发生变化，请重新打开。');
       }
       state = DirectConversationTargetState(
         phase: DirectConversationTargetPhase.ready,
@@ -61,7 +61,7 @@ class DirectConversationTargetController
       if (!mounted || epoch != _epoch) return;
       state = DirectConversationTargetState(
         phase: DirectConversationTargetPhase.failed,
-        failure: _asFailure(error, '私聊对象没有加载完成。'),
+        failure: _asFailure(error, '私聊对象加载失败。'),
       );
     }
   }
@@ -129,7 +129,7 @@ class DirectConversationTargetController
       if (!mounted) return null;
       state = before.copyWith(
         isSending: false,
-        failure: _asFailure(error, '首条消息发送失败，请使用原请求重试。'),
+        failure: _asFailure(error, '首条消息发送失败，请重试。'),
         failedDraft: draft,
       );
       return null;

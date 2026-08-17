@@ -58,7 +58,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'userMessage',
-          contains('完整会话'),
+          contains('登录状态已失效'),
         ),
       ),
     );

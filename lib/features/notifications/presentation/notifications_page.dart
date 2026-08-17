@@ -120,11 +120,11 @@ class _NotificationListFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.statusOffline,
-          title: '通知列表没有加载完成',
+          title: '通知列表加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
               ? null
-              : '请求 ID：${state.failure!.requestId}',
+              : '问题编号：${state.failure!.requestId}',
           action: OutlinedButton.icon(
             key: const Key('notification-list-retry'),
             onPressed: onRetry,
@@ -224,7 +224,7 @@ class _ReadyNotificationList extends StatelessWidget {
                 message: state.actionFailure!.userMessage,
                 detail: state.actionFailure!.requestId == null
                     ? null
-                    : '请求 ID：${state.actionFailure!.requestId}',
+                    : '问题编号：${state.actionFailure!.requestId}',
                 action: TextButton(
                   key: const Key('notification-action-error-dismiss'),
                   onPressed: onDismissFailure,
@@ -267,7 +267,7 @@ class _ReadyNotificationList extends StatelessWidget {
                 message: state.loadMoreFailure!.userMessage,
                 detail: state.loadMoreFailure!.requestId == null
                     ? null
-                    : '请求 ID：${state.loadMoreFailure!.requestId}',
+                    : '问题编号：${state.loadMoreFailure!.requestId}',
                 action: TextButton.icon(
                   key: const Key('notification-load-more-retry'),
                   onPressed: state.isBusy ? null : onLoadMore,

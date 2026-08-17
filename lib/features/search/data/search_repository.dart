@@ -27,7 +27,7 @@ class ApiSearchRepository implements SearchRepository {
         extra: ApiRequestPolicy.public.extra,
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '综合搜索返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '搜索失败，请稍后重试。');
       }
       return SearchOverviewResult(
         threads: List.unmodifiable(data.threads.map(_mapThread)),
@@ -51,7 +51,7 @@ class ApiSearchRepository implements SearchRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '动态搜索返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '动态搜索失败，请稍后重试。');
       }
       final items = envelope.data
           .map(MomentSearchMapper.map)
@@ -74,7 +74,7 @@ class ApiSearchRepository implements SearchRepository {
       );
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '主题搜索返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题搜索失败，请稍后重试。');
       }
       return List.unmodifiable(data.map(_mapThread));
     });
@@ -89,7 +89,7 @@ class ApiSearchRepository implements SearchRepository {
       );
       final data = response.data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '用户搜索返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '用户搜索失败，请稍后重试。');
       }
       return List.unmodifiable(data.map(_mapUser));
     });
@@ -111,7 +111,7 @@ class ApiSearchRepository implements SearchRepository {
       );
       final envelope = response.data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '正文搜索返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '正文搜索失败，请稍后重试。');
       }
       final items = envelope.data.map(_mapPost).toList(growable: false);
       _validateUnique(items.map((item) => item.id), '正文搜索结果');
@@ -140,11 +140,11 @@ class ApiSearchRepository implements SearchRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '主题内搜索返回不完整，请稍后重试。');
+        throw const ApiFailure(userMessage: '主题内搜索失败，请稍后重试。');
       }
       final items = envelope.data.map(_mapPost).toList(growable: false);
       if (items.any((item) => item.threadId != id)) {
-        throw const ApiFailure(userMessage: '主题内搜索返回了其他主题的内容，请重新搜索。');
+        throw const ApiFailure(userMessage: '搜索结果已经变化，请重新搜索。');
       }
       _validateUnique(items.map((item) => item.id), '主题内搜索结果');
       return CursorPage(
@@ -240,14 +240,14 @@ class ApiSearchRepository implements SearchRepository {
 
   void _validatePage(int limit) {
     if (limit < 1 || limit > 20) {
-      throw const ApiFailure(userMessage: '搜索分页大小无效，请重新加载。');
+      throw const ApiFailure(userMessage: '搜索结果暂时无法显示，请重新搜索。');
     }
   }
 
   String? _pageCursor(String? cursor, bool hasMore) {
     final safe = _optionalText(cursor);
     if (hasMore && safe == null) {
-      throw const ApiFailure(userMessage: '搜索分页游标缺失，请重新搜索。');
+      throw const ApiFailure(userMessage: '搜索结果已失效，请重新搜索。');
     }
     return safe;
   }
@@ -255,7 +255,7 @@ class ApiSearchRepository implements SearchRepository {
   void _validateUnique(Iterable<String> ids, String label) {
     final list = ids.toList(growable: false);
     if (list.toSet().length != list.length) {
-      throw ApiFailure(userMessage: '$label包含重复内容，请重新搜索。');
+      throw ApiFailure(userMessage: '$label暂时无法显示，请重新搜索。');
     }
   }
 }

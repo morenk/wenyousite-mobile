@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
@@ -24,23 +25,15 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class MePage extends ConsumerWidget {
-  const MePage({
-    this.userMomentsBuilder,
-    this.momentBookmarksBuilder,
-    super.key,
-  });
+  const MePage({this.userMomentsBuilder, super.key});
 
   final MeUserMomentsBuilder? userMomentsBuilder;
-  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
     if (!session.isAuthenticated) return const _GuestMePage();
-    return _AuthenticatedMePage(
-      userMomentsBuilder: userMomentsBuilder,
-      momentBookmarksBuilder: momentBookmarksBuilder,
-    );
+    return _AuthenticatedMePage(userMomentsBuilder: userMomentsBuilder);
   }
 }
 
@@ -77,13 +70,9 @@ class _GuestMePage extends StatelessWidget {
 }
 
 class _AuthenticatedMePage extends ConsumerWidget {
-  const _AuthenticatedMePage({
-    required this.userMomentsBuilder,
-    required this.momentBookmarksBuilder,
-  });
+  const _AuthenticatedMePage({required this.userMomentsBuilder});
 
   final MeUserMomentsBuilder? userMomentsBuilder;
-  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -140,11 +129,11 @@ class _AuthenticatedMePage extends ConsumerWidget {
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
-                title: '本人资料没有加载完成',
+                title: '本人资料加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
                 detail: state.failure?.requestId == null
                     ? null
-                    : '请求 ID：${state.failure!.requestId}',
+                    : '问题编号：${state.failure!.requestId}',
                 action: OutlinedButton.icon(
                   key: const Key('me-profile-retry'),
                   onPressed: notifier.load,
@@ -159,7 +148,6 @@ class _AuthenticatedMePage extends ConsumerWidget {
         MeProfilePhase.ready => _MeDashboard(
           profile: state.profile!,
           userMomentsBuilder: userMomentsBuilder,
-          momentBookmarksBuilder: momentBookmarksBuilder,
         ),
       },
     );
@@ -195,11 +183,11 @@ class MeEditPage extends ConsumerWidget {
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
-                title: '资料没有加载完成',
+                title: '资料加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
                 detail: state.failure?.requestId == null
                     ? null
-                    : '请求 ID：${state.failure!.requestId}',
+                    : '问题编号：${state.failure!.requestId}',
                 action: OutlinedButton.icon(
                   key: const Key('me-edit-retry'),
                   onPressed: notifier.load,
@@ -252,11 +240,11 @@ class MeSettingsPage extends ConsumerWidget {
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
-                title: '账号状态没有加载完成',
+                title: '账号状态加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
                 detail: state.failure?.requestId == null
                     ? null
-                    : '请求 ID：${state.failure!.requestId}',
+                    : '问题编号：${state.failure!.requestId}',
                 action: OutlinedButton.icon(
                   key: const Key('me-settings-retry'),
                   onPressed: notifier.load,
@@ -309,15 +297,10 @@ class _MePageList extends StatelessWidget {
 }
 
 class _MeDashboard extends ConsumerStatefulWidget {
-  const _MeDashboard({
-    required this.profile,
-    required this.userMomentsBuilder,
-    required this.momentBookmarksBuilder,
-  });
+  const _MeDashboard({required this.profile, required this.userMomentsBuilder});
 
   final MeProfileModel profile;
   final MeUserMomentsBuilder? userMomentsBuilder;
-  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
   ConsumerState<_MeDashboard> createState() => _MeDashboardState();
@@ -327,6 +310,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final Set<int> _visitedTabs = {0};
+  var _activeIndex = 0;
 
   @override
   void initState() {
@@ -347,7 +331,10 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
 
   void _handleTabChanged() {
     final index = _tabController.index;
-    if (_visitedTabs.add(index)) setState(() {});
+    if (_activeIndex == index && _visitedTabs.contains(index)) return;
+    _activeIndex = index;
+    _visitedTabs.add(index);
+    setState(() {});
     final tab = MeContentTab.values[index].publicUserTab;
     if (tab != null) {
       unawaited(
@@ -376,18 +363,9 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
               tokens.space12,
             ),
             child: WenyouConstrainedWidth(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _ProfileOverview(profile: widget.profile),
-                  SizedBox(height: tokens.space12),
-                  _WalletBalanceStrip(state: walletState),
-                  SizedBox(height: tokens.space20),
-                  const WenyouSectionHeader(
-                    title: '我的内容',
-                    subtitle: '创建的主题会直接显示在这里，无需进入公开主页预览。',
-                  ),
-                ],
+              child: _ProfileOverview(
+                profile: widget.profile,
+                walletState: walletState,
               ),
             ),
           ),
@@ -398,19 +376,16 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: horizontal),
               child: WenyouConstrainedWidth(
-                child: TabBar(
+                child: WenyouLineFilterBar<MeContentTab>(
                   key: const Key('me-content-tabs'),
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  tabs: [
+                  keyPrefix: 'me-content',
+                  semanticsLabel: '我的主页内容',
+                  options: [
                     for (final tab in MeContentTab.values)
-                      Tab(
-                        key: Key('me-content-${tab.name}-tab'),
-                        text: tab.label,
-                        height: tokens.minimumTouchTarget,
-                      ),
+                      WenyouFilterOption(value: tab, label: tab.label),
                   ],
+                  selected: MeContentTab.values[_activeIndex],
+                  onSelected: (tab) => _tabController.animateTo(tab.index),
                 ),
               ),
             ),
@@ -428,7 +403,6 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
                     userId: widget.profile.id,
                     onRefreshChrome: _refreshChrome,
                     userMomentsBuilder: widget.userMomentsBuilder,
-                    momentBookmarksBuilder: widget.momentBookmarksBuilder,
                   )
                 : const SizedBox.expand(),
         ],
@@ -530,9 +504,10 @@ class _AccountSecurityPanel extends StatelessWidget {
 }
 
 class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({required this.profile});
+  const _ProfileOverview({required this.profile, required this.walletState});
 
   final MeProfileModel profile;
+  final WalletState walletState;
 
   @override
   Widget build(BuildContext context) {
@@ -571,77 +546,21 @@ class _ProfileOverview extends StatelessWidget {
           value: '${profile.followerCount}',
           onTap: () => context.pushNamed('me-followers'),
         ),
+        UserProfileStatItem(
+          key: const Key('me-open-wallet'),
+          label: '温油',
+          value: walletState.summary == null
+              ? '—'
+              : '${WenyouAmount.format(walletState.summary!.balance)} L',
+          onTap: () => context.pushNamed('wallet'),
+        ),
+        UserProfileStatItem(
+          key: const Key('me-open-bookmarks'),
+          label: '收藏',
+          icon: WenyouIconIds.actionBookmark,
+          onTap: () => context.pushNamed('me-bookmarks'),
+        ),
       ],
-    );
-  }
-}
-
-class _WalletBalanceStrip extends StatelessWidget {
-  const _WalletBalanceStrip({required this.state});
-
-  final WalletState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final balance = state.summary?.balance;
-    final formatted = balance == null
-        ? '—'
-        : '${WenyouAmount.format(balance)} L';
-    final subtitle = state.summaryFailure != null
-        ? '余额暂未同步，点按进入钱包重试'
-        : state.isLoadingSummary
-        ? '正在同步钱包余额…'
-        : '与钱包详情使用同一份实时余额';
-    return Semantics(
-      button: true,
-      label: '打开我的温油，当前余额 $formatted',
-      child: WenyouPanel(
-        key: const Key('me-open-wallet'),
-        onTap: () => context.pushNamed('wallet'),
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.space16,
-          vertical: tokens.space12,
-        ),
-        child: Row(
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.accentedBackground,
-                borderRadius: BorderRadius.circular(tokens.radius12),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(tokens.space12),
-                child: const WenyouIcon(WenyouIconIds.economyTransaction),
-              ),
-            ),
-            SizedBox(width: tokens.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('钱包余额'),
-                  SizedBox(height: tokens.space4),
-                  Text(
-                    subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: tokens.space12),
-            Text(
-              formatted,
-              key: const Key('me-wallet-balance'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(width: tokens.space4),
-            const WenyouIcon(WenyouIconIds.navigationNext, size: 18),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -656,10 +575,7 @@ class _LogoutPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(
-            title: '当前会话',
-            subtitle: '退出会撤销当前移动端会话并清除本机登录信息。',
-          ),
+          const WenyouSectionHeader(title: '当前会话', subtitle: '退出这台设备上的账号。'),
           SizedBox(height: tokens.space16),
           const _LogoutAction(),
         ],
@@ -682,7 +598,7 @@ class _LogoutAction extends ConsumerWidget {
             message: logout.failure!.userMessage,
             detail: logout.failure!.requestId == null
                 ? null
-                : '请求 ID：${logout.failure!.requestId}',
+                : '问题编号：${logout.failure!.requestId}',
             tone: WenyouStatusTone.error,
           ),
           SizedBox(height: context.wenyouTokens.space8),
@@ -706,7 +622,7 @@ class _LogoutAction extends ConsumerWidget {
             onPressed: logout.isSubmitting
                 ? null
                 : () => _confirmLocalLogout(context, ref),
-            child: const Text('仅清除本机登录'),
+            child: const Text('仅清除这台设备的登录'),
           ),
       ],
     );
@@ -717,7 +633,7 @@ class _LogoutAction extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('退出当前账号？'),
-        content: const Text('将撤销当前移动端会话，并清除本机保存的登录信息。'),
+        content: const Text('将退出这台设备上的账号并清除登录信息。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -747,8 +663,8 @@ class _LogoutAction extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('仅清除本机登录？'),
-        content: const Text('服务器暂未确认撤销此会话。请稍后重新登录并在终端管理中检查。'),
+        title: const Text('仅清除这台设备的登录？'),
+        content: const Text('账号安全退出失败。清除这台设备的登录后，请稍后重新登录并在终端管理中检查。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -757,7 +673,7 @@ class _LogoutAction extends ConsumerWidget {
           FilledButton(
             key: const Key('logout-local-confirm'),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('清除本机登录'),
+            child: const Text('清除这台设备的登录'),
           ),
         ],
       ),
@@ -768,7 +684,7 @@ class _LogoutAction extends ConsumerWidget {
       context.go(AppRouteLocations.me);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('本机登录信息已清除。')));
+      ).showSnackBar(const SnackBar(content: Text('这台设备的登录信息已清除。')));
     }
   }
 }

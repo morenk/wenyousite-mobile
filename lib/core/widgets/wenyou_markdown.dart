@@ -9,8 +9,11 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
 class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
@@ -40,6 +43,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     with AutomaticKeepAliveClientMixin<WenyouMarkdown> {
   late final ValueNotifier<Map<String, String>> _diceLabels;
   late String _normalizedData;
+  List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
 
   @override
@@ -49,7 +53,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   void initState() {
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
-    _normalizedData = MarkdownContent.literalizeUnsupported(widget.data);
+    _prepareData();
   }
 
   @override
@@ -65,7 +69,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       _diceLabels.value = Map.unmodifiable(widget.diceLabels);
     }
     if (oldWidget.data != widget.data) {
-      _normalizedData = MarkdownContent.literalizeUnsupported(widget.data);
+      _prepareData();
     }
     if (oldWidget.bodyFontSize != widget.bodyFontSize ||
         oldWidget.bodyHeight != widget.bodyHeight) {
@@ -87,8 +91,14 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       selectable: true,
       softLineBreak: true,
       styleSheet: _styleSheet,
-      inlineSyntaxes: [_DiceInlineSyntax()],
-      builders: {'wenyou-dice': _DiceMarkdownBuilder(_diceLabels)},
+      inlineSyntaxes: [_InternalReferenceInlineSyntax(), _DiceInlineSyntax()],
+      builders: {
+        'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
+          _internalReferences,
+          (reference) => _openInternalReference(context, reference),
+        ),
+        'wenyou-dice': _DiceMarkdownBuilder(_diceLabels),
+      },
       onTapLink: (_, href, _) => _openLink(context, href),
       onTapText: widget.onTapText,
       imageBuilder: (uri, title, alt) => _MarkdownImage(
@@ -98,6 +108,13 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
         onSave: widget.onSaveImage,
       ),
     );
+  }
+
+  void _prepareData() {
+    final normalized = MarkdownContent.literalizeUnsupported(widget.data);
+    final prepared = _prepareInternalReferences(normalized);
+    _normalizedData = prepared.data;
+    _internalReferences = prepared.references;
   }
 
   MarkdownStyleSheet _createStyleSheet(BuildContext context) {
@@ -134,12 +151,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     );
     return baseStyle.copyWith(
       p: bodyStyle,
-      a: bodyStyle?.copyWith(
-        color: tokens.brandForeground,
-        fontWeight: FontWeight.w600,
-        decoration: TextDecoration.underline,
-        decorationColor: tokens.brandForeground,
-      ),
+      a: wenyouContentLinkStyle(context, base: bodyStyle),
       h1: h1,
       h1Padding: EdgeInsets.only(top: tokens.space16, bottom: tokens.space8),
       h2: h2,
@@ -185,17 +197,116 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (uri == null) return;
     final internal = internalWenyouLocation(uri);
     if (internal != null) {
-      if (widget.onInternalLink != null) {
-        widget.onInternalLink!(internal);
-      } else {
-        openInternalWenyouLink(context, internal);
-      }
+      _openInternalLocation(context, internal);
       return;
     }
     if (MarkdownContent.isSafeLink(uri)) {
       unawaited(launchUrl(uri, mode: LaunchMode.externalApplication));
       return;
     }
+  }
+
+  void _openInternalReference(
+    BuildContext context,
+    InternalReference reference,
+  ) => _openInternalLocation(context, reference.location);
+
+  void _openInternalLocation(BuildContext context, Uri location) {
+    if (widget.onInternalLink != null) {
+      widget.onInternalLink!(location);
+    } else {
+      openInternalWenyouLink(context, location);
+    }
+  }
+}
+
+final _markdownCodePattern = RegExp(
+  r'(`{3,}[^\r\n]*\r?\n[\s\S]*?\r?\n`{3,}|~{3,}[^\r\n]*\r?\n[\s\S]*?\r?\n~{3,}|`[^`\r\n]*`)',
+  unicode: true,
+);
+
+({String data, List<InternalReferencePortal> references})
+_prepareInternalReferences(String source) {
+  final output = StringBuffer();
+  final references = <InternalReferencePortal>[];
+  var offset = 0;
+  for (final match in _markdownCodePattern.allMatches(source)) {
+    _appendInternalReferenceChunk(
+      source.substring(offset, match.start),
+      output,
+      references,
+    );
+    output.write(match.group(0));
+    offset = match.end;
+  }
+  _appendInternalReferenceChunk(source.substring(offset), output, references);
+  return (data: output.toString(), references: List.unmodifiable(references));
+}
+
+void _appendInternalReferenceChunk(
+  String source,
+  StringBuffer output,
+  List<InternalReferencePortal> references,
+) {
+  for (final segment in tokenizeInternalReferenceText(source)) {
+    switch (segment) {
+      case InternalReferencePlainText(:final value):
+        output.write(value);
+      case InternalReferencePortal(:final label, :final reference):
+        final previous = output.isEmpty
+            ? ''
+            : output.toString()[output.length - 1];
+        if (previous == '!' || previous == r'\') {
+          output.write('[$label](${reference.location})');
+          continue;
+        }
+        final index = references.length;
+        references.add(segment);
+        output.write('[[wenyou-internal-reference:v1:$index]]');
+    }
+  }
+}
+
+class _InternalReferenceInlineSyntax extends md.InlineSyntax {
+  _InternalReferenceInlineSyntax()
+    : super(
+        r'\[\[wenyou-internal-reference:v1:(\d+)\]\]',
+        startCharacter: 0x5b,
+      );
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(
+      md.Element.empty('wenyou-internal-reference')
+        ..attributes['index'] = match.group(1)!,
+    );
+    return true;
+  }
+}
+
+class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
+  _InternalReferenceMarkdownBuilder(this.references, this.onTap);
+
+  final List<InternalReferencePortal> references;
+  final ValueChanged<InternalReference> onTap;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final index = int.tryParse(element.attributes['index'] ?? '');
+    if (index == null || index < 0 || index >= references.length) return null;
+    final portal = references[index];
+    return WenyouInternalReferenceChip(
+      key: ValueKey('markdown-internal-reference-$index'),
+      surfaceKey: ValueKey('markdown-internal-reference-surface-$index'),
+      label: portal.label,
+      style: parentStyle,
+      onTap: () => onTap(portal.reference),
+    );
   }
 }
 

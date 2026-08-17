@@ -212,7 +212,7 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
       );
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      final failure = _asFailure(error, '动态列表没有加载完成，请稍后重试。');
+      final failure = _asFailure(error, '动态列表加载失败，请稍后重试。');
       state = state.copyWith(
         phase: retained.isEmpty
             ? MomentLoadPhase.failed
@@ -424,7 +424,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       );
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      final failure = _asFailure(error, '动态详情没有加载完成，请稍后重试。');
+      final failure = _asFailure(error, '动态详情加载失败，请稍后重试。');
       state = state.copyWith(
         phase: retained == null
             ? MomentLoadPhase.failed
@@ -532,7 +532,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       _setReplyFailure(rootCommentId, failure);
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      _setReplyFailure(rootCommentId, _asFailure(error, '楼中楼没有加载完成，请重试。'));
+      _setReplyFailure(rootCommentId, _asFailure(error, '楼中楼加载失败，请重试。'));
     }
   }
 
@@ -675,7 +675,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
         isLoadingMoreComments: false,
-        transientFailure: _asFailure(error, '评论列表没有加载完成，请重试。'),
+        transientFailure: _asFailure(error, '评论列表加载失败，请重试。'),
       );
     }
   }

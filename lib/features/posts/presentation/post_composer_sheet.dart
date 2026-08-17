@@ -316,8 +316,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 0,
               ),
               child: const WenyouStatusBanner(
-                message: '上次发布结果尚未确认。',
-                detail: '再次提交会先用原请求确认创建结果；若正文已继续修改，再以版本更新保存当前内容。',
+                message: '上次发布失败。',
+                detail: '再次提交会先确认上次结果，不会重复发布；之后再保存本次修改。',
               ),
             ),
           if (_editorSession.codecFailure != null)
@@ -343,8 +343,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 0,
               ),
               child: WenyouStatusBanner(
-                message: '正文含有 ${_editorSession.issues.length} 个兼容节点。',
-                detail: '这些节点会锁定显示并原样保存。',
+                message: '正文中有 ${_editorSession.issues.length} 处内容暂时无法编辑。',
+                detail: '这些内容会原样保留。',
               ),
             ),
           if (uploadState.failure != null)
@@ -609,10 +609,10 @@ String _submitLabel(PostComposerKind kind) => switch (kind) {
 
 String? _requestDetail(ApiFailure? failure) {
   final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }
 
 String? _uploadRequestDetail(MediaUploadFailure? failure) {
   final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }

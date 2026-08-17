@@ -22,7 +22,7 @@ class ApiAvatarRepository implements AvatarRepository {
       );
       final user = response.data?.data;
       if (user == null) {
-        throw const ApiFailure(userMessage: '头像设置结果不完整，请重新加载资料确认。');
+        throw const ApiFailure(userMessage: '头像设置失败，请重新加载资料确认。');
       }
       final avatarUrl = _safeHttpUrl(user.avatar);
       if (avatarUrl == null) {
@@ -43,7 +43,7 @@ class ApiAvatarRepository implements AvatarRepository {
       final response = await _api.usersRemoveAvatar();
       final user = response.data?.data;
       if (user == null || user.avatar != null) {
-        throw const ApiFailure(userMessage: '头像移除结果不完整，请重新加载资料确认。');
+        throw const ApiFailure(userMessage: '头像移除失败，请重新加载资料确认。');
       }
       return AvatarUpdateResult(avatarUrl: null, updatedAt: user.updatedAt);
     } on DioException catch (error) {

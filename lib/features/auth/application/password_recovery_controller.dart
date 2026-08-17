@@ -112,7 +112,7 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      final failure = _asFailure(error, '重置验证码发送没有完成，请稍后重试。');
+      final failure = _asFailure(error, '重置验证码发送失败，请稍后重试。');
       if (failure.hasUnknownWriteOutcome) {
         state = state.copyWith(
           clearAction: true,
@@ -161,7 +161,7 @@ class PasswordRecoveryController extends StateNotifier<PasswordRecoveryState> {
       if (!mounted) return false;
       state = state.copyWith(
         clearAction: true,
-        failure: _asFailure(error, '密码重置没有完成，请稍后重试。'),
+        failure: _asFailure(error, '密码重置失败，请稍后重试。'),
       );
       return false;
     }

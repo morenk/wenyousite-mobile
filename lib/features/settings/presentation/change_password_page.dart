@@ -66,7 +66,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                 children: [
                   const WenyouSectionHeader(
                     title: '设置新密码',
-                    subtitle: '修改成功后，当前账号在所有 Web 和移动终端都会退出。',
+                    subtitle: '修改成功后，当前账号会在所有设备上退出。',
                   ),
                   SizedBox(height: tokens.space24),
                   WenyouPasswordField(

@@ -435,7 +435,7 @@ class _MentionFailure extends StatelessWidget {
           failure.userMessage,
           style: TextStyle(color: Theme.of(context).colorScheme.error),
         ),
-        if (requestId != null) Text('请求 ID：$requestId'),
+        if (requestId != null) Text('问题编号：$requestId'),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton.icon(

@@ -138,7 +138,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
           icon: WenyouIconIds.statusError,
           message: uploadFailure.requestId == null
               ? uploadFailure.userMessage
-              : '${uploadFailure.userMessage} · 请求 ID：${uploadFailure.requestId}',
+              : '${uploadFailure.userMessage} · 问题编号：${uploadFailure.requestId}',
           error: true,
           onRetry: uploadFailure.canRetry ? _retryImageUpload : null,
           onDismiss: _abandonImageUpload,

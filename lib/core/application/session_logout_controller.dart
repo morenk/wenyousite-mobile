@@ -38,7 +38,7 @@ class LogoutController extends StateNotifier<LogoutState> {
       return false;
     } on Object catch (error) {
       state = LogoutState.failed(
-        ApiFailure(userMessage: '退出没有完成，请稍后重试。', cause: error),
+        ApiFailure(userMessage: '退出失败，请稍后重试。', cause: error),
       );
       return false;
     }

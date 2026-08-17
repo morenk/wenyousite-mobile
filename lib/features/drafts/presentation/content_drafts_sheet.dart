@@ -492,11 +492,11 @@ class _LoadFailure extends StatelessWidget {
         padding: EdgeInsets.all(context.wenyouTokens.space24),
         child: WenyouEmptyState(
           icon: WenyouIconIds.statusOffline,
-          title: '正文草稿没有加载完成',
+          title: '正文草稿加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
           detail: state.failure?.requestId == null
               ? null
-              : '请求 ID：${state.failure!.requestId}',
+              : '问题编号：${state.failure!.requestId}',
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
         ),
       ),
@@ -506,7 +506,7 @@ class _LoadFailure extends StatelessWidget {
 
 String? _requestDetail(ContentDraftsState state) {
   final requestId = state.actionFailure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }
 
 extension on String {

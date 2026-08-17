@@ -1,6 +1,6 @@
 enum ThreadManagementStatus {
   recruiting('招募中'),
-  closed('已关闭'),
+  closed('已停招'),
   finished('已完结');
 
   const ThreadManagementStatus(this.label);

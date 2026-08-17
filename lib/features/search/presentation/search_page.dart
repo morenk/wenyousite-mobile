@@ -736,11 +736,11 @@ class _SearchErrorState extends StatelessWidget {
     return WenyouPanel(
       child: WenyouEmptyState(
         icon: WenyouIconIds.statusOffline,
-        title: '搜索没有完成',
+        title: '搜索失败',
         message: failure?.userMessage ?? '请检查网络后重试。',
         detail: failure?.requestId == null
             ? null
-            : '请求 ID：${failure!.requestId}',
+            : '问题编号：${failure!.requestId}',
         action: OutlinedButton.icon(
           key: const Key('search-retry'),
           onPressed: onRetry,
@@ -763,7 +763,7 @@ class _SearchInlineError extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
+      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
       action: TextButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),

@@ -76,7 +76,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .read(accountDeletionControllerProvider.notifier)
         .retryLocalCleanup();
     if (!succeeded) return;
-    messenger.showSnackBar(const SnackBar(content: Text('本机登录信息已清除。')));
+    messenger.showSnackBar(const SnackBar(content: Text('这台设备的登录信息已清除。')));
     router.go(AppRouteLocations.home);
   }
 
@@ -104,7 +104,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                   SizedBox(height: tokens.space16),
                   const _DeletionConsequence(
                     icon: WenyouIconIds.actionDevices,
-                    text: '当前账号在 Web 和移动端的全部登录终端都会失效。',
+                    text: '当前账号会在所有设备上退出。',
                   ),
                   SizedBox(height: tokens.space12),
                   const _DeletionConsequence(
@@ -119,7 +119,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                   SizedBox(height: tokens.space12),
                   const _DeletionConsequence(
                     icon: WenyouIconIds.contentDraft,
-                    text: '本机未发布草稿不会上传或自动删除，注销后也无法再以此账号恢复。',
+                    text: '这台设备上的未发布草稿不会上传或自动删除，注销后也无法再以此账号恢复。',
                   ),
                 ],
               ),
@@ -170,7 +170,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                                 onPressed: state.isSubmitting
                                     ? null
                                     : _retryLocalCleanup,
-                                child: const Text('重试清除本机登录'),
+                                child: const Text('重试清除这台设备的登录'),
                               )
                             : null,
                       ),

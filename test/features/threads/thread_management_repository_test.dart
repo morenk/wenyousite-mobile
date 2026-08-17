@@ -127,7 +127,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'userMessage',
-          contains('没有确认'),
+          contains('删除失败'),
         ),
       ),
     );

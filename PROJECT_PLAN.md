@@ -4,25 +4,23 @@
 
 ## 当前基线
 
-- 客户端：`0.3.0-dev.78+84`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
+- 客户端：`0.3.0-dev.79+85`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
 - 后端契约：`5.0.0-dev.20260816.1`，revision `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v3.1.0`。
+- 视觉依赖：Foundation `v5.1.0`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
 
 ## 当前优先级
 
 1. 完成正式签名包的真实更新安装冒烟，覆盖线上 `/meta`、下载、SHA-256、签名、安装器返回和旧版本升级后的会话/本地数据保留。
 2. 接入动态评论通知精确定位：按 `momentCommentNavigation` 黄金旅程调用 `momentsCommentContext`，补取评论上下文、滚动到目标，并复用 1dp 淡粉边框的短时提示。
-3. 接入编辑器站内坐标智能粘贴：完整消费 `editorPasteCases`，仅对单独合法坐标插入规范化传送门，非法邀请、混合文本和站外链接继续普通粘贴。
-4. 在可信管理员角色投影、高风险确认和刷新策略具备后，接入普通 Bearer 内容隐藏能力；此前不展示入口。
-5. 使用公网专用账号补齐各模块文档中尚未勾选的手工联调与真机验收，禁止对共享开发数据执行破坏性批量操作。
+3. 在可信管理员角色投影、高风险确认和刷新策略具备后，接入普通 Bearer 内容隐藏能力；此前不展示入口。
+4. 使用公网专用账号补齐各模块文档中尚未勾选的手工联调与真机验收，禁止对共享开发数据执行破坏性批量操作。
 
 ## 持续债务
 
 - `searchSearchThreads` 已支持 cursor/limit 分页，但移动端仍走不传参数的兼容调用，单次最多读取 50 条；完成移动端分页前搜索模块保持 `in_progress`。
 - 动态评论通知仍只进入动态详情，尚未消费已经稳定的 `momentsCommentContext` 与 `momentCommentNavigation` 黄金旅程。
-- 编辑器尚未消费站内引用契约的 `editorPasteCases`；当前粘贴保持 Flutter Quill 默认行为，不声称已完成传送门规范化插入。
 - 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v3 安全字面文本；这不是原始不支持结构的无损提交。
 
 ## 单切片完成定义

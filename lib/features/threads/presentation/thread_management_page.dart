@@ -94,7 +94,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 children: [
                   const WenyouSectionHeader(
                     title: '主题信息',
-                    subtitle: '这些信息会立即同步到 Web 与移动端。标签、子贴和正文在各自入口维护。',
+                    subtitle: '标签、子贴和正文可从各自的管理项修改。',
                   ),
                   SizedBox(height: tokens.space16),
                   TextFormField(
@@ -247,7 +247,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 message: failure.userMessage,
                 detail: failure.requestId == null
                     ? null
-                    : '请求 ID：${failure.requestId}',
+                    : '问题编号：${failure.requestId}',
                 action: state.conflict != null
                     ? TextButton(
                         key: const Key('thread-management-resolve-conflict'),
@@ -391,7 +391,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
           title: const Text('确认删除这个主题？'),
           content: Text(
             thread.published
-                ? '删除后主题会立即不可见，不能从移动端恢复。确定继续吗？'
+                ? '删除后主题会立即不可见，且无法恢复。确定继续吗？'
                 : '未发布草稿及其全部内容会永久删除，无法恢复。确定继续吗？',
           ),
           actions: [
@@ -483,9 +483,9 @@ class _ManagementFatalState extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.actionAccount,
-          title: '主题管理信息没有加载完成',
+          title: '主题管理信息加载失败',
           message: failureMessage ?? '请检查网络或账号权限后重试。',
-          detail: requestId == null ? null : '请求 ID：$requestId',
+          detail: requestId == null ? null : '问题编号：$requestId',
           action: OutlinedButton.icon(
             key: const Key('thread-management-load-retry'),
             onPressed: onRetry,

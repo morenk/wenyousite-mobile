@@ -130,7 +130,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('验证码不正确，请检查后重试。'), findsOneWidget);
-    expect(find.text('请求 ID：reset-request-id'), findsOneWidget);
+    expect(find.text('问题编号：reset-request-id'), findsOneWidget);
     expect(find.text('000000'), findsOneWidget);
     expect(find.text('设置新的登录密码'), findsOneWidget);
     await _disposeFlow(tester, container);

@@ -28,7 +28,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
         limit: limit,
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '收藏列表响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '收藏列表加载失败，请稍后重试。');
       }
       return CursorPage(
         items: envelope.data.map(_mapItem).toList(growable: false),
@@ -45,7 +45,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
     try {
       final envelope = (await _api.bookmarksFindFolders()).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '收藏夹分类响应为空，请稍后重试。');
+        throw const ApiFailure(userMessage: '收藏夹加载失败，请稍后重试。');
       }
       return envelope.data.map(_mapFolder).toList(growable: false);
     } on DioException catch (error) {
@@ -66,7 +66,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
         ),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '新建收藏夹结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '新建收藏夹失败，请重试。');
       }
       return _mapFolder(envelope.data);
     } on DioException catch (error) {
@@ -89,7 +89,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       if (envelope == null ||
           envelope.data.id != bookmarkId ||
           envelope.data.folderId != folderId) {
-        throw const ApiFailure(userMessage: '移动收藏结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '移动收藏失败，请重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(
@@ -104,7 +104,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
     try {
       final data = (await _api.bookmarksRemove(id: bookmarkId)).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '取消收藏结果不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '取消收藏失败，请重试。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -149,7 +149,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
     final id = dto.id.trim();
     final name = dto.name.trim();
     if (id.isEmpty || name.isEmpty) {
-      throw const ApiFailure(userMessage: '收藏夹分类信息不完整，请稍后重试。');
+      throw const ApiFailure(userMessage: '收藏夹分类加载失败，请稍后重试。');
     }
     return BookmarkFolderItem(
       id: id,

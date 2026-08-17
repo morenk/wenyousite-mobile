@@ -117,7 +117,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 2));
 
-    expect(find.text('请求 ID：mention-request-id'), findsOneWidget);
+    expect(find.text('问题编号：mention-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('mention-retry')));
     await tester.pump();
 

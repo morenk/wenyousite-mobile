@@ -35,7 +35,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       if (!mounted || epoch != _loadEpoch) return;
       state = ContentDraftsState(
         phase: ContentDraftsPhase.failed,
-        failure: _asFailure(error, '正文草稿没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '正文草稿加载失败，请稍后重试。'),
       );
     }
   }
@@ -150,7 +150,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       if (!mounted) return null;
       state = state.copyWith(
         pendingDraftId: null,
-        actionFailure: _asFailure(error, '正文草稿没有读取完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '正文草稿读取失败，请稍后重试。'),
       );
       return null;
     }

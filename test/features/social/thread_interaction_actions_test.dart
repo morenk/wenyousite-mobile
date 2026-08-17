@@ -90,7 +90,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('喜欢 12'), findsOneWidget);
-    expect(find.text('请求 ID：interaction-request-id'), findsOneWidget);
+    expect(find.text('问题编号：interaction-request-id'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

@@ -17,6 +17,15 @@ class InternalReference {
   final Uri location;
 }
 
+class InternalReferencePaste {
+  const InternalReferencePaste({required this.label, required this.reference});
+
+  final String label;
+  final InternalReference reference;
+
+  String get serialized => '[$label](${reference.location})';
+}
+
 sealed class InternalReferenceTextSegment {
   const InternalReferenceTextSegment();
 }
@@ -143,6 +152,27 @@ InternalReference? parseInternalReference(String input) {
     kind: InternalReferenceKind.discussion,
     location: Uri(path: path),
   );
+}
+
+/// Resolves the editor's whole-clipboard paste contract shared with Web.
+///
+/// Only a clipboard value that consists entirely of one legal internal URL is
+/// handled. Existing selected text becomes its label; otherwise the Foundation
+/// default label is used. Everything else falls through to Quill's normal paste.
+InternalReferencePaste? resolveInternalReferencePaste({
+  required String clipboardText,
+  required String selectedText,
+}) {
+  final reference = parseInternalReference(clipboardText.trim());
+  if (reference == null) return null;
+  final selectedLabel = selectedText.trim();
+  final label = selectedLabel.isEmpty
+      ? internalReferenceDefaultLabel
+      : selectedLabel;
+  if (label.contains(']') || label.contains('\n') || label.contains('\r')) {
+    return null;
+  }
+  return InternalReferencePaste(label: label, reference: reference);
 }
 
 List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {

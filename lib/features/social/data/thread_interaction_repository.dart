@@ -19,7 +19,7 @@ class ApiThreadInteractionRepository implements ThreadInteractionRepository {
     try {
       final data = (await _threadsApi.threadsLike(id: threadId)).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '点赞结果返回不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '点赞失败，请重新加载。');
       }
       return data.likeCount.toInt();
     } on DioException catch (error) {
@@ -32,7 +32,7 @@ class ApiThreadInteractionRepository implements ThreadInteractionRepository {
     try {
       final data = (await _threadsApi.threadsUnlike(id: threadId)).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '取消点赞结果返回不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '取消点赞失败，请重新加载。');
       }
       return data.likeCount.toInt();
     } on DioException catch (error) {
@@ -47,7 +47,7 @@ class ApiThreadInteractionRepository implements ThreadInteractionRepository {
         createBookmarkDto: CreateBookmarkDto((dto) => dto.threadId = threadId),
       )).data?.data;
       if (data == null || data.id.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '收藏结果返回不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '收藏失败，请重新加载。');
       }
       return data.id;
     } on DioException catch (error) {
@@ -62,7 +62,7 @@ class ApiThreadInteractionRepository implements ThreadInteractionRepository {
         id: bookmarkId,
       )).data?.data;
       if (data == null) {
-        throw const ApiFailure(userMessage: '取消收藏结果返回不完整，请重新加载确认。');
+        throw const ApiFailure(userMessage: '取消收藏失败，请重新加载。');
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

@@ -5,10 +5,10 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 void main() {
-  test('移动主题完整映射 Foundation v3.1.0 核心 Token', () {
+  test('移动主题完整映射 Foundation v5.1.0 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '3.1.0');
+    expect(WenyouFoundationVersion.value, '5.1.0');
     expect(WenyouEditorContract.surfaces, [
       'page',
       'expandableSheet',

@@ -511,10 +511,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('切换服务端草稿？'),
-          content: const Text(
-            '打开后会用所选服务端版本替换当前编辑器内容。若当前修改还需要保留，请先取消，再从顶栏云端草稿入口选择“保存当前主题”。',
-          ),
+          title: const Text('切换云端草稿？'),
+          content: const Text('打开后会用所选云端草稿替换当前内容。若要保留当前修改，请先取消并保存到云端。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

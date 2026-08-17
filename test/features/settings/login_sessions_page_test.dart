@@ -13,8 +13,8 @@ void main() {
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('移动端登录'), findsOneWidget);
-    expect(find.text('Web 端登录'), findsOneWidget);
+    expect(find.text('手机端登录'), findsOneWidget);
+    expect(find.text('网页端登录'), findsOneWidget);
     expect(find.text('当前终端'), findsOneWidget);
     expect(find.textContaining('登录时间：'), findsNWidgets(2));
     expect(find.textContaining('Mozilla'), findsNothing);
@@ -42,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.revokedIds, ['web-other']);
-    expect(find.text('Web 端登录'), findsNothing);
+    expect(find.text('网页端登录'), findsNothing);
     expect(find.text('该登录终端已退出。'), findsOneWidget);
   });
 
@@ -50,7 +50,7 @@ void main() {
     await tester.pumpWidget(_app(_FakeRepository(failLoad: true)));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('login-sessions-retry')), findsOneWidget);
-    expect(find.text('请求 ID：session-load-request'), findsOneWidget);
+    expect(find.text('问题编号：session-load-request'), findsOneWidget);
 
     final repository = _FakeRepository(sessions: [_other], failRevoke: true);
     await tester.pumpWidget(_app(repository));
@@ -62,8 +62,8 @@ void main() {
     await tester.tap(find.byKey(const Key('login-session-revoke-confirm')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Web 端登录'), findsOneWidget);
-    expect(find.text('请求 ID：session-revoke-request'), findsOneWidget);
+    expect(find.text('网页端登录'), findsOneWidget);
+    expect(find.text('问题编号：session-revoke-request'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

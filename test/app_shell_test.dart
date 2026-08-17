@@ -96,7 +96,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('需要升级温油站'), findsOneWidget);
-    expect(find.textContaining('服务端为 6.0.0'), findsOneWidget);
+    expect(find.text('兼容信息：6.0.0'), findsOneWidget);
     expect(find.text('首页'), findsNothing);
   });
 
@@ -115,7 +115,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('暂时连不上温油站'), findsOneWidget);
-    expect(find.text('请求 ID：startup-request-id'), findsOneWidget);
+    expect(find.text('问题编号：startup-request-id'), findsOneWidget);
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
@@ -469,7 +469,7 @@ void main() {
 
     expect(tokenStore.value, same(_tokens));
     expect(find.text('重试安全退出'), findsOneWidget);
-    expect(find.text('请求 ID：logout-request-id'), findsOneWidget);
+    expect(find.text('问题编号：logout-request-id'), findsOneWidget);
     expect(find.byKey(const Key('logout-local-only')), findsOneWidget);
   });
 

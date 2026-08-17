@@ -161,7 +161,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               message: '邮件可能已经发出',
               detail: state.failure?.requestId == null
                   ? '请保留当前验证码输入；为避免重复邮件，60 秒内不会重发。'
-                  : '请保留当前输入；请求 ID：${state.failure!.requestId}',
+                  : '请保留当前输入；问题编号：${state.failure!.requestId}',
             ),
           ],
           Align(

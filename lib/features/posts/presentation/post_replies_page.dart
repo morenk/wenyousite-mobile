@@ -672,7 +672,7 @@ class _DiscussionFailure extends StatelessWidget {
       child: WenyouPanel(
         child: WenyouEmptyState(
           icon: WenyouIconIds.metricReplies,
-          title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论没有加载完成',
+          title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论加载失败',
           message: failure?.userMessage ?? '请稍后重试。',
           detail: _failureDetail(failure),
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
@@ -729,5 +729,5 @@ PostComposerTarget _editTarget(PostItem post, String label) {
 
 String? _failureDetail(ApiFailure? failure) {
   final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }

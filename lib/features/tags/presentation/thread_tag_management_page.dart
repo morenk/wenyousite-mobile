@@ -88,7 +88,7 @@ class _ThreadTagManagementPageState
               children: [
                 WenyouSectionHeader(
                   title: bootstrap.threadTitle,
-                  subtitle: '每个主题最多 5 个标签。添加与移除会立即同步到 Web 和移动端。',
+                  subtitle: '每个主题最多 5 个标签。',
                 ),
                 SizedBox(height: tokens.space16),
                 Text(
@@ -242,7 +242,7 @@ class _ThreadTagManagementPageState
               message: state.failure!.userMessage,
               detail: state.failure!.requestId == null
                   ? null
-                  : '请求 ID：${state.failure!.requestId}',
+                  : '问题编号：${state.failure!.requestId}',
               action: TextButton(
                 onPressed: state.isMutating
                     ? null
@@ -353,11 +353,11 @@ class _TagManagementFatalState extends StatelessWidget {
           icon: failure?.httpStatus == 403
               ? WenyouIconIds.actionLock
               : WenyouIconIds.statusOffline,
-          title: failure?.httpStatus == 403 ? '无法管理这个主题' : '主题标签没有加载完成',
+          title: failure?.httpStatus == 403 ? '无法管理这个主题' : '主题标签加载失败',
           message: failure?.userMessage ?? '请检查网络后重试。',
           detail: failure?.requestId == null
               ? null
-              : '请求 ID：${failure!.requestId}',
+              : '问题编号：${failure!.requestId}',
           action: failure?.httpStatus == 403
               ? null
               : OutlinedButton.icon(

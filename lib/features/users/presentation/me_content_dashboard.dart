@@ -3,33 +3,42 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
 
 typedef MeUserMomentsBuilder =
     Widget Function(String userId, Future<void> Function() additionalRefresh);
-typedef MeMomentBookmarksBuilder =
-    Widget Function(Future<void> Function() additionalRefresh);
 
-enum MeContentTab { created, played, replies, moments, bookmarks }
+enum MeContentTab { overview, moments, threads }
 
 extension MeContentTabPresentation on MeContentTab {
   String get label => switch (this) {
-    MeContentTab.created => '创建',
-    MeContentTab.played => '参与',
-    MeContentTab.replies => '回复',
+    MeContentTab.overview => '概览',
     MeContentTab.moments => '动态',
-    MeContentTab.bookmarks => '收藏',
+    MeContentTab.threads => '帖子',
   };
 
   PublicUserContentTab? get publicUserTab => switch (this) {
-    MeContentTab.created => PublicUserContentTab.created,
-    MeContentTab.played => PublicUserContentTab.played,
-    MeContentTab.replies => PublicUserContentTab.replies,
-    MeContentTab.moments || MeContentTab.bookmarks => null,
+    MeContentTab.overview => PublicUserContentTab.replies,
+    MeContentTab.moments => null,
+    MeContentTab.threads => PublicUserContentTab.created,
+  };
+}
+
+enum _MeThreadTab { created, played }
+
+extension on _MeThreadTab {
+  String get label => switch (this) {
+    _MeThreadTab.created => '创建的',
+    _MeThreadTab.played => '参与的',
+  };
+
+  PublicUserContentTab get publicUserTab => switch (this) {
+    _MeThreadTab.created => PublicUserContentTab.created,
+    _MeThreadTab.played => PublicUserContentTab.played,
   };
 }
 
@@ -39,7 +48,6 @@ class MeContentTabBody extends ConsumerStatefulWidget {
     required this.userId,
     required this.onRefreshChrome,
     required this.userMomentsBuilder,
-    required this.momentBookmarksBuilder,
     super.key,
   });
 
@@ -47,7 +55,6 @@ class MeContentTabBody extends ConsumerStatefulWidget {
   final String userId;
   final Future<void> Function() onRefreshChrome;
   final MeUserMomentsBuilder? userMomentsBuilder;
-  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
 
   @override
   ConsumerState<MeContentTabBody> createState() => _MeContentTabBodyState();
@@ -55,6 +62,8 @@ class MeContentTabBody extends ConsumerStatefulWidget {
 
 class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     with AutomaticKeepAliveClientMixin {
+  var _threadTab = _MeThreadTab.created;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -62,9 +71,10 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
   Widget build(BuildContext context) {
     super.build(context);
     return switch (widget.tab) {
-      MeContentTab.created ||
-      MeContentTab.played ||
-      MeContentTab.replies => _buildUserContent(context),
+      MeContentTab.overview => _buildUserContent(
+        context,
+        PublicUserContentTab.replies,
+      ),
       MeContentTab.moments =>
         widget.userMomentsBuilder?.call(
               widget.userId,
@@ -72,29 +82,63 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
             ) ??
             _MeExternalContentFallback(
               title: '我的动态',
-              message: '打开动态列表查看已发布内容。',
+              message: '',
               onPressed: () => context.pushNamed(
                 'user-moments',
                 pathParameters: {'userId': widget.userId},
               ),
             ),
-      MeContentTab.bookmarks => _MeBookmarksView(
-        additionalRefresh: widget.onRefreshChrome,
-        momentBookmarksBuilder: widget.momentBookmarksBuilder,
-      ),
+      MeContentTab.threads => _buildThreads(context),
     };
   }
 
-  Widget _buildUserContent(BuildContext context) {
+  Widget _buildThreads(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            wenyouHorizontalPagePadding(context),
+            tokens.space8,
+            wenyouHorizontalPagePadding(context),
+            0,
+          ),
+          child: WenyouConstrainedWidth(
+            child: WenyouLineFilterBar<_MeThreadTab>(
+              key: const Key('me-thread-filter'),
+              keyPrefix: 'me-thread',
+              semanticsLabel: '我的帖子',
+              options: [
+                for (final tab in _MeThreadTab.values)
+                  WenyouFilterOption(value: tab, label: tab.label),
+              ],
+              selected: _threadTab,
+              onSelected: (tab) {
+                if (_threadTab == tab) return;
+                setState(() => _threadTab = tab);
+                ref
+                    .read(
+                      meUserContentControllerProvider(widget.userId).notifier,
+                    )
+                    .selectTab(tab.publicUserTab);
+              },
+            ),
+          ),
+        ),
+        Expanded(child: _buildUserContent(context, _threadTab.publicUserTab)),
+      ],
+    );
+  }
+
+  Widget _buildUserContent(BuildContext context, PublicUserContentTab tab) {
     final provider = meUserContentControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
-    final tab = widget.tab.publicUserTab!;
     return RefreshIndicator(
       onRefresh: () =>
           Future.wait([widget.onRefreshChrome(), notifier.retryActive()]),
       child: ListView(
-        key: PageStorageKey('me-${widget.tab.name}-content'),
+        key: PageStorageKey('me-${tab.name}-content'),
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
           wenyouHorizontalPagePadding(context),
@@ -110,46 +154,6 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
               isSelf: true,
               onRetry: notifier.retryActive,
               onLoadMore: notifier.loadMoreActive,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MeBookmarksView extends StatelessWidget {
-  const _MeBookmarksView({
-    required this.additionalRefresh,
-    required this.momentBookmarksBuilder,
-  });
-
-  final Future<void> Function() additionalRefresh;
-  final MeMomentBookmarksBuilder? momentBookmarksBuilder;
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          const TabBar(
-            tabs: [
-              Tab(text: '主题帖'),
-              Tab(text: '动态'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                BookmarkListView(additionalRefresh: additionalRefresh),
-                momentBookmarksBuilder?.call(additionalRefresh) ??
-                    _MeExternalContentFallback(
-                      title: '动态收藏',
-                      message: '打开动态收藏列表查看已收藏内容。',
-                      onPressed: () => context.pushNamed('moment-bookmarks'),
-                    ),
-              ],
             ),
           ),
         ],

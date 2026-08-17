@@ -38,7 +38,9 @@ class PasswordChangeController extends StateNotifier<PasswordChangeState> {
       state = PasswordChangeState.failed(
         _asFailure(
           error,
-          passwordChanged ? '密码已修改，但本机登录信息清理失败。请重启应用后重新登录。' : '密码修改没有完成，请稍后重试。',
+          passwordChanged
+              ? '密码已修改，但清理这台设备的登录信息失败。请重启应用后重新登录。'
+              : '密码修改失败，请稍后重试。',
         ),
       );
       return false;
@@ -86,7 +88,7 @@ class EmailChangeController extends StateNotifier<EmailChangeState> {
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      final failure = _asFailure(error, '验证码发送没有完成，请稍后重试。');
+      final failure = _asFailure(error, '验证码发送失败，请稍后重试。');
       if (failure.hasUnknownWriteOutcome) {
         state = EmailChangeState(
           step: EmailChangeStep.verifyCode,
@@ -135,7 +137,7 @@ class EmailChangeController extends StateNotifier<EmailChangeState> {
         clearAction: true,
         failure: _asFailure(
           error,
-          emailChanged ? '邮箱已更换，但本机登录信息清理失败。请重启应用后重新登录。' : '邮箱更换没有完成，请稍后重试。',
+          emailChanged ? '邮箱已更换，但清理这台设备的登录信息失败。请重启应用后重新登录。' : '邮箱更换失败，请稍后重试。',
         ),
       );
       return false;

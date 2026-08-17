@@ -132,7 +132,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
   }) async {
     final uri = update.updateUri;
     if (uri == null) {
-      throw const MobileUpdateException('新版本下载地址尚未配置，请稍后重试。');
+      throw const MobileUpdateException('获取新版本下载地址失败，请稍后重试。');
     }
     if (update.platform != MobileClientPlatform.android) {
       onStage(MobileUpdateStage.openingExternalPage);
@@ -206,7 +206,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
       }
       throw MobileUpdateException(error.message ?? '无法唤起系统安装器，请稍后重试。', error);
     } on Object catch (error) {
-      throw MobileUpdateException('更新没有完成，请稍后重试。', error);
+      throw MobileUpdateException('更新失败，请稍后重试。', error);
     }
   }
 
@@ -239,7 +239,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
     return switch (result) {
       'permissionRequired' => UpdateLaunchResult.permissionRequired,
       'installerOpened' => UpdateLaunchResult.installerOpened,
-      _ => throw const MobileUpdateException('系统没有响应安装请求，请重试。'),
+      _ => throw const MobileUpdateException('系统未能开始安装，请重试。'),
     };
   }
 
@@ -355,7 +355,7 @@ class _AndroidReleaseMetadata {
       Headers.contentTypeHeader,
     ).split(';').first.trim().toLowerCase();
     if (contentType != DeviceMobileUpdateService._apkContentType) {
-      throw const MobileUpdateException('服务器返回的文件不是 Android 安装包。');
+      throw const MobileUpdateException('下载的更新文件无法安装，请重新下载。');
     }
     final contentLength = int.tryParse(
       _header(response, Headers.contentLengthHeader),
@@ -367,7 +367,7 @@ class _AndroidReleaseMetadata {
     }
     final disposition = _header(response, 'content-disposition').toLowerCase();
     if (!disposition.contains('.apk')) {
-      throw const MobileUpdateException('安装包下载信息不完整，请稍后重试。');
+      throw const MobileUpdateException('安装包下载失败，请稍后重试。');
     }
     final applicationId = _header(response, 'x-amz-meta-application-id');
     if (applicationId != DeviceMobileUpdateService._applicationId) {
@@ -381,7 +381,7 @@ class _AndroidReleaseMetadata {
     }
     final versionName = _header(response, 'x-amz-meta-version-name').trim();
     if (versionName.isEmpty) {
-      throw const MobileUpdateException('安装包版本信息不完整，请稍后重试。');
+      throw const MobileUpdateException('安装包版本加载失败，请稍后重试。');
     }
     final digest = _header(response, 'x-amz-meta-apk-sha256').toLowerCase();
     if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(digest)) {
@@ -412,7 +412,7 @@ class _AndroidReleaseMetadata {
   static String _header(Response<Object?> response, String name) {
     final value = response.headers.value(name);
     if (value == null || value.trim().isEmpty) {
-      throw const MobileUpdateException('安装包发布信息不完整，请稍后重试。');
+      throw const MobileUpdateException('安装包发布信息加载失败，请稍后重试。');
     }
     return value.trim();
   }

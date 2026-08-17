@@ -5,7 +5,6 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 
 import '../../support/foundation_test_fonts.dart';
@@ -31,8 +30,6 @@ void main() {
       ),
     );
 
-    final context = tester.element(find.byKey(const Key('like')));
-    final tokens = context.wenyouTokens;
     expect(
       tester.getSize(find.byKey(const Key('like'))).width,
       greaterThanOrEqualTo(48),
@@ -51,7 +48,7 @@ void main() {
             ),
           )
           .color,
-      tokens.likeSoft,
+      Colors.transparent,
     );
     final semantics = tester.getSemantics(find.byKey(const Key('like')));
     expect(semantics.label, '取消点赞');

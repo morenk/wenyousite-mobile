@@ -115,6 +115,39 @@ void main() {
     );
   });
 
+  test('站内链接按原子传送门往返且保留同行富文本', () {
+    const source =
+        '**入口**：[楼层动态](/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd)';
+    final document = MarkdownDeltaCodec.decode(source);
+
+    final portals = document.delta.operations.where(
+      (operation) =>
+          operation.data is Map &&
+          (operation.data as Map).containsKey(
+            MarkdownDeltaCodec.internalReferenceEmbed,
+          ),
+    );
+    expect(portals, hasLength(1));
+    expect(MarkdownDeltaCodec.encode(document.delta), source);
+  });
+
+  test('行内代码里的站内链接保持代码文本', () {
+    const source = '`[不是传送门](/threads/cmsewdo0h000x7qv6aa77ll1v)`';
+    final document = MarkdownDeltaCodec.decode(source);
+
+    expect(
+      document.delta.operations.any(
+        (operation) =>
+            operation.data is Map &&
+            (operation.data as Map).containsKey(
+              MarkdownDeltaCodec.internalReferenceEmbed,
+            ),
+      ),
+      isFalse,
+    );
+    expect(MarkdownDeltaCodec.encode(document.delta), source);
+  });
+
   test('未知协议所在行按 v3 整行字面降级且不激活扩展节点', () {
     const source =
         '[[dice:v2:raw-node:1d20]] '

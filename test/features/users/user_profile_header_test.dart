@@ -43,10 +43,9 @@ void main() {
     final header = find.byKey(const Key('profile-header'));
     final cover = find.descendant(
       of: header,
-      matching: find.byType(AspectRatio),
+      matching: find.bySemanticsLabel('温柔测试员 的主页背景图'),
     );
     expect(cover, findsOneWidget);
-    expect(tester.widget<AspectRatio>(cover).aspectRatio, 2);
     expect(tester.getSize(cover).width / tester.getSize(cover).height, 2);
 
     final card = find.descendant(of: header, matching: find.byType(Card));

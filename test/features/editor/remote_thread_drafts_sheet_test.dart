@@ -8,7 +8,7 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.
 import 'package:wenyousite_mobile/features/threads/presentation/remote_thread_drafts_sheet.dart';
 
 void main() {
-  testWidgets('360dp 草稿箱展示当前项并二次确认删除其他服务端草稿', (tester) async {
+  testWidgets('360dp 草稿箱展示当前项并二次确认删除其他云端草稿', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -55,7 +55,7 @@ void main() {
     await tester.ensureVisible(remove);
     await tester.tap(remove);
     await tester.pumpAndSettle();
-    expect(find.text('删除服务端草稿？'), findsOneWidget);
+    expect(find.text('删除云端草稿？'), findsOneWidget);
     expect(find.text('“其他设备草稿”删除后无法恢复，其他设备也将无法继续编辑。'), findsOneWidget);
 
     await tester.tap(find.text('确认删除'));

@@ -121,7 +121,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'message',
-          contains('返回不完整'),
+          contains('加载失败'),
         ),
       ),
     );

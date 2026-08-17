@@ -39,7 +39,7 @@ class ThreadTagManagementController
       if (epoch != _loadEpoch) return;
       state = ThreadTagManagementState(
         phase: ThreadTagManagementPhase.failed,
-        failure: _asFailure(error, '主题标签没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '主题标签加载失败，请稍后重试。'),
       );
     }
   }

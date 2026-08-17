@@ -30,7 +30,7 @@ class LoginSessionsController extends StateNotifier<LoginSessionsState> {
       if (!mounted || epoch != _loadEpoch) return;
       state = LoginSessionsState(
         phase: LoginSessionsPhase.failed,
-        failure: _asFailure(error, '登录终端没有加载完成，请稍后重试。'),
+        failure: _asFailure(error, '登录终端加载失败，请稍后重试。'),
       );
     }
   }
@@ -65,7 +65,7 @@ class LoginSessionsController extends StateNotifier<LoginSessionsState> {
       state = LoginSessionsState(
         phase: LoginSessionsPhase.ready,
         sessions: oldSessions,
-        actionFailure: _asFailure(error, '终端退出没有完成，请稍后重试。'),
+        actionFailure: _asFailure(error, '终端退出失败，请稍后重试。'),
       );
       return false;
     }

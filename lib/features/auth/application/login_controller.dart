@@ -48,7 +48,7 @@ class LoginController extends StateNotifier<LoginState> {
       return false;
     } on Object catch (error) {
       state = LoginState.failed(
-        ApiFailure(userMessage: '登录没有完成，请稍后重试。', cause: error),
+        ApiFailure(userMessage: '登录失败，请稍后重试。', cause: error),
       );
       return false;
     }

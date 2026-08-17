@@ -134,11 +134,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         leading: BackButton(
           key: const Key('thread-detail-back'),
           onPressed: _leaveDetail,
         ),
-        title: const Text('主题详情'),
         actions: _threadAppBarActions(state, provider),
       ),
       body: switch (state.phase) {
@@ -418,7 +418,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     return [
       SliverToBoxAdapter(
         child: ThreadDetailContent(
-          top: 16,
+          top: 8,
           child: ThreadDetailOverview(
             detail: detail,
             categoryName: widget.categoryNameHint ?? '未分类',
@@ -454,7 +454,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               child: WenyouEmptyState(
                 icon: WenyouIconIds.contentTopic,
                 title: '这个主题还没有子贴',
-                message: '楼主补充内容后，可以在这里继续阅读。',
+                message: '',
               ),
             ),
           ),
@@ -475,7 +475,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                 message: actions.failure!.userMessage,
                 detail: actions.failure!.requestId == null
                     ? null
-                    : '请求 ID：${actions.failure!.requestId}',
+                    : '问题编号：${actions.failure!.requestId}',
               ),
             ),
           ),
@@ -696,7 +696,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除这个楼层？'),
-        content: const Text('楼层会被标记为已删除，操作无法在移动端撤销。'),
+        content: const Text('楼层会被标记为已删除，且无法恢复。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

@@ -48,8 +48,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('粉丝没有加载完成'), findsOneWidget);
-    expect(find.text('请求 ID：list-request-id'), findsOneWidget);
+    expect(find.text('粉丝加载失败'), findsOneWidget);
+    expect(find.text('问题编号：list-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('user-relation-list-retry')));
     await tester.pumpAndSettle();
 
@@ -73,7 +73,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('unblock-user-1')));
     await tester.pumpAndSettle();
     expect(find.text('温柔旅人'), findsOneWidget);
-    expect(find.text('请求 ID：unblock-request-id'), findsOneWidget);
+    expect(find.text('问题编号：unblock-request-id'), findsOneWidget);
 
     relationRepository.failUnblock = false;
     await tester.tap(find.byKey(const ValueKey('unblock-user-1')));

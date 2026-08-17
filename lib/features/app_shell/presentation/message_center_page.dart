@@ -209,7 +209,7 @@ class _MessageCenterLoginPrompt extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.metricComments,
             title: '登录后查看消息',
-            message: '通知、私聊请求和未读会话会集中显示在这里。',
+            message: '',
             action: FilledButton.icon(
               key: const Key('notification-login'),
               onPressed: () => context.pushNamed(

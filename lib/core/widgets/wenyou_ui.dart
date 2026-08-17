@@ -16,7 +16,7 @@ double wenyouHorizontalPagePadding(
 
 String? wenyouRequestDetail(ApiFailure? failure) {
   final requestId = failure?.requestId;
-  return requestId == null ? null : '请求 ID：$requestId';
+  return requestId == null ? null : '问题编号：$requestId';
 }
 
 class WenyouConstrainedWidth extends StatelessWidget {

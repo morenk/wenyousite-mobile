@@ -95,13 +95,13 @@ class ThreadDetailFatalState extends StatelessWidget {
             icon: notFound
                 ? WenyouIconIds.actionHide
                 : WenyouIconIds.statusOffline,
-            title: notFound ? '这个主题暂时不可见' : '主题详情没有加载完成',
+            title: notFound ? '这个主题暂时不可见' : '主题详情加载失败',
             message: notFound
                 ? '它可能已经删除、设为私密，或当前账号没有访问权限。'
                 : (failure?.userMessage ?? '请检查网络后重试。'),
             detail: failure?.requestId == null
                 ? null
-                : '请求 ID：${failure!.requestId}',
+                : '问题编号：${failure!.requestId}',
             action: OutlinedButton.icon(
               key: const Key('thread-detail-retry'),
               onPressed: onRetry,
@@ -130,7 +130,7 @@ class ThreadDetailTransientFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '请求 ID：${failure.requestId}',
+      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
       action: TextButton.icon(
         key: const Key('thread-detail-transient-retry'),
         onPressed: onRetry,
@@ -217,7 +217,7 @@ class ThreadTargetPostStatus extends StatelessWidget {
               : (failure?.userMessage ?? '目标内容定位失败，请重试。'),
           detail: failure?.requestId == null
               ? null
-              : '请求 ID：${failure!.requestId}',
+              : '问题编号：${failure!.requestId}',
           action: TextButton.icon(
             key: const Key('thread-target-retry'),
             onPressed: onRetry,

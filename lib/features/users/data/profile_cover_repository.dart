@@ -28,7 +28,7 @@ class ApiProfileCoverRepository implements ProfileCoverRepository {
       final user = response.data?.data;
       final cover = mapProfileCover(user?.profileCover);
       if (user == null || cover == null || cover.mobile == null) {
-        throw const ApiFailure(userMessage: '背景图设置结果不完整，请重新加载资料确认。');
+        throw const ApiFailure(userMessage: '背景图设置失败，请重新加载资料确认。');
       }
       return ProfileCoverUpdateResult(
         profileCover: cover,
@@ -45,7 +45,7 @@ class ApiProfileCoverRepository implements ProfileCoverRepository {
       final response = await _api.usersRemoveProfileCover();
       final user = response.data?.data;
       if (user == null || user.profileCover != null) {
-        throw const ApiFailure(userMessage: '背景图移除结果不完整，请重新加载资料确认。');
+        throw const ApiFailure(userMessage: '背景图移除失败，请重新加载资料确认。');
       }
       return ProfileCoverUpdateResult(
         profileCover: null,

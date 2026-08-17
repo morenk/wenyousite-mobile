@@ -72,7 +72,7 @@ MobileUpdateInfo? evaluateMobileUpdate({
     );
   }
 
-  // 推荐更新必须有安全地址；配置不完整时不打断用户正常使用。
+  // 推荐更新必须有安全地址；缺少配置时不打断用户正常使用。
   if (recommended != null && installed.build < recommended && uri != null) {
     return MobileUpdateInfo(
       kind: MobileUpdateKind.recommended,

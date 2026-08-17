@@ -224,7 +224,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.userMessage,
           'message',
-          contains('原请求重试'),
+          contains('加油失败'),
         ),
       ),
     );
