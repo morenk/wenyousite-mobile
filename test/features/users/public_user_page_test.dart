@@ -43,6 +43,11 @@ void main() {
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     expect(find.text('18L'), findsOneWidget);
+    expect(find.text('创作概览'), findsOneWidget);
+    expect(find.text('发布动态'), findsOneWidget);
+    expect(find.text('创建主题'), findsWidgets);
+    expect(find.text('参与主题'), findsOneWidget);
+    expect(find.text('累计回复'), findsOneWidget);
     expect(find.text('已关注'), findsOneWidget);
     expect(find.text('关注了你'), findsOneWidget);
     final coverRect = tester.getRect(find.bySemanticsLabel('温柔测试员 的主页背景图'));
@@ -199,7 +204,10 @@ void main() {
     await tester.pumpWidget(_userApp(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('创建主题'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-thread-card-thread-created')),
+      findsOneWidget,
+    );
     expect(find.text('招募中'), findsOneWidget);
     expect(find.text('RPG'), findsNothing);
     expect(repository.createdCalls, 1);
@@ -211,7 +219,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('参与'));
     await tester.pumpAndSettle();
-    expect(find.text('参与主题'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-thread-card-thread-played')),
+      findsOneWidget,
+    );
     expect(repository.playedCalls, 1);
 
     await tester.ensureVisible(find.text('回复'));
@@ -257,7 +268,10 @@ void main() {
     await tester.tap(find.byKey(const Key('public-user-created-retry')));
     await tester.pumpAndSettle();
 
-    expect(find.text('创建主题'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-thread-card-thread-created')),
+      findsOneWidget,
+    );
     expect(repository.createdCalls, 2);
   });
 
@@ -294,9 +308,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('创建主题'));
+    final createdThread = find.byKey(
+      const Key('home-thread-card-thread-created'),
+    );
+    await tester.ensureVisible(createdThread);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('创建主题'));
+    await tester.tap(
+      find.descendant(of: createdThread, matching: find.text('创建主题')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('主题=thread-created;帖子=null'), findsOneWidget);
 

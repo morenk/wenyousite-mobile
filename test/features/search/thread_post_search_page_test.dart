@@ -92,6 +92,13 @@ void main() {
       await tester.tap(find.byKey(const Key('thread-search-submit')));
       await tester.pumpAndSettle();
 
+      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      expect(
+        tester
+            .getSize(find.byKey(const Key('thread-search-result-post-1')))
+            .width,
+        expectedWidth,
+      );
       expect(tester.takeException(), isNull);
       expect(
         tester.getSize(find.byKey(const Key('thread-search-submit'))).height,

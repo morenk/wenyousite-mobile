@@ -380,6 +380,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
                   key: const Key('me-content-tabs'),
                   keyPrefix: 'me-content',
                   semanticsLabel: '我的主页内容',
+                  centered: true,
                   options: [
                     for (final tab in MeContentTab.values)
                       WenyouFilterOption(value: tab, label: tab.label),
@@ -524,14 +525,28 @@ class _ProfileOverview extends StatelessWidget {
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'
           : '${profile.experience} / ${profile.nextLevelExperience} 经验',
-      actions: SizedBox(
-        width: double.infinity,
-        child: FilledButton.icon(
-          key: const Key('me-open-edit-profile'),
-          onPressed: () => context.pushNamed('me-edit'),
-          icon: const WenyouIcon(WenyouIconIds.actionEdit),
-          label: const Text('编辑资料'),
-        ),
+      actions: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: FilledButton.icon(
+              key: const Key('me-open-edit-profile'),
+              onPressed: () => context.pushNamed('me-edit'),
+              icon: const WenyouIcon(WenyouIconIds.actionEdit),
+              label: const Text('编辑资料'),
+            ),
+          ),
+          SizedBox(width: context.wenyouTokens.space8),
+          Expanded(
+            flex: 2,
+            child: OutlinedButton.icon(
+              key: const Key('me-open-bookmarks'),
+              onPressed: () => context.pushNamed('me-bookmarks'),
+              icon: const WenyouIcon(WenyouIconIds.actionBookmark),
+              label: const Text('收藏'),
+            ),
+          ),
+        ],
       ),
       stats: [
         UserProfileStatItem(
@@ -553,12 +568,6 @@ class _ProfileOverview extends StatelessWidget {
               ? '—'
               : '${WenyouAmount.format(walletState.summary!.balance)} L',
           onTap: () => context.pushNamed('wallet'),
-        ),
-        UserProfileStatItem(
-          key: const Key('me-open-bookmarks'),
-          label: '收藏',
-          icon: WenyouIconIds.actionBookmark,
-          onTap: () => context.pushNamed('me-bookmarks'),
         ),
       ],
     );

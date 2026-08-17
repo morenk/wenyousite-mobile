@@ -701,6 +701,7 @@ class _MomentRootCommentPanel extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.only(left: tokens.space12),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (var index = 0; index < replies.length; index++) ...[
                     MomentCommentBody(

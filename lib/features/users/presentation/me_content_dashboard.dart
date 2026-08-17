@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
+import 'package:wenyousite_mobile/features/users/presentation/user_activity_summary_panel.dart';
 
 typedef MeUserMomentsBuilder =
     Widget Function(String userId, Future<void> Function() additionalRefresh);
@@ -108,6 +109,7 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
               key: const Key('me-thread-filter'),
               keyPrefix: 'me-thread',
               semanticsLabel: '我的帖子',
+              centered: true,
               options: [
                 for (final tab in _MeThreadTab.values)
                   WenyouFilterOption(value: tab, label: tab.label),
@@ -134,9 +136,12 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     final provider = meUserContentControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
+    final isOverview = widget.tab == MeContentTab.overview;
     return RefreshIndicator(
-      onRefresh: () =>
-          Future.wait([widget.onRefreshChrome(), notifier.retryActive()]),
+      onRefresh: () => Future.wait([
+        widget.onRefreshChrome(),
+        isOverview ? notifier.load() : notifier.retryActive(),
+      ]),
       child: ListView(
         key: PageStorageKey('me-${tab.name}-content'),
         physics: const AlwaysScrollableScrollPhysics(),
@@ -148,12 +153,28 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
         ),
         children: [
           WenyouConstrainedWidth(
-            child: PublicUserContentSectionView(
-              tab: tab,
-              state: state,
-              isSelf: true,
-              onRetry: notifier.retryActive,
-              onLoadMore: notifier.loadMoreActive,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isOverview) ...[
+                  UserActivitySummaryPanel(
+                    key: const Key('me-activity-summary'),
+                    keyPrefix: 'me-activity',
+                    state: state,
+                    onRetry: notifier.retryActivitySummary,
+                  ),
+                  SizedBox(height: context.wenyouTokens.space20),
+                  const WenyouSectionHeader(title: '最近回复'),
+                  SizedBox(height: context.wenyouTokens.space8),
+                ],
+                PublicUserContentSectionView(
+                  tab: tab,
+                  state: state,
+                  isSelf: true,
+                  onRetry: notifier.retryActive,
+                  onLoadMore: notifier.loadMoreActive,
+                ),
+              ],
             ),
           ),
         ],

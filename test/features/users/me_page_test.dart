@@ -80,9 +80,19 @@ void main() {
       tester.getSize(find.byKey(const Key('me-open-wallet'))).width,
       closeTo(followingWidth, 0.01),
     );
+    final editRect = tester.getRect(
+      find.byKey(const Key('me-open-edit-profile')),
+    );
+    final bookmarkRect = tester.getRect(
+      find.byKey(const Key('me-open-bookmarks')),
+    );
+    expect(bookmarkRect.top, editRect.top);
+    expect(bookmarkRect.height, editRect.height);
     expect(
-      tester.getSize(find.byKey(const Key('me-open-bookmarks'))).width,
-      closeTo(followingWidth, 0.01),
+      bookmarkRect.top,
+      greaterThan(
+        tester.getRect(find.byKey(const Key('me-open-wallet'))).bottom,
+      ),
     );
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
     expect(find.byKey(const Key('me-open-public-profile')), findsOneWidget);
@@ -93,6 +103,12 @@ void main() {
     expect(find.text('概览'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
     expect(find.text('帖子'), findsOneWidget);
+    expect(find.text('创作概览'), findsOneWidget);
+    expect(find.text('发布动态'), findsOneWidget);
+    expect(find.text('创建主题'), findsOneWidget);
+    expect(find.text('参与主题'), findsOneWidget);
+    expect(find.text('累计回复'), findsOneWidget);
+    expect(find.text('最近回复'), findsOneWidget);
     expect(find.text('创建的'), findsNothing);
     expect(find.text('参与的'), findsNothing);
     expect(find.text('收藏'), findsOneWidget);
@@ -129,6 +145,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(publicRepository.replyCalls, 1);
+    expect(publicRepository.activityCalls, 1);
     expect(publicRepository.createdCalls, 0);
 
     await tester.tap(find.text('帖子'));
@@ -439,6 +456,30 @@ void main() {
         tester.getSize(find.byKey(const Key('me-profile-header'))).width,
         expectedWidth,
       );
+      await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
+      await tester.pumpAndSettle();
+      final threadsTab = find.byKey(
+        const ValueKey('me-content-MeContentTab.threads'),
+      );
+      await tester.ensureVisible(threadsTab);
+      await tester.pumpAndSettle();
+      final mainTabGroup = Rect.fromLTRB(
+        tester.getRect(find.text('概览')).left,
+        tester.getRect(find.text('概览')).top,
+        tester.getRect(find.text('帖子')).right,
+        tester.getRect(find.text('帖子')).bottom,
+      );
+      expect(mainTabGroup.center.dx, closeTo(width / 2, 0.01));
+
+      await tester.tap(threadsTab);
+      await tester.pumpAndSettle();
+      final threadTabGroup = Rect.fromLTRB(
+        tester.getRect(find.text('创建的')).left,
+        tester.getRect(find.text('创建的')).top,
+        tester.getRect(find.text('参与的')).right,
+        tester.getRect(find.text('参与的')).bottom,
+      );
+      expect(threadTabGroup.center.dx, closeTo(width / 2, 0.01));
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(
@@ -711,13 +752,20 @@ class _FakeMeProfileRepository implements MeProfileRepository {
 
 class _FakePublicUserRepository implements PublicUserRepository {
   int fetchUserCalls = 0;
+  int activityCalls = 0;
   int createdCalls = 0;
   int playedCalls = 0;
   int replyCalls = 0;
 
   @override
-  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) {
-    throw UnimplementedError();
+  Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
+    activityCalls += 1;
+    return const PublicUserActivitySummary(
+      momentCount: 7,
+      createdThreadCount: 3,
+      playedThreadCount: 2,
+      replyCount: 18,
+    );
   }
 
   @override

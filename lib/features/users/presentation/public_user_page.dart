@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/features/users/application/me_profile_controll
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_content.dart';
+import 'package:wenyousite_mobile/features/users/presentation/user_activity_summary_panel.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
@@ -105,7 +106,9 @@ class PublicUserPage extends ConsumerWidget {
                             previewOnly: previewOnly,
                           ),
                           SizedBox(height: context.wenyouTokens.space12),
-                          _UserActivitySummaryPanel(
+                          UserActivitySummaryPanel(
+                            key: const Key('public-user-activity-summary'),
+                            keyPrefix: 'public-user-activity',
                             state: state,
                             onRetry: () => ref
                                 .read(provider.notifier)
@@ -287,127 +290,6 @@ class _UserProfileContent extends ConsumerWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _UserActivitySummaryPanel extends StatelessWidget {
-  const _UserActivitySummaryPanel({required this.state, required this.onRetry});
-
-  final PublicUserState state;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      key: const Key('public-user-activity-summary'),
-      padding: EdgeInsets.all(tokens.space16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const WenyouSectionHeader(title: '创作活动'),
-          SizedBox(height: tokens.space12),
-          switch (state.activityPhase) {
-            PublicUserActivityPhase.idle ||
-            PublicUserActivityPhase.loading => const LinearProgressIndicator(),
-            PublicUserActivityPhase.failed => WenyouStatusBanner(
-              key: const Key('public-user-activity-failure'),
-              tone: WenyouStatusTone.error,
-              message: state.activityFailure?.userMessage ?? '创作活动汇总加载失败。',
-              detail: state.activityFailure?.requestId == null
-                  ? null
-                  : '问题编号：${state.activityFailure!.requestId}',
-              action: TextButton(
-                key: const Key('public-user-activity-retry'),
-                onPressed: onRetry,
-                child: const Text('重试'),
-              ),
-            ),
-            PublicUserActivityPhase.ready => _ActivitySummaryGrid(
-              summary: state.activitySummary!,
-            ),
-          },
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivitySummaryGrid extends StatelessWidget {
-  const _ActivitySummaryGrid({required this.summary});
-
-  final PublicUserActivitySummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth - tokens.space8) / 2;
-        return Wrap(
-          spacing: tokens.space8,
-          runSpacing: tokens.space8,
-          children: [
-            _ActivitySummaryItem(
-              width: itemWidth,
-              label: '动态数',
-              value: '${summary.momentCount}',
-            ),
-            _ActivitySummaryItem(
-              width: itemWidth,
-              label: '自建主题',
-              value: '${summary.createdThreadCount}',
-            ),
-            _ActivitySummaryItem(
-              width: itemWidth,
-              label: '玩家主题',
-              value: summary.playedThreadCount?.toString() ?? '未公开',
-            ),
-            _ActivitySummaryItem(
-              width: itemWidth,
-              label: '公开回复数',
-              value: summary.replyCount?.toString() ?? '未公开',
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ActivitySummaryItem extends StatelessWidget {
-  const _ActivitySummaryItem({
-    required this.width,
-    required this.label,
-    required this.value,
-  });
-
-  final double width;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return SizedBox(
-      width: width,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.softPanel,
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(tokens.space12),
-          child: Column(
-            children: [
-              Text(value, style: Theme.of(context).textTheme.titleMedium),
-              SizedBox(height: tokens.space4),
-              Text(label, style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ),
       ),
     );
   }

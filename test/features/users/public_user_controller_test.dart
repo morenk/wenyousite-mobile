@@ -76,7 +76,9 @@ void main() {
     await controller.selectTab(PublicUserContentTab.bookmarks);
 
     expect(controller.state.availableTabs, PublicUserContentTab.values);
+    expect(controller.state.activityPhase, PublicUserActivityPhase.ready);
     expect(repository.fetchUserCalls, 0);
+    expect(repository.activityCalls, 1);
     expect(repository.createdCalls, 1);
     expect(repository.playedCalls, 1);
     expect(repository.replyCalls, 1);
@@ -133,9 +135,11 @@ class _FakePublicUserRepository implements PublicUserRepository {
   int replyCalls = 0;
   int bookmarkCalls = 0;
   int fetchUserCalls = 0;
+  int activityCalls = 0;
 
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
+    activityCalls += 1;
     return const PublicUserActivitySummary(
       momentCount: 3,
       createdThreadCount: 2,

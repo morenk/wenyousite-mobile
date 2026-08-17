@@ -17,6 +17,7 @@ class WenyouLineFilterBar<T> extends StatelessWidget {
     required this.onSelected,
     required this.semanticsLabel,
     this.keyPrefix = 'line-filter',
+    this.centered = false,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class WenyouLineFilterBar<T> extends StatelessWidget {
   final ValueChanged<T> onSelected;
   final String semanticsLabel;
   final String keyPrefix;
+  final bool centered;
 
   @override
   Widget build(BuildContext context) {
@@ -37,19 +39,35 @@ class WenyouLineFilterBar<T> extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: tokens.border)),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final option in options)
-                _LineFilterButton<T>(
-                  key: ValueKey('$keyPrefix-${option.value}'),
-                  option: option,
-                  selected: option.value == selected,
-                  onSelected: onSelected,
-                ),
-            ],
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final row = Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: centered
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                for (final option in options)
+                  _LineFilterButton<T>(
+                    key: ValueKey('$keyPrefix-${option.value}'),
+                    option: option,
+                    selected: option.value == selected,
+                    onSelected: onSelected,
+                  ),
+              ],
+            );
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: centered
+                  ? ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
+                      child: row,
+                    )
+                  : row,
+            );
+          },
         ),
       ),
     );

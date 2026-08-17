@@ -163,6 +163,13 @@ void main() {
       await tester.tap(find.byKey(const Key('search-submit')));
       await tester.pumpAndSettle();
 
+      final expectedWidth = width <= 400 ? width - 24 : width - 48;
+      expect(
+        tester
+            .getSize(find.byKey(const Key('home-thread-card-thread-1')))
+            .width,
+        expectedWidth,
+      );
       expect(tester.takeException(), isNull);
       expect(
         tester.getSize(find.byKey(const Key('search-submit'))).height,
@@ -174,6 +181,27 @@ void main() {
           greaterThanOrEqualTo(48),
         );
       }
+
+      await tester.tap(find.byKey(const Key('search-tab-posts')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byKey(const Key('search-post-post-1'))).width,
+        expectedWidth,
+      );
+
+      await tester.tap(find.byKey(const Key('search-tab-users')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byKey(const Key('search-user-user-1'))).width,
+        expectedWidth,
+      );
+
+      await tester.tap(find.byKey(const Key('search-tab-moments')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byKey(const Key('moment-open-moment-1'))).width,
+        expectedWidth,
+      );
     });
   }
 }

@@ -114,7 +114,10 @@ class PublicUserController extends StateNotifier<PublicUserState> {
         activeTab: previousTab,
         showAllContent: true,
       );
-      await _loadTab(previousTab, epoch);
+      await Future.wait([
+        _loadActivitySummary(epoch),
+        _loadTab(previousTab, epoch),
+      ]);
       return;
     }
     try {
@@ -147,7 +150,7 @@ class PublicUserController extends StateNotifier<PublicUserState> {
 
   Future<void> retryActivitySummary() {
     if (state.phase != PublicUserPhase.ready ||
-        state.profile?.isDeactivated != false ||
+        (!selfContentOnly && state.profile?.isDeactivated != false) ||
         state.activityPhase == PublicUserActivityPhase.loading) {
       return Future.value();
     }

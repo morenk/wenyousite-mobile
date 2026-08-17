@@ -175,6 +175,7 @@ class _ThreadSearchResults extends ConsumerWidget {
         ),
       ),
       SearchSectionPhase.ready => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < state.items.length; index++) ...[
             if (index > 0) SizedBox(height: tokens.space12),

@@ -378,6 +378,7 @@ class _MomentSectionBody extends ConsumerWidget {
       );
     }
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < state.items.length; index++) ...[
           if (index > 0) SizedBox(height: tokens.space12),
@@ -470,6 +471,7 @@ class _SectionBody<T> extends ConsumerWidget {
         ),
       ),
       SearchSectionPhase.ready => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < state.items.length; index++) ...[
             if (index > 0) SizedBox(height: tokens.space12),
@@ -498,6 +500,7 @@ class _PostSectionBody extends ConsumerWidget {
       );
     }
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < state.items.length; index++) ...[
           if (index > 0) SizedBox(height: tokens.space12),
@@ -586,6 +589,7 @@ class _UserResultCard extends StatelessWidget {
       button: true,
       label: '打开用户 ${item.username}',
       child: WenyouPanel(
+        key: Key('search-user-${item.id}'),
         onTap: () => context.pushNamed(
           'user-profile',
           pathParameters: {'userId': item.id},
@@ -637,6 +641,7 @@ class _PostResultCard extends StatelessWidget {
       button: true,
       label: '打开 ${item.threadTitle} 中的匹配正文',
       child: WenyouPanel(
+        key: Key('search-post-${item.id}'),
         onTap: () => context.push(location),
         padding: EdgeInsets.all(tokens.space16),
         child: Column(
