@@ -98,6 +98,22 @@ class _MembersReadyState extends ConsumerWidget {
               ),
             ),
           ],
+          if (state.actionOutcome != null) ...[
+            SizedBox(height: tokens.space12),
+            WenyouWriteOutcomeBanner(
+              key: const Key('thread-members-write-outcome'),
+              status: state.actionOutcome!,
+              confirmingMessage: '正在确认成员设置…',
+              indeterminateMessage: '成员设置结果暂时无法确定，请稍后刷新查看。',
+              requestId: state.actionRequestId,
+              onRefresh: () => ref
+                  .read(
+                    threadMemberManagementControllerProvider(threadId).notifier,
+                  )
+                  .load(),
+              refreshKey: const Key('thread-members-refresh-result'),
+            ),
+          ],
           SizedBox(height: tokens.space12),
           if (bootstrap.members.isEmpty)
             const WenyouPanel(

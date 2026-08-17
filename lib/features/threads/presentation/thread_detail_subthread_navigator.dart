@@ -8,14 +8,12 @@ class ThreadSubthreadNavigator extends StatefulWidget {
     required this.subthreads,
     required this.selectedSubthreadId,
     required this.onSelected,
-    required this.trailing,
     super.key,
   });
 
   final List<ThreadSubthreadModel> subthreads;
   final String selectedSubthreadId;
   final ValueChanged<String> onSelected;
-  final Widget trailing;
 
   @override
   State<ThreadSubthreadNavigator> createState() =>
@@ -49,7 +47,6 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
               : '没有其他子贴',
           icon: const WenyouIcon(WenyouIconIds.navigationPrevious),
         ),
-        SizedBox(width: tokens.space4),
         Expanded(
           child: OutlinedButton(
             key: const Key('thread-subthread-menu'),
@@ -60,30 +57,16 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final showDirectoryIcon = constraints.maxWidth >= 128;
-                final showPostCount = constraints.maxWidth >= 176;
                 return Row(
                   children: [
-                    if (showDirectoryIcon) ...[
-                      const WenyouIcon(WenyouIconIds.contentList, size: 18),
-                      SizedBox(width: tokens.space8),
-                    ],
                     Expanded(
                       child: Text(
                         selected.title,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    if (showPostCount) ...[
-                      SizedBox(width: tokens.space4),
-                      Text(
-                        '${selected.postCount} 楼',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
-                      ),
-                    ],
                     SizedBox(width: tokens.space4),
                     WenyouIcon(
                       _menuOpen
@@ -97,7 +80,6 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
             ),
           ),
         ),
-        SizedBox(width: tokens.space4),
         IconButton(
           key: const Key('thread-subthread-next'),
           onPressed: canCycle
@@ -108,8 +90,6 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
               : '没有其他子贴',
           icon: const WenyouIcon(WenyouIconIds.navigationNext),
         ),
-        SizedBox(width: tokens.space4),
-        widget.trailing,
       ],
     );
   }

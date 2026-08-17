@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -8,14 +9,19 @@ export 'thread_member_management_state.dart';
 
 class ThreadMemberManagementController
     extends StateNotifier<ThreadMemberManagementState> {
-  ThreadMemberManagementController(this._threadId, this._repository)
-    : super(const ThreadMemberManagementState.loading()) {
+  ThreadMemberManagementController(
+    this._threadId,
+    this._repository, {
+    this._reconciler = const WriteReconciler(),
+  }) : super(const ThreadMemberManagementState.loading()) {
     load();
   }
 
   final String _threadId;
   final ThreadMemberManagementRepository _repository;
+  final WriteReconciler _reconciler;
   var _loadEpoch = 0;
+  var _actionEpoch = 0;
 
   Future<void> load() async {
     final epoch = ++_loadEpoch;
@@ -76,33 +82,81 @@ class ThreadMemberManagementController
       pendingAction: action,
       failure: null,
     );
-    try {
-      final updated = await _repository.updateMember(
-        threadId: _threadId,
-        userId: member.userId,
-        role: role,
-        playerMarked: playerMarked,
-      );
-      if (!mounted) return false;
-      state = state.copyWith(
-        bootstrap: bootstrap.replaceMember(updated),
-        pendingUserId: null,
-        pendingAction: null,
-      );
-      return true;
-    } on ApiFailure catch (failure) {
-      if (!mounted) return false;
-      state = state.copyWith(
-        pendingUserId: null,
-        pendingAction: null,
-        failure: failure,
-      );
-      return false;
+    final epoch = ++_actionEpoch;
+    final outcome = await _reconciler
+        .run<ThreadMemberManagementMember, ThreadMemberManagementBootstrap>(
+          write: () => _repository.updateMember(
+            threadId: _threadId,
+            userId: member.userId,
+            role: role,
+            playerMarked: playerMarked,
+          ),
+          read: () => _repository.load(_threadId),
+          targetReached: (latest) {
+            final matches = latest.members.where(
+              (candidate) => candidate.userId == member.userId,
+            );
+            if (matches.length != 1) return false;
+            final current = matches.single;
+            return (role == null || current.role == role) &&
+                (playerMarked == null || current.playerMarked == playerMarked);
+          },
+          failureMessage: '成员设置失败，请稍后重试。',
+          isCurrent: () => mounted && epoch == _actionEpoch,
+          onProgress: (progress) {
+            if (!mounted || epoch != _actionEpoch) return;
+            state = state.copyWith(
+              actionOutcome: WriteOutcomeStatus.confirming,
+              actionRequestId: progress.requestId,
+            );
+          },
+        );
+    if (outcome.isDiscarded || !mounted || epoch != _actionEpoch) return false;
+    switch (outcome.status) {
+      case WriteOutcomeStatus.completed:
+        state = state.copyWith(
+          bootstrap:
+              outcome.projection ??
+              bootstrap.replaceMember(outcome.writeValue!),
+          pendingUserId: null,
+          pendingAction: null,
+          failure: null,
+          actionOutcome: null,
+          actionRequestId: null,
+        );
+        return true;
+      case WriteOutcomeStatus.failed:
+        state = state.copyWith(
+          pendingUserId: null,
+          pendingAction: null,
+          failure: outcome.failure,
+          actionOutcome: null,
+          actionRequestId: null,
+        );
+        return false;
+      case WriteOutcomeStatus.indeterminate:
+        state = state.copyWith(
+          bootstrap: outcome.projection ?? bootstrap,
+          pendingUserId: null,
+          pendingAction: null,
+          failure: null,
+          actionOutcome: WriteOutcomeStatus.indeterminate,
+          actionRequestId: outcome.requestId,
+        );
+        return false;
+      case WriteOutcomeStatus.confirming:
+        return false;
     }
   }
 
   void clearFailure() {
-    if (!state.isUpdating) state = state.copyWith(failure: null);
+    if (!state.isUpdating) {
+      state = state.copyWith(
+        failure: null,
+        actionOutcome: null,
+        actionRequestId: null,
+      );
+    }
   }
 }
 

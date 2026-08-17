@@ -88,6 +88,18 @@ class _SubthreadsReadyState extends ConsumerWidget {
               ),
             ),
           ],
+          if (state.actionOutcome != null) ...[
+            SizedBox(height: tokens.space12),
+            WenyouWriteOutcomeBanner(
+              key: const Key('subthread-management-write-outcome'),
+              status: state.actionOutcome!,
+              confirmingMessage: '正在确认子贴状态…',
+              indeterminateMessage: '子贴操作结果暂时无法确定，请稍后刷新查看。',
+              requestId: state.actionRequestId,
+              onRefresh: () => ref.read(provider.notifier).load(),
+              refreshKey: const Key('subthread-management-refresh-result'),
+            ),
+          ],
           SizedBox(height: tokens.space12),
           FilledButton.icon(
             key: const Key('subthread-management-create'),

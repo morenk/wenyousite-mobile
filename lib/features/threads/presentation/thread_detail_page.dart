@@ -17,8 +17,10 @@ import 'package:wenyousite_mobile/features/social/application/thread_subscriptio
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
@@ -170,21 +172,19 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         ),
       },
-      floatingActionButton: selectedSubthread == null
-          ? null
-          : WenyouComposerAction(
-              key: const Key('thread-floor-compose'),
-              label: session.isAuthenticated ? '发表楼层…' : '登录后发表楼层',
-              icon: session.isAuthenticated
-                  ? WenyouIconIds.actionAddComment
-                  : WenyouIconIds.actionLogin,
-              onPressed: session.isAuthenticated
-                  ? () => _compose(
+      bottomNavigationBar: state.phase == ThreadDetailPhase.ready
+          ? ThreadDetailBottomBar(
+              detail: state.detail!,
+              authenticated: session.isAuthenticated,
+              canCompose: selectedSubthread != null,
+              onRequireAuthentication: _requireLogin,
+              onCompose: selectedSubthread == null
+                  ? () {}
+                  : () => _compose(
                       threadDetailFloorTarget(state.detail!, selectedSubthread),
-                    )
-                  : _requireLogin,
-            ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+                    ),
+            )
+          : null,
     );
     return PopScope<Object?>(
       canPop: canPop,
@@ -251,6 +251,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                 semanticsLabel: '举报主题',
                 tone: WenyouPopoverActionTone.destructive,
                 key: Key('thread-detail-report'),
+              ),
+            if (detail.isCurrentUserPlayer && !detail.isCurrentUserOwner)
+              const WenyouPopoverAction(
+                value: _ThreadDetailAction.exitPlayer,
+                icon: WenyouIconIds.actionLogout,
+                label: '退出玩家身份',
+                semanticsLabel: '退出当前主题的玩家身份',
+                tone: WenyouPopoverActionTone.destructive,
+                key: Key('thread-detail-exit-player'),
               ),
           ],
           placement: WenyouPopoverPlacement.below,
@@ -326,7 +335,56 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           targetLabel: '这个主题',
           returnTo: _currentThreadLocation(),
         );
+      case _ThreadDetailAction.exitPlayer:
+        await _showPlayerExitSheet(detail);
     }
+  }
+
+  Future<void> _showPlayerExitSheet(ThreadDetailModel detail) {
+    return showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final tokens = sheetContext.wenyouTokens;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space16,
+              0,
+              tokens.space16,
+              tokens.space16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '玩家身份',
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                SizedBox(height: tokens.space4),
+                Text(
+                  '退出后会从“我参与的”主题中移除。',
+                  style: Theme.of(
+                    sheetContext,
+                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ),
+                ThreadMembershipControls(
+                  threadId: detail.id,
+                  canExitPlayer: true,
+                  onExited: () async {
+                    await _handlePlayerExited(detail);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _handlePlayerExited(ThreadDetailModel detail) async {
@@ -421,15 +479,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           top: 8,
           child: ThreadDetailOverview(
             detail: detail,
-            categoryName: widget.categoryNameHint ?? '未分类',
             selectedSubthreadId: state.selectedSubthreadId,
             onSubthreadSelected: (id) =>
                 ref.read(provider.notifier).selectSubthread(id),
-            onRequireAuthentication: () => context.pushNamed(
-              'login',
-              queryParameters: {'returnTo': _currentThreadLocation()},
-            ),
-            onPlayerExited: () => _handlePlayerExited(detail),
           ),
         ),
       ),
@@ -496,44 +548,16 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             ),
           ),
         SliverToBoxAdapter(
-          child: ThreadDetailContent(
-            top: 12,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '楼层',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+          child: ThreadBodyFloorDivider(
+            order: state.floorOrder,
+            enabled: !state.isLoadingFloors && !state.isLoadingMore,
+            onToggle: () => ref
+                .read(provider.notifier)
+                .setFloorOrder(
+                  state.floorOrder == ThreadFloorOrder.oldest
+                      ? ThreadFloorOrder.newest
+                      : ThreadFloorOrder.oldest,
                 ),
-                PopupMenuButton<ThreadFloorOrder>(
-                  key: const Key('thread-floor-order'),
-                  enabled: !state.isLoadingFloors && !state.isLoadingMore,
-                  initialValue: state.floorOrder,
-                  tooltip: '切换楼层顺序',
-                  onSelected: (order) =>
-                      ref.read(provider.notifier).setFloorOrder(order),
-                  itemBuilder: (context) => [
-                    for (final order in ThreadFloorOrder.values)
-                      PopupMenuItem(value: order, child: Text(order.label)),
-                  ],
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const WenyouIcon(WenyouIconIds.actionFilter, size: 18),
-                        const SizedBox(width: 6),
-                        Text(state.floorOrder.label),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
         if (state.isLoadingFloors)
@@ -764,4 +788,4 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 }
 
-enum _ThreadDetailAction { editBody, manage, tip, report }
+enum _ThreadDetailAction { editBody, manage, tip, report, exitPlayer }

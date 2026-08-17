@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 
@@ -12,6 +13,8 @@ class ThreadMemberManagementState {
     this.failure,
     this.pendingUserId,
     this.pendingAction,
+    this.actionOutcome,
+    this.actionRequestId,
   });
 
   const ThreadMemberManagementState.loading()
@@ -22,6 +25,8 @@ class ThreadMemberManagementState {
   final ApiFailure? failure;
   final String? pendingUserId;
   final ThreadMemberManagementAction? pendingAction;
+  final WriteOutcomeStatus? actionOutcome;
+  final String? actionRequestId;
 
   bool get isUpdating => pendingUserId != null;
 
@@ -31,6 +36,8 @@ class ThreadMemberManagementState {
     Object? failure = _unset,
     Object? pendingUserId = _unset,
     Object? pendingAction = _unset,
+    Object? actionOutcome = _unset,
+    Object? actionRequestId = _unset,
   }) {
     return ThreadMemberManagementState(
       phase: phase ?? this.phase,
@@ -46,6 +53,12 @@ class ThreadMemberManagementState {
       pendingAction: identical(pendingAction, _unset)
           ? this.pendingAction
           : pendingAction as ThreadMemberManagementAction?,
+      actionOutcome: identical(actionOutcome, _unset)
+          ? this.actionOutcome
+          : actionOutcome as WriteOutcomeStatus?,
+      actionRequestId: identical(actionRequestId, _unset)
+          ? this.actionRequestId
+          : actionRequestId as String?,
     );
   }
 }

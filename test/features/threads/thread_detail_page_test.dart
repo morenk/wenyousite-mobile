@@ -35,15 +35,9 @@ void main() {
     final repository = _FakeThreadDetailRepository();
     await tester.pumpWidget(_detailRouterApp(repository));
     await tester.pumpAndSettle();
-
     expect(find.text('星海旅团'), findsOneWidget);
-    expect(find.text('#太空歌剧'), findsOneWidget);
-    final tag = find.byKey(const Key('thread-detail-tag-tag-1'));
-    expect(
-      find.descendant(of: tag, matching: find.byType(InputChip)),
-      findsNothing,
-    );
-    expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
+    expect(find.text('#太空歌剧'), findsNothing);
+    expect(find.byKey(const Key('thread-detail-tag-tag-1')), findsNothing);
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-tip')), findsNothing);
@@ -56,9 +50,9 @@ void main() {
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
-    expect(find.text('登录后发表楼层'), findsOneWidget);
-    expect(find.text('角色扮演'), findsOneWidget);
-    expect(find.text('招募中'), findsOneWidget);
+    expect(find.text('登录后发表'), findsOneWidget);
+    expect(find.text('角色扮演'), findsNothing);
+    expect(find.text('招募中'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('thread-subthread-menu'))).height,
       greaterThanOrEqualTo(48),
@@ -77,33 +71,41 @@ void main() {
           .onPressed,
       isNotNull,
     );
-    final toolbarCenters = [
+    final navigatorCenters = [
       const Key('thread-subthread-previous'),
       const Key('thread-subthread-menu'),
       const Key('thread-subthread-next'),
-      const Key('thread-interaction-like'),
     ].map((key) => tester.getCenter(find.byKey(key)).dy).toList();
     expect(
-      toolbarCenters.every(
-        (center) => (center - toolbarCenters.first).abs() < 1,
+      navigatorCenters.every(
+        (center) => (center - navigatorCenters.first).abs() < 1,
       ),
       isTrue,
     );
+    expect(find.byKey(const Key('thread-detail-bottom-bar')), findsOneWidget);
+    expect(
+      tester.getCenter(find.byKey(const Key('thread-interaction-like'))).dy,
+      greaterThan(navigatorCenters.first),
+    );
     expect(
       tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
-      lessThan(190),
+      lessThan(140),
     );
     expect(find.text('参与者发言'), findsNothing);
     expect(find.text('8 条内容'), findsNothing);
     expect(find.text('12 楼层'), findsNothing);
+    expect(find.byKey(const Key('thread-body-floor-divider')), findsOneWidget);
     expect(find.byKey(const Key('thread-floor-order')), findsOneWidget);
-    expect(find.text('最早在前'), findsOneWidget);
+    expect(find.text('楼层'), findsNothing);
+    expect(find.text('最早在前'), findsNothing);
+    expect(find.text('最新在前'), findsNothing);
     await tester.tap(find.byKey(const Key('thread-floor-order')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('最新在前').last);
-    await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
-    expect(find.text('128 浏览 · 2 玩家 · 12 楼 · 8 升温油'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-floor-order')));
+    await tester.pumpAndSettle();
+    expect(repository.requestedOrders.last, ThreadFloorOrder.oldest);
+    expect(find.text('128 浏览 · 2 玩家 · 12 楼 · 8 升温油'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('主线正文'),
       180,
@@ -345,7 +347,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final overview = find.byKey(const Key('thread-detail-overview'));
-    expect(tester.getSize(overview).height, lessThan(190));
+    expect(tester.getSize(overview).height, lessThan(140));
     expect(
       find.ancestor(of: overview, matching: find.byType(Card)),
       findsNothing,
@@ -384,7 +386,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(
         tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
-        lessThan(190),
+        lessThan(140),
       );
       expect(find.text('主线正文'), findsOneWidget);
       expect(find.text('第一层内容'), findsOneWidget);
@@ -397,7 +399,7 @@ void main() {
     });
   }
 
-  testWidgets('360dp 五标签语境保持单行横滑且不撑高题头', (tester) async {
+  testWidgets('360dp 题头隐藏标签语境且不随标签数量增高', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -416,19 +418,54 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('thread-detail-context-row')), findsNothing);
+    expect(find.text('#太空歌剧'), findsNothing);
+    expect(find.text('#硬科幻'), findsNothing);
     expect(
-      tester
-          .widget<SingleChildScrollView>(
-            find.byKey(const Key('thread-detail-context-row')),
-          )
-          .scrollDirection,
-      Axis.horizontal,
+      tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
+      lessThan(140),
+    );
+    expect(find.text('主线正文'), findsOneWidget);
+  });
+
+  testWidgets('360dp 长主题与子贴标题各自最多显示两行', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const threadTitle = '这是一个用于验证移动端题头双行截断且不会挤占操作区域的很长主题标题';
+    const subthreadTitle = '第一幕：穿过漫长星海之后所有玩家终于抵达共同约定的远方';
+    final detail = _copyThreadDetail(
+      _detail,
+      title: threadTitle,
+      subthreads: const [
+        ThreadSubthreadModel(
+          id: 'subthread-long',
+          title: subthreadTitle,
+          sortOrder: 1,
+          postCount: 8,
+          postingPolicyLabel: '参与者发言',
+          body: ThreadBodyModel(markdown: '长标题子贴正文'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(detail: detail)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Text>(find.text(threadTitle)).maxLines, 2);
+    expect(tester.widget<Text>(find.text(subthreadTitle)).maxLines, 2);
+    expect(
+      tester.getTopLeft(find.text(subthreadTitle)).dy,
+      greaterThan(tester.getBottomLeft(find.text(threadTitle)).dy),
     );
     expect(
       tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
       lessThan(190),
     );
-    expect(find.text('主线正文'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('切换子贴同步替换正文与楼层', (tester) async {
@@ -746,7 +783,7 @@ void main() {
     });
   }
 
-  testWidgets('360 dp 登录态子贴切换、喜欢、收藏和订阅保持同一工具栏', (tester) async {
+  testWidgets('360 dp 子贴导航独占题头行，互动与发表固定在底部拇指栏', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -787,21 +824,84 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    final keys = [
+    final navigatorKeys = [
       const Key('thread-subthread-previous'),
       const Key('thread-subthread-menu'),
       const Key('thread-subthread-next'),
-      const Key('thread-interaction-like'),
-      const Key('thread-interaction-bookmark'),
-      const Key('thread-subscription-menu'),
     ];
-    final centers = keys
+    final navigatorCenters = navigatorKeys
         .map((key) => tester.getCenter(find.byKey(key)).dy)
         .toList();
     expect(
-      centers.every((center) => (center - centers.first).abs() < 1),
+      navigatorCenters.every(
+        (center) => (center - navigatorCenters.first).abs() < 1,
+      ),
       isTrue,
     );
+    final bottomKeys = [
+      const Key('thread-interaction-like'),
+      const Key('thread-interaction-bookmark'),
+      const Key('thread-subscription-menu'),
+      const Key('thread-floor-compose'),
+    ];
+    final bottomCenters = bottomKeys
+        .map((key) => tester.getCenter(find.byKey(key)).dy)
+        .toList();
+    expect(
+      bottomCenters.every((center) => (center - bottomCenters.first).abs() < 1),
+      isTrue,
+    );
+    expect(bottomCenters.first, greaterThan(navigatorCenters.first));
+    expect(find.byKey(const Key('thread-detail-bottom-bar')), findsOneWidget);
+  });
+
+  testWidgets('玩家退出入口只在更多操作的身份面板中出现', (tester) async {
+    final playerDetail = _copyThreadDetail(
+      _detail,
+      subthreads: _detail.subthreads,
+      isCurrentUserPlayer: true,
+      currentUserId: 'viewer-1',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(
+          _FakeThreadDetailRepository(detail: playerDetail),
+        ),
+        threadInteractionRepositoryProvider.overrideWithValue(
+          _FakeThreadInteractionRepository(),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('viewer-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('thread-player-exit')), findsNothing);
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-detail-exit-player')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-detail-exit-player')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('玩家身份'), findsOneWidget);
+    expect(find.byKey(const Key('thread-player-exit')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('首页整卡进入详情，返回后保留已加载首页', (tester) async {
@@ -1109,7 +1209,7 @@ void main() {
     await tester.tapAt(const Offset(12, 12));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-floor-compose')), findsOneWidget);
-    expect(find.text('发表楼层…'), findsOneWidget);
+    expect(find.text('发表楼层'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-floor-compose')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
@@ -1568,10 +1668,13 @@ ThreadDetailModel _detailWithTags(List<ThreadTagModel> tags) {
 ThreadDetailModel _copyThreadDetail(
   ThreadDetailModel source, {
   required List<ThreadSubthreadModel> subthreads,
+  String? title,
+  bool? isCurrentUserPlayer,
+  String? currentUserId,
 }) {
   return ThreadDetailModel(
     id: source.id,
-    title: source.title,
+    title: title ?? source.title,
     owner: source.owner,
     categorySlug: source.categorySlug,
     status: source.status,
@@ -1584,9 +1687,9 @@ ThreadDetailModel _copyThreadDetail(
     bookmarkId: source.bookmarkId,
     hasAutomaticUpdates: source.hasAutomaticUpdates,
     canManageThread: source.canManageThread,
-    isCurrentUserPlayer: source.isCurrentUserPlayer,
+    isCurrentUserPlayer: isCurrentUserPlayer ?? source.isCurrentUserPlayer,
     isCurrentUserOwner: source.isCurrentUserOwner,
-    currentUserId: source.currentUserId,
+    currentUserId: currentUserId ?? source.currentUserId,
     tipTotal: source.tipTotal,
     memberCount: source.memberCount,
     playerCount: source.playerCount,

@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 
@@ -18,6 +19,8 @@ class SubthreadManagementState {
     this.failure,
     this.pendingAction,
     this.pendingItemId,
+    this.actionOutcome,
+    this.actionRequestId,
   });
 
   const SubthreadManagementState.loading()
@@ -28,6 +31,8 @@ class SubthreadManagementState {
   final ApiFailure? failure;
   final SubthreadManagementAction? pendingAction;
   final String? pendingItemId;
+  final WriteOutcomeStatus? actionOutcome;
+  final String? actionRequestId;
 
   bool get isBusy => pendingAction != null;
 
@@ -37,6 +42,8 @@ class SubthreadManagementState {
     Object? failure = _unset,
     Object? pendingAction = _unset,
     Object? pendingItemId = _unset,
+    Object? actionOutcome = _unset,
+    Object? actionRequestId = _unset,
   }) {
     return SubthreadManagementState(
       phase: phase ?? this.phase,
@@ -52,6 +59,12 @@ class SubthreadManagementState {
       pendingItemId: identical(pendingItemId, _unset)
           ? this.pendingItemId
           : pendingItemId as String?,
+      actionOutcome: identical(actionOutcome, _unset)
+          ? this.actionOutcome
+          : actionOutcome as WriteOutcomeStatus?,
+      actionRequestId: identical(actionRequestId, _unset)
+          ? this.actionRequestId
+          : actionRequestId as String?,
     );
   }
 }
