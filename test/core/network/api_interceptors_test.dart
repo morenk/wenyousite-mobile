@@ -112,6 +112,27 @@ void main() {
     verify(() => handler.next(error)).called(1);
   });
 
+  test('普通 POST 遇到 40101 也只续期会话且不会重放', () async {
+    final dio = _MockDio();
+    final handler = _MockErrorInterceptorHandler();
+    final remote = _FakeSessionRemote();
+    final store = _MemoryTokenStore();
+    final session = SessionController(store, remote);
+    await session.authenticate(_oldTokens);
+    final options = RequestOptions(
+      path: '/api/v1/subscriptions',
+      method: 'POST',
+    );
+    final error = _businessError(options, 40101);
+
+    RequestContextInterceptor(dio, session).onError(error, handler);
+    await untilCalled(() => handler.next(error));
+
+    expect(remote.refreshCalls, 1);
+    verifyNever(() => dio.fetch<Object?>(any()));
+    verify(() => handler.next(error)).called(1);
+  });
+
   test('40103 立即清除会话并记录撤销原因', () async {
     final dio = _MockDio();
     final handler = _MockErrorInterceptorHandler();

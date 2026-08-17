@@ -67,8 +67,7 @@ class RequestContextInterceptor extends Interceptor {
       handler.next(err);
       return;
     }
-    if (err.requestOptions.extra[ApiRequestExtraKeys.noAutomaticReplay] ==
-        true) {
+    if (!_canReplayAfterRefresh(err.requestOptions)) {
       _sessionController.refresh().then(
         (_) => handler.next(err),
         onError: (_) => handler.next(err),
@@ -81,6 +80,18 @@ class RequestContextInterceptor extends Interceptor {
         handler.next(err);
       },
     );
+  }
+
+  bool _canReplayAfterRefresh(RequestOptions options) {
+    if (options.extra[ApiRequestExtraKeys.noAutomaticReplay] == true) {
+      return false;
+    }
+    final method = options.method.toUpperCase();
+    return method == 'GET' ||
+        method == 'HEAD' ||
+        method == 'PUT' ||
+        method == 'DELETE' ||
+        options.extra[ApiRequestExtraKeys.idempotentCreate] == true;
   }
 
   Future<Response<Object?>> _retryAfterRefresh(DioException error) async {
