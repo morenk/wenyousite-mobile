@@ -178,6 +178,43 @@ $diceNode
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('阅读态短传送门横向收缩并与前后文字自然混排', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 120);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: RepaintBoundary(
+            key: Key('markdown-inline-portal-visual'),
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: WenyouMarkdown(
+                data: '前文 [入口](/threads/cmsewdo0h000x7qv6aa77ll1v) 后文仍在同一行',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final portal = find.byKey(const ValueKey('markdown-internal-reference-0'));
+    expect(portal, findsOneWidget);
+    expect(tester.getSize(portal).width, lessThan(100));
+    expect(tester.getSize(portal).height, greaterThanOrEqualTo(48));
+    expect(tester.getTopLeft(portal).dx, lessThan(120));
+    expect(tester.takeException(), isNull);
+
+    await expectLater(
+      find.byKey(const Key('markdown-inline-portal-visual')),
+      matchesGoldenFile('goldens/markdown_inline_portal_360.png'),
+    );
+  });
+
   testWidgets('360dp 长文保持正文、标题、引用和分隔线的克制阅读层级', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);

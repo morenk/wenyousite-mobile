@@ -121,7 +121,9 @@ class _WenyouInternalReferenceChipState
               minWidth: WenyouElementContract.interactiveMinimumTarget,
               minHeight: WenyouElementContract.interactiveMinimumTarget,
             ),
-            child: Center(
+            child: Align(
+              widthFactor: 1,
+              heightFactor: 1,
               child: WenyouInternalReferenceSurface(
                 surfaceKey: widget.surfaceKey,
                 label: widget.label,

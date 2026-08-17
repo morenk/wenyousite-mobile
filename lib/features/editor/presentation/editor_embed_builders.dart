@@ -27,6 +27,13 @@ class _InternalReferenceEmbedBuilder extends EmbedBuilder {
   bool get expanded => false;
 
   @override
+  WidgetSpan buildWidgetSpan(Widget widget) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: widget,
+  );
+
+  @override
   String toPlainText(Embed node) {
     final data = node.value.data;
     return data is Map

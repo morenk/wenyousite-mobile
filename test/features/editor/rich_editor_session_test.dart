@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
 void main() {
@@ -102,5 +104,54 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('Quill 原始编辑器粘贴入口立即渲染站内传送门', (tester) async {
+    const url =
+        'https://wenyou.site/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '前文 后文',
+      onMarkdownChanged: emitted.add,
+      readClipboardText: () async => url,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection.collapsed(offset: 3),
+      ChangeSource.local,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('zh', 'CN'),
+        localizationsDelegates:
+            FlutterQuillLocalizations.localizationsDelegates,
+        home: Scaffold(
+          body: QuillEditor(
+            controller: session.controller,
+            focusNode: session.focusNode,
+            scrollController: session.scrollController,
+            config: QuillEditorConfig(
+              scrollable: false,
+              embedBuilders: wenyouEditorEmbedBuilders(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final rawEditor = tester.state<QuillRawEditorState>(
+      find.byType(QuillRawEditor),
+    );
+    await rawEditor.pasteText(SelectionChangedCause.toolbar);
+    await tester.pump();
+
+    expect(find.byKey(const Key('editor-internal-reference')), findsOneWidget);
+    expect(
+      emitted.last,
+      '前文 [传送门](/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd)后文',
+    );
+    expect(tester.takeException(), isNull);
   });
 }

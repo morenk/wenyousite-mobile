@@ -61,6 +61,60 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('编辑态传送门与前后文字保持同行基线', (tester) async {
+    const source = '前文 [入口](/threads/cmsewdo0h000x7qv6aa77ll1v) 后文仍在同一行';
+    final controller = QuillController(
+      document: Document.fromDelta(MarkdownDeltaCodec.decode(source).delta),
+      selection: const TextSelection.collapsed(offset: 0),
+      readOnly: true,
+    );
+    final focusNode = FocusNode();
+    final scrollController = ScrollController();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    addTearDown(scrollController.dispose);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 120);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: RepaintBoundary(
+            key: const Key('editor-inline-portal-visual'),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: QuillEditor(
+                controller: controller,
+                focusNode: focusNode,
+                scrollController: scrollController,
+                config: QuillEditorConfig(
+                  scrollable: false,
+                  embedBuilders: wenyouEditorEmbedBuilders(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final portal = find.byKey(const Key('editor-internal-reference'));
+    expect(portal, findsOneWidget);
+    expect(tester.getSize(portal).width, lessThan(100));
+    expect(tester.getSize(portal).height, lessThanOrEqualTo(32));
+    expect(tester.getTopLeft(portal).dx, lessThan(120));
+    expect(tester.takeException(), isNull);
+
+    await expectLater(
+      find.byKey(const Key('editor-inline-portal-visual')),
+      matchesGoldenFile('goldens/editor_inline_portal_360.png'),
+    );
+  });
+
   testWidgets('Quill 混排和换行后的骰子保持正文基线原子节点', (tester) async {
     const firstId = '550e8400-e29b-41d4-a716-446655440000';
     const secondId = '550e8400-e29b-41d4-a716-446655440001';
