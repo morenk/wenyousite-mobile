@@ -1589,9 +1589,7 @@ class _FakeHomeRepository implements HomeRepository {
   }
 }
 
-final _recentFixtureTime = DateTime.now().subtract(
-  const Duration(days: 5, hours: 1),
-);
+final _recentFixtureTime = DateTime.utc(2026, 8, 1, 5, 23);
 
 final _detail = ThreadDetailModel(
   id: 'thread-1',
