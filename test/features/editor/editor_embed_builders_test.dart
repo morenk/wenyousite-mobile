@@ -169,6 +169,8 @@ void main() {
 
     final dice = find.byKey(const Key('editor-dice-inline'));
     expect(dice, findsNWidgets(2));
+    expect(find.text('1d20 = ?'), findsOneWidget);
+    expect(find.text('2d6+3 = ?'), findsOneWidget);
     for (final element in dice.evaluate()) {
       final finder = find.byElementPredicate(
         (candidate) => candidate == element,

@@ -20,6 +20,7 @@ void main() {
           body: WenyouMarkdown(
             data: '结果 $diceNode',
             diceLabels: {nodeId: '1d20 = 16'},
+            diceSemantics: {nodeId: '骰子 1d20，逐骰结果 16，总计 16'},
           ),
         ),
       ),
@@ -33,6 +34,12 @@ void main() {
     );
     expect(find.textContaining('[[dice:', findRichText: true), findsNothing);
     expect(find.textContaining('🎲', findRichText: true), findsNothing);
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('wenyou-dice-$nodeId')))
+          .label,
+      contains('骰子 1d20，逐骰结果 16，总计 16'),
+    );
   });
 
   testWidgets('混排和换行后的骰子与正文共享行高与文字基线', (tester) async {
@@ -90,6 +97,17 @@ void main() {
 
     expect(find.text('1d20 = ?'), findsNothing);
     expect(find.text('1d20 = 16'), findsOneWidget);
+  });
+
+  test('骰子完整语义包含逐骰结果、修正值和总计', () {
+    expect(
+      formatWenyouDiceSemantics(
+        notation: '2d6+3',
+        results: const [4, 6],
+        total: 13,
+      ),
+      '骰子 2d6+3，逐骰结果 4、6，修正加 3，总计 13',
+    );
   });
 
   testWidgets('Markdown v3 不支持的表格按可读原文展示', (tester) async {

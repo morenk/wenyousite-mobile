@@ -49,7 +49,7 @@
 
 ## 10. 跨模块约束
 
-capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v5.1.0 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
+capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.0.1 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
 
 ## 11. 测试场景与验收条件
 
@@ -68,8 +68,8 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`。
+契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `e1b6bc3a288104488944ecfcd417a623daa82099`。
 
 ## 14. 相关代码与架构文档
 
-端口、控制器与状态：`lib/features/direct_messages/application/`；API 适配器：`lib/features/direct_messages/data/`；页面：`lib/features/direct_messages/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内通知](notifications.md)、[用户与资料](users.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)和[Foundation v5.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v5.1.0/docs/platforms/mobile.md)。
+端口、控制器与状态：`lib/features/direct_messages/application/`；API 适配器：`lib/features/direct_messages/data/`；页面：`lib/features/direct_messages/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内通知](notifications.md)、[用户与资料](users.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)和[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。

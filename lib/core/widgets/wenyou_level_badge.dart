@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
 class WenyouLevelBadge extends StatelessWidget {
   const WenyouLevelBadge({required this.level, super.key});
@@ -8,14 +8,16 @@ class WenyouLevelBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
+    final tier = WenyouLevelContract.resolve(level);
+    if (tier == null) return const SizedBox.shrink();
     return Semantics(
       label: '用户等级 $level',
       child: Container(
         constraints: const BoxConstraints(minHeight: 20),
         padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
-          color: tokens.accentedBackground.withValues(alpha: 0.72),
+          color: tier.surface,
+          border: Border.all(color: tier.border),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Align(
@@ -24,7 +26,7 @@ class WenyouLevelBadge extends StatelessWidget {
           child: Text(
             'Lv.$level',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: tokens.brandForeground,
+              color: tier.foreground,
               fontSize: 11,
               height: 1,
               fontWeight: FontWeight.w700,

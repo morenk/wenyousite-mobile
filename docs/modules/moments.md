@@ -37,7 +37,7 @@
 
 `MomentFeedController` 以 main/bookmarks/user target 隔离列表、游标、刷新、分页和单条互动写入；服务端计数与 active 状态覆盖本机卡片。`MomentDetailController` 并行读取详情、主评论和作者候选，独立保存主评论分页及每个根评论的楼中楼分页，并在写入后重新校准服务端投影。`MomentComposerController` 负责创建幂等键、编辑版本和删除确认结果，并拆入独立应用文件但保持 provider 接口；动态仓储与本机草稿存储端口位于 `moments/application`，API/SharedPreferences 适配器由 `main.dart` 组合根绑定，控制器和页面不导入具体 data 实现。动态发布与评论分别按页面实例消费 `media/application` 上传任务，页面只保留已完成图片、封面顺序和评论附件。领域校验使用纯领域异常，网络与 feature 错误目录在 data 边界转换。搜索控制器独立保存关键词与搜索 cursor，但通过 `MomentSearchMapper` 输出同一领域卡片。仓储/映射器对 ID、枚举、数量、金额、层级、尺寸及 HTTP(S) URL fail-closed。
 
-信息流与详情的点赞/收藏状态记录精确在途动作，只锁定对应控件并保留旧选中投影，直到服务端回包覆盖。可写消费者统一使用 Foundation v5.1 的点赞/收藏语义色、透明选中容器和官方实心图标变体；搜索等只读消费者始终显示中性线性图标，不暴露按钮或 toggled 语义。
+信息流与详情的点赞/收藏状态记录精确在途动作，只锁定对应控件并保留旧选中投影，直到服务端回包覆盖。可写消费者统一使用 Foundation v6.0.1 的点赞/收藏语义色、透明选中容器和官方实心图标变体；搜索等只读消费者始终显示中性线性图标，不暴露按钮或 toggled 语义。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -55,7 +55,7 @@
 
 ## 10. 跨模块约束
 
-media/application 提供相册与上传端口、任务状态、取消、失败和同文件重试；moments presentation 不直接导入 media/data 或 Dio，只消费完成结果并维护最多九图、封面顺序及评论图片/表情互斥。stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口；search 复用完整宽度动态卡片但不持有动态详情或写入状态；wallet 维护动态加油幂等写入；reports 管理动态与评论举报。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec；`core/navigation/internal_reference.dart` 只消费独立的 `wenyousite-internal-reference` v1 契约，不能扩大成通用 Markdown 解析器。合法站内坐标由共享阅读组件渲染成 Foundation v5.1 传送门胶囊，非法坐标与普通 Markdown 保持字面文本。视觉只消费 Foundation v5.1.0 Token、元素契约、语义图标与图片角色。双列仅是动态信息流的明确产品特例；详情继续保持单列和不超过 600dp，独立操作命中区不小于 48dp。
+media/application 提供相册与上传端口、任务状态、取消、失败和同文件重试；moments presentation 不直接导入 media/data 或 Dio，只消费完成结果并维护最多九图、封面顺序及评论图片/表情互斥。stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口；search 复用完整宽度动态卡片但不持有动态详情或写入状态；wallet 维护动态加油幂等写入；reports 管理动态与评论举报。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec；`core/navigation/internal_reference.dart` 只消费独立的 `wenyousite-internal-reference` v1 契约，不能扩大成通用 Markdown 解析器。合法站内坐标由共享阅读组件渲染成 Foundation v6.0.1 传送门胶囊，非法坐标与普通 Markdown 保持字面文本。视觉只消费 Foundation v6.0.1 Token、元素契约、语义图标与图片角色。双列仅是动态信息流的明确产品特例；详情继续保持单列和不超过 600dp，独立操作命中区不小于 48dp。
 
 ## 11. 测试场景与验收条件
 
@@ -64,7 +64,7 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 - [x] 信息流 `40007` 重置、服务端互动计数、评论幂等重试、楼中楼分页/筛选和删除校准有控制器测试。
 - [x] 发现/关注游客边界、纯文字发布、详情/评论和 360/400/600dp 布局有 Widget 测试。
 - [x] 360dp 双列瀑布续排、首屏骨架、列表信息层级、TalkBack 标签、48dp 点赞命中区和 Foundation 视觉基线有回归测试。
-- [x] 点赞/收藏的 Foundation v5.1 语义色、透明容器、官方实心资产、提交锁、最小命中区与只读中性语义有 Widget 回归。
+- [x] 点赞/收藏的 Foundation v6.0.1 语义色、透明容器、官方实心资产、提交锁、最小命中区与只读中性语义有 Widget 回归。
 - [x] 纯文本内合法传送门的胶囊、门图标、换行不截断、48dp 命中区和内部导航有 Widget 回归。
 - [x] 详情多图以固定比例单图横滑轮播，切换不改变舞台高度，当前位置与对应原图入口有 Widget 回归测试。
 - [x] 360dp 详情轮播宽 336dp，标题/正文独立留白；评论、通知、会话和楼层采用扁平连续内容样式。
@@ -87,7 +87,7 @@ media/application 提供相册与上传端口、任务状态、取消、失败�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.0.0-dev.20260816.1`；Markdown v3（动态正文不消费）；后端 `2fd8c979ef10c0e1dec3a3ca23b59d3b8f99c0ca`；Foundation `v5.1.0`（`f5eb3aa`）。
+契约 `5.0.0-dev.20260816.1`；Markdown v3（动态正文不消费）；后端 `e1b6bc3a288104488944ecfcd417a623daa82099`；Foundation `v6.0.1`（`2ca6f78`）。
 
 ## 14. 相关代码与架构文档
 

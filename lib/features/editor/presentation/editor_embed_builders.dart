@@ -101,7 +101,8 @@ class _DiceEmbedBuilder extends EmbedBuilder {
   @override
   String toPlainText(Embed node) {
     final data = node.value.data;
-    return data is Map ? data['notation']?.toString() ?? '骰子' : '骰子';
+    final notation = data is Map ? data['notation']?.toString() : null;
+    return notation == null ? '骰子' : '$notation = ?';
   }
 
   @override
@@ -115,13 +116,18 @@ class _DiceEmbedBuilder extends EmbedBuilder {
   Widget build(BuildContext context, EmbedContext embedContext) {
     final notation = _payload(embedContext)?['notation']?.toString() ?? '骰子';
     final style = embedContext.textStyle.copyWith(
+      fontFamily: WenyouFoundationTypography.utility,
+      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
     return Semantics(
       key: const Key('editor-dice-inline'),
-      label: '待掷骰子 $notation',
+      label: '骰子 $notation，待掷',
       child: Text(
-        notation,
+        '$notation = ?',
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.visible,
         style: style,
         strutStyle: StrutStyle.fromTextStyle(style, forceStrutHeight: true),
       ),

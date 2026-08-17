@@ -312,6 +312,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     required this.postId,
     required this.data,
     this.diceLabels = const {},
+    this.diceSemantics = const {},
     this.onInternalLink,
     this.onTapText,
     this.bodyFontSize = 17,
@@ -322,6 +323,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final String postId;
   final String data;
   final Map<String, String> diceLabels;
+  final Map<String, String> diceSemantics;
   final ValueChanged<Uri>? onInternalLink;
   final VoidCallback? onTapText;
   final double bodyFontSize;
@@ -336,6 +338,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     return WenyouMarkdown(
       data: data,
       diceLabels: diceLabels,
+      diceSemantics: diceSemantics,
       onInternalLink: onInternalLink,
       onTapText: onTapText,
       bodyFontSize: bodyFontSize,

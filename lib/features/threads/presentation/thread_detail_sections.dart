@@ -170,6 +170,7 @@ class ThreadSubthreadBody extends StatelessWidget {
                 key: Key('thread-body-${subthread.id}'),
                 data: body.markdown,
                 diceLabels: _diceLabels(body.diceRolls),
+                diceSemantics: _diceSemantics(body.diceRolls),
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               )
             else
@@ -178,6 +179,7 @@ class ThreadSubthreadBody extends StatelessWidget {
                 postId: body.postId!,
                 data: body.markdown,
                 diceLabels: _diceLabels(body.diceRolls),
+                diceSemantics: _diceSemantics(body.diceRolls),
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               ),
           ],
@@ -384,6 +386,7 @@ class ThreadFloorCard extends ConsumerWidget {
                       postId: floor.id,
                       data: floor.body.markdown,
                       diceLabels: _diceLabels(floor.body.diceRolls),
+                      diceSemantics: _diceSemantics(floor.body.diceRolls),
                       onInternalLink: (uri) =>
                           _showInternalLinkNotice(context, uri),
                       onTapText: pending ? null : onReply,
@@ -619,6 +622,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               postId: reply.id,
               data: reply.body.markdown,
               diceLabels: _diceLabels(reply.body.diceRolls),
+              diceSemantics: _diceSemantics(reply.body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onTapText: enabled ? onDiscussion : null,
               bodyFontSize: 15,
@@ -847,6 +851,17 @@ Map<String, String> _diceLabels(List<ThreadDiceRollModel> rolls) {
   return {
     for (final roll in rolls)
       roll.nodeId.toLowerCase(): '${roll.notation} = ${roll.total}',
+  };
+}
+
+Map<String, String> _diceSemantics(List<ThreadDiceRollModel> rolls) {
+  return {
+    for (final roll in rolls)
+      roll.nodeId.toLowerCase(): formatWenyouDiceSemantics(
+        notation: roll.notation,
+        results: roll.results,
+        total: roll.total,
+      ),
   };
 }
 

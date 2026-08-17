@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
@@ -133,7 +134,10 @@ class UserProfileHeader extends StatelessWidget {
                     ],
                     Semantics(
                       label: '等级进度 ${(levelProgress! * 100).round()}%',
-                      child: LinearProgressIndicator(value: levelProgress),
+                      child: LinearProgressIndicator(
+                        value: levelProgress,
+                        color: WenyouLevelContract.resolve(level)?.foreground,
+                      ),
                     ),
                   ],
                 ],
@@ -216,10 +220,7 @@ class _ProfileIdentity extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: tokens.space8),
-                    _ProfileBadge(
-                      icon: WenyouIconIds.navigationMoments,
-                      label: 'Lv.$level',
-                    ),
+                    WenyouLevelBadge(level: level),
                   ],
                 ),
               ),

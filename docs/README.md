@@ -6,8 +6,8 @@
 
 - [模块状态与文档索引](modules/README.md)
 - [网络与会话](architecture/networking.md)
-- [Foundation v5.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v5.1.0/docs/platforms/mobile.md)
-- [Foundation v5.1.0 元素系统](https://github.com/morenk/wenyousite-foundation/blob/v5.1.0/docs/elements.md)
+- [Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)
+- [Foundation v6.0.1 元素系统](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/elements.md)
 - [移动端视觉基线](architecture/visual-baseline.md)
 - [语义图标](architecture/icons.md)
 - [导航](architecture/navigation.md)

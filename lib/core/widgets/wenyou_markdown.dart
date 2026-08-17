@@ -15,10 +15,27 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
+String formatWenyouDiceSemantics({
+  required String notation,
+  required List<int> results,
+  required int total,
+}) {
+  if (results.isEmpty) return '骰子 $notation，总计 $total';
+  final resultTotal = results.fold<int>(0, (sum, result) => sum + result);
+  final modifier = total - resultTotal;
+  final modifierPhrase = switch (modifier) {
+    > 0 => '，修正加 $modifier',
+    < 0 => '，修正减 ${modifier.abs()}',
+    _ => '',
+  };
+  return '骰子 $notation，逐骰结果 ${results.join('、')}$modifierPhrase，总计 $total';
+}
+
 class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
     required this.data,
     this.diceLabels = const {},
+    this.diceSemantics = const {},
     this.onInternalLink,
     this.onSaveImage,
     this.onTapText,
@@ -29,6 +46,7 @@ class WenyouMarkdown extends StatefulWidget {
 
   final String data;
   final Map<String, String> diceLabels;
+  final Map<String, String> diceSemantics;
   final ValueChanged<Uri>? onInternalLink;
   final Future<String> Function(Uri uri)? onSaveImage;
   final VoidCallback? onTapText;
@@ -42,6 +60,7 @@ class WenyouMarkdown extends StatefulWidget {
 class _WenyouMarkdownState extends State<WenyouMarkdown>
     with AutomaticKeepAliveClientMixin<WenyouMarkdown> {
   late final ValueNotifier<Map<String, String>> _diceLabels;
+  late final ValueNotifier<Map<String, String>> _diceSemantics;
   late String _normalizedData;
   List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
@@ -53,6 +72,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   void initState() {
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
+    _diceSemantics = ValueNotifier(Map.unmodifiable(widget.diceSemantics));
     _prepareData();
   }
 
@@ -68,6 +88,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.diceLabels, widget.diceLabels)) {
       _diceLabels.value = Map.unmodifiable(widget.diceLabels);
     }
+    if (!mapEquals(oldWidget.diceSemantics, widget.diceSemantics)) {
+      _diceSemantics.value = Map.unmodifiable(widget.diceSemantics);
+    }
     if (oldWidget.data != widget.data) {
       _prepareData();
     }
@@ -80,6 +103,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   @override
   void dispose() {
     _diceLabels.dispose();
+    _diceSemantics.dispose();
     super.dispose();
   }
 
@@ -97,7 +121,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
           _internalReferences,
           (reference) => _openInternalReference(context, reference),
         ),
-        'wenyou-dice': _DiceMarkdownBuilder(_diceLabels),
+        'wenyou-dice': _DiceMarkdownBuilder(_diceLabels, _diceSemantics),
       },
       onTapLink: (_, href, _) => _openLink(context, href),
       onTapText: widget.onTapText,
@@ -330,9 +354,10 @@ class _DiceInlineSyntax extends md.InlineSyntax {
 }
 
 class _DiceMarkdownBuilder extends MarkdownElementBuilder {
-  _DiceMarkdownBuilder(this.labelsByNodeId);
+  _DiceMarkdownBuilder(this.labelsByNodeId, this.semanticsByNodeId);
 
   final ValueListenable<Map<String, String>> labelsByNodeId;
+  final ValueListenable<Map<String, String>> semanticsByNodeId;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -345,24 +370,34 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     final notation = element.textContent;
     final style =
         (preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style)
-            .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+            .copyWith(
+              fontFamily: WenyouFoundationTypography.utility,
+              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            );
     return Text.rich(
       TextSpan(
         children: [
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
-            child: ValueListenableBuilder<Map<String, String>>(
-              valueListenable: labelsByNodeId,
-              builder: (context, labels, _) {
+            child: ListenableBuilder(
+              listenable: Listenable.merge([labelsByNodeId, semanticsByNodeId]),
+              builder: (context, _) {
+                final labels = labelsByNodeId.value;
                 final label = labels[nodeId] ?? '$notation = ?';
                 return Semantics(
                   key: ValueKey('wenyou-dice-$nodeId'),
-                  label: labels.containsKey(nodeId)
-                      ? '骰子结果 $label'
-                      : '待掷骰子 $notation',
+                  label:
+                      semanticsByNodeId.value[nodeId] ??
+                      (labels.containsKey(nodeId)
+                          ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
+                          : '骰子 $notation，待掷'),
                   child: Text(
                     label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
                     style: style,
                     strutStyle: StrutStyle.fromTextStyle(
                       style,

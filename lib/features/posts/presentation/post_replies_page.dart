@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -511,6 +512,14 @@ class _PostCard extends ConsumerWidget {
                 diceLabels: {
                   for (final roll in post.diceRolls)
                     roll.nodeId: '${roll.notation} = ${roll.total}',
+                },
+                diceSemantics: {
+                  for (final roll in post.diceRolls)
+                    roll.nodeId: formatWenyouDiceSemantics(
+                      notation: roll.notation,
+                      results: roll.results,
+                      total: roll.total,
+                    ),
                 },
                 bodyFontSize: root ? 17 : 16,
                 bodyHeight: root ? 1.8 : 1.75,
