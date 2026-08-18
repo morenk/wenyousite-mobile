@@ -42,7 +42,7 @@
 
 未输入时只展示搜索表单和结果 Tab，不再附加功能教学；无结果空态也只保留当前状态。
 
-未输入、关键词过短、无结果、首次加载、加载更多和单 Tab 错误分别展示；动态与两类正文加载更多失败保留已有结果与重试入口；`40007 INVALID_CURSOR` 丢弃当前分类旧列表并从第一页恢复。主题内结果若返回其他主题 ID、动态封面枚举/数量/URL 不安全、分页缺少 cursor 或同页重复 ID，均 fail-closed 而不导航到错误目标。
+未输入、关键词过短、无结果、首次加载、加载更多和单 Tab 错误分别展示；首次加载使用结果列表结构 Skeleton，动态与两类正文加载更多失败保留已有结果与重试入口；`40007 INVALID_CURSOR` 丢弃当前分类旧列表并从第一页恢复。主题内结果若返回其他主题 ID、动态封面枚举/数量/URL 不安全、分页缺少 cursor 或同页重复 ID，均 fail-closed 而不导航到错误目标。
 
 ## 10. 跨模块约束
 
@@ -72,4 +72,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。

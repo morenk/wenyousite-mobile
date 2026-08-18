@@ -74,8 +74,9 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
       resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(context, state, notifier),
       body: switch (state.phase) {
-        DirectConversationPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        DirectConversationPhase.loading => const WenyouPageBody(
+          maxWidth: 600,
+          child: WenyouDetailSkeleton(label: '正在加载私聊会话'),
         ),
         DirectConversationPhase.failed => _ConversationFailure(
           state: state,

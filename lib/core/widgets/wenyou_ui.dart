@@ -151,6 +151,138 @@ class WenyouPanel extends StatelessWidget {
   }
 }
 
+class WenyouListSkeleton extends StatelessWidget {
+  const WenyouListSkeleton({
+    this.label = '内容加载中',
+    this.itemCount = 3,
+    this.showAvatar = true,
+    super.key,
+  });
+
+  final String label;
+  final int itemCount;
+  final bool showAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      liveRegion: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: Column(
+          key: const Key('wenyou-list-skeleton'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var index = 0; index < itemCount; index++) ...[
+              if (index > 0) SizedBox(height: tokens.space12),
+              WenyouPanel(
+                padding: EdgeInsets.all(tokens.space12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showAvatar) ...[
+                      _WenyouSkeletonBlock(
+                        width: 40,
+                        height: 40,
+                        radius: tokens.radiusPill,
+                      ),
+                      SizedBox(width: tokens.space12),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FractionallySizedBox(
+                            widthFactor: index.isEven ? 0.64 : 0.48,
+                            child: const _WenyouSkeletonBlock(height: 14),
+                          ),
+                          SizedBox(height: tokens.space12),
+                          const _WenyouSkeletonBlock(height: 12),
+                          SizedBox(height: tokens.space8),
+                          const FractionallySizedBox(
+                            widthFactor: 0.72,
+                            child: _WenyouSkeletonBlock(height: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class WenyouDetailSkeleton extends StatelessWidget {
+  const WenyouDetailSkeleton({this.label = '详情加载中', super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      liveRegion: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: WenyouPanel(
+          key: const Key('wenyou-detail-skeleton'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const FractionallySizedBox(
+                widthFactor: 0.74,
+                child: _WenyouSkeletonBlock(height: 24),
+              ),
+              SizedBox(height: tokens.space16),
+              const _WenyouSkeletonBlock(height: 14),
+              SizedBox(height: tokens.space8),
+              const _WenyouSkeletonBlock(height: 14),
+              SizedBox(height: tokens.space8),
+              const FractionallySizedBox(
+                widthFactor: 0.58,
+                child: _WenyouSkeletonBlock(height: 14),
+              ),
+              SizedBox(height: tokens.space20),
+              const _WenyouSkeletonBlock(height: 88),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WenyouSkeletonBlock extends StatelessWidget {
+  const _WenyouSkeletonBlock({
+    required this.height,
+    this.width = double.infinity,
+    this.radius,
+  });
+
+  final double width;
+  final double height;
+  final double? radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: tokens.softPanel,
+        borderRadius: BorderRadius.circular(radius ?? tokens.radiusPill),
+      ),
+    );
+  }
+}
+
 class WenyouSectionHeader extends StatelessWidget {
   const WenyouSectionHeader({
     required this.title,

@@ -203,7 +203,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('举报'), findsAtLeastNWidgets(1));
-    await tester.tapAt(const Offset(12, 12));
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(discussion);
@@ -1156,7 +1156,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('post-composer-body')), findsNothing);
-    await tester.tapAt(const Offset(8, 8));
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(

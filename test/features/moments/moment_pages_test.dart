@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -47,6 +48,10 @@ void main() {
   });
 
   testWidgets('360dp 动态信息流使用双列瀑布布局并保留 48dp 点赞目标', (tester) async {
+    expect(
+      WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed'],
+      'two-column-waterfall',
+    );
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -159,7 +164,7 @@ void main() {
       find.byKey(const Key('moment-comment-action-comment-root-report')),
       findsOneWidget,
     );
-    await tester.tapAt(const Offset(8, 8));
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
   });
 

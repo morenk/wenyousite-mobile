@@ -233,24 +233,7 @@ class _HomeLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          SizedBox(height: tokens.space16),
-          Text('正在整理推荐主题', style: Theme.of(context).textTheme.titleMedium),
-          SizedBox(height: tokens.space8),
-          Text(
-            '正在加载主题…',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-          ),
-        ],
-      ),
-    );
+    return const WenyouListSkeleton(label: '正在加载推荐主题', itemCount: 2);
   }
 }
 

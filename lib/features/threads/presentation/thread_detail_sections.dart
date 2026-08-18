@@ -48,26 +48,11 @@ class ThreadDetailLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     return Align(
       alignment: Alignment.topCenter,
-      child: ThreadDetailContent(
+      child: const ThreadDetailContent(
         top: 16,
-        child: WenyouPanel(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              SizedBox(height: tokens.space16),
-              Text('正在打开主题', style: Theme.of(context).textTheme.titleMedium),
-              SizedBox(height: tokens.space4),
-              Text(
-                '正文和楼层会一起准备好。',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
+        child: WenyouDetailSkeleton(label: '正在加载主题正文和楼层'),
       ),
     );
   }

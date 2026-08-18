@@ -56,7 +56,7 @@ void main() {
       findsOneWidget,
     );
     final avatar = find.byKey(const ValueKey('profile-avatar-温柔测试员'));
-    expect(tester.widget<Semantics>(avatar).properties.label, '温柔测试员 的头像');
+    expect(tester.getSemantics(avatar).label, contains('温柔测试员 的头像'));
     final avatarRect = tester.getRect(avatar);
     expect(avatarRect.size, const Size.square(72));
   });

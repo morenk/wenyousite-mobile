@@ -134,6 +134,10 @@ class MomentFeedList extends ConsumerStatefulWidget {
 class _MomentFeedListState extends ConsumerState<MomentFeedList> {
   final _scrollController = ScrollController();
 
+  bool get _usesTwoColumnWaterfall =>
+      WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed'] ==
+      'two-column-waterfall';
+
   @override
   void initState() {
     super.initState();
@@ -204,7 +208,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
             context.wenyouTokens.space24,
           ),
           sliver: SliverMasonryGrid.count(
-            crossAxisCount: 2,
+            crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
             mainAxisSpacing: context.wenyouTokens.space12,
             crossAxisSpacing: context.wenyouTokens.space12,
             childCount: 4,
@@ -268,8 +272,8 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
           0,
         ),
         sliver: SliverMasonryGrid(
-          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+          gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
           ),
           mainAxisSpacing: context.wenyouTokens.space12,
           crossAxisSpacing: context.wenyouTokens.space12,

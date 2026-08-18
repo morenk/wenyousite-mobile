@@ -231,8 +231,27 @@ abstract final class AppTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.panel,
+        elevation: WenyouOverlayContract.elevation['popup'],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(tokens.radius20),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: tokens.panel,
+        elevation: WenyouOverlayContract.elevation['floating'],
+        modalElevation: WenyouOverlayContract.elevation['floating'],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(tokens.radius20),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: tokens.panel,
+        elevation: WenyouOverlayContract.elevation['popup'],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radius12),
+          side: BorderSide(color: tokens.border),
         ),
       ),
       snackBarTheme: SnackBarThemeData(

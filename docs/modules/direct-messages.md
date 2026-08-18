@@ -45,13 +45,13 @@
 
 中心、请求与归档空态只陈述当前状态，不重复说明发起或下拉方式。
 
-能力未开放、中心为空、请求为空、归档为空、首屏失败、历史/列表分页失败、会话不可访问、发送受限和请求已取消分别展示。cursor 收到 `40007` 时从首页重载；加载更多失败保留既有内容与请求 ID，并保持当前可见消息位置。不明确创建或发送响应视为失败并保留稳定幂等键，不伪装成功；失败状态和重试入口跟随对应气泡，输入器继续可用。用户阅读历史时新消息不抢滚动，只显示“新消息”浮标；接近底部或发送本人消息时自动跟随。接受请求失败保留首条消息，拒绝失败不删除本机显示，撤回超过十分钟在请求前本地拦截且仍以服务端结果为准。
+会话列表首次读取使用连续列表 Skeleton，会话详情首次读取使用详情结构 Skeleton；能力未开放、中心为空、请求为空、归档为空、首屏失败、历史/列表分页失败、会话不可访问、发送受限和请求已取消分别展示。cursor 收到 `40007` 时从首页重载；加载更多失败保留既有内容与请求 ID，并保持当前可见消息位置。不明确创建或发送响应视为失败并保留稳定幂等键，不伪装成功；失败状态和重试入口跟随对应气泡，输入器继续可用。用户阅读历史时新消息不抢滚动，只显示“新消息”浮标；接近底部或发送本人消息时自动跟随。接受请求失败保留首条消息，拒绝失败不删除本机显示，撤回超过十分钟在请求前本地拦截且仍以服务端结果为准。
 
 ## 10. 跨模块约束
 
 会话与消息时间统一使用 Foundation 72 小时格式，并向辅助技术提供 `yyyy-MM-dd HH:mm` 完整时间；具名会话头像失败回退首字符，停用账号始终显示不可用身份图标。
 
-capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.0.1 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
+capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.1.0 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
 
 ## 11. 测试场景与验收条件
 
@@ -74,4 +74,4 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 14. 相关代码与架构文档
 
-端口、控制器与状态：`lib/features/direct_messages/application/`；API 适配器：`lib/features/direct_messages/data/`；页面：`lib/features/direct_messages/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内通知](notifications.md)、[用户与资料](users.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)和[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。
+端口、控制器与状态：`lib/features/direct_messages/application/`；API 适配器：`lib/features/direct_messages/data/`；页面：`lib/features/direct_messages/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内通知](notifications.md)、[用户与资料](users.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)和[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。

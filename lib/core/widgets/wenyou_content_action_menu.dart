@@ -121,16 +121,37 @@ Future<void> copyPostCardValue(
   String value,
   String successMessage,
 ) async {
-  try {
-    await Clipboard.setData(ClipboardData(text: value));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(successMessage)));
-  } on Object {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('复制失败，请稍后重试。')));
+  while (context.mounted) {
+    try {
+      await Clipboard.setData(ClipboardData(text: value));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
+      return;
+    } on Object {
+      if (!context.mounted) return;
+      final retry = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('复制失败'),
+          content: const Text('内容没有复制成功，你可以留在当前页面重试。'),
+          actions: [
+            TextButton(
+              key: const Key('copy-failure-close'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('关闭'),
+            ),
+            FilledButton(
+              key: const Key('copy-failure-retry'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+      if (retry != true) return;
+    }
   }
 }

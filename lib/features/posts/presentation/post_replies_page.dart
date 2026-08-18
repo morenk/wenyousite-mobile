@@ -90,8 +90,9 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         actions: [_returnToRootAction(context)],
       ),
       body: switch (state.phase) {
-        PostDiscussionPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        PostDiscussionPhase.loading => const WenyouPageBody(
+          maxWidth: 600,
+          child: WenyouDetailSkeleton(label: '正在加载楼中楼讨论'),
         ),
         PostDiscussionPhase.failed => _DiscussionFailure(
           failure: state.failure,

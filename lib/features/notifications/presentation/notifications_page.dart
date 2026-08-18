@@ -30,8 +30,9 @@ class NotificationSection extends ConsumerWidget {
         ),
         Expanded(
           child: switch (state.phase) {
-            NotificationListPhase.loading => const Center(
-              child: CircularProgressIndicator(),
+            NotificationListPhase.loading => const Padding(
+              padding: EdgeInsets.all(12),
+              child: WenyouListSkeleton(label: '正在加载通知'),
             ),
             NotificationListPhase.failed => _NotificationListFailure(
               state: state,

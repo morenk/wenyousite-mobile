@@ -305,12 +305,9 @@ class _UserLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(tokens.space24),
-        child: const CircularProgressIndicator(),
-      ),
+    return const WenyouPageBody(
+      maxWidth: 600,
+      child: WenyouDetailSkeleton(label: '正在加载个人资料'),
     );
   }
 }

@@ -55,12 +55,13 @@ class _WenyouModalActionMenuState<T> extends State<WenyouModalActionMenu<T>> {
     final selection = await showDialog<_ModalActionSelection<T>>(
       context: context,
       useRootNavigator: true,
-      barrierDismissible: true,
+      barrierDismissible: false,
       barrierLabel: '关闭${widget.semanticLabel}',
       animationStyle: AnimationStyle.noAnimation,
       builder: (dialogContext) => _WenyouActionDialog<T>(
         actions: widget.actions,
         semanticLabel: widget.semanticLabel,
+        onClose: () => Navigator.of(dialogContext).pop(),
         onSelected: (value) =>
             Navigator.of(dialogContext).pop(_ModalActionSelection(value)),
       ),
@@ -95,11 +96,13 @@ class _WenyouActionDialog<T> extends StatelessWidget {
   const _WenyouActionDialog({
     required this.actions,
     required this.semanticLabel,
+    required this.onClose,
     required this.onSelected,
   });
 
   final List<WenyouPopoverAction<T>> actions;
   final String semanticLabel;
+  final VoidCallback onClose;
   final ValueChanged<T> onSelected;
 
   @override
@@ -120,18 +123,35 @@ class _WenyouActionDialog<T> extends StatelessWidget {
           container: true,
           explicitChildNodes: true,
           label: semanticLabel,
-          child: Padding(
-            padding: const EdgeInsets.all(WenyouModalActionMenu.panelPadding),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              children: [
-                for (final action in actions)
-                  _ModalActionButton<T>(
-                    action: action,
-                    onPressed: () => onSelected(action.value),
-                  ),
-              ],
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              IconButton(
+                key: const Key('wenyou-modal-action-close'),
+                tooltip: '关闭',
+                onPressed: onClose,
+                icon: const WenyouIcon(WenyouIconIds.actionClose),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  WenyouModalActionMenu.panelPadding,
+                  0,
+                  WenyouModalActionMenu.panelPadding,
+                  WenyouModalActionMenu.panelPadding,
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (final action in actions)
+                      _ModalActionButton<T>(
+                        action: action,
+                        onPressed: () => onSelected(action.value),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

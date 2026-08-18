@@ -41,7 +41,7 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-公开资料、活动汇总和内容保持页面级与分区级空错恢复；活动汇总失败只隐藏四项计数并提供独立重试。关系列表提供加载、空、失败、请求 ID、重试和刷新，缺失关系投影会安全过滤；本人资料加载失败可重试且仍保留安全退出。资料、头像与背景写入互斥，未变化不发 PATCH，失败保留原资料、输入与请求 ID。媒体选择或取景取消静默返回，上传可取消；头像上传失败复用已裁剪图片，设置失败只重试设置端点；背景保留双画幅裁剪结果与已完成的 `mediaId`，按缺失步骤继续上传或原子重试，移除失败不清空旧图。用户名占用、7 天冷却和 429 以服务端为准。当前 `UpdateUserDto.bio` 不接受空字符串或 null，因此已有简介清空会在本地明确拦截，不伪装保存成功。
+公开资料首次读取使用身份与正文分区结构 Skeleton；资料、活动汇总和内容保持页面级与分区级空错恢复，活动汇总失败只隐藏四项计数并提供独立重试。关系列表提供加载、空、失败、请求 ID、重试和刷新，缺失关系投影会安全过滤；本人资料加载失败可重试且仍保留安全退出。资料、头像与背景写入互斥，未变化不发 PATCH，失败保留原资料、输入与请求 ID。媒体选择或取景取消静默返回，上传可取消；头像上传失败复用已裁剪图片，设置失败只重试设置端点；背景保留双画幅裁剪结果与已完成的 `mediaId`，按缺失步骤继续上传或原子重试，移除失败不清空旧图。用户名占用、7 天冷却和 429 以服务端为准。当前 `UpdateUserDto.bio` 不接受空字符串或 null，因此已有简介清空会在本地明确拦截，不伪装保存成功。
 
 ## 10. 跨模块约束
 
@@ -86,4 +86,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。

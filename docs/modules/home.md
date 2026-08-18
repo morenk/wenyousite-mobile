@@ -37,7 +37,7 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-首屏进度、筛选后空结果、首屏错误、刷新/分页局部错误和重试分离；`40007` 清空后从第一页重载；重复项目按 ID 去重。复杂骨架屏按视觉计划后置。
+首次加载以主题卡片结构 Skeleton 保持信息层级；筛选后空结果、首屏错误、刷新/分页局部错误和重试分离。`40007` 清空后从第一页重载；重复项目按 ID 去重。
 
 ## 10. 跨模块约束
 
@@ -57,7 +57,7 @@
 
 ## 12. 已知限制和后续功能
 
-当前首页不做多标签组合筛选、离线流、阅读进度和复杂个性化解释；单标签浏览由 tags 模块的独立公开页承接。主题卡片遵循视觉基础，复杂骨架与动效后置。
+当前首页不做多标签组合筛选、离线流、阅读进度和复杂个性化解释；单标签浏览由 tags 模块的独立公开页承接。主题卡片遵循视觉基础，复杂动效后置。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -65,4 +65,4 @@
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。

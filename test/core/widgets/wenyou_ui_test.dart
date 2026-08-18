@@ -232,4 +232,20 @@ void main() {
     expect(find.text('问题编号：failure-request-id'), findsOneWidget);
     expect(findFoundationIcon(WenyouIconIds.statusError), findsOneWidget);
   });
+
+  testWidgets('首屏加载骨架保持列表结构并发布礼貌 live region', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouListSkeleton(label: '正在加载主题', itemCount: 2),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('wenyou-list-skeleton')), findsOneWidget);
+    expect(find.byType(WenyouPanel), findsNWidgets(2));
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.bySemanticsLabel('正在加载主题'), findsOneWidget);
+  });
 }

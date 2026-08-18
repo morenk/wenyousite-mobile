@@ -678,20 +678,7 @@ class _SearchLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: tokens.space12),
-          const Text('正在搜索…'),
-        ],
-      ),
-    );
+    return const WenyouListSkeleton(label: '正在搜索', itemCount: 2);
   }
 }
 

@@ -178,6 +178,18 @@ void main() {
     expect(filledMinimum!.height, 48);
     expect(textMinimum!.height, 48);
     expect(filledMinimum.width, 0);
+    expect(
+      theme.dialogTheme.elevation,
+      WenyouOverlayContract.elevation['popup'],
+    );
+    expect(
+      theme.bottomSheetTheme.modalElevation,
+      WenyouOverlayContract.elevation['floating'],
+    );
+    expect(
+      theme.popupMenuTheme.elevation,
+      WenyouOverlayContract.elevation['popup'],
+    );
   });
 }
 

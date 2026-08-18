@@ -14,19 +14,14 @@
 - 共享头像在具名身份缺图或加载失败时显示首个可读字符，匿名身份显示中性用户图标，停用身份强制显示不可用图标；列表与详情短时间使用 Foundation 72 小时格式并以 Semantics 暴露完整时间，私信不再维护独立日期规则，紧凑计数保留完整朗读值。
 - 正文图片使用 contain 和共享全屏路由，支持系统返回、双击/捏合缩放、放大后平移与未放大下滑关闭；头像和封面维持各自 crop 角色。
 - 骰子阅读态与编辑态已共用 `WenyouDiceNode`：无图标、基线对齐、原子不换行且不截断；已结算使用 accent/onAccent，待掷使用 warningSoft/warning，圆角和内边距按 em 契约计算。结果只按 nodeId 绑定服务端事实，缺失时显示 `?`，逐骰结果、修正值和总计仅进入完整 Semantics。
+- 首页、通知、私信、搜索、公开资料、独立讨论和主题详情的初始读取使用共享结构 Skeleton；已有内容的局部失败继续保留原内容。原图收藏/保存与正文复制失败留在当前任务内并提供重试，Snackbar 只承载短确认。
+- Dialog、Bottom Sheet、Popup Menu 与锚点浮层统一消费 Foundation overlay elevation；中央遮罩操作窗阻断背景点击并提供 48dp 显式关闭入口，系统返回仍可退出。
+- 动态发现、关注、收藏和用户信息流显式消费 `WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed']`，仅该领域例外使用双列瀑布流，详情与其他普通集合保持单列。
 
-## 已确认未完整实现
+## 本轮审计结论
 
-| 范围 | 当前差异 | 证据与收敛边界 |
-| --- | --- | --- |
-| 加载与失败反馈 | 动态瀑布流和创作概览已有结构化 Skeleton，但多数初始资源加载仍只显示居中 Spinner。图片收藏、复制等失败仍使用 Snackbar；规范要求初始内容加载保持结构，失败和重试留在任务上下文，Snackbar 只承载短确认。 | 全仓 `CircularProgressIndicator` 初始页面分支、`content_image_viewer_page.dart`、`wenyou_content_action_menu.dart` 等；按模块迁移，不能用一次全局替换掩盖状态模型差异。 |
-| 移动集合布局 | Foundation v6.1.0 已将动态主信息流登记为双列瀑布流领域例外；移动端现有布局尚未显式消费生成合同。 | `lib/features/moments/presentation/moment_feed_page.dart`；接入 `WenyouCollectionContract.mobileDomainLayoutExceptions` 并以测试固定例外只覆盖动态主信息流。 |
+本轮识别出的移动端实现差异已在对应垂直切片闭环，并由组件、页面或视觉回归测试固定。后续新增页面仍需直接消费生成合同和共享组件，不得重新引入页面级近似 Token、通用 Spinner 首屏或仅靠 Snackbar 承载可重试失败。
 
 ## 上游生成物风险
 
 Foundation Flutter 包已导出骰子的标签、语义、绑定与等价性常量，但 v6.1.0 尚未导出骰子的 `radiusEm`、`paddingBlockEm`、`paddingInlineEm` 和两态颜色映射，也未导出提及、引用、行内代码和主题标签的全部数字常量。本仓库的共享元素组件暂按同一 Tag 的机器合同精确消费这些值；后续 Foundation 若导出对应 Flutter 常量，应迁移为直接引用，避免重复数字继续存在。
-
-## 后续顺序
-
-1. 反馈切片：结构化首屏 Skeleton、任务内失败/重试和短确认 Snackbar 边界。
-2. 动态布局切片：显式消费 Foundation v6.1.0 的动态双列领域例外。

@@ -143,7 +143,9 @@ class _WenyouAnchoredPopoverState extends State<WenyouAnchoredPopover> {
         shadowColor: WidgetStatePropertyAll(
           Theme.of(context).colorScheme.shadow.withValues(alpha: 0.16),
         ),
-        elevation: const WidgetStatePropertyAll(4),
+        elevation: WidgetStatePropertyAll(
+          WenyouOverlayContract.elevation['popup'],
+        ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(tokens.radius16),

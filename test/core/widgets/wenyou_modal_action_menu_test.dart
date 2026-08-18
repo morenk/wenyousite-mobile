@@ -10,7 +10,7 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('操作窗口固定居中并可点击暗区关闭', (tester) async {
+  testWidgets('操作窗口固定居中，暗区不关闭并提供显式关闭按钮', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -58,6 +58,10 @@ void main() {
     expect(find.byKey(const Key('modal-copy')), findsOneWidget);
 
     await tester.tapAt(const Offset(8, 8));
+    await tester.pump();
+    expect(menu, findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pump();
     expect(menu, findsNothing);
   });

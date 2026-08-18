@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 
 void main() {
@@ -91,6 +92,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('图片正在处理，完成后会出现在收藏中。'), findsOneWidget);
     expect(calls, 1);
+  });
+
+  testWidgets('收藏失败留在原图任务内并可原位重试', (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: ContentImageViewerPage(
+          url: 'https://cdn.example.com/story.png',
+          alt: '雾港地图',
+          onSaveImage: () async {
+            calls += 1;
+            if (calls == 1) {
+              throw const ApiFailure(
+                userMessage: '收藏表情失败，请稍后重试。',
+                requestId: 'save-image-request',
+              );
+            }
+            return '已添加到表情收藏。';
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('content-image-actions')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加到表情收藏'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('收藏表情失败，请稍后重试。'), findsOneWidget);
+    expect(find.text('问题编号：save-image-request'), findsOneWidget);
+    expect(find.byKey(const Key('content-image-save-retry')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('content-image-save-retry')));
+    await tester.pumpAndSettle();
+    expect(calls, 2);
+    expect(find.text('收藏表情失败，请稍后重试。'), findsNothing);
+    expect(find.text('已添加到表情收藏。'), findsOneWidget);
   });
 }
 

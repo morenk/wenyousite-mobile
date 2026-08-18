@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class ContentImageViewerPage extends StatefulWidget {
   const ContentImageViewerPage({
@@ -26,6 +27,7 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
       TransformationController();
   double _verticalDrag = 0;
   bool _saving = false;
+  ApiFailure? _saveFailure;
 
   @override
   void dispose() {
@@ -80,45 +82,72 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
             ),
         ],
       ),
-      body: GestureDetector(
-        onDoubleTap: () {
-          final zoomed =
-              _transformationController.value.getMaxScaleOnAxis() > 1.01;
-          _transformationController.value = zoomed
-              ? Matrix4.identity()
-              : Matrix4.diagonal3Values(2, 2, 1);
-        },
-        onVerticalDragUpdate: (details) {
-          if (_transformationController.value.getMaxScaleOnAxis() <= 1.01) {
-            _verticalDrag += details.delta.dy;
-          }
-        },
-        onVerticalDragEnd: (_) {
-          if (_verticalDrag > 80 && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
-          _verticalDrag = 0;
-        },
-        child: InteractiveViewer(
-          transformationController: _transformationController,
-          minScale: 1,
-          maxScale: 5,
-          child: Center(
-            child: Image.network(
-              widget.url,
-              fit: BoxFit.contain,
-              semanticLabel: alt.isEmpty ? '正文插图原图' : alt,
-              errorBuilder: (_, _, _) => const _UnavailableContentImage(),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onDoubleTap: () {
+                final zoomed =
+                    _transformationController.value.getMaxScaleOnAxis() > 1.01;
+                _transformationController.value = zoomed
+                    ? Matrix4.identity()
+                    : Matrix4.diagonal3Values(2, 2, 1);
+              },
+              onVerticalDragUpdate: (details) {
+                if (_transformationController.value.getMaxScaleOnAxis() <=
+                    1.01) {
+                  _verticalDrag += details.delta.dy;
+                }
+              },
+              onVerticalDragEnd: (_) {
+                if (_verticalDrag > 80 && Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+                _verticalDrag = 0;
+              },
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+                minScale: 1,
+                maxScale: 5,
+                child: Center(
+                  child: Image.network(
+                    widget.url,
+                    fit: BoxFit.contain,
+                    semanticLabel: alt.isEmpty ? '正文插图原图' : alt,
+                    errorBuilder: (_, _, _) => const _UnavailableContentImage(),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+          if (_saveFailure case final failure?)
+            Positioned(
+              right: context.wenyouTokens.space16,
+              bottom: context.wenyouTokens.space16,
+              left: context.wenyouTokens.space16,
+              child: SafeArea(
+                top: false,
+                child: WenyouFailureBanner(
+                  failure: failure,
+                  action: TextButton(
+                    key: const Key('content-image-save-retry'),
+                    onPressed: _saving ? null : _saveImage,
+                    child: const Text('重试收藏'),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
   Future<void> _saveImage() async {
     if (_saving || widget.onSaveImage == null) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _saveFailure = null;
+    });
     try {
       final message = await widget.onSaveImage!();
       if (!mounted) return;
@@ -127,10 +156,11 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
       ).showSnackBar(SnackBar(content: Text(message)));
     } on Object catch (error) {
       if (!mounted) return;
-      final message = error is ApiFailure ? error.userMessage : '收藏表情失败，请稍后重试。';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      setState(() {
+        _saveFailure = error is ApiFailure
+            ? error
+            : const ApiFailure(userMessage: '收藏表情失败，请稍后重试。');
+      });
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -108,7 +108,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('post-card-action-root-link')), findsOneWidget);
     expect(find.text('举报'), findsAtLeastNWidgets(1));
-    await tester.tapAt(const Offset(12, 12));
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
     await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
@@ -119,7 +119,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('举报'), findsAtLeastNWidgets(1));
-    await tester.tapAt(const Offset(12, 12));
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('post-reply-compose')));
@@ -166,7 +166,7 @@ void main() {
       'thread',
     );
     await _replaceComposerText(tester, '新发表的回复');
-    await tester.tapAt(const Offset(8, 8));
+    await tester.tap(find.byKey(const Key('post-composer-close')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('post-composer-body')), findsNothing);
 

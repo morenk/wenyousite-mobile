@@ -39,8 +39,9 @@ class _DirectMessagesPageState extends ConsumerState<DirectMessagesPage> {
         ),
         Expanded(
           child: switch (state.phase) {
-            DirectConversationListPhase.loading => const Center(
-              child: CircularProgressIndicator(),
+            DirectConversationListPhase.loading => const Padding(
+              padding: EdgeInsets.all(12),
+              child: WenyouListSkeleton(label: '正在加载私聊会话'),
             ),
             DirectConversationListPhase.failed => _DirectListFailure(
               state: state,
