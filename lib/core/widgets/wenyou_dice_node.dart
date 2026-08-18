@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
-/// Foundation v6.0.1 规定的阅读态与编辑态共用骰子原子节点。
+/// 阅读态与编辑态共用的骰子原子节点。
 class WenyouDiceNode extends StatelessWidget {
   const WenyouDiceNode({
     required this.label,

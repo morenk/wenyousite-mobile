@@ -6,10 +6,10 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 void main() {
-  test('移动主题完整映射 Foundation v6.1.0 核心 Token', () {
+  test('移动主题完整映射 Foundation 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '6.1.0');
+    expect(WenyouFoundationVersion.value, '6.2.0');
     expect(WenyouFoundationVersion.schema, 2);
     expect(WenyouEditorContract.surfaces, [
       'page',
