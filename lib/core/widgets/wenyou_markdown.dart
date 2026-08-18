@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
 String formatWenyouDiceSemantics({
@@ -369,12 +370,7 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     final nodeId = element.attributes['node-id']!;
     final notation = element.textContent;
     final style =
-        (preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style)
-            .copyWith(
-              fontFamily: WenyouFoundationTypography.utility,
-              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            );
+        preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style;
     return Text.rich(
       TextSpan(
         children: [
@@ -386,24 +382,16 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
               builder: (context, _) {
                 final labels = labelsByNodeId.value;
                 final label = labels[nodeId] ?? '$notation = ?';
-                return Semantics(
+                return WenyouDiceNode(
                   key: ValueKey('wenyou-dice-$nodeId'),
-                  label:
+                  label: label,
+                  semanticLabel:
                       semanticsByNodeId.value[nodeId] ??
                       (labels.containsKey(nodeId)
                           ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
                           : '骰子 $notation，待掷'),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: style,
-                    strutStyle: StrutStyle.fromTextStyle(
-                      style,
-                      forceStrutHeight: true,
-                    ),
-                  ),
+                  settled: labels.containsKey(nodeId),
+                  style: style,
                 );
               },
             ),

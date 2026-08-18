@@ -175,8 +175,21 @@ void main() {
       final finder = find.byElementPredicate(
         (candidate) => candidate == element,
       );
-      expect(tester.getSize(finder).height, lessThanOrEqualTo(32));
+      expect(tester.getSize(finder).height, lessThanOrEqualTo(35));
+      final surface = tester.widget<DecoratedBox>(
+        find.descendant(of: finder, matching: find.byType(DecoratedBox)),
+      );
+      final decoration = surface.decoration as BoxDecoration;
+      expect(decoration.color, WenyouFoundationPalette.warningSoft);
+      expect(
+        (decoration.borderRadius! as BorderRadius).topLeft.x,
+        closeTo(5.1, 0.001),
+      );
     }
+    expect(
+      tester.widget<Text>(find.text('1d20 = ?')).style?.color,
+      WenyouFoundationPalette.warning,
+    );
     expect(findFoundationIcon(WenyouIconIds.editorDice), findsNothing);
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
     expect(tester.takeException(), isNull);

@@ -22,6 +22,10 @@
 - `searchSearchThreads` 已支持 cursor/limit 分页，但移动端仍走不传参数的兼容调用，单次最多读取 50 条；完成移动端分页前搜索模块保持 `in_progress`。
 - 动态评论通知仍只进入动态详情，尚未消费已经稳定的 `momentsCommentContext` 与 `momentCommentNavigation` 黄金旅程。
 - 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v3 安全字面文本；这不是原始不支持结构的无损提交。
+- Foundation v6.0.1 富文本元素仍有提及、引用、行内代码和主题标签差异；需以阅读/编辑共用组件迁移，避免两态继续分叉。
+- Foundation 身份与格式化仍未完全覆盖：具名头像失败应回退首个可读字符，时间需补完整 Semantics，私信时间和紧凑计数需统一 Foundation formatter。
+- Foundation 排版与反馈仍为部分接入：紧凑回复正文需要统一到 17sp/1.8，列表/弹层/状态标题需要从全局文楷映射中拆出，初始资源加载应使用结构 Skeleton，失败和重试不能只依赖 Snackbar。
+- 动态两列瀑布流与 Foundation mobile 单列要求存在明确冲突；在移动端改为单列或 Foundation 发布正式例外前，不视为规范已闭环。完整证据见 `docs/architecture/foundation-compliance-audit.md`。
 
 ## 单切片完成定义
 

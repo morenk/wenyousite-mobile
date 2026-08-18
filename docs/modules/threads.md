@@ -84,7 +84,7 @@
 - [x] 子贴正文直接位于阅读画布且没有嵌套 Card；楼层作者信息在紧凑单行内完成，头像以独立 48dp 入口进入作者主页且不触发回复，整层其余区域暴露“回复第 N 楼”点击动作；零回复不显示重复按钮，有回复时保留至少 48dp 的回复数入口。
 - [x] `subthread` 站内坐标直接打开指定子贴；`post` 坐标由服务端帖子归属事实定位，普通楼层留在主题上下文，具体回复直接进入独立讨论且返回后不循环打开。
 - [x] Markdown 内合法站内坐标复用 Foundation v6.0.1 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
-- [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射，但详情题头只展示主题/子贴标题；骰子节点使用无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`。
+- [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射，但详情题头只展示主题/子贴标题；骰子节点使用 Foundation 已结算/待掷语义色的无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`，逐骰明细仅进入 Semantics。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
 - [x] 楼层连续列表以分隔线代替逐条卡片，点击非交互正文/元信息直接回复且不吞链接、图片、回复数、更多菜单或长按；主题流预览回复与 48dp 回复数入口保持独立点击行为，楼层与独立讨论回复保留完整操作菜单。
 - [x] 发表楼层后不重新加载首屏楼层，原楼层窗口和顺序保持稳定；新楼层追加到窗口末尾并通过 `post` 坐标平滑定位。
@@ -121,4 +121,4 @@
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。

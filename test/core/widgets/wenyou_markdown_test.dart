@@ -34,6 +34,34 @@ void main() {
     );
     expect(find.textContaining('[[dice:', findRichText: true), findsNothing);
     expect(find.textContaining('🎲', findRichText: true), findsNothing);
+    final surface = tester.widget<DecoratedBox>(
+      find.descendant(
+        of: find.byKey(const ValueKey('wenyou-dice-$nodeId')),
+        matching: find.byType(DecoratedBox),
+      ),
+    );
+    final decoration = surface.decoration as BoxDecoration;
+    expect(decoration.color, WenyouFoundationPalette.accent);
+    expect(
+      (decoration.borderRadius! as BorderRadius).topLeft.x,
+      closeTo(5.1, 0.001),
+    );
+    final padding = tester.widget<Padding>(
+      find.descendant(
+        of: find.byKey(const ValueKey('wenyou-dice-$nodeId')),
+        matching: find.byType(Padding),
+      ),
+    );
+    final insets = padding.padding.resolve(TextDirection.ltr);
+    expect(insets.left, closeTo(5.1, 0.001));
+    expect(insets.top, closeTo(1.36, 0.001));
+    final text = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('wenyou-dice-$nodeId')),
+        matching: find.text('1d20 = 16'),
+      ),
+    );
+    expect(text.style?.color, WenyouFoundationPalette.onAccent);
     expect(
       tester
           .getSemantics(find.byKey(const ValueKey('wenyou-dice-$nodeId')))
@@ -73,8 +101,8 @@ void main() {
     final secondDice = find.byKey(const ValueKey('wenyou-dice-$secondNodeId'));
     expect(firstDice, findsOneWidget);
     expect(secondDice, findsOneWidget);
-    expect(tester.getSize(firstDice).height, lessThanOrEqualTo(31));
-    expect(tester.getSize(secondDice).height, lessThanOrEqualTo(31));
+    expect(tester.getSize(firstDice).height, lessThanOrEqualTo(35));
+    expect(tester.getSize(secondDice).height, lessThanOrEqualTo(35));
     expect(tester.takeException(), isNull);
 
     await expectLater(
@@ -92,11 +120,27 @@ void main() {
 
     await tester.pumpWidget(app(const {}));
     expect(find.text('1d20 = ?'), findsOneWidget);
+    BoxDecoration decoration() =>
+        tester
+                .widget<DecoratedBox>(
+                  find.descendant(
+                    of: find.byKey(const ValueKey('wenyou-dice-$nodeId')),
+                    matching: find.byType(DecoratedBox),
+                  ),
+                )
+                .decoration
+            as BoxDecoration;
+    expect(decoration().color, WenyouFoundationPalette.warningSoft);
+    expect(
+      tester.widget<Text>(find.text('1d20 = ?')).style?.color,
+      WenyouFoundationPalette.warning,
+    );
     await tester.pumpWidget(app(const {nodeId: '1d20 = 16'}));
     await tester.pump();
 
     expect(find.text('1d20 = ?'), findsNothing);
     expect(find.text('1d20 = 16'), findsOneWidget);
+    expect(decoration().color, WenyouFoundationPalette.accent);
   });
 
   test('骰子完整语义包含逐骰结果、修正值和总计', () {
