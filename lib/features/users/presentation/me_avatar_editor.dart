@@ -107,18 +107,43 @@ class MeAvatarEditor extends ConsumerWidget {
   }
 
   Future<void> _chooseAndSet(BuildContext context, WidgetRef ref) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final container = ProviderScope.containerOf(context, listen: false);
     final controller = ref.read(avatarControllerProvider.notifier);
+    final processor = ref.read(imageCropProcessorPortProvider);
     final input = await controller.pickImage();
-    if (!context.mounted || input == null) return;
+    if (!navigator.mounted || input == null) return;
     final cropped = await showAvatarCropDialog(
-      context,
+      navigator.context,
       input: input,
-      processor: ref.read(imageCropProcessorPortProvider),
+      processor: processor,
     );
-    if (!context.mounted || cropped == null) return;
+    if (cropped == null) return;
     final result = await controller.setImage(cropped);
-    if (!context.mounted || result == null) return;
-    _applyResult(context, ref, result, '头像已更新。');
+    if (result == null) return;
+    _applyPickerResult(navigator, container, result);
+  }
+
+  void _applyPickerResult(
+    NavigatorState navigator,
+    ProviderContainer container,
+    AvatarUpdateResult result,
+  ) {
+    final previousUrl = container
+        .read(meProfileControllerProvider)
+        .profile
+        ?.avatarUrl;
+    container
+        .read(meProfileControllerProvider.notifier)
+        .applyAvatarUpdate(result);
+    if (previousUrl != null) {
+      unawaited(WenyouCachedImage.evictFromCache(previousUrl));
+    }
+    if (navigator.mounted) {
+      ScaffoldMessenger.maybeOf(
+        navigator.context,
+      )?.showSnackBar(const SnackBar(content: Text('头像已更新。')));
+    }
   }
 
   Future<void> _confirmRemove(BuildContext context, WidgetRef ref) async {

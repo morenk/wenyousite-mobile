@@ -216,7 +216,7 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
     final count = widget.inputs.length;
     final progress = _processing && count > 1
         ? '正在生成 $_processedCount/$count 张图片…'
-        : '拖动图片调整范围，双指缩放或使用滑杆精细取景。';
+        : '原图保持比例显示；拖动取景框选择区域，双指或使用滑杆调整范围。';
     return ImageCropDialogFrame(
       key: const Key('editor-image-crop-dialog'),
       title: widget.title,

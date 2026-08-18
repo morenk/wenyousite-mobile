@@ -103,18 +103,47 @@ class MeProfileCoverEditor extends ConsumerWidget {
   }
 
   Future<void> _chooseAndSet(BuildContext context, WidgetRef ref) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final container = ProviderScope.containerOf(context, listen: false);
     final controller = ref.read(profileCoverControllerProvider.notifier);
+    final processor = ref.read(imageCropProcessorPortProvider);
     final input = await controller.pickImage();
-    if (!context.mounted || input == null) return;
+    if (!navigator.mounted || input == null) return;
     final selection = await showProfileCoverCropDialog(
-      context,
+      navigator.context,
       input: input,
-      processor: ref.read(imageCropProcessorPortProvider),
+      processor: processor,
     );
-    if (!context.mounted || selection == null) return;
+    if (selection == null) return;
     final result = await controller.setSelection(selection);
-    if (!context.mounted || result == null) return;
-    _applyResult(context, ref, result, '主页背景已更新。');
+    if (result == null) return;
+    _applyPickerResult(navigator, container, result);
+  }
+
+  void _applyPickerResult(
+    NavigatorState navigator,
+    ProviderContainer container,
+    ProfileCoverUpdateResult result,
+  ) {
+    final oldUrls =
+        container
+            .read(meProfileControllerProvider)
+            .profile
+            ?.profileCover
+            ?.cachedUrls
+            .toList() ??
+        const <String>[];
+    container
+        .read(meProfileControllerProvider.notifier)
+        .applyProfileCoverUpdate(result);
+    for (final url in oldUrls) {
+      unawaited(WenyouCachedImage.evictFromCache(url));
+    }
+    if (navigator.mounted) {
+      ScaffoldMessenger.maybeOf(
+        navigator.context,
+      )?.showSnackBar(const SnackBar(content: Text('主页背景已更新。')));
+    }
   }
 
   Future<void> _confirmRemove(BuildContext context, WidgetRef ref) async {

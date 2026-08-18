@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_task_c
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
@@ -394,6 +396,8 @@ void main() {
     expect(find.byKey(const Key('profile-cover-crop-dialog')), findsOneWidget);
     expect(find.text('网页端 3:1'), findsOneWidget);
     expect(find.text('手机端 2:1'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('image-crop-zoom')));
+    await tester.pumpAndSettle();
     await tester.drag(
       find.byKey(const Key('image-crop-zoom')),
       const Offset(120, 0),
@@ -413,6 +417,97 @@ void main() {
     expect(media.uploadCalls, 2);
     expect(coverRepository.setCalls, 1);
     expect(find.text('主页背景已更新。'), findsOneWidget);
+  });
+
+  testWidgets('背景选图期间资料刷新替换编辑器后仍继续裁剪和上传', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final picker = _DeferredProfileCoverPicker();
+    final media = _FakeMediaRepository();
+    final coverRepository = _FakeProfileCoverRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      profileCoverPicker: picker,
+      profileCoverRepository: coverRepository,
+      mediaRepository: media,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final change = find.byKey(const Key('me-profile-cover-change'));
+    await tester.ensureVisible(change);
+    await tester.pumpAndSettle();
+    await tester.tap(change);
+    await tester.pump();
+
+    final reload = Completer<MeProfileModel>();
+    repository.deferNextFetch(reload);
+    container.invalidate(meProfileControllerProvider);
+    await tester.pump();
+    expect(find.text('正在读取资料'), findsOneWidget);
+
+    reload.complete(repository.profile);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('me-profile-cover-change')), findsOneWidget);
+
+    picker.complete(_avatarInput);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-cover-crop-dialog')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+    expect(media.uploadCalls, 2);
+    expect(coverRepository.setCalls, 1);
+    expect(find.text('主页背景已更新。'), findsOneWidget);
+  });
+
+  testWidgets('头像选图期间资料刷新替换编辑器后仍继续裁剪和上传', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final picker = _DeferredAvatarPicker();
+    final media = _FakeMediaRepository();
+    final avatar = _FakeAvatarRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      avatarPicker: picker,
+      mediaRepository: media,
+      avatarRepository: avatar,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pump();
+
+    final reload = Completer<MeProfileModel>();
+    repository.deferNextFetch(reload);
+    container.invalidate(meProfileControllerProvider);
+    await tester.pump();
+    expect(find.text('正在读取资料'), findsOneWidget);
+
+    reload.complete(repository.profile);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('me-avatar-change')), findsOneWidget);
+
+    picker.complete(_avatarInput);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('avatar-crop-dialog')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+    expect(media.uploadCalls, 1);
+    expect(avatar.setCalls, 1);
+    expect(find.text('头像已更新。'), findsOneWidget);
   });
 
   testWidgets('主页背景上传失败后主动显示错误并保留同图重试', (tester) async {
@@ -683,6 +778,24 @@ class _FakeProfileCoverPicker implements ProfileCoverImagePicker {
   }
 }
 
+class _DeferredProfileCoverPicker implements ProfileCoverImagePicker {
+  final _selection = Completer<MediaUploadInput?>();
+
+  void complete(MediaUploadInput? input) => _selection.complete(input);
+
+  @override
+  Future<MediaUploadInput?> pickProfileCoverFromGallery() => _selection.future;
+}
+
+class _DeferredAvatarPicker implements AvatarImagePicker {
+  final _selection = Completer<MediaUploadInput?>();
+
+  void complete(MediaUploadInput? input) => _selection.complete(input);
+
+  @override
+  Future<MediaUploadInput?> pickAvatarFromGallery() => _selection.future;
+}
+
 class _FakeProfileCoverRepository implements ProfileCoverRepository {
   int setCalls = 0;
 
@@ -862,10 +975,20 @@ class _FakeMeProfileRepository implements MeProfileRepository {
   int updateCalls = 0;
   MeProfilePatch? lastPatch;
   MeProfileModel profile;
+  Completer<MeProfileModel>? _nextFetch;
+
+  void deferNextFetch(Completer<MeProfileModel> result) {
+    _nextFetch = result;
+  }
 
   @override
   Future<MeProfileModel> fetchMe() async {
     fetchCalls += 1;
+    final nextFetch = _nextFetch;
+    if (nextFetch != null) {
+      _nextFetch = null;
+      return nextFetch.future;
+    }
     if (failFetchOnce) {
       failFetchOnce = false;
       throw const ApiFailure(

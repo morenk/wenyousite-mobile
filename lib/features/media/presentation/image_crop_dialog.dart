@@ -114,7 +114,7 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
     return ImageCropDialogFrame(
       key: const Key('avatar-crop-dialog'),
       title: '裁剪头像',
-      description: '拖动图片调整位置，双指缩放或使用滑杆调整取景。',
+      description: '原图保持比例显示；拖动取景框选择区域，双指或使用滑杆调整范围。',
       processing: _processing,
       error: _error,
       onCancel: () => Navigator.pop(context),
@@ -244,7 +244,7 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
     return ImageCropDialogFrame(
       key: const Key('profile-cover-crop-dialog'),
       title: '调整主页背景取景',
-      description: '请分别确认网页端和手机端的展示范围。',
+      description: '原图保持比例显示，请分别拖动 3:1 与 2:1 取景框选择展示区域。',
       processing: _processing,
       error: _error,
       onCancel: () => Navigator.pop(context),
@@ -475,16 +475,17 @@ class ImageCropEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sourceAspectRatio = source.width / source.height;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: roundMask ? 340 : double.infinity,
-            maxHeight: roundMask ? 340 : 280,
+            maxHeight: roundMask ? 340 : 360,
           ),
           child: AspectRatio(
-            aspectRatio: controller.targetAspectRatio,
+            aspectRatio: sourceAspectRatio,
             child: _CropViewport(
               source: source,
               controller: controller,
@@ -566,32 +567,22 @@ class _CropViewportState extends State<_CropViewport> {
             child: AnimatedBuilder(
               animation: widget.controller,
               builder: (context, _) {
-                final geometry = widget.controller._geometry(viewport);
+                final crop = widget.controller.crop;
                 return Stack(
                   fit: StackFit.expand,
                   children: [
                     ColoredBox(color: tokens.softPanel),
-                    Center(
-                      child: Transform.translate(
-                        offset: geometry.offset,
-                        child: Transform.scale(
-                          scale: widget.controller.zoom,
-                          child: SizedBox(
-                            width: geometry.baseSize.width,
-                            height: geometry.baseSize.height,
-                            child: Image.memory(
-                              widget.source.previewBytes,
-                              fit: BoxFit.fill,
-                              filterQuality: FilterQuality.high,
-                              gaplessPlayback: true,
-                            ),
-                          ),
-                        ),
-                      ),
+                    Image.memory(
+                      widget.source.previewBytes,
+                      key: const Key('image-crop-source'),
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      gaplessPlayback: true,
                     ),
                     IgnorePointer(
                       child: CustomPaint(
                         painter: _CropFramePainter(
+                          crop: crop,
                           round: widget.roundMask,
                           borderColor: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -657,29 +648,13 @@ class CropViewportController extends ChangeNotifier {
     required double scale,
   }) {
     zoom = (startZoom * scale).clamp(1, 3);
-    final geometry = _geometry(viewport);
-    final scaledWidth = geometry.baseSize.width * zoom;
-    final scaledHeight = geometry.baseSize.height * zoom;
+    if (viewport.width <= 0 || viewport.height <= 0) return;
     center = Offset(
-      startCenter.dx - focalDelta.dx / scaledWidth,
-      startCenter.dy - focalDelta.dy / scaledHeight,
+      startCenter.dx + focalDelta.dx / viewport.width,
+      startCenter.dy + focalDelta.dy / viewport.height,
     );
     _clampCenter();
     notifyListeners();
-  }
-
-  _CropGeometry _geometry(Size viewport) {
-    final viewportAspect = viewport.width / viewport.height;
-    final baseSize = sourceAspectRatio > viewportAspect
-        ? Size(viewport.height * sourceAspectRatio, viewport.height)
-        : Size(viewport.width, viewport.width / sourceAspectRatio);
-    return _CropGeometry(
-      baseSize: baseSize,
-      offset: Offset(
-        -((center.dx - .5) * baseSize.width * zoom),
-        -((center.dy - .5) * baseSize.height * zoom),
-      ),
-    );
   }
 
   void _clampCenter() {
@@ -693,55 +668,58 @@ class CropViewportController extends ChangeNotifier {
   }
 }
 
-class _CropGeometry {
-  const _CropGeometry({required this.baseSize, required this.offset});
-
-  final Size baseSize;
-  final Offset offset;
-}
-
 class _CropFramePainter extends CustomPainter {
-  const _CropFramePainter({required this.round, required this.borderColor});
+  const _CropFramePainter({
+    required this.crop,
+    required this.round,
+    required this.borderColor,
+  });
 
+  final NormalizedCropRect crop;
   final bool round;
   final Color borderColor;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final frame = Rect.fromLTWH(
+      crop.left * size.width,
+      crop.top * size.height,
+      crop.width * size.width,
+      crop.height * size.height,
+    );
     final border = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..color = borderColor.withValues(alpha: .9);
+    final selection = Path();
     if (round) {
-      final oval = Rect.fromLTWH(1, 1, size.width - 2, size.height - 2);
-      final shade = Path.combine(
-        PathOperation.difference,
-        Path()..addRect(Offset.zero & size),
-        Path()..addOval(oval),
-      );
-      canvas.drawPath(
-        shade,
-        Paint()..color = Colors.black.withValues(alpha: .5),
-      );
-      canvas.drawOval(oval, border);
+      selection.addOval(frame);
+    } else {
+      selection.addRect(frame);
+    }
+    final shade = Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Offset.zero & size),
+      selection,
+    );
+    canvas.drawPath(shade, Paint()..color = Colors.black.withValues(alpha: .5));
+    if (round) {
+      canvas.drawOval(frame, border);
       return;
     }
-    canvas.drawRect(
-      Rect.fromLTWH(1, 1, size.width - 2, size.height - 2),
-      border,
-    );
+    canvas.drawRect(frame, border);
     final grid = Paint()
       ..strokeWidth = 1
       ..color = borderColor.withValues(alpha: .45);
     for (final fraction in const [1 / 3, 2 / 3]) {
       canvas.drawLine(
-        Offset(size.width * fraction, 0),
-        Offset(size.width * fraction, size.height),
+        Offset(frame.left + frame.width * fraction, frame.top),
+        Offset(frame.left + frame.width * fraction, frame.bottom),
         grid,
       );
       canvas.drawLine(
-        Offset(0, size.height * fraction),
-        Offset(size.width, size.height * fraction),
+        Offset(frame.left, frame.top + frame.height * fraction),
+        Offset(frame.right, frame.top + frame.height * fraction),
         grid,
       );
     }
@@ -749,7 +727,12 @@ class _CropFramePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CropFramePainter oldDelegate) {
-    return round != oldDelegate.round || borderColor != oldDelegate.borderColor;
+    return crop.left != oldDelegate.crop.left ||
+        crop.top != oldDelegate.crop.top ||
+        crop.width != oldDelegate.crop.width ||
+        crop.height != oldDelegate.crop.height ||
+        round != oldDelegate.round ||
+        borderColor != oldDelegate.borderColor;
   }
 }
 
