@@ -226,7 +226,8 @@ class _UserProfileContent extends ConsumerWidget {
       stats: [
         UserProfileStatItem(
           label: '关注',
-          value: '${profile.followingCount}',
+          value: formatWenyouCompactCount(profile.followingCount),
+          semanticValue: '${profile.followingCount}',
           onTap: () => context.pushNamed(
             isCurrentUser ? 'me-following' : 'user-following',
             pathParameters: isCurrentUser ? const {} : {'userId': profile.id},
@@ -234,7 +235,11 @@ class _UserProfileContent extends ConsumerWidget {
         ),
         UserProfileStatItem(
           label: '粉丝',
-          value: '${relationState?.followerCount ?? profile.followerCount}',
+          value: formatWenyouCompactCount(
+            relationState?.followerCount ?? profile.followerCount,
+          ),
+          semanticValue:
+              '${relationState?.followerCount ?? profile.followerCount}',
           onTap: () => context.pushNamed(
             isCurrentUser ? 'me-followers' : 'user-followers',
             pathParameters: isCurrentUser ? const {} : {'userId': profile.id},

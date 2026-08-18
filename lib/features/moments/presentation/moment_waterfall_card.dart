@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -217,7 +218,10 @@ class _MomentWaterfallLikeButton extends StatelessWidget {
       iconSize: 18,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       supporting: count > 0
-          ? Text('$count', style: Theme.of(context).textTheme.labelSmall)
+          ? Text(
+              formatWenyouCompactCount(count),
+              style: Theme.of(context).textTheme.labelSmall,
+            )
           : null,
     );
   }

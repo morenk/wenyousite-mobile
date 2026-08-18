@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
@@ -211,31 +212,10 @@ class _MeAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(
-        WenyouIconIds.identityMember,
-        size: 42,
-        color: tokens.mutedText,
-      ),
-    );
-    return Semantics(
-      image: true,
-      label: '${profile.username} 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: 84,
-          child: profile.avatarUrl == null
-              ? fallback
-              : WenyouCachedImage(
-                  imageUrl: profile.avatarUrl!,
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
+    return WenyouAvatar(
+      username: profile.username,
+      avatarUrl: profile.avatarUrl,
+      size: 84,
     );
   }
 }

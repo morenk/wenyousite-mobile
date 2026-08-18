@@ -55,6 +55,8 @@
 
 ## 10. 跨模块约束
 
+动态作者头像、发布时间与互动计数复用 Foundation 共享身份和格式化组件；短时间同时提供完整时间语义，紧凑计数的操作语义保留服务端原值。
+
 media/application 提供相册与上传端口、任务状态、取消、失败和同文件重试；moments presentation 不直接导入 media/data 或 Dio，只消费完成结果并维护最多九图、封面顺序及评论图片/表情互斥。stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId；users 暴露公开用户动态入口；search 复用完整宽度动态卡片但不持有动态详情或写入状态；wallet 维护动态加油幂等写入；reports 管理动态与评论举报。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec；`core/navigation/internal_reference.dart` 只消费独立的 `wenyousite-internal-reference` v1 契约，不能扩大成通用 Markdown 解析器。合法站内坐标由共享阅读组件渲染成 Foundation v6.0.1 传送门胶囊，非法坐标与普通 Markdown 保持字面文本。视觉只消费 Foundation v6.0.1 Token、元素契约、语义图标与图片角色。双列仅是动态信息流的明确产品特例；详情继续保持单列和不超过 600dp，独立操作命中区不小于 48dp。
 
 ## 11. 测试场景与验收条件

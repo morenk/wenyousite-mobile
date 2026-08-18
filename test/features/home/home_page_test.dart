@@ -122,7 +122,7 @@ void main() {
     expect(find.text('第二段接力'), findsOneWidget);
   });
 
-  testWidgets('主题卡片展示作者头像且无头像时使用人物占位', (tester) async {
+  testWidgets('主题卡片展示作者头像且无头像时使用用户名首字符', (tester) async {
     await tester.pumpWidget(
       _homeApp(_FakeHomeRepository(items: [_threadWithAvatar, _secondThread])),
     );
@@ -139,10 +139,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(
-        of: fallback,
-        matching: findFoundationIcon(WenyouIconIds.identityMember),
-      ),
+      find.descendant(of: fallback, matching: find.text('接')),
       findsOneWidget,
     );
   });

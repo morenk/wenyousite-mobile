@@ -49,6 +49,8 @@
 
 ## 10. 跨模块约束
 
+会话与消息时间统一使用 Foundation 72 小时格式，并向辅助技术提供 `yyyy-MM-dd HH:mm` 完整时间；具名会话头像失败回退首字符，停用账号始终显示不可用身份图标。
+
 capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.0.1 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
 
 ## 11. 测试场景与验收条件

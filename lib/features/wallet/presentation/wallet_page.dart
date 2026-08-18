@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -417,24 +417,10 @@ class _CounterpartyAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
-    );
-    final url = counterparty?.avatarUrl;
-    return ClipOval(
-      child: SizedBox.square(
-        dimension: 40,
-        child: url == null
-            ? fallback
-            : WenyouCachedImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => fallback,
-                errorWidget: (_, _, _) => fallback,
-              ),
-      ),
+    return WenyouAvatar(
+      username: counterparty?.username ?? '',
+      avatarUrl: counterparty?.avatarUrl,
+      size: 40,
     );
   }
 }

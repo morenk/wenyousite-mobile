@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart';
@@ -429,8 +429,9 @@ class _NotificationBody extends StatelessWidget {
           ),
         ],
         SizedBox(height: tokens.space4),
-        Text(
-          formatWenyouRelativeTime(item.createdAt),
+        WenyouTimeText(
+          value: item.createdAt,
+          semanticsPrefix: '通知时间：',
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
@@ -449,28 +450,25 @@ class _NotificationLeading extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final actor = item.actor;
-    final fallback = ColoredBox(
+    final notificationFallback = ColoredBox(
       color: item.isRead ? tokens.softPanel : tokens.panel,
       child: WenyouIcon(
-        actor == null ? _kindIcon(item.kind) : WenyouIconIds.identityMember,
+        _kindIcon(item.kind),
         size: 21,
         color: item.isRead ? tokens.mutedText : tokens.focus,
       ),
     );
-    return ClipOval(
-      child: SizedBox.square(
-        dimension: 40,
-        child: actor?.avatarUrl == null
-            ? fallback
-            : WenyouCachedImage(
-                imageUrl: actor!.avatarUrl!,
-                fit: BoxFit.cover,
-                cacheWidth: 40,
-                cacheHeight: 40,
-                placeholder: (_, _) => fallback,
-                errorWidget: (_, _, _) => fallback,
-              ),
-      ),
+    if (actor == null) {
+      return ClipOval(
+        child: SizedBox.square(dimension: 40, child: notificationFallback),
+      );
+    }
+    return WenyouAvatar(
+      username: actor.username,
+      avatarUrl: actor.avatarUrl,
+      size: 40,
+      fallbackBackgroundColor: item.isRead ? tokens.softPanel : tokens.panel,
+      fallbackForegroundColor: item.isRead ? tokens.mutedText : tokens.focus,
     );
   }
 }

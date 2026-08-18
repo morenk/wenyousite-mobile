@@ -5,7 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -351,29 +351,10 @@ class _MemberAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final initial = member.username.trim().isEmpty
-        ? '?'
-        : member.username.characters.first;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: Center(child: Text(initial)),
-    );
-    final uri = Uri.tryParse(member.avatarUrl ?? '');
-    final validAvatar =
-        uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
-    return ClipOval(
-      child: SizedBox.square(
-        dimension: 44,
-        child: !validAvatar
-            ? fallback
-            : WenyouCachedImage(
-                imageUrl: member.avatarUrl!,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => fallback,
-                errorWidget: (_, _, _) => fallback,
-              ),
-      ),
+    return WenyouAvatar(
+      username: member.username,
+      avatarUrl: member.avatarUrl,
+      size: 44,
     );
   }
 }

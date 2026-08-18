@@ -552,13 +552,15 @@ class _ProfileOverview extends StatelessWidget {
         UserProfileStatItem(
           key: const Key('me-open-following'),
           label: '关注',
-          value: '${profile.followingCount}',
+          value: formatWenyouCompactCount(profile.followingCount),
+          semanticValue: '${profile.followingCount}',
           onTap: () => context.pushNamed('me-following'),
         ),
         UserProfileStatItem(
           key: const Key('me-open-followers'),
           label: '粉丝',
-          value: '${profile.followerCount}',
+          value: formatWenyouCompactCount(profile.followerCount),
+          semanticValue: '${profile.followerCount}',
           onTap: () => context.pushNamed('me-followers'),
         ),
         UserProfileStatItem(

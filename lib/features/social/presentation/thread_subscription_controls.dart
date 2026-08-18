@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
@@ -305,13 +306,9 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                             'thread-subscription-candidate-${candidate.userId}',
                           ),
                           contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundColor: tokens.softPanel,
-                            child: Text(
-                              candidate.username.isEmpty
-                                  ? '?'
-                                  : candidate.username.characters.first,
-                            ),
+                          leading: WenyouAvatar(
+                            username: candidate.username,
+                            size: 40,
                           ),
                           title: Text(candidate.username),
                           subtitle: Text('Lv.${candidate.level}'),

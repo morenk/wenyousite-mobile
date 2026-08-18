@@ -11,6 +11,7 @@
 - 独立讨论回复和主题流内嵌回复已统一为 17sp/1.8；提及在阅读/编辑态共用透明无图标原子文字，引用恢复正常字形，行内代码按 0.88em 字号和 0.35em 圆角呈现，Quill 内边距使用 v6.1.0 正式平台例外。
 - 主题标签在阅读与管理态统一为中性前景、透明表面、细边框和 `#` 前缀；可点击标签保留 48dp 命中区，非交互标签按内容收缩。
 - 页面、区块与详情内容标题通过显式语义入口使用 LXGW WenKai 500；Material 通用标题槽回到 Noto Sans SC，列表标题使用 600，弹层、状态、控件和用户名不再意外继承文楷。表单字段保留持久 label，筛选选择态同时提供下划线、边框/实心点或勾选等非颜色线索。
+- 共享头像在具名身份缺图或加载失败时显示首个可读字符，匿名身份显示中性用户图标，停用身份强制显示不可用图标；列表与详情短时间使用 Foundation 72 小时格式并以 Semantics 暴露完整时间，私信不再维护独立日期规则，紧凑计数保留完整朗读值。
 - 正文图片使用 contain 和共享全屏路由，支持系统返回、双击/捏合缩放、放大后平移与未放大下滑关闭；头像和封面维持各自 crop 角色。
 - 骰子阅读态与编辑态已共用 `WenyouDiceNode`：无图标、基线对齐、原子不换行且不截断；已结算使用 accent/onAccent，待掷使用 warningSoft/warning，圆角和内边距按 em 契约计算。结果只按 nodeId 绑定服务端事实，缺失时显示 `?`，逐骰结果、修正值和总计仅进入完整 Semantics。
 
@@ -18,8 +19,6 @@
 
 | 范围 | 当前差异 | 证据与收敛边界 |
 | --- | --- | --- |
-| 头像降级 | 多个具名用户头像在缺图或加载失败时统一显示人物图标。规范要求用户名可读时显示首个可读字符，只有匿名或不可用身份使用中性用户图标。 | `lib/core/widgets/wenyou_avatar_button.dart` 及搜索、主题、动态、关系、资料、私信等本地头像实现；应先建立共享 fallback，再逐处替换，停用账号继续使用不可用状态。 |
-| 时间与计数格式 | 共享相对时间已使用 72 小时窗口，但至少主题卡、动态、通知、楼层和回复的可见时间没有同步暴露完整时间 Semantics；私信列表仍有独立日期规则。紧凑计数目前只在创作概览明确消费 Foundation formatter。 | `lib/core/formatters/relative_time.dart` 的五个展示调用点及 `direct_messages_page.dart`；需提供“可见短值 + 完整可访问值”的共享组件，并审计统计数字。 |
 | 加载与失败反馈 | 动态瀑布流和创作概览已有结构化 Skeleton，但多数初始资源加载仍只显示居中 Spinner。图片收藏、复制等失败仍使用 Snackbar；规范要求初始内容加载保持结构，失败和重试留在任务上下文，Snackbar 只承载短确认。 | 全仓 `CircularProgressIndicator` 初始页面分支、`content_image_viewer_page.dart`、`wenyou_content_action_menu.dart` 等；按模块迁移，不能用一次全局替换掩盖状态模型差异。 |
 | 移动集合布局 | Foundation v6.1.0 已将动态主信息流登记为双列瀑布流领域例外；移动端现有布局尚未显式消费生成合同。 | `lib/features/moments/presentation/moment_feed_page.dart`；接入 `WenyouCollectionContract.mobileDomainLayoutExceptions` 并以测试固定例外只覆盖动态主信息流。 |
 
@@ -29,6 +28,5 @@ Foundation Flutter 包已导出骰子的标签、语义、绑定与等价性常�
 
 ## 后续顺序
 
-1. 身份与格式化切片：统一头像 fallback、时间 Semantics、私信时间和紧凑计数。
-2. 反馈切片：结构化首屏 Skeleton、任务内失败/重试和短确认 Snackbar 边界。
-3. 动态布局切片：显式消费 Foundation v6.1.0 的动态双列领域例外。
+1. 反馈切片：结构化首屏 Skeleton、任务内失败/重试和短确认 Snackbar 边界。
+2. 动态布局切片：显式消费 Foundation v6.1.0 的动态双列领域例外。

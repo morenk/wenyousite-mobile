@@ -648,18 +648,29 @@ class _PostAuthorLine extends StatelessWidget {
                 ],
               ),
               SizedBox(height: tokens.space4 / 2),
-              Text(
-                [
-                  if (root) '#${post.floorNumber ?? '-'}',
+              Semantics(
+                label: [
+                  if (root) '楼层 ${post.floorNumber ?? '-'}',
                   if (!root && post.replyToAuthor != null)
-                    '回复 @${post.replyToAuthor!.username}'
+                    '回复 ${post.replyToAuthor!.username}'
                   else if (!root)
                     '回复',
-                  formatWenyouRelativeTime(post.createdAt),
-                ].join(' · '),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  '发布时间：${formatWenyouExactTime(post.createdAt)}',
+                ].join('，'),
+                excludeSemantics: true,
+                child: Text(
+                  [
+                    if (root) '#${post.floorNumber ?? '-'}',
+                    if (!root && post.replyToAuthor != null)
+                      '回复 @${post.replyToAuthor!.username}'
+                    else if (!root)
+                      '回复',
+                    formatWenyouRelativeTime(post.createdAt),
+                  ].join(' · '),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ),
               ),
             ],
           ),

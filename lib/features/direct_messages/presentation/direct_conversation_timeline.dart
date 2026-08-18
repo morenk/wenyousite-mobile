@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -267,8 +267,10 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
               child: Column(
                 children: [
                   if (showTime) ...[
-                    Text(
-                      _formatMessageTime(message.createdAt, widget.now),
+                    WenyouTimeText(
+                      value: message.createdAt,
+                      reference: widget.now,
+                      semanticsPrefix: '消息时间：',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     SizedBox(height: tokens.space8),
@@ -320,16 +322,4 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
       ],
     );
   }
-}
-
-String _formatMessageTime(DateTime createdAt, DateTime now) {
-  final local = createdAt.toLocal();
-  final today = DateUtils.dateOnly(now);
-  final day = DateUtils.dateOnly(local);
-  if (day == today) return DateFormat('HH:mm').format(local);
-  if (day == today.subtract(const Duration(days: 1))) {
-    return '昨天 ${DateFormat('HH:mm').format(local)}';
-  }
-  if (local.year == now.year) return DateFormat('MM月dd日 HH:mm').format(local);
-  return DateFormat('yyyy年MM月dd日 HH:mm').format(local);
 }

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 
 class ThreadFeedCard extends StatelessWidget {
   const ThreadFeedCard({
@@ -171,8 +172,10 @@ class _ThreadAuthor extends StatelessWidget {
         WenyouLevelBadge(level: thread.ownerLevel),
         SizedBox(width: tokens.space8),
         Flexible(
-          child: Text(
-            '· ${formatWenyouRelativeTime(thread.activityAt)}',
+          child: WenyouTimeText(
+            value: thread.activityAt,
+            prefix: '· ',
+            semanticsPrefix: '最近活跃时间：',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(
@@ -198,34 +201,11 @@ class _ThreadAuthorAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(
-        WenyouIconIds.identityMember,
-        color: tokens.mutedText,
-        size: 22,
-      ),
-    );
-    return Semantics(
+    return WenyouAvatar(
       key: Key('home-thread-author-avatar-$threadId'),
-      image: true,
-      label: '$ownerName 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: 40,
-          child: avatarUrl == null
-              ? fallback
-              : WenyouCachedImage(
-                  imageUrl: avatarUrl!,
-                  fit: BoxFit.cover,
-                  cacheWidth: 40,
-                  cacheHeight: 40,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
+      username: ownerName,
+      avatarUrl: avatarUrl,
+      size: 40,
     );
   }
 }
@@ -396,7 +376,7 @@ class _ThreadStat extends StatelessWidget {
           WenyouIcon(icon, size: 16, color: tokens.mutedText),
           SizedBox(width: tokens.space4),
           Text(
-            '$value',
+            formatWenyouCompactCount(value),
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),

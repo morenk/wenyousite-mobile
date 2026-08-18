@@ -3,10 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
@@ -133,7 +134,8 @@ class MomentCardTile extends StatelessWidget {
                   icon: moment.viewerLiked
                       ? WenyouIconIds.actionLike
                       : WenyouIconIds.actionLike,
-                  label: '${moment.likeCount}',
+                  label: formatWenyouCompactCount(moment.likeCount),
+                  semanticValue: '${moment.likeCount}',
                   selected: moment.viewerLiked,
                   kind: WenyouInteractionKind.like,
                   pending: pendingAction == MomentInteractionAction.like,
@@ -143,7 +145,8 @@ class MomentCardTile extends StatelessWidget {
                 ),
                 _MomentCountAction(
                   icon: WenyouIconIds.metricComments,
-                  label: '${moment.commentCount}',
+                  label: formatWenyouCompactCount(moment.commentCount),
+                  semanticValue: '${moment.commentCount}',
                   onPressed: onTap,
                   tooltip: '查看评论',
                 ),
@@ -253,8 +256,9 @@ class MomentAuthorLine extends StatelessWidget {
                 ],
               ),
               if (createdAt != null)
-                Text(
-                  formatWenyouRelativeTime(createdAt!),
+                WenyouTimeText(
+                  value: createdAt!,
+                  semanticsPrefix: '发布时间：',
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
@@ -284,33 +288,10 @@ class MomentAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(
-        WenyouIconIds.identityMember,
-        size: size * 0.55,
-        color: tokens.mutedText,
-      ),
-    );
-    return Semantics(
-      image: true,
-      label: '${author.username} 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: size,
-          child: author.avatarUrl == null
-              ? fallback
-              : WenyouCachedImage(
-                  imageUrl: author.avatarUrl!,
-                  fit: BoxFit.cover,
-                  cacheWidth: size.ceil(),
-                  cacheHeight: size.ceil(),
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
+    return WenyouAvatar(
+      username: author.username,
+      avatarUrl: author.avatarUrl,
+      size: size,
     );
   }
 }
@@ -755,6 +736,7 @@ class _MomentCountAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.tooltip,
+    this.semanticValue,
     this.selected = false,
     this.kind,
     this.pending = false,
@@ -766,6 +748,7 @@ class _MomentCountAction extends StatelessWidget {
   final String icon;
   final String label;
   final String tooltip;
+  final String? semanticValue;
   final bool selected;
   final WenyouInteractionKind? kind;
   final bool pending;
@@ -782,13 +765,13 @@ class _MomentCountAction extends StatelessWidget {
         pending: pending,
         onPressed: onPressed,
         interactive: interactive,
-        semanticLabel: '$tooltip，$label',
+        semanticLabel: '$tooltip，${semanticValue ?? label}',
         supporting: Text(label),
       );
     }
     return Semantics(
       button: true,
-      label: '$tooltip，$label',
+      label: '$tooltip，${semanticValue ?? label}',
       child: TextButton.icon(
         onPressed: onPressed,
         icon: WenyouIcon(icon, size: 20, color: selected ? tokens.focus : null),

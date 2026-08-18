@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -162,10 +162,6 @@ class _RelationUserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
-    );
     return WenyouPanel(
       key: ValueKey('relation-user-${item.userId}'),
       padding: EdgeInsets.all(tokens.space12),
@@ -175,24 +171,10 @@ class _RelationUserCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Semantics(
-            image: true,
-            label: '${item.username} 的头像',
-            child: ClipOval(
-              child: SizedBox.square(
-                dimension: tokens.minimumTouchTarget,
-                child: item.avatarUrl == null
-                    ? fallback
-                    : WenyouCachedImage(
-                        imageUrl: item.avatarUrl!,
-                        fit: BoxFit.cover,
-                        cacheWidth: tokens.minimumTouchTarget.ceil(),
-                        cacheHeight: tokens.minimumTouchTarget.ceil(),
-                        placeholder: (_, _) => fallback,
-                        errorWidget: (_, _, _) => fallback,
-                      ),
-              ),
-            ),
+          WenyouAvatar(
+            username: item.username,
+            avatarUrl: item.avatarUrl,
+            size: tokens.minimumTouchTarget,
           ),
           SizedBox(width: tokens.space12),
           Expanded(

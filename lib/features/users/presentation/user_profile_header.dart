@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -10,6 +11,7 @@ class UserProfileStatItem {
   const UserProfileStatItem({
     required this.label,
     this.value,
+    this.semanticValue,
     this.icon,
     this.onTap,
     this.key,
@@ -17,6 +19,7 @@ class UserProfileStatItem {
 
   final String label;
   final String? value;
+  final String? semanticValue;
   final String? icon;
   final VoidCallback? onTap;
   final Key? key;
@@ -310,42 +313,17 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(
-        WenyouIconIds.identityMember,
-        size: 34,
-        color: tokens.mutedText,
-      ),
-    );
-    return Semantics(
+    return Container(
       key: ValueKey('profile-avatar-$username'),
-      image: true,
-      label: '$username 的头像',
-      child: Container(
-        width: 72,
-        height: 72,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          shape: BoxShape.circle,
-          border: Border.all(color: tokens.border),
-        ),
-        child: ClipOval(
-          child: avatarUrl == null
-              ? fallback
-              : WenyouCachedImage(
-                  imageUrl: avatarUrl!,
-                  width: 66,
-                  height: 66,
-                  cacheWidth: 132,
-                  cacheHeight: 132,
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
+      width: 72,
+      height: 72,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        shape: BoxShape.circle,
+        border: Border.all(color: tokens.border),
       ),
+      child: WenyouAvatar(username: username, avatarUrl: avatarUrl, size: 66),
     );
   }
 }
@@ -358,36 +336,43 @@ class _ProfileStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return InkWell(
-      key: item.key,
-      onTap: item.onTap,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget + 12),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: tokens.space4,
-            vertical: tokens.space8,
+    return Semantics(
+      label: '${item.label}：${item.semanticValue ?? item.value ?? ''}',
+      excludeSemantics: true,
+      button: item.onTap != null,
+      child: InkWell(
+        key: item.key,
+        onTap: item.onTap,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: tokens.minimumTouchTarget + 12,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (item.icon case final icon?)
-                WenyouIcon(icon, size: 22, color: tokens.mutedText)
-              else
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space4,
+              vertical: tokens.space8,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (item.icon case final icon?)
+                  WenyouIcon(icon, size: 22, color: tokens.mutedText)
+                else
+                  Text(
+                    item.value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                SizedBox(height: tokens.space4),
                 Text(
-                  item.value!,
+                  item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              SizedBox(height: tokens.space4),
-              Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -45,6 +45,8 @@
 
 ## 10. 跨模块约束
 
+本人、公开资料和关系列表头像缺图或加载失败时显示用户名首个可读字符；匿名身份才使用中性用户图标，停用身份使用不可用图标。关注与粉丝数按 Foundation 阈值紧凑显示，TalkBack 朗读完整值。
+
 关系写操作由 social 管理，users 只负责身份排除和展示同步；“我的”温油统计入口与钱包详情按同一会话 key 观察 `WalletController.summary.balance`，不会用用户资料中的累计收款 `receivedTipTotal` 代替余额；温油流水与用户加油仍由 wallet 管理，成功后 users 重读公开收款统计；社区举报由 reports 提交，users 只提供稳定公开 userId 并排除本人；私聊联系状态、权限和正文由 direct-messages 管理；头像上传由 media；密码、邮箱、会话和注销由 settings/auth。提及候选虽由 Users API 返回，但由 editor 按真实主题上下文管理输入、防抖、竞态和原子插入，users 页面不缓存或展示该隐私投影。注销后的公开身份、头像和内容归属严格采用服务端匿名化投影，不由客户端自行拼装。搜索、Markdown 和私聊入口只传 userId，目标页面重新校验可见性。最近回复复用 threads 的帖子目标定位，Markdown 摘要走统一安全纯文本转换。
 
 ## 11. 测试场景与验收条件

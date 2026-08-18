@@ -5,7 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -665,29 +665,10 @@ class _SearchAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(WenyouIconIds.identityMember, color: tokens.mutedText),
-    );
-    return Semantics(
-      image: true,
-      label: '$name 的头像',
-      child: ClipOval(
-        child: SizedBox.square(
-          dimension: tokens.minimumTouchTarget,
-          child: url == null
-              ? fallback
-              : WenyouCachedImage(
-                  imageUrl: url!,
-                  fit: BoxFit.cover,
-                  cacheWidth: 48,
-                  cacheHeight: 48,
-                  placeholder: (_, _) => fallback,
-                  errorWidget: (_, _, _) => fallback,
-                ),
-        ),
-      ),
+    return WenyouAvatar(
+      username: name,
+      avatarUrl: url,
+      size: context.wenyouTokens.minimumTouchTarget,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -278,10 +279,9 @@ class _DirectConversationCard extends StatelessWidget {
                           ),
                           if (conversation.lastMessageAt != null) ...[
                             SizedBox(width: tokens.space8),
-                            Text(
-                              _relativeConversationTime(
-                                conversation.lastMessageAt!.toLocal(),
-                              ),
+                            WenyouTimeText(
+                              value: conversation.lastMessageAt!,
+                              semanticsPrefix: '最后消息时间：',
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(color: tokens.mutedText),
                             ),
@@ -325,25 +325,6 @@ class _DirectConversationCard extends StatelessWidget {
     );
   }
 }
-
-String _relativeConversationTime(DateTime value, {DateTime? now}) {
-  final current = (now ?? DateTime.now()).toLocal();
-  final local = value.toLocal();
-  final today = DateTime(current.year, current.month, current.day);
-  final date = DateTime(local.year, local.month, local.day);
-  final dayDifference = today.difference(date).inDays;
-  if (dayDifference == 0) return _twoDigitsTime(local);
-  if (dayDifference == 1) return '昨天';
-  if (dayDifference > 1 && dayDifference < 7) {
-    return const ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][local.weekday - 1];
-  }
-  return '${local.month.toString().padLeft(2, '0')}-'
-      '${local.day.toString().padLeft(2, '0')}';
-}
-
-String _twoDigitsTime(DateTime value) =>
-    '${value.hour.toString().padLeft(2, '0')}:'
-    '${value.minute.toString().padLeft(2, '0')}';
 
 class _DirectListFailure extends StatelessWidget {
   const _DirectListFailure({required this.state, required this.onRetry});
