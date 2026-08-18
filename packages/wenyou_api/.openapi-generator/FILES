@@ -161,6 +161,7 @@ lib/src/model/create_direct_message_dto.dart
 lib/src/model/create_draft_dto.dart
 lib/src/model/create_managed_tag_dto.dart
 lib/src/model/create_moderation_appeal_dto.dart
+lib/src/model/create_moment_bookmark_dto.dart
 lib/src/model/create_moment_comment_dto.dart
 lib/src/model/create_moment_dto.dart
 lib/src/model/create_notification_campaign_dto.dart
@@ -258,6 +259,7 @@ lib/src/model/moderation_cases_list200_response.dart
 lib/src/model/moderation_cases_resolve201_response.dart
 lib/src/model/moderation_decision_public_response_dto.dart
 lib/src/model/moment_action_response_dto.dart
+lib/src/model/moment_bookmark_placement_response_dto.dart
 lib/src/model/moment_card_response_dto.dart
 lib/src/model/moment_comment_context_response_dto.dart
 lib/src/model/moment_comment_response_dto.dart
@@ -278,6 +280,7 @@ lib/src/model/moments_create_comment201_response.dart
 lib/src/model/moments_detail200_response.dart
 lib/src/model/moments_like201_response.dart
 lib/src/model/moments_list200_response.dart
+lib/src/model/moments_move_bookmark200_response.dart
 lib/src/model/moments_remove200_response.dart
 lib/src/model/moments_remove_comment200_response.dart
 lib/src/model/moments_replies200_response.dart
@@ -285,6 +288,7 @@ lib/src/model/moments_unbookmark200_response.dart
 lib/src/model/moments_unlike200_response.dart
 lib/src/model/moments_update200_response.dart
 lib/src/model/move_bookmark_dto.dart
+lib/src/model/move_moment_bookmark_dto.dart
 lib/src/model/notification_audience_dto.dart
 lib/src/model/notification_campaign_cancel200_response.dart
 lib/src/model/notification_campaign_create201_response.dart
@@ -306,6 +310,7 @@ lib/src/model/notifications_remove200_response.dart
 lib/src/model/notifications_set_read_status200_response.dart
 lib/src/model/notifications_unread_count200_response.dart
 lib/src/model/own_bookmark_thread_response_dto.dart
+lib/src/model/own_moment_bookmark_response_dto.dart
 lib/src/model/parent_post_response_dto.dart
 lib/src/model/post_author_response_dto.dart
 lib/src/model/post_count_response_dto.dart
@@ -475,6 +480,7 @@ lib/src/model/users_get_user200_response.dart
 lib/src/model/users_get_user_activity_summary200_response.dart
 lib/src/model/users_get_user_bookmarks200_response.dart
 lib/src/model/users_get_user_created_threads200_response.dart
+lib/src/model/users_get_user_moment_bookmarks200_response.dart
 lib/src/model/users_get_user_played_threads200_response.dart
 lib/src/model/users_get_user_recent_replies200_response.dart
 lib/src/model/users_mention_candidates200_response.dart

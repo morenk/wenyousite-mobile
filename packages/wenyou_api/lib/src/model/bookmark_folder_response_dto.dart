@@ -15,6 +15,7 @@ part 'bookmark_folder_response_dto.g.dart';
 /// * [name]
 /// * [isDefault]
 /// * [bookmarkCount]
+/// * [momentBookmarkCount] - 该收藏夹中的动态收藏数量
 /// * [createdAt]
 @BuiltValue()
 abstract class BookmarkFolderResponseDto implements Built<BookmarkFolderResponseDto, BookmarkFolderResponseDtoBuilder> {
@@ -29,6 +30,10 @@ abstract class BookmarkFolderResponseDto implements Built<BookmarkFolderResponse
 
   @BuiltValueField(wireName: r'bookmarkCount')
   num get bookmarkCount;
+
+  /// 该收藏夹中的动态收藏数量
+  @BuiltValueField(wireName: r'momentBookmarkCount')
+  num get momentBookmarkCount;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -74,6 +79,11 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
     yield r'bookmarkCount';
     yield serializers.serialize(
       object.bookmarkCount,
+      specifiedType: const FullType(num),
+    );
+    yield r'momentBookmarkCount';
+    yield serializers.serialize(
+      object.momentBookmarkCount,
       specifiedType: const FullType(num),
     );
     yield r'createdAt';
@@ -131,6 +141,13 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
             specifiedType: const FullType(num),
           ) as num;
           result.bookmarkCount = valueDes;
+          break;
+        case r'momentBookmarkCount':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.momentBookmarkCount = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(

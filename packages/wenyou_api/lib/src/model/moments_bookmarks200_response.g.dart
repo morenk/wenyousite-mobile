@@ -75,7 +75,7 @@ class _$MomentsBookmarks200ResponseCodeEnumSerializer
 
 class _$MomentsBookmarks200Response extends MomentsBookmarks200Response {
   @override
-  final BuiltList<MomentCardResponseDto> data;
+  final BuiltList<OwnMomentBookmarkResponseDto> data;
   @override
   final ApiPaginationMeta meta;
   @override
@@ -143,10 +143,10 @@ class MomentsBookmarks200ResponseBuilder
         ApiPaginatedSuccessEnvelopeBuilder {
   _$MomentsBookmarks200Response? _$v;
 
-  ListBuilder<MomentCardResponseDto>? _data;
-  ListBuilder<MomentCardResponseDto> get data =>
-      _$this._data ??= ListBuilder<MomentCardResponseDto>();
-  set data(covariant ListBuilder<MomentCardResponseDto>? data) =>
+  ListBuilder<OwnMomentBookmarkResponseDto>? _data;
+  ListBuilder<OwnMomentBookmarkResponseDto> get data =>
+      _$this._data ??= ListBuilder<OwnMomentBookmarkResponseDto>();
+  set data(covariant ListBuilder<OwnMomentBookmarkResponseDto>? data) =>
       _$this._data = data;
 
   ApiPaginationMetaBuilder? _meta;

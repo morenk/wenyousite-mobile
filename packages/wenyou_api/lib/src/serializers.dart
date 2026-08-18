@@ -132,6 +132,7 @@ import 'package:wenyou_api/src/model/create_direct_message_dto.dart';
 import 'package:wenyou_api/src/model/create_draft_dto.dart';
 import 'package:wenyou_api/src/model/create_managed_tag_dto.dart';
 import 'package:wenyou_api/src/model/create_moderation_appeal_dto.dart';
+import 'package:wenyou_api/src/model/create_moment_bookmark_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_comment_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_dto.dart';
 import 'package:wenyou_api/src/model/create_notification_campaign_dto.dart';
@@ -228,6 +229,7 @@ import 'package:wenyou_api/src/model/moderation_cases_list200_response.dart';
 import 'package:wenyou_api/src/model/moderation_cases_resolve201_response.dart';
 import 'package:wenyou_api/src/model/moderation_decision_public_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_action_response_dto.dart';
+import 'package:wenyou_api/src/model/moment_bookmark_placement_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_card_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_comment_context_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_comment_response_dto.dart';
@@ -248,6 +250,7 @@ import 'package:wenyou_api/src/model/moments_create_comment201_response.dart';
 import 'package:wenyou_api/src/model/moments_detail200_response.dart';
 import 'package:wenyou_api/src/model/moments_like201_response.dart';
 import 'package:wenyou_api/src/model/moments_list200_response.dart';
+import 'package:wenyou_api/src/model/moments_move_bookmark200_response.dart';
 import 'package:wenyou_api/src/model/moments_remove200_response.dart';
 import 'package:wenyou_api/src/model/moments_remove_comment200_response.dart';
 import 'package:wenyou_api/src/model/moments_replies200_response.dart';
@@ -255,6 +258,7 @@ import 'package:wenyou_api/src/model/moments_unbookmark200_response.dart';
 import 'package:wenyou_api/src/model/moments_unlike200_response.dart';
 import 'package:wenyou_api/src/model/moments_update200_response.dart';
 import 'package:wenyou_api/src/model/move_bookmark_dto.dart';
+import 'package:wenyou_api/src/model/move_moment_bookmark_dto.dart';
 import 'package:wenyou_api/src/model/notification_audience_dto.dart';
 import 'package:wenyou_api/src/model/notification_campaign_cancel200_response.dart';
 import 'package:wenyou_api/src/model/notification_campaign_create201_response.dart';
@@ -276,6 +280,7 @@ import 'package:wenyou_api/src/model/notifications_remove200_response.dart';
 import 'package:wenyou_api/src/model/notifications_set_read_status200_response.dart';
 import 'package:wenyou_api/src/model/notifications_unread_count200_response.dart';
 import 'package:wenyou_api/src/model/own_bookmark_thread_response_dto.dart';
+import 'package:wenyou_api/src/model/own_moment_bookmark_response_dto.dart';
 import 'package:wenyou_api/src/model/parent_post_response_dto.dart';
 import 'package:wenyou_api/src/model/post_author_response_dto.dart';
 import 'package:wenyou_api/src/model/post_count_response_dto.dart';
@@ -445,6 +450,7 @@ import 'package:wenyou_api/src/model/users_get_user200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_activity_summary200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_bookmarks200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_created_threads200_response.dart';
+import 'package:wenyou_api/src/model/users_get_user_moment_bookmarks200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_played_threads200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_recent_replies200_response.dart';
 import 'package:wenyou_api/src/model/users_mention_candidates200_response.dart';
@@ -580,6 +586,7 @@ part 'serializers.g.dart';
   CreateDraftDto,
   CreateManagedTagDto,
   CreateModerationAppealDto,
+  CreateMomentBookmarkDto,
   CreateMomentCommentDto,
   CreateMomentDto,
   CreateNotificationCampaignDto,
@@ -676,6 +683,7 @@ part 'serializers.g.dart';
   ModerationCasesResolve201Response,
   ModerationDecisionPublicResponseDto,
   MomentActionResponseDto,
+  MomentBookmarkPlacementResponseDto,
   MomentCardResponseDto,
   MomentCommentContextResponseDto,
   MomentCommentResponseDto,
@@ -696,6 +704,7 @@ part 'serializers.g.dart';
   MomentsDetail200Response,
   MomentsLike201Response,
   MomentsList200Response,
+  MomentsMoveBookmark200Response,
   MomentsRemove200Response,
   MomentsRemoveComment200Response,
   MomentsReplies200Response,
@@ -703,6 +712,7 @@ part 'serializers.g.dart';
   MomentsUnlike200Response,
   MomentsUpdate200Response,
   MoveBookmarkDto,
+  MoveMomentBookmarkDto,
   NotificationAudienceDto,
   NotificationCampaignCancel200Response,
   NotificationCampaignCreate201Response,
@@ -724,6 +734,7 @@ part 'serializers.g.dart';
   NotificationsSetReadStatus200Response,
   NotificationsUnreadCount200Response,
   OwnBookmarkThreadResponseDto,
+  OwnMomentBookmarkResponseDto,
   ParentPostResponseDto,
   PostAuthorResponseDto,
   PostCountResponseDto,
@@ -893,6 +904,7 @@ part 'serializers.g.dart';
   UsersGetUserActivitySummary200Response,
   UsersGetUserBookmarks200Response,
   UsersGetUserCreatedThreads200Response,
+  UsersGetUserMomentBookmarks200Response,
   UsersGetUserPlayedThreads200Response,
   UsersGetUserRecentReplies200Response,
   UsersMentionCandidates200Response,

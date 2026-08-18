@@ -16,6 +16,8 @@ class _$BookmarkFolderResponseDto extends BookmarkFolderResponseDto {
   @override
   final num bookmarkCount;
   @override
+  final num momentBookmarkCount;
+  @override
   final DateTime createdAt;
 
   factory _$BookmarkFolderResponseDto([
@@ -27,6 +29,7 @@ class _$BookmarkFolderResponseDto extends BookmarkFolderResponseDto {
     required this.name,
     required this.isDefault,
     required this.bookmarkCount,
+    required this.momentBookmarkCount,
     required this.createdAt,
   }) : super._();
   @override
@@ -46,6 +49,7 @@ class _$BookmarkFolderResponseDto extends BookmarkFolderResponseDto {
         name == other.name &&
         isDefault == other.isDefault &&
         bookmarkCount == other.bookmarkCount &&
+        momentBookmarkCount == other.momentBookmarkCount &&
         createdAt == other.createdAt;
   }
 
@@ -56,6 +60,7 @@ class _$BookmarkFolderResponseDto extends BookmarkFolderResponseDto {
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, isDefault.hashCode);
     _$hash = $jc(_$hash, bookmarkCount.hashCode);
+    _$hash = $jc(_$hash, momentBookmarkCount.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -68,6 +73,7 @@ class _$BookmarkFolderResponseDto extends BookmarkFolderResponseDto {
           ..add('name', name)
           ..add('isDefault', isDefault)
           ..add('bookmarkCount', bookmarkCount)
+          ..add('momentBookmarkCount', momentBookmarkCount)
           ..add('createdAt', createdAt))
         .toString();
   }
@@ -95,6 +101,11 @@ class BookmarkFolderResponseDtoBuilder
   set bookmarkCount(num? bookmarkCount) =>
       _$this._bookmarkCount = bookmarkCount;
 
+  num? _momentBookmarkCount;
+  num? get momentBookmarkCount => _$this._momentBookmarkCount;
+  set momentBookmarkCount(num? momentBookmarkCount) =>
+      _$this._momentBookmarkCount = momentBookmarkCount;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -110,6 +121,7 @@ class BookmarkFolderResponseDtoBuilder
       _name = $v.name;
       _isDefault = $v.isDefault;
       _bookmarkCount = $v.bookmarkCount;
+      _momentBookmarkCount = $v.momentBookmarkCount;
       _createdAt = $v.createdAt;
       _$v = null;
     }
@@ -152,6 +164,11 @@ class BookmarkFolderResponseDtoBuilder
             bookmarkCount,
             r'BookmarkFolderResponseDto',
             'bookmarkCount',
+          ),
+          momentBookmarkCount: BuiltValueNullFieldError.checkNotNull(
+            momentBookmarkCount,
+            r'BookmarkFolderResponseDto',
+            'momentBookmarkCount',
           ),
           createdAt: BuiltValueNullFieldError.checkNotNull(
             createdAt,

@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 
 import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
+import 'package:wenyou_api/src/model/create_moment_bookmark_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_comment_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_dto.dart';
 import 'package:wenyou_api/src/model/moments_bookmark201_response.dart';
@@ -22,12 +23,14 @@ import 'package:wenyou_api/src/model/moments_create_comment201_response.dart';
 import 'package:wenyou_api/src/model/moments_detail200_response.dart';
 import 'package:wenyou_api/src/model/moments_like201_response.dart';
 import 'package:wenyou_api/src/model/moments_list200_response.dart';
+import 'package:wenyou_api/src/model/moments_move_bookmark200_response.dart';
 import 'package:wenyou_api/src/model/moments_remove200_response.dart';
 import 'package:wenyou_api/src/model/moments_remove_comment200_response.dart';
 import 'package:wenyou_api/src/model/moments_replies200_response.dart';
 import 'package:wenyou_api/src/model/moments_unbookmark200_response.dart';
 import 'package:wenyou_api/src/model/moments_unlike200_response.dart';
 import 'package:wenyou_api/src/model/moments_update200_response.dart';
+import 'package:wenyou_api/src/model/move_moment_bookmark_dto.dart';
 import 'package:wenyou_api/src/model/update_moment_dto.dart';
 import 'package:wenyou_api/src/model/user_moments_list200_response.dart';
 
@@ -44,6 +47,7 @@ class MomentsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [createMomentBookmarkDto]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -55,6 +59,7 @@ class MomentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<MomentsBookmark201Response>> momentsBookmark({
     required String id,
+    CreateMomentBookmarkDto? createMomentBookmarkDto,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -78,11 +83,31 @@ class MomentsApi {
         ],
         ...?extra,
       },
+      contentType: 'application/json',
       validateStatus: validateStatus,
     );
 
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(CreateMomentBookmarkDto);
+      _bodyData = createMomentBookmarkDto == null ? null : _serializers.serialize(createMomentBookmarkDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
     final _response = await _dio.request<Object>(
       _path,
+      data: _bodyData,
       options: _options,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
@@ -126,6 +151,7 @@ class MomentsApi {
   /// Parameters:
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [folderId] - 只返回指定收藏夹中的动态；不传时返回全部
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -138,6 +164,7 @@ class MomentsApi {
   Future<Response<MomentsBookmarks200Response>> momentsBookmarks({
     String? cursor,
     num? limit = 20,
+    String? folderId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -167,6 +194,7 @@ class MomentsApi {
     final _queryParameters = <String, dynamic>{
       if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
       if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+      if (folderId != null) r'folderId': encodeQueryParameter(_serializers, folderId, const FullType(String)),
     };
 
     final _response = await _dio.request<Object>(
@@ -917,6 +945,109 @@ class MomentsApi {
     }
 
     return Response<MomentsList200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 移动动态收藏到其他收藏夹
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [moveMomentBookmarkDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [MomentsMoveBookmark200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<MomentsMoveBookmark200Response>> momentsMoveBookmark({
+    required String id,
+    required MoveMomentBookmarkDto moveMomentBookmarkDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/moments/{id}/bookmark'.replaceAll('{' r'id' '}', encodeQueryParameter(_serializers, id, const FullType(String)).toString());
+    final _options = Options(
+      method: r'PATCH',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(MoveMomentBookmarkDto);
+      _bodyData = _serializers.serialize(moveMomentBookmarkDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    MomentsMoveBookmark200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(MomentsMoveBookmark200Response),
+      ) as MomentsMoveBookmark200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<MomentsMoveBookmark200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

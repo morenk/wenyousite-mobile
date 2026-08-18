@@ -142,6 +142,7 @@ Serializers _$serializers =
           ..add(CreateDraftDto.serializer)
           ..add(CreateManagedTagDto.serializer)
           ..add(CreateModerationAppealDto.serializer)
+          ..add(CreateMomentBookmarkDto.serializer)
           ..add(CreateMomentCommentDto.serializer)
           ..add(CreateMomentDto.serializer)
           ..add(CreateNotificationCampaignDto.serializer)
@@ -271,6 +272,7 @@ Serializers _$serializers =
           ..add(ModerationDecisionPublicResponseDtoPolicyCodeEnum.serializer)
           ..add(ModerationDecisionPublicResponseDtoTargetTypeEnum.serializer)
           ..add(MomentActionResponseDto.serializer)
+          ..add(MomentBookmarkPlacementResponseDto.serializer)
           ..add(MomentCardResponseDto.serializer)
           ..add(MomentCardResponseDtoCoverTypeEnum.serializer)
           ..add(MomentCardResponseDtoTextCoverThemeEnum.serializer)
@@ -297,6 +299,7 @@ Serializers _$serializers =
           ..add(MomentsDetail200Response.serializer)
           ..add(MomentsLike201Response.serializer)
           ..add(MomentsList200Response.serializer)
+          ..add(MomentsMoveBookmark200Response.serializer)
           ..add(MomentsRemove200Response.serializer)
           ..add(MomentsRemoveComment200Response.serializer)
           ..add(MomentsReplies200Response.serializer)
@@ -304,6 +307,7 @@ Serializers _$serializers =
           ..add(MomentsUnlike200Response.serializer)
           ..add(MomentsUpdate200Response.serializer)
           ..add(MoveBookmarkDto.serializer)
+          ..add(MoveMomentBookmarkDto.serializer)
           ..add(NotificationAudienceDto.serializer)
           ..add(NotificationAudienceDtoRolesEnum.serializer)
           ..add(NotificationCampaignCancel200Response.serializer)
@@ -333,6 +337,9 @@ Serializers _$serializers =
           ..add(OwnBookmarkThreadResponseDto.serializer)
           ..add(OwnBookmarkThreadResponseDtoStatusEnum.serializer)
           ..add(OwnBookmarkThreadResponseDtoVisibilityEnum.serializer)
+          ..add(OwnMomentBookmarkResponseDto.serializer)
+          ..add(OwnMomentBookmarkResponseDtoCoverTypeEnum.serializer)
+          ..add(OwnMomentBookmarkResponseDtoTextCoverThemeEnum.serializer)
           ..add(ParentPostResponseDto.serializer)
           ..add(PostAuthorResponseDto.serializer)
           ..add(PostCountResponseDto.serializer)
@@ -541,6 +548,7 @@ Serializers _$serializers =
           ..add(UsersGetUserActivitySummary200Response.serializer)
           ..add(UsersGetUserBookmarks200Response.serializer)
           ..add(UsersGetUserCreatedThreads200Response.serializer)
+          ..add(UsersGetUserMomentBookmarks200Response.serializer)
           ..add(UsersGetUserPlayedThreads200Response.serializer)
           ..add(UsersGetUserRecentReplies200Response.serializer)
           ..add(UsersMentionCandidates200Response.serializer)
@@ -850,6 +858,12 @@ Serializers _$serializers =
               const FullType(OwnBookmarkThreadResponseDto),
             ]),
             () => ListBuilder<OwnBookmarkThreadResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(OwnMomentBookmarkResponseDto),
+            ]),
+            () => ListBuilder<OwnMomentBookmarkResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

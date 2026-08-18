@@ -5,15 +5,15 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/api_success_envelope.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:wenyou_api/src/model/own_moment_bookmark_response_dto.dart';
+import 'package:wenyou_api/src/model/moment_card_response_dto.dart';
 import 'package:wenyou_api/src/model/api_pagination_meta.dart';
 import 'package:wenyou_api/src/model/api_paginated_success_envelope.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'moments_bookmarks200_response.g.dart';
+part 'users_get_user_moment_bookmarks200_response.g.dart';
 
-/// MomentsBookmarks200Response
+/// UsersGetUserMomentBookmarks200Response
 ///
 /// Properties:
 /// * [code]
@@ -21,31 +21,31 @@ part 'moments_bookmarks200_response.g.dart';
 /// * [meta]
 /// * [data]
 @BuiltValue()
-abstract class MomentsBookmarks200Response implements ApiPaginatedSuccessEnvelope, Built<MomentsBookmarks200Response, MomentsBookmarks200ResponseBuilder> {
+abstract class UsersGetUserMomentBookmarks200Response implements ApiPaginatedSuccessEnvelope, Built<UsersGetUserMomentBookmarks200Response, UsersGetUserMomentBookmarks200ResponseBuilder> {
   @BuiltValueField(wireName: r'data')
-  BuiltList<OwnMomentBookmarkResponseDto> get data;
+  BuiltList<MomentCardResponseDto> get data;
 
-  MomentsBookmarks200Response._();
+  UsersGetUserMomentBookmarks200Response._();
 
-  factory MomentsBookmarks200Response([void updates(MomentsBookmarks200ResponseBuilder b)]) = _$MomentsBookmarks200Response;
+  factory UsersGetUserMomentBookmarks200Response([void updates(UsersGetUserMomentBookmarks200ResponseBuilder b)]) = _$UsersGetUserMomentBookmarks200Response;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(MomentsBookmarks200ResponseBuilder b) => b;
+  static void _defaults(UsersGetUserMomentBookmarks200ResponseBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<MomentsBookmarks200Response> get serializer => _$MomentsBookmarks200ResponseSerializer();
+  static Serializer<UsersGetUserMomentBookmarks200Response> get serializer => _$UsersGetUserMomentBookmarks200ResponseSerializer();
 }
 
-class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<MomentsBookmarks200Response> {
+class _$UsersGetUserMomentBookmarks200ResponseSerializer implements PrimitiveSerializer<UsersGetUserMomentBookmarks200Response> {
   @override
-  final Iterable<Type> types = const [MomentsBookmarks200Response, _$MomentsBookmarks200Response];
+  final Iterable<Type> types = const [UsersGetUserMomentBookmarks200Response, _$UsersGetUserMomentBookmarks200Response];
 
   @override
-  final String wireName = r'MomentsBookmarks200Response';
+  final String wireName = r'UsersGetUserMomentBookmarks200Response';
 
   Iterable<Object?> _serializeProperties(
     Serializers serializers,
-    MomentsBookmarks200Response object, {
+    UsersGetUserMomentBookmarks200Response object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
     yield r'code';
@@ -56,7 +56,7 @@ class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<Mom
     yield r'data';
     yield serializers.serialize(
       object.data,
-      specifiedType: const FullType(BuiltList, [FullType(OwnMomentBookmarkResponseDto)]),
+      specifiedType: const FullType(BuiltList, [FullType(MomentCardResponseDto)]),
     );
     yield r'message';
     yield serializers.serialize(
@@ -73,7 +73,7 @@ class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<Mom
   @override
   Object serialize(
     Serializers serializers,
-    MomentsBookmarks200Response object, {
+    UsersGetUserMomentBookmarks200Response object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
@@ -84,7 +84,7 @@ class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<Mom
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
     required List<Object?> serializedList,
-    required MomentsBookmarks200ResponseBuilder result,
+    required UsersGetUserMomentBookmarks200ResponseBuilder result,
     required List<Object?> unhandled,
   }) {
     for (var i = 0; i < serializedList.length; i += 2) {
@@ -101,8 +101,8 @@ class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<Mom
         case r'data':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(OwnMomentBookmarkResponseDto)]),
-          ) as BuiltList<OwnMomentBookmarkResponseDto>;
+            specifiedType: const FullType(BuiltList, [FullType(MomentCardResponseDto)]),
+          ) as BuiltList<MomentCardResponseDto>;
           result.data.replace(valueDes);
           break;
         case r'message':
@@ -128,12 +128,12 @@ class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<Mom
   }
 
   @override
-  MomentsBookmarks200Response deserialize(
+  UsersGetUserMomentBookmarks200Response deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = MomentsBookmarks200ResponseBuilder();
+    final result = UsersGetUserMomentBookmarks200ResponseBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(
@@ -148,17 +148,17 @@ class _$MomentsBookmarks200ResponseSerializer implements PrimitiveSerializer<Mom
   }
 }
 
-class MomentsBookmarks200ResponseCodeEnum extends EnumClass {
+class UsersGetUserMomentBookmarks200ResponseCodeEnum extends EnumClass {
 
   @BuiltValueEnumConst(wireNumber: 0)
-  static const MomentsBookmarks200ResponseCodeEnum number0 = _$momentsBookmarks200ResponseCodeEnum_number0;
+  static const UsersGetUserMomentBookmarks200ResponseCodeEnum number0 = _$usersGetUserMomentBookmarks200ResponseCodeEnum_number0;
   @BuiltValueEnumConst(wireNumber: 11184809, fallback: true)
-  static const MomentsBookmarks200ResponseCodeEnum unknownDefaultOpenApi = _$momentsBookmarks200ResponseCodeEnum_unknownDefaultOpenApi;
+  static const UsersGetUserMomentBookmarks200ResponseCodeEnum unknownDefaultOpenApi = _$usersGetUserMomentBookmarks200ResponseCodeEnum_unknownDefaultOpenApi;
 
-  static Serializer<MomentsBookmarks200ResponseCodeEnum> get serializer => _$momentsBookmarks200ResponseCodeEnumSerializer;
+  static Serializer<UsersGetUserMomentBookmarks200ResponseCodeEnum> get serializer => _$usersGetUserMomentBookmarks200ResponseCodeEnumSerializer;
 
-  const MomentsBookmarks200ResponseCodeEnum._(String name): super(name);
+  const UsersGetUserMomentBookmarks200ResponseCodeEnum._(String name): super(name);
 
-  static BuiltSet<MomentsBookmarks200ResponseCodeEnum> get values => _$momentsBookmarks200ResponseCodeEnumValues;
-  static MomentsBookmarks200ResponseCodeEnum valueOf(String name) => _$momentsBookmarks200ResponseCodeEnumValueOf(name);
+  static BuiltSet<UsersGetUserMomentBookmarks200ResponseCodeEnum> get values => _$usersGetUserMomentBookmarks200ResponseCodeEnumValues;
+  static UsersGetUserMomentBookmarks200ResponseCodeEnum valueOf(String name) => _$usersGetUserMomentBookmarks200ResponseCodeEnumValueOf(name);
 }
