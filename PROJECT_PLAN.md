@@ -7,7 +7,7 @@
 - 客户端：`0.3.0-dev.80+86`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
 - 后端契约：`5.1.0-dev.20260817.1`，revision `f6f4406076403027891d7d20ca4256057d8ab8e0`。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v6.0.1`。
+- 视觉依赖：Foundation `v6.1.0`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
 
 ## 当前优先级
@@ -25,7 +25,7 @@
 - Foundation v6.0.1 富文本元素仍有提及、引用、行内代码和主题标签差异；需以阅读/编辑共用组件迁移，避免两态继续分叉。
 - Foundation 身份与格式化仍未完全覆盖：具名头像失败应回退首个可读字符，时间需补完整 Semantics，私信时间和紧凑计数需统一 Foundation formatter。
 - Foundation 排版与反馈仍为部分接入：紧凑回复正文需要统一到 17sp/1.8，列表/弹层/状态标题需要从全局文楷映射中拆出，初始资源加载应使用结构 Skeleton，失败和重试不能只依赖 Snackbar。
-- 动态两列瀑布流与 Foundation mobile 单列要求存在明确冲突；在移动端改为单列或 Foundation 发布正式例外前，不视为规范已闭环。完整证据见 `docs/architecture/foundation-compliance-audit.md`。
+- Foundation v6.1.0 已正式登记动态主信息流双列瀑布流例外；移动端仍需显式消费该例外并完成其余合规债务。完整证据见 `docs/architecture/foundation-compliance-audit.md`。
 
 ## 单切片完成定义
 

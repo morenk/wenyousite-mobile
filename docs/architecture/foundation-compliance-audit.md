@@ -1,6 +1,6 @@
-# Foundation v6.0.1 移动端实现审计
+# Foundation v6.1.0 移动端实现审计
 
-本审计以 Foundation `v6.0.1`（`2ca6f785b87070662ad10758be8a06266886b083`）为事实源，复核 Flutter profile、`experiences.elements`、`controls`、`feedback`、`formatting`、`images` 与 v6 变更。审计日期为 2026-08-18；它记录当前实现覆盖和明确债务，不在移动端仓库复制或改写上游规范。
+本审计以 Foundation `v6.1.0`（`618954fb3f5048d5c2d89205c814b6ece8aeb386`）为事实源，复核 Flutter profile、`experiences.elements`、`controls`、`feedback`、`formatting`、`images` 与 v6 变更。审计日期为 2026-08-19；它记录当前实现覆盖和明确债务，不在移动端仓库复制或改写上游规范。
 
 ## 已闭环基线
 
@@ -23,7 +23,7 @@
 | 头像降级 | 多个具名用户头像在缺图或加载失败时统一显示人物图标。规范要求用户名可读时显示首个可读字符，只有匿名或不可用身份使用中性用户图标。 | `lib/core/widgets/wenyou_avatar_button.dart` 及搜索、主题、动态、关系、资料、私信等本地头像实现；应先建立共享 fallback，再逐处替换，停用账号继续使用不可用状态。 |
 | 时间与计数格式 | 共享相对时间已使用 72 小时窗口，但至少主题卡、动态、通知、楼层和回复的可见时间没有同步暴露完整时间 Semantics；私信列表仍有独立日期规则。紧凑计数目前只在创作概览明确消费 Foundation formatter。 | `lib/core/formatters/relative_time.dart` 的五个展示调用点及 `direct_messages_page.dart`；需提供“可见短值 + 完整可访问值”的共享组件，并审计统计数字。 |
 | 加载与失败反馈 | 动态瀑布流和创作概览已有结构化 Skeleton，但多数初始资源加载仍只显示居中 Spinner。图片收藏、复制等失败仍使用 Snackbar；规范要求初始内容加载保持结构，失败和重试留在任务上下文，Snackbar 只承载短确认。 | 全仓 `CircularProgressIndicator` 初始页面分支、`content_image_viewer_page.dart`、`wenyou_content_action_menu.dart` 等；按模块迁移，不能用一次全局替换掩盖状态模型差异。 |
-| 移动单列 | Foundation mobile profile 要求页面保持单列；动态首页当前明确采用两列瀑布流并有对应 Skeleton/Golden。 | `lib/features/moments/presentation/moment_feed_page.dart`；这是现行产品实现与 Foundation 的明确冲突，需先由产品决定改为单列，或在 Foundation 发布正式例外，移动端不能自行宣布兼容。 |
+| 移动集合布局 | Foundation v6.1.0 已将动态主信息流登记为双列瀑布流领域例外；移动端现有布局尚未显式消费生成合同。 | `lib/features/moments/presentation/moment_feed_page.dart`；接入 `WenyouCollectionContract.mobileDomainLayoutExceptions` 并以测试固定例外只覆盖动态主信息流。 |
 
 ## 上游生成物风险
 

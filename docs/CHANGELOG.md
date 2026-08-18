@@ -1,5 +1,7 @@
 # 移动端变更记录
 
+- Foundation 固定依赖升级到 `v6.1.0`，消费动态主信息流双列瀑布流与 Flutter Quill 行内代码内边距的正式平台例外；其余视觉规则不放宽。
+
 本文件从当前已部署开发基线开始记录活跃变化。build 83 及以前的完整开发历史保存在 [历史变更记录](archive/changelog-through-build-83.md)。
 
 ## Unreleased

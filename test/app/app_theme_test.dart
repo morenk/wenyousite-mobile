@@ -5,10 +5,10 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 void main() {
-  test('移动主题完整映射 Foundation v6.0.1 核心 Token', () {
+  test('移动主题完整映射 Foundation v6.1.0 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '6.0.1');
+    expect(WenyouFoundationVersion.value, '6.1.0');
     expect(WenyouFoundationVersion.schema, 2);
     expect(WenyouEditorContract.surfaces, [
       'page',
@@ -22,6 +22,14 @@ void main() {
     expect(WenyouEditorContract.morePresentation, 'inline');
     expect(WenyouCollectionContract.fillAvailableWidth, isTrue);
     expect(WenyouCollectionContract.contentSizedExceptions, contains('badge'));
+    expect(
+      WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed'],
+      'two-column-waterfall',
+    );
+    expect(
+      WenyouEditorContract.mobileRenderingExceptions,
+      contains('inline-code-padding-uses-flutter-quill-native-bounds'),
+    );
     expect(WenyouControlContract.minimumTarget, 48);
     expect(WenyouLevelContract.resolve(4)?.id, 'rose');
     expect(tokens.brandSurface, WenyouFoundationPalette.primary);
