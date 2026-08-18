@@ -336,6 +336,7 @@ BookmarkFolderResponseDto _folderDto(
       ..name = name
       ..isDefault = isDefault
       ..bookmarkCount = count
+      ..momentBookmarkCount = 0
       ..createdAt = DateTime.utc(2026, 8, 1),
   );
 }

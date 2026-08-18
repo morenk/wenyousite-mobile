@@ -89,24 +89,12 @@ class MeProfileCoverEditor extends ConsumerWidget {
         ],
         if (state.failure != null) ...[
           SizedBox(height: tokens.space12),
-          WenyouStatusBanner(
-            key: const Key('me-profile-cover-failure'),
-            tone: WenyouStatusTone.error,
-            message: state.failure!.userMessage,
-            detail: state.failure!.requestId == null
-                ? null
-                : '问题编号：${state.failure!.requestId}',
+          _ProfileCoverFailureNotice(
+            state: state,
             action: TextButton(
               key: const Key('me-profile-cover-retry'),
               onPressed: () => _retry(context, ref),
-              child: Text(
-                state.failedOperation == ProfileCoverOperation.remove
-                    ? '重试移除'
-                    : state.pendingWebMediaId != null &&
-                          state.pendingMobileMediaId != null
-                    ? '重试设置'
-                    : '重试上传',
-              ),
+              child: Text(_retryLabel(state)),
             ),
           ),
         ],
@@ -219,6 +207,56 @@ class MeProfileCoverEditor extends ConsumerWidget {
       MediaUploadStage.processing => '$fallback：安全处理中…',
       null => '$fallback…',
     };
+  }
+
+  String _retryLabel(ProfileCoverState state) {
+    if (state.failedOperation == ProfileCoverOperation.remove) return '重试移除';
+    if (state.pendingWebMediaId != null && state.pendingMobileMediaId != null) {
+      return '重试设置';
+    }
+    return state.hasPendingSelection ? '重试上传' : '重新选择';
+  }
+}
+
+class _ProfileCoverFailureNotice extends StatefulWidget {
+  const _ProfileCoverFailureNotice({required this.state, required this.action});
+
+  final ProfileCoverState state;
+  final Widget action;
+
+  @override
+  State<_ProfileCoverFailureNotice> createState() =>
+      _ProfileCoverFailureNoticeState();
+}
+
+class _ProfileCoverFailureNoticeState
+    extends State<_ProfileCoverFailureNotice> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
+  }
+
+  void _reveal() {
+    if (!mounted) return;
+    Scrollable.ensureVisible(
+      context,
+      alignment: .8,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final failure = widget.state.failure!;
+    return WenyouStatusBanner(
+      key: const Key('me-profile-cover-failure'),
+      tone: WenyouStatusTone.error,
+      message: failure.userMessage,
+      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
+      action: widget.action,
+    );
   }
 }
 

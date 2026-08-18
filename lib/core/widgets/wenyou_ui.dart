@@ -547,10 +547,10 @@ class WenyouComposerSubmitButton extends StatelessWidget {
       ),
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(
-          isUnavailable ? tokens.border : tokens.brandForeground,
+          isUnavailable ? tokens.border : tokens.brandSurface,
         ),
         foregroundColor: WidgetStatePropertyAll(
-          isUnavailable ? tokens.mutedText : tokens.panel,
+          isUnavailable ? tokens.mutedText : tokens.onBrandSurface,
         ),
       ),
       tooltip: loading ? '$label，处理中' : label,
@@ -563,7 +563,7 @@ class WenyouComposerSubmitButton extends StatelessWidget {
                 dimension: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: tokens.panel,
+                  color: tokens.onBrandSurface,
                 ),
               ),
             )

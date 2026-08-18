@@ -14,11 +14,13 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_page.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
+import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -166,6 +168,7 @@ void main() {
     );
     final expectedSelection = editable.controller.selection;
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pump();
@@ -214,6 +217,7 @@ void main() {
       '重试图片',
     );
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(1));
@@ -269,7 +273,7 @@ void main() {
     final field = find.byKey(const Key('direct-message-composer-field'));
     await tester.enterText(field, '取消后保留');
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
-    await tester.pump();
+    await _confirmImageCrop(tester);
     await tester.pump();
 
     expect(find.text('正在上传 50%'), findsOneWidget);
@@ -690,6 +694,9 @@ List<Override> _overrides(_FakeRepository repository) {
   return [
     directMessagesEnabledProvider.overrideWithValue(true),
     stickersEnabledProvider.overrideWithValue(false),
+    imageCropProcessorPortProvider.overrideWithValue(
+      const FakePassThroughImageCropProcessor(),
+    ),
     directMessageRepositoryProvider.overrideWithValue(repository),
     directConversationControllerProvider.overrideWith((ref, conversationId) {
       return DirectConversationController(
@@ -702,6 +709,17 @@ List<Override> _overrides(_FakeRepository repository) {
       return DirectUnreadController(repository, autoStart: false);
     }),
   ];
+}
+
+Future<void> _confirmImageCrop(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
+  tester
+      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .onPressed!();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
 }
 
 GoRouter _router() {

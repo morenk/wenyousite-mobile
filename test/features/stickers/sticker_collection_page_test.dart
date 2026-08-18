@@ -8,6 +8,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -16,6 +17,7 @@ import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 
+import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_icon_finder.dart';
 
 void main() {
@@ -79,6 +81,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('stickers-add-gallery')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
 
     expect(picker.calls, 1);
@@ -104,6 +107,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('stickers-add-gallery')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(1));
@@ -141,7 +145,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('stickers-add-gallery')));
-    await tester.pump();
+    await _confirmImageCrop(tester);
     await tester.pump();
 
     expect(find.text('正在上传 50%'), findsOneWidget);
@@ -205,6 +209,9 @@ List<Override> _overrides(
 }) {
   return [
     stickersEnabledProvider.overrideWithValue(true),
+    imageCropProcessorPortProvider.overrideWithValue(
+      const FakePassThroughImageCropProcessor(),
+    ),
     stickerRepositoryProvider.overrideWithValue(repository),
     stickerCollectionControllerProvider.overrideWith((ref) {
       return StickerCollectionController(
@@ -216,6 +223,17 @@ List<Override> _overrides(
     if (gateway != null)
       mediaUploadGatewayPortProvider.overrideWithValue(gateway),
   ];
+}
+
+Future<void> _confirmImageCrop(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
+  tester
+      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .onPressed!();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
 }
 
 class _FakeStickerRepository implements StickerRepository {

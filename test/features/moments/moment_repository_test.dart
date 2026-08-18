@@ -15,6 +15,7 @@ void main() {
     registerFallbackValue(_FakeCreateMomentDto());
     registerFallbackValue(_FakeUpdateMomentDto());
     registerFallbackValue(_FakeCreateMomentCommentDto());
+    registerFallbackValue(_FakeMoveMomentBookmarkDto());
   });
 
   test('三个信息流、详情、评论、楼中楼与作者候选完整映射分页契约', () async {
@@ -37,7 +38,9 @@ void main() {
         ),
       ),
     );
-    when(() => api.momentsBookmarks(cursor: null, limit: 20)).thenAnswer(
+    when(
+      () => api.momentsBookmarks(cursor: null, limit: 20, folderId: null),
+    ).thenAnswer(
       (_) async => _response(
         '/api/v1/moments/bookmarks',
         MomentsBookmarks200Response(
@@ -45,7 +48,7 @@ void main() {
             ..code = ApiSuccessEnvelopeCodeEnum.number0
             ..message = 'ok'
             ..meta.update((meta) => meta.hasMore = false)
-            ..data.add(_cardDto()),
+            ..data.add(_ownBookmarkDto()),
         ),
       ),
     );
@@ -175,6 +178,7 @@ void main() {
     late CreateMomentDto createPayload;
     late UpdateMomentDto updatePayload;
     late CreateMomentCommentDto commentPayload;
+    late MoveMomentBookmarkDto moveBookmarkPayload;
     when(
       () => api.momentsCreate(
         extra: ApiRequestPolicy.idempotentCreate.extra,
@@ -223,6 +227,29 @@ void main() {
       ),
     );
     _stubActions(api);
+    when(
+      () => api.momentsMoveBookmark(
+        id: 'moment-1',
+        moveMomentBookmarkDto: any(named: 'moveMomentBookmarkDto'),
+      ),
+    ).thenAnswer((invocation) async {
+      moveBookmarkPayload =
+          invocation.namedArguments[#moveMomentBookmarkDto]!
+              as MoveMomentBookmarkDto;
+      return _response(
+        '/api/v1/moments/moment-1/bookmark',
+        MomentsMoveBookmark200Response(
+          (builder) => builder
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.update(
+              (data) => data
+                ..momentId = 'moment-1'
+                ..folderId = 'folder-2',
+            ),
+        ),
+      );
+    });
     when(
       () => api.momentsCreateComment(
         id: 'moment-1',
@@ -275,6 +302,7 @@ void main() {
       'moment-1',
       active: false,
     );
+    await repository.moveBookmark('moment-1', 'folder-2');
     await repository.createComment(
       'moment-1',
       const MomentCommentInput(
@@ -297,6 +325,7 @@ void main() {
     expect(unliked.active, isFalse);
     expect(bookmarked.count, 4);
     expect(unbookmarked.active, isFalse);
+    expect(moveBookmarkPayload.folderId, 'folder-2');
     expect(commentPayload.content, '回复');
     expect(commentPayload.stickerAssetId, 'sticker-1');
     expect(commentPayload.replyToCommentId, 'comment-root');
@@ -369,6 +398,9 @@ class _FakeUpdateMomentDto extends Fake implements UpdateMomentDto {}
 class _FakeCreateMomentCommentDto extends Fake
     implements CreateMomentCommentDto {}
 
+class _FakeMoveMomentBookmarkDto extends Fake
+    implements MoveMomentBookmarkDto {}
+
 Response<T> _response<T>(String path, T data) {
   return Response(
     requestOptions: RequestOptions(path: path),
@@ -426,6 +458,31 @@ MomentCardResponseDto _cardDto({
       ..viewerBookmarked = true
       ..createdAt = now
       ..updatedAt = now,
+  );
+}
+
+OwnMomentBookmarkResponseDto _ownBookmarkDto() {
+  final now = DateTime.utc(2026, 8, 10, 12);
+  return OwnMomentBookmarkResponseDto(
+    (builder) => builder
+      ..id = 'moment-1'
+      ..authorId = 'user-1'
+      ..author.replace(_authorDto())
+      ..title = '今日微光'
+      ..contentExcerpt = '一段纯文本'
+      ..coverType = OwnMomentBookmarkResponseDtoCoverTypeEnum.IMAGE
+      ..textCoverTheme = OwnMomentBookmarkResponseDtoTextCoverThemeEnum.ROSE
+      ..coverMedia.replace(_mediaDto())
+      ..imageCount = 1
+      ..likeCount = 2
+      ..commentCount = 3
+      ..bookmarkCount = 4
+      ..tipTotal = '25'
+      ..viewerLiked = false
+      ..viewerBookmarked = true
+      ..createdAt = now
+      ..updatedAt = now
+      ..bookmarkFolderId = 'folder-default',
   );
 }
 

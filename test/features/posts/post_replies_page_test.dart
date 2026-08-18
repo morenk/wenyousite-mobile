@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
@@ -26,6 +27,8 @@ import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+
+import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -438,6 +441,9 @@ void main() {
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         stickersEnabledProvider.overrideWithValue(false),
         postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        imageCropProcessorPortProvider.overrideWithValue(
+          const FakePassThroughImageCropProcessor(),
+        ),
         editorImagePickerPortProvider.overrideWithValue(
           _FakeEditorImagePicker(),
         ),
@@ -464,6 +470,7 @@ void main() {
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('editor-image')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('描述这张图片'), findsNothing);
@@ -488,6 +495,9 @@ void main() {
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         stickersEnabledProvider.overrideWithValue(false),
         postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        imageCropProcessorPortProvider.overrideWithValue(
+          const FakePassThroughImageCropProcessor(),
+        ),
         editorImagePickerPortProvider.overrideWithValue(
           _FakeEditorImagePicker(),
         ),
@@ -513,6 +523,7 @@ void main() {
     await _replaceComposerText(tester, '保留的回复正文');
 
     await tester.tap(find.byKey(const Key('editor-image')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('图片处理失败'), findsOneWidget);
@@ -564,6 +575,9 @@ void main() {
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         stickersEnabledProvider.overrideWithValue(false),
         postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+        imageCropProcessorPortProvider.overrideWithValue(
+          const FakePassThroughImageCropProcessor(),
+        ),
         editorImagePickerPortProvider.overrideWithValue(
           _FakeEditorImagePicker(),
         ),
@@ -587,7 +601,7 @@ void main() {
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('editor-image')));
-    await tester.pump();
+    await _confirmImageCrop(tester);
     expect(find.textContaining('正在上传图片'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
@@ -808,6 +822,17 @@ void main() {
     expect(find.text('远行主题').hitTestable(), findsOneWidget);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
   });
+}
+
+Future<void> _confirmImageCrop(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
+  tester
+      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .onPressed!();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
 }
 
 Future<void> _replaceComposerText(WidgetTester tester, String text) async {

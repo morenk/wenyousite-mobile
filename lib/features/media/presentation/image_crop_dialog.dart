@@ -44,8 +44,9 @@ class _AvatarCropDialog extends StatefulWidget {
 
 class _AvatarCropDialogState extends State<_AvatarCropDialog> {
   CropImageSource? _source;
-  _CropViewportController? _controller;
+  CropViewportController? _controller;
   String? _error;
+  var _preparing = true;
   var _processing = false;
 
   @override
@@ -55,19 +56,29 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
   }
 
   Future<void> _prepare() async {
+    if (_processing) return;
+    setState(() {
+      _preparing = true;
+      _error = null;
+    });
     try {
       final source = await widget.processor.prepare(widget.input);
       if (!mounted) return;
+      _controller?.dispose();
       setState(() {
         _source = source;
-        _controller = _CropViewportController(
+        _controller = CropViewportController(
           sourceAspectRatio: source.width / source.height,
           targetAspectRatio: 1,
         );
+        _preparing = false;
       });
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _error = _messageFor(error));
+      setState(() {
+        _preparing = false;
+        _error = imageCropFailureMessage(error);
+      });
     }
   }
 
@@ -87,7 +98,7 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
       if (!mounted) return;
       setState(() {
         _processing = false;
-        _error = _messageFor(error);
+        _error = imageCropFailureMessage(error);
       });
     }
   }
@@ -100,7 +111,7 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return _CropDialogFrame(
+    return ImageCropDialogFrame(
       key: const Key('avatar-crop-dialog'),
       title: '裁剪头像',
       description: '拖动图片调整位置，双指缩放或使用滑杆调整取景。',
@@ -109,8 +120,12 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
       onCancel: () => Navigator.pop(context),
       onSave: _source == null ? null : _save,
       child: _source == null || _controller == null
-          ? const _CropPreparing(label: '正在准备头像…')
-          : _CropEditor(
+          ? ImageCropPreparing(
+              preparing: _preparing,
+              canRetry: !_preparing && _error != null,
+              onRetry: _prepare,
+            )
+          : ImageCropEditor(
               key: const Key('avatar-crop-editor'),
               source: _source!,
               controller: _controller!,
@@ -135,10 +150,11 @@ class _ProfileCoverCropDialog extends StatefulWidget {
 
 class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
   CropImageSource? _source;
-  _CropViewportController? _webController;
-  _CropViewportController? _mobileController;
+  CropViewportController? _webController;
+  CropViewportController? _mobileController;
   _CoverSurface _surface = _CoverSurface.web;
   String? _error;
+  var _preparing = true;
   var _processing = false;
 
   @override
@@ -148,24 +164,35 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
   }
 
   Future<void> _prepare() async {
+    if (_processing) return;
+    setState(() {
+      _preparing = true;
+      _error = null;
+    });
     try {
       final source = await widget.processor.prepare(widget.input);
       if (!mounted) return;
+      _webController?.dispose();
+      _mobileController?.dispose();
       setState(() {
         _source = source;
         final sourceAspect = source.width / source.height;
-        _webController = _CropViewportController(
+        _webController = CropViewportController(
           sourceAspectRatio: sourceAspect,
           targetAspectRatio: 3,
         );
-        _mobileController = _CropViewportController(
+        _mobileController = CropViewportController(
           sourceAspectRatio: sourceAspect,
           targetAspectRatio: 2,
         );
+        _preparing = false;
       });
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _error = _messageFor(error));
+      setState(() {
+        _preparing = false;
+        _error = imageCropFailureMessage(error);
+      });
     }
   }
 
@@ -195,7 +222,7 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
       if (!mounted) return;
       setState(() {
         _processing = false;
-        _error = _messageFor(error);
+        _error = imageCropFailureMessage(error);
       });
     }
   }
@@ -214,7 +241,7 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
       _CoverSurface.web => _webController,
       _CoverSurface.mobile => _mobileController,
     };
-    return _CropDialogFrame(
+    return ImageCropDialogFrame(
       key: const Key('profile-cover-crop-dialog'),
       title: '调整主页背景取景',
       description: '请分别确认网页端和手机端的展示范围。',
@@ -223,7 +250,11 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
       onCancel: () => Navigator.pop(context),
       onSave: source == null ? null : _save,
       child: source == null || activeController == null
-          ? const _CropPreparing(label: '正在准备背景图…')
+          ? ImageCropPreparing(
+              preparing: _preparing,
+              canRetry: !_preparing && _error != null,
+              onRetry: _prepare,
+            )
           : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -246,7 +277,7 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
                             setState(() => _surface = selection.single),
                 ),
                 SizedBox(height: context.wenyouTokens.space12),
-                _CropEditor(
+                ImageCropEditor(
                   key: ValueKey('profile-cover-crop-${_surface.name}'),
                   source: source,
                   controller: activeController,
@@ -264,8 +295,8 @@ class _ProfileCoverCropDialogState extends State<_ProfileCoverCropDialog> {
   }
 }
 
-class _CropDialogFrame extends StatelessWidget {
-  const _CropDialogFrame({
+class ImageCropDialogFrame extends StatelessWidget {
+  const ImageCropDialogFrame({
     required this.title,
     required this.description,
     required this.processing,
@@ -374,8 +405,41 @@ class _CropDialogFrame extends StatelessWidget {
   }
 }
 
-class _CropPreparing extends StatelessWidget {
-  const _CropPreparing({required this.label});
+class ImageCropPreparing extends StatelessWidget {
+  const ImageCropPreparing({
+    required this.preparing,
+    required this.canRetry,
+    required this.onRetry,
+    super.key,
+  });
+
+  final bool preparing;
+  final bool canRetry;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (preparing) {
+      return const _CropPreparingIndicator(label: '正在准备图片…');
+    }
+    return SizedBox(
+      height: 220,
+      child: Center(
+        child: canRetry
+            ? OutlinedButton.icon(
+                key: const Key('editor-image-crop-prepare-retry'),
+                onPressed: onRetry,
+                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+                label: const Text('重试处理'),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+class _CropPreparingIndicator extends StatelessWidget {
+  const _CropPreparingIndicator({required this.label});
 
   final String label;
 
@@ -397,8 +461,8 @@ class _CropPreparing extends StatelessWidget {
   }
 }
 
-class _CropEditor extends StatelessWidget {
-  const _CropEditor({
+class ImageCropEditor extends StatelessWidget {
+  const ImageCropEditor({
     required this.source,
     required this.controller,
     this.roundMask = false,
@@ -406,7 +470,7 @@ class _CropEditor extends StatelessWidget {
   });
 
   final CropImageSource source;
-  final _CropViewportController controller;
+  final CropViewportController controller;
   final bool roundMask;
 
   @override
@@ -463,7 +527,7 @@ class _CropViewport extends StatefulWidget {
   });
 
   final CropImageSource source;
-  final _CropViewportController controller;
+  final CropViewportController controller;
   final bool roundMask;
 
   @override
@@ -502,7 +566,7 @@ class _CropViewportState extends State<_CropViewport> {
             child: AnimatedBuilder(
               animation: widget.controller,
               builder: (context, _) {
-                final geometry = widget.controller.geometry(viewport);
+                final geometry = widget.controller._geometry(viewport);
                 return Stack(
                   fit: StackFit.expand,
                   children: [
@@ -544,14 +608,14 @@ class _CropViewportState extends State<_CropViewport> {
   }
 }
 
-class _CropViewportController extends ChangeNotifier {
-  _CropViewportController({
+class CropViewportController extends ChangeNotifier {
+  CropViewportController({
     required this.sourceAspectRatio,
     required this.targetAspectRatio,
   });
 
   final double sourceAspectRatio;
-  final double targetAspectRatio;
+  double targetAspectRatio;
   double zoom = 1;
   Offset center = const Offset(.5, .5);
 
@@ -578,6 +642,13 @@ class _CropViewportController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setTargetAspectRatio(double value) {
+    if (value <= 0 || (targetAspectRatio - value).abs() < .001) return;
+    targetAspectRatio = value;
+    _clampCenter();
+    notifyListeners();
+  }
+
   void updateGesture({
     required Size viewport,
     required double startZoom,
@@ -586,7 +657,7 @@ class _CropViewportController extends ChangeNotifier {
     required double scale,
   }) {
     zoom = (startZoom * scale).clamp(1, 3);
-    final geometry = this.geometry(viewport);
+    final geometry = _geometry(viewport);
     final scaledWidth = geometry.baseSize.width * zoom;
     final scaledHeight = geometry.baseSize.height * zoom;
     center = Offset(
@@ -597,7 +668,7 @@ class _CropViewportController extends ChangeNotifier {
     notifyListeners();
   }
 
-  _CropGeometry geometry(Size viewport) {
+  _CropGeometry _geometry(Size viewport) {
     final viewportAspect = viewport.width / viewport.height;
     final baseSize = sourceAspectRatio > viewportAspect
         ? Size(viewport.height * sourceAspectRatio, viewport.height)
@@ -682,7 +753,7 @@ class _CropFramePainter extends CustomPainter {
   }
 }
 
-String _messageFor(Object error) {
+String imageCropFailureMessage(Object error) {
   if (error is ApiFailure) return error.userMessage;
   return '图片处理失败，请重试或更换图片。';
 }

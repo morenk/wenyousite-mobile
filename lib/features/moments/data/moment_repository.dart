@@ -47,6 +47,7 @@ class ApiMomentRepository implements MomentRepository {
   @override
   Future<CursorPage<MomentCard>> fetchBookmarks({
     String? cursor,
+    String? folderId,
     int limit = 20,
   }) async {
     _validatePage(limit);
@@ -54,13 +55,16 @@ class ApiMomentRepository implements MomentRepository {
       final envelope = (await _api.momentsBookmarks(
         cursor: _optionalText(cursor),
         limit: limit,
+        folderId: _optionalText(folderId),
       )).data;
       if (envelope == null) {
         throw const ApiFailure(userMessage: '动态收藏加载失败，请稍后重试。');
       }
-      return _cardPage(
-        envelope.data,
-        cursor: envelope.meta.cursor,
+      final items = envelope.data.map(_ownBookmarkCard).toList(growable: false);
+      _validateUnique(items.map((item) => item.id), '动态收藏列表');
+      return CursorPage(
+        items: List.unmodifiable(items),
+        cursor: _pageCursor(envelope.meta.cursor, envelope.meta.hasMore),
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
@@ -221,6 +225,30 @@ class ApiMomentRepository implements MomentRepository {
   }
 
   @override
+  Future<void> moveBookmark(String momentId, String folderId) async {
+    final id = _requiredText(momentId, '动态 ID');
+    final targetFolderId = _requiredText(folderId, '收藏夹 ID');
+    try {
+      final placement = (await _api.momentsMoveBookmark(
+        id: id,
+        moveMomentBookmarkDto: MoveMomentBookmarkDto(
+          (builder) => builder.folderId = targetFolderId,
+        ),
+      )).data?.data;
+      if (placement == null ||
+          placement.momentId != id ||
+          placement.folderId != targetFolderId) {
+        throw const ApiFailure(userMessage: '移动收藏失败，请重试。');
+      }
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(
+        error,
+        featureMessages: const {40400: '动态收藏或目标收藏夹已不存在，请刷新后重试。'},
+      );
+    }
+  }
+
+  @override
   Future<CursorPage<MomentRootComment>> fetchComments({
     required String momentId,
     required MomentCommentOrder order,
@@ -375,6 +403,29 @@ class ApiMomentRepository implements MomentRepository {
   }
 
   MomentCard _card(MomentCardResponseDto dto) {
+    return _cardFields(
+      id: dto.id,
+      authorId: dto.authorId,
+      author: dto.author,
+      title: dto.title,
+      contentExcerpt: dto.contentExcerpt,
+      coverType: dto.coverType.name,
+      textCoverTheme: dto.textCoverTheme.name,
+      coverMedia: dto.coverMedia,
+      imageCount: dto.imageCount,
+      likeCount: dto.likeCount,
+      commentCount: dto.commentCount,
+      bookmarkCount: dto.bookmarkCount,
+      tipTotal: dto.tipTotal,
+      viewerLiked: dto.viewerLiked,
+      viewerBookmarked: dto.viewerBookmarked,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+    );
+  }
+
+  MomentCard _ownBookmarkCard(OwnMomentBookmarkResponseDto dto) {
+    _requiredText(dto.bookmarkFolderId, '动态收藏夹 ID');
     return _cardFields(
       id: dto.id,
       authorId: dto.authorId,

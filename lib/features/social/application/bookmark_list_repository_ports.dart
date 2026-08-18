@@ -1,14 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
-abstract interface class BookmarkListRepository {
+abstract interface class BookmarkListRepository
+    implements BookmarkFolderCatalog {
   Future<CursorPage<BookmarkListItem>> fetchPage({
     String? cursor,
     String? folderId,
     int limit = 20,
   });
 
+  @override
   Future<List<BookmarkFolderItem>> fetchFolders();
 
   Future<BookmarkFolderItem> createFolder(String name);

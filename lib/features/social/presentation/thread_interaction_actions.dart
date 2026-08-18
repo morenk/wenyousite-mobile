@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
-import 'package:wenyousite_mobile/features/social/presentation/bookmark_folder_picker.dart';
 
 class ThreadInteractionActions extends ConsumerWidget {
   const ThreadInteractionActions({
@@ -251,8 +251,8 @@ class ThreadInteractionActions extends ConsumerWidget {
   ) async {
     final folder = await showBookmarkFolderPicker(
       context: context,
-      repository: repository,
-      bookmarkId: bookmarkId,
+      catalog: repository,
+      moveToFolder: (folderId) => repository.move(bookmarkId, folderId),
     );
     if (!context.mounted || folder == null) return;
     ScaffoldMessenger.of(

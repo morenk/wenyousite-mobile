@@ -7,6 +7,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
@@ -15,6 +16,7 @@ import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.da
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
@@ -25,6 +27,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_compose_repositor
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
 
+import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -105,6 +108,15 @@ void main() {
     await _pumpPage(tester, controller);
     final publish = find.byKey(const Key('compose-publish'));
     await tester.ensureVisible(publish);
+    final publishButton = tester.widget<FilledButton>(publish);
+    expect(
+      publishButton.style?.backgroundColor?.resolve({}),
+      WenyouThemeTokens.light.brandSurface,
+    );
+    expect(
+      publishButton.style?.foregroundColor?.resolve({}),
+      WenyouThemeTokens.light.onBrandSurface,
+    );
 
     await tester.tap(publish);
     await tester.pump();
@@ -124,7 +136,7 @@ void main() {
     final imageButton = find.byKey(const Key('editor-image'));
     await tester.ensureVisible(imageButton);
     await tester.tap(imageButton);
-    await tester.pump();
+    await _confirmImageCrop(tester);
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('描述这张图片'), findsNothing);
@@ -150,7 +162,7 @@ void main() {
     final imageButton = find.byKey(const Key('editor-image'));
     await tester.ensureVisible(imageButton);
     await tester.tap(imageButton);
-    await tester.pump();
+    await _confirmImageCrop(tester);
     await tester.pump();
 
     expect(find.textContaining('正在上传图片'), findsOneWidget);
@@ -188,7 +200,7 @@ void main() {
     );
 
     await tester.tap(find.byKey(const Key('editor-image')));
-    await tester.pump();
+    await _confirmImageCrop(tester);
     expect(find.textContaining('正在上传图片'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
@@ -487,6 +499,9 @@ Future<void> _pumpPage(
     ProviderScope(
       overrides: [
         stickersEnabledProvider.overrideWithValue(false),
+        imageCropProcessorPortProvider.overrideWithValue(
+          const FakePassThroughImageCropProcessor(),
+        ),
         threadComposeControllerProvider.overrideWith((ref) => controller),
         if (contentDraftsController != null)
           contentDraftsControllerProvider.overrideWith(
@@ -512,6 +527,17 @@ Future<void> _pumpPage(
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 10));
+}
+
+Future<void> _confirmImageCrop(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
+  tester
+      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .onPressed!();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
 }
 
 const _requestId = '550e8400-e29b-41d4-a716-446655440000';

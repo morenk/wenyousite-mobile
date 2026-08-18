@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart'
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
@@ -218,7 +219,12 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
     );
     final image = retry
         ? await controller.retryUpload()
-        : await controller.pickAndUpload();
+        : await pickCropAndUploadEditorImage(
+            context,
+            ref,
+            uploadTaskId: _uploadTaskId,
+            title: '裁剪评论图片',
+          );
     if (!mounted || _closing || image == null) return;
     setState(() {
       _sticker = null;

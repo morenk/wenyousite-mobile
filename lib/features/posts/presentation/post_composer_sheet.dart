@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sh
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -544,7 +545,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     );
     final uploaded = retry
         ? await controller.retryUpload()
-        : await controller.pickAndUpload();
+        : await pickCropAndUploadEditorImage(
+            context,
+            ref,
+            uploadTaskId: _uploadTaskId,
+            title: '裁剪正文图片',
+          );
     if (!mounted || _preparingClose || _closing || uploaded == null) return;
     _insertBlockImage(uploaded);
   }

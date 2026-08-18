@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sh
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
@@ -148,8 +149,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 style: FilledButton.styleFrom(
                   minimumSize: Size(0, tokens.minimumTouchTarget),
                   padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                  backgroundColor: tokens.brandForeground,
-                  foregroundColor: tokens.panel,
+                  backgroundColor: tokens.brandSurface,
+                  foregroundColor: tokens.onBrandSurface,
                   disabledBackgroundColor: tokens.border,
                   disabledForegroundColor: tokens.mutedText,
                 ),
@@ -163,7 +164,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     ? SizedBox.square(
                         dimension: 18,
                         child: CircularProgressIndicator(
-                          color: tokens.panel,
+                          color: tokens.onBrandSurface,
                           strokeWidth: 2,
                         ),
                       )
@@ -464,7 +465,12 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     );
     final uploaded = retry
         ? await controller.retryUpload()
-        : await controller.pickAndUpload();
+        : await pickCropAndUploadEditorImage(
+            context,
+            ref,
+            uploadTaskId: _uploadTaskId,
+            title: '裁剪正文图片',
+          );
     if (!mounted || _preparingPop || uploaded == null) return;
     _insertBlockImage(uploaded);
   }

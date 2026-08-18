@@ -10,7 +10,8 @@ export 'package:wenyousite_mobile/features/media/application/avatar_image_ports.
 export 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart'
     show EditorImagePicker;
 
-class SystemEditorImagePicker implements EditorImagePicker, AvatarImagePicker {
+class SystemEditorImagePicker
+    implements EditorImagePicker, MultiEditorImagePicker, AvatarImagePicker {
   SystemEditorImagePicker(this._picker);
 
   final ImagePicker _picker;
@@ -19,9 +20,28 @@ class SystemEditorImagePicker implements EditorImagePicker, AvatarImagePicker {
   Future<MediaUploadInput?> pickFromGallery() async {
     final file = await _picker.pickImage(source: ImageSource.gallery);
     if (file == null) return null;
+    return _readFile(file, emptyMessage: '图片文件不能为空。');
+  }
+
+  @override
+  Future<List<MediaUploadInput>> pickManyFromGallery({
+    required int limit,
+  }) async {
+    final files = await _picker.pickMultiImage(limit: limit);
+    final inputs = <MediaUploadInput>[];
+    for (final file in files) {
+      inputs.add(await _readFile(file, emptyMessage: '图片文件不能为空。'));
+    }
+    return List.unmodifiable(inputs);
+  }
+
+  Future<MediaUploadInput> _readFile(
+    XFile file, {
+    required String emptyMessage,
+  }) async {
     final size = await file.length();
     if (size < 1) {
-      throw const ApiFailure(userMessage: '图片文件不能为空。');
+      throw ApiFailure(userMessage: emptyMessage);
     }
     if (size > maxMediaImageBytes) {
       throw const ApiFailure(userMessage: '图片大小不能超过 10MB。');
@@ -37,18 +57,7 @@ class SystemEditorImagePicker implements EditorImagePicker, AvatarImagePicker {
   Future<MediaUploadInput?> pickAvatarFromGallery() async {
     final file = await _picker.pickImage(source: ImageSource.gallery);
     if (file == null) return null;
-    final size = await file.length();
-    if (size < 1) {
-      throw const ApiFailure(userMessage: '头像文件不能为空。');
-    }
-    if (size > maxMediaImageBytes) {
-      throw const ApiFailure(userMessage: '头像大小不能超过 10MB。');
-    }
-    return MediaUploadInput(
-      filename: file.name,
-      declaredContentType: file.mimeType,
-      bytes: await file.readAsBytes(),
-    );
+    return _readFile(file, emptyMessage: '头像文件不能为空。');
   }
 }
 

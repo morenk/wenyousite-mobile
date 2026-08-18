@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.1.0-dev.20260817.1",
+  "contractVersion": "5.2.0-dev.20260818.1",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
@@ -57,6 +57,7 @@
     { "operationId": "notificationCampaignCancel", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminModerationExportAuditLogs", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "clientContentModerationHide", "category": "planned_moderation", "reason": "后端 4.9.0 新增移动端管理员直接隐藏内容；需先接入可信角色投影、内容操作入口与高风险确认切片。" },
-    { "operationId": "momentsCommentContext", "category": "planned_moments", "reason": "后端 4.13.0 新增动态评论定位上下文；移动端需将通知目标、上下文预取、滚动定位和短时高亮作为同一切片接入。" }
+    { "operationId": "momentsCommentContext", "category": "planned_moments", "reason": "后端 4.13.0 新增动态评论定位上下文；移动端需将通知目标、上下文预取、滚动定位和短时高亮作为同一切片接入。" },
+    { "operationId": "usersGetUserMomentBookmarks", "category": "planned_moments", "reason": "后端 5.2.0 新增公开动态收藏分页；需与用户主页动态收藏分区、隐私空态和分页定位作为独立切片接入，本切片仅接入详情快捷修改收藏夹。" }
   ]
 }

@@ -43,6 +43,11 @@ abstract interface class ImageCropProcessor {
     NormalizedCropRect crop,
   );
 
+  Future<MediaUploadInput> cropImage(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  );
+
   Future<ProfileCoverImageSelection> cropProfileCover(
     CropImageSource source, {
     required NormalizedCropRect webCrop,

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
@@ -132,6 +133,9 @@ List<Override> productionProviderOverrides() => [
     (ref) => ref.watch(apiSearchRepositoryProvider),
   ),
   bookmarkListRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiBookmarkListRepositoryProvider),
+  ),
+  bookmarkFolderCatalogProvider.overrideWith(
     (ref) => ref.watch(apiBookmarkListRepositoryProvider),
   ),
   threadInteractionRepositoryProvider.overrideWith(

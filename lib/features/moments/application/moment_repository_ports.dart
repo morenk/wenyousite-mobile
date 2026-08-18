@@ -11,6 +11,7 @@ abstract interface class MomentRepository {
 
   Future<CursorPage<MomentCard>> fetchBookmarks({
     String? cursor,
+    String? folderId,
     int limit = 20,
   });
 
@@ -41,6 +42,8 @@ abstract interface class MomentRepository {
     String momentId, {
     required bool active,
   });
+
+  Future<void> moveBookmark(String momentId, String folderId);
 
   Future<CursorPage<MomentRootComment>> fetchComments({
     required String momentId,
@@ -87,6 +90,7 @@ class _UnboundMomentRepository implements MomentRepository {
   @override
   Future<CursorPage<MomentCard>> fetchBookmarks({
     String? cursor,
+    String? folderId,
     int limit = 20,
   }) => Future.error(_error());
 
@@ -125,6 +129,10 @@ class _UnboundMomentRepository implements MomentRepository {
     String momentId, {
     required bool active,
   }) => Future.error(_error());
+
+  @override
+  Future<void> moveBookmark(String momentId, String folderId) =>
+      Future.error(_error());
 
   @override
   Future<CursorPage<MomentRootComment>> fetchComments({

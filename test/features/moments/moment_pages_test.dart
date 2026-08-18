@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
+import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -15,6 +17,7 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
+import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -25,6 +28,7 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_p
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 
+import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -166,6 +170,54 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('动态收藏默认入夹并在五秒提示中修改收藏夹', (tester) async {
+    final repository = _PageRepository();
+    final folderRepository = _MomentFolderRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        momentRepositoryProvider.overrideWithValue(repository),
+        bookmarkFolderCatalogProvider.overrideWithValue(folderRepository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-detail-bookmark')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('已收藏到默认收藏夹。'), findsOneWidget);
+    expect(
+      find.byKey(const Key('moment-bookmark-change-folder')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('moment-bookmark-change-folder')));
+    await tester.pumpAndSettle();
+    expect(find.text('3 条收藏'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('bookmark-folder-picker-option-folder-later')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.bookmarkMoves, [('moment-1', 'folder-later')]);
+    expect(find.text('已移动到“稍后阅读”。'), findsOneWidget);
   });
 
   testWidgets('动态详情按来源返回且直接进入时回到动态列表', (tester) async {
@@ -396,6 +448,9 @@ void main() {
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
           momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          imageCropProcessorPortProvider.overrideWithValue(
+            const FakePassThroughImageCropProcessor(),
+          ),
           editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -410,6 +465,7 @@ void main() {
     await tester.tap(find.byKey(const Key('moment-compose-images')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-compose-add-image')));
+    await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('图片处理失败'), findsOneWidget);
@@ -435,6 +491,52 @@ void main() {
     expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
   });
 
+  testWidgets('动态发布可多选图片并在同一裁剪流程逐张上传', (tester) async {
+    final picker = _FakeMultiImagePicker();
+    final gateway = _SuccessfulBatchUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          imageCropProcessorPortProvider.overrideWithValue(
+            const FakePassThroughImageCropProcessor(),
+          ),
+          editorImagePickerPortProvider.overrideWithValue(picker),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-compose-images')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-compose-add-image')));
+    await tester.pumpAndSettle();
+
+    expect(picker.lastLimit, 9);
+    expect(find.byKey(const Key('image-crop-thumbnail-tabs')), findsOneWidget);
+    expect(find.text('图片 1/3'), findsOneWidget);
+    await _confirmImageCrop(tester);
+    await tester.pumpAndSettle();
+
+    expect(gateway.inputs, hasLength(3));
+    for (var index = 1; index <= 3; index++) {
+      expect(find.byKey(ValueKey('moment-image-$index')), findsOneWidget);
+    }
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('moment-compose-images')),
+        matching: find.text('图片 3/9'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('动态评论上传中系统返回会取消任务并忽略迟到图片', (tester) async {
     final gateway = _LateCompletingUploadGateway();
     final container = ProviderContainer(
@@ -442,6 +544,9 @@ void main() {
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         momentRepositoryProvider.overrideWithValue(_PageRepository()),
+        imageCropProcessorPortProvider.overrideWithValue(
+          const FakePassThroughImageCropProcessor(),
+        ),
         editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
         mediaUploadGatewayPortProvider.overrideWithValue(gateway),
       ],
@@ -463,7 +568,7 @@ void main() {
     await tester.tap(find.byKey(const Key('moment-comment-dock')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-comment-image')));
-    await tester.pump();
+    await _confirmImageCrop(tester);
 
     expect(find.textContaining('正在上传'), findsOneWidget);
     await tester.binding.handlePopRoute();
@@ -727,6 +832,17 @@ void main() {
   }
 }
 
+Future<void> _confirmImageCrop(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
+  tester
+      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+      .onPressed!();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
+}
+
 Widget _feedApp(MomentRepository repository) {
   return ProviderScope(
     overrides: [
@@ -749,6 +865,7 @@ class _PageRepository extends Fake implements MomentRepository {
   final feedModes = <MomentFeedMode>[];
   final createdInputs = <MomentDraftInput>[];
   final commentInputs = <MomentCommentInput>[];
+  final bookmarkMoves = <(String, String)>[];
   final MomentDetail _detailValue;
 
   @override
@@ -779,6 +896,21 @@ class _PageRepository extends Fake implements MomentRepository {
 
   @override
   Future<MomentDetail> fetchDetail(String momentId) async => _detailValue;
+
+  @override
+  Future<MomentActionResult> setBookmark(
+    String momentId, {
+    required bool active,
+  }) async => MomentActionResult(
+    momentId: momentId,
+    count: active ? 2 : 1,
+    active: active,
+  );
+
+  @override
+  Future<void> moveBookmark(String momentId, String folderId) async {
+    bookmarkMoves.add((momentId, folderId));
+  }
 
   @override
   Future<CursorPage<MomentRootComment>> fetchComments({
@@ -825,6 +957,28 @@ class _PageRepository extends Fake implements MomentRepository {
   }
 }
 
+class _MomentFolderRepository extends Fake implements BookmarkFolderCatalog {
+  @override
+  Future<List<BookmarkFolderItem>> fetchFolders() async => [
+    BookmarkFolderItem(
+      id: 'folder-default',
+      name: '默认收藏夹',
+      isDefault: true,
+      bookmarkCount: 4,
+      momentBookmarkCount: 1,
+      createdAt: DateTime.utc(2026, 8, 19),
+    ),
+    BookmarkFolderItem(
+      id: 'folder-later',
+      name: '稍后阅读',
+      isDefault: false,
+      bookmarkCount: 8,
+      momentBookmarkCount: 3,
+      createdAt: DateTime.utc(2026, 8, 19),
+    ),
+  ];
+}
+
 class _PendingPageRepository extends _PageRepository {
   final feed = Completer<CursorPage<MomentCard>>();
 
@@ -861,6 +1015,49 @@ class _FakeImagePicker implements EditorImagePicker {
       filename: 'moment.png',
       declaredContentType: 'image/png',
       bytes: Uint8List.fromList(const [137, 80, 78, 71]),
+    );
+  }
+}
+
+class _FakeMultiImagePicker
+    implements EditorImagePicker, MultiEditorImagePicker {
+  int? lastLimit;
+
+  @override
+  Future<MediaUploadInput?> pickFromGallery() async => null;
+
+  @override
+  Future<List<MediaUploadInput>> pickManyFromGallery({
+    required int limit,
+  }) async {
+    lastLimit = limit;
+    return [
+      for (var index = 0; index < 3; index++)
+        MediaUploadInput(
+          filename: 'moment-$index.png',
+          declaredContentType: 'image/png',
+          bytes: Uint8List.fromList([index + 1]),
+        ),
+    ];
+  }
+}
+
+class _SuccessfulBatchUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    inputs.add(input);
+    return _ImmediateUploadOperation(
+      Future.value(
+        UploadedEditorImage(
+          mediaId: 'moment-image-${inputs.length}',
+          url: 'https://cdn.example.com/moment-${inputs.length}.png',
+        ),
+      ),
     );
   }
 }

@@ -8,12 +8,15 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
@@ -91,9 +94,14 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                     onLike: () => _authenticated(
                       () => ref.read(provider.notifier).toggleLike(),
                     ),
-                    onBookmark: () => _authenticated(
-                      () => ref.read(provider.notifier).toggleBookmark(),
-                    ),
+                    onBookmark: () => _authenticated(() {
+                      unawaited(
+                        _toggleBookmark(
+                          ref.read(provider.notifier),
+                          wasBookmarked: state.detail!.card.viewerBookmarked,
+                        ),
+                      );
+                    }),
                   ),
                 ),
               ),
@@ -267,6 +275,43 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     } else {
       _openLogin();
     }
+  }
+
+  Future<void> _toggleBookmark(
+    MomentDetailController controller, {
+    required bool wasBookmarked,
+  }) async {
+    final succeeded = await controller.toggleBookmark();
+    if (!mounted || !succeeded || wasBookmarked) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          content: const Text('已收藏到默认收藏夹。'),
+          action: SnackBarAction(
+            key: const Key('moment-bookmark-change-folder'),
+            label: '修改收藏夹',
+            onPressed: () => unawaited(_changeBookmarkFolder()),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _changeBookmarkFolder() async {
+    final folder = await showBookmarkFolderPicker(
+      context: context,
+      catalog: ref.read(bookmarkFolderCatalogProvider),
+      contentKind: BookmarkFolderContentKind.moment,
+      moveToFolder: (folderId) => ref
+          .read(momentRepositoryProvider)
+          .moveBookmark(widget.momentId, folderId),
+    );
+    if (!mounted || folder == null) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('已移动到“${folder.name}”。')));
   }
 
   void _openLogin() {

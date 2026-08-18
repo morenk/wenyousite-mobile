@@ -174,6 +174,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       name: name,
       isDefault: dto.isDefault,
       bookmarkCount: dto.bookmarkCount.toInt(),
+      momentBookmarkCount: dto.momentBookmarkCount.toInt(),
       createdAt: dto.createdAt,
     );
   }

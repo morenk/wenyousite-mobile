@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -33,6 +34,8 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   String? _coverMediaId;
   int? _hydratedVersion;
   final Object _uploadTaskId = Object();
+  List<MediaUploadInput> _pendingImageInputs = const [];
+  var _pendingImageIndex = 0;
   Timer? _draftTimer;
   var _baselineSignature = '';
   var _contentReady = false;
@@ -233,13 +236,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                           if (sheetContext.mounted) setSheetState(() {});
                         },
                   onCancelUpload: uploadState.isBusy
-                      ? () => sheetRef
-                            .read(
-                              mediaUploadTaskControllerProvider(
-                                _uploadTaskId,
-                              ).notifier,
-                            )
-                            .cancel()
+                      ? _cancelPendingImageUpload
                       : null,
                   onRetryUpload:
                       uploadState.failure?.canRetry == true &&
@@ -310,7 +307,18 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     _scheduleDraftRead();
   }
 
-  Future<void> _pickAndUpload() => _runImageUpload(retry: false);
+  Future<void> _pickAndUpload() async {
+    final inputs = await pickAndCropEditorImages(
+      context,
+      ref,
+      maximumSelection: 9 - _images.length,
+      title: '裁剪动态图片',
+    );
+    if (!mounted || inputs == null || inputs.isEmpty) return;
+    _pendingImageInputs = inputs;
+    _pendingImageIndex = 0;
+    await _runImageUpload(retry: false);
+  }
 
   Future<void> _retryUpload() => _runImageUpload(retry: true);
 
@@ -318,15 +326,33 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     final controller = ref.read(
       mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
     );
-    final image = retry
-        ? await controller.retryUpload()
-        : await controller.pickAndUpload();
-    if (!mounted || image == null) return;
-    setState(() {
-      _images = List.unmodifiable([..._images, image]);
-      _coverMediaId ??= image.mediaId;
-    });
-    _onDraftChanged();
+    if (_pendingImageInputs.isEmpty) return;
+    var retryCurrent = retry;
+    while (_pendingImageIndex < _pendingImageInputs.length) {
+      final image = retryCurrent
+          ? await controller.retryUpload()
+          : await controller.uploadInput(
+              _pendingImageInputs[_pendingImageIndex],
+            );
+      retryCurrent = false;
+      if (!mounted || image == null) return;
+      setState(() {
+        _images = List.unmodifiable([..._images, image]);
+        _coverMediaId ??= image.mediaId;
+      });
+      _pendingImageIndex += 1;
+      _onDraftChanged();
+    }
+    _pendingImageInputs = const [];
+    _pendingImageIndex = 0;
+  }
+
+  void _cancelPendingImageUpload() {
+    ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .cancel();
+    _pendingImageInputs = const [];
+    _pendingImageIndex = 0;
   }
 
   Future<void> _submit() async {

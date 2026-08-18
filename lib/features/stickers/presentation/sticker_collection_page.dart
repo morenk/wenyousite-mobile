@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
@@ -272,7 +273,12 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     );
     final uploaded = retry
         ? await uploadController.retryUpload()
-        : await uploadController.pickAndUpload();
+        : await pickCropAndUploadEditorImage(
+            context,
+            ref,
+            uploadTaskId: _uploadTaskId,
+            title: '裁剪收藏表情',
+          );
     if (!mounted || uploaded == null) return;
     await ref
         .read(stickerCollectionControllerProvider.notifier)

@@ -1,22 +1,8 @@
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 
+export 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
+
 enum BookmarkedThreadStatus { recruiting, closed, finished, unknown }
-
-class BookmarkFolderItem {
-  const BookmarkFolderItem({
-    required this.id,
-    required this.name,
-    required this.isDefault,
-    required this.bookmarkCount,
-    required this.createdAt,
-  });
-
-  final String id;
-  final String name;
-  final bool isDefault;
-  final int bookmarkCount;
-  final DateTime createdAt;
-}
 
 class BookmarkListItem {
   const BookmarkListItem({

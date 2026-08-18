@@ -2,37 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
-import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
+
+enum BookmarkFolderContentKind { thread, moment }
 
 Future<BookmarkFolderItem?> showBookmarkFolderPicker({
   required BuildContext context,
-  required BookmarkListRepository repository,
-  required String bookmarkId,
+  required BookmarkFolderCatalog catalog,
+  required Future<void> Function(String folderId) moveToFolder,
+  BookmarkFolderContentKind contentKind = BookmarkFolderContentKind.thread,
 }) {
   return showModalBottomSheet<BookmarkFolderItem>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => BookmarkFolderPickerSheet(
-      repository: repository,
-      bookmarkId: bookmarkId,
+      catalog: catalog,
+      moveToFolder: moveToFolder,
+      contentKind: contentKind,
     ),
   );
 }
 
 class BookmarkFolderPickerSheet extends StatefulWidget {
   const BookmarkFolderPickerSheet({
-    required this.repository,
-    required this.bookmarkId,
+    required this.catalog,
+    required this.moveToFolder,
+    this.contentKind = BookmarkFolderContentKind.thread,
     super.key,
   });
 
-  final BookmarkListRepository repository;
-  final String bookmarkId;
+  final BookmarkFolderCatalog catalog;
+  final Future<void> Function(String folderId) moveToFolder;
+  final BookmarkFolderContentKind contentKind;
 
   @override
   State<BookmarkFolderPickerSheet> createState() =>
@@ -56,7 +62,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
       _failure = null;
     });
     try {
-      final folders = await widget.repository.fetchFolders();
+      final folders = await widget.catalog.fetchFolders();
       if (!mounted) return;
       setState(() => _folders = folders);
     } on Object catch (error) {
@@ -74,7 +80,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
       _failure = null;
     });
     try {
-      await widget.repository.move(widget.bookmarkId, folder.id);
+      await widget.moveToFolder(folder.id);
       if (!mounted) return;
       Navigator.of(context).pop(folder);
     } on Object catch (error) {
@@ -173,6 +179,9 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
       itemBuilder: (context, index) {
         final folder = folders[index];
         final pending = _pendingFolderId == folder.id;
+        final count = widget.contentKind == BookmarkFolderContentKind.moment
+            ? folder.momentBookmarkCount
+            : folder.bookmarkCount;
         return ListTile(
           key: ValueKey('bookmark-folder-picker-option-${folder.id}'),
           enabled: _pendingFolderId == null && !folder.isDefault,
@@ -186,7 +195,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          subtitle: Text('${folder.bookmarkCount} 条收藏'),
+          subtitle: Text('$count 条收藏'),
           trailing: pending
               ? const SizedBox.square(
                   dimension: 20,

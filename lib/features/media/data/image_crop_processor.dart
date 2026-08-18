@@ -23,6 +23,14 @@ class IsolateImageCropProcessor implements ImageCropProcessor {
   }
 
   @override
+  Future<MediaUploadInput> cropImage(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  ) {
+    return compute(_cropImage, (source, crop));
+  }
+
+  @override
   Future<ProfileCoverImageSelection> cropProfileCover(
     CropImageSource source, {
     required NormalizedCropRect webCrop,
@@ -65,6 +73,60 @@ MediaUploadInput _cropAvatar((CropImageSource, NormalizedCropRect) request) {
   );
 }
 
+MediaUploadInput _cropImage((CropImageSource, NormalizedCropRect) request) {
+  final (source, crop) = request;
+  final oriented = _decodeOrThrow(source.original);
+  var output = _cropSource(oriented, crop);
+  const maximumEdge = 2560;
+  if (output.width > maximumEdge || output.height > maximumEdge) {
+    output = image.copyResize(
+      output,
+      width: output.width >= output.height ? maximumEdge : null,
+      height: output.height > output.width ? maximumEdge : null,
+      interpolation: image.Interpolation.cubic,
+    );
+  }
+
+  final animated = output.hasAnimation;
+  final preserveAlpha = output.hasAlpha;
+  var bytes = animated
+      ? image.encodeGif(output)
+      : preserveAlpha
+      ? image.encodePng(output)
+      : image.encodeJpg(output, quality: 92);
+  while (bytes.length > maxMediaImageBytes &&
+      output.width > 640 &&
+      output.height > 640) {
+    output = image.copyResize(
+      output,
+      width: (output.width * .82).round(),
+      height: (output.height * .82).round(),
+      interpolation: image.Interpolation.cubic,
+    );
+    bytes = animated
+        ? image.encodeGif(output)
+        : preserveAlpha
+        ? image.encodePng(output)
+        : image.encodeJpg(output, quality: 88);
+  }
+  if (bytes.length > maxMediaImageBytes) {
+    throw const ApiFailure(userMessage: '裁剪后的图片超过 10MB，请缩小取景范围或更换图片。');
+  }
+  return MediaUploadInput(
+    filename: animated
+        ? 'cropped-image.gif'
+        : preserveAlpha
+        ? 'cropped-image.png'
+        : 'cropped-image.jpg',
+    declaredContentType: animated
+        ? 'image/gif'
+        : preserveAlpha
+        ? 'image/png'
+        : 'image/jpeg',
+    bytes: bytes,
+  );
+}
+
 ProfileCoverImageSelection _cropProfileCover(
   (CropImageSource, NormalizedCropRect, NormalizedCropRect) request,
 ) {
@@ -95,19 +157,7 @@ MediaUploadInput _renderCrop(
   required String filename,
 }) {
   final oriented = _decodeOrThrow(source.original);
-  final left = (crop.left.clamp(0, 1) * oriented.width).floor();
-  final top = (crop.top.clamp(0, 1) * oriented.height).floor();
-  final right = (crop.right.clamp(0, 1) * oriented.width).ceil();
-  final bottom = (crop.bottom.clamp(0, 1) * oriented.height).ceil();
-  final cropWidth = (right - left).clamp(1, oriented.width - left);
-  final cropHeight = (bottom - top).clamp(1, oriented.height - top);
-  final cropped = image.copyCrop(
-    oriented,
-    x: left,
-    y: top,
-    width: cropWidth,
-    height: cropHeight,
-  );
+  final cropped = _cropSource(oriented, crop);
   final resized = image.copyResize(
     cropped,
     width: outputWidth,
@@ -122,6 +172,22 @@ MediaUploadInput _renderCrop(
     filename: filename,
     declaredContentType: 'image/png',
     bytes: bytes,
+  );
+}
+
+image.Image _cropSource(image.Image oriented, NormalizedCropRect crop) {
+  final left = (crop.left.clamp(0, 1) * oriented.width).floor();
+  final top = (crop.top.clamp(0, 1) * oriented.height).floor();
+  final right = (crop.right.clamp(0, 1) * oriented.width).ceil();
+  final bottom = (crop.bottom.clamp(0, 1) * oriented.height).ceil();
+  final cropWidth = (right - left).clamp(1, oriented.width - left);
+  final cropHeight = (bottom - top).clamp(1, oriented.height - top);
+  return image.copyCrop(
+    oriented,
+    x: left,
+    y: top,
+    width: cropWidth,
+    height: cropHeight,
   );
 }
 

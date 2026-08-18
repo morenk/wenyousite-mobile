@@ -378,6 +378,41 @@ void main() {
     expect(find.text('主页背景已更新。'), findsOneWidget);
   });
 
+  testWidgets('主页背景上传失败后主动显示错误并保留同图重试', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(),
+      profileCoverPicker: _FakeProfileCoverPicker(_avatarInput),
+      mediaRepository: _FailingProfileCoverUploadGateway(),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final change = find.byKey(const Key('me-profile-cover-change'));
+    await tester.ensureVisible(change);
+    await tester.pumpAndSettle();
+    await tester.tap(change);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+
+    final failure = find.byKey(const Key('me-profile-cover-failure'));
+    expect(failure, findsOneWidget);
+    expect(find.text('背景图上传失败，请重试。'), findsOneWidget);
+    expect(find.text('问题编号：cover-upload-request'), findsOneWidget);
+    expect(find.text('重试上传'), findsOneWidget);
+    expect(tester.getRect(failure).top, lessThan(640));
+  });
+
   testWidgets('已有头像二次确认后移除并回到默认占位', (tester) async {
     final repository = _FakeMeProfileRepository(
       initialProfile: _profileWithAvatar('https://cdn.example.com/old.png'),
@@ -620,6 +655,12 @@ class _FakeImageCropProcessor implements ImageCropProcessor {
   ) async => _avatarInput;
 
   @override
+  Future<MediaUploadInput> cropImage(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  ) async => source.original;
+
+  @override
   Future<ProfileCoverImageSelection> cropProfileCover(
     CropImageSource source, {
     required NormalizedCropRect webCrop,
@@ -664,6 +705,34 @@ class _FakeMediaRepository implements MediaUploadGateway {
       ),
     );
   }
+}
+
+class _FailingProfileCoverUploadGateway implements MediaUploadGateway {
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    return _FutureUploadOperation(
+      Future.error(
+        const ApiFailure(
+          userMessage: '背景图上传失败，请重试。',
+          requestId: 'cover-upload-request',
+        ),
+      ),
+    );
+  }
+}
+
+class _FutureUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  _FutureUploadOperation(this.result);
+
+  @override
+  final Future<UploadedEditorImage> result;
+
+  @override
+  void cancel() {}
 }
 
 class _ImmediateUploadOperation
