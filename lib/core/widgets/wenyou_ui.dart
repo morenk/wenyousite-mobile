@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -176,7 +177,7 @@ class WenyouSectionHeader extends StatelessWidget {
                 header: true,
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.wenyouSectionTitle,
                 ),
               ),
               if (subtitle != null) ...[
@@ -477,7 +478,7 @@ class WenyouEmptyState extends StatelessWidget {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.wenyouStatusTitle,
           ),
         ),
         if (message.trim().isNotEmpty) ...[

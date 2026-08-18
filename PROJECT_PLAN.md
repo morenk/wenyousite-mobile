@@ -24,7 +24,7 @@
 - 动态收藏接口只返回选中状态和计数，缺少收藏记录 ID、收藏夹投影与移动端点；需后端先发布契约，移动端才能提供与主题帖一致的“默认收藏 + 短时修改收藏夹”闭环。
 - 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v3 安全字面文本；这不是原始不支持结构的无损提交。
 - Foundation 身份与格式化仍未完全覆盖：具名头像失败应回退首个可读字符，时间需补完整 Semantics，私信时间和紧凑计数需统一 Foundation formatter。
-- Foundation 排版与反馈仍为部分接入：列表/弹层/状态标题需要从全局文楷映射中拆出，初始资源加载应使用结构 Skeleton，失败和重试不能只依赖 Snackbar。
+- Foundation 反馈仍为部分接入：初始资源加载应使用结构 Skeleton，失败和重试不能只依赖 Snackbar。
 - Foundation v6.1.0 已正式登记动态主信息流双列瀑布流例外；移动端仍需显式消费该例外并完成其余合规债务。完整证据见 `docs/architecture/foundation-compliance-audit.md`。
 
 ## 单切片完成定义

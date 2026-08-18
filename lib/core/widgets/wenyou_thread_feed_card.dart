@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
@@ -48,7 +49,7 @@ class ThreadFeedCard extends StatelessWidget {
                   thread.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.wenyouListTitle,
                 ),
                 if (thread.coverImageUrls.isNotEmpty) ...[
                   SizedBox(height: tokens.space12),

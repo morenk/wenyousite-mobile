@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
@@ -115,7 +116,10 @@ class _CheckingPage extends StatelessWidget {
               children: [
                 const CircularProgressIndicator(),
                 SizedBox(height: tokens.space16),
-                Text('正在连接温油站', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  '正在连接温油站',
+                  style: Theme.of(context).textTheme.wenyouStatusTitle,
+                ),
                 SizedBox(height: tokens.space8),
                 Text(
                   '正在确认是否可以正常使用。',
@@ -181,7 +185,7 @@ class _UpdatePage extends StatelessWidget {
                 child: Text(
                   isRequired ? '需要更新后继续' : '温油站有新版本',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.wenyouStatusTitle,
                 ),
               ),
               SizedBox(height: tokens.space8),

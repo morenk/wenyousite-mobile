@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 abstract final class AppTheme {
@@ -42,25 +43,19 @@ abstract final class AppTheme {
     );
     final textTheme = baseTextTheme.copyWith(
       headlineSmall: baseTextTheme.headlineSmall?.copyWith(
-        fontFamily: WenyouFoundationTypography.display,
-        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
         fontSize: _typeSize('pageTitle'),
         height: _typeHeight('pageTitle'),
         fontWeight: _typeWeight('pageTitle'),
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
-        fontFamily: WenyouFoundationTypography.display,
-        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
         fontSize: _typeSize('sectionTitle'),
         height: _typeHeight('sectionTitle'),
-        fontWeight: _typeWeight('sectionTitle'),
+        fontWeight: FontWeight.w600,
       ),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
-        fontFamily: WenyouFoundationTypography.display,
-        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
         fontSize: _typeSize('subsectionTitle'),
         height: _typeHeight('subsectionTitle'),
-        fontWeight: _typeWeight('subsectionTitle'),
+        fontWeight: FontWeight.w600,
       ),
       bodyLarge: baseTextTheme.bodyLarge?.copyWith(
         fontSize: _typeSize('body'),
@@ -115,7 +110,7 @@ abstract final class AppTheme {
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: textTheme.titleLarge,
+        titleTextStyle: textTheme.wenyouSectionTitle,
       ),
       cardTheme: CardThemeData(
         color: tokens.panel,

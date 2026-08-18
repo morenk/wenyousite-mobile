@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -221,25 +222,37 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: TextField(
-                  key: const Key('compose-title'),
-                  controller: _titleController,
-                  enabled: !locked,
-                  maxLength: 100,
-                  maxLines: _editorSession.hasFocus ? 1 : 3,
-                  minLines: 1,
-                  textInputAction: TextInputAction.next,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  decoration: const InputDecoration(
-                    hintText: '主题标题',
-                    counterText: '',
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '主题标题',
+                      key: const Key('compose-title-label'),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: tokens.mutedText,
+                      ),
+                    ),
+                    TextField(
+                      key: const Key('compose-title'),
+                      controller: _titleController,
+                      enabled: !locked,
+                      maxLength: 100,
+                      maxLines: _editorSession.hasFocus ? 1 : 3,
+                      minLines: 1,
+                      textInputAction: TextInputAction.next,
+                      style: Theme.of(context).textTheme.wenyouPageTitle,
+                      decoration: const InputDecoration(
+                        hintText: '一句话说明这个主题',
+                        counterText: '',
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 4),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               ThreadComposeMetadataBar(

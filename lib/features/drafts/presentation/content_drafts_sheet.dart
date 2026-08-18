@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -62,7 +63,10 @@ class ContentDraftsSheet extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('正文草稿', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      '正文草稿',
+                      style: Theme.of(context).textTheme.wenyouOverlayTitle,
+                    ),
                     SizedBox(height: tokens.space4),
                     Text(
                       '只保存当前正文 · 已用 ${state.usage.usedSlots}/${state.usage.maxSlots}',

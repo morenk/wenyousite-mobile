@@ -72,6 +72,7 @@ void main() {
           .text,
       '恢复的标题',
     );
+    expect(find.byKey(const Key('compose-title-label')), findsOneWidget);
     expect(controller.state.body, '恢复的主题正文');
     expect(find.byKey(const Key('compose-body')), findsOneWidget);
     expect(find.byType(MentionSuggestions), findsOneWidget);

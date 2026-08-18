@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 void main() {
@@ -144,6 +145,30 @@ void main() {
     );
     expect(
       theme.textTheme.titleLarge!.fontFamily,
+      WenyouFoundationTypography.body,
+    );
+    expect(
+      theme.textTheme.wenyouPageTitle.fontFamily,
+      WenyouFoundationTypography.display,
+    );
+    expect(
+      theme.textTheme.wenyouSectionTitle.fontFamily,
+      WenyouFoundationTypography.display,
+    );
+    expect(
+      theme.textTheme.wenyouListTitle.fontFamily,
+      WenyouFoundationTypography.body,
+    );
+    expect(
+      theme.textTheme.wenyouOverlayTitle.fontFamily,
+      WenyouFoundationTypography.body,
+    );
+    expect(
+      theme.textTheme.wenyouStatusTitle.fontFamily,
+      WenyouFoundationTypography.body,
+    );
+    expect(
+      theme.appBarTheme.titleTextStyle!.fontFamily,
       WenyouFoundationTypography.display,
     );
     expect(

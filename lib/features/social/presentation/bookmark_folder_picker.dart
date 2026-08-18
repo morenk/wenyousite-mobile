@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -111,7 +112,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
                   Expanded(
                     child: Text(
                       '修改收藏夹',
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.wenyouOverlayTitle,
                     ),
                   ),
                   IconButton(
