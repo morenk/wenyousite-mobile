@@ -191,6 +191,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
                 HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
+      coverImageUrls: _safeHttpUrls(dto.coverImages),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
@@ -213,8 +214,17 @@ class ApiPublicUserRepository implements PublicUserRepository {
       ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
-      lastActivityAt: dto.updatedAt,
+      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      preview: _optionalText(dto.preview),
+      tags: dto.topicTags
+          .map(
+            (relation) =>
+                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+          )
+          .toList(growable: false),
+      coverImageUrls: _safeHttpUrls(dto.coverImages),
       memberCount: dto.count.members.toInt(),
+      playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
       tipTotal: dto.tipTotal,
     );
@@ -289,6 +299,14 @@ class ApiPublicUserRepository implements PublicUserRepository {
       return null;
     }
     return value;
+  }
+
+  List<String> _safeHttpUrls(Iterable<String> values) {
+    return values
+        .map(_safeHttpUrl)
+        .whereType<String>()
+        .take(1)
+        .toList(growable: false);
   }
 }
 

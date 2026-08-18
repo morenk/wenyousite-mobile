@@ -14,7 +14,7 @@ void main() {
     registerFallbackValue(MoveBookmarkDto((builder) => builder.folderId = 'x'));
   });
 
-  test('本人收藏传递游标并映射帖子摘要与下一页', () async {
+  test('本人收藏传递游标并映射完整主题卡与下一页', () async {
     final api = _MockBookmarksApi();
     when(
       () => api.bookmarksFindAll(cursor: 'bookmark-cursor', limit: 7),
@@ -37,8 +37,16 @@ void main() {
     expect(item.status, BookmarkedThreadStatus.recruiting);
     expect(item.isPrivate, isTrue);
     expect(item.isPinned, isTrue);
+    expect(item.isPublished, isTrue);
+    expect(item.ownerId, 'owner-1');
     expect(item.ownerName, '骰子猫');
+    expect(item.ownerAvatarUrl, 'https://cdn.example.com/avatar.jpg');
+    expect(item.lastActivityAt, DateTime.utc(2026, 8, 11));
+    expect(item.preview, '雾港中的第一封信');
+    expect(item.tags.single.name, '都市奇谈');
+    expect(item.coverImageUrls, ['https://cdn.example.com/cover.jpg']);
     expect(item.memberCount, 4);
+    expect(item.playerCount, 2);
     expect(item.postCount, 18);
   });
 
@@ -220,18 +228,47 @@ Response<BookmarksFindAll200Response> _listResponse({
               ..createdAt = DateTime.utc(2026, 8, 1)
               ..updatedAt = DateTime.utc(2026, 8, 10)
               ..bookmarkFolderId = 'folder-default'
+              ..defaultSubthread.update(
+                (subthread) => subthread
+                  ..id = 'subthread-1'
+                  ..title = '主线'
+                  ..lastPostAt = DateTime.utc(2026, 8, 11),
+              )
+              ..topicTags.add(
+                ThreadTagRelationResponseDto(
+                  (relation) => relation
+                    ..id = 'relation-1'
+                    ..threadId = 'thread-1'
+                    ..tagId = 'tag-1'
+                    ..tag.update(
+                      (tag) => tag
+                        ..id = 'tag-1'
+                        ..name = '都市奇谈'
+                        ..sortOrder = 1
+                        ..isActive = true,
+                    ),
+                ),
+              )
+              ..preview = '  雾港中的第一封信  '
+              ..coverImages.addAll([
+                'javascript:alert(1)',
+                'https://cdn.example.com/cover.jpg',
+                'https://cdn.example.com/ignored.jpg',
+              ])
               ..owner.update(
                 (owner) => owner
                   ..id = 'owner-1'
                   ..username = '骰子猫'
+                  ..avatar = 'https://cdn.example.com/avatar.jpg'
                   ..level = 3,
               )
               ..count.update(
                 (count) => count
                   ..members = 4
+                  ..players = 2
                   ..posts = 18,
               );
-            if (includeBookmarkId) thread.bookmarkId = 'bookmark-1';
+            thread.bookmarkId = includeBookmarkId ? 'bookmark-1' : '';
           }),
         ),
     ),

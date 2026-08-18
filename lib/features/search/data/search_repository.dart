@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_call.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
@@ -156,23 +157,52 @@ class ApiSearchRepository implements SearchRepository {
   }
 
   SearchThreadResult _mapThread(SearchThreadResponseDto dto) {
+    final preview = dto.preview.trim();
     return SearchThreadResult(
       id: dto.id,
       title: dto.title.trim().isEmpty ? '未命名主题' : dto.title.trim(),
       categorySlug: dto.category,
+      status: _mapThreadStatus(dto.status),
+      isPinned: dto.pinned,
+      isPrivate:
+          dto.visibility == SearchThreadResponseDtoVisibilityEnum.PRIVATE,
+      isPublished: dto.published,
       ownerId: dto.owner.id,
       ownerName: dto.owner.username,
       ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
+      ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
+      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      preview: preview.isEmpty ? null : preview,
+      tags: dto.topicTags
+          .map(
+            (relation) =>
+                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+          )
+          .toList(growable: false),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
+      tipTotal: dto.tipTotal,
       coverImageUrls: dto.coverImages
           .map(_safeHttpUrl)
           .whereType<String>()
           .take(1)
           .toList(growable: false),
     );
+  }
+
+  HomeThreadStatus _mapThreadStatus(SearchThreadResponseDtoStatusEnum value) {
+    if (value == SearchThreadResponseDtoStatusEnum.RECRUITING) {
+      return HomeThreadStatus.recruiting;
+    }
+    if (value == SearchThreadResponseDtoStatusEnum.CLOSED) {
+      return HomeThreadStatus.closed;
+    }
+    if (value == SearchThreadResponseDtoStatusEnum.FINISHED) {
+      return HomeThreadStatus.finished;
+    }
+    return HomeThreadStatus.unknown;
   }
 
   SearchUserResult _mapUser(SearchUserResponseDto dto) {

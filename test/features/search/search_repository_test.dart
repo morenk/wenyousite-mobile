@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 
@@ -67,6 +68,9 @@ void main() {
     expect(moments.cursor, 'moment-cursor-2');
     expect(threads.single.title, '星海旅团');
     expect(threads.single.ownerName, '已注销用户');
+    expect(threads.single.status, HomeThreadStatus.recruiting);
+    expect(threads.single.preview, '向星海出发');
+    expect(threads.single.tags.single.name, '太空歌剧');
     expect(threads.single.coverImageUrls, [
       'https://cdn.example.com/cover.jpg',
     ]);
@@ -267,6 +271,28 @@ SearchThreadResponseDto _threadDto() {
       ..tipTotal = '0'
       ..createdAt = DateTime.utc(2026, 8, 10)
       ..updatedAt = DateTime.utc(2026, 8, 10)
+      ..defaultSubthread.update(
+        (subthread) => subthread
+          ..id = 'subthread-1'
+          ..title = '主线'
+          ..lastPostAt = DateTime.utc(2026, 8, 11),
+      )
+      ..topicTags.add(
+        ThreadTagRelationResponseDto(
+          (relation) => relation
+            ..id = 'relation-1'
+            ..threadId = 'thread-1'
+            ..tagId = 'tag-1'
+            ..tag.update(
+              (tag) => tag
+                ..id = 'tag-1'
+                ..name = '太空歌剧'
+                ..sortOrder = 1
+                ..isActive = true,
+            ),
+        ),
+      )
+      ..preview = '  向星海出发  '
       ..owner.update(
         (owner) => owner
           ..id = 'user-1'

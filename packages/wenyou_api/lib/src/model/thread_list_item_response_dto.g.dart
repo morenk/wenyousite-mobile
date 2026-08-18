@@ -195,7 +195,9 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
   @override
   final ThreadListCountResponseDto count;
   @override
-  final String? preview;
+  final String preview;
+  @override
+  final BuiltList<String> coverImages;
 
   factory _$ThreadListItemResponseDto([
     void Function(ThreadListItemResponseDtoBuilder)? updates,
@@ -217,7 +219,8 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
     this.defaultSubthread,
     required this.topicTags,
     required this.count,
-    this.preview,
+    required this.preview,
+    required this.coverImages,
   }) : super._();
   @override
   ThreadListItemResponseDto rebuild(
@@ -247,7 +250,8 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
         defaultSubthread == other.defaultSubthread &&
         topicTags == other.topicTags &&
         count == other.count &&
-        preview == other.preview;
+        preview == other.preview &&
+        coverImages == other.coverImages;
   }
 
   @override
@@ -269,6 +273,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
     _$hash = $jc(_$hash, topicTags.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
+    _$hash = $jc(_$hash, coverImages.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -291,7 +296,8 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
           ..add('defaultSubthread', defaultSubthread)
           ..add('topicTags', topicTags)
           ..add('count', count)
-          ..add('preview', preview))
+          ..add('preview', preview)
+          ..add('coverImages', coverImages))
         .toString();
   }
 }
@@ -375,6 +381,12 @@ class ThreadListItemResponseDtoBuilder
   String? get preview => _$this._preview;
   set preview(String? preview) => _$this._preview = preview;
 
+  ListBuilder<String>? _coverImages;
+  ListBuilder<String> get coverImages =>
+      _$this._coverImages ??= ListBuilder<String>();
+  set coverImages(ListBuilder<String>? coverImages) =>
+      _$this._coverImages = coverImages;
+
   ThreadListItemResponseDtoBuilder() {
     ThreadListItemResponseDto._defaults(this);
   }
@@ -398,6 +410,7 @@ class ThreadListItemResponseDtoBuilder
       _topicTags = $v.topicTags.toBuilder();
       _count = $v.count.toBuilder();
       _preview = $v.preview;
+      _coverImages = $v.coverImages.toBuilder();
       _$v = null;
     }
     return this;
@@ -473,7 +486,12 @@ class ThreadListItemResponseDtoBuilder
             defaultSubthread: _defaultSubthread?.build(),
             topicTags: topicTags.build(),
             count: count.build(),
-            preview: preview,
+            preview: BuiltValueNullFieldError.checkNotNull(
+              preview,
+              r'ThreadListItemResponseDto',
+              'preview',
+            ),
+            coverImages: coverImages.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -486,6 +504,9 @@ class ThreadListItemResponseDtoBuilder
         topicTags.build();
         _$failedField = 'count';
         count.build();
+
+        _$failedField = 'coverImages';
+        coverImages.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ThreadListItemResponseDto',

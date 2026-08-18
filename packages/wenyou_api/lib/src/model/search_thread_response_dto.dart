@@ -31,7 +31,7 @@ part 'search_thread_response_dto.g.dart';
 /// * [defaultSubthread]
 /// * [topicTags]
 /// * [count]
-/// * [preview] - 首页列表正文预览
+/// * [preview] - 默认主贴正文的纯文本预览
 /// * [coverImages] - 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
 /// * [relevance] - 仅说明本次查询的标题相关度；客户端不得作为稳定业务字段依赖
 @BuiltValue()
@@ -85,9 +85,9 @@ abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto,
   @BuiltValueField(wireName: r'_count')
   ThreadListCountResponseDto get count;
 
-  /// 首页列表正文预览
+  /// 默认主贴正文的纯文本预览
   @BuiltValueField(wireName: r'preview')
-  String? get preview;
+  String get preview;
 
   /// 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
   @BuiltValueField(wireName: r'coverImages')
@@ -195,13 +195,11 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
       object.count,
       specifiedType: const FullType(ThreadListCountResponseDto),
     );
-    if (object.preview != null) {
-      yield r'preview';
-      yield serializers.serialize(
-        object.preview,
-        specifiedType: const FullType(String),
-      );
-    }
+    yield r'preview';
+    yield serializers.serialize(
+      object.preview,
+      specifiedType: const FullType(String),
+    );
     yield r'coverImages';
     yield serializers.serialize(
       object.coverImages,

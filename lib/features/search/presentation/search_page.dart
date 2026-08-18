@@ -11,7 +11,6 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_feed_card.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
@@ -549,30 +548,15 @@ class _ThreadResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return HomeThreadCard(
       key: Key('search-thread-${item.id}'),
-      thread: HomeThreadCardModel(
-        id: item.id,
-        title: item.title,
-        categorySlug: item.categorySlug,
-        status: HomeThreadStatus.unknown,
-        isPinned: false,
-        ownerId: item.ownerId,
-        ownerName: item.ownerName,
-        ownerAvatarUrl: item.ownerAvatarUrl,
-        ownerLevel: 0,
-        tags: const [],
-        coverImageUrls: item.coverImageUrls,
-        memberCount: item.memberCount,
-        playerCount: item.playerCount,
-        postCount: item.postCount,
-        tipTotal: '0',
-        lastActivityAt: item.createdAt,
-      ),
+      thread: item,
       categoryName: item.categorySlug,
       onTap: () => context.pushNamed(
         'thread-detail',
         pathParameters: {'threadId': item.id},
         extra: item.categorySlug,
       ),
+      onTagTap: (tag) =>
+          context.pushNamed('tag-threads', pathParameters: {'tagId': tag.id}),
     );
   }
 }

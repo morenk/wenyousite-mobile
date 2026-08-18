@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+
 enum SearchResultTab {
   overview('综合', '一次查看主题、用户和正文摘要'),
   moments('动态', '搜索公开动态标题与正文'),
@@ -11,33 +13,7 @@ enum SearchResultTab {
   final String description;
 }
 
-class SearchThreadResult {
-  const SearchThreadResult({
-    required this.id,
-    required this.title,
-    required this.ownerId,
-    required this.ownerName,
-    required this.createdAt,
-    required this.memberCount,
-    required this.playerCount,
-    required this.postCount,
-    required this.coverImageUrls,
-    this.categorySlug,
-    this.ownerAvatarUrl,
-  });
-
-  final String id;
-  final String title;
-  final String? categorySlug;
-  final String ownerId;
-  final String ownerName;
-  final String? ownerAvatarUrl;
-  final DateTime createdAt;
-  final int memberCount;
-  final int playerCount;
-  final int postCount;
-  final List<String> coverImageUrls;
-}
+typedef SearchThreadResult = ThreadFeedCardModel;
 
 class SearchUserResult {
   const SearchUserResult({

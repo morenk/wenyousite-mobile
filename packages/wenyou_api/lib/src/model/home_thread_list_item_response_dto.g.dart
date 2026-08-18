@@ -198,7 +198,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
   @override
   final ThreadListCountResponseDto count;
   @override
-  final String? preview;
+  final String preview;
   @override
   final BuiltList<String> coverImages;
 
@@ -222,7 +222,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
     this.defaultSubthread,
     required this.topicTags,
     required this.count,
-    this.preview,
+    required this.preview,
     required this.coverImages,
   }) : super._();
   @override
@@ -493,7 +493,11 @@ class HomeThreadListItemResponseDtoBuilder
             defaultSubthread: _defaultSubthread?.build(),
             topicTags: topicTags.build(),
             count: count.build(),
-            preview: preview,
+            preview: BuiltValueNullFieldError.checkNotNull(
+              preview,
+              r'HomeThreadListItemResponseDto',
+              'preview',
+            ),
             coverImages: coverImages.build(),
           );
     } catch (_) {

@@ -31,7 +31,8 @@ part 'thread_list_item_response_dto.g.dart';
 /// * [defaultSubthread]
 /// * [topicTags]
 /// * [count]
-/// * [preview] - 首页列表正文预览；用户活动列表可能不返回
+/// * [preview] - 默认主贴正文的纯文本预览
+/// * [coverImages] - 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
 @BuiltValue()
 abstract class ThreadListItemResponseDto implements Built<ThreadListItemResponseDto, ThreadListItemResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -83,9 +84,13 @@ abstract class ThreadListItemResponseDto implements Built<ThreadListItemResponse
   @BuiltValueField(wireName: r'_count')
   ThreadListCountResponseDto get count;
 
-  /// 首页列表正文预览；用户活动列表可能不返回
+  /// 默认主贴正文的纯文本预览
   @BuiltValueField(wireName: r'preview')
-  String? get preview;
+  String get preview;
+
+  /// 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
+  @BuiltValueField(wireName: r'coverImages')
+  BuiltList<String> get coverImages;
 
   ThreadListItemResponseDto._();
 
@@ -185,13 +190,16 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
       object.count,
       specifiedType: const FullType(ThreadListCountResponseDto),
     );
-    if (object.preview != null) {
-      yield r'preview';
-      yield serializers.serialize(
-        object.preview,
-        specifiedType: const FullType(String),
-      );
-    }
+    yield r'preview';
+    yield serializers.serialize(
+      object.preview,
+      specifiedType: const FullType(String),
+    );
+    yield r'coverImages';
+    yield serializers.serialize(
+      object.coverImages,
+      specifiedType: const FullType(BuiltList, [FullType(String)]),
+    );
   }
 
   @override
@@ -329,6 +337,13 @@ class _$ThreadListItemResponseDtoSerializer implements PrimitiveSerializer<Threa
             specifiedType: const FullType(String),
           ) as String;
           result.preview = valueDes;
+          break;
+        case r'coverImages':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(String)]),
+          ) as BuiltList<String>;
+          result.coverImages.replace(valueDes);
           break;
         default:
           unhandled.add(key);

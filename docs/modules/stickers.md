@@ -61,7 +61,7 @@ media application 负责相册选择与安全上传，stickers presentation 只�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `e1b6bc3a288104488944ecfcd417a623daa82099`；Foundation `v6.0.1`（`2ca6f78`）。
+契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`；Foundation `v6.0.1`（`2ca6f78`）。
 
 ## 14. 相关代码与架构文档
 

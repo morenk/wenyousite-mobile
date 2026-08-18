@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-首页和动态顶栏的搜索按钮进入独立 `/search` 页面；它不占用底部导航分支。页面包含输入框和“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab，360dp 起全部可见且不横向滚动。动态、主题帖、楼层内容和用户结果统一占满单列可用宽度，不得随标题、正文或用户名长度收缩；主题帖结果直接复用首页与标签页的整宽主题卡片。搜索投影未提供状态、等级、摘要、加油和标签时使用安全缺省值，封面、作者、分类、玩家数与回复数仍保持同一信息层级和响应式布局。动态结果进入 `/moments/:momentId`，主题帖结果进入 `/threads/:threadId`，用户结果进入 `/users/:userId`，楼层内容结果进入 `/threads/:threadId?post=:postId`。主题详情工具栏进入公开 `/threads/:threadId/search`，其楼层结果同样固定为单列全宽，并继续用稳定帖子 ID 回到同一详情定位目标上下文。
+首页和动态顶栏的搜索按钮进入独立 `/search` 页面；它不占用底部导航分支。页面包含输入框和“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab，360dp 起全部可见且不横向滚动。动态、主题帖、楼层内容和用户结果统一占满单列可用宽度，不得随标题、正文或用户名长度收缩；主题帖结果直接复用首页与标签页的整宽主题卡片，并完整呈现服务端投影的状态、作者等级、摘要、封面、标签、玩家/回复/加油计数与默认子贴活跃时间。动态结果进入 `/moments/:momentId`，主题帖结果进入 `/threads/:threadId`，标签进入 `/tags/:tagId`，用户结果进入 `/users/:userId`，楼层内容结果进入 `/threads/:threadId?post=:postId`。主题详情工具栏进入公开 `/threads/:threadId/search`，其楼层结果同样固定为单列全宽，并继续用稳定帖子 ID 回到同一详情定位目标上下文。
 
 ## 4. 用户操作流程
 
@@ -26,7 +26,7 @@
 
 ## 6. 状态模型和数据流
 
-四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果只消费 `coverImages` 的唯一首图。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
+四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 threads/core 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
 
 契约中的 `searchSearchThreads` 已支持可选 cursor/limit 和带 `meta` 的分页响应；当前移动端仓储仍使用 `Future<List<SearchThreadResult>> searchThreads(String query)`，省略 cursor/limit 并消费兼容首批结果，因此单个关键词最多读取服务端默认的 50 条主题结果。完成端口、控制器和页面的 cursor 分页前，本模块保持 `in_progress`。
 
@@ -66,7 +66,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `e1b6bc3a288104488944ecfcd417a623daa82099`。
+契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`。
 
 ## 14. 相关代码与架构文档
 

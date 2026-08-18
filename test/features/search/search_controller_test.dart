@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
@@ -308,8 +309,10 @@ SearchThreadResult _thread(String id, String title) {
   return SearchThreadResult(
     id: id,
     title: title,
+    status: HomeThreadStatus.recruiting,
     ownerId: 'user-1',
     ownerName: '温柔测试员',
+    ownerLevel: 3,
     createdAt: DateTime.utc(2026, 8, 10),
     memberCount: 3,
     playerCount: 1,

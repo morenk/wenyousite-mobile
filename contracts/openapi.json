@@ -16994,7 +16994,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "5.0.0-dev.20260816.1",
+    "version": "5.1.0-dev.20260817.1",
     "contact": {}
   },
   "tags": [
@@ -17976,108 +17976,6 @@
           "mediaId"
         ]
       },
-      "BookmarkThreadCountResponseDto": {
-        "type": "object",
-        "properties": {
-          "members": {
-            "type": "number",
-            "minimum": 0
-          },
-          "posts": {
-            "type": "number",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "members",
-          "posts"
-        ]
-      },
-      "BookmarkThreadResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "category": {
-            "type": "string",
-            "nullable": true,
-            "example": "MYSTERY",
-            "description": "动态分类 slug"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "RECRUITING",
-              "CLOSED",
-              "FINISHED"
-            ]
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "PUBLIC",
-              "PRIVATE"
-            ]
-          },
-          "published": {
-            "type": "boolean"
-          },
-          "pinned": {
-            "type": "boolean"
-          },
-          "tipTotal": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "用户投入的累计打赏升数"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "deletedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "owner": {
-            "$ref": "#/components/schemas/PostAuthorResponseDto"
-          },
-          "_count": {
-            "$ref": "#/components/schemas/BookmarkThreadCountResponseDto"
-          },
-          "bookmarkId": {
-            "type": "string",
-            "description": "查看自己的收藏时返回收藏记录 ID"
-          },
-          "bookmarkFolderId": {
-            "type": "string",
-            "description": "查看自己的收藏时返回所属收藏夹 ID"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "category",
-          "status",
-          "visibility",
-          "published",
-          "pinned",
-          "tipTotal",
-          "createdAt",
-          "updatedAt",
-          "deletedAt",
-          "owner",
-          "_count"
-        ]
-      },
       "ThreadListDefaultSubthreadResponseDto": {
         "type": "object",
         "properties": {
@@ -18178,6 +18076,114 @@
           "posts"
         ]
       },
+      "BookmarkThreadResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "example": "MYSTERY",
+            "description": "动态分类 slug"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECRUITING",
+              "CLOSED",
+              "FINISHED"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "PRIVATE"
+            ]
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "tipTotal": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "用户投入的累计打赏升数"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/PostAuthorResponseDto"
+          },
+          "defaultSubthread": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadListDefaultSubthreadResponseDto"
+              }
+            ]
+          },
+          "topicTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadTagRelationResponseDto"
+            }
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ThreadListCountResponseDto"
+          },
+          "preview": {
+            "type": "string",
+            "description": "默认主贴正文的纯文本预览"
+          },
+          "coverImages": {
+            "maxItems": 1,
+            "description": "默认主贴正文中的第一张普通图片 URL；无图时返回空数组",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "category",
+          "status",
+          "visibility",
+          "published",
+          "pinned",
+          "tipTotal",
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "owner",
+          "defaultSubthread",
+          "topicTags",
+          "_count",
+          "preview",
+          "coverImages"
+        ]
+      },
       "ThreadListItemResponseDto": {
         "type": "object",
         "properties": {
@@ -18255,7 +18261,15 @@
           },
           "preview": {
             "type": "string",
-            "description": "首页列表正文预览；用户活动列表可能不返回"
+            "description": "默认主贴正文的纯文本预览"
+          },
+          "coverImages": {
+            "maxItems": 1,
+            "description": "默认主贴正文中的第一张普通图片 URL；无图时返回空数组",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -18273,7 +18287,9 @@
           "owner",
           "defaultSubthread",
           "topicTags",
-          "_count"
+          "_count",
+          "preview",
+          "coverImages"
         ]
       },
       "UserActivitySummaryResponseDto": {
@@ -19115,8 +19131,35 @@
           "owner": {
             "$ref": "#/components/schemas/PostAuthorResponseDto"
           },
+          "defaultSubthread": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadListDefaultSubthreadResponseDto"
+              }
+            ]
+          },
+          "topicTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadTagRelationResponseDto"
+            }
+          },
           "_count": {
-            "$ref": "#/components/schemas/BookmarkThreadCountResponseDto"
+            "$ref": "#/components/schemas/ThreadListCountResponseDto"
+          },
+          "preview": {
+            "type": "string",
+            "description": "默认主贴正文的纯文本预览"
+          },
+          "coverImages": {
+            "maxItems": 1,
+            "description": "默认主贴正文中的第一张普通图片 URL；无图时返回空数组",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "bookmarkId": {
             "type": "string",
@@ -19140,7 +19183,13 @@
           "updatedAt",
           "deletedAt",
           "owner",
-          "_count"
+          "defaultSubthread",
+          "topicTags",
+          "_count",
+          "preview",
+          "coverImages",
+          "bookmarkId",
+          "bookmarkFolderId"
         ]
       },
       "BookmarkFolderResponseDto": {
@@ -19438,7 +19487,7 @@
           },
           "preview": {
             "type": "string",
-            "description": "首页列表正文预览"
+            "description": "默认主贴正文的纯文本预览"
           },
           "coverImages": {
             "maxItems": 1,
@@ -19465,6 +19514,7 @@
           "defaultSubthread",
           "topicTags",
           "_count",
+          "preview",
           "coverImages"
         ]
       },
@@ -23975,7 +24025,7 @@
           },
           "preview": {
             "type": "string",
-            "description": "首页列表正文预览"
+            "description": "默认主贴正文的纯文本预览"
           },
           "coverImages": {
             "maxItems": 1,
@@ -24006,6 +24056,7 @@
           "defaultSubthread",
           "topicTags",
           "_count",
+          "preview",
           "coverImages"
         ]
       },

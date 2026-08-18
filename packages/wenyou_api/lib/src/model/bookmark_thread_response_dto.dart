@@ -3,9 +3,11 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/thread_list_count_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/thread_tag_relation_response_dto.dart';
 import 'package:wenyou_api/src/model/post_author_response_dto.dart';
-import 'package:wenyou_api/src/model/bookmark_thread_count_response_dto.dart';
+import 'package:wenyou_api/src/model/thread_list_default_subthread_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -26,9 +28,11 @@ part 'bookmark_thread_response_dto.g.dart';
 /// * [updatedAt]
 /// * [deletedAt]
 /// * [owner]
+/// * [defaultSubthread]
+/// * [topicTags]
 /// * [count]
-/// * [bookmarkId] - 查看自己的收藏时返回收藏记录 ID
-/// * [bookmarkFolderId] - 查看自己的收藏时返回所属收藏夹 ID
+/// * [preview] - 默认主贴正文的纯文本预览
+/// * [coverImages] - 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
 @BuiltValue()
 abstract class BookmarkThreadResponseDto implements Built<BookmarkThreadResponseDto, BookmarkThreadResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -71,16 +75,22 @@ abstract class BookmarkThreadResponseDto implements Built<BookmarkThreadResponse
   @BuiltValueField(wireName: r'owner')
   PostAuthorResponseDto get owner;
 
+  @BuiltValueField(wireName: r'defaultSubthread')
+  ThreadListDefaultSubthreadResponseDto? get defaultSubthread;
+
+  @BuiltValueField(wireName: r'topicTags')
+  BuiltList<ThreadTagRelationResponseDto> get topicTags;
+
   @BuiltValueField(wireName: r'_count')
-  BookmarkThreadCountResponseDto get count;
+  ThreadListCountResponseDto get count;
 
-  /// 查看自己的收藏时返回收藏记录 ID
-  @BuiltValueField(wireName: r'bookmarkId')
-  String? get bookmarkId;
+  /// 默认主贴正文的纯文本预览
+  @BuiltValueField(wireName: r'preview')
+  String get preview;
 
-  /// 查看自己的收藏时返回所属收藏夹 ID
-  @BuiltValueField(wireName: r'bookmarkFolderId')
-  String? get bookmarkFolderId;
+  /// 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
+  @BuiltValueField(wireName: r'coverImages')
+  BuiltList<String> get coverImages;
 
   BookmarkThreadResponseDto._();
 
@@ -165,25 +175,31 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
       object.owner,
       specifiedType: const FullType(PostAuthorResponseDto),
     );
+    yield r'defaultSubthread';
+    yield object.defaultSubthread == null ? null : serializers.serialize(
+      object.defaultSubthread,
+      specifiedType: const FullType.nullable(ThreadListDefaultSubthreadResponseDto),
+    );
+    yield r'topicTags';
+    yield serializers.serialize(
+      object.topicTags,
+      specifiedType: const FullType(BuiltList, [FullType(ThreadTagRelationResponseDto)]),
+    );
     yield r'_count';
     yield serializers.serialize(
       object.count,
-      specifiedType: const FullType(BookmarkThreadCountResponseDto),
+      specifiedType: const FullType(ThreadListCountResponseDto),
     );
-    if (object.bookmarkId != null) {
-      yield r'bookmarkId';
-      yield serializers.serialize(
-        object.bookmarkId,
-        specifiedType: const FullType(String),
-      );
-    }
-    if (object.bookmarkFolderId != null) {
-      yield r'bookmarkFolderId';
-      yield serializers.serialize(
-        object.bookmarkFolderId,
-        specifiedType: const FullType(String),
-      );
-    }
+    yield r'preview';
+    yield serializers.serialize(
+      object.preview,
+      specifiedType: const FullType(String),
+    );
+    yield r'coverImages';
+    yield serializers.serialize(
+      object.coverImages,
+      specifiedType: const FullType(BuiltList, [FullType(String)]),
+    );
   }
 
   @override
@@ -293,26 +309,41 @@ class _$BookmarkThreadResponseDtoSerializer implements PrimitiveSerializer<Bookm
           ) as PostAuthorResponseDto;
           result.owner.replace(valueDes);
           break;
+        case r'defaultSubthread':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ThreadListDefaultSubthreadResponseDto),
+          ) as ThreadListDefaultSubthreadResponseDto?;
+          if (valueDes == null) continue;
+          result.defaultSubthread.replace(valueDes);
+          break;
+        case r'topicTags':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(ThreadTagRelationResponseDto)]),
+          ) as BuiltList<ThreadTagRelationResponseDto>;
+          result.topicTags.replace(valueDes);
+          break;
         case r'_count':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BookmarkThreadCountResponseDto),
-          ) as BookmarkThreadCountResponseDto;
+            specifiedType: const FullType(ThreadListCountResponseDto),
+          ) as ThreadListCountResponseDto;
           result.count.replace(valueDes);
           break;
-        case r'bookmarkId':
+        case r'preview':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
-          result.bookmarkId = valueDes;
+          result.preview = valueDes;
           break;
-        case r'bookmarkFolderId':
+        case r'coverImages':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.bookmarkFolderId = valueDes;
+            specifiedType: const FullType(BuiltList, [FullType(String)]),
+          ) as BuiltList<String>;
+          result.coverImages.replace(valueDes);
           break;
         default:
           unhandled.add(key);

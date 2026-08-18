@@ -95,8 +95,21 @@ void main() {
     expect(created.items.single.title, '星海旅团');
     expect(created.items.single.status.name, 'recruiting');
     expect(created.items.single.memberCount, 5);
+    expect(created.items.single.playerCount, 2);
+    expect(created.items.single.preview, '向星海出发');
+    expect(created.items.single.tags.single.name, '太空歌剧');
+    expect(created.items.single.coverImageUrls, [
+      'https://cdn.example.com/cover.jpg',
+    ]);
     expect(played.items.single.isPrivate, isTrue);
     expect(bookmarks.items.single.ownerName, '收藏作者');
+    expect(bookmarks.items.single.playerCount, 1);
+    expect(bookmarks.items.single.preview, '收藏主题摘要');
+    expect(bookmarks.items.single.tags.single.name, '推理');
+    expect(bookmarks.items.single.coverImageUrls, [
+      'https://cdn.example.com/bookmark-cover.jpg',
+    ]);
+    expect(bookmarks.items.single.lastActivityAt, DateTime.utc(2026, 8, 11));
     expect(bookmarks.items.single.postCount, 6);
     expect(replies.single.preview, '最近回复 [图片]');
     expect(replies.single.parentPostId, 'floor-7');
@@ -160,6 +173,32 @@ Response<UsersGetUserBookmarks200Response> _bookmarksResponse() {
               ..tipTotal = '2'
               ..createdAt = now
               ..updatedAt = now
+              ..defaultSubthread.update(
+                (subthread) => subthread
+                  ..id = 'bookmark-subthread'
+                  ..title = '主线'
+                  ..lastPostAt = DateTime.utc(2026, 8, 11),
+              )
+              ..topicTags.add(
+                ThreadTagRelationResponseDto(
+                  (relation) => relation
+                    ..id = 'bookmark-relation'
+                    ..threadId = 'thread-bookmark'
+                    ..tagId = 'bookmark-tag'
+                    ..tag.update(
+                      (tag) => tag
+                        ..id = 'bookmark-tag'
+                        ..name = '推理'
+                        ..sortOrder = 1
+                        ..isActive = true,
+                    ),
+                ),
+              )
+              ..preview = '  收藏主题摘要  '
+              ..coverImages.addAll([
+                'file:///invalid.jpg',
+                'https://cdn.example.com/bookmark-cover.jpg',
+              ])
               ..owner.update(
                 (owner) => owner
                   ..id = 'bookmark-owner'
@@ -169,6 +208,7 @@ Response<UsersGetUserBookmarks200Response> _bookmarksResponse() {
               ..count.update(
                 (count) => count
                   ..members = 3
+                  ..players = 1
                   ..posts = 6,
               ),
           ),
@@ -221,6 +261,29 @@ ThreadListItemResponseDto _thread({
       ..tipTotal = '8'
       ..createdAt = now
       ..updatedAt = now
+      ..defaultSubthread.update(
+        (subthread) => subthread
+          ..id = '$id-subthread'
+          ..title = '主线'
+          ..lastPostAt = now,
+      )
+      ..topicTags.add(
+        ThreadTagRelationResponseDto(
+          (relation) => relation
+            ..id = '$id-relation'
+            ..threadId = id
+            ..tagId = 'tag-space-opera'
+            ..tag.update(
+              (tag) => tag
+                ..id = 'tag-space-opera'
+                ..name = '太空歌剧'
+                ..sortOrder = 1
+                ..isActive = true,
+            ),
+        ),
+      )
+      ..preview = '  向星海出发  '
+      ..coverImages.add('https://cdn.example.com/cover.jpg')
       ..owner.update(
         (owner) => owner
           ..id = 'owner-1'

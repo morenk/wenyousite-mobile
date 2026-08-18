@@ -118,7 +118,6 @@ Serializers _$serializers =
           ..add(BlockedUserRecordResponseDto.serializer)
           ..add(BookmarkFolderResponseDto.serializer)
           ..add(BookmarkResponseDto.serializer)
-          ..add(BookmarkThreadCountResponseDto.serializer)
           ..add(BookmarkThreadResponseDto.serializer)
           ..add(BookmarkThreadResponseDtoStatusEnum.serializer)
           ..add(BookmarkThreadResponseDtoVisibilityEnum.serializer)
@@ -1045,6 +1044,30 @@ Serializers _$serializers =
               const FullType(ThreadTagRelationResponseDto),
             ]),
             () => ListBuilder<ThreadTagRelationResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ThreadTagRelationResponseDto),
+            ]),
+            () => ListBuilder<ThreadTagRelationResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ThreadTagRelationResponseDto),
+            ]),
+            () => ListBuilder<ThreadTagRelationResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

@@ -189,11 +189,19 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
   @override
   final PostAuthorResponseDto owner;
   @override
-  final BookmarkThreadCountResponseDto count;
+  final ThreadListDefaultSubthreadResponseDto? defaultSubthread;
   @override
-  final String? bookmarkId;
+  final BuiltList<ThreadTagRelationResponseDto> topicTags;
   @override
-  final String? bookmarkFolderId;
+  final ThreadListCountResponseDto count;
+  @override
+  final String preview;
+  @override
+  final BuiltList<String> coverImages;
+  @override
+  final String bookmarkId;
+  @override
+  final String bookmarkFolderId;
 
   factory _$OwnBookmarkThreadResponseDto([
     void Function(OwnBookmarkThreadResponseDtoBuilder)? updates,
@@ -212,9 +220,13 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
     required this.updatedAt,
     this.deletedAt,
     required this.owner,
+    this.defaultSubthread,
+    required this.topicTags,
     required this.count,
-    this.bookmarkId,
-    this.bookmarkFolderId,
+    required this.preview,
+    required this.coverImages,
+    required this.bookmarkId,
+    required this.bookmarkFolderId,
   }) : super._();
   @override
   OwnBookmarkThreadResponseDto rebuild(
@@ -241,7 +253,11 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
         updatedAt == other.updatedAt &&
         deletedAt == other.deletedAt &&
         owner == other.owner &&
+        defaultSubthread == other.defaultSubthread &&
+        topicTags == other.topicTags &&
         count == other.count &&
+        preview == other.preview &&
+        coverImages == other.coverImages &&
         bookmarkId == other.bookmarkId &&
         bookmarkFolderId == other.bookmarkFolderId;
   }
@@ -261,7 +277,11 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, owner.hashCode);
+    _$hash = $jc(_$hash, defaultSubthread.hashCode);
+    _$hash = $jc(_$hash, topicTags.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
+    _$hash = $jc(_$hash, preview.hashCode);
+    _$hash = $jc(_$hash, coverImages.hashCode);
     _$hash = $jc(_$hash, bookmarkId.hashCode);
     _$hash = $jc(_$hash, bookmarkFolderId.hashCode);
     _$hash = $jf(_$hash);
@@ -283,7 +303,11 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
           ..add('updatedAt', updatedAt)
           ..add('deletedAt', deletedAt)
           ..add('owner', owner)
+          ..add('defaultSubthread', defaultSubthread)
+          ..add('topicTags', topicTags)
           ..add('count', count)
+          ..add('preview', preview)
+          ..add('coverImages', coverImages)
           ..add('bookmarkId', bookmarkId)
           ..add('bookmarkFolderId', bookmarkFolderId))
         .toString();
@@ -350,11 +374,34 @@ class OwnBookmarkThreadResponseDtoBuilder
       _$this._owner ??= PostAuthorResponseDtoBuilder();
   set owner(PostAuthorResponseDtoBuilder? owner) => _$this._owner = owner;
 
-  BookmarkThreadCountResponseDtoBuilder? _count;
-  BookmarkThreadCountResponseDtoBuilder get count =>
-      _$this._count ??= BookmarkThreadCountResponseDtoBuilder();
-  set count(BookmarkThreadCountResponseDtoBuilder? count) =>
-      _$this._count = count;
+  ThreadListDefaultSubthreadResponseDtoBuilder? _defaultSubthread;
+  ThreadListDefaultSubthreadResponseDtoBuilder get defaultSubthread =>
+      _$this._defaultSubthread ??=
+          ThreadListDefaultSubthreadResponseDtoBuilder();
+  set defaultSubthread(
+    ThreadListDefaultSubthreadResponseDtoBuilder? defaultSubthread,
+  ) => _$this._defaultSubthread = defaultSubthread;
+
+  ListBuilder<ThreadTagRelationResponseDto>? _topicTags;
+  ListBuilder<ThreadTagRelationResponseDto> get topicTags =>
+      _$this._topicTags ??= ListBuilder<ThreadTagRelationResponseDto>();
+  set topicTags(ListBuilder<ThreadTagRelationResponseDto>? topicTags) =>
+      _$this._topicTags = topicTags;
+
+  ThreadListCountResponseDtoBuilder? _count;
+  ThreadListCountResponseDtoBuilder get count =>
+      _$this._count ??= ThreadListCountResponseDtoBuilder();
+  set count(ThreadListCountResponseDtoBuilder? count) => _$this._count = count;
+
+  String? _preview;
+  String? get preview => _$this._preview;
+  set preview(String? preview) => _$this._preview = preview;
+
+  ListBuilder<String>? _coverImages;
+  ListBuilder<String> get coverImages =>
+      _$this._coverImages ??= ListBuilder<String>();
+  set coverImages(ListBuilder<String>? coverImages) =>
+      _$this._coverImages = coverImages;
 
   String? _bookmarkId;
   String? get bookmarkId => _$this._bookmarkId;
@@ -384,7 +431,11 @@ class OwnBookmarkThreadResponseDtoBuilder
       _updatedAt = $v.updatedAt;
       _deletedAt = $v.deletedAt;
       _owner = $v.owner.toBuilder();
+      _defaultSubthread = $v.defaultSubthread?.toBuilder();
+      _topicTags = $v.topicTags.toBuilder();
       _count = $v.count.toBuilder();
+      _preview = $v.preview;
+      _coverImages = $v.coverImages.toBuilder();
       _bookmarkId = $v.bookmarkId;
       _bookmarkFolderId = $v.bookmarkFolderId;
       _$v = null;
@@ -459,17 +510,40 @@ class OwnBookmarkThreadResponseDtoBuilder
             ),
             deletedAt: deletedAt,
             owner: owner.build(),
+            defaultSubthread: _defaultSubthread?.build(),
+            topicTags: topicTags.build(),
             count: count.build(),
-            bookmarkId: bookmarkId,
-            bookmarkFolderId: bookmarkFolderId,
+            preview: BuiltValueNullFieldError.checkNotNull(
+              preview,
+              r'OwnBookmarkThreadResponseDto',
+              'preview',
+            ),
+            coverImages: coverImages.build(),
+            bookmarkId: BuiltValueNullFieldError.checkNotNull(
+              bookmarkId,
+              r'OwnBookmarkThreadResponseDto',
+              'bookmarkId',
+            ),
+            bookmarkFolderId: BuiltValueNullFieldError.checkNotNull(
+              bookmarkFolderId,
+              r'OwnBookmarkThreadResponseDto',
+              'bookmarkFolderId',
+            ),
           );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'owner';
         owner.build();
+        _$failedField = 'defaultSubthread';
+        _defaultSubthread?.build();
+        _$failedField = 'topicTags';
+        topicTags.build();
         _$failedField = 'count';
         count.build();
+
+        _$failedField = 'coverImages';
+        coverImages.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'OwnBookmarkThreadResponseDto',

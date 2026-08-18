@@ -25,7 +25,7 @@
 
 ## 6. 状态模型和数据流
 
-`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 threads，home 仓储只编排分类和信息流查询。仓储接口位于 `home/application`，`main.dart` 组合根绑定 API data 适配器，控制器不直接导入 data。作者头像与卡片封面都只接受 HTTP(S) URL；头像缺失或不安全时映射为 null 并由共享卡片统一降级，封面只消费服务端 `coverImages` 的唯一首图，空数组时不预留图片区。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
+`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 threads，home 仓储只编排分类和信息流查询。搜索、本人收藏和用户主页的主题列表把各自 DTO 映射到同一共享读模型，不维护平行卡片字段。仓储接口位于 `home/application`，`main.dart` 组合根绑定 API data 适配器，控制器不直接导入 data。作者头像与卡片封面都只接受 HTTP(S) URL；头像缺失或不安全时映射为 null 并由共享卡片统一降级，封面只消费服务端 `coverImages` 的唯一首图，空数组时不预留图片区。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -59,7 +59,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.0.0-dev.20260816.1`；Markdown v3；后端 `e1b6bc3a288104488944ecfcd417a623daa82099`。
+契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`。
 
 ## 14. 相关代码与架构文档
 

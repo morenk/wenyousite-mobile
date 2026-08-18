@@ -194,7 +194,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
   @override
   final ThreadListCountResponseDto count;
   @override
-  final String? preview;
+  final String preview;
   @override
   final BuiltList<String> coverImages;
   @override
@@ -220,7 +220,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
     this.defaultSubthread,
     required this.topicTags,
     required this.count,
-    this.preview,
+    required this.preview,
     required this.coverImages,
     this.relevance,
   }) : super._();
@@ -496,7 +496,11 @@ class SearchThreadResponseDtoBuilder
             defaultSubthread: _defaultSubthread?.build(),
             topicTags: topicTags.build(),
             count: count.build(),
-            preview: preview,
+            preview: BuiltValueNullFieldError.checkNotNull(
+              preview,
+              r'SearchThreadResponseDto',
+              'preview',
+            ),
             coverImages: coverImages.build(),
             relevance: relevance,
           );

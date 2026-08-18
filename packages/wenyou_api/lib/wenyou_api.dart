@@ -141,7 +141,6 @@ export 'package:wenyou_api/src/model/auth_verify_change_email200_response.dart';
 export 'package:wenyou_api/src/model/blocked_user_record_response_dto.dart';
 export 'package:wenyou_api/src/model/bookmark_folder_response_dto.dart';
 export 'package:wenyou_api/src/model/bookmark_response_dto.dart';
-export 'package:wenyou_api/src/model/bookmark_thread_count_response_dto.dart';
 export 'package:wenyou_api/src/model/bookmark_thread_response_dto.dart';
 export 'package:wenyou_api/src/model/bookmarks_create201_response.dart';
 export 'package:wenyou_api/src/model/bookmarks_create_folder201_response.dart';

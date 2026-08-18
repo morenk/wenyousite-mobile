@@ -4,7 +4,7 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dar
 HomeThreadCardModel mapHomeThreadCardResponse(
   HomeThreadListItemResponseDto item,
 ) {
-  final preview = item.preview?.trim();
+  final preview = item.preview.trim();
   return ThreadFeedCardModel(
     id: item.id,
     title: item.title,
@@ -18,7 +18,7 @@ HomeThreadCardModel mapHomeThreadCardResponse(
     ownerName: item.owner.username,
     ownerAvatarUrl: _safeHttpUrl(item.owner.avatar),
     ownerLevel: item.owner.level.toInt(),
-    preview: preview == null || preview.isEmpty ? null : preview,
+    preview: preview.isEmpty ? null : preview,
     tags: item.topicTags
         .map(
           (relation) =>

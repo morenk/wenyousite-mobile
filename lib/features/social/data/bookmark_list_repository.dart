@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
@@ -112,15 +113,15 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
   }
 
   BookmarkListItem _mapItem(OwnBookmarkThreadResponseDto dto) {
-    final bookmarkId = dto.bookmarkId?.trim();
-    if (bookmarkId == null || bookmarkId.isEmpty) {
+    final bookmarkId = dto.bookmarkId.trim();
+    if (bookmarkId.isEmpty) {
       throw const ApiFailure(userMessage: '收藏记录缺少管理 ID，请稍后重试。');
     }
     final title = dto.title.trim();
-    final folderId = dto.bookmarkFolderId?.trim();
+    final folderId = dto.bookmarkFolderId.trim();
     return BookmarkListItem(
       bookmarkId: bookmarkId,
-      folderId: folderId == null || folderId.isEmpty ? null : folderId,
+      folderId: folderId.isEmpty ? null : folderId,
       threadId: dto.id,
       title: title.isEmpty ? '未命名主题' : title,
       categorySlug: dto.category,
@@ -136,10 +137,27 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       isPrivate:
           dto.visibility == OwnBookmarkThreadResponseDtoVisibilityEnum.PRIVATE,
       isPinned: dto.pinned,
+      isPublished: dto.published,
+      ownerId: dto.owner.id,
       ownerName: dto.owner.username,
+      ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
+      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      preview: _optionalText(dto.preview),
+      tags: dto.topicTags
+          .map(
+            (relation) =>
+                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+          )
+          .toList(growable: false),
+      coverImageUrls: dto.coverImages
+          .map(_safeHttpUrl)
+          .whereType<String>()
+          .take(1)
+          .toList(growable: false),
       memberCount: dto.count.members.toInt(),
+      playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
       tipTotal: dto.tipTotal,
     );
@@ -158,6 +176,20 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       bookmarkCount: dto.bookmarkCount.toInt(),
       createdAt: dto.createdAt,
     );
+  }
+
+  String? _optionalText(String value) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  String? _safeHttpUrl(String? value) {
+    if (value == null) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http')) {
+      return null;
+    }
+    return value;
   }
 }
 
