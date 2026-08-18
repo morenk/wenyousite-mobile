@@ -85,13 +85,8 @@ class MeAvatarEditor extends ConsumerWidget {
         ],
         if (state.failure != null) ...[
           SizedBox(height: tokens.space12),
-          WenyouStatusBanner(
-            key: const Key('me-avatar-failure'),
-            tone: WenyouStatusTone.error,
-            message: state.failure!.userMessage,
-            detail: state.failure!.requestId == null
-                ? null
-                : '问题编号：${state.failure!.requestId}',
+          _AvatarFailureNotice(
+            state: state,
             action: TextButton(
               key: const Key('me-avatar-retry'),
               onPressed: () => _retry(context, ref),
@@ -202,6 +197,46 @@ class MeAvatarEditor extends ConsumerWidget {
       },
       AvatarPhase.idle || AvatarPhase.failed => '',
     };
+  }
+}
+
+class _AvatarFailureNotice extends StatefulWidget {
+  const _AvatarFailureNotice({required this.state, required this.action});
+
+  final AvatarState state;
+  final Widget action;
+
+  @override
+  State<_AvatarFailureNotice> createState() => _AvatarFailureNoticeState();
+}
+
+class _AvatarFailureNoticeState extends State<_AvatarFailureNotice> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
+  }
+
+  void _reveal() {
+    if (!mounted) return;
+    Scrollable.ensureVisible(
+      context,
+      alignment: .8,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final failure = widget.state.failure!;
+    return WenyouStatusBanner(
+      key: const Key('me-avatar-failure'),
+      tone: WenyouStatusTone.error,
+      message: failure.userMessage,
+      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
+      action: widget.action,
+    );
   }
 }
 

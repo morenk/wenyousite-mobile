@@ -281,6 +281,43 @@ void main() {
     expect(find.byKey(const Key('me-avatar-remove')), findsOneWidget);
   });
 
+  testWidgets('头像选图失败后主动显示错误并允许重新选择', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 480);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(),
+      avatarPicker: _FakeAvatarPicker(
+        null,
+        failure: const ApiFailure(
+          userMessage: '系统相册没有返回图片，请重试。',
+          requestId: 'avatar-picker-request',
+        ),
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final change = find.byKey(const Key('me-avatar-change'));
+    await tester.ensureVisible(change);
+    await tester.tap(change);
+    await tester.pumpAndSettle();
+
+    final failure = find.byKey(const Key('me-avatar-failure'));
+    expect(failure, findsOneWidget);
+    expect(find.text('系统相册没有返回图片，请重试。'), findsOneWidget);
+    expect(find.text('问题编号：avatar-picker-request'), findsOneWidget);
+    expect(find.text('重新选择'), findsOneWidget);
+    expect(tester.getRect(failure).top, lessThan(480));
+  });
+
   testWidgets('设置失败保留请求 ID，重试只调用设置端点', (tester) async {
     var failOnce = true;
     final repository = _FakeMeProfileRepository();
@@ -410,6 +447,43 @@ void main() {
     expect(find.text('背景图上传失败，请重试。'), findsOneWidget);
     expect(find.text('问题编号：cover-upload-request'), findsOneWidget);
     expect(find.text('重试上传'), findsOneWidget);
+    expect(tester.getRect(failure).top, lessThan(640));
+  });
+
+  testWidgets('主页背景选图失败后主动显示错误并允许重新选择', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(),
+      profileCoverPicker: const _FakeProfileCoverPicker(
+        null,
+        failure: ApiFailure(
+          userMessage: '系统相册没有返回背景图，请重试。',
+          requestId: 'cover-picker-request',
+        ),
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final change = find.byKey(const Key('me-profile-cover-change'));
+    await tester.ensureVisible(change);
+    await tester.tap(change);
+    await tester.pumpAndSettle();
+
+    final failure = find.byKey(const Key('me-profile-cover-failure'));
+    expect(failure, findsOneWidget);
+    expect(find.text('系统相册没有返回背景图，请重试。'), findsOneWidget);
+    expect(find.text('问题编号：cover-picker-request'), findsOneWidget);
+    expect(find.text('重新选择'), findsOneWidget);
     expect(tester.getRect(failure).top, lessThan(640));
   });
 
@@ -597,12 +671,16 @@ Future<ProviderContainer> _authenticatedContainer(
 }
 
 class _FakeProfileCoverPicker implements ProfileCoverImagePicker {
-  const _FakeProfileCoverPicker(this.input);
+  const _FakeProfileCoverPicker(this.input, {this.failure});
 
   final MediaUploadInput? input;
+  final Object? failure;
 
   @override
-  Future<MediaUploadInput?> pickProfileCoverFromGallery() async => input;
+  Future<MediaUploadInput?> pickProfileCoverFromGallery() async {
+    if (failure case final error?) throw error;
+    return input;
+  }
 }
 
 class _FakeProfileCoverRepository implements ProfileCoverRepository {
@@ -674,12 +752,16 @@ class _FakeImageCropProcessor implements ImageCropProcessor {
 }
 
 class _FakeAvatarPicker implements AvatarImagePicker {
-  _FakeAvatarPicker(this.input);
+  _FakeAvatarPicker(this.input, {this.failure});
 
   final MediaUploadInput? input;
+  final Object? failure;
 
   @override
-  Future<MediaUploadInput?> pickAvatarFromGallery() async => input;
+  Future<MediaUploadInput?> pickAvatarFromGallery() async {
+    if (failure case final error?) throw error;
+    return input;
+  }
 }
 
 class _FakeMediaRepository implements MediaUploadGateway {
