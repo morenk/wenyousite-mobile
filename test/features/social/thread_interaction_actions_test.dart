@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
+import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/thread_interaction_actions.dart';
 
@@ -32,7 +35,11 @@ void main() {
 
   testWidgets('登录用户点赞与收藏切换采用服务端结果并展示反馈', (tester) async {
     final repository = _FakeRepository();
-    final container = await _authenticatedContainer(repository);
+    final bookmarkRepository = _FakeBookmarkListRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      bookmarkRepository: bookmarkRepository,
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -59,12 +66,112 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
     expect(find.text('已收藏'), findsOneWidget);
-    expect(find.text('已收藏这个主题。'), findsOneWidget);
+    expect(find.text('已收藏到默认收藏夹。'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-bookmark-change-folder')),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(bookmarkRepository.moves, isEmpty);
 
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
     expect(find.text('收藏'), findsOneWidget);
     expect(repository.removedBookmarkIds, ['bookmark-1']);
+  });
+
+  testWidgets('收藏成功气泡可把新收藏移动到指定收藏夹', (tester) async {
+    final repository = _FakeRepository();
+    final bookmarkRepository = _FakeBookmarkListRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      bookmarkRepository: bookmarkRepository,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ThreadInteractionActions(
+              target: _target,
+              onRequireAuthentication: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-bookmark-change-folder')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('当前已保存在默认收藏夹，选择后立即移动。'), findsOneWidget);
+    expect(find.text('默认收藏夹'), findsOneWidget);
+    expect(find.text('稍后阅读'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('bookmark-folder-picker-option-folder-later')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(bookmarkRepository.moves, [('bookmark-1', 'folder-later')]);
+    expect(find.text('已移动到“稍后阅读”。'), findsOneWidget);
+  });
+
+  testWidgets('修改收藏夹加载和移动失败时可在原面板重试', (tester) async {
+    final repository = _FakeRepository();
+    final bookmarkRepository = _FakeBookmarkListRepository(
+      folderFailures: 1,
+      moveFailures: 1,
+    );
+    final container = await _authenticatedContainer(
+      repository,
+      bookmarkRepository: bookmarkRepository,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ThreadInteractionActions(
+              target: _target,
+              onRequireAuthentication: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-bookmark-change-folder')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('收藏夹加载失败，请稍后重试。'), findsOneWidget);
+    expect(find.text('问题编号：folder-request-id'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-retry')));
+    await tester.pumpAndSettle();
+
+    final customFolder = find.byKey(
+      const ValueKey('bookmark-folder-picker-option-folder-later'),
+    );
+    await tester.tap(customFolder);
+    await tester.pumpAndSettle();
+    expect(find.text('移动收藏失败，请稍后重试。'), findsOneWidget);
+    expect(customFolder, findsOneWidget);
+
+    await tester.tap(customFolder);
+    await tester.pumpAndSettle();
+    expect(bookmarkRepository.moves, [
+      ('bookmark-1', 'folder-later'),
+      ('bookmark-1', 'folder-later'),
+    ]);
+    expect(find.text('已移动到“稍后阅读”。'), findsOneWidget);
   });
 
   testWidgets('互动失败保留按钮状态并显示请求 ID', (tester) async {
@@ -143,19 +250,83 @@ Widget _app({
 }
 
 Future<ProviderContainer> _authenticatedContainer(
-  ThreadInteractionRepository repository,
-) async {
+  ThreadInteractionRepository repository, {
+  BookmarkListRepository? bookmarkRepository,
+}) async {
   final container = ProviderContainer(
     overrides: [
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       threadInteractionRepositoryProvider.overrideWithValue(repository),
+      bookmarkListRepositoryProvider.overrideWithValue(
+        bookmarkRepository ?? _FakeBookmarkListRepository(),
+      ),
     ],
   );
   await container
       .read(sessionControllerProvider.notifier)
       .authenticate(_tokens);
   return container;
+}
+
+class _FakeBookmarkListRepository implements BookmarkListRepository {
+  _FakeBookmarkListRepository({int folderFailures = 0, int moveFailures = 0})
+    : _remainingFolderFailures = folderFailures,
+      _remainingMoveFailures = moveFailures;
+
+  int _remainingFolderFailures;
+  int _remainingMoveFailures;
+  final List<(String, String)> moves = [];
+
+  @override
+  Future<List<BookmarkFolderItem>> fetchFolders() async {
+    if (_remainingFolderFailures > 0) {
+      _remainingFolderFailures -= 1;
+      throw const ApiFailure(
+        userMessage: '收藏夹加载失败，请稍后重试。',
+        requestId: 'folder-request-id',
+      );
+    }
+    return [
+      BookmarkFolderItem(
+        id: 'folder-default',
+        name: '默认收藏夹',
+        isDefault: true,
+        bookmarkCount: 1,
+        createdAt: DateTime(2026),
+      ),
+      BookmarkFolderItem(
+        id: 'folder-later',
+        name: '稍后阅读',
+        isDefault: false,
+        bookmarkCount: 2,
+        createdAt: DateTime(2026),
+      ),
+    ];
+  }
+
+  @override
+  Future<void> move(String bookmarkId, String folderId) async {
+    moves.add((bookmarkId, folderId));
+    if (_remainingMoveFailures > 0) {
+      _remainingMoveFailures -= 1;
+      throw const ApiFailure(userMessage: '移动收藏失败，请稍后重试。');
+    }
+  }
+
+  @override
+  Future<CursorPage<BookmarkListItem>> fetchPage({
+    String? cursor,
+    String? folderId,
+    int limit = 20,
+  }) async => const CursorPage(items: [], hasMore: false);
+
+  @override
+  Future<BookmarkFolderItem> createFolder(String name) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> remove(String bookmarkId) => throw UnimplementedError();
 }
 
 class _FakeRepository implements ThreadInteractionRepository {

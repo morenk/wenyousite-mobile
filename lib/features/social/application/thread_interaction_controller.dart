@@ -21,6 +21,8 @@ class ThreadInteractionController
   final WriteReconciler _reconciler;
   var _actionEpoch = 0;
 
+  String? get currentBookmarkId => state.bookmarkId;
+
   Future<bool> toggleLike() async {
     if (state.isPending) return false;
     final before = state;
@@ -120,11 +122,11 @@ class ThreadInteractionController
                 likeCount: before.likeCount,
                 isBookmarked: !wasBookmarked,
                 bookmarkId: outcome.writeValue,
-                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏这个主题。',
+                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏到默认收藏夹。',
               )
             : _fromProjection(
                 projection,
-                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏这个主题。',
+                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏到默认收藏夹。',
               );
         return true;
       case WriteOutcomeStatus.failed:

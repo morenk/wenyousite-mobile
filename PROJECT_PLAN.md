@@ -21,6 +21,7 @@
 
 - `searchSearchThreads` 已支持 cursor/limit 分页，但移动端仍走不传参数的兼容调用，单次最多读取 50 条；完成移动端分页前搜索模块保持 `in_progress`。
 - 动态评论通知仍只进入动态详情，尚未消费已经稳定的 `momentsCommentContext` 与 `momentCommentNavigation` 黄金旅程。
+- 动态收藏接口只返回选中状态和计数，缺少收藏记录 ID、收藏夹投影与移动端点；需后端先发布契约，移动端才能提供与主题帖一致的“默认收藏 + 短时修改收藏夹”闭环。
 - 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v3 安全字面文本；这不是原始不支持结构的无损提交。
 - Foundation v6.0.1 富文本元素仍有提及、引用、行内代码和主题标签差异；需以阅读/编辑共用组件迁移，避免两态继续分叉。
 - Foundation 身份与格式化仍未完全覆盖：具名头像失败应回退首个可读字符，时间需补完整 Semantics，私信时间和紧凑计数需统一 Foundation formatter。

@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
+import 'package:wenyousite_mobile/features/social/presentation/bookmark_folder_picker.dart';
 
 class ThreadInteractionActions extends ConsumerWidget {
   const ThreadInteractionActions({
@@ -27,6 +31,7 @@ class ThreadInteractionActions extends ConsumerWidget {
     final provider = threadInteractionControllerProvider(target);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
+    final bookmarkRepository = ref.read(bookmarkListRepositoryProvider);
     final tokens = context.wenyouTokens;
     if (compact) {
       return Row(
@@ -61,7 +66,13 @@ class ThreadInteractionActions extends ConsumerWidget {
               pending: state.pendingAction == ThreadInteractionAction.bookmark,
               onPressed: state.isPending
                   ? null
-                  : () => _toggleBookmark(context, notifier, compact: true),
+                  : () => _toggleBookmark(
+                      context,
+                      notifier,
+                      wasBookmarked: state.isBookmarked,
+                      bookmarkRepository: bookmarkRepository,
+                      compact: true,
+                    ),
               semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
               padding: EdgeInsets.symmetric(horizontal: tokens.space4),
             ),
@@ -101,7 +112,12 @@ class ThreadInteractionActions extends ConsumerWidget {
                     state.pendingAction == ThreadInteractionAction.bookmark,
                 onPressed: state.isPending
                     ? null
-                    : () => _toggleBookmark(context, notifier),
+                    : () => _toggleBookmark(
+                        context,
+                        notifier,
+                        wasBookmarked: state.isBookmarked,
+                        bookmarkRepository: bookmarkRepository,
+                      ),
                 semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
                 supporting: Text(state.isBookmarked ? '已收藏' : '收藏'),
               ),
@@ -150,12 +166,19 @@ class ThreadInteractionActions extends ConsumerWidget {
   Future<void> _toggleBookmark(
     BuildContext context,
     ThreadInteractionController notifier, {
+    required bool wasBookmarked,
+    required BookmarkListRepository bookmarkRepository,
     bool compact = false,
   }) async {
     final succeeded = await notifier.toggleBookmark();
     if (!context.mounted) return;
     if (!succeeded) {
       if (compact) _showFailure(context, notifier);
+      return;
+    }
+    final bookmarkId = notifier.currentBookmarkId;
+    if (!wasBookmarked && bookmarkId != null) {
+      _showBookmarkSuccess(context, notifier, bookmarkRepository, bookmarkId);
       return;
     }
     _showSuccess(context, notifier);
@@ -193,5 +216,47 @@ class ThreadInteractionActions extends ConsumerWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showBookmarkSuccess(
+    BuildContext context,
+    ThreadInteractionController notifier,
+    BookmarkListRepository repository,
+    String bookmarkId,
+  ) {
+    final message = notifier.takeSuccessMessage();
+    if (message == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          content: Text(message),
+          action: SnackBarAction(
+            key: const Key('thread-bookmark-change-folder'),
+            label: '修改收藏夹',
+            onPressed: () => unawaited(
+              _changeBookmarkFolder(context, repository, bookmarkId),
+            ),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _changeBookmarkFolder(
+    BuildContext context,
+    BookmarkListRepository repository,
+    String bookmarkId,
+  ) async {
+    final folder = await showBookmarkFolderPicker(
+      context: context,
+      repository: repository,
+      bookmarkId: bookmarkId,
+    );
+    if (!context.mounted || folder == null) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('已移动到“${folder.name}”。')));
   }
 }
