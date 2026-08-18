@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
 String formatWenyouDiceSemantics({
@@ -116,13 +117,22 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
       selectable: true,
       softLineBreak: true,
       styleSheet: _styleSheet,
-      inlineSyntaxes: [_InternalReferenceInlineSyntax(), _DiceInlineSyntax()],
+      inlineSyntaxes: [
+        _InternalReferenceInlineSyntax(),
+        _UserMentionInlineSyntax(),
+        _AllPlayersMentionInlineSyntax(),
+        _DiceInlineSyntax(),
+      ],
       builders: {
         'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
           _internalReferences,
           (reference) => _openInternalReference(context, reference),
         ),
         'wenyou-dice': _DiceMarkdownBuilder(_diceLabels, _diceSemantics),
+        'wenyou-mention': _MentionMarkdownBuilder(
+          (location) => _openInternalLocation(context, location),
+        ),
+        'code': _InlineCodeMarkdownBuilder(),
       },
       onTapLink: (_, href, _) => _openLink(context, href),
       onTapText: widget.onTapText,
@@ -200,16 +210,17 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
         fontFamily: 'monospace',
         fontWeight: FontWeight.w500,
       ),
-      blockquote: bodyStyle?.copyWith(fontStyle: FontStyle.italic),
-      blockquotePadding: EdgeInsets.all(tokens.space12),
+      blockquote: bodyStyle?.copyWith(fontStyle: FontStyle.normal),
+      blockquotePadding: EdgeInsets.symmetric(
+        horizontal: widget.bodyFontSize,
+        vertical: widget.bodyFontSize * 0.75,
+      ),
       blockquoteDecoration: BoxDecoration(
         color: tokens.softPanel,
         border: Border(
           left: BorderSide(color: tokens.brandForeground, width: 3),
         ),
-        borderRadius: BorderRadius.horizontal(
-          right: Radius.circular(tokens.radius12),
-        ),
+        borderRadius: BorderRadius.circular(tokens.radius12),
       ),
       horizontalRuleDecoration: BoxDecoration(
         border: Border(top: BorderSide(color: tokens.border)),
@@ -242,6 +253,75 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     } else {
       openInternalWenyouLink(context, location);
     }
+  }
+}
+
+class _UserMentionInlineSyntax extends md.InlineSyntax {
+  _UserMentionInlineSyntax()
+    : super(
+        r'\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
+        startCharacter: 0x5b,
+      );
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(
+      md.Element.text('wenyou-mention', match.group(1)!)
+        ..attributes['location'] = '/users/${match.group(2)!}',
+    );
+    return true;
+  }
+}
+
+class _AllPlayersMentionInlineSyntax extends md.InlineSyntax {
+  _AllPlayersMentionInlineSyntax()
+    : super(r'@全体玩家(?![A-Za-z0-9_\u4e00-\u9fff])', startCharacter: 0x40);
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Element.text('wenyou-mention', match.group(0)!));
+    return true;
+  }
+}
+
+class _MentionMarkdownBuilder extends MarkdownElementBuilder {
+  _MentionMarkdownBuilder(this.onTap);
+
+  final ValueChanged<Uri> onTap;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final label = element.textContent;
+    final style = preferredStyle ?? parentStyle;
+    final location = Uri.tryParse(element.attributes['location'] ?? '');
+    if (location == null || location.path.isEmpty) {
+      return WenyouMentionSurface(label: label, style: style);
+    }
+    return WenyouMentionLink(
+      label: label,
+      style: style,
+      onTap: () => onTap(location),
+    );
+  }
+}
+
+class _InlineCodeMarkdownBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    return WenyouInlineCodeSurface(
+      text: element.textContent,
+      style: preferredStyle ?? parentStyle,
+    );
   }
 }
 

@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -144,6 +145,15 @@ void main() {
       find.byKey(const Key('thread-floor-reply-floor-1-reply-1')),
       findsOneWidget,
     );
+    final replyMarkdown = find.descendant(
+      of: find.byKey(const Key('thread-floor-reply-floor-1-reply-1')),
+      matching: find.byType(WenyouMarkdown),
+    );
+    expect(replyMarkdown, findsOneWidget);
+    for (final markdown in tester.widgetList<WenyouMarkdown>(replyMarkdown)) {
+      expect(markdown.bodyFontSize, 17);
+      expect(markdown.bodyHeight, 1.8);
+    }
     expect(
       find.byKey(const Key('thread-floor-reply-preview-collapsed-floor-1')),
       findsNothing,

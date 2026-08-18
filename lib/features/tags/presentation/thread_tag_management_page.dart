@@ -112,7 +112,6 @@ class _ThreadTagManagementPageState
                         WenyouTagChip(
                           key: Key('thread-tag-selected-${tag.id}'),
                           name: tag.name,
-                          colorHex: tag.color,
                           deleteTooltip: '从主题移除 #${tag.name}',
                           onPressed: state.isBusy
                               ? null

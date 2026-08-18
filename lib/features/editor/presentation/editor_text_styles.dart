@@ -73,15 +73,19 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       null,
     ),
     quote: DefaultTextBlockStyle(
-      body.copyWith(fontStyle: FontStyle.italic),
-      noHorizontalSpacing,
+      body.copyWith(fontStyle: FontStyle.normal),
+      HorizontalSpacing(wenyouEditorBodyFontSize, wenyouEditorBodyFontSize),
       VerticalSpacing(tokens.space8, tokens.space8),
-      VerticalSpacing(tokens.space4, tokens.space4),
+      const VerticalSpacing(
+        wenyouEditorBodyFontSize * 0.75,
+        wenyouEditorBodyFontSize * 0.75,
+      ),
       BoxDecoration(
         color: tokens.softPanel,
         border: Border(
           left: BorderSide(color: tokens.brandForeground, width: 3),
         ),
+        borderRadius: BorderRadius.circular(tokens.radius12),
       ),
     ),
     code: DefaultTextBlockStyle(
@@ -98,7 +102,7 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
     inlineCode: InlineCodeStyle(
       style: compact.copyWith(fontFamily: 'monospace'),
       backgroundColor: tokens.softPanel,
-      radius: Radius.circular(tokens.radius12),
+      radius: Radius.circular((compact.fontSize ?? 14) * 0.35),
       header2: compact.copyWith(fontSize: h2.fontSize),
       header3: compact.copyWith(fontSize: h3.fontSize),
     ),

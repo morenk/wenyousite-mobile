@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
@@ -74,6 +75,13 @@ void main() {
     expect(find.text('远行主题'), findsOneWidget);
     expect(find.text('主线 · #8楼'), findsOneWidget);
     expect(find.text('楼中楼讨论'), findsNothing);
+    expect(find.byType(WenyouMarkdown), findsNWidgets(3));
+    for (final markdown in tester.widgetList<WenyouMarkdown>(
+      find.byType(WenyouMarkdown),
+    )) {
+      expect(markdown.bodyFontSize, 17);
+      expect(markdown.bodyHeight, 1.8);
+    }
     final countCenter = tester.getCenter(
       find.byKey(const Key('post-replies-count')),
     );

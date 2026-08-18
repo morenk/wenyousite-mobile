@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
-/// A lightweight topic-tag link for reading surfaces.
-///
-/// Editing surfaces should keep using [InputChip] so destructive affordances
-/// remain explicit. In feeds and details a tag is navigation metadata, not a
-/// separate card, so only the `#name` label is visible.
+/// Foundation `elements.metadata.topicTag` for reading surfaces.
 class WenyouTagLink extends StatelessWidget {
   const WenyouTagLink({required this.name, required this.onPressed, super.key});
 
@@ -16,8 +12,8 @@ class WenyouTagLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final textStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: onPressed == null ? tokens.mutedText : tokens.brandForeground,
-      fontWeight: FontWeight.w600,
+      color: tokens.mutedText,
+      fontWeight: FontWeight.w500,
     );
     final label = '#$name';
 
@@ -25,22 +21,22 @@ class WenyouTagLink extends StatelessWidget {
       return Semantics(
         label: label,
         excludeSemantics: true,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: tokens.minimumTouchTarget,
-            minHeight: tokens.minimumTouchTarget,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            border: Border.all(color: tokens.border),
+            borderRadius: BorderRadius.circular(tokens.radius12),
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-            child: Center(
-              widthFactor: 1,
-              heightFactor: 1,
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textStyle,
-              ),
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space8,
+              vertical: tokens.space4,
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textStyle,
             ),
           ),
         ),
@@ -51,15 +47,17 @@ class WenyouTagLink extends StatelessWidget {
       link: true,
       label: '查看 $label 标签下的主题',
       excludeSemantics: true,
-      child: TextButton(
+      child: OutlinedButton(
         onPressed: onPressed,
-        style: TextButton.styleFrom(
-          foregroundColor: tokens.brandForeground,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: tokens.mutedText,
+          backgroundColor: Colors.transparent,
+          side: BorderSide(color: tokens.border),
           minimumSize: Size(
             tokens.minimumTouchTarget,
             tokens.minimumTouchTarget,
           ),
-          padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+          padding: EdgeInsets.symmetric(horizontal: tokens.space8),
           tapTargetSize: MaterialTapTargetSize.padded,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(tokens.radius12),

@@ -106,7 +106,6 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                     WenyouTagChip(
                       key: Key('tag-detail-${state.tag!.id}'),
                       name: state.tag!.name,
-                      colorHex: state.tag!.color,
                     ),
                     SizedBox(height: tokens.space8),
                     Text(

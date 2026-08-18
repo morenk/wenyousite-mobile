@@ -61,6 +61,53 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('编辑态提及保持透明无图标的原子文字', (tester) async {
+    const source = '你好 [@张三](/users/user-zhang) 与 @全体玩家';
+    final controller = QuillController(
+      document: Document.fromDelta(MarkdownDeltaCodec.decode(source).delta),
+      selection: const TextSelection.collapsed(offset: 0),
+      readOnly: true,
+    );
+    final focusNode = FocusNode();
+    final scrollController = ScrollController();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: QuillEditor(
+            controller: controller,
+            focusNode: focusNode,
+            scrollController: scrollController,
+            config: QuillEditorConfig(
+              scrollable: false,
+              embedBuilders: wenyouEditorEmbedBuilders(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final mentions = find.byKey(const Key('editor-mention'));
+    expect(mentions, findsNWidgets(2));
+    expect(find.text('@张三'), findsOneWidget);
+    expect(find.text('@全体玩家'), findsOneWidget);
+    expect(findFoundationIcon(WenyouIconIds.actionMention), findsNothing);
+    for (final text in tester.widgetList<Text>(
+      find.descendant(of: mentions, matching: find.byType(Text)),
+    )) {
+      expect(text.style?.color, WenyouFoundationPalette.brandStrong);
+      expect(text.style?.fontWeight, FontWeight.w600);
+      expect(text.style?.backgroundColor, Colors.transparent);
+    }
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('编辑态传送门与前后文字保持同行基线', (tester) async {
     const source = '前文 [入口](/threads/cmsewdo0h000x7qv6aa77ll1v) 后文仍在同一行';
     final controller = QuillController(

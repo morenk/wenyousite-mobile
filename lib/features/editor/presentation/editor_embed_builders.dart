@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
 List<EmbedBuilder> wenyouEditorEmbedBuilders() => const [
@@ -74,6 +75,13 @@ class _MentionEmbedBuilder extends EmbedBuilder {
   bool get expanded => false;
 
   @override
+  WidgetSpan buildWidgetSpan(Widget widget) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: widget,
+  );
+
+  @override
   String toPlainText(Embed node) {
     final data = node.value.data;
     return data is Map ? data['label']?.toString() ?? '@用户' : '@用户';
@@ -82,10 +90,14 @@ class _MentionEmbedBuilder extends EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final payload = _payload(embedContext);
-    return _AtomicNode(
-      icon: WenyouIconIds.actionMention,
-      label: payload?['label']?.toString() ?? '@用户',
-      semanticLabel: '提及 ${payload?['label'] ?? '用户'}',
+    return Semantics(
+      key: const Key('editor-mention'),
+      label: '提及 ${payload?['label'] ?? '用户'}',
+      excludeSemantics: true,
+      child: WenyouMentionSurface(
+        label: payload?['label']?.toString() ?? '@用户',
+        style: embedContext.textStyle,
+      ),
     );
   }
 }

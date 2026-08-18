@@ -42,7 +42,7 @@
 
 ## 10. 跨模块约束
 
-主题条目复用 threads 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。主题列表与详情中的导航标签使用无图标、无底色、无边框的行内 `#标签` 文本，触控区至少 48dp；管理工作台的编辑 Chip 才使用服务端标签色作低透明度强调，正文和边框继续使用 Foundation 语义色，避免任意标签色破坏对比度。
+主题条目复用 threads 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。主题列表、详情和管理工作台的标签统一使用无图标、中性前景、透明表面、Foundation 细边框与 `#` 前缀，不消费服务端局部颜色表达状态；导航标签保留至少 48dp 触控区，非交互标签按内容收缩。
 
 ## 11. 测试场景与验收条件
 
@@ -51,6 +51,7 @@
 - [x] 搜索旧响应被丢弃，已有标签先读取详情，输入新名称直接关联且同名标签自动复用。
 - [x] 五标签上限在网络前阻止第六次添加；移除失败保留原关系和请求 ID。
 - [x] 添加、移除、写入结果校准和 360/400/600dp 页面布局通过 Widget 测试。
+- [x] 阅读与管理标签均固定中性前景、透明表面、细边框和 `#` 前缀；服务端颜色不会改变标签对比度，可点击与非交互命中语义分别有 Widget 回归。
 
 ## 12. 已知限制和后续功能
 
@@ -62,4 +63,4 @@
 
 ## 14. 相关代码与架构文档
 
-端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v6.0.1](https://github.com/morenk/wenyousite-foundation/tree/v6.0.1)。
+端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v6.1.0](https://github.com/morenk/wenyousite-foundation/tree/v6.1.0)。

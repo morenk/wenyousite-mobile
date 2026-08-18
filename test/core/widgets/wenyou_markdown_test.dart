@@ -3,6 +3,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import '../../support/foundation_test_fonts.dart';
@@ -12,6 +13,65 @@ void main() {
 
   const nodeId = '550e8400-e29b-41d4-a716-446655440000';
   const diceNode = '[[dice:v1:$nodeId:1d20]]';
+
+  testWidgets('提及与行内代码按 Foundation 元素契约渲染', (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: '你好 [@张三](/users/user-zhang) 与 @全体玩家，执行 `code`。',
+            onInternalLink: (uri) => opened = uri,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(WenyouMentionSurface), findsNWidgets(2));
+    expect(find.byType(WenyouMentionLink), findsOneWidget);
+    final mentionTexts = tester.widgetList<Text>(
+      find.descendant(
+        of: find.byType(WenyouMentionSurface),
+        matching: find.byType(Text),
+      ),
+    );
+    for (final text in mentionTexts) {
+      expect(text.style?.color, WenyouFoundationPalette.brandStrong);
+      expect(text.style?.fontWeight, FontWeight.w600);
+      expect(text.style?.decoration, TextDecoration.none);
+    }
+    expect(
+      tester.getSize(find.byType(WenyouMentionLink)).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(find.bySemanticsLabel('查看 @张三 的个人资料'), findsOneWidget);
+    await tester.tap(find.text('@张三'));
+    await tester.pump();
+    expect(opened?.toString(), '/users/user-zhang');
+
+    final inlineCode = find.byType(WenyouInlineCodeSurface);
+    expect(inlineCode, findsOneWidget);
+    final container = tester.widget<Container>(
+      find.descendant(of: inlineCode, matching: find.byType(Container)),
+    );
+    final codeText = tester.widget<Text>(
+      find.descendant(of: inlineCode, matching: find.text('code')),
+    );
+    final fontSize = codeText.style!.fontSize!;
+    expect(fontSize, closeTo(17 * 0.88, 0.001));
+    expect(
+      (container.padding! as EdgeInsets).horizontal / 2,
+      closeTo(fontSize * 0.35, 0.001),
+    );
+    expect(
+      ((container.decoration! as BoxDecoration).borderRadius! as BorderRadius)
+          .topLeft
+          .x,
+      closeTo(fontSize * 0.35, 0.001),
+    );
+  });
 
   testWidgets('骰子节点渲染为内联结果且不泄漏节点标签', (tester) async {
     await tester.pumpWidget(
@@ -329,6 +389,17 @@ $diceNode
     expect(style.h2?.fontSize, closeTo(22.95, 0.001));
     expect(style.h3?.fontSize, closeTo(19.04, 0.001));
     expect(style.blockquote?.height, 1.8);
+    expect(style.blockquote?.fontStyle, FontStyle.normal);
+    expect(
+      style.blockquotePadding,
+      const EdgeInsets.symmetric(horizontal: 17, vertical: 12.75),
+    );
+    final quote = style.blockquoteDecoration! as BoxDecoration;
+    expect((quote.border! as Border).left.width, 3);
+    expect(
+      (quote.borderRadius! as BorderRadius).topLeft.x,
+      WenyouFoundationMobile.radiusCompact,
+    );
     final rule = style.horizontalRuleDecoration! as BoxDecoration;
     expect((rule.border! as Border).top.width, 1);
     expect(tester.takeException(), isNull);

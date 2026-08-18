@@ -22,6 +22,8 @@
 
 楼层与回复的长按菜单复用核心中央操作窗口：页面其余区域统一暗淡，窗口不依赖楼层在视口中的位置；图标在上、短标签在下，每行最多三项，点击暗区或系统返回直接关闭，选择后才执行复制、回复、编辑、删除或举报。需要筛选、创作和连续滚动的完整任务继续使用 Bottom Sheet。
 
+楼层、独立讨论主楼层、非根回复和主题流内嵌回复都使用 17sp、1.8 行高的共享 Markdown 阅读样式；层级只由留白、分隔线、身份元信息和软面板表达，不再通过缩小正文牺牲可读性。
+
 ## 5. API operationId 与生成类型
 
 - 阅读：`postsFindFloors`、`postsFindById`、`postsFindReplies`。
@@ -68,6 +70,7 @@
 - [x] 楼层/回复半屏编辑器点击暗区或关闭按钮立即收起，同一页面再次打开相同目标会恢复本地输入且不自动写入云端。
 - [x] 主题详情与独立讨论的普通正文图片没有常驻覆盖按钮，登录与游客均可进入共享原图页；收藏表情只在能力允许时从顶栏按需菜单触发，进行中禁止重复提交。
 - [x] 楼层与回复的骰子结果按 nodeId 绑定服务端事实，已结算/待掷分别使用 Foundation 语义色；逐骰结果、修正值和总计进入 Semantics，结果异步到达只更新对应原子节点。
+- [x] 独立讨论非根回复与主题流内嵌回复统一为 17sp/1.8，并通过 320～600dp 布局与 Golden 回归。
 
 ## 12. 已知限制和后续功能
 
@@ -75,8 +78,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`；Foundation `v6.0.1`（`2ca6f78`）。
+契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`；Foundation `v6.1.0`（`618954f`）。
 
 ## 14. 相关代码与架构文档
 
-帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。
+帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。

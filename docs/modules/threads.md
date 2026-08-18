@@ -20,7 +20,7 @@
 
 阅读时调用主题详情接口加载完整事实，但移动端题头只呈现最多两行的主题标题，以及下一行最多两行的当前子贴标题与前后切换；分类、状态、置顶/私密、标签、楼主、等级、时间、浏览/玩家/楼层/加油统计都不在题头重复展示。目录入口仍保留完整子贴标题和各自楼层数，所有独立入口保持至少 48dp 命中区。选中子贴正文直接铺在阅读画布上，不套第二层面板；正文结束后使用横贯视口的 1px 分界线进入楼层流，分界线上不显示“楼层”或当前顺序文案，只在右侧保留排序语义图标。点击图标直接在 `OLDEST/NEWEST` 间互换并重载首屏，不打开选择菜单。楼层继续用分隔线形成连续文本流，32dp 紧凑头像视觉置于 48dp 点击区内，用户名、内容宽度等级和时间保持同一行；头像直接进入作者主页。每层右侧只显示弱化楼层号；点击楼层非交互正文或元信息区域直接回复该层，长按在楼层上方打开完整锚点操作气泡，头像、链接、图片与回复数保持各自行为。零回复不显示重复按钮；已有回复始终保留弱化的“N 条回复”入口，并按 Web 规则预览服务端内嵌的前五条回复。按 `sortOrder` 排列子贴并加载对应正文/楼层，带 `subthread` 或 `post` 的坐标按服务端事实定位。发表成功后保留楼层窗口与滚动位置并平滑定位到新楼层。点赞、收藏、订阅和发表入口位于固定底部拇指栏，不随滚动收起、恢复、缩放或淡入；正文视口由 Scaffold 正确扣除栏高，列表末尾无需为悬浮按钮额外留白。
 
-合法站内坐标在主题 Markdown 阅读态统一使用 Foundation v6.0.1 的门图标柔粉胶囊，600 字重、可换行且不截断，并保留 48dp 命中区；外层命中区横向按内容收缩，使传送门可与前后文字自然混排而不独占或居中整行。普通链接仍使用品牌深色下划线。编辑态传送门按文字基线参与同一行排版，保持原子编辑且不执行导航。
+合法站内坐标在主题 Markdown 阅读态统一使用 Foundation 的门图标柔粉胶囊，600 字重、可换行且不截断，并保留 48dp 命中区；外层命中区横向按内容收缩，使传送门可与前后文字自然混排而不独占或居中整行。普通链接仍使用品牌深色下划线。用户提及和 `@全体玩家` 不进入传送门：阅读与编辑态共用透明、无图标、品牌深色 600 字重原子文字，用户提及仅在阅读态进入资料页。编辑态传送门按文字基线参与同一行排版，保持原子编辑且不执行导航。
 
 创建时先恢复按账号隔离的本地 Markdown 快照并加载动态分类；分类只消费 ID、标识、名称、描述、图标、排序和可用状态，不读取或提交颜色；创作页顶栏使用明确的“发布”主按钮，分类、可见性和标签在正文前以带标题的元信息按钮呈现，正文草稿从格式工具栏中独立出来，不夹在样式按钮之间；首次保存/发布用稳定 `clientRequestId` 调用 `threadsCreate` 建立未发布主题，再携带主题、默认子贴与正文版本调用 `threadsSaveAggregate`。保存保持 `published=false`，发布必须由响应明确确认 `published=true`。
 
@@ -84,6 +84,7 @@
 - [x] 子贴正文直接位于阅读画布且没有嵌套 Card；楼层作者信息在紧凑单行内完成，头像以独立 48dp 入口进入作者主页且不触发回复，整层其余区域暴露“回复第 N 楼”点击动作；零回复不显示重复按钮，有回复时保留至少 48dp 的回复数入口。
 - [x] `subthread` 站内坐标直接打开指定子贴；`post` 坐标由服务端帖子归属事实定位，普通楼层留在主题上下文，具体回复直接进入独立讨论且返回后不循环打开。
 - [x] Markdown 内合法站内坐标复用 Foundation v6.0.1 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
+- [x] 提及、引用、行内代码和主题标签按 Foundation v6.1.0 在阅读/编辑态统一；主题流内嵌回复使用 17sp/1.8，并有组件、Codec、布局和 Golden 回归。
 - [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射，但详情题头只展示主题/子贴标题；骰子节点使用 Foundation 已结算/待掷语义色的无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`，逐骰明细仅进入 Semantics。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
 - [x] 楼层连续列表以分隔线代替逐条卡片，点击非交互正文/元信息直接回复且不吞链接、图片、回复数、更多菜单或长按；主题流预览回复与 48dp 回复数入口保持独立点击行为，楼层与独立讨论回复保留完整操作菜单。
@@ -117,8 +118,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`；Foundation `v6.0.1`（`2ca6f78`）。
+契约 `5.1.0-dev.20260817.1`；Markdown v3；后端 `f6f4406076403027891d7d20ca4256057d8ab8e0`；Foundation `v6.1.0`（`618954f`）。
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.0.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.0.1/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。
