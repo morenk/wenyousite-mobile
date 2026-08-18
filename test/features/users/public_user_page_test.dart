@@ -50,10 +50,15 @@ void main() {
     expect(find.text('累计回复'), findsOneWidget);
     expect(find.text('已关注'), findsOneWidget);
     expect(find.text('关注了你'), findsOneWidget);
-    final coverRect = tester.getRect(find.bySemanticsLabel('温柔测试员 的主页背景图'));
-    final avatarRect = tester.getRect(find.bySemanticsLabel('温柔测试员 的头像'));
+    expect(find.bySemanticsLabel('温柔测试员 的主页背景图'), findsNothing);
+    expect(
+      find.byKey(const Key('profile-identity-without-cover')),
+      findsOneWidget,
+    );
+    final avatar = find.byKey(const ValueKey('profile-avatar-温柔测试员'));
+    expect(tester.widget<Semantics>(avatar).properties.label, '温柔测试员 的头像');
+    final avatarRect = tester.getRect(avatar);
     expect(avatarRect.size, const Size.square(72));
-    expect(avatarRect.top, closeTo(coverRect.bottom - 36, 0.01));
   });
 
   testWidgets('公开用户页失败后可重试恢复', (tester) async {

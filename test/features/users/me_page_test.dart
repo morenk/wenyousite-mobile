@@ -98,7 +98,7 @@ void main() {
     expect(find.byKey(const Key('me-open-public-profile')), findsOneWidget);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
     expect(find.text('我的内容'), findsNothing);
-    await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
+    await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
     await tester.pumpAndSettle();
     expect(find.text('概览'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
@@ -141,7 +141,7 @@ void main() {
     expect(find.text('钱包余额'), findsNothing);
     expect(find.textContaining('同一份实时余额'), findsNothing);
 
-    await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
+    await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
     await tester.pumpAndSettle();
 
     expect(publicRepository.replyCalls, 1);
@@ -456,7 +456,7 @@ void main() {
         tester.getSize(find.byKey(const Key('me-profile-header'))).width,
         expectedWidth,
       );
-      await tester.drag(find.byType(NestedScrollView), const Offset(0, -520));
+      await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
       await tester.pumpAndSettle();
       final threadsTab = find.byKey(
         const ValueKey('me-content-MeContentTab.threads'),

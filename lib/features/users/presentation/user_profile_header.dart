@@ -188,6 +188,39 @@ class _ProfileIdentity extends StatelessWidget {
     final tokens = context.wenyouTokens;
     const avatarSize = 72.0;
     const avatarOverlap = avatarSize / 2;
+    if (profileCover == null) {
+      return Padding(
+        key: const Key('profile-identity-without-cover'),
+        padding: EdgeInsets.fromLTRB(
+          tokens.space16,
+          tokens.space16,
+          tokens.space16,
+          tokens.space4,
+        ),
+        child: Row(
+          children: [
+            _ProfileAvatar(username: username, avatarUrl: avatarUrl),
+            SizedBox(width: tokens.space12),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  SizedBox(width: tokens.space8),
+                  WenyouLevelBadge(level: level),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final coverHeight = constraints.maxWidth / 2;
@@ -198,7 +231,7 @@ class _ProfileIdentity extends StatelessWidget {
             children: [
               Positioned.fill(
                 bottom: avatarOverlap + tokens.space12,
-                child: _ProfileCover(cover: profileCover, username: username),
+                child: _ProfileCover(cover: profileCover!, username: username),
               ),
               Positioned(
                 left: tokens.space16,
@@ -235,14 +268,14 @@ class _ProfileIdentity extends StatelessWidget {
 class _ProfileCover extends StatelessWidget {
   const _ProfileCover({required this.cover, required this.username});
 
-  final ProfileCoverModel? cover;
+  final ProfileCoverModel cover;
   final String username;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final fallback = ColoredBox(
-      color: tokens.brandSurface,
+      color: tokens.softPanel,
       child: Center(
         child: WenyouIcon(
           WenyouIconIds.contentGallery,
@@ -251,21 +284,19 @@ class _ProfileCover extends StatelessWidget {
         ),
       ),
     );
-    final variant = cover?.preferredForMobile;
+    final variant = cover.preferredForMobile;
     return Semantics(
       image: true,
       label: '$username 的主页背景图',
-      child: variant == null
-          ? fallback
-          : WenyouCachedImage(
-              imageUrl: variant.url,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              cacheWidth: 1200,
-              cacheHeight: 600,
-              placeholder: (_, _) => fallback,
-              errorWidget: (_, _, _) => fallback,
-            ),
+      child: WenyouCachedImage(
+        imageUrl: variant.url,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        cacheWidth: 1200,
+        cacheHeight: 600,
+        placeholder: (_, _) => fallback,
+        errorWidget: (_, _, _) => fallback,
+      ),
     );
   }
 }
@@ -288,6 +319,7 @@ class _ProfileAvatar extends StatelessWidget {
       ),
     );
     return Semantics(
+      key: ValueKey('profile-avatar-$username'),
       image: true,
       label: '$username 的头像',
       child: Container(

@@ -5,6 +5,37 @@ import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dar
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 
 void main() {
+  testWidgets('没有背景图时移除封面舞台并使用紧凑资料行', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: Padding(
+            padding: EdgeInsets.all(12),
+            child: UserProfileHeader(
+              username: '无背景用户',
+              level: 2,
+              stats: [UserProfileStatItem(label: '关注', value: '0')],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final identity = find.byKey(const Key('profile-identity-without-cover'));
+    expect(identity, findsOneWidget);
+    expect(find.bySemanticsLabel('无背景用户 的主页背景图'), findsNothing);
+    expect(tester.getSize(identity).height, 92);
+    expect(find.text('无背景用户'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('个人资料背景以 2 比 1 直接展示并裁切在卡片圆角内', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
