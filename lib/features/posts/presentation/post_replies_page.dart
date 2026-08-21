@@ -44,9 +44,11 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _scrollController = ScrollController();
   final _composerDrafts = <String, String>{};
   String? _lastRevealSignature;
+  String? _revealScopeSignature;
   String? _revealAttemptReplyId;
   var _revealAttempts = 0;
   var _revealScheduled = false;
+  var _targetRevealReleased = false;
   var _openingComposer = false;
 
   String get threadId => widget.threadId;
@@ -58,6 +60,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.focusedReplyId != widget.focusedReplyId) {
       _lastRevealSignature = null;
+      _revealScopeSignature = null;
       _revealAttemptReplyId = null;
       _revealAttempts = 0;
     }
@@ -125,38 +128,42 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
           PostDiscussionPhase.ready =>
             state.root?.threadId != threadId
                 ? const _RouteMismatch()
-                : NotificationListener<ScrollMetricsNotification>(
-                    onNotification: _handleTargetLayoutChange,
-                    child: RefreshIndicator(
-                      onRefresh: () => ref.read(provider.notifier).refresh(),
-                      child: _DiscussionList(
-                        state: state,
-                        actions: actions,
-                        viewerId: viewerId,
-                        authenticated: session.isAuthenticated,
-                        focusedReplyId: focusedReplyId,
-                        targetKey: _targetKey,
-                        scrollController: _scrollController,
-                        canReport: threadContext?.canReport ?? false,
-                        canManageThread:
-                            threadContext?.canManageThread ?? false,
-                        onOrder: (order) =>
-                            ref.read(provider.notifier).setOrder(order),
-                        onAuthor: (authorId) =>
-                            ref.read(provider.notifier).setAuthor(authorId),
-                        onLoadMore: () =>
-                            ref.read(provider.notifier).loadMore(),
-                        onRetry: () =>
-                            ref.read(provider.notifier).retryTransientFailure(),
-                        onCompose: (target) =>
-                            _compose(context, ref, provider, target),
-                        onDelete: (post, root) => _delete(
-                          context,
-                          ref,
-                          provider,
-                          actionsProvider,
-                          post,
-                          root: root,
+                : NotificationListener<ScrollNotification>(
+                    onNotification: _handleUserScroll,
+                    child: NotificationListener<ScrollMetricsNotification>(
+                      onNotification: _handleTargetLayoutChange,
+                      child: RefreshIndicator(
+                        onRefresh: () => ref.read(provider.notifier).refresh(),
+                        child: _DiscussionList(
+                          state: state,
+                          actions: actions,
+                          viewerId: viewerId,
+                          authenticated: session.isAuthenticated,
+                          focusedReplyId: focusedReplyId,
+                          targetKey: _targetKey,
+                          scrollController: _scrollController,
+                          canReport: threadContext?.canReport ?? false,
+                          canManageThread:
+                              threadContext?.canManageThread ?? false,
+                          onOrder: (order) =>
+                              ref.read(provider.notifier).setOrder(order),
+                          onAuthor: (authorId) =>
+                              ref.read(provider.notifier).setAuthor(authorId),
+                          onLoadMore: () =>
+                              ref.read(provider.notifier).loadMore(),
+                          onRetry: () => ref
+                              .read(provider.notifier)
+                              .retryTransientFailure(),
+                          onCompose: (target) =>
+                              _compose(context, ref, provider, target),
+                          onDelete: (post, root) => _delete(
+                            context,
+                            ref,
+                            provider,
+                            actionsProvider,
+                            post,
+                            root: root,
+                          ),
                         ),
                       ),
                     ),
@@ -189,9 +196,21 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
 
   void _revealReplyWhenReady(PostDiscussionState state) {
     final replyId = focusedReplyId;
-    if (replyId == null ||
-        state.phase != PostDiscussionPhase.ready ||
-        !state.replies.any((reply) => reply.id == replyId) ||
+    if (replyId == null || state.phase != PostDiscussionPhase.ready) {
+      return;
+    }
+    final scopeSignature =
+        '$replyId:${state.order.name}:${state.authorId ?? ''}';
+    if (_revealScopeSignature != scopeSignature) {
+      _revealScopeSignature = scopeSignature;
+      _lastRevealSignature = null;
+      _revealAttemptReplyId = null;
+      _revealAttempts = 0;
+      _revealScheduled = false;
+      _targetRevealReleased = false;
+    }
+    if (!state.replies.any((reply) => reply.id == replyId) ||
+        _targetRevealReleased ||
         _revealScheduled) {
       return;
     }
@@ -210,7 +229,11 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _revealScheduled = false;
       final targetContext = _targetKey.currentContext;
-      if (!mounted) return;
+      if (!mounted ||
+          _targetRevealReleased ||
+          _revealScopeSignature != scopeSignature) {
+        return;
+      }
       if (targetContext != null) {
         Scrollable.ensureVisible(
           targetContext,
@@ -236,11 +259,26 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   }
 
   bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
-    if (focusedReplyId == null || _lastRevealSignature == null) return false;
+    if (focusedReplyId == null ||
+        _lastRevealSignature == null ||
+        _targetRevealReleased) {
+      return false;
+    }
     _lastRevealSignature = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() {});
     });
+    return false;
+  }
+
+  bool _handleUserScroll(ScrollNotification notification) {
+    final startsUserScroll =
+        notification.depth == 0 &&
+        notification.metrics.axis == Axis.vertical &&
+        notification is ScrollStartNotification &&
+        notification.dragDetails != null &&
+        _revealScopeSignature != null;
+    if (startsUserScroll) _targetRevealReleased = true;
     return false;
   }
 

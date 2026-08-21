@@ -588,7 +588,7 @@ void main() {
     );
   });
 
-  testWidgets('首屏外目标楼层会在懒加载构建后滚入真实视口', (tester) async {
+  testWidgets('首屏外目标楼层定位后会释放用户滚动', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -636,6 +636,27 @@ void main() {
     final targetRect = tester.getRect(targetFinder);
     expect(targetRect.bottom, greaterThan(0));
     expect(targetRect.top, lessThan(640));
+
+    final scrollView = tester.widget<CustomScrollView>(
+      find.byType(CustomScrollView),
+    );
+    final scrollController = scrollView.controller!;
+    final locatedOffset = scrollController.offset;
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 240));
+    await tester.pumpAndSettle();
+    final userOffset = scrollController.offset;
+    expect(userOffset, lessThan(locatedOffset - 100));
+
+    final scrollContext = tester.element(find.byType(CustomScrollView));
+    ScrollMetricsNotification(
+      metrics: scrollController.position,
+      context: scrollContext,
+    ).dispatch(scrollContext);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(scrollController.offset, closeTo(userOffset, 1));
   });
 
   testWidgets('发表楼层后保留已加载窗口并定位到新楼层', (tester) async {

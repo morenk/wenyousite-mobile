@@ -50,10 +50,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _targetKey = GlobalKey();
   final _composerDrafts = <String, String>{};
   String? _lastRevealSignature;
+  String? _revealScopeSignature;
   String? _lastOpenedReplyTargetId;
   String? _revealAttemptTargetId;
   var _revealAttempts = 0;
   var _revealScheduled = false;
+  var _targetRevealReleased = false;
 
   @override
   void initState() {
@@ -74,6 +76,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.targetPostId != widget.targetPostId) {
       _lastRevealSignature = null;
+      _revealScopeSignature = null;
       _lastOpenedReplyTargetId = null;
       _revealAttemptTargetId = null;
       _revealAttempts = 0;
@@ -151,8 +154,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           failure: state.failure,
           onRetry: () => ref.read(provider.notifier).loadInitial(),
         ),
-        ThreadDetailPhase.ready =>
-          NotificationListener<ScrollMetricsNotification>(
+        ThreadDetailPhase.ready => NotificationListener<ScrollNotification>(
+          onNotification: _handleUserScroll,
+          child: NotificationListener<ScrollMetricsNotification>(
             onNotification: _handleTargetLayoutChange,
             child: RefreshIndicator(
               onRefresh: () => ref.read(provider.notifier).refresh(),
@@ -177,6 +181,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               ),
             ),
           ),
+        ),
       },
       bottomNavigationBar: state.phase == ThreadDetailPhase.ready
           ? ThreadDetailBottomBar(
@@ -414,9 +419,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (target == null ||
         target.focusedReplyId != null ||
         target.threadId != widget.threadId ||
-        state.selectedSubthreadId != target.subthreadId ||
-        state.isLoadingFloors ||
-        _revealScheduled) {
+        state.selectedSubthreadId != target.subthreadId) {
+      return;
+    }
+    final scopeSignature =
+        '${target.requestedPostId}:${state.floorOrder.name}:'
+        '${state.selectedSubthreadId}';
+    if (_revealScopeSignature != scopeSignature) {
+      _revealScopeSignature = scopeSignature;
+      _lastRevealSignature = null;
+      _revealAttemptTargetId = null;
+      _revealAttempts = 0;
+      _revealScheduled = false;
+      _targetRevealReleased = false;
+    }
+    if (state.isLoadingFloors || _targetRevealReleased || _revealScheduled) {
       return;
     }
     final displayedFloors = _floorsWithTarget(
@@ -439,7 +456,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _revealScheduled = false;
       final targetContext = _targetKey.currentContext;
-      if (!mounted) return;
+      if (!mounted ||
+          _targetRevealReleased ||
+          _revealScopeSignature != scopeSignature) {
+        return;
+      }
       if (targetContext != null) {
         Scrollable.ensureVisible(
           targetContext,
@@ -465,13 +486,26 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
-    if (widget.targetPostId == null || _lastRevealSignature == null) {
+    if (widget.targetPostId == null ||
+        _lastRevealSignature == null ||
+        _targetRevealReleased) {
       return false;
     }
     _lastRevealSignature = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() {});
     });
+    return false;
+  }
+
+  bool _handleUserScroll(ScrollNotification notification) {
+    final startsUserScroll =
+        notification.depth == 0 &&
+        notification.metrics.axis == Axis.vertical &&
+        notification is ScrollStartNotification &&
+        notification.dragDetails != null &&
+        _revealScopeSignature != null;
+    if (startsUserScroll) _targetRevealReleased = true;
     return false;
   }
 

@@ -717,7 +717,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('首屏外目标回复会在懒加载构建后滚入真实视口', (tester) async {
+  testWidgets('首屏外目标回复定位后会释放用户滚动', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -757,6 +757,32 @@ void main() {
     final targetRect = tester.getRect(targetFinder);
     expect(targetRect.bottom, greaterThan(0));
     expect(targetRect.top, lessThan(640));
+
+    final scrollView = tester.widget<CustomScrollView>(
+      find.byKey(const Key('post-replies-list')),
+    );
+    final scrollController = scrollView.controller!;
+    final locatedOffset = scrollController.offset;
+    await tester.drag(
+      find.byKey(const Key('post-replies-list')),
+      const Offset(0, 240),
+    );
+    await tester.pumpAndSettle();
+    final userOffset = scrollController.offset;
+    expect(userOffset, lessThan(locatedOffset - 100));
+
+    final scrollContext = tester.element(
+      find.byKey(const Key('post-replies-list')),
+    );
+    ScrollMetricsNotification(
+      metrics: scrollController.position,
+      context: scrollContext,
+    ).dispatch(scrollContext);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(scrollController.offset, closeTo(userOffset, 1));
   });
 
   testWidgets('360dp 独立讨论保持正文优先视觉基线', (tester) async {
