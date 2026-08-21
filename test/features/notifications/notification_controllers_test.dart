@@ -49,6 +49,175 @@ void main() {
     ]);
   });
 
+  test('加载更多按通知 ID 去重并保留已有顺序', () async {
+    final repository = _FakeRepository(
+      pages: {
+        (NotificationFilters.all, null): CursorPage(
+          items: [_item('notification-1'), _item('notification-2')],
+          cursor: 'next-page',
+          hasMore: true,
+        ),
+        (NotificationFilters.all, 'next-page'): CursorPage(
+          items: [_item('notification-2'), _item('notification-3')],
+          hasMore: false,
+        ),
+      },
+    );
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(unread.dispose);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    await controller.loadMore();
+
+    expect(controller.state.items.map((item) => item.id), [
+      'notification-1',
+      'notification-2',
+      'notification-3',
+    ]);
+  });
+
+  test('失效游标从当前筛选首页重载', () async {
+    var firstPageCalls = 0;
+    final subscription = NotificationFilters.byId('subscription');
+    final repository = _FakeRepository(
+      fetchPageOperation: (filter, cursor) async {
+        if (filter == NotificationFilters.all) {
+          return const CursorPage(items: [], hasMore: false);
+        }
+        if (cursor == 'expired-cursor') {
+          throw const ApiFailure(
+            userMessage: '列表位置已失效，正在重新加载。',
+            businessCode: 40007,
+            requestId: 'invalid-cursor-request',
+          );
+        }
+        firstPageCalls += 1;
+        return firstPageCalls == 1
+            ? CursorPage(
+                items: [_item('stale-notification')],
+                cursor: 'expired-cursor',
+                hasMore: true,
+              )
+            : CursorPage(items: [_item('fresh-notification')], hasMore: false);
+      },
+    );
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(unread.dispose);
+    addTearDown(controller.dispose);
+    await _settle();
+    await controller.selectFilter(subscription);
+
+    await controller.loadMore();
+
+    expect(controller.state.filter, subscription);
+    expect(controller.state.items.single.id, 'fresh-notification');
+    expect(controller.state.hasMore, isFalse);
+    expect(repository.requests, [
+      (NotificationFilters.all, null),
+      (subscription, null),
+      (subscription, 'expired-cursor'),
+      (subscription, null),
+    ]);
+  });
+
+  test('筛选切换后丢弃旧筛选迟到响应', () async {
+    final stalePage = Completer<CursorPage<NotificationListItem>>();
+    final subscription = NotificationFilters.byId('subscription');
+    final repository = _FakeRepository(
+      fetchPageOperation: (filter, cursor) {
+        if (filter == NotificationFilters.all) return stalePage.future;
+        return Future.value(
+          CursorPage(items: [_item('fresh-notification')], hasMore: false),
+        );
+      },
+    );
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(unread.dispose);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    await controller.selectFilter(subscription);
+    stalePage.complete(
+      CursorPage(items: [_item('stale-notification')], hasMore: false),
+    );
+    await _settle();
+
+    expect(controller.state.filter, subscription);
+    expect(controller.state.items.single.id, 'fresh-notification');
+  });
+
+  test('普通分页失败保留列表并携带问题编号', () async {
+    final repository = _FakeRepository(
+      fetchPageOperation: (filter, cursor) async {
+        if (cursor == null) {
+          return CursorPage(
+            items: [_item('notification-1')],
+            cursor: 'next-page',
+            hasMore: true,
+          );
+        }
+        throw const ApiFailure(
+          userMessage: '加载失败',
+          requestId: 'load-more-request',
+        );
+      },
+    );
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(unread.dispose);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    await controller.loadMore();
+
+    expect(controller.state.items.single.id, 'notification-1');
+    expect(controller.state.cursor, 'next-page');
+    expect(controller.state.loadMoreFailure?.requestId, 'load-more-request');
+  });
+
+  test('同一分页在途时忽略重复加载请求', () async {
+    final pendingPage = Completer<CursorPage<NotificationListItem>>();
+    final repository = _FakeRepository(
+      fetchPageOperation: (filter, cursor) {
+        if (cursor == null) {
+          return Future.value(
+            CursorPage(
+              items: [_item('notification-1')],
+              cursor: 'next-page',
+              hasMore: true,
+            ),
+          );
+        }
+        return pendingPage.future;
+      },
+    );
+    final unread = NotificationUnreadController(repository, autoStart: false);
+    final controller = NotificationListController(repository, unread);
+    addTearDown(unread.dispose);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    final first = controller.loadMore();
+    final second = controller.loadMore();
+    expect(
+      repository.requests.where((request) => request.$2 == 'next-page'),
+      hasLength(1),
+    );
+    pendingPage.complete(
+      CursorPage(items: [_item('notification-2')], hasMore: false),
+    );
+    await Future.wait([first, second]);
+
+    expect(controller.state.items.map((item) => item.id), [
+      'notification-1',
+      'notification-2',
+    ]);
+  });
+
   test('单条已读乐观更新；失败回滚并重新校准角标', () async {
     final pending = Completer<void>();
     final repository = _FakeRepository(
@@ -163,10 +332,11 @@ void main() {
 
 class _FakeRepository implements NotificationRepository {
   _FakeRepository({
-    required this.pages,
+    this.pages = const {},
     this.unreadCount = 0,
     this.setReadOperation,
     this.markAllFailure,
+    this.fetchPageOperation,
   });
 
   final Map<(NotificationFilter, String?), CursorPage<NotificationListItem>>
@@ -174,6 +344,11 @@ class _FakeRepository implements NotificationRepository {
   final int unreadCount;
   final Future<void> Function(String id)? setReadOperation;
   final ApiFailure? markAllFailure;
+  final Future<CursorPage<NotificationListItem>> Function(
+    NotificationFilter filter,
+    String? cursor,
+  )?
+  fetchPageOperation;
   final List<(NotificationFilter, String?)> requests = [];
   final List<String> removedIds = [];
   int markAllCalls = 0;
@@ -184,6 +359,9 @@ class _FakeRepository implements NotificationRepository {
     String? cursor,
   }) async {
     requests.add((filter, cursor));
+    if (fetchPageOperation != null) {
+      return fetchPageOperation!(filter, cursor);
+    }
     return pages[(filter, cursor)]!;
   }
 

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/request_epoch.dart';
+import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_repository_ports.dart';
@@ -29,7 +31,7 @@ class NotificationUnreadController
       if (!mounted) return;
       state = NotificationUnreadState(
         count: state.count,
-        failure: _asFailure(error, '未读通知数同步失败。'),
+        failure: mapApplicationFailure(error, '未读通知数同步失败。'),
       );
     }
   }
@@ -65,7 +67,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
 
   final NotificationRepository _repository;
   final NotificationUnreadController _unread;
-  var _loadEpoch = 0;
+  final _requestEpoch = RequestEpoch();
 
   Future<void> selectFilter(NotificationFilter filter) async {
     if (filter == state.filter) return;
@@ -74,11 +76,11 @@ class NotificationListController extends StateNotifier<NotificationListState> {
 
   Future<void> load({NotificationFilter? filter}) async {
     final nextFilter = filter ?? state.filter;
-    final epoch = ++_loadEpoch;
+    final epoch = _requestEpoch.begin();
     state = NotificationListState.loading(filter: nextFilter);
     try {
       final page = await _repository.fetchPage(filter: nextFilter);
-      if (!mounted || epoch != _loadEpoch) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = NotificationListState(
         phase: NotificationListPhase.ready,
         filter: nextFilter,
@@ -87,11 +89,11 @@ class NotificationListController extends StateNotifier<NotificationListState> {
         hasMore: page.hasMore,
       );
     } on Object catch (error) {
-      if (!mounted || epoch != _loadEpoch) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = NotificationListState(
         phase: NotificationListPhase.failed,
         filter: nextFilter,
-        failure: _asFailure(error, '通知列表加载失败，请稍后重试。'),
+        failure: mapApplicationFailure(error, '通知列表加载失败，请稍后重试。'),
       );
     }
   }
@@ -102,7 +104,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
         !state.hasMore) {
       return;
     }
-    final epoch = _loadEpoch;
+    final epoch = _requestEpoch.current;
     final before = state;
     state = _readyFrom(before, isLoadingMore: true, clearFailures: true);
     try {
@@ -110,21 +112,26 @@ class NotificationListController extends StateNotifier<NotificationListState> {
         filter: before.filter,
         cursor: before.cursor,
       );
-      if (!mounted || epoch != _loadEpoch) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = NotificationListState(
         phase: NotificationListPhase.ready,
         filter: before.filter,
-        items: List.unmodifiable([...before.items, ...page.items]),
+        items: mergeUniqueBy(
+          before.items,
+          page.items,
+          keyOf: (item) => item.id,
+        ),
         cursor: page.cursor,
         hasMore: page.hasMore,
       );
     } on Object catch (error) {
-      if (!mounted || epoch != _loadEpoch) return;
-      state = _readyFrom(
-        before,
-        loadMoreFailure: _asFailure(error, '更多通知加载失败，请稍后重试。'),
-        clearFailures: true,
-      );
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
+      final failure = mapApplicationFailure(error, '更多通知加载失败，请稍后重试。');
+      if (failure.isInvalidCursor) {
+        await load(filter: before.filter);
+        return;
+      }
+      state = _readyFrom(before, loadMoreFailure: failure, clearFailures: true);
     }
   }
 
@@ -157,7 +164,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       if (!mounted) return false;
       state = _readyFrom(
         before,
-        actionFailure: _asFailure(error, '通知没有标记为已读，请稍后重试。'),
+        actionFailure: mapApplicationFailure(error, '通知没有标记为已读，请稍后重试。'),
       );
       unawaited(_unread.refresh());
       return false;
@@ -202,7 +209,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       if (!mounted) return false;
       state = _readyFrom(
         before,
-        actionFailure: _asFailure(error, '通知没有删除，请稍后重试。'),
+        actionFailure: mapApplicationFailure(error, '通知没有删除，请稍后重试。'),
       );
       return false;
     }
@@ -234,7 +241,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       if (!mounted) return false;
       state = _readyFrom(
         before,
-        actionFailure: _asFailure(error, '全部标为已读失败，请稍后重试。'),
+        actionFailure: mapApplicationFailure(error, '全部标为已读失败，请稍后重试。'),
       );
       unawaited(_unread.refresh());
       return false;
@@ -288,7 +295,3 @@ final notificationListControllerProvider =
         notificationUnreadControllerProvider,
       ],
     );
-
-ApiFailure _asFailure(Object error, String fallback) {
-  return mapApplicationFailure(error, fallback);
-}
