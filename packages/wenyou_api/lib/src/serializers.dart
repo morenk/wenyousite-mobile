@@ -209,6 +209,7 @@ import 'package:wenyou_api/src/model/mark_direct_conversation_read_dto.dart';
 import 'package:wenyou_api/src/model/media_confirm_upload200_response.dart';
 import 'package:wenyou_api/src/model/media_get_media200_response.dart';
 import 'package:wenyou_api/src/model/media_get_upload_url201_response.dart';
+import 'package:wenyou_api/src/model/media_reissue_upload_url200_response.dart';
 import 'package:wenyou_api/src/model/media_response_dto.dart';
 import 'package:wenyou_api/src/model/mention_candidate_dto.dart';
 import 'package:wenyou_api/src/model/mention_candidates_response_dto.dart';
@@ -663,6 +664,7 @@ part 'serializers.g.dart';
   MediaConfirmUpload200Response,
   MediaGetMedia200Response,
   MediaGetUploadUrl201Response,
+  MediaReissueUploadUrl200Response,
   MediaResponseDto,
   MentionCandidateDto,
   MentionCandidatesResponseDto,

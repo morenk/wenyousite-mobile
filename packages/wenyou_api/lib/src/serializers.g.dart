@@ -240,6 +240,7 @@ Serializers _$serializers =
           ..add(MediaConfirmUpload200Response.serializer)
           ..add(MediaGetMedia200Response.serializer)
           ..add(MediaGetUploadUrl201Response.serializer)
+          ..add(MediaReissueUploadUrl200Response.serializer)
           ..add(MediaResponseDto.serializer)
           ..add(MediaResponseDtoStatusEnum.serializer)
           ..add(MentionCandidateDto.serializer)

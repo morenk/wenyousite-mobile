@@ -195,6 +195,9 @@ class BusinessErrorCode extends EnumClass {
   @BuiltValueEnumConst(wireNumber: 40418)
   static const BusinessErrorCode MODERATION_APPEAL_NOT_FOUND = _$MODERATION_APPEAL_NOT_FOUND;
   /// 稳定业务错误码；名称和值来源于 ErrorCode
+  @BuiltValueEnumConst(wireNumber: 40419)
+  static const BusinessErrorCode MEDIA_OBJECT_MISSING = _$MEDIA_OBJECT_MISSING;
+  /// 稳定业务错误码；名称和值来源于 ErrorCode
   @BuiltValueEnumConst(wireNumber: 40900)
   static const BusinessErrorCode CONFLICT = _$CONFLICT;
   /// 稳定业务错误码；名称和值来源于 ErrorCode

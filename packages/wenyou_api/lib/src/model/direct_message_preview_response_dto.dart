@@ -13,7 +13,7 @@ part 'direct_message_preview_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [senderId]
-/// * [contentPreview]
+/// * [contentPreview] - 去除传送门语法并隐藏邀请 token 后的纯文本预览，最多 120 字符
 /// * [hasImage]
 /// * [hasSticker]
 /// * [isRecalled]
@@ -26,6 +26,7 @@ abstract class DirectMessagePreviewResponseDto implements Built<DirectMessagePre
   @BuiltValueField(wireName: r'senderId')
   String get senderId;
 
+  /// 去除传送门语法并隐藏邀请 token 后的纯文本预览，最多 120 字符
   @BuiltValueField(wireName: r'contentPreview')
   String? get contentPreview;
 

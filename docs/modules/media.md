@@ -25,7 +25,7 @@
 
 ## 5. API operationId 与生成类型
 
-- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
+- 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`；契约已提供 `mediaReissueUploadUrl`，当前等待同一媒体重签与重传切片接入。
 - 头像：`usersSetAvatar`、`usersRemoveAvatar`。
 - 主页背景：`usersSetProfileCover`、`usersRemoveProfileCover`。
 - 主要生成类型：`CreateUploadUrlDto`、`ConfirmUploadDto`、`MediaResponseDto`、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
@@ -46,7 +46,7 @@
 
 选图、预览解码或裁剪生成失败时显示明确错误，并提供重新选择或原地重试；头像与主页背景的选图失败在页内展示带问题编号的错误横幅并主动滚入视野。主页背景上传失败后同样主动显示，并根据已保留的裁剪结果和 `mediaId` 显示“重新选择 / 重试上传 / 重试设置”，不会静默失败。
 
-用户取消选择或关闭取景窗口不提示错误；上传期间显示阶段和可用进度并允许取消。空文件、超限、未知类型与无法解码的图片在申请地址前拒绝；对象存储失败不会调用确认；确认缺失、处理失败和轮询超时都不写入业务内容。失败保留当前 Markdown 或已确认的裁剪结果，用户可直接重试；取消会清除重试输入。处理中禁止同时保存/发布，避免提交不存在的图片。头像上传失败复用 1:1 输出，设置失败保留媒体 ID 和请求 ID，并只重试 `usersSetAvatar`；背景按缺失画幅继续上传并在双 `mediaId` 完成后重试原子设置；移除失败保留当前图片。原图页保存/收藏失败时不退出查看任务，在图片上方保留带问题编号的失败横幅与重试入口；成功后才使用短确认。
+用户取消选择或关闭取景窗口不提示错误；上传期间显示阶段和可用进度并允许取消。空文件、超限、未知类型与无法解码的图片在申请地址前拒绝；对象存储失败不会调用确认；确认缺失、`MEDIA_OBJECT_MISSING`、处理失败和轮询超时都不写入业务内容。当前 `MEDIA_OBJECT_MISSING` 沿用上传失败并保留同一裁剪输入供用户明确重试，不在后台自动重传；后续切片才会为原 `mediaId` 重签 PUT 地址。失败保留当前 Markdown 或已确认的裁剪结果，用户可直接重试；取消会清除重试输入。处理中禁止同时保存/发布，避免提交不存在的图片。头像上传失败复用 1:1 输出，设置失败保留媒体 ID 和请求 ID，并只重试 `usersSetAvatar`；背景按缺失画幅继续上传并在双 `mediaId` 完成后重试原子设置；移除失败保留当前图片。原图页保存/收藏失败时不退出查看任务，在图片上方保留带问题编号的失败横幅与重试入口；成功后才使用短确认。
 
 ## 10. 跨模块约束
 
@@ -68,11 +68,11 @@
 
 ## 12. 已知限制和后续功能
 
-服务端用户 DTO 未提供 thumbnail/medium 字段，因此移动端只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，不写入本地快照或业务状态，也不提供后台队列；页面释放、主动取消或进程终止后需重新选择图片。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
+服务端用户 DTO 未提供 thumbnail/medium 字段，因此移动端只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，不写入本地快照或业务状态，也不提供后台队列；页面释放、主动取消或进程终止后需重新选择图片。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.2.0-dev.20260818.1`；Markdown v3；后端 `534c454bafc64718f5b93d52d66e8888db330dcd`；Foundation `v6.2.0`（`4ad1eb8`）。
+契约 `5.4.0-dev.20260821.1`；Markdown v3；后端 `5cad10cdfa05b04dbde8a44add8e7b89d20bdb6a`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 

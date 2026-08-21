@@ -23,7 +23,8 @@ class InternalReferencePaste {
   final String label;
   final InternalReference reference;
 
-  String get serialized => '[$label](${reference.location})';
+  String get serialized =>
+      '[${_escapeInternalReferenceLabel(label)}](${reference.location})';
 }
 
 sealed class InternalReferenceTextSegment {
@@ -52,13 +53,17 @@ final _discussionPathPattern = RegExp(
 );
 final _invitePathPattern = RegExp(r'^/join/([^/]+)$', unicode: true);
 final _candidatePattern = RegExp(
-  r'\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|https://wenyou\.site/(?:threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?|join/[a-z0-9_-]+)(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?|/(?:threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?|join/[a-z0-9_-]+)(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?',
+  r'\[((?:\\[\\\[\]]|[^\[\]\\\r\n])+)\]\(([^)\r\n]+)\)|https://(?:www\.)?wenyou\.site/(?:threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?|join/[a-z0-9_-]+)(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?|/(?:threads/[a-z0-9_-]+(?:/posts/[a-z0-9_-]+/replies)?|join/[a-z0-9_-]+)(?:\?[^\s<>\])}.,!;:，。！？；：、]+)?',
   caseSensitive: false,
   unicode: true,
 );
 final _trailingPunctuationPattern = RegExp(r'[.,!?;:，。！？；：、]+$', unicode: true);
-final _relativeBoundaryPattern = RegExp(
+final _bareLeftBoundaryPattern = RegExp(
   r'''[\s([{\u0022'，。！？；：、]''',
+  unicode: true,
+);
+final _bareRightBoundaryPattern = RegExp(
+  r'''[\s)\]}\u0022'.,!?;:，。！？；：、]''',
   unicode: true,
 );
 
@@ -76,7 +81,7 @@ InternalReference? parseInternalReference(String input) {
   }
   if (!relative &&
       (uri.scheme != 'https' ||
-          uri.host.toLowerCase() != 'wenyou.site' ||
+          !_isProductionHost(uri.host) ||
           (uri.hasPort && uri.port != 443) ||
           uri.userInfo.isNotEmpty)) {
     return null;
@@ -89,8 +94,25 @@ InternalReference? parseInternalReference(String input) {
     if (threadId == null) return null;
     final subthreadId = _singleQueryValue(uri, 'subthread');
     final postId = _singleQueryValue(uri, 'post');
+    if (postId != null) {
+      if (!_hasOnlyQueries(uri, {
+            'post',
+            if (subthreadId != null) 'subthread',
+          }) ||
+          !_idPattern.hasMatch(postId) ||
+          (subthreadId != null && !_idPattern.hasMatch(subthreadId))) {
+        return null;
+      }
+      return InternalReference(
+        kind: InternalReferenceKind.floor,
+        location: Uri(
+          path: '/threads/$threadId',
+          queryParameters: {'post': postId},
+        ),
+      );
+    }
     if (subthreadId != null) {
-      if (!_hasOnlyQuery(uri, 'subthread') ||
+      if (!_hasOnlyQueries(uri, {'subthread'}) ||
           !_idPattern.hasMatch(subthreadId)) {
         return null;
       }
@@ -99,18 +121,6 @@ InternalReference? parseInternalReference(String input) {
         location: Uri(
           path: '/threads/$threadId',
           queryParameters: {'subthread': subthreadId},
-        ),
-      );
-    }
-    if (postId != null) {
-      if (!_hasOnlyQuery(uri, 'post') || !_idPattern.hasMatch(postId)) {
-        return null;
-      }
-      return InternalReference(
-        kind: InternalReferenceKind.floor,
-        location: Uri(
-          path: '/threads/$threadId',
-          queryParameters: {'post': postId},
         ),
       );
     }
@@ -169,7 +179,7 @@ InternalReferencePaste? resolveInternalReferencePaste({
   final label = selectedLabel.isEmpty
       ? internalReferenceDefaultLabel
       : selectedLabel;
-  if (label.contains(']') || label.contains('\n') || label.contains('\r')) {
+  if (label.contains('\n') || label.contains('\r')) {
     return null;
   }
   return InternalReferencePaste(label: label, reference: reference);
@@ -185,7 +195,10 @@ List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {
       );
     }
     final candidate = match.group(0)!;
-    final label = match.group(1)?.trim();
+    final rawLabel = match.group(1)?.trim();
+    final label = rawLabel == null
+        ? null
+        : _unescapeInternalReferenceLabel(rawLabel);
     final markdownLocation = match.group(2)?.trim();
     final trailing = markdownLocation == null
         ? _trailingPunctuationPattern.firstMatch(candidate)?.group(0) ?? ''
@@ -195,12 +208,10 @@ List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {
         (trailing.isEmpty
             ? candidate
             : candidate.substring(0, candidate.length - trailing.length));
-    final previousCharacter = match.start == 0 ? '' : value[match.start - 1];
-    final hasRelativeBoundary =
-        !candidate.startsWith('/') ||
-        previousCharacter.isEmpty ||
-        _relativeBoundaryPattern.hasMatch(previousCharacter);
-    final reference = hasRelativeBoundary
+    final hasBareBoundaries =
+        markdownLocation != null ||
+        _hasBareBoundaries(value, match.start, match.end);
+    final reference = hasBareBoundaries
         ? parseInternalReference(location)
         : null;
     if (reference == null) {
@@ -235,6 +246,45 @@ String formatInternalReferencePreview(String value) {
   }).join();
 }
 
+bool _isProductionHost(String host) {
+  final normalized = host.toLowerCase();
+  return normalized == 'wenyou.site' || normalized == 'www.wenyou.site';
+}
+
+bool _hasBareBoundaries(String source, int start, int end) {
+  if (start > 0 && !_bareLeftBoundaryPattern.hasMatch(source[start - 1])) {
+    return false;
+  }
+  if (end < source.length && !_bareRightBoundaryPattern.hasMatch(source[end])) {
+    return false;
+  }
+  return true;
+}
+
+String _escapeInternalReferenceLabel(String value) {
+  return value
+      .replaceAll(r'\', r'\\')
+      .replaceAll('[', r'\[')
+      .replaceAll(']', r'\]');
+}
+
+String _unescapeInternalReferenceLabel(String value) {
+  final output = StringBuffer();
+  for (var index = 0; index < value.length; index++) {
+    final character = value[index];
+    if (character == r'\' && index + 1 < value.length) {
+      final escaped = value[index + 1];
+      if (escaped == r'\' || escaped == '[' || escaped == ']') {
+        output.write(escaped);
+        index += 1;
+        continue;
+      }
+    }
+    output.write(character);
+  }
+  return output.toString();
+}
+
 String? _decodedId(String? value) {
   if (value == null) return null;
   try {
@@ -264,4 +314,11 @@ bool _hasOnlyQuery(Uri uri, String? allowed) {
   if (allowed == null) return uri.queryParametersAll.isEmpty;
   return uri.queryParametersAll.length == 1 &&
       uri.queryParametersAll[allowed]?.length == 1;
+}
+
+bool _hasOnlyQueries(Uri uri, Set<String> allowed) {
+  return uri.queryParametersAll.length == allowed.length &&
+      uri.queryParametersAll.entries.every(
+        (entry) => allowed.contains(entry.key) && entry.value.length == 1,
+      );
 }

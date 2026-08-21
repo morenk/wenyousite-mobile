@@ -1,5 +1,18 @@
 # API 合同变更
 
+## 5.4.0-dev.20260821.1
+
+- 新增 `POST /media/:id/upload-url`：仅为本人仍处于 `UPLOADING` 的媒体重新签发 PUT 地址，保持原 `mediaId`、对象 key 和公开 URL，不重复创建记录或计入小时上传配额。
+- `POST /media/upload-done` 在对象尚不存在时返回 HTTP 404 / `MEDIA_OBJECT_MISSING`，客户端可据此重签并重传同一媒体；确认的幂等和处理状态响应保持不变。
+- 媒体引用新增头像、帖子正文和草稿正文的结构化关系，并以 `Media.orphanedAt` 维护已完成媒体的引用宽限期；现有 URL 响应与私聊、PRIVATE 内容访问语义不变。
+
+## 5.3.0-dev.20260820.1
+
+- 站内传送门 v1 接受 `wenyou.site`、`www.wenyou.site` 与相对坐标并统一规范化为相对地址；命名标签支持反斜线和方括号转义，裸地址要求完整边界。
+- 同一主题坐标同时含 `post` 与 `subthread` 时固定以 `post` 为准并清理多余参数；分享地址只携带内容坐标，不携带排序等界面状态。
+- 私聊 `contentPreview` 字段形状不变，语义调整为去除传送门语法、规范化空白并隐藏邀请 token 后的 120 字符纯文本；完整消息正文保持原字符串。Outbox 与 FCM 仍只携带必要 ID。
+- 站内传送门 fixture 新增 `www`、转义标签、裸地址边界、精确坐标优先级和私聊预览脱敏用例；旧字符串正文无需迁移。
+
 ## 5.2.0-dev.20260818.1
 
 - 动态收藏接入私有收藏夹：`POST /moments/:id/bookmark` 可选传 `folderId`，新增 `PATCH /moments/:id/bookmark` 移动收藏，`GET /moments/bookmarks` 可按 `folderId` 筛选并仅在本人响应附带 `bookmarkFolderId`。

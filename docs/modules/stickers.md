@@ -44,7 +44,7 @@
 
 ## 10. 跨模块约束
 
-media application 负责相册选择与安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL。视觉只使用 Foundation v6.1.0 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
+media application 负责相册选择与安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL。视觉只使用 Foundation v6.2.0 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
 
 ## 11. 测试场景与验收条件
 
@@ -61,7 +61,7 @@ media application 负责相册选择与安全上传，stickers presentation 只�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.2.0-dev.20260818.1`；Markdown v3；后端 `534c454bafc64718f5b93d52d66e8888db330dcd`；Foundation `v6.1.0`（`618954f`）。
+契约 `5.4.0-dev.20260821.1`；Markdown v3；后端 `5cad10cdfa05b04dbde8a44add8e7b89d20bdb6a`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 

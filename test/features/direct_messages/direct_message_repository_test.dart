@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -83,6 +86,41 @@ void main() {
     expect(lookup.contactState, DirectContactState.accepted);
     expect(conversation.otherUser.username, '小油');
     expect(messages.items.single.content, '你好');
+  });
+
+  test('会话列表直接消费服务端脱敏预览且不恢复邀请凭据', () async {
+    final fixture =
+        jsonDecode(
+              File(
+                'contracts/internal-reference-v1-fixtures.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, Object?>;
+    final cases = fixture['directMessagePreviewCases']! as List<Object?>;
+
+    for (final rawCase in cases) {
+      final testCase = rawCase! as Map<String, Object?>;
+      final preview = testCase['preview']! as String;
+      final api = _MockDirectMessagesApi();
+      when(
+        () => api.directConversationsFindAll(view: 'INBOX', limit: 20),
+      ).thenAnswer((_) async => _conversationListResponse(preview: preview));
+
+      final page = await ApiDirectMessageRepository(
+        api,
+      ).fetchConversations(view: DirectConversationView.inbox);
+
+      expect(
+        page.items.single.lastMessage?.content,
+        preview,
+        reason: testCase['id']! as String,
+      );
+      expect(
+        page.items.single.lastMessage?.content,
+        isNot(contains('/join/')),
+        reason: testCase['id']! as String,
+      );
+    }
   });
 
   test('创建、发送、处理请求、归档、已读和撤回使用生成 DTO', () async {
@@ -338,12 +376,12 @@ DirectMessageUserResponseDto _userDto() {
   );
 }
 
-DirectMessagePreviewResponseDto _previewDto() {
+DirectMessagePreviewResponseDto _previewDto({String content = '你好'}) {
   return DirectMessagePreviewResponseDto(
     (builder) => builder
       ..id = 'message-1'
       ..senderId = 'user-1'
-      ..contentPreview = '你好'
+      ..contentPreview = content
       ..hasImage = false
       ..hasSticker = false
       ..isRecalled = false
@@ -358,6 +396,7 @@ DirectConversationResponseDto _conversationDto({
       DirectConversationResponseDtoRequestDirectionEnum.NONE,
   int unread = 2,
   bool archived = false,
+  String preview = '你好',
 }) {
   return DirectConversationResponseDto((builder) {
     builder
@@ -365,7 +404,7 @@ DirectConversationResponseDto _conversationDto({
       ..status = status
       ..requestDirection = direction
       ..otherUser.replace(_userDto())
-      ..lastMessage.replace(_previewDto())
+      ..lastMessage.replace(_previewDto(content: preview))
       ..unreadCount = status == DirectConversationResponseDtoStatusEnum.ACCEPTED
           ? unread
           : 0
@@ -430,7 +469,9 @@ DirectMessageResponseDto _stickerMessageDto() {
   );
 }
 
-Response<DirectConversationsFindAll200Response> _conversationListResponse() {
+Response<DirectConversationsFindAll200Response> _conversationListResponse({
+  String preview = '你好',
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/direct-conversations'),
     data: DirectConversationsFindAll200Response(
@@ -438,7 +479,7 @@ Response<DirectConversationsFindAll200Response> _conversationListResponse() {
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
         ..meta.update((meta) => meta.hasMore = false)
-        ..data.add(_conversationDto()),
+        ..data.add(_conversationDto(preview: preview)),
     ),
   );
 }

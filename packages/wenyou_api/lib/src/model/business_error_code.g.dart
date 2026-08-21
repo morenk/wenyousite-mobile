@@ -176,6 +176,9 @@ const BusinessErrorCode _$MODERATION_DECISION_NOT_FOUND =
     const BusinessErrorCode._('MODERATION_DECISION_NOT_FOUND');
 const BusinessErrorCode _$MODERATION_APPEAL_NOT_FOUND =
     const BusinessErrorCode._('MODERATION_APPEAL_NOT_FOUND');
+const BusinessErrorCode _$MEDIA_OBJECT_MISSING = const BusinessErrorCode._(
+  'MEDIA_OBJECT_MISSING',
+);
 const BusinessErrorCode _$CONFLICT = const BusinessErrorCode._('CONFLICT');
 const BusinessErrorCode _$EMAIL_ALREADY_REGISTERED = const BusinessErrorCode._(
   'EMAIL_ALREADY_REGISTERED',
@@ -379,6 +382,8 @@ BusinessErrorCode _$valueOf(String name) {
       return _$MODERATION_DECISION_NOT_FOUND;
     case 'MODERATION_APPEAL_NOT_FOUND':
       return _$MODERATION_APPEAL_NOT_FOUND;
+    case 'MEDIA_OBJECT_MISSING':
+      return _$MEDIA_OBJECT_MISSING;
     case 'CONFLICT':
       return _$CONFLICT;
     case 'EMAIL_ALREADY_REGISTERED':
@@ -505,6 +510,7 @@ final BuiltSet<BusinessErrorCode> _$values =
       _$MODERATION_CASE_NOT_FOUND,
       _$MODERATION_DECISION_NOT_FOUND,
       _$MODERATION_APPEAL_NOT_FOUND,
+      _$MEDIA_OBJECT_MISSING,
       _$CONFLICT,
       _$EMAIL_ALREADY_REGISTERED,
       _$USERNAME_TAKEN,
@@ -606,6 +612,7 @@ class _$BusinessErrorCodeMeta {
       _$MODERATION_DECISION_NOT_FOUND;
   BusinessErrorCode get MODERATION_APPEAL_NOT_FOUND =>
       _$MODERATION_APPEAL_NOT_FOUND;
+  BusinessErrorCode get MEDIA_OBJECT_MISSING => _$MEDIA_OBJECT_MISSING;
   BusinessErrorCode get CONFLICT => _$CONFLICT;
   BusinessErrorCode get EMAIL_ALREADY_REGISTERED => _$EMAIL_ALREADY_REGISTERED;
   BusinessErrorCode get USERNAME_TAKEN => _$USERNAME_TAKEN;
@@ -719,6 +726,7 @@ class _$BusinessErrorCodeSerializer
     'MODERATION_CASE_NOT_FOUND': 40416,
     'MODERATION_DECISION_NOT_FOUND': 40417,
     'MODERATION_APPEAL_NOT_FOUND': 40418,
+    'MEDIA_OBJECT_MISSING': 40419,
     'CONFLICT': 40900,
     'EMAIL_ALREADY_REGISTERED': 40901,
     'USERNAME_TAKEN': 40902,
@@ -811,6 +819,7 @@ class _$BusinessErrorCodeSerializer
     40416: 'MODERATION_CASE_NOT_FOUND',
     40417: 'MODERATION_DECISION_NOT_FOUND',
     40418: 'MODERATION_APPEAL_NOT_FOUND',
+    40419: 'MEDIA_OBJECT_MISSING',
     40900: 'CONFLICT',
     40901: 'EMAIL_ALREADY_REGISTERED',
     40902: 'USERNAME_TAKEN',
