@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -276,6 +277,7 @@ class ThreadFloorCard extends ConsumerWidget {
     required this.canDelete,
     required this.pending,
     required this.onReply,
+    required this.onReplyToReply,
     required this.onDiscussion,
     required this.onEdit,
     required this.onDelete,
@@ -291,6 +293,7 @@ class ThreadFloorCard extends ConsumerWidget {
   final bool canDelete;
   final bool pending;
   final VoidCallback onReply;
+  final ValueChanged<ThreadReplyModel> onReplyToReply;
   final VoidCallback onDiscussion;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -299,6 +302,7 @@ class ThreadFloorCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
+    final viewportHeight = MediaQuery.sizeOf(context).height;
     return PostCardActionMenu(
       canCopyText: !floor.isDeleted,
       canReply: !floor.isDeleted,
@@ -369,57 +373,40 @@ class ThreadFloorCard extends ConsumerWidget {
                       ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
                     )
                   else
-                    StickerPostMarkdown(
-                      postId: floor.id,
-                      data: floor.body.markdown,
-                      diceLabels: _diceLabels(floor.body.diceRolls),
-                      diceSemantics: _diceSemantics(floor.body.diceRolls),
-                      diceDetails: _diceDetails(floor.body.diceRolls),
-                      onInternalLink: (uri) =>
-                          _showInternalLinkNotice(context, uri),
-                      onTapText: pending ? null : onReply,
+                    WenyouCollapsibleContent(
+                      contentIdentity: Object.hash(
+                        floor.id,
+                        floor.version,
+                        floor.body.markdown,
+                      ),
+                      triggerHeight: viewportHeight * 1.2,
+                      collapsedHeight: viewportHeight * .8,
+                      fadeColor: tokens.panel,
+                      actionKey: Key('thread-floor-body-toggle-${floor.id}'),
+                      collapsedKey: Key(
+                        'thread-floor-body-collapsed-${floor.id}',
+                      ),
+                      child: StickerPostMarkdown(
+                        postId: floor.id,
+                        data: floor.body.markdown,
+                        diceLabels: _diceLabels(floor.body.diceRolls),
+                        diceSemantics: _diceSemantics(floor.body.diceRolls),
+                        diceDetails: _diceDetails(floor.body.diceRolls),
+                        onInternalLink: (uri) =>
+                            _showInternalLinkNotice(context, uri),
+                        onTapText: pending ? null : onReply,
+                      ),
                     ),
                   if (floor.replyCount > 0) ...[
-                    SizedBox(height: tokens.space4),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        key: Key('thread-floor-discussion-${floor.id}'),
-                        onPressed: pending ? null : onDiscussion,
-                        style: TextButton.styleFrom(
-                          foregroundColor: tokens.mutedText,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: tokens.space8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            WenyouIcon(WenyouIconIds.metricComments, size: 16),
-                            SizedBox(width: tokens.space4),
-                            Text(
-                              '${floor.replyCount} 条回复',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            SizedBox(width: tokens.space4),
-                            const WenyouIcon(
-                              WenyouIconIds.navigationNext,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ),
+                    SizedBox(height: tokens.space8),
+                    _FloorInlineReplyPreview(
+                      floorId: floor.id,
+                      replies: floor.replies,
+                      replyCount: floor.replyCount,
+                      pending: pending,
+                      onReply: onReplyToReply,
+                      onDiscussion: onDiscussion,
                     ),
-                    if (floor.replies.isNotEmpty) ...[
-                      SizedBox(height: tokens.space4),
-                      _FloorInlineReplyPreview(
-                        floorId: floor.id,
-                        replies: floor.replies,
-                        replyCount: floor.replyCount,
-                        pending: pending,
-                        onDiscussion: onDiscussion,
-                      ),
-                    ],
                   ],
                 ],
               ),
@@ -469,90 +456,51 @@ class _FloorInlineReplyPreview extends StatelessWidget {
     required this.replies,
     required this.replyCount,
     required this.pending,
+    required this.onReply,
     required this.onDiscussion,
   });
 
   static const _previewLimit = 5;
-  static const _collapseContentLength = 500;
   static const _collapsedHeight = 320.0;
 
   final String floorId;
   final List<ThreadReplyModel> replies;
   final int replyCount;
   final bool pending;
+  final ValueChanged<ThreadReplyModel> onReply;
   final VoidCallback onDiscussion;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final visibleReplies = replies.take(_previewLimit).toList(growable: false);
-    final contentLength = visibleReplies.fold<int>(
-      0,
-      (sum, reply) => sum + reply.body.markdown.length,
-    );
-    final collapsed = contentLength > _collapseContentLength;
     final replyCards = <Widget>[
       for (var index = 0; index < visibleReplies.length; index++) ...[
         if (index > 0) SizedBox(height: tokens.space4),
         _FloorInlineReplyCard(
           floorId: floorId,
           reply: visibleReplies[index],
-          enabled: !pending,
-          onDiscussion: onDiscussion,
+          enabled: !pending && !visibleReplies[index].isDeleted,
+          onReply: () => onReply(visibleReplies[index]),
         ),
       ],
     ];
-    if (!collapsed) {
-      return Column(
-        key: Key('thread-floor-reply-preview-$floorId'),
+    return WenyouOverflowDestination(
+      key: Key('thread-floor-reply-preview-$floorId'),
+      maxHeight: _collapsedHeight,
+      forceAction: replyCount > visibleReplies.length,
+      fadeColor: tokens.panel,
+      collapsedKey: Key('thread-floor-reply-preview-collapsed-$floorId'),
+      action: WenyouOverflowAction(
+        key: Key('thread-floor-reply-preview-expand-$floorId'),
+        label: '展开全部 $replyCount 条回复',
+        icon: WenyouIconIds.navigationNext,
+        backgroundColor: tokens.panel,
+        onPressed: pending ? null : onDiscussion,
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: replyCards,
-      );
-    }
-    return SizedBox(
-      key: Key('thread-floor-reply-preview-collapsed-$floorId'),
-      height: _collapsedHeight,
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: replyCards,
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 104,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [tokens.panel.withValues(alpha: 0), tokens.panel],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: tokens.space8,
-            right: tokens.space8,
-            bottom: tokens.space4,
-            child: FilledButton.tonalIcon(
-              key: Key('thread-floor-reply-preview-expand-$floorId'),
-              onPressed: pending ? null : onDiscussion,
-              icon: const WenyouIcon(WenyouIconIds.navigationExpand),
-              label: Text('展开全部 $replyCount 条回复'),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -563,13 +511,13 @@ class _FloorInlineReplyCard extends StatelessWidget {
     required this.floorId,
     required this.reply,
     required this.enabled,
-    required this.onDiscussion,
+    required this.onReply,
   });
 
   final String floorId;
   final ThreadReplyModel reply;
   final bool enabled;
-  final VoidCallback onDiscussion;
+  final VoidCallback onReply;
 
   @override
   Widget build(BuildContext context) {
@@ -578,7 +526,8 @@ class _FloorInlineReplyCard extends StatelessWidget {
       key: Key('thread-floor-reply-$floorId-${reply.id}'),
       semanticsLabel: '${reply.author.username} 的楼中楼回复',
       enabled: enabled,
-      onTap: onDiscussion,
+      onTap: onReply,
+      tapHint: '点击回复这条回复',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -613,7 +562,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               diceSemantics: _diceSemantics(reply.body.diceRolls),
               diceDetails: _diceDetails(reply.body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
-              onTapText: enabled ? onDiscussion : null,
+              onTapText: enabled ? onReply : null,
               bodyFontSize: 17,
               bodyHeight: 1.8,
             ),
@@ -761,6 +710,25 @@ PostComposerTarget threadDetailReplyFloorTarget(
     version: null,
     initialContent: '',
     label: '回复 @${floor.author.username}',
+  );
+}
+
+PostComposerTarget threadDetailReplyInlineTarget(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+  ThreadFloorModel floor,
+  ThreadReplyModel reply,
+) {
+  return (
+    kind: PostComposerKind.createReply,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    postId: null,
+    parentPostId: floor.id,
+    replyToPostId: reply.id,
+    version: null,
+    initialContent: '',
+    label: '回复 @${reply.author.username}',
   );
 }
 

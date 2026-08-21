@@ -32,7 +32,7 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('公开主题详情连续展示正文，并由克制入口进入楼中楼', (tester) async {
+  testWidgets('公开主题详情连续展示正文，短楼中楼不提供独立讨论入口', (tester) async {
     final repository = _FakeThreadDetailRepository();
     await tester.pumpWidget(_detailRouterApp(repository));
     await tester.pumpAndSettle();
@@ -166,12 +166,14 @@ void main() {
       findsNothing,
     );
     expect(find.byKey(const Key('thread-reply-level-reply-1')), findsNothing);
-    final discussion = find.byKey(const Key('thread-floor-discussion-floor-1'));
-    expect(discussion, findsOneWidget);
-    expect(tester.getSize(discussion).height, greaterThanOrEqualTo(48));
-    final discussionSemantics = tester.getSemantics(discussion);
-    expect(discussionSemantics.label, contains('1 条回复'));
-    expect(tester.widget<TextButton>(discussion).onPressed, isNotNull);
+    expect(
+      find.byKey(const Key('thread-floor-discussion-floor-1')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-reply-preview-expand-floor-1')),
+      findsNothing,
+    );
 
     final floorAvatar = find.byKey(
       const Key('thread-floor-author-avatar-floor-1'),
@@ -213,18 +215,9 @@ void main() {
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(discussion);
-    await tester.pumpAndSettle();
-    await tester.tap(discussion);
-    await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('test-post-replies-destination')),
-      findsOneWidget,
-    );
-    expect(find.text('thread-1/floor-1'), findsOneWidget);
-    expect(
-      find.byKey(const Key('test-post-replies-reports-absent')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
@@ -261,17 +254,13 @@ void main() {
     expect(find.text('主题详情'), findsNothing);
   });
 
-  testWidgets('楼层只预览前五条回复且合计正文超过 500 字时折叠', (tester) async {
+  testWidgets('楼中楼超过五条时只预览前五条并提供独立讨论入口', (tester) async {
     final replies = [
       for (var index = 1; index <= 6; index++)
         ThreadReplyModel(
           id: 'preview-$index',
           author: _author,
-          body: ThreadBodyModel(
-            markdown: index == 1
-                ? List.filled(501, '长').join()
-                : '第 $index 条简短回复',
-          ),
+          body: ThreadBodyModel(markdown: '第 $index 条简短回复'),
           createdAt: DateTime.utc(2026, 8, 9, 12, 20 + index),
           isDeleted: false,
         ),
@@ -287,7 +276,7 @@ void main() {
       replies: replies,
     );
     await tester.pumpWidget(
-      _detailApp(_FakeThreadDetailRepository(mainFloor: floor)),
+      _detailRouterApp(_FakeThreadDetailRepository(mainFloor: floor)),
     );
     await tester.pumpAndSettle();
 
@@ -315,6 +304,128 @@ void main() {
       find.byKey(const Key('thread-floor-reply-floor-preview-preview-6')),
       findsNothing,
     );
+    final expand = find.byKey(
+      const Key('thread-floor-reply-preview-expand-floor-preview'),
+    );
+    await tester.ensureVisible(expand);
+    await tester.pumpAndSettle();
+    await tester.tap(expand);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('test-post-replies-destination')),
+      findsOneWidget,
+    );
+    expect(find.text('thread-1/floor-preview'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('楼中楼未超过五条但真实布局超高时显示渐变与独立入口', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    const visualKey = Key('thread-floor-reply-overflow-visual');
+    final reply = ThreadReplyModel(
+      id: 'preview-tall',
+      author: _author,
+      body: ThreadBodyModel(
+        markdown: List.filled(14, '这是一段用于验证真实排版高度的楼中楼回复。').join('\n\n'),
+      ),
+      createdAt: DateTime.utc(2026, 8, 9, 12, 21),
+      isDeleted: false,
+    );
+    final floor = ThreadFloorModel(
+      id: 'floor-tall-preview',
+      floorNumber: 1,
+      author: _author,
+      body: const ThreadBodyModel(markdown: '带有超高讨论的楼层'),
+      createdAt: DateTime.utc(2026, 8, 9, 12, 10),
+      isDeleted: false,
+      replyCount: 1,
+      replies: [reply],
+    );
+    await tester.pumpWidget(
+      _detailApp(
+        _FakeThreadDetailRepository(mainFloor: floor),
+        visualKey: visualKey,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final collapsed = find.byKey(
+      const Key('thread-floor-reply-preview-collapsed-floor-tall-preview'),
+    );
+    final expand = find.byKey(
+      const Key('thread-floor-reply-preview-expand-floor-tall-preview'),
+    );
+    await tester.scrollUntilVisible(
+      collapsed,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(expand);
+    await tester.pumpAndSettle();
+
+    expect(collapsed, findsOneWidget);
+    expect(tester.getSize(collapsed).height, 320);
+    expect(expand, findsOneWidget);
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/thread_floor_reply_overflow_360.png'),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('楼层正文按真实视口高度渐变折叠并可展开收起', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final floor = ThreadFloorModel(
+      id: 'floor-tall-body',
+      floorNumber: 1,
+      author: _author,
+      body: ThreadBodyModel(
+        markdown: List.filled(36, '这是用于验证楼层正文真实布局高度的一段文字。').join('\n\n'),
+      ),
+      createdAt: DateTime.utc(2026, 8, 9, 12, 10),
+      isDeleted: false,
+      replyCount: 0,
+      replies: const [],
+    );
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(mainFloor: floor)),
+    );
+    await tester.pumpAndSettle();
+
+    final collapsed = find.byKey(
+      const Key('thread-floor-body-collapsed-floor-tall-body'),
+    );
+    final toggle = find.byKey(
+      const Key('thread-floor-body-toggle-floor-tall-body'),
+    );
+    await tester.scrollUntilVisible(
+      toggle,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(collapsed, findsOneWidget);
+    expect(tester.getSize(collapsed).height, 640);
+    expect(find.text('展开全文'), findsOneWidget);
+
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(collapsed, findsNothing);
+    expect(find.text('收起'), findsOneWidget);
+
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(collapsed, findsOneWidget);
+    expect(find.text('展开全文'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -1308,28 +1419,76 @@ void main() {
     expect(find.text('回复 @温柔测试员'), findsOneWidget);
   });
 
-  testWidgets('楼层回复数与长按菜单保留独立点击行为', (tester) async {
-    final repository = _FakeThreadDetailRepository();
-    await tester.pumpWidget(_detailRouterApp(repository));
+  testWidgets('点击短楼中楼预览直接精确回复且楼层长按菜单保持独立', (tester) async {
+    final reply = ThreadReplyModel(
+      id: 'reply-direct',
+      author: const ThreadAuthorModel(
+        id: 'user-2',
+        username: '楼中楼作者',
+        level: 4,
+      ),
+      body: const ThreadBodyModel(markdown: '点击这条短回复'),
+      createdAt: _recentFixtureTime,
+      isDeleted: false,
+    );
+    final floorModel = ThreadFloorModel(
+      id: 'floor-direct',
+      floorNumber: 1,
+      author: _author,
+      body: const ThreadBodyModel(markdown: '可直接回复的楼层'),
+      createdAt: _recentFixtureTime,
+      isDeleted: false,
+      replyCount: 1,
+      replies: [reply],
+    );
+    final detailRepository = _FakeThreadDetailRepository(
+      mainFloor: floorModel,
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-created',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: floorModel,
+      ),
+    );
+    final postRepository = _CreatingPostRepository();
+    final container = ProviderContainer(
+      overrides: [
+        stickersEnabledProvider.overrideWithValue(false),
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(detailRepository),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+        postRepositoryProvider.overrideWithValue(postRepository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('viewer-1'));
+    final router = GoRouter(
+      initialLocation: '/threads/thread-1',
+      routes: [
+        GoRoute(
+          path: '/threads/:threadId',
+          builder: (context, state) => ThreadDetailPage(
+            threadId: state.pathParameters['threadId']!,
+            targetPostId: state.uri.queryParameters['post'],
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    final discussion = find.byKey(const Key('thread-floor-discussion-floor-1'));
-    await tester.scrollUntilVisible(
-      discussion,
-      180,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(discussion);
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('test-post-replies-destination')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('post-composer-body')), findsNothing);
-
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    final floor = find.byKey(const Key('thread-floor-card-floor-1'));
+    final floor = find.byKey(const Key('thread-floor-card-floor-direct'));
     await tester.scrollUntilVisible(
       floor,
       180,
@@ -1338,25 +1497,36 @@ void main() {
     await tester.longPressAt(tester.getTopLeft(floor) + const Offset(8, 8));
     await tester.pumpAndSettle();
     expect(
-      find.byKey(const Key('thread-floor-action-floor-1-copy')),
+      find.byKey(const Key('thread-floor-action-floor-direct-copy')),
       findsOneWidget,
     );
     expect(find.byKey(const Key('post-composer-body')), findsNothing);
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
+    final preview = find.byKey(
+      const Key('thread-floor-reply-floor-direct-reply-direct'),
+    );
     await tester.scrollUntilVisible(
-      floor,
+      preview,
       180,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.longPress(floor);
-    await tester.pumpAndSettle();
     expect(
-      find.byKey(const Key('thread-floor-action-floor-1-copy')),
-      findsOneWidget,
+      find.byKey(const Key('thread-floor-reply-preview-expand-floor-direct')),
+      findsNothing,
     );
-    expect(find.byKey(const Key('post-composer-body')), findsNothing);
+    await tester.tap(preview);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
+    expect(find.text('回复 @楼中楼作者'), findsOneWidget);
+
+    await _replacePostComposerText(tester, '精确回复内容');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await tester.pumpAndSettle();
+    expect(postRepository.createInputs, hasLength(1));
+    expect(postRepository.createInputs.single.parentPostId, 'floor-direct');
+    expect(postRepository.createInputs.single.replyToPostId, 'reply-direct');
   });
 
   testWidgets('管理者从主题详情编辑正文并按作者与管理权限操作楼层', (tester) async {
@@ -1428,7 +1598,11 @@ void main() {
     expect(find.byKey(const Key('thread-floor-delete-floor-1')), findsNothing);
     expect(
       find.byKey(const Key('thread-floor-discussion-floor-1')),
-      findsOneWidget,
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-reply-preview-expand-floor-1')),
+      findsNothing,
     );
 
     await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));

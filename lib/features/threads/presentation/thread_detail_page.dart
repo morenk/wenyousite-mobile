@@ -701,6 +701,16 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                               ),
                             )
                           : _requireLogin,
+                      onReplyToReply: authenticated
+                          ? (reply) => _compose(
+                              threadDetailReplyInlineTarget(
+                                detail,
+                                selected,
+                                floor,
+                                reply,
+                              ),
+                            )
+                          : (_) => _requireLogin(),
                       onDiscussion: () => _openDiscussion(
                         floor,
                         focusedReplyId: usableTarget?.floor.id == floor.id
