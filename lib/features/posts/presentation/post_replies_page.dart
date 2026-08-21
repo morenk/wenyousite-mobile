@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
@@ -27,14 +28,12 @@ class PostRepliesPage extends ConsumerStatefulWidget {
     required this.threadId,
     required this.rootPostId,
     this.focusedReplyId,
-    this.reportsEnabled = false,
     super.key,
   });
 
   final String threadId;
   final String rootPostId;
   final String? focusedReplyId;
-  final bool reportsEnabled;
 
   @override
   ConsumerState<PostRepliesPage> createState() => _PostRepliesPageState();
@@ -42,20 +41,32 @@ class PostRepliesPage extends ConsumerStatefulWidget {
 
 class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
+  final _scrollController = ScrollController();
   final _composerDrafts = <String, String>{};
-  String? _lastRevealedReplyId;
+  String? _lastRevealSignature;
+  String? _revealAttemptReplyId;
+  var _revealAttempts = 0;
+  var _revealScheduled = false;
+  var _openingComposer = false;
 
   String get threadId => widget.threadId;
   String get rootPostId => widget.rootPostId;
   String? get focusedReplyId => widget.focusedReplyId;
-  bool get reportsEnabled => widget.reportsEnabled;
 
   @override
   void didUpdateWidget(covariant PostRepliesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.focusedReplyId != widget.focusedReplyId) {
-      _lastRevealedReplyId = null;
+      _lastRevealSignature = null;
+      _revealAttemptReplyId = null;
+      _revealAttempts = 0;
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -63,10 +74,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final target = (rootPostId: rootPostId, focusedReplyId: focusedReplyId);
     final provider = postDiscussionControllerProvider(target);
     final actionsProvider = postActionControllerProvider(threadId);
-    ref.listen(sessionControllerProvider.select((state) => state.status), (
-      previous,
-      next,
-    ) {
+    ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       ref
         ..invalidate(provider)
@@ -74,82 +82,108 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     });
     final state = ref.watch(provider);
     final actions = ref.watch(actionsProvider);
+    final threadContext = ref
+        .watch(postThreadContextProvider(threadId))
+        .valueOrNull;
     final session = ref.watch(sessionControllerProvider);
     final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
+    final routeCanPop = ModalRoute.of(context)?.canPop ?? false;
     final readyRoot =
         state.phase == PostDiscussionPhase.ready &&
             state.root?.threadId == threadId
         ? state.root
         : null;
     _revealReplyWhenReady(state);
-    return Scaffold(
-      appBar: AppBar(
-        title: readyRoot == null
-            ? const Text('楼中楼讨论')
-            : PostDiscussionTitle(root: readyRoot),
-        actions: [_returnToRootAction(context)],
-      ),
-      body: switch (state.phase) {
-        PostDiscussionPhase.loading => const WenyouPageBody(
-          maxWidth: 600,
-          child: WenyouDetailSkeleton(label: '正在加载楼中楼讨论'),
+    return PopScope<Object?>(
+      canPop: routeCanPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _goToRoot(context);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: routeCanPop
+              ? null
+              : BackButton(onPressed: () => _goBack(context)),
+          title: readyRoot == null
+              ? const Text('楼中楼讨论')
+              : PostDiscussionTitle(root: readyRoot),
+          actions: [_returnToRootAction(context)],
         ),
-        PostDiscussionPhase.failed => _DiscussionFailure(
-          failure: state.failure,
-          onRetry: () => ref.read(provider.notifier).load(),
-        ),
-        PostDiscussionPhase.ready =>
-          state.root?.threadId != threadId
-              ? const _RouteMismatch()
-              : RefreshIndicator(
-                  onRefresh: () => ref.read(provider.notifier).refresh(),
-                  child: _DiscussionList(
-                    state: state,
-                    actions: actions,
-                    viewerId: viewerId,
-                    authenticated: session.isAuthenticated,
-                    focusedReplyId: focusedReplyId,
-                    targetKey: _targetKey,
-                    reportsEnabled: reportsEnabled,
-                    onOrder: (order) =>
-                        ref.read(provider.notifier).setOrder(order),
-                    onAuthor: (authorId) =>
-                        ref.read(provider.notifier).setAuthor(authorId),
-                    onLoadMore: () => ref.read(provider.notifier).loadMore(),
-                    onCompose: (target) =>
-                        _compose(context, ref, provider, target),
-                    onDelete: (post, root) => _delete(
-                      context,
-                      ref,
-                      provider,
-                      actionsProvider,
-                      post,
-                      root: root,
+        body: switch (state.phase) {
+          PostDiscussionPhase.loading => const WenyouPageBody(
+            maxWidth: 600,
+            child: WenyouDetailSkeleton(label: '正在加载楼中楼讨论'),
+          ),
+          PostDiscussionPhase.failed => _DiscussionFailure(
+            failure: state.failure,
+            onRetry: () => ref.read(provider.notifier).load(),
+          ),
+          PostDiscussionPhase.restricted => _DiscussionFailure(
+            failure: state.failure,
+            onRetry: null,
+          ),
+          PostDiscussionPhase.ready =>
+            state.root?.threadId != threadId
+                ? const _RouteMismatch()
+                : NotificationListener<ScrollMetricsNotification>(
+                    onNotification: _handleTargetLayoutChange,
+                    child: RefreshIndicator(
+                      onRefresh: () => ref.read(provider.notifier).refresh(),
+                      child: _DiscussionList(
+                        state: state,
+                        actions: actions,
+                        viewerId: viewerId,
+                        authenticated: session.isAuthenticated,
+                        focusedReplyId: focusedReplyId,
+                        targetKey: _targetKey,
+                        scrollController: _scrollController,
+                        canReport: threadContext?.canReport ?? false,
+                        canManageThread:
+                            threadContext?.canManageThread ?? false,
+                        onOrder: (order) =>
+                            ref.read(provider.notifier).setOrder(order),
+                        onAuthor: (authorId) =>
+                            ref.read(provider.notifier).setAuthor(authorId),
+                        onLoadMore: () =>
+                            ref.read(provider.notifier).loadMore(),
+                        onRetry: () =>
+                            ref.read(provider.notifier).retryTransientFailure(),
+                        onCompose: (target) =>
+                            _compose(context, ref, provider, target),
+                        onDelete: (post, root) => _delete(
+                          context,
+                          ref,
+                          provider,
+                          actionsProvider,
+                          post,
+                          root: root,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-      },
-      floatingActionButton: readyRoot == null
-          ? null
-          : WenyouComposerAction(
-              key: const Key('post-reply-compose'),
-              label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
-              icon: session.isAuthenticated
-                  ? WenyouIconIds.actionReply
-                  : WenyouIconIds.actionLogin,
-              onPressed: session.isAuthenticated
-                  ? () => _compose(
-                      context,
-                      ref,
-                      provider,
-                      _replyTarget(readyRoot, readyRoot),
-                    )
-                  : () => context.pushNamed(
-                      'login',
-                      queryParameters: {'returnTo': _location()},
-                    ),
-            ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+        },
+        floatingActionButton: readyRoot == null
+            ? null
+            : WenyouComposerAction(
+                key: const Key('post-reply-compose'),
+                label: session.isAuthenticated ? '发表回复…' : '登录后发表回复',
+                icon: session.isAuthenticated
+                    ? WenyouIconIds.actionReply
+                    : WenyouIconIds.actionLogin,
+                onPressed: session.isAuthenticated
+                    ? () => _compose(
+                        context,
+                        ref,
+                        provider,
+                        _replyTarget(readyRoot, readyRoot),
+                      )
+                    : () => context.pushNamed(
+                        'login',
+                        queryParameters: {'returnTo': _location()},
+                      ),
+              ),
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+      ),
     );
   }
 
@@ -158,19 +192,68 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     if (replyId == null ||
         state.phase != PostDiscussionPhase.ready ||
         !state.replies.any((reply) => reply.id == replyId) ||
-        _lastRevealedReplyId == replyId) {
+        _revealScheduled) {
       return;
     }
-    _lastRevealedReplyId = replyId;
+    final targetIndex = state.replies.indexWhere(
+      (reply) => reply.id == replyId,
+    );
+    final signature =
+        '$replyId:${state.order.name}:${state.authorId}:'
+        '$targetIndex:${state.replies.length}';
+    if (_lastRevealSignature == signature) return;
+    if (_revealAttemptReplyId != replyId) {
+      _revealAttemptReplyId = replyId;
+      _revealAttempts = 0;
+    }
+    _revealScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealScheduled = false;
       final targetContext = _targetKey.currentContext;
-      if (!mounted || targetContext == null) return;
-      Scrollable.ensureVisible(
-        targetContext,
-        duration: Duration.zero,
-        alignment: 0.12,
+      if (!mounted) return;
+      if (targetContext != null) {
+        Scrollable.ensureVisible(
+          targetContext,
+          duration: Duration.zero,
+          alignment: 0.12,
+        );
+        _lastRevealSignature = signature;
+        _revealAttemptReplyId = null;
+        _revealAttempts = 0;
+        return;
+      }
+      if (!_scrollController.hasClients || _revealAttempts >= 6) return;
+      if (targetIndex < 0) return;
+      _revealAttempts += 1;
+      final position = _scrollController.position;
+      final fraction = (targetIndex + 1) / (state.replies.length + 1);
+      final estimated = position.maxScrollExtent * fraction;
+      _scrollController.jumpTo(
+        estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
       );
+      if (mounted) setState(() {});
     });
+  }
+
+  bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
+    if (focusedReplyId == null || _lastRevealSignature == null) return false;
+    _lastRevealSignature = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+    return false;
+  }
+
+  void _goBack(BuildContext context) {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+      return;
+    }
+    _goToRoot(context);
+  }
+
+  void _goToRoot(BuildContext context) {
+    context.go(AppRouteLocations.thread(threadId, postId: rootPostId));
   }
 
   Widget _returnToRootAction(BuildContext context) {
@@ -183,10 +266,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   }
 
   String _location() {
-    final query = <String, String>{
-      if (reportsEnabled) 'reports': '1',
-      'post': ?focusedReplyId,
-    };
+    final query = <String, String>{'post': ?focusedReplyId};
     return Uri(
       pathSegments: ['', 'threads', threadId, 'posts', rootPostId, 'replies'],
       queryParameters: query.isEmpty ? null : query,
@@ -203,22 +283,29 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     provider,
     PostComposerTarget target,
   ) async {
+    if (_openingComposer) return;
+    _openingComposer = true;
     final draftKey = postComposerDraftKey(target);
-    final result = await showPostComposerSheet(
-      context: context,
-      target: target,
-      initialDraft: _composerDrafts[draftKey],
-      onDraftChanged: (content) {
-        if (content == target.initialContent) {
-          _composerDrafts.remove(draftKey);
-        } else {
-          _composerDrafts[draftKey] = content;
-        }
-      },
-    );
-    if (result != null) {
-      _composerDrafts.remove(draftKey);
-      await ref.read(provider.notifier).refresh();
+    try {
+      final result = await showPostComposerSheet(
+        context: context,
+        target: target,
+        initialDraft: _composerDrafts[draftKey],
+        onDraftChanged: (content) {
+          if (content == target.initialContent) {
+            _composerDrafts.remove(draftKey);
+          } else {
+            _composerDrafts[draftKey] = content;
+          }
+        },
+      );
+      if (result != null) {
+        _composerDrafts.remove(draftKey);
+        await ref.read(provider.notifier).refresh();
+      }
+    } finally {
+      _openingComposer = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -273,10 +360,13 @@ class _DiscussionList extends StatelessWidget {
     required this.authenticated,
     required this.focusedReplyId,
     required this.targetKey,
-    required this.reportsEnabled,
+    required this.scrollController,
+    required this.canReport,
+    required this.canManageThread,
     required this.onOrder,
     required this.onAuthor,
     required this.onLoadMore,
+    required this.onRetry,
     required this.onCompose,
     required this.onDelete,
   });
@@ -287,10 +377,13 @@ class _DiscussionList extends StatelessWidget {
   final bool authenticated;
   final String? focusedReplyId;
   final GlobalKey targetKey;
-  final bool reportsEnabled;
+  final ScrollController scrollController;
+  final bool canReport;
+  final bool canManageThread;
   final ValueChanged<PostReplyOrder> onOrder;
   final ValueChanged<String?> onAuthor;
   final VoidCallback onLoadMore;
+  final VoidCallback onRetry;
   final ValueChanged<PostComposerTarget> onCompose;
   final void Function(PostItem post, bool root) onDelete;
 
@@ -317,9 +410,9 @@ class _DiscussionList extends StatelessWidget {
         post: root,
         root: true,
         canEdit: root.isAuthoredBy(viewerId),
-        canDelete: root.isAuthoredBy(viewerId),
+        canDelete: root.isAuthoredBy(viewerId) || canManageThread,
         pending: actions.pendingPostId == root.id,
-        reportReturnTo: reportsEnabled && !root.isAuthoredBy(viewerId)
+        reportReturnTo: canReport && !root.isAuthoredBy(viewerId)
             ? _reportLocation(root, root.id)
             : null,
         onReply: authenticated
@@ -342,13 +435,14 @@ class _DiscussionList extends StatelessWidget {
           message: state.transientFailure!.userMessage,
           detail: _failureDetail(state.transientFailure),
           tone: WenyouStatusTone.error,
-          action: TextButton(onPressed: onLoadMore, child: const Text('重试')),
+          action: TextButton(onPressed: onRetry, child: const Text('重试')),
         ),
         SizedBox(height: tokens.space12),
       ],
     ];
     return CustomScrollView(
       key: const Key('post-replies-list'),
+      controller: scrollController,
       scrollCacheExtent: const ScrollCacheExtent.pixels(_contentCacheExtent),
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -398,10 +492,11 @@ class _DiscussionList extends StatelessWidget {
                             ? targetKey
                             : null,
                         canEdit: reply.isAuthoredBy(viewerId),
-                        canDelete: reply.isAuthoredBy(viewerId),
+                        canDelete:
+                            reply.isAuthoredBy(viewerId) || canManageThread,
                         pending: actions.pendingPostId == reply.id,
                         reportReturnTo:
-                            reportsEnabled && !reply.isAuthoredBy(viewerId)
+                            canReport && !reply.isAuthoredBy(viewerId)
                             ? _reportLocation(root, reply.id)
                             : null,
                         onReply: authenticated
@@ -448,7 +543,7 @@ class _DiscussionList extends StatelessWidget {
   String _reportLocation(PostItem root, String postId) {
     return Uri(
       pathSegments: ['', 'threads', root.threadId, 'posts', root.id, 'replies'],
-      queryParameters: {'reports': '1', if (postId != root.id) 'post': postId},
+      queryParameters: {if (postId != root.id) 'post': postId},
     ).toString();
   }
 }
@@ -518,6 +613,13 @@ class _PostCard extends ConsumerWidget {
                   for (final roll in post.diceRolls)
                     roll.nodeId: formatWenyouDiceSemantics(
                       notation: roll.notation,
+                      results: roll.results,
+                      total: roll.total,
+                    ),
+                },
+                diceDetails: {
+                  for (final roll in post.diceRolls)
+                    roll.nodeId.toLowerCase(): WenyouDiceRollDetail(
                       results: roll.results,
                       total: roll.total,
                     ),
@@ -685,7 +787,7 @@ class _DiscussionFailure extends StatelessWidget {
   const _DiscussionFailure({required this.failure, required this.onRetry});
 
   final ApiFailure? failure;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -696,7 +798,9 @@ class _DiscussionFailure extends StatelessWidget {
           title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论加载失败',
           message: failure?.userMessage ?? '请稍后重试。',
           detail: _failureDetail(failure),
-          action: FilledButton(onPressed: onRetry, child: const Text('重试')),
+          action: onRetry == null
+              ? null
+              : FilledButton(onPressed: onRetry, child: const Text('重试')),
         ),
       ),
     );

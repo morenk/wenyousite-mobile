@@ -56,6 +56,12 @@ final sessionControllerProvider =
       );
     });
 
+/// Account-scoped identity that ignores access-token refresh notifications.
+final sessionScopeProvider = Provider<SessionScope>((ref) {
+  ref.watch(sessionControllerProvider.select((session) => session.generation));
+  return ref.read(sessionControllerProvider.notifier).scope;
+});
+
 final dioProvider = Provider<Dio>((ref) {
   final environment = ref.watch(appEnvironmentProvider);
   final dio = Dio(

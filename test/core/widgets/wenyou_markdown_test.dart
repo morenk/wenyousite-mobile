@@ -73,21 +73,25 @@ void main() {
     );
   });
 
-  testWidgets('骰子节点渲染为内联结果且不泄漏节点标签', (tester) async {
+  testWidgets('已结算骰子打开安全区明细并只在明细逐项朗读', (tester) async {
+    const settledDiceNode = '[[dice:v1:$nodeId:3d6+2]]';
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
           body: WenyouMarkdown(
-            data: '结果 $diceNode',
-            diceLabels: {nodeId: '1d20 = 16'},
-            diceSemantics: {nodeId: '骰子 1d20，逐骰结果 16，总计 16'},
+            data: '结果 $settledDiceNode',
+            diceLabels: {nodeId: '3d6+2 = 13'},
+            diceSemantics: {nodeId: '这条旧语义不应覆盖结构化结果'},
+            diceDetails: {
+              nodeId: WenyouDiceRollDetail(results: [4, 6, 1], total: 13),
+            },
           ),
         ),
       ),
     );
 
     expect(find.byKey(const ValueKey('wenyou-dice-$nodeId')), findsOneWidget);
-    expect(find.text('1d20 = 16'), findsOneWidget);
+    expect(find.text('3d6+2 = 13'), findsOneWidget);
     expect(
       find.textContaining('<wenyou-dice', findRichText: true),
       findsNothing,
@@ -114,19 +118,79 @@ void main() {
     );
     final insets = padding.padding.resolve(TextDirection.ltr);
     expect(insets.left, closeTo(5.1, 0.001));
-    expect(insets.top, closeTo(1.36, 0.001));
+    expect(insets.top, closeTo(0.68, 0.001));
     final text = tester.widget<Text>(
       find.descendant(
         of: find.byKey(const ValueKey('wenyou-dice-$nodeId')),
-        matching: find.text('1d20 = 16'),
+        matching: find.text('3d6+2 = 13'),
       ),
     );
     expect(text.style?.color, WenyouFoundationPalette.onAccent);
+    expect(text.style?.height, WenyouElementContract.diceLineHeight);
+    final triggerSemantics = tester
+        .getSemantics(find.byKey(const ValueKey('wenyou-dice-$nodeId')))
+        .getSemanticsData();
+    expect(triggerSemantics.label, '骰子 3d6+2，总计 13');
+    expect(triggerSemantics.hint, '查看逐骰结果');
+    expect(triggerSemantics.flagsCollection.isButton, isTrue);
+    expect(triggerSemantics.flagsCollection.isExpanded.toBoolOrNull(), isFalse);
+    expect(triggerSemantics.label, isNot(contains('4、6、1')));
+    final triggerSize = tester.getSize(
+      find.byKey(const ValueKey('wenyou-dice-$nodeId')),
+    );
+    expect(triggerSize.width, greaterThanOrEqualTo(48));
+    expect(triggerSize.height, greaterThanOrEqualTo(48));
+
+    await tester.tap(find.byKey(const ValueKey('wenyou-dice-$nodeId')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('wenyou-dice-detail-sheet')), findsOneWidget);
+    expect(find.text('骰子结果'), findsOneWidget);
+    expect(find.text('逐骰结果'), findsOneWidget);
+    expect(find.bySemanticsLabel('第 1 枚，4 点'), findsOneWidget);
+    expect(find.bySemanticsLabel('第 2 枚，6 点'), findsOneWidget);
+    expect(find.bySemanticsLabel('第 3 枚，1 点'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('wenyou-dice-subtotal')),
+        matching: find.text('11'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('wenyou-dice-modifier')),
+        matching: find.text('+2'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('wenyou-dice-total')),
+        matching: find.text('13'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('wenyou-dice-detail-sheet'))).height,
+      lessThanOrEqualTo(
+        tester.view.physicalSize.height /
+            tester.view.devicePixelRatio *
+            WenyouElementContract.diceDetailMaximumHeightFraction,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('wenyou-dice-detail-close')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('wenyou-dice-detail-sheet')), findsNothing);
     expect(
       tester
           .getSemantics(find.byKey(const ValueKey('wenyou-dice-$nodeId')))
-          .label,
-      contains('骰子 1d20，逐骰结果 16，总计 16'),
+          .getSemanticsData()
+          .flagsCollection
+          .isExpanded
+          .toBoolOrNull(),
+      isFalse,
     );
   });
 
@@ -172,14 +236,25 @@ void main() {
   });
 
   testWidgets('骰子结果异步到达后更新内联标签', (tester) async {
-    Widget app(Map<String, String> labels) => MaterialApp(
+    Widget app(Map<String, WenyouDiceRollDetail> details) => MaterialApp(
       home: Scaffold(
-        body: WenyouMarkdown(data: diceNode, diceLabels: labels),
+        body: WenyouMarkdown(data: diceNode, diceDetails: details),
       ),
     );
 
     await tester.pumpWidget(app(const {}));
     expect(find.text('1d20 = ?'), findsOneWidget);
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('wenyou-dice-$nodeId')))
+          .getSemanticsData()
+          .flagsCollection
+          .isButton,
+      isFalse,
+    );
+    await tester.tap(find.byKey(const ValueKey('wenyou-dice-$nodeId')));
+    await tester.pump();
+    expect(find.byKey(const Key('wenyou-dice-detail-sheet')), findsNothing);
     BoxDecoration decoration() =>
         tester
                 .widget<DecoratedBox>(
@@ -195,22 +270,87 @@ void main() {
       tester.widget<Text>(find.text('1d20 = ?')).style?.color,
       WenyouFoundationPalette.warning,
     );
-    await tester.pumpWidget(app(const {nodeId: '1d20 = 16'}));
+    await tester.pumpWidget(
+      app(const {
+        nodeId: WenyouDiceRollDetail(results: [16], total: 16),
+      }),
+    );
     await tester.pump();
 
     expect(find.text('1d20 = ?'), findsNothing);
     expect(find.text('1d20 = 16'), findsOneWidget);
     expect(decoration().color, WenyouFoundationPalette.accent);
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('wenyou-dice-$nodeId')))
+          .getSemanticsData()
+          .flagsCollection
+          .isButton,
+      isTrue,
+    );
   });
 
-  test('骰子完整语义包含逐骰结果、修正值和总计', () {
+  testWidgets('长骰池在八成视口内滚动并保留服务端顺序', (tester) async {
+    const longNodeId = '550e8400-e29b-41d4-a716-446655440002';
+    const longDiceNode = '[[dice:v1:$longNodeId:100d6-2]]';
+    final results = List<int>.generate(100, (index) => index % 6 + 1);
+    final subtotal = results.fold<int>(0, (sum, value) => sum + value);
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewPadding = const FakeViewPadding(bottom: 24);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewPadding);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: longDiceNode,
+            diceDetails: {
+              longNodeId: WenyouDiceRollDetail(
+                results: results,
+                total: subtotal - 2,
+              ),
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('wenyou-dice-$longNodeId')));
+    await tester.pumpAndSettle();
+
+    final sheet = find.byKey(const Key('wenyou-dice-detail-sheet'));
+    expect(tester.getSize(sheet).height, lessThanOrEqualTo(640 * 0.8));
+    expect(find.bySemanticsLabel('第 1 枚，1 点'), findsOneWidget);
+    expect(find.bySemanticsLabel('第 100 枚，4 点'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('wenyou-dice-modifier')),
+        matching: find.text('−2'),
+      ),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('wenyou-dice-result-99')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(const ValueKey('wenyou-dice-result-99'))).top,
+      lessThan(tester.getRect(sheet).bottom),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  test('骰子触发器语义不提前朗读逐骰结果', () {
     expect(
       formatWenyouDiceSemantics(
         notation: '2d6+3',
         results: const [4, 6],
         total: 13,
       ),
-      '骰子 2d6+3，逐骰结果 4、6，修正加 3，总计 13',
+      '骰子 2d6+3，总计 13',
     );
   });
 

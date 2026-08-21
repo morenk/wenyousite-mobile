@@ -77,9 +77,15 @@ class SubthreadManagementController
     }
   }
 
-  Future<bool> create(SubthreadManagementDraft draft) async {
+  Future<MutationSubmitResult<SubthreadManagementItem>> create(
+    SubthreadManagementDraft draft,
+  ) async {
     final bootstrap = state.bootstrap;
-    if (bootstrap == null || state.isBusy) return false;
+    if (bootstrap == null || state.isBusy) {
+      return const MutationSubmitResult.failed(
+        ApiFailure(userMessage: '当前无法添加子贴，请稍后重试。'),
+      );
+    }
     final fingerprint =
         '${draft.normalizedTitle}\u0000${draft.postingPolicy.name}';
     if (_pendingCreateFingerprint != fingerprint || _pendingCreateId == null) {
@@ -108,7 +114,9 @@ class SubthreadManagementController
       ),
       failureMessage: '子贴创建失败，请稍后刷新查看。',
     );
-    if (outcome.isDiscarded || !mounted) return false;
+    if (outcome.isDiscarded || !mounted) {
+      return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+    }
     switch (outcome.status) {
       case WriteOutcomeStatus.completed:
         var created = outcome.writeValue;
@@ -127,29 +135,41 @@ class SubthreadManagementController
           );
         } else {
           _completeFromProjection(outcome.projection!);
+          created = outcome.projection!.items.firstWhere(
+            (item) =>
+                !beforeIds.contains(item.id) &&
+                item.title == draft.normalizedTitle &&
+                item.postingPolicy == draft.postingPolicy,
+          );
         }
         _pendingCreateId = null;
         _pendingCreateFingerprint = null;
-        return true;
+        return MutationSubmitResult.completed(created);
       case WriteOutcomeStatus.failed:
         final failure = outcome.failure!;
         if (failure.businessCode == 40912) _pendingCreateId = null;
         _failMutation(failure);
-        return false;
+        return MutationSubmitResult.failed(failure);
       case WriteOutcomeStatus.indeterminate:
         _indeterminateMutation(outcome, bootstrap);
-        return false;
+        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
       case WriteOutcomeStatus.confirming:
-        return false;
+        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
     }
   }
 
-  Future<bool> update(
+  Future<MutationSubmitResult<SubthreadManagementItem>> update(
     SubthreadManagementItem current,
     SubthreadManagementDraft draft,
   ) async {
-    if (state.isBusy || current.isDefault) return false;
-    if (!draft.differsFrom(current)) return true;
+    if (state.isBusy || current.isDefault) {
+      return const MutationSubmitResult.failed(
+        ApiFailure(userMessage: '当前无法保存子贴，请稍后重试。'),
+      );
+    }
+    if (!draft.differsFrom(current)) {
+      return MutationSubmitResult.completed(current);
+    }
     state = state.copyWith(
       failure: null,
       pendingAction: SubthreadManagementAction.updating,
@@ -168,29 +188,48 @@ class SubthreadManagementController
       ),
       failureMessage: '子贴保存失败，请稍后刷新查看。',
     );
-    if (outcome.isDiscarded || !mounted) return false;
+    if (outcome.isDiscarded || !mounted) {
+      return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+    }
     switch (outcome.status) {
       case WriteOutcomeStatus.completed:
+        late final SubthreadManagementItem updated;
         if (outcome.projection != null) {
           _completeFromProjection(outcome.projection!);
+          updated = outcome.projection!.items.firstWhere(
+            (item) => item.id == current.id,
+          );
         } else {
-          _replaceItem(outcome.writeValue!);
+          updated = outcome.writeValue!;
+          _replaceItem(updated);
           _completePending();
         }
-        return true;
+        return MutationSubmitResult.completed(updated);
       case WriteOutcomeStatus.failed:
         final failure = outcome.failure!;
         if (failure.businessCode == 40002 || failure.httpStatus == 409) {
-          await _reloadAfterConflict(failure);
+          final latest = await _reloadAfterConflict(failure);
+          if (latest != null) {
+            final matches = latest.items.where(
+              (item) =>
+                  item.id == current.id &&
+                  item.title == draft.normalizedTitle &&
+                  item.postingPolicy == draft.postingPolicy,
+            );
+            if (matches.isNotEmpty) {
+              _completeFromProjection(latest);
+              return MutationSubmitResult.completed(matches.first);
+            }
+          }
         } else {
           _failMutation(failure);
         }
-        return false;
+        return MutationSubmitResult.failed(state.failure ?? failure);
       case WriteOutcomeStatus.indeterminate:
         _indeterminateMutation(outcome, bootstrap);
-        return false;
+        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
       case WriteOutcomeStatus.confirming:
-        return false;
+        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
     }
   }
 
@@ -209,7 +248,7 @@ class SubthreadManagementController
       targetReached: (latest) =>
           !latest.items.any((candidate) => candidate.id == item.id),
       failureMessage: '子贴删除失败，请稍后刷新查看。',
-      convergentBusinessCodes: const {40400},
+      convergentBusinessCodes: const {40400, 40404},
     );
     if (outcome.isDiscarded || !mounted) return false;
     switch (outcome.status) {
@@ -388,7 +427,9 @@ class SubthreadManagementController
     );
   }
 
-  Future<void> _reloadAfterConflict(ApiFailure conflict) async {
+  Future<SubthreadManagementBootstrap?> _reloadAfterConflict(
+    ApiFailure conflict,
+  ) async {
     try {
       final latest = await _repository.load(_threadId);
       state = state.copyWith(
@@ -399,6 +440,7 @@ class SubthreadManagementController
         actionOutcome: null,
         actionRequestId: null,
       );
+      return latest;
     } on ApiFailure catch (reloadFailure) {
       state = state.copyWith(
         failure: reloadFailure,
@@ -407,6 +449,7 @@ class SubthreadManagementController
         actionOutcome: null,
         actionRequestId: null,
       );
+      return null;
     }
   }
 }

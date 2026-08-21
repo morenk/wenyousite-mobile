@@ -51,18 +51,27 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
       );
     } on Object catch (error) {
       if (!_isCurrent(epoch)) return;
-      state = PostDiscussionState(
-        phase: PostDiscussionPhase.failed,
-        order: state.order,
-        authorId: state.authorId,
-        failure: _asFailure(error, '楼中楼讨论加载失败，请稍后重试。'),
-      );
+      final failure = _asFailure(error, '楼中楼讨论加载失败，请稍后重试。');
+      if (_isRestricted(failure)) {
+        _hideRestrictedContent(failure);
+      } else {
+        state = PostDiscussionState(
+          phase: PostDiscussionPhase.failed,
+          order: state.order,
+          authorId: state.authorId,
+          failure: failure,
+        );
+      }
     }
   }
 
   Future<void> refresh() async {
     if (state.phase != PostDiscussionPhase.ready || state.isRefreshing) return;
-    state = state.copyWith(isRefreshing: true, transientFailure: null);
+    state = state.copyWith(
+      isRefreshing: true,
+      transientFailure: null,
+      retryAction: null,
+    );
     final epoch = ++_epoch;
     try {
       final root = await _repository.fetchPost(target.rootPostId);
@@ -82,12 +91,19 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
         isRefreshing: false,
         failure: null,
         transientFailure: null,
+        retryAction: null,
       );
     } on Object catch (error) {
       if (!_isCurrent(epoch)) return;
+      final failure = _asFailure(error, '楼中楼讨论刷新失败，请稍后重试。');
+      if (_isRestricted(failure)) {
+        _hideRestrictedContent(failure);
+        return;
+      }
       state = state.copyWith(
         isRefreshing: false,
-        transientFailure: _asFailure(error, '楼中楼讨论刷新失败，请稍后重试。'),
+        transientFailure: failure,
+        retryAction: PostDiscussionRetryAction.refresh,
       );
     }
   }
@@ -96,7 +112,7 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
     if (order == state.order || state.phase != PostDiscussionPhase.ready) {
       return;
     }
-    state = state.copyWith(order: order, authorId: null);
+    state = state.copyWith(order: order);
     await load();
   }
 
@@ -117,7 +133,11 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
       return;
     }
     final epoch = _epoch;
-    state = state.copyWith(isLoadingMore: true, transientFailure: null);
+    state = state.copyWith(
+      isLoadingMore: true,
+      transientFailure: null,
+      retryAction: null,
+    );
     try {
       final page = await _repository.fetchReplies(
         rootPostId: target.rootPostId,
@@ -131,16 +151,34 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingMore: false,
+        transientFailure: null,
+        retryAction: null,
       );
     } on Object catch (error) {
       if (!_isCurrent(epoch)) return;
       final failure = _asFailure(error, '更多回复加载失败，请稍后重试。');
+      if (_isRestricted(failure)) {
+        _hideRestrictedContent(failure);
+        return;
+      }
       if (failure.isInvalidCursor) {
         await load();
         return;
       }
-      state = state.copyWith(isLoadingMore: false, transientFailure: failure);
+      state = state.copyWith(
+        isLoadingMore: false,
+        transientFailure: failure,
+        retryAction: PostDiscussionRetryAction.loadMore,
+      );
     }
+  }
+
+  Future<void> retryTransientFailure() {
+    return switch (state.retryAction) {
+      PostDiscussionRetryAction.refresh => refresh(),
+      PostDiscussionRetryAction.loadMore => loadMore(),
+      null => Future<void>.value(),
+    };
   }
 
   void _assertRoot(PostItem root) {
@@ -170,6 +208,18 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
   }
 
   bool _isCurrent(int epoch) => mounted && epoch == _epoch;
+
+  bool _isRestricted(ApiFailure failure) =>
+      failure.httpStatus == 403 || failure.httpStatus == 404;
+
+  void _hideRestrictedContent(ApiFailure failure) {
+    state = PostDiscussionState(
+      phase: PostDiscussionPhase.restricted,
+      order: state.order,
+      authorId: state.authorId,
+      failure: failure,
+    );
+  }
 
   static List<PostItem> _mergeReplies(
     Iterable<PostItem> current,
@@ -423,11 +473,14 @@ class PostActionController extends StateNotifier<PostActionState> {
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
-      state = PostActionState(
-        failure: error is ApiFailure
-            ? error
-            : ApiFailure(userMessage: '帖子没有删除成功，请稍后重试。', cause: error),
-      );
+      final failure = error is ApiFailure
+          ? error
+          : ApiFailure(userMessage: '帖子没有删除成功，请稍后重试。', cause: error);
+      if (failure.businessCode == 40403) {
+        state = const PostActionState(successMessage: '帖子已删除。');
+        return true;
+      }
+      state = PostActionState(failure: failure);
       return false;
     }
   }
@@ -444,24 +497,24 @@ final postDiscussionControllerProvider = StateNotifierProvider.autoDispose
       PostDiscussionState,
       PostDiscussionTarget
     >((ref, target) {
-      ref.watch(sessionControllerProvider);
+      ref.watch(sessionScopeProvider);
       return PostDiscussionController(
         ref.watch(postRepositoryProvider),
         target,
       );
-    }, dependencies: [postRepositoryProvider]);
+    }, dependencies: [sessionScopeProvider, postRepositoryProvider]);
 
 final postComposerControllerProvider = StateNotifierProvider.autoDispose
     .family<PostComposerController, PostComposerState, PostComposerTarget>((
       ref,
       target,
     ) {
-      ref.watch(sessionControllerProvider);
+      ref.watch(sessionScopeProvider);
       return PostComposerController(ref.watch(postRepositoryProvider), target);
-    }, dependencies: [postRepositoryProvider]);
+    }, dependencies: [sessionScopeProvider, postRepositoryProvider]);
 
 final postActionControllerProvider = StateNotifierProvider.autoDispose
     .family<PostActionController, PostActionState, String>((ref, threadId) {
-      ref.watch(sessionControllerProvider);
+      ref.watch(sessionScopeProvider);
       return PostActionController(ref.watch(postRepositoryProvider));
-    }, dependencies: [postRepositoryProvider]);
+    }, dependencies: [sessionScopeProvider, postRepositoryProvider]);

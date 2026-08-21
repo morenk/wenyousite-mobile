@@ -86,6 +86,24 @@ void main() {
     expect(controller.state.isDeleting, isFalse);
     expect(controller.state.failure?.requestId, 'remove-request-id');
   });
+
+  test('主题删除重放返回 THREAD_NOT_FOUND 时收敛为已经删除', () async {
+    final repository = _FakeRepository(
+      initial: _bootstrap(version: 1),
+      removeFailure: const ApiFailure(
+        userMessage: '主题不存在。',
+        httpStatus: 404,
+        businessCode: 40402,
+      ),
+    );
+    final controller = ThreadManagementController('thread-1', repository);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(await controller.remove(), isTrue);
+    expect(controller.state.isDeleting, isFalse);
+    expect(controller.state.failure, isNull);
+  });
 }
 
 Future<void> _settle() async {

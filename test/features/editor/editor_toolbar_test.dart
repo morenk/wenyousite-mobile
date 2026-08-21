@@ -3,9 +3,29 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 
 void main() {
+  test('骰子三字段生成 canonical 表达式并省略零修正', () {
+    expect(
+      canonicalDiceNotation(quantity: '02', sides: '006', modifier: '+03'),
+      '2d6+3',
+    );
+    expect(
+      canonicalDiceNotation(quantity: '1', sides: '20', modifier: ''),
+      '1d20',
+    );
+    expect(
+      canonicalDiceNotation(quantity: '2', sides: '10', modifier: '-4'),
+      '2d10-4',
+    );
+    expect(
+      canonicalDiceNotation(quantity: '101', sides: '6', modifier: '0'),
+      isNull,
+    );
+  });
+
   for (final width in const [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 工具栏按可用宽度提升常用命令', (tester) async {
       tester.view.physicalSize = Size(width, 640);
@@ -216,15 +236,128 @@ void main() {
     await tester.tap(find.byTooltip('骰子'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
-    await tester.enterText(find.byType(TextField).last, '2d6+3');
+    expect(find.text('预览：1d20 = ?'), findsOneWidget);
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('editor-dice-quantity')),
+        matching: find.byType(TextField),
+      ),
+      '2',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('editor-dice-modifier')),
+        matching: find.byType(TextField),
+      ),
+      '3',
+    );
+    await tester.tap(find.byKey(const Key('editor-dice-quick-d6')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(
+              of: find.byKey(const Key('editor-dice-quantity')),
+              matching: find.byType(TextField),
+            ),
+          )
+          .controller
+          ?.text,
+      '2',
+    );
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(
+              of: find.byKey(const Key('editor-dice-modifier')),
+              matching: find.byType(TextField),
+            ),
+          )
+          .controller
+          ?.text,
+      '3',
+    );
+    expect(find.text('预览：2d6+3 = ?'), findsOneWidget);
     await tester.tap(find.byTooltip('确认插入'));
     await tester.pumpAndSettle();
     final markdown = MarkdownDeltaCodec.encode(controller.document.toDelta());
-    expect(markdown, contains('2d6+3'));
+    final insertedDice = RegExp(
+      r'\[\[dice:v1:([0-9a-f-]{36}):2d6\+3\]\]',
+    ).firstMatch(markdown);
+    expect(insertedDice, isNotNull);
+    expect(insertedDice!.group(1), isNotEmpty);
     expect(
       MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(markdown).delta),
       markdown,
     );
+  });
+
+  testWidgets('骰子字段无效时保留插入器并给出任务内错误', (tester) async {
+    final controller = QuillController.basic();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('editor-dice-quantity')),
+        matching: find.byType(TextField),
+      ),
+      '101',
+    );
+    await tester.pump();
+    expect(find.text('预览：—'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('确认插入'));
+    await tester.pump();
+    expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
+    expect(find.byKey(const Key('editor-dice-error')), findsOneWidget);
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      isNot(contains('[[dice:')),
+    );
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('editor-dice-quantity')),
+        matching: find.byType(TextField),
+      ),
+      '1',
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('editor-dice-error')), findsNothing);
+    expect(find.text('预览：1d20 = ?'), findsOneWidget);
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('editor-dice-modifier')),
+        matching: find.byType(TextField),
+      ),
+      '10001',
+    );
+    await tester.tap(find.byTooltip('确认插入'));
+    await tester.pump();
+    expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
+    expect(find.textContaining('修正范围为 -10000～10000'), findsOneWidget);
   });
 
   testWidgets('可扩展面板在键盘收起时为系统导航区保留空间', (tester) async {

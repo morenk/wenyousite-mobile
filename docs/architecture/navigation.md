@@ -14,7 +14,7 @@ go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `return
 
 公开标签使用命名路由 `/tags/:tagId`。首页、主题详情和标签主题卡片只传服务端稳定标签 ID，页面重新读取 `tagsGetById` 事实并通过 `threadsFindAll(tagId)` 精确聚合公开主题；标签不存在、已停用或不可访问时不根据名称猜测替代目标。公开标签页不要求登录，进入其中的主题仍复用 `/threads/:threadId`。
 
-私密邀请使用受保护命名路由 `/join/:token`，token 是 16 位不透明 base64url 值，只用于预览和幂等加入，不解析业务信息。游客进入时完整路径写入安全 `returnTo`，登录后恢复预览；加入要求邮箱已验证，验证页返回后仍由用户显式确认加入。预览确认已加入或加入响应中的主题 ID 与预览一致后，替换到 `/threads/:threadId`。失效邀请回首页，不猜测主题 ID。V1 未配置 Android App Links，楼主复制的是 Web 同形链接，由 Web 负责外部落地；应用内路由先固定兼容边界。
+私密邀请使用受保护命名路由 `/join/:token`，token 是 16 位不透明 base64url 值，只用于预览和幂等加入，不解析业务信息。游客进入时完整路径写入安全 `returnTo`，登录后恢复预览并由用户显式确认加入；契约 4.14 后不再存在登录后邮箱验证门槛。预览确认已加入或加入响应中的主题 ID 与预览一致后，替换到 `/threads/:threadId`。失效邀请回首页，不猜测主题 ID。V1 未配置 Android App Links，楼主复制的是 Web 同形链接，由 Web 负责外部落地；应用内路由先固定兼容边界。
 
 0.3 的全站搜索页使用 `/search`，“动态 / 主题帖 / 楼层内容 / 用户”四个纯文字等宽 Tab 按需加载并在 360dp 全部可见。动态进入 `/moments/:momentId`，主题帖进入 `/threads/:threadId`，楼层内容进入同一主题详情的 `post` 定位。公开用户资料使用命名路由 `/users/:userId`；搜索用户结果和 Markdown `/users/{id}` 站内链接只传稳定用户 ID，由资料页重新读取权限与可见性。公开统计进入 `/users/:userId/following` 与 `/users/:userId/followers`，列表项再以 userId 返回同一资料路由。公开用户内容里的主题卡片继续进入 `/threads/:threadId`，最近回复则使用同一 `post` 查询参数约定，不建立用户页专属临时目标。
 

@@ -16,6 +16,7 @@ class DirectMessageTimeline extends StatefulWidget {
     required this.onRecall,
     required this.onRetryMessage,
     required this.onAbandonFailedMessage,
+    this.onReportMessage,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class DirectMessageTimeline extends StatefulWidget {
   final ValueChanged<DirectMessage> onRecall;
   final ValueChanged<String> onRetryMessage;
   final ValueChanged<String> onAbandonFailedMessage;
+  final DirectMessageReportCallback? onReportMessage;
 
   @override
   State<DirectMessageTimeline> createState() => _DirectMessageTimelineState();
@@ -298,6 +300,7 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
                         ? () => widget.onAbandonFailedMessage(message.id)
                         : null,
                     onRecall: () => widget.onRecall(message),
+                    onReport: widget.onReportMessage,
                   ),
                 ],
               ),

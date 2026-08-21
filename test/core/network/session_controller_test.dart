@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,114 @@ void main() {
     expect(controller.currentUserId, 'user-one');
     await controller.authenticate(_oldTokens);
     expect(controller.currentUserId, isNull);
+  });
+
+  test('会话 scope 在令牌刷新时稳定，仅在登录边界推进代次', () async {
+    final remote = _FakeSessionRemote(
+      onRefresh: (_) async => _tokensFor('user-one', '2'),
+    );
+    final controller = SessionController(_MemoryTokenStore(), remote);
+    await controller.authenticate(_tokensFor('user-one', '1'));
+    final signedIn = controller.scope;
+
+    await controller.refresh();
+
+    expect(controller.scope, signedIn);
+    await controller.authenticate(_tokensFor('user-two', '1'));
+    final switchedAccount = controller.scope;
+    expect(switchedAccount.accountId, 'user-two');
+    expect(switchedAccount.generation, greaterThan(signedIn.generation));
+
+    await controller.logoutLocally();
+    final signedOut = controller.scope;
+    expect(signedOut.accountId, isNull);
+    expect(signedOut.generation, greaterThan(switchedAccount.generation));
+
+    await controller.authenticate(_tokensFor('user-two', '2'));
+    final reauthenticated = controller.scope;
+    await controller.invalidate(SessionInvalidationReason.revoked);
+    expect(controller.scope.accountId, isNull);
+    expect(
+      controller.scope.generation,
+      greaterThan(reauthenticated.generation),
+    );
+  });
+
+  test('重复恢复同一账号保持 scope，恢复为空或失败时推进退出边界', () async {
+    final store = _MemoryTokenStore()..value = _tokensFor('user-one', '1');
+    final controller = SessionController(store, _FakeSessionRemote());
+
+    await controller.restore();
+    final restored = controller.scope;
+    await controller.restore();
+    expect(controller.scope, restored);
+
+    store.value = null;
+    await controller.restore();
+    expect(controller.scope.accountId, isNull);
+    expect(controller.scope.generation, greaterThan(restored.generation));
+
+    await controller.authenticate(_tokensFor('user-two', '1'));
+    final authenticated = controller.scope;
+    store.readError = StateError('secure storage unavailable');
+    await controller.restore();
+    expect(controller.scope.accountId, isNull);
+    expect(controller.scope.generation, greaterThan(authenticated.generation));
+  });
+
+  test('旧会话刷新迟到成功不会覆盖已切换账号', () async {
+    final refresh = Completer<SessionTokens>();
+    final store = _MemoryTokenStore();
+    final controller = SessionController(
+      store,
+      _FakeSessionRemote(onRefresh: (_) => refresh.future),
+    );
+    await controller.authenticate(_tokensFor('user-one', '1'));
+    final expectation = expectLater(
+      controller.refresh(),
+      throwsA(isA<ApiFailure>()),
+    );
+
+    final nextTokens = _tokensFor('user-two', '1');
+    await controller.authenticate(nextTokens);
+    final switchedScope = controller.scope;
+    refresh.complete(_tokensFor('user-one', '2'));
+    await expectation;
+
+    expect(controller.tokens, same(nextTokens));
+    expect(store.value, same(nextTokens));
+    expect(controller.scope, switchedScope);
+    expect(controller.state.isAuthenticated, isTrue);
+  });
+
+  test('旧会话刷新迟到失败不会清除已切换账号', () async {
+    final refresh = Completer<SessionTokens>();
+    final store = _MemoryTokenStore();
+    final controller = SessionController(
+      store,
+      _FakeSessionRemote(onRefresh: (_) => refresh.future),
+    );
+    await controller.authenticate(_tokensFor('user-one', '1'));
+    final expectation = expectLater(
+      controller.refresh(),
+      throwsA(isA<ApiFailure>()),
+    );
+
+    final nextTokens = _tokensFor('user-two', '1');
+    await controller.authenticate(nextTokens);
+    refresh.completeError(
+      const ApiFailure(
+        userMessage: '旧会话已撤销。',
+        httpStatus: 401,
+        businessCode: 40103,
+      ),
+    );
+    await expectation;
+
+    expect(controller.tokens, same(nextTokens));
+    expect(store.value, same(nextTokens));
+    expect(controller.scope.accountId, 'user-two');
+    expect(controller.state.isAuthenticated, isTrue);
   });
 
   test('并发刷新共享一次请求并原子替换双 Token', () async {
@@ -157,6 +266,16 @@ const _oldTokens = SessionTokens(
   refreshToken: 'old-refresh',
 );
 
+SessionTokens _tokensFor(String userId, String nonce) {
+  final payload = base64Url
+      .encode(utf8.encode('{"sub":"$userId","nonce":"$nonce"}'))
+      .replaceAll('=', '');
+  return SessionTokens(
+    accessToken: 'header.$payload.signature',
+    refreshToken: 'refresh-$userId-$nonce',
+  );
+}
+
 class _FakeSessionRemote implements SessionRemote {
   _FakeSessionRemote({this.onRefresh, this.onLogout});
 
@@ -184,12 +303,16 @@ class _FakeSessionRemote implements SessionRemote {
 
 class _MemoryTokenStore implements TokenStore {
   SessionTokens? value;
+  Object? readError;
 
   @override
   Future<void> clear() async => value = null;
 
   @override
-  Future<SessionTokens?> read() async => value;
+  Future<SessionTokens?> read() async {
+    if (readError case final error?) throw error;
+    return value;
+  }
 
   @override
   Future<void> write(SessionTokens tokens) async => value = tokens;

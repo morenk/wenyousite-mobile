@@ -23,6 +23,7 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_ports.
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
@@ -46,6 +47,10 @@ void main() {
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         stickersEnabledProvider.overrideWithValue(false),
         postRepositoryProvider.overrideWithValue(repository),
+        postThreadContextLookupProvider.overrideWithValue(
+          (_) async =>
+              const PostThreadContext(isPrivate: false, canManageThread: false),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -58,11 +63,7 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const PostRepliesPage(
-            threadId: 'thread',
-            rootPostId: 'root',
-            reportsEnabled: true,
-          ),
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
         ),
       ),
     );
@@ -295,6 +296,55 @@ void main() {
     expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
   });
 
+  testWidgets('私密主题管理者可删除他人回复但不会获得举报入口', (tester) async {
+    final repository = _FakePostRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(repository),
+        postThreadContextLookupProvider.overrideWithValue(
+          (_) async =>
+              const PostThreadContext(isPrivate: true, canManageThread: true),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('thread-manager'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('post-card-action-reply-other-delete')),
+      findsOneWidget,
+    );
+    expect(find.text('举报'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const Key('post-card-action-reply-other-delete')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '删除'));
+    await tester.pumpAndSettle();
+
+    expect(repository.removedIds, ['reply-other']);
+    expect(find.text('他人的回复'), findsNothing);
+  });
+
   testWidgets('点击别人的楼中楼回复会把回复目标指向该回复', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
@@ -368,11 +418,7 @@ void main() {
           theme: AppTheme.light,
           home: const RepaintBoundary(
             key: Key('post-composer-text-first-visual'),
-            child: PostRepliesPage(
-              threadId: 'thread',
-              rootPostId: 'root',
-              reportsEnabled: true,
-            ),
+            child: PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
           ),
         ),
       ),
@@ -618,6 +664,101 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('发布请求在途时系统返回不会丢失待确认创建状态', (tester) async {
+    final pendingCreate = Completer<PostItem>();
+    final repository = _FakePostRepository(createCompleter: pendingCreate);
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+    await _replaceComposerText(tester, '等待服务端确认的回复');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await tester.pump();
+
+    expect(repository.createInputs, hasLength(1));
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('post-composer-body')),
+    );
+    expect(
+      MarkdownDeltaCodec.encode(editor.controller.document.toDelta()),
+      contains('等待服务端确认的回复'),
+    );
+    expect(editor.controller.readOnly, isTrue);
+
+    pendingCreate.complete(_reply('created-pending', '等待服务端确认的回复', _author));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(repository.createInputs, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('首屏外目标回复会在懒加载构建后滚入真实视口', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final replies = [
+      for (var index = 1; index <= 20; index += 1)
+        _reply(
+          'long-reply-$index',
+          '第 $index 条较长回复，用来确保目标一开始不在 Sliver 构建范围内。\n\n补充内容。',
+          _otherAuthor,
+        ),
+      _reply('far-reply', '远端目标回复', _otherAuthor),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(
+            _FakePostRepository(initialReplies: replies),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(
+            threadId: 'thread',
+            rootPostId: 'root',
+            focusedReplyId: 'far-reply',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final targetFinder = find.byKey(const Key('post-reply-far-reply'));
+    expect(targetFinder, findsOneWidget);
+    final targetRect = tester.getRect(targetFinder);
+    expect(targetRect.bottom, greaterThan(0));
+    expect(targetRect.top, lessThan(640));
+  });
+
   testWidgets('360dp 独立讨论保持正文优先视觉基线', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
@@ -857,10 +998,16 @@ Future<void> _replaceComposerText(WidgetTester tester, String text) async {
 }
 
 class _FakePostRepository implements PostRepository {
-  final List<PostItem> replies = [
-    _reply('reply-own', '自己的回复', _author),
-    _reply('reply-other', '他人的回复', _otherAuthor),
-  ];
+  _FakePostRepository({this.createCompleter, List<PostItem>? initialReplies})
+    : replies =
+          initialReplies ??
+          [
+            _reply('reply-own', '自己的回复', _author),
+            _reply('reply-other', '他人的回复', _otherAuthor),
+          ];
+
+  final Completer<PostItem>? createCompleter;
+  final List<PostItem> replies;
   final List<PostCreateInput> createInputs = [];
   final List<({String id, String content, int version})> updateRequests = [];
   final List<String> removedIds = [];
@@ -894,7 +1041,9 @@ class _FakePostRepository implements PostRepository {
   @override
   Future<PostItem> create(PostCreateInput input) async {
     createInputs.add(input);
-    final created = _reply('created', input.content, _author);
+    final created = createCompleter == null
+        ? _reply('created', input.content, _author)
+        : await createCompleter!.future;
     replies.add(created);
     return created;
   }

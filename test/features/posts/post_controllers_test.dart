@@ -82,6 +82,93 @@ void main() {
     expect(controller.state.transientFailure, isNull);
   });
 
+  test('楼中楼刷新遇到权限撤销时清除已经显示的私密内容', () async {
+    var calls = 0;
+    final repository = _FakePostRepository(
+      posts: {'root': _post('root')},
+      onReplies: ({cursor, required order, authorId}) async {
+        calls += 1;
+        if (calls > 1) {
+          throw const ApiFailure(userMessage: '当前无法查看这段讨论。', httpStatus: 403);
+        }
+        return CursorPage(
+          items: [_reply('private-reply')],
+          cursor: 'next',
+          hasMore: true,
+        );
+      },
+    );
+    final controller = PostDiscussionController(repository, (
+      rootPostId: 'root',
+      focusedReplyId: null,
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    expect(controller.state.root, isNotNull);
+    expect(controller.state.replies, isNotEmpty);
+
+    await controller.refresh();
+
+    expect(controller.state.phase, PostDiscussionPhase.restricted);
+    expect(controller.state.root, isNull);
+    expect(controller.state.replies, isEmpty);
+    expect(controller.state.cursor, isNull);
+    expect(controller.state.hasMore, isFalse);
+    expect(controller.state.failure?.httpStatus, 403);
+  });
+
+  test('刷新失败的重试仍刷新首屏而不是错误加载下一页', () async {
+    var calls = 0;
+    final repository = _FakePostRepository(
+      posts: {'root': _post('root')},
+      onReplies: ({cursor, required order, authorId}) async {
+        calls += 1;
+        if (calls == 2) {
+          throw const ApiFailure(userMessage: '暂时不可用。', httpStatus: 503);
+        }
+        return CursorPage(items: [_reply('reply-$calls')], hasMore: false);
+      },
+    );
+    final controller = PostDiscussionController(repository, (
+      rootPostId: 'root',
+      focusedReplyId: null,
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    await controller.refresh();
+    expect(controller.state.retryAction, PostDiscussionRetryAction.refresh);
+
+    await controller.retryTransientFailure();
+
+    expect(controller.state.replies.single.id, 'reply-3');
+    expect(repository.replyRequests.last.cursor, isNull);
+    expect(controller.state.transientFailure, isNull);
+    expect(controller.state.retryAction, isNull);
+  });
+
+  test('切换回复排序保留已选择的作者筛选', () async {
+    final repository = _FakePostRepository(
+      posts: {'root': _post('root')},
+      onReplies: ({cursor, required order, authorId}) async =>
+          CursorPage(items: [_reply('reply')], hasMore: false),
+    );
+    final controller = PostDiscussionController(repository, (
+      rootPostId: 'root',
+      focusedReplyId: null,
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    await controller.setAuthor('author-1');
+    await controller.setOrder(PostReplyOrder.newest);
+
+    expect(controller.state.authorId, 'author-1');
+    expect(repository.replyRequests.last.authorId, 'author-1');
+    expect(repository.replyRequests.last.order, PostReplyOrder.newest);
+  });
+
   test('创建结果不明确时复用幂等键，确认后补写用户的新内容', () async {
     var createCalls = 0;
     final repository = _FakePostRepository(
@@ -166,6 +253,22 @@ void main() {
     final floor = _post('floor');
     expect(await actions.remove(floor), isTrue);
     expect(repository.removedIds, ['floor']);
+  });
+
+  test('帖子删除重放返回 POST_NOT_FOUND 时收敛为已经删除', () async {
+    final repository = _FakePostRepository(
+      removeFailure: const ApiFailure(
+        userMessage: '帖子不存在。',
+        httpStatus: 404,
+        businessCode: 40403,
+      ),
+    );
+    final actions = PostActionController(repository);
+    addTearDown(actions.dispose);
+
+    expect(await actions.remove(_post('already-removed')), isTrue);
+    expect(actions.state.failure, isNull);
+    expect(actions.state.successMessage, '帖子已删除。');
   });
 }
 
@@ -265,12 +368,14 @@ class _FakePostRepository implements PostRepository {
     this.onReplies,
     this.onCreate,
     this.onUpdate,
+    this.removeFailure,
   });
 
   final Map<String, PostItem> posts;
   final _ReplyLoader? onReplies;
   final Future<PostItem> Function(PostCreateInput input)? onCreate;
   final _UpdateHandler? onUpdate;
+  final ApiFailure? removeFailure;
   final List<({String? cursor, PostReplyOrder order, String? authorId})>
   replyRequests = [];
   final List<PostCreateInput> createInputs = [];
@@ -333,5 +438,8 @@ class _FakePostRepository implements PostRepository {
   }
 
   @override
-  Future<void> remove(String postId) async => removedIds.add(postId);
+  Future<void> remove(String postId) async {
+    if (removeFailure case final failure?) throw failure;
+    removedIds.add(postId);
+  }
 }

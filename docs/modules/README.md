@@ -19,7 +19,7 @@
 | direct-messages | in_progress | 私聊主闭环已交付；公网弱网与长会话验收待补齐 | [站内私聊](direct-messages.md) |
 | stickers | in_progress | 收藏表情主闭环已交付；公网处理态验收待补齐 | [表情包](stickers.md) |
 | users | in_progress | 用户资料主闭环已交付；背景图与活动汇总待接入 | [用户](users.md) |
-| reports | in_progress | 社区举报主闭环已交付；公网五类目标联调待补齐 | [社区举报](reports.md) |
+| reports | in_progress | 社区举报六类目标主闭环已交付；公网联调待补齐 | [社区举报](reports.md) |
 | moderation | in_progress | 治理决定与申诉已交付；管理员隐藏能力待接入 | [治理决定与申诉](moderation.md) |
 | wallet | in_progress | 钱包与加油主闭环已交付；公网账务联调待补齐 | [温油钱包](wallet.md) |
 | social | in_progress | 收藏、订阅与关系主闭环已交付；切号回归待补齐 | [社交关系](social.md) |

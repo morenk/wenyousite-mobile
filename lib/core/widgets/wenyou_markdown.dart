@@ -17,27 +17,21 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 
+export 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart'
+    show WenyouDiceRollDetail;
+
 String formatWenyouDiceSemantics({
   required String notation,
   required List<int> results,
   required int total,
-}) {
-  if (results.isEmpty) return '骰子 $notation，总计 $total';
-  final resultTotal = results.fold<int>(0, (sum, result) => sum + result);
-  final modifier = total - resultTotal;
-  final modifierPhrase = switch (modifier) {
-    > 0 => '，修正加 $modifier',
-    < 0 => '，修正减 ${modifier.abs()}',
-    _ => '',
-  };
-  return '骰子 $notation，逐骰结果 ${results.join('、')}$modifierPhrase，总计 $total';
-}
+}) => '骰子 $notation，总计 $total';
 
 class WenyouMarkdown extends StatefulWidget {
   const WenyouMarkdown({
     required this.data,
     this.diceLabels = const {},
     this.diceSemantics = const {},
+    this.diceDetails = const {},
     this.onInternalLink,
     this.onSaveImage,
     this.onTapText,
@@ -49,6 +43,7 @@ class WenyouMarkdown extends StatefulWidget {
   final String data;
   final Map<String, String> diceLabels;
   final Map<String, String> diceSemantics;
+  final Map<String, WenyouDiceRollDetail> diceDetails;
   final ValueChanged<Uri>? onInternalLink;
   final Future<String> Function(Uri uri)? onSaveImage;
   final VoidCallback? onTapText;
@@ -63,6 +58,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     with AutomaticKeepAliveClientMixin<WenyouMarkdown> {
   late final ValueNotifier<Map<String, String>> _diceLabels;
   late final ValueNotifier<Map<String, String>> _diceSemantics;
+  late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
   List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
@@ -75,6 +71,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     super.initState();
     _diceLabels = ValueNotifier(Map.unmodifiable(widget.diceLabels));
     _diceSemantics = ValueNotifier(Map.unmodifiable(widget.diceSemantics));
+    _diceDetails = ValueNotifier(Map.unmodifiable(widget.diceDetails));
     _prepareData();
   }
 
@@ -93,6 +90,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
     if (!mapEquals(oldWidget.diceSemantics, widget.diceSemantics)) {
       _diceSemantics.value = Map.unmodifiable(widget.diceSemantics);
     }
+    if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
+      _diceDetails.value = Map.unmodifiable(widget.diceDetails);
+    }
     if (oldWidget.data != widget.data) {
       _prepareData();
     }
@@ -106,6 +106,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
   void dispose() {
     _diceLabels.dispose();
     _diceSemantics.dispose();
+    _diceDetails.dispose();
     super.dispose();
   }
 
@@ -128,7 +129,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
           _internalReferences,
           (reference) => _openInternalReference(context, reference),
         ),
-        'wenyou-dice': _DiceMarkdownBuilder(_diceLabels, _diceSemantics),
+        'wenyou-dice': _DiceMarkdownBuilder(
+          _diceLabels,
+          _diceSemantics,
+          _diceDetails,
+        ),
         'wenyou-mention': _MentionMarkdownBuilder(
           (location) => _openInternalLocation(context, location),
         ),
@@ -435,10 +440,15 @@ class _DiceInlineSyntax extends md.InlineSyntax {
 }
 
 class _DiceMarkdownBuilder extends MarkdownElementBuilder {
-  _DiceMarkdownBuilder(this.labelsByNodeId, this.semanticsByNodeId);
+  _DiceMarkdownBuilder(
+    this.labelsByNodeId,
+    this.semanticsByNodeId,
+    this.detailsByNodeId,
+  );
 
   final ValueListenable<Map<String, String>> labelsByNodeId;
   final ValueListenable<Map<String, String>> semanticsByNodeId;
+  final ValueListenable<Map<String, WenyouDiceRollDetail>> detailsByNodeId;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -458,20 +468,27 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
             child: ListenableBuilder(
-              listenable: Listenable.merge([labelsByNodeId, semanticsByNodeId]),
+              listenable: Listenable.merge([
+                labelsByNodeId,
+                semanticsByNodeId,
+                detailsByNodeId,
+              ]),
               builder: (context, _) {
                 final labels = labelsByNodeId.value;
-                final label = labels[nodeId] ?? '$notation = ?';
+                final detail = detailsByNodeId.value[nodeId];
+                final label = detail == null
+                    ? labels[nodeId] ?? '$notation = ?'
+                    : '$notation = ${detail.total}';
+                final settled = detail != null || labels.containsKey(nodeId);
                 return WenyouDiceNode(
                   key: ValueKey('wenyou-dice-$nodeId'),
                   label: label,
-                  semanticLabel:
-                      semanticsByNodeId.value[nodeId] ??
-                      (labels.containsKey(nodeId)
-                          ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
-                          : '骰子 $notation，待掷'),
-                  settled: labels.containsKey(nodeId),
+                  semanticLabel: settled
+                      ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
+                      : semanticsByNodeId.value[nodeId] ?? '骰子 $notation，待掷',
+                  settled: settled,
                   style: style,
+                  detail: detail,
                 );
               },
             ),

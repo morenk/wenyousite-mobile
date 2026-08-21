@@ -101,95 +101,98 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
     final tokens = context.wenyouTokens;
     final provider = reportControllerProvider(widget.target);
     final state = ref.watch(provider);
-    return AlertDialog(
-      title: Text('举报${widget.targetLabel}'),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '提交后会保存当前目标快照并进入人工审核。管理员可看到你的举报账号；举报不会立即删除内容。',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                ),
-                SizedBox(height: tokens.space16),
-                DropdownButtonFormField<ReportReason>(
-                  key: const Key('report-reason'),
-                  initialValue: _reason,
-                  decoration: const InputDecoration(labelText: '举报原因'),
-                  items: [
-                    for (final reason in ReportReason.values)
-                      DropdownMenuItem(
-                        value: reason,
-                        child: Text(reason.label),
-                      ),
-                  ],
-                  onChanged: state.isSubmitting
-                      ? null
-                      : (value) {
-                          if (value != null) setState(() => _reason = value);
-                        },
-                ),
-                SizedBox(height: tokens.space12),
-                TextFormField(
-                  key: const Key('report-details'),
-                  controller: _detailsController,
-                  enabled: !state.isSubmitting,
-                  minLines: 3,
-                  maxLines: 6,
-                  maxLength: 1000,
-                  decoration: InputDecoration(
-                    labelText: _reason.requiresDetails
-                        ? '补充说明（必填）'
-                        : '补充说明（选填）',
-                    hintText: '请描述具体问题，不要填写密码、验证码等敏感信息',
-                    alignLabelWithHint: true,
+    return PopScope<Object?>(
+      canPop: !state.isSubmitting,
+      child: AlertDialog(
+        title: Text('举报${widget.targetLabel}'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '提交后会保存当前目标快照并进入人工审核。管理员可看到你的举报账号；举报不会立即删除内容。',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
                   ),
-                  validator: (value) {
-                    if (_reason.requiresDetails &&
-                        (value == null || value.trim().isEmpty)) {
-                      return '选择其他原因时，请填写补充说明';
-                    }
-                    return null;
-                  },
-                ),
-                if (state.failure != null) ...[
-                  SizedBox(height: tokens.space12),
-                  WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
-                    message: state.failure!.userMessage,
-                    detail: state.failure!.requestId == null
+                  SizedBox(height: tokens.space16),
+                  DropdownButtonFormField<ReportReason>(
+                    key: const Key('report-reason'),
+                    initialValue: _reason,
+                    decoration: const InputDecoration(labelText: '举报原因'),
+                    items: [
+                      for (final reason in ReportReason.values)
+                        DropdownMenuItem(
+                          value: reason,
+                          child: Text(reason.label),
+                        ),
+                    ],
+                    onChanged: state.isSubmitting
                         ? null
-                        : '问题编号：${state.failure!.requestId}',
+                        : (value) {
+                            if (value != null) setState(() => _reason = value);
+                          },
                   ),
+                  SizedBox(height: tokens.space12),
+                  TextFormField(
+                    key: const Key('report-details'),
+                    controller: _detailsController,
+                    enabled: !state.isSubmitting,
+                    minLines: 3,
+                    maxLines: 6,
+                    maxLength: 1000,
+                    decoration: InputDecoration(
+                      labelText: _reason.requiresDetails
+                          ? '补充说明（必填）'
+                          : '补充说明（选填）',
+                      hintText: '请描述具体问题，不要填写密码、验证码等敏感信息',
+                      alignLabelWithHint: true,
+                    ),
+                    validator: (value) {
+                      if (_reason.requiresDetails &&
+                          (value == null || value.trim().isEmpty)) {
+                        return '选择其他原因时，请填写补充说明';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (state.failure != null) ...[
+                    SizedBox(height: tokens.space12),
+                    WenyouStatusBanner(
+                      tone: WenyouStatusTone.error,
+                      message: state.failure!.userMessage,
+                      detail: state.failure!.requestId == null
+                          ? null
+                          : '问题编号：${state.failure!.requestId}',
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const Key('report-submit'),
+            onPressed: state.isSubmitting ? null : _submit,
+            child: state.isSubmitting
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('提交举报'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          key: const Key('report-submit'),
-          onPressed: state.isSubmitting ? null : _submit,
-          child: state.isSubmitting
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('提交举报'),
-        ),
-      ],
     );
   }
 

@@ -8,7 +8,7 @@
 
 ## 2. 用户角色与使用场景
 
-已登录用户在 `/compose/thread` 创建公开或私密主题，保存服务端主题草稿或发布；也可在主题详情和楼中楼创建或编辑普通帖子，有 capability 的楼主/协作者可编辑子贴正文。邮箱未验证时仍可本地编辑和保存主题草稿，但不能发布；游客由路由或写入口登录后回到原目标。
+已登录用户在 `/compose/thread` 创建公开或私密主题，保存服务端主题草稿或发布；也可在主题详情和楼中楼创建或编辑普通帖子，有 capability 的楼主/协作者可编辑子贴正文。契约 4.14 后所有已建立会话的注册用户使用统一发布身份；游客由路由或写入口登录后回到原目标。
 
 ## 3. 页面、入口和导航关系
 
@@ -18,11 +18,11 @@
 
 主题标题字段始终显示“主题标题”标签，不以 placeholder 代替字段身份；正文编辑 Dock 的提示文字仍是短时创作入口提示。分类、可见性和标签选择态同时保留结构与字重线索，不只依赖颜色表达当前选择。
 
-打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份、邮箱状态与可用分类。首屏按标题 → 固定元信息栏 → 剩余正文画布 → 本地保存状态 → 键盘 dock 排列，正文不套装饰卡片或使用固定整机高度推算。编辑态正文统一为 17sp、1.8 行高，H2/H3、引用、行内代码、链接和协议节点保持与成稿等价的 WYSIWYG 层级。发布始终从紧凑顶栏提交。工具栏消费 Foundation v6.1.0：正文/H2/H3、粗体、斜体、图片和更多固定在主栏，发送场景最右固定发送；再按可用宽度和 48dp 最小命中区依次提升草稿、引用、分隔线和表情包，已提升动作不在“更多”中重复。标题选择与更多能力在编辑器内部展开，不打开独立格式 Bottom Sheet，也不横向滚动；链接和骰子参数就地输入，异步图片/表情/草稿返回后恢复选区、焦点和键盘。
+打开页面时以 JWT 的 `sub` 仅作本地账号分区，读取完整 Markdown 快照，再异步用 `usersGetMe` 和 `threadCategoriesList` 确认服务端身份与可用分类。首屏按标题 → 固定元信息栏 → 剩余正文画布 → 本地保存状态 → 键盘 dock 排列，正文不套装饰卡片或使用固定整机高度推算。编辑态正文统一为 17sp、1.8 行高，H2/H3、引用、行内代码、链接和协议节点保持与成稿等价的 WYSIWYG 层级。发布始终从紧凑顶栏提交。工具栏消费 Foundation v6.2.0：正文/H2/H3、粗体、斜体、图片和更多固定在主栏，发送场景最右固定发送；再按可用宽度和 48dp 最小命中区依次提升草稿、引用、分隔线和表情包，已提升动作不在“更多”中重复。标题选择与更多能力在编辑器内部展开，不打开独立格式 Bottom Sheet，也不横向滚动；链接就地输入，骰子使用“骰子数 / 面数 / 修正”三字段托盘、d4/d6/d8/d10/d12/d20/d100 快捷面数、实时 canonical 预览和范围校验。异步图片/表情/草稿返回后恢复选区、焦点和键盘。
 
 在已有主题上下文输入 `@` 会于 180ms 防抖后读取关注用户和帖内标记玩家；继续输入非空用户名时，再合并服务端确认的全站用户名结果，主题关系候选优先且按稳定 ID 去重，关系外候选标记为普通用户。服务端确认楼主或协作者权限时额外展示 `@全体玩家`。候选以根浮层靠近软键盘展示，不参与主题或帖子正文布局；浮层宽度随 320～600dp 视口收束、总高最多 200dp 并在内部滚动，窄屏键盘态额外避开 48dp 格式工具入口。关闭或选择候选都把焦点还给正文且不改变画布尺寸和当前选区；选择后以原子 Quill embed 替换当前 `@关键词` 并补一个分隔空格，Codec 固定序列化为 `[@用户名](/users/:userId)` 或 `@全体玩家`。全新主题必须先保存为服务端草稿取得真实 `threadId`，否则浮层只说明前置条件且不发请求。
 
-正文变化先留在 `RichEditorSession` 的内存 Delta，120ms 空闲后编码为 Markdown；保存、提交、切后台、暂停或离页前强制 flush，随后主题控制器再以 700ms 防抖写本地快照。骰子表达式和服务端结果在阅读态与 Quill 编辑态共用 `WenyouDiceNode`：作为与文字共享基线的无图标行内原子节点，已结算使用 accent/onAccent，待掷使用 warningSoft/warning，内部不换行或截断。用户与全体玩家提及同样复用透明、无图标、品牌深色 600 字重原子文字，编辑态不导航且按 userId 无损往返；阅读态用户提及保留资料页导航与 48dp 命中区。引用使用正常字形、muted 表面、3px 主色标记和紧凑圆角；行内代码使用平台等宽字体、0.88em 字号和 0.35em 圆角，Flutter Quill 内边距按 Foundation v6.1.0 正式原生边界例外处理。帖子半屏编辑器打开后自动聚焦，新建从空白处开始，编辑或恢复已有正文时把光标放到文末；点击暗区或关闭按钮会立即收起并按目标保留页面内草稿。主题与帖子共用的 `RichEditorSession` 把剪贴板钩子接入真实 `QuillRawEditor` 粘贴路径：剪贴板整体为合法主题、楼层、楼中楼、回复或邀请坐标时，立即以原子传送门替换当前选区；已有选区作为名称，空选区使用“传送门”。混合文本、非法坐标和站外链接继续交给 Quill 普通粘贴。编辑态传送门复用 Foundation 表面，以 alphabetic baseline 的 `WidgetSpan` 与前后文字同行且不触发导航，保存时稳定序列化为标准 Markdown 链接。
+正文变化先留在 `RichEditorSession` 的内存 Delta，120ms 空闲后编码为 Markdown；保存、提交、切后台、暂停或离页前强制 flush，随后主题控制器再以 700ms 防抖写本地快照。骰子表达式和服务端结果在阅读态与 Quill 编辑态共用 `WenyouDiceNode`：作为与文字共享基线的无图标行内原子节点，已结算使用 accent/onAccent，待掷使用 warningSoft/warning，内部不换行或截断；已结算节点保留至少 48dp 命中区，可打开包含安全区后整体不超过视口 80% 的 Bottom Sheet，按服务端顺序展示逐骰、小计、非零修正和总计，并在关闭后恢复触发点焦点。插入时生成 UUID `nodeId`，三字段 canonical notation 与 Markdown v3 往返保持稳定。用户与全体玩家提及同样复用透明、无图标、品牌深色 600 字重原子文字，编辑态不导航且按 userId 无损往返；阅读态用户提及保留资料页导航与 48dp 命中区。引用使用正常字形、muted 表面、3px 主色标记和紧凑圆角；行内代码使用平台等宽字体、0.88em 字号和 0.35em 圆角，Flutter Quill 内边距按 Foundation v6.2.0 正式原生边界例外处理。帖子半屏编辑器打开后自动聚焦，新建从空白处开始，编辑或恢复已有正文时把光标放到文末；点击暗区或关闭按钮会立即收起并按目标保留页面内草稿，提交请求在途时则锁定关闭和系统返回，等待明确结果。主题与帖子共用的 `RichEditorSession` 把剪贴板钩子接入真实 `QuillRawEditor` 粘贴路径：剪贴板整体为合法主题、楼层、楼中楼、回复或邀请坐标时，立即以原子传送门替换当前选区；已有选区作为名称，空选区使用“传送门”。混合文本、非法坐标和站外链接继续交给 Quill 普通粘贴。编辑态传送门复用 Foundation 表面，以 alphabetic baseline 的 `WidgetSpan` 与前后文字同行且不触发导航，保存时稳定序列化为标准 Markdown 链接。
 
 ## 5. API operationId 与生成类型
 
@@ -36,7 +36,7 @@
 
 ## 6. 状态模型和数据流
 
-`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。二者归属 `threads`。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。两个创作控制器都只接收 Markdown，不持有 Quill Delta；Quill 生命周期、文档 revision 同步、格式错误、选区和图片/表情插入由公共 `RichEditorSession` 管理。主题端口位于 `threads/application`，提及与本地快照端口位于 `editor/application`，适配器由 `main.dart` 组合根绑定。图片上传进度、失败与取消由 media 的独立上传任务控制器管理。恢复五槽位正文或切换完整主题时递增文档 revision。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；页面只读取光标前最多 26 个字符检测提及，仓储合并关系候选和最多 20 个全站结果。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
+`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。二者归属 `threads`。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。主题创作、云端草稿和帖子编辑器以 `SessionScope(accountId, generation)` 隔离：Access Token 刷新保持控制器与当前内容，登录、退出、会话失效或切号才重建。两个创作控制器都只接收 Markdown，不持有 Quill Delta；Quill 生命周期、文档 revision 同步、格式错误、选区和图片/表情/骰子插入由公共 `RichEditorSession` 管理。主题端口位于 `threads/application`，提及与本地快照端口位于 `editor/application`，适配器由 `main.dart` 组合根绑定。图片上传进度、失败与取消由 media 的独立上传任务控制器管理。恢复五槽位正文或切换完整主题时递增文档 revision。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；页面只读取光标前最多 26 个字符检测提及，仓储合并关系候选和最多 20 个全站结果。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -72,7 +72,8 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 - [x] 主题与帖子编辑器使用 17sp/1.8 长文样式；320/360/400/600dp 键盘态完整核心格式栏固定在键盘上方，IME 最终 inset 在首帧直接生效，不随系统键盘动画逐帧位移或缩放正文画布；标题和更多在编辑器内展开，焦点与选区不丢失，并有长文与键盘视觉基线。
 - [x] 主题与帖子图片选择后先裁剪再上传，图片节点的替代文字统一为“图片”；Dock 核心按钮等分利用单行宽度，并在可扩展面板键盘收起时避开系统底部安全区。
 - [x] `@提及` 候选在 320/360/400dp 键盘态使用不参与正文布局的限高浮层，避开格式工具入口，关闭/插入保持焦点和选区；2× 字号无溢出，并有独立视觉基线。
-- [x] 阅读态与 Quill 编辑态的骰子表达式/结果共用 Foundation v6.1.0 无图标原子节点；已结算/待掷语义色、em 圆角和内边距、混排、换行第二行、完整 Semantics、Codec 往返和 360dp 视觉基线均有回归。
+- [x] 阅读态与 Quill 编辑态的骰子表达式/结果共用 Foundation v6.2.0 无图标原子节点；三字段构建、常用面数、canonical 预览、UUID nodeId、48dp 命中区、整面板 80% 高度上限、逐骰明细、焦点恢复、混排、Codec 往返和 360dp 视觉基线均有回归。
+- [x] Access Token 轮转保留主题/帖子编辑控制器、当前 Markdown 和待确认幂等键；切号推进会话代次并隔离旧账号内容。
 - [x] 阅读态与编辑态提及共用透明无图标原子文字并保持 userId 往返；引用正常字形、3px 标记与 em 内边距，行内代码 0.88em 字号和 0.35em 圆角均有组件与样式回归。
 - [x] 已有内容中可精确往返的粗斜体、删除线、行内代码、安全链接、H2/H3、引用和 0～3 级列表恢复为 Quill 属性。
 - [x] 完整消费站内引用 fixture 的 7 个 `editorPasteCases`，合法主题/邀请坐标规范化为传送门，非法邀请、混合文本和站外链接保持普通粘贴。
@@ -85,8 +86,8 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.2.0-dev.20260818.1`；Markdown v3；后端 `534c454bafc64718f5b93d52d66e8888db330dcd`；Foundation `v6.1.0`（`618954f`）。
+契约 `5.2.0-dev.20260818.1`；Markdown v3；后端 `534c454bafc64718f5b93d52d66e8888db330dcd`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 
-通用会话、工具栏、提及和快照端口：`lib/features/editor/`；跨 feature 只通过根级 `editor.dart` / `editor_persistence.dart` façade 消费。主题创作页面、控制器与 API 适配器：`lib/features/threads/`；帖子工作流：`lib/features/posts/`；普通 Markdown 中立解析与 Delta Codec：`lib/core/markdown/`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)、[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。
+通用会话、工具栏、提及和快照端口：`lib/features/editor/`；跨 feature 只通过根级 `editor.dart` / `editor_persistence.dart` façade 消费。主题创作页面、控制器与 API 适配器：`lib/features/threads/`；帖子工作流：`lib/features/posts/`；普通 Markdown 中立解析与 Delta Codec：`lib/core/markdown/`；数据库：`lib/core/storage/app_database.dart`。参见[Codec 架构](../architecture/editor-codec.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)、[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。

@@ -311,6 +311,6 @@ final contentDraftsControllerProvider =
       ContentDraftsController,
       ContentDraftsState
     >((ref) {
-      ref.watch(sessionControllerProvider);
+      ref.watch(sessionScopeProvider);
       return ContentDraftsController(ref.watch(contentDraftRepositoryProvider));
-    }, dependencies: [contentDraftRepositoryProvider]);
+    }, dependencies: [sessionScopeProvider, contentDraftRepositoryProvider]);

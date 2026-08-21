@@ -117,9 +117,15 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
     state = state.copyWith(isDeleting: true, failure: null, conflict: null);
     try {
       await _repository.remove(thread.id);
+      if (!mounted) return false;
       state = state.copyWith(isDeleting: false);
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
+      if (failure.businessCode == 40402) {
+        state = state.copyWith(isDeleting: false, failure: null);
+        return true;
+      }
       state = state.copyWith(isDeleting: false, failure: failure);
       return false;
     }

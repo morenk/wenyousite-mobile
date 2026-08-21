@@ -1,4 +1,11 @@
-enum ReportTargetType { user, thread, post, moment, momentComment }
+enum ReportTargetType {
+  user,
+  thread,
+  post,
+  moment,
+  momentComment,
+  directMessage,
+}
 
 class ReportInputValidationException implements Exception {
   const ReportInputValidationException(this.userMessage);
@@ -20,6 +27,9 @@ class ReportTarget {
   const ReportTarget.momentComment(String id)
     : this._(ReportTargetType.momentComment, id);
 
+  const ReportTarget.directMessage(String id)
+    : this._(ReportTargetType.directMessage, id);
+
   final ReportTargetType type;
   final String id;
 
@@ -39,6 +49,8 @@ enum ReportReason {
   sexualContent('色情内容'),
   violentContent('暴力内容'),
   personalInformation('泄露个人信息'),
+  impersonationOrFraud('冒充或诈骗'),
+  intellectualProperty('侵犯知识产权'),
   illegalContent('违法违规内容'),
   other('其他原因');
 

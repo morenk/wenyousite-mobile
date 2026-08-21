@@ -21,6 +21,78 @@ void main() {
     expect(repository.viewerUserId, 'viewer-1');
   });
 
+  test('玩家候选加载失败不阻断官方订阅读取与切换', () async {
+    final repository = _FakeRepository(
+      candidateFailure: const ApiFailure(
+        userMessage: '玩家列表暂时不可用',
+        requestId: 'candidate-request-id',
+      ),
+    );
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+
+    await _settle();
+
+    expect(controller.state.phase, ThreadSubscriptionPhase.ready);
+    expect(controller.state.candidates, isEmpty);
+    expect(
+      controller.state.candidateFailure?.requestId,
+      'candidate-request-id',
+    );
+    expect(await controller.toggleThread(), isTrue);
+    expect(controller.state.threadSubscription?.id, 'official-created');
+    expect(
+      controller.state.candidateFailure?.requestId,
+      'candidate-request-id',
+    );
+  });
+
+  test('玩家候选悬停时官方订阅先进入可操作状态且写入不会被迟到结果覆盖', () async {
+    final candidates = Completer<List<ThreadSubscriptionCandidate>>();
+    final repository = _FakeRepository(candidateCompleter: candidates);
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+
+    while (controller.state.phase != ThreadSubscriptionPhase.ready) {
+      await _settle();
+    }
+    expect(controller.state.isLoadingCandidates, isTrue);
+    expect(await controller.toggleThread(), isTrue);
+    expect(controller.state.threadSubscription?.id, 'official-created');
+
+    candidates.complete(const [
+      ThreadSubscriptionCandidate(
+        userId: 'player-1',
+        username: '骰子猫',
+        level: 3,
+      ),
+    ]);
+    await _settle();
+
+    expect(controller.state.isLoadingCandidates, isFalse);
+    expect(controller.state.candidates.single.userId, 'player-1');
+    expect(controller.state.threadSubscription?.id, 'official-created');
+  });
+
+  test('玩家候选失败只重试候选请求并保留官方订阅状态', () async {
+    final repository = _FakeRepository(
+      candidateFailure: const ApiFailure(userMessage: '玩家列表暂时不可用'),
+    );
+    final controller = ThreadSubscriptionController(repository, _target);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(await controller.toggleThread(), isTrue);
+    final subscriptionReads = repository.fetchSubscriptionCalls;
+    await controller.retryCandidates();
+
+    expect(repository.fetchSubscriptionCalls, subscriptionReads);
+    expect(repository.fetchCandidateCalls, 2);
+    expect(controller.state.threadSubscription?.id, 'official-created');
+    expect(controller.state.candidateFailure, isNull);
+    expect(controller.state.candidates.single.userId, 'player-1');
+  });
+
   test('官方订阅创建与取消使用服务端记录 ID', () async {
     final repository = _FakeRepository();
     final controller = ThreadSubscriptionController(repository, _target);
@@ -179,16 +251,21 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     this.subscriptions = const [],
     this.subscriptionReads,
     this.failure,
+    this.candidateFailure,
+    this.candidateCompleter,
     this.createCompleter,
   });
 
   final List<ThreadSubscriptionRecord> subscriptions;
   final List<List<ThreadSubscriptionRecord>>? subscriptionReads;
   final ApiFailure? failure;
+  ApiFailure? candidateFailure;
+  final Completer<List<ThreadSubscriptionCandidate>>? candidateCompleter;
   final Completer<ThreadSubscriptionRecord>? createCompleter;
   String? viewerUserId;
   int createCalls = 0;
   int fetchSubscriptionCalls = 0;
+  int fetchCandidateCalls = 0;
   final List<String> removedIds = [];
 
   @override
@@ -206,7 +283,12 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     String threadId, {
     String? viewerUserId,
   }) async {
+    fetchCandidateCalls += 1;
     this.viewerUserId = viewerUserId;
+    final failure = candidateFailure;
+    candidateFailure = null;
+    if (failure != null) throw failure;
+    if (candidateCompleter != null) return candidateCompleter!.future;
     return const [
       ThreadSubscriptionCandidate(
         userId: 'player-1',

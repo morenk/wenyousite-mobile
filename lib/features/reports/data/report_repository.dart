@@ -66,6 +66,8 @@ class ApiReportRepository implements ReportRepository {
       ReportTargetType.moment => CreateReportDtoTargetTypeEnum.MOMENT,
       ReportTargetType.momentComment =>
         CreateReportDtoTargetTypeEnum.MOMENT_COMMENT,
+      ReportTargetType.directMessage =>
+        CreateReportDtoTargetTypeEnum.DIRECT_MESSAGE,
     };
   }
 
@@ -81,6 +83,10 @@ class ApiReportRepository implements ReportRepository {
         CreateReportDtoReasonCodeEnum.VIOLENT_CONTENT,
       ReportReason.personalInformation =>
         CreateReportDtoReasonCodeEnum.PERSONAL_INFORMATION,
+      ReportReason.impersonationOrFraud =>
+        CreateReportDtoReasonCodeEnum.IMPERSONATION_OR_FRAUD,
+      ReportReason.intellectualProperty =>
+        CreateReportDtoReasonCodeEnum.INTELLECTUAL_PROPERTY,
       ReportReason.illegalContent =>
         CreateReportDtoReasonCodeEnum.ILLEGAL_CONTENT,
       ReportReason.other => CreateReportDtoReasonCodeEnum.OTHER,
@@ -98,6 +104,8 @@ class ApiReportRepository implements ReportRepository {
       ReportResponseDtoTargetTypeEnum.MOMENT => ReportTarget.moment(id),
       ReportResponseDtoTargetTypeEnum.MOMENT_COMMENT =>
         ReportTarget.momentComment(id),
+      ReportResponseDtoTargetTypeEnum.DIRECT_MESSAGE =>
+        ReportTarget.directMessage(id),
       _ => throw const ApiFailure(userMessage: '暂时无法举报这类内容。'),
     };
   }
@@ -114,6 +122,10 @@ class ApiReportRepository implements ReportRepository {
         ReportReason.violentContent,
       ReportResponseDtoReasonCodeEnum.PERSONAL_INFORMATION =>
         ReportReason.personalInformation,
+      ReportResponseDtoReasonCodeEnum.IMPERSONATION_OR_FRAUD =>
+        ReportReason.impersonationOrFraud,
+      ReportResponseDtoReasonCodeEnum.INTELLECTUAL_PROPERTY =>
+        ReportReason.intellectualProperty,
       ReportResponseDtoReasonCodeEnum.ILLEGAL_CONTENT =>
         ReportReason.illegalContent,
       ReportResponseDtoReasonCodeEnum.OTHER => ReportReason.other,

@@ -9,6 +9,10 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
@@ -18,6 +22,9 @@ import 'package:wenyousite_mobile/features/media/application/image_crop_ports.da
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/reports/application/report_repository_ports.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 
 import '../../support/fake_image_crop_processor.dart';
@@ -87,6 +94,51 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.archiveValues, [true]);
     expect(find.byTooltip('更多会话操作'), findsOneWidget);
+  });
+
+  testWidgets('收到且未撤回的私信可举报，并提交消息目标', (tester) async {
+    final repository = _FakeRepository();
+    final reportRepository = _FakeReportRepository();
+    final session = SessionController(
+      _MemoryTokenStore(),
+      _FakeSessionRemote(),
+    );
+    await session.authenticate(_tokens('user-1'));
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ..._overrides(repository),
+          sessionControllerProvider.overrideWith((ref) => session),
+          reportRepositoryProvider.overrideWithValue(reportRepository),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final incomingBubble = find.byKey(
+      const ValueKey('direct-message-actions-incoming-1'),
+    );
+    await tester.longPress(incomingBubble);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('direct-message-report-incoming-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('举报这条私信'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('report-submit')));
+    await tester.pumpAndSettle();
+
+    expect(reportRepository.inputs, hasLength(1));
+    expect(
+      reportRepository.inputs.single.target,
+      const ReportTarget.directMessage('incoming-1'),
+    );
+    expect(find.textContaining('举报已提交'), findsOneWidget);
   });
 
   testWidgets('发送失败只标记对应气泡并可原位重试', (tester) async {
@@ -728,8 +780,17 @@ GoRouter _router() {
     routes: [
       GoRoute(
         path: '/messages/:conversationId',
-        builder: (_, state) => DirectConversationPage(
-          conversationId: state.pathParameters['conversationId']!,
+        builder: (_, state) => Consumer(
+          builder: (_, ref, _) => DirectConversationPage(
+            conversationId: state.pathParameters['conversationId']!,
+            onReportMessage: (reportContext, messageId) => showWenyouReportFlow(
+              context: reportContext,
+              ref: ref,
+              target: ReportTarget.directMessage(messageId),
+              targetLabel: '这条私信',
+              returnTo: '/messages/${state.pathParameters['conversationId']!}',
+            ),
+          ),
         ),
       ),
       GoRoute(
@@ -857,6 +918,53 @@ class _FakeRepository implements DirectMessageRepository {
     required String recipientId,
     required DirectMessageDraft draft,
   }) => throw UnimplementedError();
+}
+
+class _FakeReportRepository implements ReportRepository {
+  final inputs = <ReportInput>[];
+
+  @override
+  Future<ReportResult> create(ReportInput input) async {
+    inputs.add(input);
+    return ReportResult(
+      id: 'report-${inputs.length}',
+      target: input.target,
+      reason: input.reason,
+      createdAt: DateTime.utc(2026, 8, 21),
+    );
+  }
+}
+
+class _MemoryTokenStore implements TokenStore {
+  SessionTokens? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<SessionTokens?> read() async => value;
+
+  @override
+  Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _FakeSessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) =>
+      throw UnimplementedError();
+}
+
+SessionTokens _tokens(String userId) {
+  final payload = base64Url
+      .encode(utf8.encode('{"sub":"$userId"}'))
+      .replaceAll('=', '');
+  return SessionTokens(
+    accessToken: 'header.$payload.signature',
+    refreshToken: 'refresh-token',
+  );
 }
 
 class _FakeImagePicker implements EditorImagePicker {

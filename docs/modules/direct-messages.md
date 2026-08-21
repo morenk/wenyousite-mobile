@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-实现服务端 capability 控制的站内一对一私聊：会话、消息请求、历史与增量消息、首条消息、后续发送、接受/拒绝、归档、已读、撤回和未读角标形成完整移动闭环。当前不实现 FCM 后台送达、离线消息队列或本机私聊正文持久化；输入器已通过 stickers 模块选择收藏表情，消息图片或表情也可加入本人收藏。
+实现服务端 capability 控制的站内一对一私聊：会话、消息请求、历史与增量消息、首条消息、后续发送、接受/拒绝、归档、已读、撤回、收到消息举报和未读角标形成完整移动闭环。当前不实现 FCM 后台送达、离线消息队列或本机私聊正文持久化；输入器已通过 stickers 模块选择收藏表情，消息图片或表情也可加入本人收藏。
 
 ## 2. 用户角色与使用场景
 
@@ -18,7 +18,7 @@
 
 私聊图片从相册选择后先进入单图裁剪，用户确认取景后才启动上传；裁剪关闭不改动当前文字、选区或焦点。
 
-中心按会话、请求、归档三类读取并游标分页；进入会话并行读取会话事实与首批消息，时间线以最新消息为反向列表起点，首次进入或重新打开都直接停在最新消息，不恢复上一次历史阅读位置。使用最后一条已确认消息 ID 增量读取，显示到最新收到消息后标记已读。活跃会话常态每 8 秒同步，发送成功和回到前台后进入短周期追赶，退到后台暂停；轮询始终静默且不伪造在线、输入中或已读回执。发送会立即插入本地气泡并清空输入器，HTTP 成功按 `clientRequestId` 原位替换，失败只标记对应气泡且可复用原幂等键重试，不阻塞后续输入。会话与首条消息页面底部复用单体内联输入 dock：图片、收藏表情、可增长到五行的正文和发送同排，字数只在接近上限时出现；点击消息区或输入框外的其他区域会收起软键盘并退出输入焦点，当前文字仍保留在本页输入框内。收藏表情从按钮上方打开可滚动锚点面板，打开和选择期间保留输入焦点、选区与键盘。消息长按在气泡旁打开最多五列的图标操作气泡，复制、收藏、撤回、验证、重试和删除按权限出现，超过五项自动换行；失败状态图标打开同一菜单。发送按钮按统一语义区分可用、处理中和不可用状态，避免把可发送状态误读为禁用；页面关闭 Scaffold 自动 inset，dock 按 `viewInsets` 一帧到达最终键盘位置，不播放位移动画。收到的请求图片默认隐藏，用户点按或接受请求后才加载，查看前也不显示收藏入口；拒绝需二次确认。已接受会话和发出的待处理请求可归档，自己十分钟内的消息可二次确认撤回，撤回待处理首条消息会取消请求并退出会话。
+中心按会话、请求、归档三类读取并游标分页；进入会话并行读取会话事实与首批消息，时间线以最新消息为反向列表起点，首次进入或重新打开都直接停在最新消息，不恢复上一次历史阅读位置。使用最后一条已确认消息 ID 增量读取，显示到最新收到消息后标记已读。活跃会话常态每 8 秒同步，发送成功和回到前台后进入短周期追赶，退到后台暂停；轮询始终静默且不伪造在线、输入中或已读回执。发送会立即插入本地气泡并清空输入器，HTTP 成功按 `clientRequestId` 原位替换，失败只标记对应气泡且可复用原幂等键重试，不阻塞后续输入。会话与首条消息页面底部复用单体内联输入 dock：图片、收藏表情、可增长到五行的正文和发送同排，字数只在接近上限时出现；点击消息区或输入框外的其他区域会收起软键盘并退出输入焦点，当前文字仍保留在本页输入框内。收藏表情从按钮上方打开可滚动锚点面板，打开和选择期间保留输入焦点、选区与键盘。消息长按在气泡旁打开最多五列的图标操作气泡，复制、收藏、撤回、举报、验证、重试和删除按权限出现，超过五项自动换行；失败状态图标打开同一菜单。举报只出现在收到、未撤回且服务端已确认的消息上，提交目标是稳定 messageId；本人消息、乐观消息、失败消息和撤回消息都不显示。发送按钮按统一语义区分可用、处理中和不可用状态，避免把可发送状态误读为禁用；页面关闭 Scaffold 自动 inset，dock 按 `viewInsets` 一帧到达最终键盘位置，不播放位移动画。收到的请求图片默认隐藏，用户点按或接受请求后才加载，查看前也不显示收藏入口；拒绝需二次确认。已接受会话和发出的待处理请求可归档，自己十分钟内的消息可二次确认撤回，撤回待处理首条消息会取消请求并退出会话。
 
 新私聊页同时读取已有会话事实和目标公开资料。只有 `isFollowing && isFollowedBy` 时显示“你们已互相关注”与直接建立文案；其他可发起用户才显示“这会先作为消息请求”。资料关系只用于发送前文案，新会话的 `ACCEPTED/PENDING` 最终仍以创建接口回包为准。复制、收藏表情、接受/拒绝请求、归档和撤回的短反馈使用 floating SnackBar，底部同时留出键盘、安全区和输入 dock 间距，不覆盖输入框。
 
@@ -26,6 +26,7 @@
 
 - `directConversationsFindAll`、`directConversationsUnread`、`directConversationsFindByUser`、`directConversationsFindById`、`directConversationsMessages`。
 - `directConversationsCreate`、`directConversationsSend`、`directConversationsHandleRequest`、`directConversationsArchive`、`directConversationsMarkRead`、`directMessagesRecall`。
+- 收到消息举报复用 reports 模块的 `reportsCreate`，目标类型固定为 `DIRECT_MESSAGE`。
 - 新私聊对象资料复用 `usersGetUser`，图片选择与上传复用 media 模块的 `mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
 - 主要生成类型：`DirectConversationResponseDto`、`DirectMessageResponseDto`、`DirectConversationLookupResponseDto`、`DirectUnreadCountResponseDto`、`CreateDirectConversationDto`、`CreateDirectMessageDto`、`HandleDirectRequestDto`、`SetDirectConversationArchiveDto`、`MarkDirectConversationReadDto`、`DirectMessageRecallResponseDto`。
 
@@ -37,7 +38,7 @@
 
 ## 7. 鉴权、权限和隐私规则
 
-三条路由都要求 authenticated，会话权限完全以服务端 `canSend/canAccept/canDecline/isBlocked` 和状态投影为准。客户端不记录完整私聊正文、图片预签名 URL、Token 或消息请求载荷；正文、失败草稿和上传中的媒体只存在于页面进程内。陌生请求图片在明确查看前不发起网络加载；撤回响应仍含正文或媒体时拒绝展示。契约 4.14 后所有注册用户使用统一身份，私信写入不再检查邮箱验证状态。`40305/40306`、`40411/40412` 与 `40906`～`40909` 使用稳定业务提示。
+三条路由都要求 authenticated，会话权限完全以服务端 `canSend/canAccept/canDecline/isBlocked` 和状态投影为准。客户端不记录完整私聊正文、图片预签名 URL、Token 或消息请求载荷；正文、失败草稿和上传中的媒体只存在于页面进程内。陌生请求图片在明确查看前不发起网络加载；撤回响应仍含正文或媒体时拒绝展示。举报由 reports 模块提交，后端再次复核当前用户确为消息接收者；举报表单和日志不复制完整私信正文。契约 4.14 后所有注册用户使用统一身份，私信写入不再检查邮箱验证状态。`40305/40306`、`40411/40412` 与 `40906`～`40909` 使用稳定业务提示。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -53,7 +54,7 @@
 
 会话与消息时间统一使用 Foundation 72 小时格式，并向辅助技术提供 `yyyy-MM-dd HH:mm` 完整时间；具名会话头像失败回退首字符，停用账号始终显示不可用身份图标。
 
-capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.1.0 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
+capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，举报表单与提交由 reports 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、reports data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.2.0 的 Token、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
 
 ## 11. 测试场景与验收条件
 
@@ -64,6 +65,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 - [x] 中心、会话、新私聊的主路径、错误恢复与 320dp、360dp、400dp、600dp 布局通过 Widget 测试；内联输入 dock 在 280–320dp 软键盘 inset 及 1.3/2.0 倍字体下保持可见且不重复避让，并在 IME 最终 inset 可用时一帧到位，不跟随系统键盘动画逐帧升降；点击消息区会失焦收起键盘但保留当前输入，360dp 键盘态与 600dp 最新消息底部对齐的分组气泡由 golden 固定。长会话首次进入直接显示最后一条，连续气泡、消息旁长按操作、保留键盘的收藏表情锚点面板、离底新消息浮标和历史锚点保持可操作。
 - [x] 私聊路由登录守卫、用户主页入口和 capability 关闭状态通过测试。
 - [x] 互关用户不再误显示消息请求提示；陌生人文案、服务端结果优先级与避让输入 dock 的浮动反馈均有 Widget 回归。
+- [x] 收到且未撤回的服务端消息可提交 `DIRECT_MESSAGE` 举报；本人、失败与撤回消息无入口，目标 ID 与回跳路径有页面回归。
 - [ ] 使用两个公网专用账号完成请求、接受、发送、图片、已读、归档和撤回真机联调。
 
 ## 12. 已知限制和后续功能
@@ -72,8 +74,8 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.2.0-dev.20260818.1`；Markdown v3；后端 `534c454bafc64718f5b93d52d66e8888db330dcd`；Foundation `v6.1.0`（`618954f`）。
+契约 `5.2.0-dev.20260818.1`；Markdown v3；后端 `534c454bafc64718f5b93d52d66e8888db330dcd`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 
-端口、控制器与状态：`lib/features/direct_messages/application/`；API 适配器：`lib/features/direct_messages/data/`；页面：`lib/features/direct_messages/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内通知](notifications.md)、[用户与资料](users.md)、[媒体](media.md)、[语义图标](../architecture/icons.md)和[Foundation v6.1.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.1.0/docs/platforms/mobile.md)。
+端口、控制器与状态：`lib/features/direct_messages/application/`；API 适配器：`lib/features/direct_messages/data/`；页面：`lib/features/direct_messages/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[站内通知](notifications.md)、[用户与资料](users.md)、[媒体](media.md)、[社区举报](reports.md)、[语义图标](../architecture/icons.md)和[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。

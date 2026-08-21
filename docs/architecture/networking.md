@@ -14,6 +14,8 @@
 
 Access Token 与 Refresh Token 都保存到安全存储。刷新和退出由无业务拦截器的独立生成客户端发起，避免刷新请求递归进入 `40101` 拦截链。并发请求遇到 `40101` 时共享同一个刷新 Future；刷新成功后原子替换双 Token，每个可重放原请求最多重放一次。GET/HEAD、语义幂等的 PUT/DELETE 和显式声明 `idempotentCreate` 的创建请求可以重放；普通 POST 即使刷新成功也返回原结果，不自动重复写入。标记 `noAutomaticReplay` 的写请求同样只刷新会话、不重放请求。`40103` 至 `40106`、刷新失败或可重放请求再次返回 `40101` 时清空会话并携带失效原因进入登录页。
 
+账号内页面状态使用 `SessionScope(accountId, generation)` 作为隔离边界。Access Token 轮转只替换凭据，不推进 generation，因此当前编辑器、待确认幂等创建、帖子讨论和云端草稿不会因正常刷新被销毁；登录建立新会话、退出、会话失效或切换账号才推进 generation 并释放旧账号状态。刷新完成前再次登录、退出或切号时，以刷新起点的 Token 与 generation 校验迟到结果，旧刷新既不能覆盖新凭据也不能清除新会话。JWT `sub` 只用于本地分区，不能作为权限事实。
+
 退出当前终端时同时提交 bearer 与 refresh token；若 access token 已过期，先共享刷新再重试退出一次。服务端成功或明确判定会话失效后清除本机 Token；网络/5xx 失败保留会话和请求 ID供重试。只有用户在风险提示中再次确认，才允许仅清除本机登录。
 
 Cursor 是不透明字符串。筛选变化清空 cursor；`40007` 清空列表并从第一页重载。请求附加语义只通过 `ApiRequestPolicy` 表达：公开请求使用 `public`，携带稳定 `clientRequestId` 的创建请求显式使用 `idempotentCreate`；业务代码不得直接写 Dio `extra` 键。自动重试只覆盖 GET/HEAD、语义幂等的 PUT/DELETE 和这类已声明创建请求，并保留原 `X-Request-ID`、请求体与幂等键；PATCH、普通 POST、4xx 与 429 均不自动重放。温油加油同样是幂等写入：一次弹窗操作以规范化目标、金额和 UUID 固定请求，失败后相同金额重试不得轮换 UUID。社区举报没有客户端幂等键，因此 `reportsCreate` 不自动重放；结果不明确时由用户显式重试，已成功但响应丢失由服务端唯一约束收敛为 `40914`。

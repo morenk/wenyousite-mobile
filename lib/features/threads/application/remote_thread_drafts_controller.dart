@@ -120,8 +120,8 @@ final remoteThreadDraftsControllerProvider =
       RemoteThreadDraftsController,
       RemoteThreadDraftsState
     >((ref) {
-      ref.watch(sessionControllerProvider);
+      ref.watch(sessionScopeProvider);
       return RemoteThreadDraftsController(
         ref.watch(threadComposeRepositoryProvider),
       );
-    }, dependencies: [threadComposeRepositoryProvider]);
+    }, dependencies: [sessionScopeProvider, threadComposeRepositoryProvider]);

@@ -102,39 +102,67 @@ class ThreadDetailBottomBar extends StatelessWidget {
               constraints: BoxConstraints(
                 maxWidth: tokens.wideContainerMaxWidth,
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: Row(
-                  children: [
-                    ThreadInteractionActions(
-                      target: target,
-                      onRequireAuthentication: onRequireAuthentication,
-                      compact: true,
-                    ),
-                    ThreadSubscriptionControls(
-                      threadId: detail.id,
-                      viewerUserId: detail.currentUserId,
-                      hasAutomaticUpdates: detail.hasAutomaticUpdates,
-                      compact: true,
-                    ),
-                    if (canCompose) ...[
-                      SizedBox(width: tokens.space8),
-                      Expanded(
-                        child: WenyouComposerAction(
-                          key: const Key('thread-floor-compose'),
-                          label: authenticated ? '发表楼层' : '登录后发表',
-                          icon: authenticated
-                              ? WenyouIconIds.actionAddComment
-                              : WenyouIconIds.actionLogin,
-                          onPressed: authenticated
-                              ? onCompose
-                              : onRequireAuthentication,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final iconOnlyCompose =
+                      constraints.maxWidth < 336 ||
+                      MediaQuery.textScalerOf(context).scale(1) > 1.3;
+                  final composeLabel = authenticated ? '发表楼层' : '登录后发表';
+                  final composeIcon = authenticated
+                      ? WenyouIconIds.actionAddComment
+                      : WenyouIconIds.actionLogin;
+                  final composeAction = authenticated
+                      ? onCompose
+                      : onRequireAuthentication;
+                  return SizedBox(
+                    width: double.infinity,
+                    child: Row(
+                      children: [
+                        ThreadInteractionActions(
+                          target: target,
+                          onRequireAuthentication: onRequireAuthentication,
+                          compact: true,
                         ),
-                      ),
-                    ] else
-                      const Spacer(),
-                  ],
-                ),
+                        ThreadSubscriptionControls(
+                          threadId: detail.id,
+                          viewerUserId: detail.currentUserId,
+                          hasAutomaticUpdates: detail.hasAutomaticUpdates,
+                          compact: true,
+                        ),
+                        if (canCompose) ...[
+                          SizedBox(width: tokens.space8),
+                          Expanded(
+                            child: iconOnlyCompose
+                                ? Align(
+                                    alignment: Alignment.centerRight,
+                                    child: IconButton(
+                                      key: const Key('thread-floor-compose'),
+                                      tooltip: composeLabel,
+                                      onPressed: composeAction,
+                                      style: IconButton.styleFrom(
+                                        minimumSize: Size.square(
+                                          tokens.minimumTouchTarget,
+                                        ),
+                                        foregroundColor: tokens.text,
+                                        backgroundColor:
+                                            tokens.accentedBackground,
+                                      ),
+                                      icon: WenyouIcon(composeIcon, size: 20),
+                                    ),
+                                  )
+                                : WenyouComposerAction(
+                                    key: const Key('thread-floor-compose'),
+                                    label: composeLabel,
+                                    icon: composeIcon,
+                                    onPressed: composeAction,
+                                  ),
+                          ),
+                        ] else
+                          const Spacer(),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),

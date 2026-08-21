@@ -13,9 +13,14 @@ import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_m
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 
 class DirectConversationPage extends ConsumerStatefulWidget {
-  const DirectConversationPage({required this.conversationId, super.key});
+  const DirectConversationPage({
+    required this.conversationId,
+    this.onReportMessage,
+    super.key,
+  });
 
   final String conversationId;
+  final DirectMessageReportCallback? onReportMessage;
 
   @override
   ConsumerState<DirectConversationPage> createState() =>
@@ -94,6 +99,7 @@ class _DirectConversationPageState extends ConsumerState<DirectConversationPage>
           onAccept: () => _handleRequest(context, notifier, accept: true),
           onDecline: () => _handleRequest(context, notifier, accept: false),
           onRecall: (message) => _recall(context, notifier, message),
+          onReportMessage: widget.onReportMessage,
         ),
       },
     );
@@ -274,6 +280,7 @@ class _ReadyConversation extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
     required this.onRecall,
+    this.onReportMessage,
   });
 
   final DirectConversationState state;
@@ -292,6 +299,7 @@ class _ReadyConversation extends StatelessWidget {
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final ValueChanged<DirectMessage> onRecall;
+  final DirectMessageReportCallback? onReportMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -333,6 +341,7 @@ class _ReadyConversation extends StatelessWidget {
               onRecall: onRecall,
               onRetryMessage: onRetryMessage,
               onAbandonFailedMessage: onAbandonFailedMessage,
+              onReportMessage: onReportMessage,
             ),
           ),
         ),

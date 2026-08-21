@@ -1,7 +1,9 @@
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 
-enum PostDiscussionPhase { loading, ready, failed }
+enum PostDiscussionPhase { loading, ready, restricted, failed }
+
+enum PostDiscussionRetryAction { refresh, loadMore }
 
 const _unset = Object();
 
@@ -18,6 +20,7 @@ class PostDiscussionState {
     this.isLoadingMore = false,
     this.failure,
     this.transientFailure,
+    this.retryAction,
   });
 
   final PostDiscussionPhase phase;
@@ -31,6 +34,7 @@ class PostDiscussionState {
   final bool isLoadingMore;
   final ApiFailure? failure;
   final ApiFailure? transientFailure;
+  final PostDiscussionRetryAction? retryAction;
 
   PostDiscussionState copyWith({
     PostDiscussionPhase? phase,
@@ -44,6 +48,7 @@ class PostDiscussionState {
     bool? isLoadingMore,
     Object? failure = _unset,
     Object? transientFailure = _unset,
+    Object? retryAction = _unset,
   }) {
     return PostDiscussionState(
       phase: phase ?? this.phase,
@@ -63,6 +68,9 @@ class PostDiscussionState {
       transientFailure: identical(transientFailure, _unset)
           ? this.transientFailure
           : transientFailure as ApiFailure?,
+      retryAction: identical(retryAction, _unset)
+          ? this.retryAction
+          : retryAction as PostDiscussionRetryAction?,
     );
   }
 }

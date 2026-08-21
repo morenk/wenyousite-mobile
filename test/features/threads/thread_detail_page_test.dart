@@ -117,6 +117,13 @@ void main() {
       find.textContaining('1d20 = 16', findRichText: true),
       findsOneWidget,
     );
+    const bodyDiceId = '550e8400-e29b-41d4-a716-446655440000';
+    await tester.tap(find.byKey(const ValueKey('wenyou-dice-$bodyDiceId')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('wenyou-dice-detail-sheet')), findsOneWidget);
+    expect(find.bySemanticsLabel('第 1 枚，16 点'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('wenyou-dice-detail-close')));
+    await tester.pumpAndSettle();
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
@@ -215,6 +222,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('thread-1/floor-1'), findsOneWidget);
+    expect(
+      find.byKey(const Key('test-post-replies-reports-absent')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('楼中楼回复深链直接定位独立讨论，返回后不重复打开', (tester) async {
@@ -577,6 +588,56 @@ void main() {
     );
   });
 
+  testWidgets('首屏外目标楼层会在懒加载构建后滚入真实视口', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final floors = [
+      for (var index = 1; index <= 20; index += 1)
+        ThreadFloorModel(
+          id: 'long-floor-$index',
+          floorNumber: index,
+          author: _author,
+          body: ThreadBodyModel(
+            markdown: '第 $index 层的较长正文，用来确保目标一开始不在 Sliver 构建范围内。\n\n补充内容。',
+          ),
+          createdAt: _recentFixtureTime,
+          isDeleted: false,
+          replyCount: 0,
+          replies: const [],
+        ),
+    ];
+    final targetFloor = ThreadFloorModel(
+      id: 'far-target',
+      floorNumber: 1000,
+      author: _author,
+      body: const ThreadBodyModel(markdown: '远端目标楼层'),
+      createdAt: _recentFixtureTime,
+      isDeleted: false,
+      replyCount: 0,
+      replies: const [],
+    );
+    final repository = _FakeThreadDetailRepository(
+      mainFloors: floors,
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'far-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: targetFloor,
+      ),
+    );
+
+    await tester.pumpWidget(_detailApp(repository, targetPostId: 'far-target'));
+    await tester.pumpAndSettle();
+
+    final targetFinder = find.byKey(const Key('thread-floor-card-far-target'));
+    expect(targetFinder, findsOneWidget);
+    final targetRect = tester.getRect(targetFinder);
+    expect(targetRect.bottom, greaterThan(0));
+    expect(targetRect.top, lessThan(640));
+  });
+
   testWidgets('发表楼层后保留已加载窗口并定位到新楼层', (tester) async {
     tester.view.physicalSize = const Size(360, 900);
     tester.view.devicePixelRatio = 1;
@@ -865,6 +926,67 @@ void main() {
     expect(find.byKey(const Key('thread-detail-bottom-bar')), findsOneWidget);
   });
 
+  testWidgets('320dp 与两倍字号下底栏把发表收为可读图标且保持可操作', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = ProviderContainer(
+      overrides: [
+        stickersEnabledProvider.overrideWithValue(false),
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(
+          _FakeThreadDetailRepository(
+            detail: _copyThreadDetail(
+              _detail,
+              subthreads: _detail.subthreads,
+              likeCount: 1000000,
+            ),
+          ),
+        ),
+        threadInteractionRepositoryProvider.overrideWithValue(
+          _FakeThreadInteractionRepository(),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('viewer-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final compose = find.byKey(const Key('thread-floor-compose'));
+    expect(compose, findsOneWidget);
+    expect(find.text('发表楼层'), findsNothing);
+    expect(find.text('100万'), findsOneWidget);
+    expect(tester.getSemantics(compose).getSemanticsData().tooltip, '发表楼层');
+
+    await tester.tap(compose);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
+  });
+
   testWidgets('玩家退出入口只在更多操作的身份面板中出现', (tester) async {
     final playerDetail = _copyThreadDetail(
       _detail,
@@ -1072,6 +1194,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.threadCalls, 2);
+  });
+
+  testWidgets('登录身份变化重新读取目标楼层而不复用旧账号投影', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-1',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: _mainFloor,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        threadDetailRepositoryProvider.overrideWithValue(repository),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(
+            threadId: 'thread-1',
+            targetPostId: 'floor-1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.targetPostIds, ['floor-1']);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokens);
+    await tester.pumpAndSettle();
+
+    expect(repository.targetPostIds, ['floor-1', 'floor-1']);
   });
 
   testWidgets('登录用户点击零回复楼层正文直接回复且不显示回复按钮', (tester) async {
@@ -1479,9 +1644,18 @@ Widget _detailRouterApp(
               title: const Text('楼中楼讨论'),
             ),
             body: Center(
-              child: Text(
-                [threadId, postId, ?replyId].join('/'),
-                key: const Key('test-post-replies-destination'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    [threadId, postId, ?replyId].join('/'),
+                    key: const Key('test-post-replies-destination'),
+                  ),
+                  if (!state.uri.queryParameters.containsKey('reports'))
+                    const SizedBox.shrink(
+                      key: Key('test-post-replies-reports-absent'),
+                    ),
+                ],
               ),
             ),
           );
@@ -1679,6 +1853,7 @@ ThreadDetailModel _copyThreadDetail(
   String? title,
   bool? isCurrentUserPlayer,
   String? currentUserId,
+  int? likeCount,
 }) {
   return ThreadDetailModel(
     id: source.id,
@@ -1689,7 +1864,7 @@ ThreadDetailModel _copyThreadDetail(
     isPrivate: source.isPrivate,
     isPinned: source.isPinned,
     viewCount: source.viewCount,
-    likeCount: source.likeCount,
+    likeCount: likeCount ?? source.likeCount,
     isLiked: source.isLiked,
     isBookmarked: source.isBookmarked,
     bookmarkId: source.bookmarkId,

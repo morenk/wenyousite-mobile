@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
 enum WenyouComposerSurface { page, expandableSheet, inline }
@@ -115,7 +116,9 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   _EditorTray _tray = _EditorTray.none;
   late final TextEditingController _linkLabelController;
   late final TextEditingController _linkUrlController;
-  late final TextEditingController _diceController;
+  late final TextEditingController _diceQuantityController;
+  late final TextEditingController _diceSidesController;
+  late final TextEditingController _diceModifierController;
   TextSelection? _preservedSelection;
   String? _inlineError;
 
@@ -124,7 +127,15 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     super.initState();
     _linkLabelController = TextEditingController();
     _linkUrlController = TextEditingController();
-    _diceController = TextEditingController(text: '1d20');
+    _diceQuantityController = TextEditingController(
+      text: '${WenyouElementContract.diceDefaultQuantity}',
+    );
+    _diceSidesController = TextEditingController(
+      text: '${WenyouElementContract.diceDefaultSides}',
+    );
+    _diceModifierController = TextEditingController(
+      text: '${WenyouElementContract.diceDefaultModifier}',
+    );
     widget.controller.addListener(_onControllerChanged);
     _syncToolbarController();
   }
@@ -148,7 +159,9 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     widget.toolbarController?._detach(_closeTray);
     _linkLabelController.dispose();
     _linkUrlController.dispose();
-    _diceController.dispose();
+    _diceQuantityController.dispose();
+    _diceSidesController.dispose();
+    _diceModifierController.dispose();
     super.dispose();
   }
 
@@ -494,13 +507,15 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildDiceTray(BuildContext context) {
-    return EditorInlineInputTray(
+    return EditorDiceInputTray(
       key: const Key('editor-dice-tray'),
-      primaryController: _diceController,
-      primaryHint: '例如 1d20 或 2d6+3',
+      quantityController: _diceQuantityController,
+      sidesController: _diceSidesController,
+      modifierController: _diceModifierController,
       error: _inlineError,
       onBack: () => _setTray(_EditorTray.more),
       onConfirm: _insertDice,
+      onInputChanged: _clearInlineError,
     );
   }
 
@@ -709,16 +724,24 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   void _openDiceTray() {
     _preservedSelection = widget.controller.selection;
-    _diceController.text = '1d20';
+    _diceQuantityController.text =
+        '${WenyouElementContract.diceDefaultQuantity}';
+    _diceSidesController.text = '${WenyouElementContract.diceDefaultSides}';
+    _diceModifierController.text =
+        '${WenyouElementContract.diceDefaultModifier}';
     _setTray(_EditorTray.dice);
   }
 
   void _insertDice() {
-    final normalized = MarkdownDeltaCodec.normalizeDiceNotation(
-      _diceController.text,
+    final normalized = canonicalDiceNotation(
+      quantity: _diceQuantityController.text,
+      sides: _diceSidesController.text,
+      modifier: _diceModifierController.text,
     );
     if (normalized == null) {
-      setState(() => _inlineError = '请输入 1～100 枚、2～1000 面的骰子');
+      setState(
+        () => _inlineError = '请输入 1～100 枚、2～1000 面的骰子，修正范围为 -10000～10000',
+      );
       return;
     }
     final selection = _preservedSelection ?? widget.controller.selection;
@@ -733,6 +756,10 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       TextSelection.collapsed(offset: selection.start + 1),
     );
     _setTray(_EditorTray.none);
+  }
+
+  void _clearInlineError() {
+    if (_inlineError != null) setState(() => _inlineError = null);
   }
 
   void _insertBlockEmbed(Embeddable embed) {

@@ -9,7 +9,55 @@ import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 void main() {
   setUpAll(() => registerFallbackValue(_FakeCreateReportDto()));
 
-  test('五类目标与八类原因完整映射 reportsCreate 并校验待处理响应', () async {
+  test('举报请求与响应枚举扩展必须显式进入领域映射', () {
+    const targetNames = {
+      'USER',
+      'THREAD',
+      'POST',
+      'MOMENT',
+      'MOMENT_COMMENT',
+      'DIRECT_MESSAGE',
+    };
+    const reasonNames = {
+      'SPAM',
+      'HARASSMENT',
+      'HATE_OR_THREATS',
+      'SEXUAL_CONTENT',
+      'VIOLENT_CONTENT',
+      'PERSONAL_INFORMATION',
+      'IMPERSONATION_OR_FRAUD',
+      'INTELLECTUAL_PROPERTY',
+      'ILLEGAL_CONTENT',
+      'OTHER',
+    };
+
+    expect(
+      _knownNames(CreateReportDtoTargetTypeEnum.values, (value) => value.name),
+      targetNames,
+    );
+    expect(
+      _knownNames(
+        ReportResponseDtoTargetTypeEnum.values,
+        (value) => value.name,
+      ),
+      targetNames,
+    );
+    expect(
+      _knownNames(CreateReportDtoReasonCodeEnum.values, (value) => value.name),
+      reasonNames,
+    );
+    expect(
+      _knownNames(
+        ReportResponseDtoReasonCodeEnum.values,
+        (value) => value.name,
+      ),
+      reasonNames,
+    );
+    expect(ReportTargetType.values, hasLength(targetNames.length));
+    expect(ReportReason.values, hasLength(reasonNames.length));
+  });
+
+  test('六类目标与十类原因完整映射 reportsCreate 并校验待处理响应', () async {
     final api = _MockReportsApi();
     final payloads = <CreateReportDto>[];
     when(
@@ -46,6 +94,7 @@ void main() {
       const ReportTarget.post('post-1'),
       const ReportTarget.moment('moment-1'),
       const ReportTarget.momentComment('comment-1'),
+      const ReportTarget.directMessage('message-1'),
     ];
 
     for (var index = 0; index < ReportReason.values.length; index++) {
@@ -62,7 +111,7 @@ void main() {
       expect(result.reason, reason);
     }
 
-    expect(payloads, hasLength(8));
+    expect(payloads, hasLength(10));
     expect(
       payloads.map((item) => item.targetType).toSet(),
       containsAll(targets.map((target) => _requestTarget(target.type))),
@@ -133,6 +182,16 @@ void main() {
   });
 }
 
+Set<String> _knownNames<T>(
+  Iterable<T> values,
+  String Function(T value) nameOf,
+) {
+  return values
+      .map(nameOf)
+      .where((name) => name != 'unknownDefaultOpenApi')
+      .toSet();
+}
+
 class _MockReportsApi extends Mock implements ReportsApi {}
 
 class _FakeCreateReportDto extends Fake implements CreateReportDto {}
@@ -145,6 +204,8 @@ CreateReportDtoTargetTypeEnum _requestTarget(ReportTargetType target) {
     ReportTargetType.moment => CreateReportDtoTargetTypeEnum.MOMENT,
     ReportTargetType.momentComment =>
       CreateReportDtoTargetTypeEnum.MOMENT_COMMENT,
+    ReportTargetType.directMessage =>
+      CreateReportDtoTargetTypeEnum.DIRECT_MESSAGE,
   };
 }
 
@@ -160,6 +221,8 @@ ReportResponseDtoTargetTypeEnum _responseTarget(
       ReportResponseDtoTargetTypeEnum.MOMENT,
     CreateReportDtoTargetTypeEnum.MOMENT_COMMENT =>
       ReportResponseDtoTargetTypeEnum.MOMENT_COMMENT,
+    CreateReportDtoTargetTypeEnum.DIRECT_MESSAGE =>
+      ReportResponseDtoTargetTypeEnum.DIRECT_MESSAGE,
     _ => throw StateError('unexpected target'),
   };
 }
@@ -174,6 +237,10 @@ CreateReportDtoReasonCodeEnum _requestReason(ReportReason reason) {
       CreateReportDtoReasonCodeEnum.VIOLENT_CONTENT,
     ReportReason.personalInformation =>
       CreateReportDtoReasonCodeEnum.PERSONAL_INFORMATION,
+    ReportReason.impersonationOrFraud =>
+      CreateReportDtoReasonCodeEnum.IMPERSONATION_OR_FRAUD,
+    ReportReason.intellectualProperty =>
+      CreateReportDtoReasonCodeEnum.INTELLECTUAL_PROPERTY,
     ReportReason.illegalContent =>
       CreateReportDtoReasonCodeEnum.ILLEGAL_CONTENT,
     ReportReason.other => CreateReportDtoReasonCodeEnum.OTHER,
@@ -195,6 +262,10 @@ ReportResponseDtoReasonCodeEnum _responseReason(
       ReportResponseDtoReasonCodeEnum.VIOLENT_CONTENT,
     CreateReportDtoReasonCodeEnum.PERSONAL_INFORMATION =>
       ReportResponseDtoReasonCodeEnum.PERSONAL_INFORMATION,
+    CreateReportDtoReasonCodeEnum.IMPERSONATION_OR_FRAUD =>
+      ReportResponseDtoReasonCodeEnum.IMPERSONATION_OR_FRAUD,
+    CreateReportDtoReasonCodeEnum.INTELLECTUAL_PROPERTY =>
+      ReportResponseDtoReasonCodeEnum.INTELLECTUAL_PROPERTY,
     CreateReportDtoReasonCodeEnum.ILLEGAL_CONTENT =>
       ReportResponseDtoReasonCodeEnum.ILLEGAL_CONTENT,
     CreateReportDtoReasonCodeEnum.OTHER =>

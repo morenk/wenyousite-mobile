@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -37,6 +38,28 @@ void main() {
     expect(repository.calls, 1);
     expect(repository.lastInput?.reason, ReportReason.other);
     expect(repository.lastInput?.details, '这里是具体问题');
+    expect(find.textContaining('管理员会根据站点规范进行审核'), findsOneWidget);
+  });
+
+  testWidgets('举报提交在途时系统返回不会关闭待确认弹窗', (tester) async {
+    final repository = _DelayedWidgetReportRepository();
+    await tester.pumpWidget(await _reportApp(repository));
+    await tester.tap(find.text('举报'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('report-submit')));
+    await tester.pump();
+
+    expect(repository.calls, 1);
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+
+    expect(find.text('举报这个用户'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    repository.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('举报这个用户'), findsNothing);
     expect(find.textContaining('管理员会根据站点规范进行审核'), findsOneWidget);
   });
 }
@@ -92,6 +115,29 @@ class _WidgetReportRepository implements ReportRepository {
       target: input.target,
       reason: input.reason,
       createdAt: DateTime.utc(2026, 8, 10),
+    );
+  }
+}
+
+class _DelayedWidgetReportRepository extends _WidgetReportRepository {
+  final _completer = Completer<ReportResult>();
+
+  @override
+  Future<ReportResult> create(ReportInput input) {
+    calls += 1;
+    lastInput = input;
+    return _completer.future;
+  }
+
+  void complete() {
+    final input = lastInput!;
+    _completer.complete(
+      ReportResult(
+        id: 'report-delayed',
+        target: input.target,
+        reason: input.reason,
+        createdAt: DateTime.utc(2026, 8, 10),
+      ),
     );
   }
 }

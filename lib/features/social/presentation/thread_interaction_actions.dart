@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
@@ -52,7 +53,7 @@ class ThreadInteractionActions extends ConsumerWidget {
                 : '喜欢，当前 ${state.likeCount} 个喜欢',
             padding: EdgeInsets.symmetric(horizontal: tokens.space4),
             supporting: Text(
-              '${state.likeCount}',
+              formatWenyouCompactCount(state.likeCount),
               style: const TextStyle(
                 fontFeatures: [FontFeature.tabularFigures()],
               ),

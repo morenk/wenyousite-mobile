@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -129,7 +130,9 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                     state.threadSubscription == null ? '订阅官方更新' : '已订阅官方更新',
                   ),
                 ),
-                if (state.candidates.isNotEmpty)
+                if (state.isLoadingCandidates ||
+                    state.candidates.isNotEmpty ||
+                    state.candidateFailure != null)
                   OutlinedButton.icon(
                     key: const Key('thread-subscription-players'),
                     onPressed: state.isPending
@@ -137,7 +140,11 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                         : () => _showPlayerSheet(context, target),
                     icon: const WenyouIcon(WenyouIconIds.identityMembers),
                     label: Text(
-                      '玩家发言 ${state.userSubscriptionCount}/${state.candidates.length}',
+                      state.isLoadingCandidates
+                          ? '玩家列表加载中'
+                          : state.candidateFailure == null
+                          ? '玩家发言 ${state.userSubscriptionCount}/${state.candidates.length}'
+                          : '玩家列表加载失败',
                     ),
                   ),
               ],
@@ -250,7 +257,8 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               ),
             ],
             SizedBox(height: tokens.space12),
-            if (includeThreadToggle) ...[
+            if (includeThreadToggle &&
+                state.phase == ThreadSubscriptionPhase.ready) ...[
               ListTile(
                 key: const Key('thread-subscription-official'),
                 contentPadding: EdgeInsets.zero,
@@ -284,57 +292,74 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               SizedBox(height: tokens.space4),
             ],
             Expanded(
-              child: state.candidates.isEmpty
-                  ? Center(
-                      child: Text(
-                        '暂无可订阅的玩家',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    )
-                  : ListView.separated(
-                      itemCount: state.candidates.length,
-                      separatorBuilder: (_, _) => Divider(color: tokens.border),
-                      itemBuilder: (context, index) {
-                        final candidate = state.candidates[index];
-                        final subscribed =
-                            state.userSubscriptionFor(candidate.userId) != null;
-                        final pending =
-                            state.pendingType == ThreadSubscriptionType.user &&
-                            state.pendingTargetUserId == candidate.userId;
-                        return ListTile(
-                          key: ValueKey(
-                            'thread-subscription-candidate-${candidate.userId}',
-                          ),
-                          contentPadding: EdgeInsets.zero,
-                          leading: WenyouAvatar(
-                            username: candidate.username,
-                            size: 40,
-                          ),
-                          title: Text(candidate.username),
-                          subtitle: Text('Lv.${candidate.level}'),
-                          trailing: OutlinedButton(
-                            key: ValueKey(
-                              'thread-subscription-user-${candidate.userId}',
-                            ),
-                            onPressed: state.isPending
-                                ? null
-                                : () => _toggleUser(
-                                    context,
-                                    notifier,
-                                    candidate.userId,
-                                  ),
-                            child: pending
-                                ? const SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(subscribed ? '取消订阅' : '订阅发言'),
-                          ),
-                        );
-                      },
+              child: switch (state.phase) {
+                ThreadSubscriptionPhase.loading => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                ThreadSubscriptionPhase.failed => _PlayerLoadFailure(
+                  failure: state.failure,
+                  onRetry: notifier.load,
+                ),
+                ThreadSubscriptionPhase.ready when state.isLoadingCandidates =>
+                  const Center(child: CircularProgressIndicator()),
+                ThreadSubscriptionPhase.ready
+                    when state.candidateFailure != null =>
+                  _PlayerLoadFailure(
+                    failure: state.candidateFailure,
+                    onRetry: notifier.retryCandidates,
+                  ),
+                ThreadSubscriptionPhase.ready when state.candidates.isEmpty =>
+                  Center(
+                    child: Text(
+                      '暂无可订阅的玩家',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
+                  ),
+                ThreadSubscriptionPhase.ready => ListView.separated(
+                  itemCount: state.candidates.length,
+                  separatorBuilder: (_, _) => Divider(color: tokens.border),
+                  itemBuilder: (context, index) {
+                    final candidate = state.candidates[index];
+                    final subscribed =
+                        state.userSubscriptionFor(candidate.userId) != null;
+                    final pending =
+                        state.pendingType == ThreadSubscriptionType.user &&
+                        state.pendingTargetUserId == candidate.userId;
+                    return ListTile(
+                      key: ValueKey(
+                        'thread-subscription-candidate-${candidate.userId}',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      leading: WenyouAvatar(
+                        username: candidate.username,
+                        size: 40,
+                      ),
+                      title: Text(candidate.username),
+                      subtitle: Text('Lv.${candidate.level}'),
+                      trailing: OutlinedButton(
+                        key: ValueKey(
+                          'thread-subscription-user-${candidate.userId}',
+                        ),
+                        onPressed: state.isPending
+                            ? null
+                            : () => _toggleUser(
+                                context,
+                                notifier,
+                                candidate.userId,
+                              ),
+                        child: pending
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(subscribed ? '取消订阅' : '订阅发言'),
+                      ),
+                    );
+                  },
+                ),
+              },
             ),
           ],
         ),
@@ -359,6 +384,30 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
     final succeeded = await notifier.toggleThread();
     if (!context.mounted || !succeeded) return;
     _showSuccess(context, notifier);
+  }
+}
+
+class _PlayerLoadFailure extends StatelessWidget {
+  const _PlayerLoadFailure({required this.failure, required this.onRetry});
+
+  final ApiFailure? failure;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: WenyouEmptyState(
+        icon: WenyouIconIds.statusNotificationsOff,
+        title: '玩家列表加载失败',
+        message: failure?.userMessage ?? '请稍后重试。',
+        action: FilledButton.icon(
+          key: const Key('thread-subscription-candidates-retry'),
+          onPressed: onRetry,
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+          label: const Text('重新加载'),
+        ),
+      ),
+    );
   }
 }
 

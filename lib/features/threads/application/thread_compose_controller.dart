@@ -658,17 +658,15 @@ final threadComposeControllerProvider =
       ThreadComposeState
     >(
       (ref) {
-        ref.watch(sessionControllerProvider);
-        final ownerId = ref
-            .read(sessionControllerProvider.notifier)
-            .currentUserId;
+        final sessionScope = ref.watch(sessionScopeProvider);
         return ThreadComposeController(
           ref.watch(threadComposeRepositoryProvider),
           ref.watch(editorSnapshotStoreProvider),
-          knownOwnerId: ownerId,
+          knownOwnerId: sessionScope.accountId,
         );
       },
       dependencies: [
+        sessionScopeProvider,
         threadComposeRepositoryProvider,
         editorSnapshotStoreProvider,
       ],

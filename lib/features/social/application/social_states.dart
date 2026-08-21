@@ -202,7 +202,9 @@ class ThreadSubscriptionState {
     required this.phase,
     this.subscriptions = const [],
     this.candidates = const [],
+    this.isLoadingCandidates = false,
     this.failure,
+    this.candidateFailure,
     this.pendingType,
     this.pendingTargetUserId,
     this.actionFailure,
@@ -217,7 +219,9 @@ class ThreadSubscriptionState {
   final ThreadSubscriptionPhase phase;
   final List<ThreadSubscriptionRecord> subscriptions;
   final List<ThreadSubscriptionCandidate> candidates;
+  final bool isLoadingCandidates;
   final ApiFailure? failure;
+  final ApiFailure? candidateFailure;
   final ThreadSubscriptionType? pendingType;
   final String? pendingTargetUserId;
   final ApiFailure? actionFailure;

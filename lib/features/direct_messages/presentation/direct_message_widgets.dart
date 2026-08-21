@@ -25,6 +25,9 @@ import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets
 
 export 'direct_message_avatar.dart';
 
+typedef DirectMessageReportCallback =
+    Future<void> Function(BuildContext context, String messageId);
+
 class DirectMessageComposer extends ConsumerStatefulWidget {
   const DirectMessageComposer({
     required this.onSend,
@@ -480,7 +483,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   }
 }
 
-enum _DirectMessageAction { copy, saveSticker, recall, retry, abandon }
+enum _DirectMessageAction { copy, saveSticker, recall, report, retry, abandon }
 
 class DirectMessageBubble extends ConsumerStatefulWidget {
   const DirectMessageBubble({
@@ -494,6 +497,7 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
     this.failure,
     this.onRetry,
     this.onAbandon,
+    this.onReport,
     super.key,
   });
 
@@ -507,6 +511,7 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
   final VoidCallback onRecall;
   final VoidCallback? onRetry;
   final VoidCallback? onAbandon;
+  final DirectMessageReportCallback? onReport;
 
   @override
   ConsumerState<DirectMessageBubble> createState() =>
@@ -548,6 +553,11 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     final failed =
         widget.message.deliveryState == DirectMessageDeliveryState.failed;
     final canSaveSticker = stickersEnabled && media != null && _imageRevealed;
+    final canReport =
+        widget.onReport != null &&
+        !widget.mine &&
+        !widget.message.isRecalled &&
+        widget.message.deliveryState == DirectMessageDeliveryState.sent;
     final semanticActions = <CustomSemanticsAction, VoidCallback>{
       if (!widget.message.isRecalled && widget.message.content != null)
         const CustomSemanticsAction(label: '复制消息'): _copyMessage,
@@ -555,6 +565,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         const CustomSemanticsAction(label: '收藏表情'): _saveSticker,
       if (!widget.message.isRecalled && widget.canRecall && !widget.isRecalling)
         const CustomSemanticsAction(label: '撤回消息'): widget.onRecall,
+      if (canReport) const CustomSemanticsAction(label: '举报消息'): _reportMessage,
       if (failed && widget.onRetry != null)
         const CustomSemanticsAction(label: '重试发送'): widget.onRetry!,
       if (failed && widget.onAbandon != null)
@@ -588,6 +599,15 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
           enabled: !widget.isRecalling,
           loading: widget.isRecalling,
           key: ValueKey('direct-message-recall-${widget.message.id}'),
+        ),
+      if (canReport)
+        WenyouPopoverAction(
+          value: _DirectMessageAction.report,
+          icon: WenyouIconIds.actionReport,
+          label: '举报',
+          semanticsLabel: '举报消息',
+          tone: WenyouPopoverActionTone.destructive,
+          key: ValueKey('direct-message-report-${widget.message.id}'),
         ),
       if (failed && widget.onRetry != null)
         WenyouPopoverAction(
@@ -774,6 +794,8 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         unawaited(_saveSticker());
       case _DirectMessageAction.recall:
         widget.onRecall();
+      case _DirectMessageAction.report:
+        unawaited(_reportMessage());
       case _DirectMessageAction.retry:
         widget.onRetry?.call();
       case _DirectMessageAction.abandon:
@@ -787,6 +809,12 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     await Clipboard.setData(ClipboardData(text: content));
     if (!mounted) return;
     showDirectMessageNotice(context, '已复制');
+  }
+
+  Future<void> _reportMessage() async {
+    final onReport = widget.onReport;
+    if (onReport == null) return;
+    await onReport(context, widget.message.id);
   }
 
   Future<void> _saveSticker() async {

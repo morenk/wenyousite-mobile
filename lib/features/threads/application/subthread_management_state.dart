@@ -12,6 +12,37 @@ enum SubthreadManagementAction {
   reordering,
 }
 
+sealed class MutationSubmitResult<T> {
+  const MutationSubmitResult._();
+
+  const factory MutationSubmitResult.completed(T value) =
+      MutationSubmitCompleted<T>;
+
+  const factory MutationSubmitResult.failed(ApiFailure failure) =
+      MutationSubmitFailed<T>;
+
+  const factory MutationSubmitResult.indeterminate({String? requestId}) =
+      MutationSubmitIndeterminate<T>;
+}
+
+final class MutationSubmitCompleted<T> extends MutationSubmitResult<T> {
+  const MutationSubmitCompleted(this.value) : super._();
+
+  final T value;
+}
+
+final class MutationSubmitFailed<T> extends MutationSubmitResult<T> {
+  const MutationSubmitFailed(this.failure) : super._();
+
+  final ApiFailure failure;
+}
+
+final class MutationSubmitIndeterminate<T> extends MutationSubmitResult<T> {
+  const MutationSubmitIndeterminate({this.requestId}) : super._();
+
+  final String? requestId;
+}
+
 class SubthreadManagementState {
   const SubthreadManagementState({
     required this.phase,

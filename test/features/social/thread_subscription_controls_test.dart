@@ -65,6 +65,28 @@ void main() {
     expect(find.text('问题编号：load-request-id'), findsOneWidget);
   });
 
+  testWidgets('玩家列表失败时官方订阅仍可操作并提供独立重试', (tester) async {
+    final repository = _FakeRepository(failCandidates: true);
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订阅官方更新'), findsOneWidget);
+    expect(find.text('玩家列表加载失败'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pumpAndSettle();
+    expect(find.text('已订阅官方更新'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('thread-subscription-players')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-subscription-candidates-retry')),
+      findsOneWidget,
+    );
+    expect(find.text('玩家列表暂时不可用'), findsOneWidget);
+  });
+
   testWidgets('订阅写入失败保留旧状态并显示请求 ID', (tester) async {
     final writeFailureRepository = _FakeRepository(failWrite: true);
     final writeContainer = await _authenticatedContainer(
@@ -185,11 +207,13 @@ Future<ProviderContainer> _authenticatedContainer(
 class _FakeRepository implements ThreadSubscriptionRepository {
   _FakeRepository({
     this.failLoad = false,
+    this.failCandidates = false,
     this.failWrite = false,
     this.uncertainWrite = false,
   });
 
   final bool failLoad;
+  final bool failCandidates;
   final bool failWrite;
   final bool uncertainWrite;
   int loadCalls = 0;
@@ -214,9 +238,18 @@ class _FakeRepository implements ThreadSubscriptionRepository {
   Future<List<ThreadSubscriptionCandidate>> fetchCandidates(
     String threadId, {
     String? viewerUserId,
-  }) async => const [
-    ThreadSubscriptionCandidate(userId: 'player-1', username: '骰子猫', level: 3),
-  ];
+  }) async {
+    if (failCandidates) {
+      throw const ApiFailure(userMessage: '玩家列表暂时不可用');
+    }
+    return const [
+      ThreadSubscriptionCandidate(
+        userId: 'player-1',
+        username: '骰子猫',
+        level: 3,
+      ),
+    ];
+  }
 
   @override
   Future<ThreadSubscriptionRecord> create({

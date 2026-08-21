@@ -301,6 +301,77 @@ void main() {
     expect(controller.state.isRefreshing, isFalse);
   });
 
+  test('元数据刷新打断首屏楼层时主动重载，迟到旧结果不能制造假空态', () async {
+    final staleFloors = Completer<CursorPage<ThreadFloorModel>>();
+    var floorCalls = 0;
+    final repository = _FakeThreadDetailRepository(
+      onFloors: (_, _) {
+        floorCalls += 1;
+        if (floorCalls == 1) return staleFloors.future;
+        return Future.value(
+          CursorPage(items: [_floor('fresh-floor')], hasMore: false),
+        );
+      },
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    final initialLoad = controller.loadInitial();
+    while (repository.floorRequests.isEmpty) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await controller.refreshMetadata();
+    staleFloors.complete(
+      CursorPage(items: [_floor('stale-floor')], hasMore: false),
+    );
+    await initialLoad;
+
+    expect(repository.floorRequests, ['subthread-2:null', 'subthread-2:null']);
+    expect(controller.state.floors.single.id, 'fresh-floor');
+    expect(controller.state.isLoadingFloors, isFalse);
+  });
+
+  test('元数据刷新回退到其他子贴时清空旧窗口并加载新首页', () async {
+    var threadCalls = 0;
+    final repository = _FakeThreadDetailRepository(
+      onThread: (_) async {
+        threadCalls += 1;
+        return threadCalls == 1 ? _detail : _detailWithoutSelectedSubthread;
+      },
+      onFloors: (subthreadId, _) async => CursorPage(
+        items: [
+          _floor(
+            subthreadId == 'subthread-2' ? 'old-subthread-floor' : 'new-floor',
+          ),
+        ],
+        cursor: subthreadId == 'subthread-2' ? 'old-cursor' : null,
+        hasMore: subthreadId == 'subthread-2',
+      ),
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    expect(controller.state.selectedSubthreadId, 'subthread-2');
+    expect(controller.state.floors.single.id, 'old-subthread-floor');
+
+    await controller.refreshMetadata();
+
+    expect(controller.state.selectedSubthreadId, 'subthread-1');
+    expect(controller.state.floors.single.id, 'new-floor');
+    expect(controller.state.cursor, isNull);
+    expect(controller.state.hasMore, isFalse);
+    expect(repository.floorRequests, ['subthread-2:null', 'subthread-1:null']);
+  });
+
   test('详情首屏失败进入可重试终态并保留请求 ID', () async {
     final repository = _FakeThreadDetailRepository(
       onThread: (_) => throw const ApiFailure(
@@ -410,6 +481,35 @@ final _detail = ThreadDetailModel(
   defaultSubthreadId: 'subthread-2',
   createdAt: DateTime.utc(2026, 8, 1),
   updatedAt: DateTime.utc(2026, 8, 9),
+);
+
+final _detailWithoutSelectedSubthread = ThreadDetailModel(
+  id: 'thread-1',
+  title: '星海旅团',
+  owner: _author,
+  categorySlug: 'RPG',
+  status: ThreadDetailStatus.recruiting,
+  isPrivate: false,
+  isPinned: false,
+  viewCount: 21,
+  likeCount: 3,
+  tipTotal: '8',
+  memberCount: 5,
+  playerCount: 2,
+  postCount: 9,
+  tags: const [],
+  subthreads: const [
+    ThreadSubthreadModel(
+      id: 'subthread-1',
+      title: '主线',
+      sortOrder: 1,
+      postCount: 9,
+      postingPolicyLabel: '参与者发言',
+    ),
+  ],
+  defaultSubthreadId: 'subthread-1',
+  createdAt: DateTime.utc(2026, 8, 1),
+  updatedAt: DateTime.utc(2026, 8, 10),
 );
 
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);

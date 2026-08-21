@@ -105,6 +105,81 @@ void main() {
     expect(find.text('子贴已被修改，请重新编辑。'), findsOneWidget);
   });
 
+  testWidgets('创建结果不确定时保留表单与请求编号且不提示成功', (tester) async {
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      createFailureOnce: const ApiFailure(
+        userMessage: '创建结果暂时无法确定',
+        httpStatus: 500,
+        requestId: 'create-unknown-id',
+      ),
+    );
+    await _pumpPage(tester, repository);
+
+    await tester.tap(find.byKey(const Key('subthread-management-create')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('subthread-form-title')),
+      '玩家区',
+    );
+    await tester.tap(find.byKey(const Key('subthread-form-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subthread-form-title')), findsOneWidget);
+    expect(find.text('玩家区'), findsOneWidget);
+    expect(
+      find.byKey(const Key('subthread-form-indeterminate')),
+      findsOneWidget,
+    );
+    expect(find.text('问题编号：create-unknown-id'), findsWidgets);
+    expect(find.text('子贴已创建。'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('subthread-form-submit')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('subthread-form-title')), findsNothing);
+    expect(find.text('子贴已创建。'), findsOneWidget);
+    expect(repository.createRequestIds, hasLength(2));
+    expect(repository.createRequestIds.toSet(), hasLength(1));
+  });
+
+  testWidgets('编辑结果不确定时保留修改内容且不提示成功', (tester) async {
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      updateFailureOnce: const ApiFailure(
+        userMessage: '保存结果暂时无法确定',
+        httpStatus: 500,
+        requestId: 'update-unknown-id',
+      ),
+    );
+    await _pumpPage(tester, repository);
+
+    final edit = find.byKey(const ValueKey('subthread-edit-sub-second'));
+    await tester.ensureVisible(edit);
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('subthread-form-title')),
+      '本机新标题',
+    );
+    await tester.tap(find.byKey(const Key('subthread-form-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('subthread-form-title')), findsOneWidget);
+    expect(find.text('本机新标题'), findsOneWidget);
+    expect(
+      find.byKey(const Key('subthread-form-indeterminate')),
+      findsOneWidget,
+    );
+    expect(find.text('问题编号：update-unknown-id'), findsWidgets);
+    expect(find.text('子贴已更新。'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('subthread-form-submit')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('subthread-form-title')), findsNothing);
+    expect(find.text('子贴已更新。'), findsOneWidget);
+    expect(repository.updatedTitles, ['本机新标题']);
+  });
+
   testWidgets('加载失败保留请求 ID并可重试', (tester) async {
     final repository = _FakeRepository(
       bootstrap: _bootstrap(),
@@ -172,13 +247,16 @@ class _FakeRepository implements SubthreadManagementRepository {
     required this.bootstrap,
     this.updateFailureOnce,
     this.loadFailureOnce,
+    this.createFailureOnce,
   });
 
   SubthreadManagementBootstrap bootstrap;
   ApiFailure? updateFailureOnce;
   ApiFailure? loadFailureOnce;
+  ApiFailure? createFailureOnce;
   int findCalls = 0;
   final List<String> createdTitles = [];
+  final List<String> createRequestIds = [];
   final List<String> updatedTitles = [];
   final List<String> removedIds = [];
   final List<List<String>> reorderIds = [];
@@ -209,6 +287,10 @@ class _FakeRepository implements SubthreadManagementRepository {
     required SubthreadManagementDraft draft,
     required String clientRequestId,
   }) async {
+    createRequestIds.add(clientRequestId);
+    final failure = createFailureOnce;
+    createFailureOnce = null;
+    if (failure != null) throw failure;
     createdTitles.add(draft.normalizedTitle);
     return SubthreadManagementItem(
       id: 'sub-created',

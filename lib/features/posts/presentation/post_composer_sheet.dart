@@ -221,6 +221,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_toolbarController.closeTray()) return;
+        if (state.isSubmitting) return;
         unawaited(_requestClose());
       },
       child: Column(
@@ -503,6 +504,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
 
   Future<void> _requestClose() async {
     if (_closing || _preparingClose) return;
+    final composerState = ref.read(
+      postComposerControllerProvider(widget.target),
+    );
+    if (composerState.isSubmitting) return;
     _preparingClose = true;
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)

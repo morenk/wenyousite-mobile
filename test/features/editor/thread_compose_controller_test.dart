@@ -1,14 +1,82 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/editor/data/editor_snapshot_store.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
 void main() {
+  test('访问令牌刷新保留创作控制器，账号切换才重建并隔离内容', () async {
+    final tokenStore = _MemoryTokenStore();
+    final sessionRemote = _RotatingSessionRemote(_tokensFor('user-one', '2'));
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(tokenStore),
+        sessionRemoteProvider.overrideWithValue(sessionRemote),
+        threadComposeRepositoryProvider.overrideWithValue(_FakeRepository()),
+        editorSnapshotStoreProvider.overrideWithValue(_MemorySnapshotStore()),
+      ],
+    );
+    addTearDown(container.dispose);
+    final session = container.read(sessionControllerProvider.notifier);
+    await session.authenticate(_tokensFor('user-one', '1'));
+    final subscription = container.listen(
+      threadComposeControllerProvider,
+      (_, _) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await _waitUntil(
+      () =>
+          container.read(threadComposeControllerProvider).phase ==
+          ThreadComposePhase.ready,
+      reason: 'initial provider did not become ready',
+    );
+    final original = container.read(threadComposeControllerProvider.notifier);
+    original
+      ..updateTitle('刷新时保留标题')
+      ..updateBody('刷新时保留正文');
+
+    await session.refresh();
+    await container.pump();
+
+    expect(
+      container.read(threadComposeControllerProvider.notifier),
+      same(original),
+    );
+    expect(container.read(threadComposeControllerProvider).title, '刷新时保留标题');
+    expect(container.read(threadComposeControllerProvider).body, '刷新时保留正文');
+
+    await session.authenticate(_tokensFor('user-two', '1'));
+    await container.pump();
+    expect(container.read(sessionScopeProvider).accountId, 'user-two');
+    expect(
+      container.read(threadComposeControllerProvider.notifier),
+      isNot(same(original)),
+      reason: 'scope changed without recreating the compose controller',
+    );
+    await _waitUntil(
+      () =>
+          container.read(threadComposeControllerProvider).ownerId == 'user-two',
+      reason: 'account switch did not recreate the provider',
+    );
+
+    expect(
+      container.read(threadComposeControllerProvider.notifier),
+      isNot(same(original)),
+    );
+    expect(container.read(threadComposeControllerProvider).title, isEmpty);
+    expect(container.read(threadComposeControllerProvider).body, isEmpty);
+  });
+
   test('按 JWT 用户隔离恢复本地快照并异步补齐分类与邮箱状态', () async {
     final store = _MemorySnapshotStore();
     store.snapshot = LocalEditorSnapshot(
@@ -259,14 +327,24 @@ void _fillPublishable(
     ..updateBody(body);
 }
 
-Future<void> _waitUntil(bool Function() predicate) async {
+Future<void> _waitUntil(bool Function() predicate, {String? reason}) async {
   for (var i = 0; i < 100 && !predicate(); i++) {
     await Future<void>.delayed(const Duration(milliseconds: 2));
   }
-  expect(predicate(), isTrue);
+  expect(predicate(), isTrue, reason: reason);
 }
 
 const _requestId = '550e8400-e29b-41d4-a716-446655440000';
+
+SessionTokens _tokensFor(String userId, String nonce) {
+  final payload = base64Url
+      .encode(utf8.encode('{"sub":"$userId","nonce":"$nonce"}'))
+      .replaceAll('=', '');
+  return SessionTokens(
+    accessToken: 'header.$payload.signature',
+    refreshToken: 'refresh-$userId-$nonce',
+  );
+}
 
 ThreadRemoteDraft _remote({String body = '主题正文', String title = '测试主题'}) {
   return ThreadRemoteDraft(
@@ -412,4 +490,29 @@ class _ControlledSnapshotStore extends _MemorySnapshotStore {
     }
     await super.saveThreadSnapshot(value);
   }
+}
+
+class _MemoryTokenStore implements TokenStore {
+  SessionTokens? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<SessionTokens?> read() async => value;
+
+  @override
+  Future<void> write(SessionTokens tokens) async => value = tokens;
+}
+
+class _RotatingSessionRemote implements SessionRemote {
+  _RotatingSessionRemote(this.nextTokens);
+
+  final SessionTokens nextTokens;
+
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) async => nextTokens;
 }

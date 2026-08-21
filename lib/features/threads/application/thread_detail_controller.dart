@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -180,18 +181,34 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   /// currently loaded floor window. This is used after a successful post
   /// mutation so the reader's scroll position remains stable.
   Future<void> refreshMetadata() async {
-    final epoch = _requestEpoch;
-    state = state.copyWith(transientFailure: null);
+    final previousSelectedId = state.selectedSubthreadId;
+    final wasLoadingFloors = state.isLoadingFloors;
+    final epoch = ++_requestEpoch;
+    state = state.copyWith(
+      transientFailure: null,
+      isLoadingMore: false,
+      retryAction: null,
+    );
     try {
       final detail = await _repository.fetchThread(threadId);
       if (!_isCurrent(epoch)) return;
-      final selectedId = detail.preferredSubthreadId(state.selectedSubthreadId);
+      final selectedId = detail.preferredSubthreadId(previousSelectedId);
+      final selectionChanged = selectedId != previousSelectedId;
+      final shouldReloadFloors =
+          selectedId != null && (selectionChanged || wasLoadingFloors);
       state = state.copyWith(
         phase: ThreadDetailPhase.ready,
         detail: detail,
         selectedSubthreadId: selectedId,
+        floors: shouldReloadFloors ? const [] : state.floors,
+        cursor: shouldReloadFloors ? null : state.cursor,
+        hasMore: shouldReloadFloors ? false : state.hasMore,
+        isLoadingFloors: shouldReloadFloors,
         failure: null,
       );
+      if (shouldReloadFloors) {
+        await _loadFirstFloors(epoch, selectedId);
+      }
     } on Object catch (error) {
       if (!_isCurrent(epoch)) return;
       final failure = _asFailure(error, '主题信息刷新失败，请稍后重试。');
@@ -200,6 +217,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         return;
       }
       state = state.copyWith(
+        isLoadingFloors: false,
         transientFailure: failure,
         retryAction: ThreadDetailRetryAction.refresh,
       );
@@ -401,5 +419,6 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
 
 final threadPostTargetProvider = FutureProvider.autoDispose
     .family<ThreadPostTargetModel, String>((ref, postId) {
+      ref.watch(sessionScopeProvider);
       return ref.watch(threadDetailRepositoryProvider).fetchPostTarget(postId);
-    }, dependencies: [threadDetailRepositoryProvider]);
+    }, dependencies: [threadDetailRepositoryProvider, sessionScopeProvider]);

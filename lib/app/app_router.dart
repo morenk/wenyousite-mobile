@@ -20,6 +20,8 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_p
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
+import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
+import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/thread_post_search_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
@@ -172,8 +174,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.directConversation,
         name: AppRouteNames.directConversation,
         builder: (context, state) {
-          return DirectConversationPage(
-            conversationId: state.pathParameters['conversationId']!,
+          final conversationId = state.pathParameters['conversationId']!;
+          return Consumer(
+            builder: (_, ref, _) => DirectConversationPage(
+              conversationId: conversationId,
+              onReportMessage: (reportContext, messageId) =>
+                  showWenyouReportFlow(
+                    context: reportContext,
+                    ref: ref,
+                    target: ReportTarget.directMessage(messageId),
+                    targetLabel: '这条私信',
+                    returnTo: Uri(
+                      pathSegments: ['', 'messages', conversationId],
+                    ).toString(),
+                  ),
+            ),
           );
         },
       ),
@@ -201,7 +216,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               threadId: state.pathParameters['threadId']!,
               rootPostId: state.pathParameters['postId']!,
               focusedReplyId: state.uri.queryParameters['post'],
-              reportsEnabled: state.uri.queryParameters['reports'] == '1',
             ),
           );
         },

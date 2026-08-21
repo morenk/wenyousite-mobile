@@ -22,38 +22,60 @@ class ThreadSubscriptionController
   final ThreadSubscriptionTarget target;
   final WriteReconciler _reconciler;
   var _loadEpoch = 0;
+  var _candidateEpoch = 0;
   var _actionEpoch = 0;
 
   Future<void> load() async {
     final epoch = ++_loadEpoch;
+    final candidateEpoch = ++_candidateEpoch;
     state = const ThreadSubscriptionState.loading();
-    try {
-      final subscriptionsFuture = _repository.fetchSubscriptions(
-        target.threadId,
-      );
-      final candidatesFuture = _repository.fetchCandidates(
+    final subscriptionsFuture = _capture(
+      _repository.fetchSubscriptions(target.threadId),
+    );
+    final candidatesFuture = _capture(
+      _repository.fetchCandidates(
         target.threadId,
         viewerUserId: target.viewerUserId,
-      );
-      final results = await Future.wait<Object>([
-        subscriptionsFuture,
-        candidatesFuture,
-      ]);
-      final subscriptions = results[0] as List<ThreadSubscriptionRecord>;
-      final candidates = results[1] as List<ThreadSubscriptionCandidate>;
-      if (!mounted || epoch != _loadEpoch) return;
-      state = ThreadSubscriptionState(
-        phase: ThreadSubscriptionPhase.ready,
-        subscriptions: subscriptions,
-        candidates: candidates,
-      );
-    } on Object catch (error) {
-      if (!mounted || epoch != _loadEpoch) return;
+      ),
+    );
+    final subscriptionsResult = await subscriptionsFuture;
+    if (!mounted || epoch != _loadEpoch) return;
+    final subscriptionError = subscriptionsResult.error;
+    if (subscriptionError != null) {
       state = ThreadSubscriptionState(
         phase: ThreadSubscriptionPhase.failed,
-        failure: _asFailure(error, '订阅状态加载失败，请稍后重试。'),
+        failure: _asFailure(subscriptionError, '订阅状态加载失败，请稍后重试。'),
       );
+      return;
     }
+    state = ThreadSubscriptionState(
+      phase: ThreadSubscriptionPhase.ready,
+      subscriptions: subscriptionsResult.value!,
+      isLoadingCandidates: true,
+    );
+    final candidatesResult = await candidatesFuture;
+    if (!mounted || epoch != _loadEpoch || candidateEpoch != _candidateEpoch) {
+      return;
+    }
+    _completeCandidates(candidatesResult);
+  }
+
+  Future<void> retryCandidates() async {
+    if (state.phase != ThreadSubscriptionPhase.ready ||
+        state.isLoadingCandidates ||
+        state.isPending) {
+      return;
+    }
+    final epoch = ++_candidateEpoch;
+    state = _copyState(isLoadingCandidates: true, clearCandidateFailure: true);
+    final result = await _capture(
+      _repository.fetchCandidates(
+        target.threadId,
+        viewerUserId: target.viewerUserId,
+      ),
+    );
+    if (!mounted || epoch != _candidateEpoch) return;
+    _completeCandidates(result);
   }
 
   Future<bool> toggleThread() async {
@@ -78,6 +100,8 @@ class ThreadSubscriptionController
         phase: ThreadSubscriptionPhase.ready,
         subscriptions: state.subscriptions,
         candidates: state.candidates,
+        isLoadingCandidates: state.isLoadingCandidates,
+        candidateFailure: state.candidateFailure,
         actionFailure: const ApiFailure(userMessage: '这名玩家已不在可订阅列表，请刷新后重试。'),
       );
       return false;
@@ -137,6 +161,8 @@ class ThreadSubscriptionController
               phase: ThreadSubscriptionPhase.ready,
               subscriptions: state.subscriptions,
               candidates: state.candidates,
+              isLoadingCandidates: state.isLoadingCandidates,
+              candidateFailure: state.candidateFailure,
               pendingType: type,
               pendingTargetUserId: targetUserId,
               actionOutcome: WriteOutcomeStatus.confirming,
@@ -170,6 +196,8 @@ class ThreadSubscriptionController
           phase: ThreadSubscriptionPhase.ready,
           subscriptions: outcome.projection ?? before,
           candidates: state.candidates,
+          isLoadingCandidates: state.isLoadingCandidates,
+          candidateFailure: state.candidateFailure,
           actionOutcome: WriteOutcomeStatus.indeterminate,
           actionRequestId: outcome.requestId,
         );
@@ -185,7 +213,9 @@ class ThreadSubscriptionController
       phase: state.phase,
       subscriptions: state.subscriptions,
       candidates: state.candidates,
+      isLoadingCandidates: state.isLoadingCandidates,
       failure: state.failure,
+      candidateFailure: state.candidateFailure,
       pendingType: state.pendingType,
       pendingTargetUserId: state.pendingTargetUserId,
       successMessage: state.successMessage,
@@ -201,7 +231,9 @@ class ThreadSubscriptionController
       phase: state.phase,
       subscriptions: state.subscriptions,
       candidates: state.candidates,
+      isLoadingCandidates: state.isLoadingCandidates,
       failure: state.failure,
+      candidateFailure: state.candidateFailure,
       pendingType: state.pendingType,
       pendingTargetUserId: state.pendingTargetUserId,
       actionFailure: state.actionFailure,
@@ -216,6 +248,8 @@ class ThreadSubscriptionController
       phase: ThreadSubscriptionPhase.ready,
       subscriptions: state.subscriptions,
       candidates: state.candidates,
+      isLoadingCandidates: state.isLoadingCandidates,
+      candidateFailure: state.candidateFailure,
       pendingType: type,
       pendingTargetUserId: targetUserId,
     );
@@ -229,6 +263,8 @@ class ThreadSubscriptionController
       phase: ThreadSubscriptionPhase.ready,
       subscriptions: List.unmodifiable(subscriptions),
       candidates: state.candidates,
+      isLoadingCandidates: state.isLoadingCandidates,
+      candidateFailure: state.candidateFailure,
       successMessage: message,
     );
   }
@@ -238,12 +274,59 @@ class ThreadSubscriptionController
       phase: ThreadSubscriptionPhase.ready,
       subscriptions: state.subscriptions,
       candidates: state.candidates,
+      isLoadingCandidates: state.isLoadingCandidates,
+      candidateFailure: state.candidateFailure,
       actionFailure: _asFailure(error, fallback),
     );
   }
 
   ApiFailure _asFailure(Object error, String fallback) {
     return mapApplicationFailure(error, fallback);
+  }
+
+  void _completeCandidates(
+    ({List<ThreadSubscriptionCandidate>? value, Object? error}) result,
+  ) {
+    state = _copyState(
+      candidates: result.value,
+      isLoadingCandidates: false,
+      candidateFailure: result.error == null
+          ? null
+          : _asFailure(result.error!, '玩家列表加载失败，请稍后重试。'),
+      clearCandidateFailure: result.error == null,
+    );
+  }
+
+  ThreadSubscriptionState _copyState({
+    List<ThreadSubscriptionCandidate>? candidates,
+    bool? isLoadingCandidates,
+    ApiFailure? candidateFailure,
+    bool clearCandidateFailure = false,
+  }) {
+    return ThreadSubscriptionState(
+      phase: state.phase,
+      subscriptions: state.subscriptions,
+      candidates: candidates ?? state.candidates,
+      isLoadingCandidates: isLoadingCandidates ?? state.isLoadingCandidates,
+      failure: state.failure,
+      candidateFailure: clearCandidateFailure
+          ? null
+          : (candidateFailure ?? state.candidateFailure),
+      pendingType: state.pendingType,
+      pendingTargetUserId: state.pendingTargetUserId,
+      actionFailure: state.actionFailure,
+      actionOutcome: state.actionOutcome,
+      actionRequestId: state.actionRequestId,
+      successMessage: state.successMessage,
+    );
+  }
+}
+
+Future<({T? value, Object? error})> _capture<T>(Future<T> future) async {
+  try {
+    return (value: await future, error: null);
+  } on Object catch (error) {
+    return (value: null, error: error);
   }
 }
 

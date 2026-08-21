@@ -27,6 +27,7 @@ import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_rep
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
@@ -126,6 +127,16 @@ List<Override> productionProviderOverrides() => [
   postRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiPostRepositoryProvider),
   ),
+  postThreadContextLookupProvider.overrideWith((ref) {
+    final repository = ref.watch(threadDetailRepositoryProvider);
+    return (threadId) async {
+      final detail = await repository.fetchThread(threadId);
+      return PostThreadContext(
+        isPrivate: detail.isPrivate,
+        canManageThread: detail.canManageThread,
+      );
+    };
+  }),
   reportRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiReportRepositoryProvider),
   ),

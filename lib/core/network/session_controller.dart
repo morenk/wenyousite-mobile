@@ -16,20 +16,53 @@ enum SessionInvalidationReason {
   refreshFailed,
 }
 
+/// Stable account boundary for state that must survive access-token rotation.
+///
+/// [generation] advances when a login session starts or ends. Token refreshes
+/// keep the same scope so account-owned editors and pending writes are not
+/// disposed while credentials rotate.
+class SessionScope {
+  const SessionScope({required this.accountId, required this.generation});
+
+  final String? accountId;
+  final int generation;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is SessionScope &&
+            other.accountId == accountId &&
+            other.generation == generation;
+  }
+
+  @override
+  int get hashCode => Object.hash(accountId, generation);
+}
+
 class SessionState {
-  const SessionState._(this.status, {this.reason});
+  const SessionState._(this.status, {this.reason, this.generation = 0});
 
-  const SessionState.guest() : this._(SessionStatus.guest);
+  const SessionState.guest({int generation = 0})
+    : this._(SessionStatus.guest, generation: generation);
 
-  const SessionState.restoring() : this._(SessionStatus.restoring);
+  const SessionState.restoring({int generation = 0})
+    : this._(SessionStatus.restoring, generation: generation);
 
-  const SessionState.authenticated() : this._(SessionStatus.authenticated);
+  const SessionState.authenticated({int generation = 0})
+    : this._(SessionStatus.authenticated, generation: generation);
 
-  const SessionState.invalidated(SessionInvalidationReason reason)
-    : this._(SessionStatus.invalidated, reason: reason);
+  const SessionState.invalidated(
+    SessionInvalidationReason reason, {
+    int generation = 0,
+  }) : this._(
+         SessionStatus.invalidated,
+         reason: reason,
+         generation: generation,
+       );
 
   final SessionStatus status;
   final SessionInvalidationReason? reason;
+  final int generation;
 
   bool get isAuthenticated => status == SessionStatus.authenticated;
 }
@@ -42,8 +75,12 @@ class SessionController extends StateNotifier<SessionState> {
   final SessionRemote _remote;
   SessionTokens? _tokens;
   Future<SessionTokens>? _refreshInFlight;
+  int _sessionGeneration = 0;
 
   SessionTokens? get tokens => _tokens;
+
+  SessionScope get scope =>
+      SessionScope(accountId: currentUserId, generation: _sessionGeneration);
 
   /// 仅用于把本地敏感数据按当前登录用户隔离。
   ///
@@ -68,23 +105,29 @@ class SessionController extends StateNotifier<SessionState> {
   }
 
   Future<void> restore() async {
-    state = const SessionState.restoring();
+    final hadTokens = _tokens != null;
+    final previousAccountId = currentUserId;
+    state = SessionState.restoring(generation: _sessionGeneration);
     try {
-      _tokens = await _tokenStore.read();
+      final restored = await _tokenStore.read();
+      _tokens = restored;
+      if (hadTokens != (restored != null) ||
+          previousAccountId != currentUserId) {
+        _sessionGeneration += 1;
+      }
       state = _tokens == null
-          ? const SessionState.guest()
-          : const SessionState.authenticated();
+          ? SessionState.guest(generation: _sessionGeneration)
+          : SessionState.authenticated(generation: _sessionGeneration);
     } on Object {
       _tokens = null;
       await _tokenStore.clear();
-      state = const SessionState.guest();
+      if (hadTokens) _sessionGeneration += 1;
+      state = SessionState.guest(generation: _sessionGeneration);
     }
   }
 
   Future<void> authenticate(SessionTokens tokens) async {
-    await _tokenStore.write(tokens);
-    _tokens = tokens;
-    state = const SessionState.authenticated();
+    await _replaceTokens(tokens, advanceGeneration: true);
   }
 
   Future<SessionTokens> refresh() {
@@ -100,22 +143,36 @@ class SessionController extends StateNotifier<SessionState> {
     if (current == null) {
       throw const ApiFailure(userMessage: '登录已失效，请重新登录。');
     }
+    final generation = _sessionGeneration;
     try {
       final next = await _remote.refresh(current.refreshToken);
-      await authenticate(next);
+      _ensureRefreshStillCurrent(current, generation);
+      await _replaceTokens(next, advanceGeneration: false);
       return next;
     } on ApiFailure catch (failure) {
       // A refresh can fail because the device is temporarily offline or the
       // service is unavailable. Keep durable tokens in those cases so a
       // later request can retry instead of forcing a needless login.
-      if (_refreshFailureInvalidatesSession(failure)) {
+      if (_refreshFailureInvalidatesSession(failure) &&
+          _isRefreshStillCurrent(current, generation)) {
         await invalidate(_reasonFor(failure.businessCode));
       }
       rethrow;
     } on Object catch (error) {
-      await invalidate(SessionInvalidationReason.refreshFailed);
+      if (_isRefreshStillCurrent(current, generation)) {
+        await invalidate(SessionInvalidationReason.refreshFailed);
+      }
       throw ApiFailure(userMessage: '登录已失效，请重新登录。', cause: error);
     }
+  }
+
+  bool _isRefreshStillCurrent(SessionTokens tokens, int generation) {
+    return identical(_tokens, tokens) && _sessionGeneration == generation;
+  }
+
+  void _ensureRefreshStillCurrent(SessionTokens tokens, int generation) {
+    if (_isRefreshStillCurrent(tokens, generation)) return;
+    throw const ApiFailure(userMessage: '登录状态已变化，请重试。');
   }
 
   Future<void> logout() async {
@@ -153,13 +210,25 @@ class SessionController extends StateNotifier<SessionState> {
   Future<void> invalidate(SessionInvalidationReason reason) async {
     _tokens = null;
     await _tokenStore.clear();
-    state = SessionState.invalidated(reason);
+    _sessionGeneration += 1;
+    state = SessionState.invalidated(reason, generation: _sessionGeneration);
   }
 
   Future<void> logoutLocally() async {
     _tokens = null;
     await _tokenStore.clear();
-    state = const SessionState.guest();
+    _sessionGeneration += 1;
+    state = SessionState.guest(generation: _sessionGeneration);
+  }
+
+  Future<void> _replaceTokens(
+    SessionTokens tokens, {
+    required bool advanceGeneration,
+  }) async {
+    await _tokenStore.write(tokens);
+    _tokens = tokens;
+    if (advanceGeneration) _sessionGeneration += 1;
+    state = SessionState.authenticated(generation: _sessionGeneration);
   }
 
   SessionInvalidationReason _reasonFor(int? code) {

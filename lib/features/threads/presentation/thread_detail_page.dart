@@ -49,8 +49,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _scrollController = ScrollController();
   final _targetKey = GlobalKey();
   final _composerDrafts = <String, String>{};
-  String? _lastRevealedTargetId;
+  String? _lastRevealSignature;
   String? _lastOpenedReplyTargetId;
+  String? _revealAttemptTargetId;
+  var _revealAttempts = 0;
+  var _revealScheduled = false;
 
   @override
   void initState() {
@@ -70,8 +73,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   void didUpdateWidget(covariant ThreadDetailPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.targetPostId != widget.targetPostId) {
-      _lastRevealedTargetId = null;
+      _lastRevealSignature = null;
       _lastOpenedReplyTargetId = null;
+      _revealAttemptTargetId = null;
+      _revealAttempts = 0;
     }
   }
 
@@ -89,10 +94,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
     final actionsProvider = postActionControllerProvider(widget.threadId);
-    ref.listen(sessionControllerProvider.select((session) => session.status), (
-      previous,
-      next,
-    ) {
+    ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       ref
         ..invalidate(provider)
@@ -149,28 +151,32 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           failure: state.failure,
           onRetry: () => ref.read(provider.notifier).loadInitial(),
         ),
-        ThreadDetailPhase.ready => RefreshIndicator(
-          onRefresh: () => ref.read(provider.notifier).refresh(),
-          child: CustomScrollView(
-            key: PageStorageKey('thread-detail-${widget.threadId}'),
-            controller: _scrollController,
-            scrollCacheExtent: const ScrollCacheExtent.pixels(
-              _contentCacheExtent,
-            ),
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              ..._buildReadySlivers(
-                context,
-                state,
-                provider,
-                target,
-                actions: actions,
-                authenticated: session.isAuthenticated,
-                viewerId: viewerId,
+        ThreadDetailPhase.ready =>
+          NotificationListener<ScrollMetricsNotification>(
+            onNotification: _handleTargetLayoutChange,
+            child: RefreshIndicator(
+              onRefresh: () => ref.read(provider.notifier).refresh(),
+              child: CustomScrollView(
+                key: PageStorageKey('thread-detail-${widget.threadId}'),
+                controller: _scrollController,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(
+                  _contentCacheExtent,
+                ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  ..._buildReadySlivers(
+                    context,
+                    state,
+                    provider,
+                    target,
+                    actions: actions,
+                    authenticated: session.isAuthenticated,
+                    viewerId: viewerId,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
       },
       bottomNavigationBar: state.phase == ThreadDetailPhase.ready
           ? ThreadDetailBottomBar(
@@ -410,19 +416,63 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         target.threadId != widget.threadId ||
         state.selectedSubthreadId != target.subthreadId ||
         state.isLoadingFloors ||
-        _lastRevealedTargetId == target.requestedPostId) {
+        _revealScheduled) {
       return;
     }
-    _lastRevealedTargetId = target.requestedPostId;
+    final displayedFloors = _floorsWithTarget(
+      state.floors,
+      target,
+      state.floorOrder,
+    );
+    final targetIndex = displayedFloors.indexWhere(
+      (floor) => floor.id == target.floor.id,
+    );
+    final signature =
+        '${target.requestedPostId}:${state.floorOrder.name}:'
+        '${state.selectedSubthreadId}:$targetIndex:${displayedFloors.length}';
+    if (_lastRevealSignature == signature) return;
+    if (_revealAttemptTargetId != target.requestedPostId) {
+      _revealAttemptTargetId = target.requestedPostId;
+      _revealAttempts = 0;
+    }
+    _revealScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealScheduled = false;
       final targetContext = _targetKey.currentContext;
-      if (!mounted || targetContext == null) return;
-      Scrollable.ensureVisible(
-        targetContext,
-        duration: Duration.zero,
-        alignment: 0.12,
+      if (!mounted) return;
+      if (targetContext != null) {
+        Scrollable.ensureVisible(
+          targetContext,
+          duration: Duration.zero,
+          alignment: 0.12,
+        );
+        _lastRevealSignature = signature;
+        _revealAttemptTargetId = null;
+        _revealAttempts = 0;
+        return;
+      }
+      if (!_scrollController.hasClients || _revealAttempts >= 6) return;
+      if (targetIndex < 0) return;
+      _revealAttempts += 1;
+      final position = _scrollController.position;
+      final fraction = (targetIndex + 1) / (displayedFloors.length + 1);
+      final estimated = position.maxScrollExtent * fraction;
+      _scrollController.jumpTo(
+        estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
       );
+      if (mounted) setState(() {});
     });
+  }
+
+  bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
+    if (widget.targetPostId == null || _lastRevealSignature == null) {
+      return false;
+    }
+    _lastRevealSignature = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+    return false;
   }
 
   void _openReplyTargetWhenReady(
@@ -441,11 +491,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     _lastOpenedReplyTargetId = target.requestedPostId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _openDiscussion(
-        target.floor,
-        reportsEnabled: !(state.detail?.isPrivate ?? true),
-        focusedReplyId: focusedReplyId,
-      );
+      _openDiscussion(target.floor, focusedReplyId: focusedReplyId);
     });
   }
 
@@ -623,7 +669,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                           : _requireLogin,
                       onDiscussion: () => _openDiscussion(
                         floor,
-                        reportsEnabled: !detail.isPrivate,
                         focusedReplyId: usableTarget?.floor.id == floor.id
                             ? usableTarget?.focusedReplyId
                             : null,
@@ -696,18 +741,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
-  void _openDiscussion(
-    ThreadFloorModel floor, {
-    required bool reportsEnabled,
-    String? focusedReplyId,
-  }) {
+  void _openDiscussion(ThreadFloorModel floor, {String? focusedReplyId}) {
     context.pushNamed(
       'post-replies',
       pathParameters: {'threadId': widget.threadId, 'postId': floor.id},
-      queryParameters: {
-        if (reportsEnabled) 'reports': '1',
-        'post': ?focusedReplyId,
-      },
+      queryParameters: {'post': ?focusedReplyId},
     );
   }
 

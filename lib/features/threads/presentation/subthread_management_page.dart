@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
@@ -145,10 +146,7 @@ class _SubthreadsReadyState extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => _SubthreadFormDialog(
         mode: _SubthreadFormMode.create,
-        onSubmit: (draft) async {
-          final succeeded = await ref.read(provider.notifier).create(draft);
-          return succeeded ? null : ref.read(provider).failure;
-        },
+        onSubmit: (draft) => ref.read(provider.notifier).create(draft),
       ),
     );
     if (succeeded == true && context.mounted) {
@@ -297,12 +295,7 @@ class _SubthreadCard extends ConsumerWidget {
       builder: (_) => _SubthreadFormDialog(
         mode: _SubthreadFormMode.edit,
         initial: latest,
-        onSubmit: (draft) async {
-          final succeeded = await ref
-              .read(provider.notifier)
-              .update(latest, draft);
-          return succeeded ? null : ref.read(provider).failure;
-        },
+        onSubmit: (draft) => ref.read(provider.notifier).update(latest, draft),
       ),
     );
     if (succeeded == true && context.mounted) {
@@ -358,7 +351,10 @@ class _SubthreadFormDialog extends StatefulWidget {
 
   final _SubthreadFormMode mode;
   final SubthreadManagementItem? initial;
-  final Future<ApiFailure?> Function(SubthreadManagementDraft draft) onSubmit;
+  final Future<MutationSubmitResult<SubthreadManagementItem>> Function(
+    SubthreadManagementDraft draft,
+  )
+  onSubmit;
 
   @override
   State<_SubthreadFormDialog> createState() => _SubthreadFormDialogState();
@@ -370,6 +366,8 @@ class _SubthreadFormDialogState extends State<_SubthreadFormDialog> {
   late SubthreadPostingPolicy _policy;
   bool _isSubmitting = false;
   ApiFailure? _failure;
+  bool _isIndeterminate = false;
+  String? _indeterminateRequestId;
 
   @override
   void initState() {
@@ -453,6 +451,16 @@ class _SubthreadFormDialogState extends State<_SubthreadFormDialog> {
                         : '问题编号：${_failure!.requestId}',
                   ),
                 ],
+                if (_isIndeterminate) ...[
+                  const SizedBox(height: 12),
+                  WenyouWriteOutcomeBanner(
+                    key: const Key('subthread-form-indeterminate'),
+                    status: WriteOutcomeStatus.indeterminate,
+                    confirmingMessage: '正在确认子贴状态…',
+                    indeterminateMessage: '子贴操作结果暂时无法确定，请稍后刷新查看。',
+                    requestId: _indeterminateRequestId,
+                  ),
+                ],
               ],
             ),
           ),
@@ -493,22 +501,33 @@ class _SubthreadFormDialogState extends State<_SubthreadFormDialog> {
     setState(() {
       _isSubmitting = true;
       _failure = null;
+      _isIndeterminate = false;
+      _indeterminateRequestId = null;
     });
-    final failure = await widget.onSubmit(
+    final result = await widget.onSubmit(
       SubthreadManagementDraft(
         title: _titleController.text,
         postingPolicy: _policy,
       ),
     );
     if (!mounted) return;
-    if (failure == null) {
-      Navigator.pop(context, true);
-      return;
+    switch (result) {
+      case MutationSubmitCompleted<SubthreadManagementItem>():
+        Navigator.pop(context, true);
+      case MutationSubmitFailed<SubthreadManagementItem>(:final failure):
+        setState(() {
+          _isSubmitting = false;
+          _failure = failure;
+        });
+      case MutationSubmitIndeterminate<SubthreadManagementItem>(
+        :final requestId,
+      ):
+        setState(() {
+          _isSubmitting = false;
+          _isIndeterminate = true;
+          _indeterminateRequestId = requestId;
+        });
     }
-    setState(() {
-      _isSubmitting = false;
-      _failure = failure;
-    });
   }
 }
 

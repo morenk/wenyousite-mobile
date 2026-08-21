@@ -156,6 +156,7 @@ class ThreadSubthreadBody extends StatelessWidget {
                 data: body.markdown,
                 diceLabels: _diceLabels(body.diceRolls),
                 diceSemantics: _diceSemantics(body.diceRolls),
+                diceDetails: _diceDetails(body.diceRolls),
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               )
             else
@@ -165,6 +166,7 @@ class ThreadSubthreadBody extends StatelessWidget {
                 data: body.markdown,
                 diceLabels: _diceLabels(body.diceRolls),
                 diceSemantics: _diceSemantics(body.diceRolls),
+                diceDetails: _diceDetails(body.diceRolls),
                 onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               ),
           ],
@@ -372,6 +374,7 @@ class ThreadFloorCard extends ConsumerWidget {
                       data: floor.body.markdown,
                       diceLabels: _diceLabels(floor.body.diceRolls),
                       diceSemantics: _diceSemantics(floor.body.diceRolls),
+                      diceDetails: _diceDetails(floor.body.diceRolls),
                       onInternalLink: (uri) =>
                           _showInternalLinkNotice(context, uri),
                       onTapText: pending ? null : onReply,
@@ -608,6 +611,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               data: reply.body.markdown,
               diceLabels: _diceLabels(reply.body.diceRolls),
               diceSemantics: _diceSemantics(reply.body.diceRolls),
+              diceDetails: _diceDetails(reply.body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onTapText: enabled ? onDiscussion : null,
               bodyFontSize: 17,
@@ -845,6 +849,18 @@ Map<String, String> _diceSemantics(List<ThreadDiceRollModel> rolls) {
     for (final roll in rolls)
       roll.nodeId.toLowerCase(): formatWenyouDiceSemantics(
         notation: roll.notation,
+        results: roll.results,
+        total: roll.total,
+      ),
+  };
+}
+
+Map<String, WenyouDiceRollDetail> _diceDetails(
+  List<ThreadDiceRollModel> rolls,
+) {
+  return {
+    for (final roll in rolls)
+      roll.nodeId.toLowerCase(): WenyouDiceRollDetail(
         results: roll.results,
         total: roll.total,
       ),

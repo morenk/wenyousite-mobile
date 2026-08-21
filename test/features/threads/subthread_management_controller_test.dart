@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
@@ -25,8 +26,14 @@ void main() {
       postingPolicy: SubthreadPostingPolicy.players,
     );
 
-    expect(await controller.create(draft), isFalse);
-    expect(await controller.create(draft), isTrue);
+    expect(
+      await controller.create(draft),
+      isA<MutationSubmitFailed<SubthreadManagementItem>>(),
+    );
+    expect(
+      await controller.create(draft),
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>(),
+    );
     expect(repository.createRequestIds, ['request-1', 'request-1']);
 
     expect(
@@ -36,7 +43,7 @@ void main() {
           postingPolicy: SubthreadPostingPolicy.collaborators,
         ),
       ),
-      isTrue,
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>(),
     );
     expect(repository.createRequestIds.last, 'request-2');
   });
@@ -62,9 +69,56 @@ void main() {
       postingPolicy: SubthreadPostingPolicy.players,
     );
 
-    expect(await controller.create(draft), isFalse);
-    expect(await controller.create(draft), isTrue);
+    expect(
+      await controller.create(draft),
+      isA<MutationSubmitFailed<SubthreadManagementItem>>(),
+    );
+    expect(
+      await controller.create(draft),
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>(),
+    );
     expect(repository.createRequestIds, ['request-1', 'request-2']);
+  });
+
+  test('创建结果不确定时返回独立终态并保留幂等键', () async {
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      createFailureOnce: const ApiFailure(
+        userMessage: '创建结果暂时无法确定',
+        httpStatus: 500,
+        requestId: 'create-unknown-id',
+      ),
+    );
+    var id = 0;
+    final controller = SubthreadManagementController(
+      'thread-1',
+      repository,
+      createRequestId: () => 'request-${++id}',
+    );
+    addTearDown(controller.dispose);
+    await _settle();
+    const draft = SubthreadManagementDraft(
+      title: '玩家区',
+      postingPolicy: SubthreadPostingPolicy.players,
+    );
+
+    final first = await controller.create(draft);
+    expect(
+      first,
+      isA<MutationSubmitIndeterminate<SubthreadManagementItem>>().having(
+        (result) => result.requestId,
+        'requestId',
+        'create-unknown-id',
+      ),
+    );
+    expect(controller.state.failure, isNull);
+    expect(controller.state.actionOutcome, WriteOutcomeStatus.indeterminate);
+
+    expect(
+      await controller.create(draft),
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>(),
+    );
+    expect(repository.createRequestIds, ['request-1', 'request-1']);
   });
 
   test('编辑前读取单条详情并用详情版本更新目标', () async {
@@ -85,7 +139,7 @@ void main() {
           postingPolicy: SubthreadPostingPolicy.collaborators,
         ),
       ),
-      isTrue,
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>(),
     );
     expect(repository.updatedVersions, [4]);
     expect(controller.state.bootstrap!.items.last.title, '新剧情区');
@@ -120,11 +174,88 @@ void main() {
           postingPolicy: SubthreadPostingPolicy.participants,
         ),
       ),
-      isFalse,
+      isA<MutationSubmitFailed<SubthreadManagementItem>>(),
     );
     expect(controller.state.bootstrap!.items.last.title, '云端标题');
     expect(controller.state.failure?.businessCode, 40002);
     expect(repository.loadCalls, 2);
+  });
+
+  test('不确定更新已在服务端达成时，旧版本重试冲突后按目标收敛', () async {
+    const draft = SubthreadManagementDraft(
+      title: '本机标题',
+      postingPolicy: SubthreadPostingPolicy.collaborators,
+    );
+    final latest = _bootstrap(
+      items: [
+        _defaultItem,
+        _secondary.copyWith(
+          title: draft.title,
+          postingPolicy: draft.postingPolicy,
+          version: 8,
+        ),
+      ],
+    );
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      reloadBootstrap: latest,
+      updateFailure: const ApiFailure(
+        userMessage: '子贴已被修改，请刷新后重试',
+        httpStatus: 409,
+        businessCode: 40002,
+      ),
+    );
+    final controller = SubthreadManagementController('thread-1', repository);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    final result = await controller.update(_secondary, draft);
+
+    expect(
+      result,
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>().having(
+        (completed) => completed.value.version,
+        'version',
+        8,
+      ),
+    );
+    expect(controller.state.bootstrap!.items.last.title, draft.title);
+    expect(controller.state.failure, isNull);
+  });
+
+  test('编辑结果不确定时返回独立终态且可按原表单重试', () async {
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      updateFailure: const ApiFailure(
+        userMessage: '保存结果暂时无法确定',
+        httpStatus: 500,
+        requestId: 'update-unknown-id',
+      ),
+    );
+    final controller = SubthreadManagementController('thread-1', repository);
+    addTearDown(controller.dispose);
+    await _settle();
+    const draft = SubthreadManagementDraft(
+      title: '新剧情区',
+      postingPolicy: SubthreadPostingPolicy.collaborators,
+    );
+
+    final first = await controller.update(_secondary, draft);
+    expect(
+      first,
+      isA<MutationSubmitIndeterminate<SubthreadManagementItem>>().having(
+        (result) => result.requestId,
+        'requestId',
+        'update-unknown-id',
+      ),
+    );
+    expect(controller.state.bootstrap!.items.last.title, '剧情区');
+
+    expect(
+      await controller.update(_secondary, draft),
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>(),
+    );
+    expect(controller.state.bootstrap!.items.last.title, '新剧情区');
   });
 
   test('默认子贴不能编辑删除或下移，非默认子贴删除后原地移除', () async {
@@ -142,6 +273,28 @@ void main() {
     expect(controller.state.bootstrap!.items.map((item) => item.id), [
       'sub-default',
     ]);
+  });
+
+  test('删除已不存在的子贴接受 40404 并按最新目录收敛', () async {
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      reloadBootstrap: _bootstrap(items: [_defaultItem]),
+      removeFailureOnce: const ApiFailure(
+        userMessage: '子贴不存在',
+        httpStatus: 404,
+        businessCode: 40404,
+      ),
+    );
+    final controller = SubthreadManagementController('thread-1', repository);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(await controller.remove(_secondary), isTrue);
+    expect(controller.state.bootstrap!.items.map((item) => item.id), [
+      'sub-default',
+    ]);
+    expect(controller.state.failure, isNull);
+    expect(repository.loadCalls, 2);
   });
 
   test('上下移动提交完整集合，失败时保留原列表', () async {
@@ -210,12 +363,14 @@ class _FakeRepository implements SubthreadManagementRepository {
     this.reloadBootstrap,
     this.createFailureOnce,
     this.updateFailure,
+    this.removeFailureOnce,
   });
 
   SubthreadManagementBootstrap bootstrap;
   final SubthreadManagementBootstrap? reloadBootstrap;
   ApiFailure? createFailureOnce;
-  final ApiFailure? updateFailure;
+  ApiFailure? updateFailure;
+  ApiFailure? removeFailureOnce;
   ApiFailure? reorderFailure;
   int loadCalls = 0;
   int findCalls = 0;
@@ -270,7 +425,9 @@ class _FakeRepository implements SubthreadManagementRepository {
     required SubthreadManagementItem current,
     required SubthreadManagementDraft draft,
   }) async {
-    if (updateFailure != null) throw updateFailure!;
+    final failure = updateFailure;
+    updateFailure = null;
+    if (failure != null) throw failure;
     updatedVersions.add(current.version);
     return current.copyWith(
       title: draft.normalizedTitle,
@@ -282,6 +439,9 @@ class _FakeRepository implements SubthreadManagementRepository {
   @override
   Future<void> remove(SubthreadManagementItem item) async {
     removeCalls += 1;
+    final failure = removeFailureOnce;
+    removeFailureOnce = null;
+    if (failure != null) throw failure;
   }
 
   @override
