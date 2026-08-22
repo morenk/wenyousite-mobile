@@ -55,6 +55,7 @@ class PostReplyFilters extends StatelessWidget {
       authorsLoading: authorsLoading,
       authorsFailure: authorsFailure,
       onRetryAuthors: onRetryAuthors,
+      orderSectionLabel: '回复顺序',
       authorSectionLabel: '只看回复者',
       allAuthorsLabel: '全部回复者',
       onApply: (selection) => onApply(selection.order, selection.authorId),

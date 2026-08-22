@@ -29,6 +29,7 @@ class ThreadDetailState {
     this.transientFailure,
     this.retryAction = ThreadDetailRetryAction.refresh,
     this.floorOrder = ThreadFloorOrder.oldest,
+    this.floorAuthorId,
   });
 
   final ThreadDetailPhase phase;
@@ -44,6 +45,7 @@ class ThreadDetailState {
   final ApiFailure? transientFailure;
   final ThreadDetailRetryAction retryAction;
   final ThreadFloorOrder floorOrder;
+  final String? floorAuthorId;
 
   ThreadSubthreadModel? get selectedSubthread =>
       detail?.subthreadById(selectedSubthreadId);
@@ -62,6 +64,7 @@ class ThreadDetailState {
     Object? transientFailure = _unset,
     ThreadDetailRetryAction? retryAction,
     ThreadFloorOrder? floorOrder,
+    Object? floorAuthorId = _unset,
   }) {
     return ThreadDetailState(
       phase: phase ?? this.phase,
@@ -85,6 +88,9 @@ class ThreadDetailState {
           : transientFailure as ApiFailure?,
       retryAction: retryAction ?? this.retryAction,
       floorOrder: floorOrder ?? this.floorOrder,
+      floorAuthorId: identical(floorAuthorId, _unset)
+          ? this.floorAuthorId
+          : floorAuthorId as String?,
     );
   }
 }
@@ -128,6 +134,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   }
 
   Future<void> refresh() async {
+    final previousSelectedId = state.selectedSubthreadId;
     final epoch = ++_requestEpoch;
     state = state.copyWith(
       isRefreshing: true,
@@ -139,10 +146,12 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       final detail = await _repository.fetchThread(threadId);
       if (!_isCurrent(epoch)) return;
       final selectedId = detail.preferredSubthreadId(state.selectedSubthreadId);
+      final selectionChanged = selectedId != previousSelectedId;
       state = state.copyWith(
         phase: ThreadDetailPhase.ready,
         detail: detail,
         selectedSubthreadId: selectedId,
+        floorAuthorId: selectionChanged ? null : state.floorAuthorId,
         floors: const [],
         cursor: null,
         hasMore: false,
@@ -200,6 +209,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         phase: ThreadDetailPhase.ready,
         detail: detail,
         selectedSubthreadId: selectedId,
+        floorAuthorId: selectionChanged ? null : state.floorAuthorId,
         floors: shouldReloadFloors ? const [] : state.floors,
         cursor: shouldReloadFloors ? null : state.cursor,
         hasMore: shouldReloadFloors ? false : state.hasMore,
@@ -232,6 +242,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     final epoch = ++_requestEpoch;
     state = state.copyWith(
       selectedSubthreadId: subthreadId,
+      floorAuthorId: null,
       floors: const [],
       cursor: null,
       hasMore: false,
@@ -243,8 +254,20 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   }
 
   Future<void> setFloorOrder(ThreadFloorOrder order) async {
+    await applyFloorFilters(order: order, authorId: state.floorAuthorId);
+  }
+
+  Future<void> applyFloorFilters({
+    required ThreadFloorOrder order,
+    required String? authorId,
+  }) async {
     final selectedId = state.selectedSubthreadId;
-    if (state.floorOrder == order ||
+    final normalizedAuthorId = switch (authorId?.trim()) {
+      final value? when value.isNotEmpty => value,
+      _ => null,
+    };
+    if ((state.floorOrder == order &&
+            state.floorAuthorId == normalizedAuthorId) ||
         selectedId == null ||
         state.phase != ThreadDetailPhase.ready) {
       return;
@@ -252,6 +275,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     final epoch = ++_requestEpoch;
     state = state.copyWith(
       floorOrder: order,
+      floorAuthorId: normalizedAuthorId,
       floors: const [],
       cursor: null,
       hasMore: false,
@@ -293,6 +317,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         subthreadId: selectedId,
         cursor: state.cursor,
         order: state.floorOrder,
+        authorId: state.floorAuthorId,
       );
       if (!_isCurrent(epoch) || state.selectedSubthreadId != selectedId) return;
       final merged = mergeUniqueBy(
@@ -336,6 +361,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       final page = await _repository.fetchFloors(
         subthreadId: subthreadId,
         order: state.floorOrder,
+        authorId: state.floorAuthorId,
       );
       if (!_isCurrent(epoch) || state.selectedSubthreadId != subthreadId) {
         return;
@@ -376,6 +402,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       phase: ThreadDetailPhase.failed,
       detail: null,
       selectedSubthreadId: null,
+      floorAuthorId: null,
       floors: const [],
       cursor: null,
       hasMore: false,

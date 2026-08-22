@@ -17,7 +17,9 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_interaction_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
@@ -95,15 +97,27 @@ void main() {
     expect(find.text('参与者发言'), findsNothing);
     expect(find.text('8 条内容'), findsNothing);
     expect(find.text('12 楼层'), findsNothing);
-    expect(find.byKey(const Key('thread-body-floor-divider')), findsOneWidget);
-    expect(find.byKey(const Key('thread-floor-order')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floor-controls')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floors-count')), findsOneWidget);
+    expect(find.text('8 层'), findsOneWidget);
+    expect(find.byKey(const Key('thread-floors-settings')), findsOneWidget);
     expect(find.text('楼层'), findsNothing);
-    expect(find.text('最早在前'), findsNothing);
+    expect(find.text('最早在前'), findsOneWidget);
     expect(find.text('最新在前'), findsNothing);
-    await tester.tap(find.byKey(const Key('thread-floor-order')));
+    await tester.tap(find.byKey(const Key('thread-floors-settings')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-floors-settings-sheet')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('最新在前'));
+    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
     await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
-    await tester.tap(find.byKey(const Key('thread-floor-order')));
+    await tester.tap(find.byKey(const Key('thread-floors-settings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('discussion-settings-reset')));
+    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
     await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.oldest);
     expect(find.text('128 浏览 · 2 玩家 · 12 楼 · 8 升温油'), findsNothing);
@@ -219,6 +233,35 @@ void main() {
       find.byKey(const Key('test-post-replies-destination')),
       findsNothing,
     );
+  });
+
+  testWidgets('主楼设置一次应用排序和发言者，筛选空态可恢复全部楼层', (tester) async {
+    final repository = _FakeThreadDetailRepository();
+    await tester.pumpWidget(_detailApp(repository));
+    await tester.pumpAndSettle();
+
+    expect(repository.requestedSubthreads, ['subthread-1']);
+    await tester.tap(find.byKey(const Key('thread-floors-settings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('最新在前'));
+    await tester.tap(find.text('下一位接力者'));
+    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    await tester.pumpAndSettle();
+
+    expect(repository.requestedSubthreads, ['subthread-1', 'subthread-1']);
+    expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
+    expect(repository.requestedAuthors.last, 'user-2');
+    expect(find.text('最新在前 · 下一位接力者'), findsOneWidget);
+    expect(find.text('没有符合条件的楼层'), findsOneWidget);
+    expect(find.text('查看全部楼层'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('thread-floors-clear-author')));
+    await tester.pumpAndSettle();
+
+    expect(repository.requestedAuthors.last, isNull);
+    expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
+    expect(find.text('第一层内容'), findsOneWidget);
+    expect(find.text('没有符合条件的楼层'), findsNothing);
   });
 
   testWidgets('楼中楼回复深链直接定位独立讨论，返回后不重复打开', (tester) async {
@@ -697,6 +740,32 @@ void main() {
             .dy,
       ),
     );
+  });
+
+  testWidgets('目标主楼被发言者筛选排除时恢复全部楼层后再定位', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-2',
+        floor: _targetFloor,
+      ),
+    );
+    await tester.pumpWidget(
+      _detailApp(repository, targetPostId: 'floor-target'),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-floors-settings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('下一位接力者'));
+    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    await tester.pumpAndSettle();
+
+    expect(repository.requestedAuthors, contains('user-2'));
+    expect(repository.requestedAuthors.last, isNull);
+    expect(find.text('已取消发言者筛选，以显示目标楼层。'), findsOneWidget);
+    expect(find.text('目标楼层内容'), findsOneWidget);
   });
 
   testWidgets('首屏外目标楼层定位后会释放用户滚动', (tester) async {
@@ -1801,6 +1870,9 @@ Widget _detailApp(
     overrides: [
       stickersEnabledProvider.overrideWithValue(false),
       threadDetailRepositoryProvider.overrideWithValue(repository),
+      postDiscussionAuthorDirectoryProvider.overrideWithValue(
+        _FakePostDiscussionAuthorDirectory(),
+      ),
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -1874,6 +1946,9 @@ Widget _detailRouterApp(
     overrides: [
       stickersEnabledProvider.overrideWithValue(false),
       threadDetailRepositoryProvider.overrideWithValue(repository),
+      postDiscussionAuthorDirectoryProvider.overrideWithValue(
+        _FakePostDiscussionAuthorDirectory(),
+      ),
     ],
     child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
   );
@@ -1901,6 +1976,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final List<ThreadFloorModel>? nextFloors;
   final List<String> requestedSubthreads = [];
   final List<ThreadFloorOrder> requestedOrders = [];
+  final List<String?> requestedAuthors = [];
   final List<String> targetPostIds = [];
   int threadCalls = 0;
 
@@ -1923,29 +1999,64 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     String? cursor,
     int limit = 20,
     ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
   }) async {
     requestedSubthreads.add(subthreadId);
     requestedOrders.add(order);
+    requestedAuthors.add(authorId);
     if (cursor != null && loadMoreFailure != null) {
       throw loadMoreFailure!;
     }
     if (cursor != null) {
-      return CursorPage(items: nextFloors ?? const [], hasMore: false);
+      final floors = nextFloors ?? const <ThreadFloorModel>[];
+      return CursorPage(
+        items: authorId == null
+            ? floors
+            : floors.where((floor) => floor.author.id == authorId).toList(),
+        hasMore: false,
+      );
     }
     if (cursor == null && floorFailure != null) {
       throw floorFailure!;
     }
     if (cursor == null && (loadMoreFailure != null || nextFloors != null)) {
+      final floors = subthreadId == 'subthread-1' ? mainFloors : [_sideFloor];
       return CursorPage(
-        items: subthreadId == 'subthread-1' ? mainFloors : [_sideFloor],
+        items: authorId == null
+            ? floors
+            : floors.where((floor) => floor.author.id == authorId).toList(),
         cursor: 'next-cursor',
         hasMore: true,
       );
     }
+    final floors = subthreadId == 'subthread-1' ? mainFloors : [_sideFloor];
     return CursorPage(
-      items: subthreadId == 'subthread-1' ? mainFloors : [_sideFloor],
+      items: authorId == null
+          ? floors
+          : floors.where((floor) => floor.author.id == authorId).toList(),
       hasMore: false,
     );
+  }
+}
+
+class _FakePostDiscussionAuthorDirectory
+    implements PostDiscussionAuthorDirectory {
+  @override
+  Future<List<PostDiscussionAuthor>> fetchAuthors(String threadId) async {
+    return [
+      PostDiscussionAuthor(
+        userId: _author.id,
+        username: _author.username,
+        role: PostDiscussionAuthorRole.owner,
+        joinedAt: DateTime.utc(2026, 8, 1),
+      ),
+      PostDiscussionAuthor(
+        userId: _playerAuthor.id,
+        username: _playerAuthor.username,
+        role: PostDiscussionAuthorRole.player,
+        joinedAt: DateTime.utc(2026, 8, 2),
+      ),
+    ];
   }
 }
 
@@ -2114,6 +2225,11 @@ final _managerDetail = ThreadDetailModel(
 );
 
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);
+const _playerAuthor = ThreadAuthorModel(
+  id: 'user-2',
+  username: '下一位接力者',
+  level: 5,
+);
 
 const _tokens = SessionTokens(
   accessToken: 'access-token',
@@ -2333,7 +2449,7 @@ final _longMainFloor = ThreadFloorModel(
 final _longSecondFloor = ThreadFloorModel(
   id: 'floor-long-2',
   floorNumber: 2,
-  author: const ThreadAuthorModel(id: 'user-2', username: '下一位接力者', level: 5),
+  author: _playerAuthor,
   body: const ThreadBodyModel(
     markdown: '''第二层内容
 

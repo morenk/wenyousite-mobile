@@ -96,6 +96,107 @@ void main() {
     expect(repository.floorOrders.last, ThreadFloorOrder.newest);
   });
 
+  test('排序与发言者一次应用只重载一次，并在后续分页保持同一筛选', () async {
+    final repository = _FakeThreadDetailRepository(
+      onFloors: (subthreadId, cursor) async => CursorPage(
+        items: cursor == null
+            ? [_floor('filtered-first', number: 3)]
+            : [_floor('filtered-next', number: 2)],
+        cursor: cursor == null ? 'cursor-1' : null,
+        hasMore: cursor == null,
+      ),
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    await controller.applyFloorFilters(
+      order: ThreadFloorOrder.newest,
+      authorId: ' user-owner ',
+    );
+
+    expect(controller.state.floorOrder, ThreadFloorOrder.newest);
+    expect(controller.state.floorAuthorId, 'user-owner');
+    expect(repository.floorRequests, ['subthread-2:null', 'subthread-2:null']);
+    expect(repository.floorOrders.last, ThreadFloorOrder.newest);
+    expect(repository.floorAuthors, [null, 'user-owner']);
+
+    await controller.loadMore();
+
+    expect(repository.floorAuthors.last, 'user-owner');
+    expect(repository.floorOrders.last, ThreadFloorOrder.newest);
+    expect(controller.state.floors.map((floor) => floor.id), [
+      'filtered-first',
+      'filtered-next',
+    ]);
+  });
+
+  test('切换子贴清除发言者筛选但保留楼层顺序', () async {
+    final repository = _FakeThreadDetailRepository();
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    await controller.applyFloorFilters(
+      order: ThreadFloorOrder.newest,
+      authorId: 'user-owner',
+    );
+    await controller.selectSubthread('subthread-1');
+
+    expect(controller.state.selectedSubthreadId, 'subthread-1');
+    expect(controller.state.floorOrder, ThreadFloorOrder.newest);
+    expect(controller.state.floorAuthorId, isNull);
+    expect(repository.floorAuthors.last, isNull);
+    expect(repository.floorOrders.last, ThreadFloorOrder.newest);
+  });
+
+  test('连续切换发言者时丢弃旧筛选的迟到结果', () async {
+    final stalePage = Completer<CursorPage<ThreadFloorModel>>();
+    var floorCalls = 0;
+    final repository = _FakeThreadDetailRepository(
+      onFloors: (subthreadId, cursor) {
+        floorCalls += 1;
+        if (floorCalls == 2) return stalePage.future;
+        return Future.value(
+          CursorPage(items: [_floor('fresh-$floorCalls')], hasMore: false),
+        );
+      },
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    final staleFilter = controller.applyFloorFilters(
+      order: ThreadFloorOrder.oldest,
+      authorId: 'user-owner',
+    );
+    await Future<void>.delayed(Duration.zero);
+    await controller.applyFloorFilters(
+      order: ThreadFloorOrder.oldest,
+      authorId: 'user-player',
+    );
+    stalePage.complete(
+      CursorPage(items: [_floor('stale-floor')], hasMore: false),
+    );
+    await staleFilter;
+
+    expect(controller.state.floorAuthorId, 'user-player');
+    expect(controller.state.floors.single.id, 'fresh-3');
+    expect(repository.floorAuthors, [null, 'user-owner', 'user-player']);
+  });
+
   test('分页 cursor 失效时自动从当前子贴第一页重载', () async {
     var firstPageCalls = 0;
     final repository = _FakeThreadDetailRepository(
@@ -122,10 +223,20 @@ void main() {
     addTearDown(controller.dispose);
 
     await controller.loadInitial();
+    await controller.applyFloorFilters(
+      order: ThreadFloorOrder.oldest,
+      authorId: 'user-owner',
+    );
     await controller.loadMore();
 
-    expect(firstPageCalls, 2);
-    expect(controller.state.floors.single.id, 'fresh-2');
+    expect(firstPageCalls, 3);
+    expect(controller.state.floors.single.id, 'fresh-3');
+    expect(repository.floorAuthors, [
+      null,
+      'user-owner',
+      'user-owner',
+      'user-owner',
+    ]);
     expect(controller.state.transientFailure, isNull);
   });
 
@@ -399,6 +510,7 @@ void _expectRestrictedTerminal(ThreadDetailState state, int status) {
   expect(state.phase, ThreadDetailPhase.failed);
   expect(state.detail, isNull);
   expect(state.selectedSubthreadId, isNull);
+  expect(state.floorAuthorId, isNull);
   expect(state.floors, isEmpty);
   expect(state.cursor, isNull);
   expect(state.hasMore, isFalse);
@@ -420,6 +532,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   onFloors;
   final List<String> floorRequests = [];
   final List<ThreadFloorOrder> floorOrders = [];
+  final List<String?> floorAuthors = [];
 
   @override
   Future<ThreadDetailModel> fetchThread(String threadId) {
@@ -437,9 +550,11 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     String? cursor,
     int limit = 20,
     ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
   }) {
     floorRequests.add('$subthreadId:$cursor');
     floorOrders.add(order);
+    floorAuthors.add(authorId);
     return onFloors?.call(subthreadId, cursor) ??
         Future.value(
           CursorPage(items: [_floor('floor-$subthreadId')], hasMore: false),

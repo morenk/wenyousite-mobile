@@ -79,6 +79,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     String? cursor,
     int limit = 20,
     ThreadFloorOrder order = ThreadFloorOrder.oldest,
+    String? authorId,
   }) async {
     try {
       final response = await _postsApi.postsFindFloors(
@@ -86,6 +87,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
         cursor: cursor,
         limit: limit,
         order: order.apiValue,
+        authorId: authorId,
       );
       final envelope = response.data;
       if (envelope == null) {

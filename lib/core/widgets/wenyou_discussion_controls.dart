@@ -50,6 +50,7 @@ class WenyouDiscussionControls<T extends Object> extends StatelessWidget {
     required this.authorId,
     required this.authors,
     required this.onApply,
+    this.orderSectionLabel = '显示顺序',
     this.authorSectionLabel = '只看作者',
     this.allAuthorsLabel = '全部作者',
     this.enabled = true,
@@ -69,6 +70,7 @@ class WenyouDiscussionControls<T extends Object> extends StatelessWidget {
   final String? authorId;
   final List<WenyouDiscussionAuthorOption> authors;
   final ValueChanged<WenyouDiscussionSelection<T>> onApply;
+  final String orderSectionLabel;
   final String authorSectionLabel;
   final String allAuthorsLabel;
   final bool enabled;
@@ -144,6 +146,7 @@ class WenyouDiscussionControls<T extends Object> extends StatelessWidget {
         orderOptions: orderOptions,
         authorId: authorId,
         authors: authors,
+        orderSectionLabel: orderSectionLabel,
         authorSectionLabel: authorSectionLabel,
         allAuthorsLabel: allAuthorsLabel,
         authorsLoading: authorsLoading,
@@ -165,6 +168,7 @@ class _WenyouDiscussionSettingsSheet<T extends Object> extends StatefulWidget {
     required this.orderOptions,
     required this.authorId,
     required this.authors,
+    required this.orderSectionLabel,
     required this.authorSectionLabel,
     required this.allAuthorsLabel,
     required this.authorsLoading,
@@ -178,6 +182,7 @@ class _WenyouDiscussionSettingsSheet<T extends Object> extends StatefulWidget {
   final List<WenyouDiscussionOrderOption<T>> orderOptions;
   final String? authorId;
   final List<WenyouDiscussionAuthorOption> authors;
+  final String orderSectionLabel;
   final String authorSectionLabel;
   final String allAuthorsLabel;
   final bool authorsLoading;
@@ -237,7 +242,7 @@ class _WenyouDiscussionSettingsSheetState<T extends Object>
                 shrinkWrap: true,
                 padding: EdgeInsets.only(bottom: tokens.space8),
                 children: [
-                  _SectionLabel(label: '回复顺序'),
+                  _SectionLabel(label: widget.orderSectionLabel),
                   RadioGroup<T>(
                     groupValue: _order,
                     onChanged: (value) {

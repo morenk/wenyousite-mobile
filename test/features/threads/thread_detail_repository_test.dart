@@ -77,6 +77,7 @@ void main() {
         cursor: 'cursor-1',
         limit: 7,
         order: 'NEWEST',
+        authorId: '550e8400-e29b-41d4-a716-446655440000',
       ),
     ).thenAnswer((_) async => _floorsResponse());
 
@@ -86,6 +87,7 @@ void main() {
           cursor: 'cursor-1',
           limit: 7,
           order: ThreadFloorOrder.newest,
+          authorId: '550e8400-e29b-41d4-a716-446655440000',
         );
 
     verify(
@@ -94,6 +96,7 @@ void main() {
         cursor: 'cursor-1',
         limit: 7,
         order: 'NEWEST',
+        authorId: '550e8400-e29b-41d4-a716-446655440000',
       ),
     ).called(1);
     expect(page.cursor, 'cursor-2');

@@ -7,54 +7,6 @@ import 'package:wenyousite_mobile/features/social/presentation/thread_interactio
 import 'package:wenyousite_mobile/features/social/presentation/thread_subscription_controls.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-class ThreadBodyFloorDivider extends StatelessWidget {
-  const ThreadBodyFloorDivider({
-    required this.order,
-    required this.enabled,
-    required this.onToggle,
-    super.key,
-  });
-
-  final ThreadFloorOrder order;
-  final bool enabled;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final next = order == ThreadFloorOrder.oldest
-        ? ThreadFloorOrder.newest
-        : ThreadFloorOrder.oldest;
-    return SizedBox(
-      key: const Key('thread-body-floor-divider'),
-      height: tokens.minimumTouchTarget,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(child: Divider(height: 1, color: tokens.border)),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: wenyouHorizontalPagePadding(context),
-              ),
-              child: ColoredBox(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: IconButton(
-                  key: const Key('thread-floor-order'),
-                  onPressed: enabled ? onToggle : null,
-                  tooltip: '${order.label}，点击切换为${next.label}',
-                  icon: const WenyouIcon(WenyouIconIds.actionSort),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class ThreadDetailBottomBar extends StatelessWidget {
   const ThreadDetailBottomBar({
     required this.detail,

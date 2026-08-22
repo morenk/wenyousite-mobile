@@ -9,6 +9,8 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -20,6 +22,8 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_floor_filters.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
@@ -52,6 +56,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   String? _lastRevealSignature;
   String? _revealScopeSignature;
   String? _lastOpenedReplyTargetId;
+  final _targetFilterRestore = ThreadTargetFilterRestoreCoordinator();
   String? _revealAttemptTargetId;
   var _revealAttempts = 0;
   var _revealScheduled = false;
@@ -78,6 +83,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       _lastRevealSignature = null;
       _revealScopeSignature = null;
       _lastOpenedReplyTargetId = null;
+      _targetFilterRestore.reset();
       _revealAttemptTargetId = null;
       _revealAttempts = 0;
     }
@@ -97,6 +103,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
     final actionsProvider = postActionControllerProvider(widget.threadId);
+    final authorsProvider = postDiscussionAuthorsProvider(widget.threadId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       ref
@@ -110,6 +117,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final selectedSubthread = state.phase == ThreadDetailPhase.ready
         ? state.selectedSubthread
         : null;
+    final discussionAuthors = selectedSubthread == null
+        ? const AsyncValue<List<PostDiscussionAuthor>>.data([])
+        : ref.watch(authorsProvider);
     final target = widget.targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(widget.targetPostId!));
@@ -136,7 +146,29 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ref.read(provider.notifier).selectSubthread(resolvedTarget.subthreadId);
       });
     }
-    _revealTargetWhenReady(state, resolvedTarget);
+    final targetExcludedByFilter = _targetFilterRestore.scheduleIfNeeded(
+      state: state,
+      target: resolvedTarget,
+      threadId: widget.threadId,
+      onRestore: (authorId, subthreadId) async {
+        if (!mounted) return;
+        final current = ref.read(provider);
+        if (current.floorAuthorId != authorId ||
+            current.selectedSubthreadId != subthreadId) {
+          return;
+        }
+        await ref
+            .read(provider.notifier)
+            .applyFloorFilters(order: current.floorOrder, authorId: null);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('已取消发言者筛选，以显示目标楼层。')));
+      },
+    );
+    if (!targetExcludedByFilter) {
+      _revealTargetWhenReady(state, resolvedTarget);
+    }
     _openReplyTargetWhenReady(state, resolvedTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
@@ -173,6 +205,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                     provider,
                     target,
                     actions: actions,
+                    discussionAuthors: discussionAuthors,
                     authenticated: session.isAuthenticated,
                     viewerId: viewerId,
                   ),
@@ -423,7 +456,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
     final scopeSignature =
         '${target.requestedPostId}:${state.floorOrder.name}:'
-        '${state.selectedSubthreadId}';
+        '${state.floorAuthorId ?? ''}:${state.selectedSubthreadId}';
     if (_revealScopeSignature != scopeSignature) {
       _revealScopeSignature = scopeSignature;
       _lastRevealSignature = null;
@@ -435,7 +468,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (state.isLoadingFloors || _targetRevealReleased || _revealScheduled) {
       return;
     }
-    final displayedFloors = _floorsWithTarget(
+    final displayedFloors = threadFloorsWithTarget(
       state.floors,
       target,
       state.floorOrder,
@@ -535,6 +568,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     provider,
     AsyncValue<ThreadPostTargetModel>? targetState, {
     required PostActionState actions,
+    required AsyncValue<List<PostDiscussionAuthor>> discussionAuthors,
     required bool authenticated,
     required String? viewerId,
   }) {
@@ -544,10 +578,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final usableTarget =
         target != null &&
             target.threadId == widget.threadId &&
-            target.subthreadId == state.selectedSubthreadId
+            target.subthreadId == state.selectedSubthreadId &&
+            (state.floorAuthorId == null ||
+                target.floor.author.id == state.floorAuthorId)
         ? target
         : null;
-    final displayedFloors = _floorsWithTarget(
+    final displayedFloors = threadFloorsWithTarget(
       state.floors,
       usableTarget,
       state.floorOrder,
@@ -627,16 +663,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             ),
           ),
         SliverToBoxAdapter(
-          child: ThreadBodyFloorDivider(
-            order: state.floorOrder,
-            enabled: !state.isLoadingFloors && !state.isLoadingMore,
-            onToggle: () => ref
+          child: ThreadFloorFilters(
+            state: state,
+            floorCount: selected.postCount,
+            authors: discussionAuthors,
+            onRetryAuthors: () =>
+                ref.invalidate(postDiscussionAuthorsProvider(widget.threadId)),
+            onApply: (order, authorId) => ref
                 .read(provider.notifier)
-                .setFloorOrder(
-                  state.floorOrder == ThreadFloorOrder.oldest
-                      ? ThreadFloorOrder.newest
-                      : ThreadFloorOrder.oldest,
-                ),
+                .applyFloorFilters(order: order, authorId: authorId),
           ),
         ),
         if (state.isLoadingFloors)
@@ -658,14 +693,31 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             ),
           )
         else if (displayedFloors.isEmpty)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: WenyouContentFrame(
               top: 12,
               child: WenyouPanel(
                 child: WenyouEmptyState(
                   icon: WenyouIconIds.metricComments,
-                  title: '还没有楼层',
-                  message: '这个子贴目前只有正文，暂时没有后续讨论。',
+                  title: state.floorAuthorId == null ? '还没有楼层' : '没有符合条件的楼层',
+                  message: state.floorAuthorId == null
+                      ? '这个子贴目前只有正文，暂时没有后续讨论。'
+                      : '可以换一位发言者，或查看全部楼层。',
+                  action: state.floorAuthorId == null
+                      ? null
+                      : TextButton.icon(
+                          key: const Key('thread-floors-clear-author'),
+                          onPressed: () => ref
+                              .read(provider.notifier)
+                              .applyFloorFilters(
+                                order: state.floorOrder,
+                                authorId: null,
+                              ),
+                          icon: const WenyouIcon(
+                            WenyouIconIds.actionClearFilter,
+                          ),
+                          label: const Text('查看全部楼层'),
+                        ),
                 ),
               ),
             ),
@@ -841,31 +893,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       pathSegments: ['', 'threads', widget.threadId],
       queryParameters: {'post': postId},
     ).toString();
-  }
-
-  List<ThreadFloorModel> _floorsWithTarget(
-    List<ThreadFloorModel> floors,
-    ThreadPostTargetModel? target,
-    ThreadFloorOrder order,
-  ) {
-    if (target == null) return floors;
-    final index = floors.indexWhere((floor) => floor.id == target.floor.id);
-    final merged = index == -1
-        ? [...floors, target.floor]
-        : [
-            for (var floorIndex = 0; floorIndex < floors.length; floorIndex++)
-              floorIndex == index ? target.floor : floors[floorIndex],
-          ];
-    merged.sort((left, right) {
-      final leftNumber = left.floorNumber;
-      final rightNumber = right.floorNumber;
-      if (leftNumber == null && rightNumber == null) return 0;
-      if (leftNumber == null) return 1;
-      if (rightNumber == null) return -1;
-      final comparison = leftNumber.compareTo(rightNumber);
-      return order == ThreadFloorOrder.oldest ? comparison : -comparison;
-    });
-    return merged;
   }
 }
 
