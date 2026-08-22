@@ -259,6 +259,35 @@ void main() {
     expect(repository.removedIds, ['floor']);
   });
 
+  test('子贴正文必须包含文字，楼层和回复仍允许仅含骰子', () async {
+    final repository = _FakePostRepository();
+    final body = PostComposerController(repository, _bodyTarget);
+    final floor = PostComposerController(repository, _createFloorTarget);
+    addTearDown(body.dispose);
+    addTearDown(floor.dispose);
+    final diceOnly = _diceMarkdown(1);
+
+    body.updateContent(diceOnly);
+    expect(await body.submit(), isNull);
+    expect(body.state.failure?.userMessage, contains('子贴正文需要包含文字'));
+    expect(repository.bodyRequests, isEmpty);
+
+    floor.updateContent(diceOnly);
+    expect(await floor.submit(), isNotNull);
+    expect(repository.createInputs.single.content, diceOnly);
+  });
+
+  test('每份帖子正文独立阻止第 21 个骰子', () async {
+    final repository = _FakePostRepository();
+    final floor = PostComposerController(repository, _createFloorTarget);
+    addTearDown(floor.dispose);
+
+    floor.updateContent(_diceMarkdown(21));
+    expect(await floor.submit(), isNull);
+    expect(floor.state.failure?.userMessage, contains('最多可插入 20 个骰子'));
+    expect(repository.createInputs, isEmpty);
+  });
+
   test('帖子删除重放返回 POST_NOT_FOUND 时收敛为已经删除', () async {
     final repository = _FakePostRepository(
       removeFailure: const ApiFailure(
@@ -278,6 +307,11 @@ void main() {
 
 const _author = PostAuthor(id: 'author-1', username: '作者甲', level: 3);
 const _otherAuthor = PostAuthor(id: 'author-2', username: '作者乙', level: 2);
+
+String _diceMarkdown(int count) => List.generate(count, (index) {
+  final suffix = index.toString().padLeft(12, '0');
+  return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
+}).join(' ');
 
 PostItem _post(
   String id, {

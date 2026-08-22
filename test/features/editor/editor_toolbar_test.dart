@@ -215,12 +215,19 @@ void main() {
     await tester.tap(find.byTooltip('链接'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-link-tray')), findsOneWidget);
-    await tester.enterText(find.widgetWithText(TextField, '查看资料'), '查看资料');
     await tester.enterText(
-      find.widgetWithText(TextField, 'https://…'),
+      find.descendant(
+        of: find.byKey(const Key('editor-link-tray')),
+        matching: find.widgetWithText(TextField, '显示文字'),
+      ),
+      '查看资料',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, '链接地址'),
       'https://wenyou.site/help',
     );
-    await tester.tap(find.byTooltip('确认插入'));
+    expect(find.byKey(const Key('editor-submit')), findsNothing);
+    await tester.tap(find.byKey(const Key('editor-link-insert')));
     await tester.pumpAndSettle();
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
@@ -278,7 +285,8 @@ void main() {
       '3',
     );
     expect(find.text('预览：2d6+3 = ?'), findsOneWidget);
-    await tester.tap(find.byTooltip('确认插入'));
+    expect(find.byKey(const Key('editor-submit')), findsNothing);
+    await tester.tap(find.byKey(const Key('editor-dice-insert')));
     await tester.pumpAndSettle();
     final markdown = MarkdownDeltaCodec.encode(controller.document.toDelta());
     final insertedDice = RegExp(
@@ -327,10 +335,10 @@ void main() {
     await tester.pump();
     expect(find.text('预览：—'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('确认插入'));
+    await tester.tap(find.byKey(const Key('editor-dice-insert')));
     await tester.pump();
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
-    expect(find.byKey(const Key('editor-dice-error')), findsOneWidget);
+    expect(find.text('需为 1～100'), findsOneWidget);
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       isNot(contains('[[dice:')),
@@ -344,7 +352,7 @@ void main() {
       '1',
     );
     await tester.pump();
-    expect(find.byKey(const Key('editor-dice-error')), findsNothing);
+    expect(find.text('需为 1～100'), findsNothing);
     expect(find.text('预览：1d20 = ?'), findsOneWidget);
 
     await tester.enterText(
@@ -354,10 +362,108 @@ void main() {
       ),
       '10001',
     );
-    await tester.tap(find.byTooltip('确认插入'));
+    await tester.tap(find.byKey(const Key('editor-dice-insert')));
     await tester.pump();
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
-    expect(find.textContaining('修正范围为 -10000～10000'), findsOneWidget);
+    expect(find.text('需为 -10000～10000'), findsOneWidget);
+  });
+
+  testWidgets('骰子任务只保留深品牌色插入操作，并按当前正文限制 20 个', (tester) async {
+    final decoded = MarkdownDeltaCodec.decode(_diceMarkdown(20));
+    final controller = QuillController(
+      document: Document.fromDelta(decoded.delta),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+              onSubmit: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pump();
+
+    expect(find.byKey(const Key('editor-submit')), findsNothing);
+    expect(find.text('当前正文 20/20'), findsOneWidget);
+    expect(find.byKey(const Key('editor-dice-limit')), findsOneWidget);
+    var insert = tester.widget<FilledButton>(
+      find.byKey(const Key('editor-dice-insert')),
+    );
+    expect(insert.onPressed, isNull);
+
+    controller.replaceText(0, 1, '', const TextSelection.collapsed(offset: 0));
+    await tester.pump();
+
+    expect(find.text('当前正文 19/20'), findsOneWidget);
+    insert = tester.widget<FilledButton>(
+      find.byKey(const Key('editor-dice-insert')),
+    );
+    expect(insert.onPressed, isNotNull);
+    expect(
+      insert.style?.backgroundColor?.resolve(<WidgetState>{}),
+      AppTheme.light.colorScheme.primary,
+    );
+    expect(
+      insert.style?.foregroundColor?.resolve(<WidgetState>{}),
+      AppTheme.light.colorScheme.onPrimary,
+    );
+  });
+
+  testWidgets('320dp 与两倍字体下骰子字段改为纵向并保持任务可滚动', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = QuillController.basic();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+              onSubmit: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pump();
+
+    expect(find.byKey(const Key('editor-task-tray-scroll')), findsOneWidget);
+    expect(find.byKey(const Key('editor-dice-insert')), findsOneWidget);
+    expect(find.byKey(const Key('editor-submit')), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('可扩展面板在键盘收起时为系统导航区保留空间', (tester) async {
@@ -437,3 +543,8 @@ void main() {
     expect(find.byKey(const Key('editor-submit')), findsOneWidget);
   });
 }
+
+String _diceMarkdown(int count) => List.generate(count, (index) {
+  final suffix = index.toString().padLeft(12, '0');
+  return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
+}).join(' ');

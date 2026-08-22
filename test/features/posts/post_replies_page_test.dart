@@ -476,6 +476,19 @@ void main() {
     );
     expect(editor.controller.selection, selection);
     expect(editor.focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pump();
+
+    expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
+    expect(find.byKey(const Key('editor-dice-insert')), findsOneWidget);
+    expect(find.byKey(const Key('editor-submit')), findsNothing);
+    expect(find.byKey(const Key('editor-dice-count')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byKey(const Key('post-composer-sheet')),
+      matchesGoldenFile('goldens/post_composer_dice_keyboard_360.png'),
+    );
   });
 
   testWidgets('回复编辑器选图后直接上传并写入统一图片节点', (tester) async {

@@ -2,7 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_task_tray.dart';
+
+typedef EditorDiceInputErrors = ({
+  String? quantity,
+  String? sides,
+  String? modifier,
+});
+
+const noEditorDiceInputErrors = (quantity: null, sides: null, modifier: null);
+
+EditorDiceInputErrors validateEditorDiceInputs({
+  required String quantity,
+  required String sides,
+  required String modifier,
+}) {
+  final parsedQuantity = int.tryParse(quantity.trim());
+  final parsedSides = int.tryParse(sides.trim());
+  final trimmedModifier = modifier.trim();
+  final parsedModifier = trimmedModifier.isEmpty
+      ? 0
+      : int.tryParse(trimmedModifier);
+  return (
+    quantity:
+        parsedQuantity == null ||
+            parsedQuantity < MarkdownDiceContract.minimumQuantity ||
+            parsedQuantity > MarkdownDiceContract.maximumQuantity
+        ? '需为 1～100'
+        : null,
+    sides:
+        parsedSides == null ||
+            parsedSides < MarkdownDiceContract.minimumSides ||
+            parsedSides > MarkdownDiceContract.maximumSides
+        ? '需为 2～1000'
+        : null,
+    modifier:
+        parsedModifier == null ||
+            parsedModifier.abs() > MarkdownDiceContract.maximumModifierMagnitude
+        ? '需为 -10000～10000'
+        : null,
+  );
+}
+
+bool hasEditorDiceInputErrors(EditorDiceInputErrors errors) =>
+    errors.quantity != null || errors.sides != null || errors.modifier != null;
 
 String? canonicalDiceNotation({
   required String quantity,
@@ -23,7 +67,7 @@ String? canonicalDiceNotation({
     < 0 => '$parsedModifier',
     _ => '',
   };
-  return MarkdownDeltaCodec.normalizeDiceNotation(
+  return MarkdownDiceContract.normalizeNotation(
     '${parsedQuantity}d$parsedSides$modifierSuffix',
   );
 }
@@ -33,7 +77,9 @@ class EditorDiceInputTray extends StatelessWidget {
     required this.quantityController,
     required this.sidesController,
     required this.modifierController,
-    required this.error,
+    required this.errors,
+    required this.currentCount,
+    required this.insertEnabled,
     required this.onBack,
     required this.onConfirm,
     required this.onInputChanged,
@@ -43,7 +89,9 @@ class EditorDiceInputTray extends StatelessWidget {
   final TextEditingController quantityController;
   final TextEditingController sidesController;
   final TextEditingController modifierController;
-  final String? error;
+  final EditorDiceInputErrors errors;
+  final int currentCount;
+  final bool insertEnabled;
   final VoidCallback onBack;
   final VoidCallback onConfirm;
   final VoidCallback onInputChanged;
@@ -56,85 +104,77 @@ class EditorDiceInputTray extends StatelessWidget {
       sidesController,
       modifierController,
     ]);
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        tokens.space4,
-        tokens.space4,
-        tokens.space4,
-        tokens.space8,
+    final fields = [
+      _DiceNumberField(
+        key: const Key('editor-dice-quantity'),
+        controller: quantityController,
+        label: WenyouElementContract.diceQuantityLabel,
+        error: errors.quantity,
+        autofocus: true,
+        maxLength: 3,
+        signed: false,
+        textInputAction: TextInputAction.next,
+        onChanged: onInputChanged,
       ),
-      decoration: BoxDecoration(
-        color: tokens.accentedBackground,
-        border: Border(top: BorderSide(color: tokens.border)),
+      _DiceNumberField(
+        key: const Key('editor-dice-sides'),
+        controller: sidesController,
+        label: WenyouElementContract.diceSidesLabel,
+        error: errors.sides,
+        maxLength: 4,
+        signed: false,
+        textInputAction: TextInputAction.next,
+        onChanged: onInputChanged,
       ),
+      _DiceNumberField(
+        key: const Key('editor-dice-modifier'),
+        controller: modifierController,
+        label: WenyouElementContract.diceModifierLabel,
+        error: errors.modifier,
+        maxLength: 6,
+        signed: true,
+        textInputAction: TextInputAction.done,
+        onChanged: onInputChanged,
+        onSubmitted: onConfirm,
+      ),
+    ];
+    return EditorTaskTray(
+      title: WenyouElementContract.diceInsertionTitle,
+      onBack: onBack,
+      onInsert: onConfirm,
+      insertEnabled: insertEnabled,
+      insertKey: const Key('editor-dice-insert'),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              IconButton(
-                tooltip: '返回格式工具',
-                onPressed: onBack,
-                icon: const WenyouIcon(WenyouIconIds.navigationBack),
-              ),
-              Expanded(
-                child: Text(
-                  WenyouElementContract.diceInsertionTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              IconButton.filled(
-                tooltip: '确认插入',
-                onPressed: onConfirm,
-                icon: const WenyouIcon(WenyouIconIds.actionConfirm),
-              ),
-            ],
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _DiceNumberField(
-                    key: const Key('editor-dice-quantity'),
-                    controller: quantityController,
-                    label: WenyouElementContract.diceQuantityLabel,
-                    autofocus: true,
-                    maxLength: 3,
-                    signed: false,
-                    textInputAction: TextInputAction.next,
-                    onChanged: onInputChanged,
-                  ),
-                ),
-                SizedBox(width: tokens.space8),
-                Expanded(
-                  child: _DiceNumberField(
-                    key: const Key('editor-dice-sides'),
-                    controller: sidesController,
-                    label: WenyouElementContract.diceSidesLabel,
-                    maxLength: 4,
-                    signed: false,
-                    textInputAction: TextInputAction.next,
-                    onChanged: onInputChanged,
-                  ),
-                ),
-                SizedBox(width: tokens.space8),
-                Expanded(
-                  child: _DiceNumberField(
-                    key: const Key('editor-dice-modifier'),
-                    controller: modifierController,
-                    label: WenyouElementContract.diceModifierLabel,
-                    maxLength: 6,
-                    signed: true,
-                    textInputAction: TextInputAction.done,
-                    onChanged: onInputChanged,
-                    onSubmitted: onConfirm,
-                  ),
-                ),
-              ],
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked =
+                  constraints.maxWidth < 340 ||
+                  MediaQuery.textScalerOf(context).scale(16) >= 21;
+              if (stacked) {
+                return Column(
+                  children: [
+                    for (var index = 0; index < fields.length; index++) ...[
+                      fields[index],
+                      if (index < fields.length - 1)
+                        SizedBox(height: tokens.space8),
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < fields.length; index++) ...[
+                    Expanded(child: fields[index]),
+                    if (index < fields.length - 1)
+                      SizedBox(width: tokens.space8),
+                  ],
+                ],
+              );
+            },
           ),
           SizedBox(height: tokens.space8),
           ListenableBuilder(
@@ -146,18 +186,16 @@ class EditorDiceInputTray extends StatelessWidget {
                 sides: sidesController.text,
                 modifier: modifierController.text,
               );
-              return Padding(
-                padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Wrap(
-                      key: const Key('editor-dice-quick-sides'),
-                      spacing: tokens.space8,
-                      runSpacing: tokens.space4,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SingleChildScrollView(
+                    key: const Key('editor-dice-quick-sides'),
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
                       children: [
                         for (final sides
-                            in WenyouElementContract.diceQuickSides)
+                            in WenyouElementContract.diceQuickSides) ...[
                           ChoiceChip(
                             key: ValueKey('editor-dice-quick-d$sides'),
                             label: Text('d$sides'),
@@ -172,44 +210,62 @@ class EditorDiceInputTray extends StatelessWidget {
                               onInputChanged();
                             },
                           ),
+                          SizedBox(width: tokens.space8),
+                        ],
                       ],
                     ),
-                    SizedBox(height: tokens.space8),
-                    Semantics(
-                      liveRegion: true,
-                      label: notation == null ? '骰子预览不可用' : '骰子预览 $notation，待掷',
-                      excludeSemantics: true,
-                      child: Text(
-                        notation == null ? '预览：—' : '预览：$notation = ?',
-                        key: const Key('editor-dice-preview'),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: notation == null
-                              ? tokens.mutedText
-                              : tokens.brandForeground,
-                          fontFamily: WenyouFoundationTypography.utility,
-                          fontFamilyFallback:
-                              WenyouFoundationTypography.chineseFallback,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                  SizedBox(height: tokens.space8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Semantics(
+                          liveRegion: true,
+                          label: notation == null
+                              ? '骰子预览不可用'
+                              : '骰子预览 $notation，待掷',
+                          excludeSemantics: true,
+                          child: Text(
+                            notation == null ? '预览：—' : '预览：$notation = ?',
+                            key: const Key('editor-dice-preview'),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: notation == null
+                                      ? tokens.mutedText
+                                      : tokens.brandForeground,
+                                  fontFamily:
+                                      WenyouFoundationTypography.utility,
+                                  fontFamilyFallback: WenyouFoundationTypography
+                                      .chineseFallback,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      Text(
+                        '当前正文 $currentCount/${MarkdownDiceContract.maximumNodesPerPost}',
+                        key: const Key('editor-dice-count'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               );
             },
           ),
-          if (error case final message?) ...[
+          if (!insertEnabled) ...[
             SizedBox(height: tokens.space4),
             Semantics(
               liveRegion: true,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-                child: Text(
-                  message,
-                  key: const Key('editor-dice-error'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+              child: Text(
+                '当前正文最多可插入 ${MarkdownDiceContract.maximumNodesPerPost} 个骰子，请先删除一个。',
+                key: const Key('editor-dice-limit'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
             ),
@@ -224,6 +280,7 @@ class _DiceNumberField extends StatelessWidget {
   const _DiceNumberField({
     required this.controller,
     required this.label,
+    required this.error,
     required this.maxLength,
     required this.signed,
     required this.textInputAction,
@@ -235,6 +292,7 @@ class _DiceNumberField extends StatelessWidget {
 
   final TextEditingController controller;
   final String label;
+  final String? error;
   final int maxLength;
   final bool signed;
   final bool autofocus;
@@ -260,7 +318,11 @@ class _DiceNumberField extends StatelessWidget {
           FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(maxLength),
       ],
-      decoration: InputDecoration(isDense: true, labelText: label),
+      decoration: InputDecoration(
+        isDense: true,
+        labelText: label,
+        errorText: error,
+      ),
       onChanged: (_) => onChanged(),
       onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
     );

@@ -99,16 +99,20 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableHeight = (constraints.maxHeight - keyboard).clamp(
-          240.0,
+          0.0,
           constraints.maxHeight,
         );
+        final desiredHeight = constraints.maxHeight * _extent;
+        final sheetHeight = desiredHeight < availableHeight
+            ? desiredHeight
+            : availableHeight;
         return Padding(
           padding: EdgeInsets.only(bottom: keyboard),
           child: Align(
             alignment: Alignment.bottomCenter,
             child: SizedBox(
               key: const Key('post-composer-viewport'),
-              height: availableHeight * _extent,
+              height: sheetHeight,
               width: double.infinity,
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -122,10 +126,8 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
                     expanded: _extent >= _maximumExtent - .01,
                     onResize: (delta) {
                       setState(() {
-                        _extent = (_extent - delta / availableHeight).clamp(
-                          _minimumExtent,
-                          _maximumExtent,
-                        );
+                        _extent = (_extent - delta / constraints.maxHeight)
+                            .clamp(_minimumExtent, _maximumExtent);
                       });
                     },
                     onToggleExpanded: () {

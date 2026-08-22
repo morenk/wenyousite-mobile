@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
@@ -206,6 +207,11 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
     }
     if (content.length > 10000) {
       _setActionFailure('正文超过 10000 字符，请精简后再保存。');
+      return false;
+    }
+    if (MarkdownDiceContract.countMarkdownNodes(content) >
+        MarkdownDiceContract.maximumNodesPerPost) {
+      _setActionFailure('当前正文最多可插入 20 个骰子，请删除一个后再保存。');
       return false;
     }
     return true;

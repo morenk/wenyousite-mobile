@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
@@ -50,7 +51,7 @@ class MarkdownDeltaCodec {
   MarkdownDeltaCodec._();
 
   static const mentionEmbed = 'wenyou_mention';
-  static const diceEmbed = 'wenyou_dice';
+  static const diceEmbed = MarkdownDiceContract.embedType;
   static const stickerEmbed = 'wenyou_sticker';
   static const imageEmbed = 'wenyou_image';
   static const internalReferenceEmbed = 'wenyou_internal_reference';
@@ -74,17 +75,7 @@ class MarkdownDeltaCodec {
   static final _mention = RegExp(
     r'^\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
   );
-  static final _dice = RegExp(
-    r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):([^\]\r\n]{1,32})\]\]',
-    caseSensitive: false,
-  );
-  static final _diceNotation = RegExp(
-    r'^\s*(?:(\d+)\s*)?[dD]\s*(\d+)(?:\s*([+-])\s*(\d+))?\s*$',
-  );
-  static final _uuidV4 = RegExp(
-    r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-    caseSensitive: false,
-  );
+  static final _dice = MarkdownDiceContract.nodeAtStart;
   static final _image = RegExp(
     r'''^!\[([^\]\n]*)\]\(\s*([^\s)]+)(?:\s+["']([^"'\n]*)["'])?\s*\)''',
   );
@@ -329,7 +320,7 @@ class MarkdownDeltaCodec {
       if (dice != null) {
         final raw = dice.group(0)!;
         final nodeId = dice.group(1)!.toLowerCase();
-        final notation = _normalizeDiceNotation(dice.group(2)!);
+        final notation = MarkdownDiceContract.normalizeNotation(dice.group(2)!);
         if (notation == null) {
           flushText();
           _insertCompatibility(
@@ -680,10 +671,10 @@ class MarkdownDeltaCodec {
         output.write('[$label](/users/$userId)');
       case diceEmbed:
         final nodeId = _requiredString(payload, 'nodeId', type).toLowerCase();
-        if (!_isUuidV4(nodeId)) {
+        if (!MarkdownDiceContract.uuidV4.hasMatch(nodeId)) {
           throw const MarkdownCodecException('骰子节点缺少有效 UUID v4');
         }
-        final notation = _normalizeDiceNotation(
+        final notation = MarkdownDiceContract.normalizeNotation(
           _requiredString(payload, 'notation', type),
         );
         if (notation == null) {
@@ -755,33 +746,8 @@ class MarkdownDeltaCodec {
     return end == line.length || !_mentionWord.hasMatch(line[end]);
   }
 
-  static String? _normalizeDiceNotation(String value) {
-    final match = _diceNotation.firstMatch(value);
-    if (match == null) return null;
-    final quantity = int.tryParse(match.group(1) ?? '1');
-    final sides = int.tryParse(match.group(2)!);
-    final magnitude = int.tryParse(match.group(4) ?? '0');
-    if (quantity == null ||
-        sides == null ||
-        magnitude == null ||
-        quantity < 1 ||
-        quantity > 100 ||
-        sides < 2 ||
-        sides > 1000 ||
-        magnitude > 10000) {
-      return null;
-    }
-    final sign = match.group(3);
-    final modifier = magnitude == 0
-        ? ''
-        : '${sign == '-' ? '-' : '+'}$magnitude';
-    return '${quantity}d$sides$modifier';
-  }
-
-  static bool _isUuidV4(String value) => _uuidV4.hasMatch(value);
-
   static String? normalizeDiceNotation(String value) =>
-      _normalizeDiceNotation(value);
+      MarkdownDiceContract.normalizeNotation(value);
 
   static Map<String, dynamic> _payload(Object? value, String type) {
     if (value is! Map) {

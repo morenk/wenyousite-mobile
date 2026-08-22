@@ -594,6 +594,7 @@ class WenyouComposerSubmitButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final scheme = Theme.of(context).colorScheme;
     final isUnavailable = !enabled && !loading;
     return IconButton.filled(
       constraints: BoxConstraints.tightFor(
@@ -602,10 +603,10 @@ class WenyouComposerSubmitButton extends StatelessWidget {
       ),
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(
-          isUnavailable ? tokens.border : tokens.brandSurface,
+          isUnavailable ? tokens.border : scheme.primary,
         ),
         foregroundColor: WidgetStatePropertyAll(
-          isUnavailable ? tokens.mutedText : tokens.onBrandSurface,
+          isUnavailable ? tokens.mutedText : scheme.onPrimary,
         ),
       ),
       tooltip: loading ? '$label，处理中' : label,
@@ -618,7 +619,7 @@ class WenyouComposerSubmitButton extends StatelessWidget {
                 dimension: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: tokens.onBrandSurface,
+                  color: scheme.onPrimary,
                 ),
               ),
             )

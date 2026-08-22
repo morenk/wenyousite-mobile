@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 
 /// Visibility accepted by the thread creation workflow.
 enum ThreadComposeVisibility {
@@ -261,6 +262,10 @@ String? validateThreadDraft({
   if (MarkdownContent.normalize(body).length > 10000) {
     return '正文不能超过 10000 个字符。';
   }
+  if (MarkdownDiceContract.countMarkdownNodes(body) >
+      MarkdownDiceContract.maximumNodesPerPost) {
+    return '当前正文最多可插入 20 个骰子，请删除一个后重试。';
+  }
   final normalizedTags = normalizeTagNames(tags);
   if (normalizedTags.length > 5) return '最多添加 5 个标签。';
   final tagPattern = RegExp(r'^[A-Za-z0-9_\u4e00-\u9fff#]+$');
@@ -282,7 +287,9 @@ String? validateThreadPublish({
   if (draftError != null) return draftError;
   if (title.trim().isEmpty) return '请填写主题标题。';
   if (_normalizedOptional(categorySlug) == null) return '请选择主题分类。';
-  if (!MarkdownContent.hasVisibleContent(body)) return '请填写可见的主题正文。';
+  if (!MarkdownContent.hasVisibleNonDiceContent(body)) {
+    return '主题正文需要包含文字，骰子可作为补充。';
+  }
   return null;
 }
 

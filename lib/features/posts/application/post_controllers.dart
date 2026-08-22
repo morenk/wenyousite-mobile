@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_repository_ports.dart';
@@ -442,6 +443,14 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   String? _validate(String content) {
+    if (MarkdownDiceContract.countMarkdownNodes(content) >
+        MarkdownDiceContract.maximumNodesPerPost) {
+      return '当前正文最多可插入 20 个骰子，请删除一个后重试。';
+    }
+    if (target.kind == PostComposerKind.upsertBody &&
+        !MarkdownContent.hasVisibleNonDiceContent(content)) {
+      return '子贴正文需要包含文字，骰子可作为补充。';
+    }
     if (!MarkdownContent.hasVisibleContent(content)) {
       return '正文和骰子不能同时为空。';
     }

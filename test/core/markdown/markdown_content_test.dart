@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 
 void main() {
   final contract =
@@ -75,6 +76,36 @@ void main() {
       ),
       '2d6+3 = ?',
     );
+  });
+
+  test('发布可见性排除真实骰子，但保留代码和转义中的骰子文字', () {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    const dice = '[[dice:v1:$nodeId:1d20]]';
+
+    expect(MarkdownContent.hasVisibleNonDiceContent(dice), isFalse);
+    expect(MarkdownContent.hasVisibleNonDiceContent('正文 $dice'), isTrue);
+    expect(MarkdownContent.hasVisibleNonDiceContent('`$dice`'), isTrue);
+    expect(MarkdownContent.hasVisibleNonDiceContent('\\$dice'), isTrue);
+    expect(
+      MarkdownContent.hasVisibleNonDiceContent('```md\n$dice\n```'),
+      isTrue,
+    );
+  });
+
+  test('骰子数量按单份正文统计，并忽略代码与转义中的标记', () {
+    const first = '550e8400-e29b-41d4-a716-446655440000';
+    const second = '550e8400-e29b-41d4-a716-446655440001';
+    const markdown =
+        '''
+[[dice:v1:$first:1d20]] [[dice:v1:$second:2d6]]
+`[[dice:v1:$first:3d6]]`
+\\[[dice:v1:$first:4d6]]
+```md
+[[dice:v1:$first:5d6]]
+```
+''';
+
+    expect(MarkdownDiceContract.countMarkdownNodes(markdown), 2);
   });
 
   test('搜索预览移除 Markdown 语法并保留图片与骰子语义', () {

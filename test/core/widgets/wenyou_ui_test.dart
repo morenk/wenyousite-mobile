@@ -176,8 +176,8 @@ void main() {
 
     await tester.pumpWidget(buildButton(enabled: true, loading: false));
     await expectColors(
-      background: WenyouThemeTokens.light.brandSurface,
-      foreground: WenyouThemeTokens.light.onBrandSurface,
+      background: AppTheme.light.colorScheme.primary,
+      foreground: AppTheme.light.colorScheme.onPrimary,
     );
 
     await tester.pumpWidget(buildButton(enabled: false, loading: false));
@@ -188,8 +188,8 @@ void main() {
 
     await tester.pumpWidget(buildButton(enabled: false, loading: true));
     await expectColors(
-      background: WenyouThemeTokens.light.brandSurface,
-      foreground: WenyouThemeTokens.light.onBrandSurface,
+      background: AppTheme.light.colorScheme.primary,
+      foreground: AppTheme.light.colorScheme.onPrimary,
     );
     expect(find.bySemanticsLabel('发送，处理中'), findsOneWidget);
   });

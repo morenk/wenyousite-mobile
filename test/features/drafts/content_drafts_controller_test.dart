@@ -37,6 +37,18 @@ void main() {
     expect(controller.state.actionFailure?.userMessage, contains('5 个'));
   });
 
+  test('正文草稿允许骰子-only，并阻止当前正文第 21 个骰子', () async {
+    final repository = _FakeRepository(drafts: []);
+    final controller = ContentDraftsController(repository, autoStart: false);
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(await controller.saveToNextSlot(_diceMarkdown(1)), isTrue);
+    expect(await controller.saveToNextSlot(_diceMarkdown(21)), isFalse);
+    expect(controller.state.actionFailure?.userMessage, contains('20 个骰子'));
+    expect(repository.createSlots, hasLength(1));
+  });
+
   test('版本冲突读取最新版并保留待覆盖正文，用户确认后才重试', () async {
     final repository = _FakeRepository(
       drafts: [_draft(slot: 1)],
@@ -75,6 +87,11 @@ void main() {
     expect(controller.state.drafts.map((draft) => draft.slot), [1]);
   });
 }
+
+String _diceMarkdown(int count) => List.generate(count, (index) {
+  final suffix = index.toString().padLeft(12, '0');
+  return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
+}).join(' ');
 
 class _FakeRepository implements ContentDraftRepository {
   _FakeRepository({

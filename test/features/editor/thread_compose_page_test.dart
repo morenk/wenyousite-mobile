@@ -287,7 +287,16 @@ void main() {
       expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
       expect(editor.controller.selection, selection);
       expect(editor.focusNode.hasFocus, isTrue);
-      if (width == 360) {
+      if (width == 320) {
+        await tester.tap(find.byTooltip('骰子'));
+        await tester.pump();
+        expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
+        expect(find.byKey(const Key('editor-dice-insert')), findsOneWidget);
+        expect(
+          find.byKey(const Key('editor-task-tray-scroll')),
+          findsOneWidget,
+        );
+      } else if (width == 360) {
         await tester.tap(find.byKey(const Key('editor-heading')));
         await tester.pump();
         expect(find.byKey(const Key('editor-heading-tray')), findsOneWidget);

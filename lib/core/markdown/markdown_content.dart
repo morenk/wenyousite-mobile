@@ -1,3 +1,5 @@
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+
 class MarkdownContent {
   MarkdownContent._();
 
@@ -343,6 +345,9 @@ class MarkdownContent {
     }
     return false;
   }
+
+  static bool hasVisibleNonDiceContent(String markdown) =>
+      hasVisibleContent(MarkdownDiceContract.removeMarkdownNodes(markdown));
 
   static bool isSafeLink(Uri uri) {
     return uri.scheme == 'https' ||

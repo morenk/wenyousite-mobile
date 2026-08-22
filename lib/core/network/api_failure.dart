@@ -84,6 +84,10 @@ class ApiFailure implements Exception {
         return '列表位置已失效，正在重新加载。';
       case 40002:
         return '内容已在其他位置修改，请读取最新版后再决定是否覆盖。';
+      case 40003:
+        return '骰子格式无效，请返回正文重新插入。';
+      case 40004:
+        return '当前正文最多可插入 20 个骰子，请删除一个后重试。';
       case 40103:
         return '登录已被撤销，请重新登录。';
       case 40104:

@@ -134,6 +134,26 @@ void main() {
     expect(failure.userMessage, isNot(contains('internal')));
   });
 
+  test('骰子格式和单份正文上限使用稳定业务提示', () {
+    String messageFor(int code) {
+      final options = RequestOptions(path: '/api/v1/subthreads/sub/posts');
+      return ApiFailure.fromDio(
+        DioException(
+          requestOptions: options,
+          response: Response<Object?>(
+            requestOptions: options,
+            statusCode: 400,
+            data: {'code': code, 'message': 'private dice wording'},
+          ),
+        ),
+      ).userMessage;
+    }
+
+    expect(messageFor(40003), contains('骰子格式无效'));
+    expect(messageFor(40004), contains('当前正文最多可插入 20 个骰子'));
+    expect(messageFor(40004), isNot(contains('private dice wording')));
+  });
+
   test('子贴发言权限按协作者和玩家业务码提供稳定提示', () {
     String messageFor(int code) {
       final options = RequestOptions(path: '/api/v1/subthreads/sub/posts');
