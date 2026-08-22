@@ -33,13 +33,11 @@ import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_pag
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
 import 'package:wenyousite_mobile/features/tags/presentation/tag_threads_page.dart';
-import 'package:wenyousite_mobile/features/tags/presentation/thread_tag_management_page.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/subthread_editor_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
@@ -224,8 +222,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.threadMemberManagement,
         name: AppRouteNames.threadMemberManagement,
         builder: (context, state) {
-          return ThreadMemberManagementPage(
+          return ThreadManagementPage(
             threadId: state.pathParameters['threadId']!,
+            initialSection: ThreadManagementSection.members,
           );
         },
       ),
@@ -233,17 +232,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.threadTagManagement,
         name: AppRouteNames.threadTagManagement,
         builder: (context, state) {
-          return ThreadTagManagementPage(
+          return ThreadManagementPage(
             threadId: state.pathParameters['threadId']!,
+            openTagEditor: true,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutePaths.subthreadCreate,
+        name: AppRouteNames.subthreadCreate,
+        builder: (context, state) =>
+            SubthreadEditorPage(threadId: state.pathParameters['threadId']!),
+      ),
+      GoRoute(
+        path: AppRoutePaths.subthreadEdit,
+        name: AppRouteNames.subthreadEdit,
+        builder: (context, state) => SubthreadEditorPage(
+          threadId: state.pathParameters['threadId']!,
+          subthreadId: state.pathParameters['subthreadId']!,
+        ),
       ),
       GoRoute(
         path: AppRoutePaths.subthreadManagement,
         name: AppRouteNames.subthreadManagement,
         builder: (context, state) {
-          return SubthreadManagementPage(
+          return ThreadManagementPage(
             threadId: state.pathParameters['threadId']!,
+            initialSection: ThreadManagementSection.subthreads,
           );
         },
       ),

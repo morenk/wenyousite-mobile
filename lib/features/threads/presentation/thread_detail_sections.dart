@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -106,53 +108,124 @@ class ThreadDetailTransientFailure extends StatelessWidget {
 }
 
 class ThreadSubthreadBody extends StatelessWidget {
-  const ThreadSubthreadBody({required this.subthread, super.key});
+  const ThreadSubthreadBody(
+    this.detail,
+    this.subthread, {
+    required this.onEdit,
+    this.pending = false,
+    super.key,
+  });
 
+  final ThreadDetailModel detail;
   final ThreadSubthreadModel subthread;
+  final bool pending;
+  final ValueChanged<PostComposerTarget> onEdit;
+
+  bool get canManage => detail.canManageThread;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final body = subthread.body;
-    return Semantics(
-      container: true,
-      label: '当前子贴正文',
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (body == null || body.markdown.trim().isEmpty)
-              Text(
-                '这个子贴还没有正文。',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-              )
-            else if (body.postId == null)
-              WenyouMarkdown(
-                key: Key('thread-body-${subthread.id}'),
-                data: body.markdown,
-                diceLabels: _diceLabels(body.diceRolls),
-                diceSemantics: _diceSemantics(body.diceRolls),
-                diceDetails: _diceDetails(body.diceRolls),
-                onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
-              )
-            else
-              StickerPostMarkdown(
-                key: Key('thread-body-${subthread.id}'),
-                postId: body.postId!,
-                data: body.markdown,
-                diceLabels: _diceLabels(body.diceRolls),
-                diceSemantics: _diceSemantics(body.diceRolls),
-                diceDetails: _diceDetails(body.diceRolls),
-                onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
-              ),
-          ],
+    final content = Padding(
+      padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (body == null || body.markdown.trim().isEmpty)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '这个子贴还没有正文。',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  ),
+                ),
+                if (canManage)
+                  TextButton.icon(
+                    key: Key('thread-body-add-${subthread.id}'),
+                    onPressed: pending
+                        ? null
+                        : () =>
+                              onEdit(threadDetailBodyTarget(detail, subthread)),
+                    icon: const WenyouIcon(WenyouIconIds.actionAdd),
+                    label: const Text('添加正文'),
+                  ),
+              ],
+            )
+          else if (body.postId == null)
+            WenyouMarkdown(
+              key: Key('thread-body-${subthread.id}'),
+              data: body.markdown,
+              diceLabels: _diceLabels(body.diceRolls),
+              diceSemantics: _diceSemantics(body.diceRolls),
+              diceDetails: _diceDetails(body.diceRolls),
+              onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+            )
+          else
+            StickerPostMarkdown(
+              key: Key('thread-body-${subthread.id}'),
+              postId: body.postId!,
+              data: body.markdown,
+              diceLabels: _diceLabels(body.diceRolls),
+              diceSemantics: _diceSemantics(body.diceRolls),
+              diceDetails: _diceDetails(body.diceRolls),
+              onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+            ),
+        ],
+      ),
+    );
+    if (body == null || body.markdown.trim().isEmpty) {
+      return Semantics(container: true, label: '当前子贴暂无正文', child: content);
+    }
+    return PostCardActionMenu(
+      canCopyText: true,
+      canReply: false,
+      canEdit: canManage,
+      canDelete: false,
+      canReport: false,
+      pending: pending,
+      semanticLabel: '子贴正文操作',
+      actionKeyPrefix: 'thread-body-action-${subthread.id}',
+      onSelected: (action) {
+        switch (action) {
+          case PostCardAction.copyText:
+            unawaited(copyPostCardValue(context, body.markdown, '正文已复制。'));
+          case PostCardAction.copyLink:
+            unawaited(
+              copyPostCardValue(context, _publicBodyLink(), '正文链接已复制。'),
+            );
+          case PostCardAction.edit:
+            onEdit(threadDetailBodyTarget(detail, subthread));
+          case PostCardAction.reply ||
+              PostCardAction.delete ||
+              PostCardAction.report:
+            break;
+        }
+      },
+      anchorBuilder: (context, handle) => Semantics(
+        key: Key('thread-body-container-${subthread.id}'),
+        container: true,
+        label: '当前子贴正文',
+        hint: canManage ? '长按打开正文操作，可编辑正文' : '长按打开正文操作',
+        onLongPress: handle.open,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onLongPress: handle.open,
+          child: content,
         ),
       ),
     );
   }
+
+  String _publicBodyLink() => Uri.parse('https://wenyou.site')
+      .replace(
+        pathSegments: ['threads', detail.id],
+        queryParameters: {'subthread': subthread.id},
+      )
+      .toString();
 }
 
 class ThreadTargetPostStatus extends StatelessWidget {

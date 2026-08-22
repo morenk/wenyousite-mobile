@@ -1,224 +1,109 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/subthread_editor_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 
 void main() {
-  testWidgets('展示固定默认子贴并完成新增、详情读取和编辑', (tester) async {
-    final repository = _FakeRepository(bootstrap: _bootstrap());
-    await _pumpPage(tester, repository);
+  testWidgets('目录只展示非默认子贴及正文状态', (tester) async {
+    await _pumpWorkspace(tester, _FakeRepository());
 
-    expect(find.text('默认子贴固定置顶；标题随主题信息维护，正文从主题详情编辑。'), findsOneWidget);
+    expect(find.text('主贴'), findsNothing);
+    expect(find.text('剧情区'), findsOneWidget);
+    expect(find.textContaining('有正文'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('subthread-edit-sub-default')),
-      findsNothing,
+      find.byKey(const Key('subthread-management-create')),
+      findsOneWidget,
     );
-    expect(
-      find.byKey(const ValueKey('subthread-delete-sub-default')),
-      findsNothing,
-    );
+  });
+
+  testWidgets('新建子贴可在全屏编辑器同时填写正文', (tester) async {
+    final repository = _FakeRepository();
+    await _pumpWorkspace(tester, repository);
 
     await tester.tap(find.byKey(const Key('subthread-management-create')));
     await tester.pumpAndSettle();
+    expect(find.text('添加子贴'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-management-body-editor')),
+      findsOneWidget,
+    );
+
     await tester.enterText(
       find.byKey(const Key('subthread-form-title')),
       '玩家区',
     );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
+    await _replaceBody(tester, '这里是玩家区正文');
+    await tester.tap(find.byKey(const Key('subthread-editor-save')));
     await tester.pumpAndSettle();
-    expect(repository.createdTitles, ['玩家区']);
-    expect(find.text('子贴已创建。'), findsOneWidget);
 
-    final edit = find.byKey(const ValueKey('subthread-edit-sub-second'));
-    await tester.ensureVisible(edit);
-    await tester.tap(edit);
+    expect(repository.createdDraft?.title, '玩家区');
+    expect(repository.createdDraft?.body, '这里是玩家区正文');
+    expect(find.text('玩家区'), findsOneWidget);
+  });
+
+  testWidgets('点击子贴进入全屏编辑并同时保存标题权限正文', (tester) async {
+    final repository = _FakeRepository();
+    await _pumpWorkspace(tester, repository);
+
+    await tester.tap(find.byKey(const ValueKey('subthread-edit-sub-second')));
     await tester.pumpAndSettle();
-    expect(repository.findCalls, 1);
+    expect(find.text('编辑子贴'), findsOneWidget);
+    expect(
+      tester
+          .widget<QuillEditor>(
+            find.byKey(const Key('thread-management-body-editor')),
+          )
+          .controller
+          .document
+          .toPlainText()
+          .trim(),
+      '剧情区正文',
+    );
+
     await tester.enterText(
       find.byKey(const Key('subthread-form-title')),
       '新剧情区',
     );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
+    await _replaceBody(tester, '更新后的剧情区正文');
+    await tester.tap(find.byKey(const Key('subthread-editor-save')));
     await tester.pumpAndSettle();
-    expect(repository.updatedTitles, ['新剧情区']);
+
+    expect(repository.updatedDraft?.title, '新剧情区');
+    expect(repository.updatedDraft?.body, '更新后的剧情区正文');
     expect(find.text('新剧情区'), findsOneWidget);
   });
 
-  testWidgets('显式上下排序并二次确认删除非默认子贴', (tester) async {
-    final repository = _FakeRepository(
-      bootstrap: _bootstrap(items: [_defaultItem, _secondary, _third]),
-    );
-    await _pumpPage(tester, repository);
-
-    final up = find.byKey(const ValueKey('subthread-up-sub-third'));
-    await tester.ensureVisible(up);
-    await tester.tap(up);
-    await tester.pumpAndSettle();
-    expect(repository.reorderIds, [
-      ['sub-default', 'sub-third', 'sub-second'],
-    ]);
-
-    final delete = find.byKey(const ValueKey('subthread-delete-sub-second'));
-    await tester.ensureVisible(delete);
-    await tester.tap(delete);
-    await tester.pumpAndSettle();
-    expect(find.text('确认删除这个子贴？'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const ValueKey('subthread-delete-confirm-sub-second')),
-    );
-    await tester.pumpAndSettle();
-    expect(repository.removedIds, ['sub-second']);
-    expect(find.text('剧情区'), findsNothing);
-  });
-
-  testWidgets('版本冲突刷新目录并要求关闭旧表单后重新编辑', (tester) async {
-    final repository = _FakeRepository(
-      bootstrap: _bootstrap(),
-      updateFailureOnce: const ApiFailure(
-        userMessage: '子贴已被修改，请重新编辑。',
-        businessCode: 40002,
-        httpStatus: 409,
-      ),
-    );
-    await _pumpPage(tester, repository);
-
-    final edit = find.byKey(const ValueKey('subthread-edit-sub-second'));
-    await tester.ensureVisible(edit);
-    await tester.tap(edit);
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('subthread-form-title')),
-      '本机旧表单',
-    );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('返回最新目录'), findsOneWidget);
-    await tester.tap(find.text('返回最新目录'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('subthread-form-title')), findsNothing);
-    expect(find.text('子贴已被修改，请重新编辑。'), findsOneWidget);
-  });
-
-  testWidgets('创建结果不确定时保留表单与请求编号且不提示成功', (tester) async {
-    final repository = _FakeRepository(
-      bootstrap: _bootstrap(),
-      createFailureOnce: const ApiFailure(
-        userMessage: '创建结果暂时无法确定',
-        httpStatus: 500,
-        requestId: 'create-unknown-id',
-      ),
-    );
-    await _pumpPage(tester, repository);
-
-    await tester.tap(find.byKey(const Key('subthread-management-create')));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('subthread-form-title')),
-      '玩家区',
-    );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('subthread-form-title')), findsOneWidget);
-    expect(find.text('玩家区'), findsOneWidget);
-    expect(
-      find.byKey(const Key('subthread-form-indeterminate')),
-      findsOneWidget,
-    );
-    expect(find.text('问题编号：create-unknown-id'), findsWidgets);
-    expect(find.text('子贴已创建。'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('subthread-form-title')), findsNothing);
-    expect(find.text('子贴已创建。'), findsOneWidget);
-    expect(repository.createRequestIds, hasLength(2));
-    expect(repository.createRequestIds.toSet(), hasLength(1));
-  });
-
-  testWidgets('编辑结果不确定时保留修改内容且不提示成功', (tester) async {
-    final repository = _FakeRepository(
-      bootstrap: _bootstrap(),
-      updateFailureOnce: const ApiFailure(
-        userMessage: '保存结果暂时无法确定',
-        httpStatus: 500,
-        requestId: 'update-unknown-id',
-      ),
-    );
-    await _pumpPage(tester, repository);
-
-    final edit = find.byKey(const ValueKey('subthread-edit-sub-second'));
-    await tester.ensureVisible(edit);
-    await tester.tap(edit);
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('subthread-form-title')),
-      '本机新标题',
-    );
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('subthread-form-title')), findsOneWidget);
-    expect(find.text('本机新标题'), findsOneWidget);
-    expect(
-      find.byKey(const Key('subthread-form-indeterminate')),
-      findsOneWidget,
-    );
-    expect(find.text('问题编号：update-unknown-id'), findsWidgets);
-    expect(find.text('子贴已更新。'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('subthread-form-submit')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('subthread-form-title')), findsNothing);
-    expect(find.text('子贴已更新。'), findsOneWidget);
-    expect(repository.updatedTitles, ['本机新标题']);
-  });
-
-  testWidgets('加载失败保留请求 ID并可重试', (tester) async {
-    final repository = _FakeRepository(
-      bootstrap: _bootstrap(),
-      loadFailureOnce: const ApiFailure(
-        userMessage: '目录加载失败',
-        requestId: 'subthread-load-id',
-      ),
-    );
-    await _pumpPage(tester, repository);
-
-    expect(find.text('目录加载失败'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('subthread-management-retry')));
-    await tester.pumpAndSettle();
-    expect(find.text('剧情区'), findsOneWidget);
-  });
-
   for (final width in [360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 子贴管理页无布局溢出', (tester) async {
+    testWidgets('$width dp 子贴目录无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = Size(width, 820);
+      tester.view.physicalSize = Size(width, 860);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
-      await _pumpPage(
-        tester,
-        _FakeRepository(
-          bootstrap: _bootstrap(items: [_defaultItem, _secondary, _third]),
-        ),
-      );
+      await _pumpWorkspace(tester, _FakeRepository());
 
       expect(tester.takeException(), isNull);
-      expect(find.text('星海旅团'), findsOneWidget);
+      expect(find.text('剧情区'), findsOneWidget);
     });
   }
 }
 
-Future<void> _pumpPage(
+Future<void> _pumpWorkspace(
   WidgetTester tester,
   SubthreadManagementRepository repository,
 ) async {
+  final container = ProviderContainer(
+    overrides: [
+      stickersEnabledProvider.overrideWithValue(false),
+      subthreadManagementRepositoryProvider.overrideWithValue(repository),
+    ],
+  );
   final router = GoRouter(
     initialLocation: '/threads/thread-1/manage/subthreads',
     routes: [
@@ -228,58 +113,61 @@ Future<void> _pumpPage(
           threadId: state.pathParameters['threadId']!,
         ),
       ),
+      GoRoute(
+        path: '/threads/:threadId/manage/subthreads/new',
+        builder: (_, state) =>
+            SubthreadEditorPage(threadId: state.pathParameters['threadId']!),
+      ),
+      GoRoute(
+        path: '/threads/:threadId/manage/subthreads/:subthreadId/edit',
+        builder: (_, state) => SubthreadEditorPage(
+          threadId: state.pathParameters['threadId']!,
+          subthreadId: state.pathParameters['subthreadId']!,
+        ),
+      ),
     ],
   );
   addTearDown(router.dispose);
+  addTearDown(container.dispose);
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        subthreadManagementRepositoryProvider.overrideWithValue(repository),
-      ],
+    UncontrolledProviderScope(
+      container: container,
       child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ),
   );
   await tester.pumpAndSettle();
 }
 
-class _FakeRepository implements SubthreadManagementRepository {
-  _FakeRepository({
-    required this.bootstrap,
-    this.updateFailureOnce,
-    this.loadFailureOnce,
-    this.createFailureOnce,
-  });
+Future<void> _replaceBody(WidgetTester tester, String text) async {
+  final editor = tester.widget<QuillEditor>(
+    find.byKey(const Key('thread-management-body-editor')),
+  );
+  editor.controller.replaceText(
+    0,
+    editor.controller.document.length - 1,
+    text,
+    TextSelection.collapsed(offset: text.length),
+  );
+  await tester.pump(const Duration(milliseconds: 200));
+}
 
-  SubthreadManagementBootstrap bootstrap;
-  ApiFailure? updateFailureOnce;
-  ApiFailure? loadFailureOnce;
-  ApiFailure? createFailureOnce;
-  int findCalls = 0;
-  final List<String> createdTitles = [];
-  final List<String> createRequestIds = [];
-  final List<String> updatedTitles = [];
-  final List<String> removedIds = [];
-  final List<List<String>> reorderIds = [];
+class _FakeRepository implements SubthreadManagementRepository {
+  _FakeRepository() : _bootstrap = _initialBootstrap();
+
+  SubthreadManagementBootstrap _bootstrap;
+  SubthreadManagementDraft? createdDraft;
+  SubthreadManagementDraft? updatedDraft;
 
   @override
-  Future<SubthreadManagementBootstrap> load(String threadId) async {
-    final failure = loadFailureOnce;
-    loadFailureOnce = null;
-    if (failure != null) throw failure;
-    return bootstrap;
-  }
+  Future<SubthreadManagementBootstrap> load(String threadId) async =>
+      _bootstrap;
 
   @override
   Future<SubthreadManagementItem> findById({
     required String threadId,
     required String subthreadId,
     required bool isDefault,
-  }) async {
-    findCalls += 1;
-    return bootstrap.items
-        .firstWhere((item) => item.id == subthreadId)
-        .copyWith(version: 4);
-  }
+  }) async => _bootstrap.items.firstWhere((item) => item.id == subthreadId);
 
   @override
   Future<SubthreadManagementItem> create({
@@ -287,21 +175,22 @@ class _FakeRepository implements SubthreadManagementRepository {
     required SubthreadManagementDraft draft,
     required String clientRequestId,
   }) async {
-    createRequestIds.add(clientRequestId);
-    final failure = createFailureOnce;
-    createFailureOnce = null;
-    if (failure != null) throw failure;
-    createdTitles.add(draft.normalizedTitle);
-    return SubthreadManagementItem(
-      id: 'sub-created',
+    createdDraft = draft;
+    final item = SubthreadManagementItem(
+      id: 'sub-new',
       threadId: threadId,
       title: draft.normalizedTitle,
-      sortOrder: bootstrap.items.length,
+      sortOrder: _bootstrap.items.length,
       postingPolicy: draft.postingPolicy,
       version: 1,
       postCount: 0,
       isDefault: false,
+      body: draft.body,
+      bodyPostId: draft.body.isEmpty ? null : 'body-new',
+      bodyVersion: draft.body.isEmpty ? null : 1,
     );
+    _bootstrap = _bootstrap.copyWith(items: [..._bootstrap.items, item]);
+    return item;
   }
 
   @override
@@ -309,20 +198,31 @@ class _FakeRepository implements SubthreadManagementRepository {
     required SubthreadManagementItem current,
     required SubthreadManagementDraft draft,
   }) async {
-    final failure = updateFailureOnce;
-    updateFailureOnce = null;
-    if (failure != null) throw failure;
-    updatedTitles.add(draft.normalizedTitle);
-    return current.copyWith(
+    updatedDraft = draft;
+    final item = current.copyWith(
       title: draft.normalizedTitle,
       postingPolicy: draft.postingPolicy,
       version: current.version + 1,
+      body: draft.body,
+      bodyPostId: current.bodyPostId ?? 'body-second',
+      bodyVersion: (current.bodyVersion ?? 0) + 1,
     );
+    _bootstrap = _bootstrap.copyWith(
+      items: [
+        for (final candidate in _bootstrap.items)
+          if (candidate.id == item.id) item else candidate,
+      ],
+    );
+    return item;
   }
 
   @override
   Future<void> remove(SubthreadManagementItem item) async {
-    removedIds.add(item.id);
+    _bootstrap = _bootstrap.copyWith(
+      items: _bootstrap.items
+          .where((candidate) => candidate.id != item.id)
+          .toList(),
+    );
   }
 
   @override
@@ -330,53 +230,40 @@ class _FakeRepository implements SubthreadManagementRepository {
     required String threadId,
     required List<SubthreadManagementItem> items,
   }) async {
-    reorderIds.add(items.map((item) => item.id).toList());
-    return [
-      for (var index = 0; index < items.length; index++)
-        items[index].copyWith(sortOrder: index),
-    ];
+    _bootstrap = _bootstrap.copyWith(items: List.unmodifiable(items));
+    return _bootstrap.items;
   }
 }
 
-SubthreadManagementBootstrap _bootstrap({
-  List<SubthreadManagementItem>? items,
-}) {
-  return SubthreadManagementBootstrap(
+SubthreadManagementBootstrap _initialBootstrap() {
+  return const SubthreadManagementBootstrap(
     threadId: 'thread-1',
     threadTitle: '星海旅团',
-    items: items ?? [_defaultItem, _secondary],
+    items: [
+      SubthreadManagementItem(
+        id: 'sub-default',
+        threadId: 'thread-1',
+        title: '主贴',
+        sortOrder: 0,
+        postingPolicy: SubthreadPostingPolicy.participants,
+        version: 1,
+        postCount: 0,
+        isDefault: true,
+        body: '主正文',
+      ),
+      SubthreadManagementItem(
+        id: 'sub-second',
+        threadId: 'thread-1',
+        title: '剧情区',
+        sortOrder: 1,
+        postingPolicy: SubthreadPostingPolicy.participants,
+        version: 3,
+        postCount: 2,
+        isDefault: false,
+        bodyPostId: 'body-second',
+        bodyVersion: 5,
+        body: '剧情区正文',
+      ),
+    ],
   );
 }
-
-const _defaultItem = SubthreadManagementItem(
-  id: 'sub-default',
-  threadId: 'thread-1',
-  title: '主贴',
-  sortOrder: 0,
-  postingPolicy: SubthreadPostingPolicy.participants,
-  version: 2,
-  postCount: 1,
-  isDefault: true,
-);
-
-const _secondary = SubthreadManagementItem(
-  id: 'sub-second',
-  threadId: 'thread-1',
-  title: '剧情区',
-  sortOrder: 1,
-  postingPolicy: SubthreadPostingPolicy.participants,
-  version: 3,
-  postCount: 2,
-  isDefault: false,
-);
-
-const _third = SubthreadManagementItem(
-  id: 'sub-third',
-  threadId: 'thread-1',
-  title: '闲聊区',
-  sortOrder: 2,
-  postingPolicy: SubthreadPostingPolicy.players,
-  version: 1,
-  postCount: 0,
-  isDefault: false,
-);

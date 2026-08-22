@@ -180,6 +180,18 @@ void main() {
       Uri.parse(tagsRedirect!).queryParameters['returnTo'],
       '/threads/thread-1/manage/tags',
     );
+
+    for (final location in [
+      '/threads/thread-1/manage/subthreads/new',
+      '/threads/thread-1/manage/subthreads/sub-1/edit',
+    ]) {
+      final redirect = resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: location,
+        uri: Uri.parse(location),
+      );
+      expect(Uri.parse(redirect!).queryParameters['returnTo'], location);
+    }
   });
 
   test('公开标签主题页不要求登录', () {

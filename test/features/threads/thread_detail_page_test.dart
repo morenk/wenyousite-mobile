@@ -138,6 +138,24 @@ void main() {
     expect(find.bySemanticsLabel('第 1 枚，16 点'), findsOneWidget);
     await tester.tap(find.byKey(const Key('wenyou-dice-detail-close')));
     await tester.pumpAndSettle();
+    await tester.longPress(
+      find.byKey(const Key('thread-body-container-subthread-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-copy')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-link')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-edit')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
+    await tester.pumpAndSettle();
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -750));
     await tester.pumpAndSettle();
     expect(find.text('第一层内容'), findsOneWidget);
@@ -1633,6 +1651,29 @@ void main() {
     expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
     expect(find.byKey(const Key('thread-body-edit')), findsNothing);
     expect(find.byKey(const Key('thread-detail-edit-body')), findsNothing);
+    await tester.longPress(
+      find.byKey(const Key('thread-body-container-subthread-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-copy')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-link')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-edit')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const Key('thread-body-action-subthread-1-edit')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('编辑子贴正文'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('post-composer-close')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
@@ -1825,9 +1866,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('这个子贴还没有正文。'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-body-add-subthread-1')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();
-    expect(find.text('添加正文'), findsOneWidget);
+    expect(find.text('添加正文'), findsAtLeastNWidgets(1));
     expect(find.text('尚未开篇'), findsAtLeastNWidgets(1));
     await tester.tap(find.byKey(const Key('thread-detail-edit-body')));
     await tester.pumpAndSettle();

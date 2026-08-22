@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -12,10 +13,15 @@ export 'package:wenyousite_mobile/features/threads/application/subthread_managem
 
 class ApiSubthreadManagementRepository
     implements SubthreadManagementRepository {
-  ApiSubthreadManagementRepository(this._threadsApi, this._subthreadsApi);
+  ApiSubthreadManagementRepository(
+    this._threadsApi,
+    this._subthreadsApi, [
+    this._postsApi,
+  ]);
 
   final ThreadsApi _threadsApi;
   final SubthreadsApi _subthreadsApi;
+  final PostsApi? _postsApi;
 
   @override
   Future<SubthreadManagementBootstrap> load(String threadId) async {
@@ -49,12 +55,16 @@ class ApiSubthreadManagementRepository
         );
       }
       final defaultId = thread.defaultSubthreadId;
+      final detailById = {
+        for (final subthread in thread.subthreads) subthread.id: subthread,
+      };
       final items = listEnvelope.data
           .map(
             (dto) => _mapItem(
               dto,
               expectedThreadId: threadId,
               isDefault: dto.id == defaultId,
+              bodyPost: detailById[dto.id]?.bodyPost,
             ),
           )
           .toList();
@@ -75,6 +85,7 @@ class ApiSubthreadManagementRepository
             ? thread.title!.trim()
             : '未命名主题',
         items: List.unmodifiable(items),
+        published: thread.published,
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -120,6 +131,8 @@ class ApiSubthreadManagementRepository
             ..clientRequestId = clientRequestId
             ..title = draft.normalizedTitle
             ..postingPolicy = _mapCreatePolicy(draft.postingPolicy);
+          final body = MarkdownContent.normalize(draft.body);
+          if (body.isNotEmpty) builder.content = body;
         }),
       )).data;
       if (envelope == null) {
@@ -129,6 +142,7 @@ class ApiSubthreadManagementRepository
         envelope.data,
         expectedThreadId: threadId,
         isDefault: false,
+        body: MarkdownContent.normalize(draft.body),
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -141,30 +155,75 @@ class ApiSubthreadManagementRepository
     required SubthreadManagementDraft draft,
   }) async {
     if (!draft.differsFrom(current)) return current;
+    var updated = current;
+    var metadataSaved = false;
     try {
-      final envelope = (await _subthreadsApi.subthreadsUpdate(
-        id: current.id,
-        updateSubthreadDto: UpdateSubthreadDto((builder) {
-          builder.version = current.version;
-          if (draft.normalizedTitle != current.title) {
-            builder.title = draft.normalizedTitle;
-          }
-          if (draft.postingPolicy != current.postingPolicy) {
-            builder.postingPolicy = _mapUpdatePolicy(draft.postingPolicy);
-          }
-        }),
-      )).data;
-      if (envelope == null) {
-        throw const ApiFailure(userMessage: '子贴更新失败，请重试。');
+      if (draft.normalizedTitle != current.title ||
+          draft.postingPolicy != current.postingPolicy) {
+        final envelope = (await _subthreadsApi.subthreadsUpdate(
+          id: current.id,
+          updateSubthreadDto: UpdateSubthreadDto((builder) {
+            builder.version = current.version;
+            if (draft.normalizedTitle != current.title) {
+              builder.title = draft.normalizedTitle;
+            }
+            if (draft.postingPolicy != current.postingPolicy) {
+              builder.postingPolicy = _mapUpdatePolicy(draft.postingPolicy);
+            }
+          }),
+        )).data;
+        if (envelope == null) {
+          throw const ApiFailure(userMessage: '子贴更新失败，请重试。');
+        }
+        updated = _mapItem(
+          envelope.data,
+          expectedThreadId: current.threadId,
+          expectedId: current.id,
+          isDefault: current.isDefault,
+          bodyPostId: current.bodyPostId,
+          bodyVersion: current.bodyVersion,
+          body: current.body,
+        );
+        metadataSaved = true;
       }
-      return _mapItem(
-        envelope.data,
-        expectedThreadId: current.threadId,
-        expectedId: current.id,
-        isDefault: current.isDefault,
-      );
+      final normalizedBody = MarkdownContent.normalize(draft.body);
+      if (normalizedBody != current.body) {
+        final postsApi = _postsApi;
+        if (postsApi == null) {
+          throw const ApiFailure(userMessage: '正文编辑服务暂时不可用，请稍后重试。');
+        }
+        final bodyEnvelope = (await postsApi.postsUpsertBody(
+          subthreadId: current.id,
+          upsertBodyDto: UpsertBodyDto((builder) {
+            builder.content = normalizedBody;
+            if (current.bodyVersion != null) {
+              builder.version = current.bodyVersion;
+            }
+          }),
+        )).data;
+        if (bodyEnvelope == null) {
+          throw const ApiFailure(userMessage: '子贴正文保存失败，请重试。');
+        }
+        final post = bodyEnvelope.data;
+        updated = updated.copyWith(
+          bodyPostId: post.id,
+          bodyVersion: post.version.toInt(),
+          body: MarkdownContent.normalize(post.content),
+        );
+      }
+      return updated;
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      final failure = ApiFailure.fromDio(error);
+      if (!metadataSaved) throw failure;
+      throw ApiFailure(
+        userMessage: '标题和发帖权限已保存，但正文保存失败；当前正文仍已保留。',
+        httpStatus: failure.httpStatus,
+        businessCode: failure.businessCode,
+        requestId: failure.requestId,
+        contractVersion: failure.contractVersion,
+        retryAfter: failure.retryAfter,
+        cause: failure.cause,
+      );
     }
   }
 
@@ -234,6 +293,10 @@ class ApiSubthreadManagementRepository
     required String expectedThreadId,
     String? expectedId,
     required bool isDefault,
+    ThreadBodyPostResponseDto? bodyPost,
+    String? bodyPostId,
+    int? bodyVersion,
+    String body = '',
   }) {
     if (dto.threadId != expectedThreadId ||
         (expectedId != null && dto.id != expectedId)) {
@@ -254,6 +317,9 @@ class ApiSubthreadManagementRepository
       version: dto.version.toInt(),
       postCount: dto.count.posts.toInt(),
       isDefault: isDefault,
+      bodyPostId: bodyPost?.id ?? bodyPostId,
+      bodyVersion: bodyPost?.version.toInt() ?? bodyVersion,
+      body: MarkdownContent.normalize(bodyPost?.content ?? body),
     );
   }
 
@@ -290,5 +356,6 @@ final apiSubthreadManagementRepositoryProvider =
       return ApiSubthreadManagementRepository(
         api.getThreadsApi(),
         api.getSubthreadsApi(),
+        api.getPostsApi(),
       );
     });

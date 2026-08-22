@@ -19,6 +19,9 @@ class SubthreadManagementItem {
     required this.version,
     required this.postCount,
     required this.isDefault,
+    this.bodyPostId,
+    this.bodyVersion,
+    this.body = '',
   });
 
   final String id;
@@ -29,6 +32,11 @@ class SubthreadManagementItem {
   final int version;
   final int postCount;
   final bool isDefault;
+  final String? bodyPostId;
+  final int? bodyVersion;
+  final String body;
+
+  bool get hasBody => body.trim().isNotEmpty;
 
   SubthreadManagementItem copyWith({
     String? title,
@@ -37,6 +45,9 @@ class SubthreadManagementItem {
     int? version,
     int? postCount,
     bool? isDefault,
+    Object? bodyPostId = _unset,
+    Object? bodyVersion = _unset,
+    String? body,
   }) {
     return SubthreadManagementItem(
       id: id,
@@ -47,6 +58,13 @@ class SubthreadManagementItem {
       version: version ?? this.version,
       postCount: postCount ?? this.postCount,
       isDefault: isDefault ?? this.isDefault,
+      bodyPostId: identical(bodyPostId, _unset)
+          ? this.bodyPostId
+          : bodyPostId as String?,
+      bodyVersion: identical(bodyVersion, _unset)
+          ? this.bodyVersion
+          : bodyVersion as int?,
+      body: body ?? this.body,
     );
   }
 }
@@ -56,11 +74,13 @@ class SubthreadManagementBootstrap {
     required this.threadId,
     required this.threadTitle,
     required this.items,
+    this.published = true,
   });
 
   final String threadId;
   final String threadTitle;
   final List<SubthreadManagementItem> items;
+  final bool published;
 
   SubthreadManagementBootstrap copyWith({
     List<SubthreadManagementItem>? items,
@@ -69,6 +89,7 @@ class SubthreadManagementBootstrap {
       threadId: threadId,
       threadTitle: threadTitle,
       items: items ?? this.items,
+      published: published,
     );
   }
 }
@@ -77,14 +98,20 @@ class SubthreadManagementDraft {
   const SubthreadManagementDraft({
     required this.title,
     required this.postingPolicy,
+    this.body = '',
   });
 
   final String title;
   final SubthreadPostingPolicy postingPolicy;
+  final String body;
 
   String get normalizedTitle => title.trim();
 
   bool differsFrom(SubthreadManagementItem item) {
-    return normalizedTitle != item.title || postingPolicy != item.postingPolicy;
+    return normalizedTitle != item.title ||
+        postingPolicy != item.postingPolicy ||
+        body != item.body;
   }
 }
+
+const _unset = Object();

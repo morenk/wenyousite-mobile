@@ -46,7 +46,7 @@ abstract final class AppRouteAccessPolicy {
     r'^/moments/(?:[^/]+|:momentId)/edit$',
   );
   static final _threadManagementPattern = RegExp(
-    r'^/threads/(?:[^/]+|:threadId)/manage(?:/(?:members|subthreads|tags))?$',
+    r'^/threads/(?:[^/]+|:threadId)/manage(?:/(?:members|tags)|/subthreads(?:/new|/(?:[^/]+|:subthreadId)/edit)?)?$',
   );
   static final _invitationPattern = RegExp(r'^/join/(?:[^/]+|:token)$');
   static final _directMessagePattern = RegExp(

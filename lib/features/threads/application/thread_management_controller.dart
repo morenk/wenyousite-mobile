@@ -34,6 +34,11 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
   Future<bool> save(ThreadManagementDraft draft) async {
     final bootstrap = state.bootstrap;
     if (bootstrap == null || state.isBusy) return false;
+    final validation = draft.validate(bootstrap.thread);
+    if (validation != null) {
+      state = state.copyWith(failure: ApiFailure(userMessage: validation));
+      return false;
+    }
     if (!draft.differsFrom(bootstrap.thread)) return true;
     state = state.copyWith(isSaving: true, failure: null, conflict: null);
     try {

@@ -43,6 +43,12 @@ abstract final class AppRouteLocations {
   static String subthreadManagement(String threadId) =>
       '${threadManagement(threadId)}/subthreads';
 
+  static String subthreadCreate(String threadId) =>
+      '${subthreadManagement(threadId)}/new';
+
+  static String subthreadEdit(String threadId, String subthreadId) =>
+      '${subthreadManagement(threadId)}/${Uri.encodeComponent(subthreadId)}/edit';
+
   static String user(String userId) => _fromSegments(['users', userId]);
 
   static String moment(String momentId) => _fromSegments(['moments', momentId]);
@@ -85,6 +91,9 @@ abstract final class AppRoutePaths {
   static const threadMemberManagement = '/threads/:threadId/manage/members';
   static const threadTagManagement = '/threads/:threadId/manage/tags';
   static const subthreadManagement = '/threads/:threadId/manage/subthreads';
+  static const subthreadCreate = '/threads/:threadId/manage/subthreads/new';
+  static const subthreadEdit =
+      '/threads/:threadId/manage/subthreads/:subthreadId/edit';
   static const threadManagement = '/threads/:threadId/manage';
   static const threadPostSearch = '/threads/:threadId/search';
   static const threadDetail = '/threads/:threadId';
@@ -131,6 +140,8 @@ abstract final class AppRouteNames {
   static const threadMemberManagement = 'thread-member-management';
   static const threadTagManagement = 'thread-tag-management';
   static const subthreadManagement = 'subthread-management';
+  static const subthreadCreate = 'subthread-create';
+  static const subthreadEdit = 'subthread-edit';
   static const threadManagement = 'thread-management';
   static const threadPostSearch = 'thread-post-search';
   static const threadDetail = 'thread-detail';

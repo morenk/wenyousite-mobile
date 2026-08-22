@@ -14,6 +14,8 @@ void main() {
       '/messages/new/user-1',
       '/threads/:threadId/manage/tags',
       '/threads/thread-1/manage/subthreads',
+      '/threads/thread-1/manage/subthreads/new',
+      '/threads/thread-1/manage/subthreads/sub-1/edit',
       '/moments/moment-1/edit',
       '/join/invite-token',
     ]) {
@@ -51,6 +53,10 @@ void main() {
     expect(
       AppRouteLocations.postReplies('thread/1', 'floor/2', postId: 'reply&9'),
       '/threads/thread%2F1/posts/floor%2F2/replies?post=reply%269',
+    );
+    expect(
+      AppRouteLocations.subthreadEdit('thread/1', 'sub/2'),
+      '/threads/thread%2F1/manage/subthreads/sub%2F2/edit',
     );
   });
 }

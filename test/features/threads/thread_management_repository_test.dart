@@ -8,7 +8,15 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_management_mode
 
 void main() {
   setUpAll(() {
-    registerFallbackValue(UpdateThreadDto((builder) => builder.version = 1));
+    registerFallbackValue(
+      SaveThreadAggregateDto(
+        (builder) => builder
+          ..version = 1
+          ..defaultSubthreadVersion = 1
+          ..content = '正文'
+          ..tagNames.replace(const <String>[]),
+      ),
+    );
   });
 
   test('加载主题权限与动态分区，并保留当前已停用分区', () async {
@@ -38,12 +46,12 @@ void main() {
     final threadsApi = _MockThreadsApi();
     final categoriesApi = _MockCategoriesApi();
     when(
-      () => threadsApi.threadsUpdate(
+      () => threadsApi.threadsSaveAggregate(
         id: 'thread-1',
-        updateThreadDto: any(named: 'updateThreadDto'),
+        saveThreadAggregateDto: any(named: 'saveThreadAggregateDto'),
       ),
     ).thenAnswer(
-      (_) async => _updateResponse(
+      (_) async => _aggregateResponse(
         _detail(title: '新标题', status: ThreadDetailResponseDtoStatusEnum.CLOSED),
       ),
     );
@@ -56,21 +64,29 @@ void main() {
         categorySlug: 'RPG',
         status: ThreadManagementStatus.closed,
         visibility: ThreadManagementVisibility.public,
+        body: '主正文',
+        tagNames: ['跑团'],
       ),
     );
 
     final captured =
         verify(
-              () => threadsApi.threadsUpdate(
+              () => threadsApi.threadsSaveAggregate(
                 id: 'thread-1',
-                updateThreadDto: captureAny(named: 'updateThreadDto'),
+                saveThreadAggregateDto: captureAny(
+                  named: 'saveThreadAggregateDto',
+                ),
               ),
             ).captured.single
-            as UpdateThreadDto;
+            as SaveThreadAggregateDto;
     expect(captured.version, 7);
+    expect(captured.defaultSubthreadVersion, 3);
+    expect(captured.bodyVersion, 4);
+    expect(captured.content, '主正文');
+    expect(captured.tagNames.toList(), ['跑团']);
     expect(captured.title, '新标题');
     expect(captured.category, isNull);
-    expect(captured.status, UpdateThreadDtoStatusEnum.CLOSED);
+    expect(captured.status, SaveThreadAggregateDtoStatusEnum.CLOSED);
     expect(captured.visibility, isNull);
     expect(captured.published, isNull);
     expect(updated.title, '新标题');
@@ -102,9 +118,9 @@ void main() {
       ),
     );
     verifyNever(
-      () => threadsApi.threadsUpdate(
+      () => threadsApi.threadsSaveAggregate(
         id: any(named: 'id'),
-        updateThreadDto: any(named: 'updateThreadDto'),
+        saveThreadAggregateDto: any(named: 'saveThreadAggregateDto'),
       ),
     );
   });
@@ -149,6 +165,12 @@ ThreadManagementSnapshot _snapshot({required bool isOwner}) {
     published: true,
     canManage: true,
     isOwner: isOwner,
+    defaultSubthreadId: 'subthread-1',
+    defaultSubthreadVersion: 3,
+    bodyPostId: 'body-1',
+    bodyVersion: 4,
+    body: '主正文',
+    tagNames: const ['跑团'],
   );
 }
 
@@ -166,12 +188,12 @@ Response<ThreadsFindById200Response> _findResponse(
   );
 }
 
-Response<ThreadsUpdate200Response> _updateResponse(
+Response<ThreadsSaveAggregate200Response> _aggregateResponse(
   ThreadDetailResponseDto detail,
 ) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/threads/thread-1'),
-    data: ThreadsUpdate200Response(
+    data: ThreadsSaveAggregate200Response(
       (builder) => builder
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
@@ -225,6 +247,7 @@ ThreadDetailResponseDto _detail({
       ..version = 7
       ..likeCount = 0
       ..tipTotal = '0'
+      ..defaultSubthreadId = 'subthread-1'
       ..createdAt = now
       ..updatedAt = now
       ..owner.update(
@@ -251,6 +274,41 @@ ThreadDetailResponseDto _detail({
           ..canManageThread = true
           ..canManageMembers = true
           ..isOwner = false,
+      )
+      ..subthreads.add(
+        ThreadSubthreadResponseDto(
+          (subthread) => subthread
+            ..id = 'subthread-1'
+            ..threadId = 'thread-1'
+            ..title = title
+            ..sortOrder = 0
+            ..postingPolicy =
+                ThreadSubthreadResponseDtoPostingPolicyEnum.PARTICIPANTS
+            ..version = 3
+            ..createdAt = now
+            ..bodyPost.update(
+              (body) => body
+                ..id = 'body-1'
+                ..content = '主正文'
+                ..version = 4,
+            )
+            ..count.update((count) => count.posts = 0),
+        ),
+      )
+      ..topicTags.add(
+        ThreadTagRelationResponseDto(
+          (relation) => relation
+            ..id = 'relation-1'
+            ..threadId = 'thread-1'
+            ..tagId = 'tag-1'
+            ..tag.update(
+              (tag) => tag
+                ..id = 'tag-1'
+                ..name = '跑团'
+                ..sortOrder = 1
+                ..isActive = true,
+            ),
+        ),
       ),
   );
 }

@@ -26,6 +26,8 @@ class SubthreadManagementController
   final WriteReconciler _reconciler;
   String? _pendingCreateId;
   String? _pendingCreateFingerprint;
+  SubthreadManagementDraft? _pendingCreateDraft;
+  var _pendingCreateIndeterminate = false;
   var _loadEpoch = 0;
   var _actionEpoch = 0;
 
@@ -59,10 +61,15 @@ class SubthreadManagementController
       pendingItemId: item.id,
     );
     try {
-      final latest = await _repository.findById(
+      final loaded = await _repository.findById(
         threadId: _threadId,
         subthreadId: item.id,
         isDefault: false,
+      );
+      final latest = loaded.copyWith(
+        bodyPostId: item.bodyPostId,
+        bodyVersion: item.bodyVersion,
+        body: item.body,
       );
       _replaceItem(latest);
       state = state.copyWith(pendingAction: null, pendingItemId: null);
@@ -87,10 +94,24 @@ class SubthreadManagementController
       );
     }
     final fingerprint =
-        '${draft.normalizedTitle}\u0000${draft.postingPolicy.name}';
+        '${draft.normalizedTitle}\u0000${draft.postingPolicy.name}\u0000${draft.body}';
+    if (_pendingCreateIndeterminate &&
+        _pendingCreateFingerprint != fingerprint &&
+        _pendingCreateDraft != null) {
+      final pendingResult = await create(_pendingCreateDraft!);
+      return switch (pendingResult) {
+        MutationSubmitCompleted(value: final created) => update(created, draft),
+        MutationSubmitFailed(failure: final failure) =>
+          MutationSubmitResult.failed(failure),
+        MutationSubmitIndeterminate(requestId: final requestId) =>
+          MutationSubmitResult.indeterminate(requestId: requestId),
+      };
+    }
     if (_pendingCreateFingerprint != fingerprint || _pendingCreateId == null) {
       _pendingCreateFingerprint = fingerprint;
       _pendingCreateId = _createRequestId();
+      _pendingCreateDraft = draft;
+      _pendingCreateIndeterminate = false;
     }
     state = state.copyWith(
       failure: null,
@@ -110,7 +131,8 @@ class SubthreadManagementController
         (item) =>
             !beforeIds.contains(item.id) &&
             item.title == draft.normalizedTitle &&
-            item.postingPolicy == draft.postingPolicy,
+            item.postingPolicy == draft.postingPolicy &&
+            item.body == draft.body,
       ),
       failureMessage: '子贴创建失败，请稍后刷新查看。',
     );
@@ -139,18 +161,27 @@ class SubthreadManagementController
             (item) =>
                 !beforeIds.contains(item.id) &&
                 item.title == draft.normalizedTitle &&
-                item.postingPolicy == draft.postingPolicy,
+                item.postingPolicy == draft.postingPolicy &&
+                item.body == draft.body,
           );
         }
         _pendingCreateId = null;
         _pendingCreateFingerprint = null;
+        _pendingCreateDraft = null;
+        _pendingCreateIndeterminate = false;
         return MutationSubmitResult.completed(created);
       case WriteOutcomeStatus.failed:
         final failure = outcome.failure!;
-        if (failure.businessCode == 40912) _pendingCreateId = null;
+        if (failure.businessCode == 40912) {
+          _pendingCreateId = null;
+          _pendingCreateFingerprint = null;
+          _pendingCreateDraft = null;
+          _pendingCreateIndeterminate = false;
+        }
         _failMutation(failure);
         return MutationSubmitResult.failed(failure);
       case WriteOutcomeStatus.indeterminate:
+        _pendingCreateIndeterminate = true;
         _indeterminateMutation(outcome, bootstrap);
         return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
       case WriteOutcomeStatus.confirming:
@@ -184,7 +215,8 @@ class SubthreadManagementController
         (item) =>
             item.id == current.id &&
             item.title == draft.normalizedTitle &&
-            item.postingPolicy == draft.postingPolicy,
+            item.postingPolicy == draft.postingPolicy &&
+            item.body == draft.body,
       ),
       failureMessage: '子贴保存失败，请稍后刷新查看。',
     );
@@ -214,7 +246,8 @@ class SubthreadManagementController
               (item) =>
                   item.id == current.id &&
                   item.title == draft.normalizedTitle &&
-                  item.postingPolicy == draft.postingPolicy,
+                  item.postingPolicy == draft.postingPolicy &&
+                  item.body == draft.body,
             );
             if (matches.isNotEmpty) {
               _completeFromProjection(latest);
@@ -291,10 +324,35 @@ class SubthreadManagementController
     }
     final moved = items.removeAt(currentIndex);
     items.insert(targetIndex, moved);
+    return _saveOrder(items, pendingItemId: itemId);
+  }
+
+  Future<bool> reorderNonDefault(int oldIndex, int newIndex) async {
+    final bootstrap = state.bootstrap;
+    if (bootstrap == null || state.isBusy) return false;
+    final defaultItems = bootstrap.items
+        .where((item) => item.isDefault)
+        .toList();
+    final items = bootstrap.items.where((item) => !item.isDefault).toList();
+    if (oldIndex < 0 || oldIndex >= items.length) return false;
+    if (newIndex < 0 || newIndex >= items.length || oldIndex == newIndex) {
+      return false;
+    }
+    final moved = items.removeAt(oldIndex);
+    items.insert(newIndex, moved);
+    return _saveOrder([...defaultItems, ...items], pendingItemId: moved.id);
+  }
+
+  Future<bool> _saveOrder(
+    List<SubthreadManagementItem> items, {
+    required String pendingItemId,
+  }) async {
+    final bootstrap = state.bootstrap;
+    if (bootstrap == null || state.isBusy) return false;
     state = state.copyWith(
       failure: null,
       pendingAction: SubthreadManagementAction.reordering,
-      pendingItemId: itemId,
+      pendingItemId: pendingItemId,
       actionOutcome: null,
       actionRequestId: null,
     );

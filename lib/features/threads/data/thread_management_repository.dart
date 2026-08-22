@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
@@ -79,16 +80,27 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
   }) async {
     try {
       final normalizedTitle = draft.title.trim();
-      final response = await _threadsApi.threadsUpdate(
+      if (current.defaultSubthreadId == null ||
+          current.defaultSubthreadVersion <= 0) {
+        throw const ApiFailure(userMessage: '主题正文暂时无法保存，请重新加载后重试。');
+      }
+      final response = await _threadsApi.threadsSaveAggregate(
         id: current.id,
-        updateThreadDto: UpdateThreadDto((builder) {
-          builder.version = current.version;
+        saveThreadAggregateDto: SaveThreadAggregateDto((builder) {
+          builder
+            ..version = current.version
+            ..defaultSubthreadVersion = current.defaultSubthreadVersion
+            ..content = MarkdownContent.normalize(draft.body)
+            ..tagNames.replace(draft.normalizedTagNames);
+          if (current.bodyVersion != null) {
+            builder.bodyVersion = current.bodyVersion;
+          }
           if (normalizedTitle != current.title) builder.title = normalizedTitle;
           if (draft.categorySlug != current.categorySlug) {
             builder.category = draft.categorySlug;
           }
           if (draft.status != current.status) {
-            builder.status = _mapUpdateStatus(draft.status);
+            builder.status = _mapSaveStatus(draft.status);
           }
           if (draft.visibility != current.visibility) {
             if (!current.isOwner) {
@@ -100,8 +112,8 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
             }
             builder.visibility =
                 draft.visibility == ThreadManagementVisibility.private
-                ? UpdateThreadDtoVisibilityEnum.PRIVATE
-                : UpdateThreadDtoVisibilityEnum.PUBLIC;
+                ? SaveThreadAggregateDtoVisibilityEnum.PRIVATE
+                : SaveThreadAggregateDtoVisibilityEnum.PUBLIC;
           }
         }),
       );
@@ -137,6 +149,15 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     final isOwner =
         dto.capabilities?.isOwner ??
         (membershipRole == CurrentThreadMembershipResponseDtoRoleEnum.OWNER);
+    final defaultSubthread = dto.defaultSubthreadId == null
+        ? null
+        : dto.subthreads
+              .where((item) => item.id == dto.defaultSubthreadId)
+              .firstOrNull;
+    if (defaultSubthread == null) {
+      throw const ApiFailure(userMessage: '主题正文加载失败，请稍后重新加载。');
+    }
+    final body = defaultSubthread.bodyPost;
     return ThreadManagementSnapshot(
       id: dto.id,
       title: dto.title?.trim() ?? '',
@@ -156,14 +177,26 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
       published: dto.published,
       canManage: canManage,
       isOwner: isOwner,
+      defaultSubthreadId: defaultSubthread.id,
+      defaultSubthreadVersion: defaultSubthread.version.toInt(),
+      bodyPostId: body?.id,
+      bodyVersion: body?.version.toInt(),
+      body: MarkdownContent.normalize(body?.content ?? ''),
+      tagNames: List.unmodifiable(
+        dto.topicTags.map((relation) => relation.tag.name.trim()),
+      ),
     );
   }
 
-  UpdateThreadDtoStatusEnum _mapUpdateStatus(ThreadManagementStatus status) {
+  SaveThreadAggregateDtoStatusEnum _mapSaveStatus(
+    ThreadManagementStatus status,
+  ) {
     return switch (status) {
-      ThreadManagementStatus.recruiting => UpdateThreadDtoStatusEnum.RECRUITING,
-      ThreadManagementStatus.closed => UpdateThreadDtoStatusEnum.CLOSED,
-      ThreadManagementStatus.finished => UpdateThreadDtoStatusEnum.FINISHED,
+      ThreadManagementStatus.recruiting =>
+        SaveThreadAggregateDtoStatusEnum.RECRUITING,
+      ThreadManagementStatus.closed => SaveThreadAggregateDtoStatusEnum.CLOSED,
+      ThreadManagementStatus.finished =>
+        SaveThreadAggregateDtoStatusEnum.FINISHED,
     };
   }
 }

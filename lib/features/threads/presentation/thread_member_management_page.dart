@@ -35,20 +35,33 @@ class ThreadMemberManagementPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: switch (state.phase) {
-        ThreadMemberManagementPhase.loading => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        ThreadMemberManagementPhase.failed => _MembersFatalState(
-          failure: state.failure,
-          onRetry: () => ref.read(provider.notifier).load(),
-        ),
-        ThreadMemberManagementPhase.ready => _MembersReadyState(
-          threadId: threadId,
-          state: state,
-        ),
-      },
+      body: ThreadMemberManagementContent(threadId: threadId),
     );
+  }
+}
+
+class ThreadMemberManagementContent extends ConsumerWidget {
+  const ThreadMemberManagementContent({required this.threadId, super.key});
+
+  final String threadId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = threadMemberManagementControllerProvider(threadId);
+    final state = ref.watch(provider);
+    return switch (state.phase) {
+      ThreadMemberManagementPhase.loading => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      ThreadMemberManagementPhase.failed => _MembersFatalState(
+        failure: state.failure,
+        onRetry: () => ref.read(provider.notifier).load(),
+      ),
+      ThreadMemberManagementPhase.ready => _MembersReadyState(
+        threadId: threadId,
+        state: state,
+      ),
+    };
   }
 }
 

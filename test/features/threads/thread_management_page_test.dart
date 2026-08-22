@@ -6,41 +6,58 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 
 void main() {
-  testWidgets('主题管理页进入独立子贴工作台', (tester) async {
-    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+  testWidgets('主题管理页通过统一页签进入子贴内容', (tester) async {
+    await _pumpPage(
+      tester,
+      _FakeRepository(initial: _bootstrap()),
+      subthreadRepository: _FakeSubthreadRepository(),
+    );
 
-    final entry = find.byKey(const Key('thread-management-open-subthreads'));
-    await tester.ensureVisible(entry);
-    await tester.tap(entry);
+    await tester.tap(
+      find.byKey(
+        const ValueKey(
+          'thread-management-tab-ThreadManagementSection.subthreads',
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('子贴工作台占位'), findsOneWidget);
+    expect(find.text('子贴内容'), findsWidgets);
+    expect(
+      find.byKey(const Key('subthread-management-create')),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('主题管理页进入独立标签工作台', (tester) async {
+  testWidgets('主题标签在设置页内编辑', (tester) async {
     await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
 
-    final entry = find.byKey(const Key('thread-management-open-tags'));
+    final entry = find.byKey(const Key('thread-management-edit-tags'));
     await tester.ensureVisible(entry);
     await tester.tap(entry);
     await tester.pumpAndSettle();
 
-    expect(find.text('标签工作台占位'), findsOneWidget);
+    expect(find.text('编辑主题标签'), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-management-tag-input')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('楼主修改标题并保存后返回主题详情调用方', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
 
-    expect(find.text('主题信息'), findsOneWidget);
+    expect(find.text('主题设置'), findsWidgets);
     expect(find.byKey(const Key('thread-management-delete')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('thread-management-title')),
@@ -57,9 +74,7 @@ void main() {
     );
     expect(
       tester
-          .widget<WenyouAsyncPrimaryButton>(
-            find.byKey(const Key('thread-management-save')),
-          )
+          .widget<IconButton>(find.byKey(const Key('thread-management-save')))
           .onPressed,
       isNotNull,
     );
@@ -68,7 +83,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.lastDraft?.title, '新的主题标题');
-    expect(find.text('主题详情占位'), findsOneWidget);
+    expect(find.text('主题设置已保存。'), findsOneWidget);
+    expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
   });
 
   testWidgets('协作者可编辑常规信息但不能修改可见性或删除主题', (tester) async {
@@ -177,7 +193,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('放弃未保存的修改？'), findsOneWidget);
+    expect(find.text('还有未保存的修改'), findsOneWidget);
     await tester.tap(find.text('继续编辑'));
     await tester.pumpAndSettle();
     expect(find.text('还没保存的标题'), findsOneWidget);
@@ -200,7 +216,7 @@ void main() {
       await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
 
       expect(tester.takeException(), isNull);
-      expect(find.text('主题信息'), findsOneWidget);
+      expect(find.text('主题设置'), findsWidgets);
       expect(find.byKey(const Key('thread-management-save')), findsOneWidget);
     });
   }
@@ -210,6 +226,7 @@ Future<void> _pumpPage(
   WidgetTester tester,
   ThreadManagementRepository repository, {
   ThreadInvitationRepository? invitationRepository,
+  SubthreadManagementRepository? subthreadRepository,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -217,6 +234,10 @@ Future<void> _pumpPage(
       if (invitationRepository != null)
         threadInvitationRepositoryProvider.overrideWithValue(
           invitationRepository,
+        ),
+      if (subthreadRepository != null)
+        subthreadManagementRepositoryProvider.overrideWithValue(
+          subthreadRepository,
         ),
     ],
   );
@@ -357,4 +378,45 @@ class _FakeInvitationRepository implements ThreadInvitationRepository {
   Future<ThreadInvitationPreview> preview(String token) {
     throw UnimplementedError();
   }
+}
+
+class _FakeSubthreadRepository implements SubthreadManagementRepository {
+  @override
+  Future<SubthreadManagementBootstrap> load(String threadId) async {
+    return SubthreadManagementBootstrap(
+      threadId: threadId,
+      threadTitle: '原主题',
+      items: const [],
+    );
+  }
+
+  @override
+  Future<SubthreadManagementItem> create({
+    required String threadId,
+    required SubthreadManagementDraft draft,
+    required String clientRequestId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<SubthreadManagementItem> findById({
+    required String threadId,
+    required String subthreadId,
+    required bool isDefault,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> remove(SubthreadManagementItem item) =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<SubthreadManagementItem>> reorder({
+    required String threadId,
+    required List<SubthreadManagementItem> items,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<SubthreadManagementItem> update({
+    required SubthreadManagementItem current,
+    required SubthreadManagementDraft draft,
+  }) => throw UnimplementedError();
 }

@@ -121,6 +121,50 @@ void main() {
     expect(repository.createRequestIds, ['request-1', 'request-1']);
   });
 
+  test('创建结果不确定后修改表单时先确认原创建再更新', () async {
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(),
+      createFailureOnce: const ApiFailure(
+        userMessage: '创建结果暂时无法确定',
+        httpStatus: 500,
+        requestId: 'create-unknown-id',
+      ),
+    );
+    var id = 0;
+    final controller = SubthreadManagementController(
+      'thread-1',
+      repository,
+      createRequestId: () => 'request-${++id}',
+    );
+    addTearDown(controller.dispose);
+    await _settle();
+    const original = SubthreadManagementDraft(
+      title: '玩家区',
+      postingPolicy: SubthreadPostingPolicy.players,
+    );
+    const changed = SubthreadManagementDraft(
+      title: '幕后区',
+      postingPolicy: SubthreadPostingPolicy.collaborators,
+    );
+
+    expect(
+      await controller.create(original),
+      isA<MutationSubmitIndeterminate<SubthreadManagementItem>>(),
+    );
+    final result = await controller.create(changed);
+
+    expect(
+      result,
+      isA<MutationSubmitCompleted<SubthreadManagementItem>>().having(
+        (completed) => completed.value.title,
+        'title',
+        '幕后区',
+      ),
+    );
+    expect(repository.createRequestIds, ['request-1', 'request-1']);
+    expect(repository.updatedVersions, [1]);
+  });
+
   test('编辑前读取单条详情并用详情版本更新目标', () async {
     final repository = _FakeRepository(bootstrap: _bootstrap());
     final controller = SubthreadManagementController('thread-1', repository);

@@ -630,7 +630,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         SliverToBoxAdapter(
           child: WenyouContentFrame(
             top: 12,
-            child: ThreadSubthreadBody(subthread: selected!),
+            child: ThreadSubthreadBody(detail, selected!, onEdit: _compose),
           ),
         ),
         if (actions.failure != null)
