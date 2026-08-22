@@ -46,36 +46,25 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final horizontal = wenyouHorizontalPagePadding(context);
     return Scaffold(
       appBar: const _BookmarkListAppBar(),
       body: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              horizontal,
-              context.wenyouTokens.space8,
-              horizontal,
-              0,
-            ),
-            child: WenyouConstrainedWidth(
-              child: WenyouContentTabs<BookmarkContentTab>(
-                key: const Key('bookmark-content-filter'),
-                keyPrefix: 'bookmark-content',
-                semanticsLabel: '收藏内容',
-                fillAvailableWidth: true,
-                options: [
-                  for (final tab in BookmarkContentTab.values)
-                    WenyouFilterOption(
-                      value: tab,
-                      label: tab.label,
-                      keyValue: tab.name,
-                    ),
-                ],
-                selected: _tab,
-                onSelected: (tab) => setState(() => _tab = tab),
-              ),
-            ),
+          WenyouContentTabs<BookmarkContentTab>(
+            key: const Key('bookmark-content-filter'),
+            keyPrefix: 'bookmark-content',
+            semanticsLabel: '收藏内容',
+            placement: WenyouTabPlacement.page,
+            options: [
+              for (final tab in BookmarkContentTab.values)
+                WenyouFilterOption(
+                  value: tab,
+                  label: tab.label,
+                  keyValue: tab.name,
+                ),
+            ],
+            selected: _tab,
+            onSelected: (tab) => setState(() => _tab = tab),
           ),
           Expanded(
             child: _tab == BookmarkContentTab.threads

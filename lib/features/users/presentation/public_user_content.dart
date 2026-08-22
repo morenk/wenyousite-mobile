@@ -40,7 +40,7 @@ class PublicUserContentArea extends ConsumerWidget {
                 key: const Key('public-user-content-tabs'),
                 keyPrefix: 'public-user',
                 semanticsLabel: '用户公开内容',
-                fillAvailableWidth: true,
+                placement: WenyouTabPlacement.embedded,
                 options: [
                   for (final tab in state.availableTabs)
                     WenyouFilterOption(

@@ -355,25 +355,17 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
           ),
         ),
         SliverToBoxAdapter(
-          child: ColoredBox(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontal),
-              child: WenyouConstrainedWidth(
-                child: WenyouContentTabs<MeContentTab>(
-                  key: const Key('me-content-tabs'),
-                  keyPrefix: 'me-content',
-                  semanticsLabel: '我的主页内容',
-                  fillAvailableWidth: true,
-                  options: [
-                    for (final tab in MeContentTab.values)
-                      WenyouFilterOption(value: tab, label: tab.label),
-                  ],
-                  selected: MeContentTab.values[_activeIndex],
-                  onSelected: _selectTab,
-                ),
-              ),
-            ),
+          child: WenyouContentTabs<MeContentTab>(
+            key: const Key('me-content-tabs'),
+            keyPrefix: 'me-content',
+            semanticsLabel: '我的主页内容',
+            placement: WenyouTabPlacement.page,
+            options: [
+              for (final tab in MeContentTab.values)
+                WenyouFilterOption(value: tab, label: tab.label),
+            ],
+            selected: MeContentTab.values[_activeIndex],
+            onSelected: _selectTab,
           ),
         ),
       ],

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
-import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -156,33 +155,26 @@ class _MessageSectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: WenyouContentFrame(
-        top: context.wenyouTokens.space8,
-        bottom: context.wenyouTokens.space8,
-        child: WenyouContentTabs<String>(
-          key: const Key('message-section-tabs'),
-          keyPrefix: 'message-section',
-          semanticsLabel: '消息栏目',
-          fillAvailableWidth: true,
-          options: [
-            WenyouFilterOption(
-              value: MessageCenterSections.notifications,
-              label: _labelWithCount('通知', notificationUnread),
-            ),
-            WenyouFilterOption(
-              value: MessageCenterSections.directMessages,
-              label: _labelWithCount(
-                WenyouNavigationContract.labels['directMessages'] ?? '私聊',
-                directUnread,
-              ),
-            ),
-          ],
-          selected: selected,
-          onSelected: onSelected,
+    return WenyouContentTabs<String>(
+      key: const Key('message-section-tabs'),
+      keyPrefix: 'message-section',
+      semanticsLabel: '消息栏目',
+      placement: WenyouTabPlacement.page,
+      options: [
+        WenyouFilterOption(
+          value: MessageCenterSections.notifications,
+          label: _labelWithCount('通知', notificationUnread),
         ),
-      ),
+        WenyouFilterOption(
+          value: MessageCenterSections.directMessages,
+          label: _labelWithCount(
+            WenyouNavigationContract.labels['directMessages'] ?? '私聊',
+            directUnread,
+          ),
+        ),
+      ],
+      selected: selected,
+      onSelected: onSelected,
     );
   }
 }

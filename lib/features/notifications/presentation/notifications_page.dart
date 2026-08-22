@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
@@ -23,9 +24,21 @@ class NotificationSection extends ConsumerWidget {
     final notifier = ref.read(notificationListControllerProvider.notifier);
     return Column(
       children: [
-        _NotificationFilterBar(
+        WenyouContentTabs<NotificationFilter>(
+          key: const Key('notification-filter-tabs'),
+          keyPrefix: 'notification-filter',
+          semanticsLabel: '通知分类',
+          placement: WenyouTabPlacement.page,
+          options: [
+            for (final filter in NotificationFilters.values)
+              WenyouFilterOption(
+                value: filter,
+                label: filter.label,
+                keyValue: filter.id,
+              ),
+          ],
           selected: state.filter,
-          isEnabled: !state.isBusy,
+          enabled: !state.isBusy,
           onSelected: notifier.selectFilter,
         ),
         Expanded(
@@ -131,54 +144,6 @@ class _NotificationListFailure extends StatelessWidget {
             onPressed: onRetry,
             icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             label: const Text('重新加载'),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationFilterBar extends StatelessWidget {
-  const _NotificationFilterBar({
-    required this.selected,
-    required this.isEnabled,
-    required this.onSelected,
-  });
-
-  final NotificationFilter selected;
-  final bool isEnabled;
-  final ValueChanged<NotificationFilter> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.panel,
-        border: Border(bottom: BorderSide(color: tokens.border)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.space12,
-          tokens.space8,
-          tokens.space12,
-          tokens.space12,
-        ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final filter in NotificationFilters.values) ...[
-                ChoiceChip(
-                  key: ValueKey('notification-filter-${filter.id}'),
-                  label: Text(filter.label),
-                  selected: selected == filter,
-                  onSelected: isEnabled ? (_) => onSelected(filter) : null,
-                ),
-                if (filter != NotificationFilters.values.last)
-                  SizedBox(width: tokens.space8),
-              ],
-            ],
           ),
         ),
       ),

@@ -68,6 +68,7 @@ List<String> collectArchitectureFailures(Directory root) {
   );
   _checkEditorPublicSurface(dartFiles, failures, root);
   _checkFoundationIconBoundary(dartFiles, failures, root);
+  _checkSharedTabBoundary(dartFiles, failures, root);
   _checkVersionConsistency(failures, root);
   _checkDirectDependencies(dartFiles, failures, root);
   _checkRawRequestFlags(dartFiles, failures, root);
@@ -77,6 +78,30 @@ List<String> collectArchitectureFailures(Directory root) {
 
   failures.sort();
   return failures;
+}
+
+void _checkSharedTabBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const forbiddenPatterns = <String, String>{
+    r'\bTabBar\s*\(': 'Material TabBar',
+    r'\bTabBarView\s*\(': 'Material TabBarView',
+    r'\bDefaultTabController\s*\(': 'Material DefaultTabController',
+  };
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (!path.startsWith('lib/features/') || !path.contains('/presentation/')) {
+      continue;
+    }
+    final source = file.readAsStringSync();
+    for (final entry in forbiddenPatterns.entries) {
+      if (RegExp(entry.key).hasMatch(source)) {
+        failures.add('$path uses ${entry.value}; use WenyouContentTabs');
+      }
+    }
+  }
 }
 
 void _checkHandwrittenParts(

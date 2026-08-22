@@ -94,42 +94,29 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
   }
 
   Widget _buildThreads(BuildContext context) {
-    final tokens = context.wenyouTokens;
     return Column(
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            wenyouHorizontalPagePadding(context),
-            tokens.space8,
-            wenyouHorizontalPagePadding(context),
-            0,
-          ),
-          child: WenyouConstrainedWidth(
-            child: WenyouContentTabs<_MeThreadTab>(
-              key: const Key('me-thread-filter'),
-              keyPrefix: 'me-thread',
-              semanticsLabel: '我的帖子',
-              fillAvailableWidth: true,
-              options: [
-                for (final tab in _MeThreadTab.values)
-                  WenyouFilterOption(
-                    value: tab,
-                    label: tab.label,
-                    keyValue: tab.name,
-                  ),
-              ],
-              selected: _threadTab,
-              onSelected: (tab) {
-                if (_threadTab == tab) return;
-                setState(() => _threadTab = tab);
-                ref
-                    .read(
-                      meUserContentControllerProvider(widget.userId).notifier,
-                    )
-                    .selectTab(tab.publicUserTab);
-              },
-            ),
-          ),
+        WenyouContentTabs<_MeThreadTab>(
+          key: const Key('me-thread-filter'),
+          keyPrefix: 'me-thread',
+          semanticsLabel: '我的帖子',
+          placement: WenyouTabPlacement.page,
+          options: [
+            for (final tab in _MeThreadTab.values)
+              WenyouFilterOption(
+                value: tab,
+                label: tab.label,
+                keyValue: tab.name,
+              ),
+          ],
+          selected: _threadTab,
+          onSelected: (tab) {
+            if (_threadTab == tab) return;
+            setState(() => _threadTab = tab);
+            ref
+                .read(meUserContentControllerProvider(widget.userId).notifier)
+                .selectTab(tab.publicUserTab);
+          },
         ),
         Expanded(child: _buildUserContent(context, _threadTab.publicUserTab)),
       ],

@@ -165,7 +165,7 @@ class _SearchTabs extends ConsumerWidget {
       key: const Key('search-tabs'),
       keyPrefix: 'search-tab',
       semanticsLabel: '搜索结果栏目',
-      fillAvailableWidth: true,
+      placement: WenyouTabPlacement.embedded,
       options: [
         for (final tab in _visibleTabs)
           WenyouFilterOption(value: tab, label: tab.label, keyValue: tab.name),

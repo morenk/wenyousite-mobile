@@ -99,19 +99,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     };
     return [
       SliverToBoxAdapter(
-        child: WenyouContentFrame(
-          top: 16,
-          child: _HomeFilters(
-            state: state,
-            onCategorySelected: (slug) => ref
-                .read(homeFeedControllerProvider.notifier)
-                .selectCategory(slug),
-            onSortSelected: (sort) =>
-                ref.read(homeFeedControllerProvider.notifier).selectSort(sort),
-            onStatusSelected: (status) => ref
-                .read(homeFeedControllerProvider.notifier)
-                .selectStatus(status),
-          ),
+        child: _HomeFilters(
+          state: state,
+          onCategorySelected: (slug) => ref
+              .read(homeFeedControllerProvider.notifier)
+              .selectCategory(slug),
+          onSortSelected: (sort) =>
+              ref.read(homeFeedControllerProvider.notifier).selectSort(sort),
+          onStatusSelected: (status) => ref
+              .read(homeFeedControllerProvider.notifier)
+              .selectStatus(status),
         ),
       ),
       if (state.transientFailure != null)
@@ -293,49 +290,56 @@ class _HomeFilters extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        WenyouCategoryFilterBar<String>(
+        WenyouContentTabs<String>(
           key: const Key('home-category-menu'),
           keyPrefix: 'home-category',
           semanticsLabel: '主题帖分类',
+          placement: WenyouTabPlacement.page,
           options: [
             for (final entry in categoryLabels.entries)
-              WenyouFilterOption(value: entry.key, label: entry.value),
+              WenyouFilterOption(
+                value: entry.key,
+                label: entry.value,
+                keyValue: entry.key,
+              ),
           ],
           selected: selectedCategory,
           onSelected: (value) =>
               onCategorySelected(value == allCategories ? null : value),
         ),
-        SizedBox(height: tokens.space8),
-        Row(
-          children: [
-            Expanded(
-              child: WenyouDropdownFilter<HomeFeedSort>(
-                key: const Key('home-sort-menu'),
-                tooltip: '选择主题排序',
-                icon: WenyouIconIds.actionSort,
-                options: [
-                  for (final value in HomeFeedSort.values)
-                    WenyouFilterOption(value: value, label: value.label),
-                ],
-                selected: state.query.sort,
-                onSelected: onSortSelected,
+        WenyouContentFrame(
+          top: tokens.space8,
+          child: Row(
+            children: [
+              Expanded(
+                child: WenyouDropdownFilter<HomeFeedSort>(
+                  key: const Key('home-sort-menu'),
+                  tooltip: '选择主题排序',
+                  icon: WenyouIconIds.actionSort,
+                  options: [
+                    for (final value in HomeFeedSort.values)
+                      WenyouFilterOption(value: value, label: value.label),
+                  ],
+                  selected: state.query.sort,
+                  onSelected: onSortSelected,
+                ),
               ),
-            ),
-            SizedBox(width: tokens.space8),
-            Expanded(
-              child: WenyouDropdownFilter<HomeThreadStatusFilter>(
-                key: const Key('home-status-menu'),
-                tooltip: '选择主题状态',
-                icon: WenyouIconIds.actionFilter,
-                options: [
-                  for (final value in HomeThreadStatusFilter.values)
-                    WenyouFilterOption(value: value, label: value.label),
-                ],
-                selected: state.query.status,
-                onSelected: onStatusSelected,
+              SizedBox(width: tokens.space8),
+              Expanded(
+                child: WenyouDropdownFilter<HomeThreadStatusFilter>(
+                  key: const Key('home-status-menu'),
+                  tooltip: '选择主题状态',
+                  icon: WenyouIconIds.actionFilter,
+                  options: [
+                    for (final value in HomeThreadStatusFilter.values)
+                      WenyouFilterOption(value: value, label: value.label),
+                  ],
+                  selected: state.query.status,
+                  onSelected: onStatusSelected,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

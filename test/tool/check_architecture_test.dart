@@ -273,6 +273,26 @@ void main() {
     );
   });
 
+  test('feature pages must use the shared content tabs', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      'final controller = DefaultTabController(length: 2, child: body);\n'
+      'final tabs = TabBar(tabs: const []);\n'
+      'final pages = TabBarView(children: const []);\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path uses Material DefaultTabController; use WenyouContentTabs',
+        '$path uses Material TabBar; use WenyouContentTabs',
+        '$path uses Material TabBarView; use WenyouContentTabs',
+      ]),
+    );
+  });
+
   test('golden tests must load Foundation fonts', () {
     const path = 'test/features/alpha/page_test.dart';
     const goldenMatcher = 'matchesGoldenFile';

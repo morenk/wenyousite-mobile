@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 @immutable
 class WenyouFilterOption<T> {
@@ -15,39 +18,9 @@ class WenyouFilterOption<T> {
   final Object? keyValue;
 }
 
-class WenyouLineFilterBar<T> extends StatelessWidget {
-  const WenyouLineFilterBar({
-    required this.options,
-    required this.selected,
-    required this.onSelected,
-    required this.semanticsLabel,
-    this.keyPrefix = 'line-filter',
-    this.centered = false,
-    super.key,
-  });
+enum WenyouTabPlacement { page, embedded }
 
-  final List<WenyouFilterOption<T>> options;
-  final T selected;
-  final ValueChanged<T> onSelected;
-  final String semanticsLabel;
-  final String keyPrefix;
-  final bool centered;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WenyouLineSelectionBar<T>(
-      options: options,
-      selected: selected,
-      onSelected: onSelected,
-      semanticsLabel: semanticsLabel,
-      keyPrefix: keyPrefix,
-      centered: centered,
-      enabled: true,
-    );
-  }
-}
-
-/// Primary navigation between sibling content views inside the same page.
+/// Canonical selection for sibling content and page-leading feed categories.
 ///
 /// This is intentionally tap-driven. Pages keep ownership of the selected
 /// value and swap their content without installing a swipeable [TabBarView].
@@ -57,8 +30,8 @@ class WenyouContentTabs<T> extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     required this.semanticsLabel,
+    required this.placement,
     this.keyPrefix = 'content-tab',
-    this.fillAvailableWidth = false,
     this.enabled = true,
     super.key,
   });
@@ -67,35 +40,37 @@ class WenyouContentTabs<T> extends StatelessWidget {
   final T selected;
   final ValueChanged<T> onSelected;
   final String semanticsLabel;
+  final WenyouTabPlacement placement;
   final String keyPrefix;
-  final bool fillAvailableWidth;
   final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return _WenyouLineSelectionBar<T>(
+    final tabs = _WenyouAdaptiveTabBar<T>(
       options: options,
       selected: selected,
       onSelected: onSelected,
       semanticsLabel: semanticsLabel,
       keyPrefix: keyPrefix,
-      centered: fillAvailableWidth,
-      fillAvailableWidth: fillAvailableWidth,
       enabled: enabled,
+    );
+    if (placement == WenyouTabPlacement.embedded) return tabs;
+
+    return ColoredBox(
+      color: context.wenyouTokens.panel,
+      child: WenyouContentFrame(child: tabs),
     );
   }
 }
 
-class _WenyouLineSelectionBar<T> extends StatelessWidget {
-  const _WenyouLineSelectionBar({
+class _WenyouAdaptiveTabBar<T> extends StatefulWidget {
+  const _WenyouAdaptiveTabBar({
     required this.options,
     required this.selected,
     required this.onSelected,
     required this.semanticsLabel,
     required this.keyPrefix,
-    required this.centered,
     required this.enabled,
-    this.fillAvailableWidth = false,
   });
 
   final List<WenyouFilterOption<T>> options;
@@ -103,65 +78,138 @@ class _WenyouLineSelectionBar<T> extends StatelessWidget {
   final ValueChanged<T> onSelected;
   final String semanticsLabel;
   final String keyPrefix;
-  final bool centered;
-  final bool fillAvailableWidth;
   final bool enabled;
+
+  @override
+  State<_WenyouAdaptiveTabBar<T>> createState() =>
+      _WenyouAdaptiveTabBarState<T>();
+}
+
+class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    Widget button(WenyouFilterOption<T> option) => _LineFilterButton<T>(
-      key: ValueKey('$keyPrefix-${option.keyValue ?? option.value}'),
-      option: option,
-      selected: option.value == selected,
-      onSelected: onSelected,
-      enabled: enabled,
-    );
+    final labelStyle = Theme.of(
+      context,
+    ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700);
+    final labelWidths = [
+      for (final option in widget.options)
+        _measureLabel(context, option.label, labelStyle),
+    ];
+    final buttonWidths = [
+      for (final width in labelWidths)
+        math.max(tokens.minimumTouchTarget, width + tokens.space12 * 2),
+    ];
     return Semantics(
       container: true,
       explicitChildNodes: true,
-      label: semanticsLabel,
+      label: widget.semanticsLabel,
       child: DecoratedBox(
         decoration: BoxDecoration(
+          color: tokens.panel,
           border: Border(bottom: BorderSide(color: tokens.border)),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            if (fillAvailableWidth) {
+            final optionCount = widget.options.length;
+            final canFill =
+                optionCount >= 2 &&
+                optionCount <= 4 &&
+                constraints.maxWidth.isFinite &&
+                buttonWidths.every(
+                  (width) => width <= constraints.maxWidth / optionCount,
+                );
+            if (canFill) {
               return Row(
                 children: [
-                  for (final option in options) Expanded(child: button(option)),
+                  for (var index = 0; index < optionCount; index++)
+                    Expanded(child: _buildButton(index, labelWidths[index])),
                 ],
               );
             }
-            final row = Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: centered
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
-              children: [for (final option in options) button(option)],
-            );
+            _scheduleReveal(buttonWidths, constraints.maxWidth);
             return SingleChildScrollView(
+              controller: _scrollController,
               scrollDirection: Axis.horizontal,
-              child: centered
-                  ? ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: constraints.maxWidth,
-                      ),
-                      child: row,
-                    )
-                  : row,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var index = 0; index < optionCount; index++)
+                    SizedBox(
+                      width: buttonWidths[index],
+                      child: _buildButton(index, labelWidths[index]),
+                    ),
+                ],
+              ),
             );
           },
         ),
       ),
     );
   }
+
+  Widget _buildButton(int index, double labelWidth) {
+    final option = widget.options[index];
+    return _ContentTabButton<T>(
+      key: ValueKey('${widget.keyPrefix}-${option.keyValue ?? option.value}'),
+      option: option,
+      labelWidth: labelWidth,
+      selected: option.value == widget.selected,
+      onSelected: widget.onSelected,
+      enabled: widget.enabled,
+    );
+  }
+
+  double _measureLabel(BuildContext context, String label, TextStyle? style) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    return painter.width;
+  }
+
+  void _scheduleReveal(List<double> widths, double viewportWidth) {
+    final selectedIndex = widget.options.indexWhere(
+      (option) => option.value == widget.selected,
+    );
+    if (selectedIndex < 0 || !viewportWidth.isFinite) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final start = widths
+          .take(selectedIndex)
+          .fold<double>(0, (sum, width) => sum + width);
+      final end = start + widths[selectedIndex];
+      final visibleStart = _scrollController.offset;
+      final visibleEnd = visibleStart + position.viewportDimension;
+      var target = visibleStart;
+      if (start < visibleStart) {
+        target = start;
+      } else if (end > visibleEnd) {
+        target = end - position.viewportDimension;
+      }
+      target = target.clamp(0.0, position.maxScrollExtent).toDouble();
+      if ((target - visibleStart).abs() > 0.5) {
+        _scrollController.jumpTo(target);
+      }
+    });
+  }
 }
 
-class _LineFilterButton<T> extends StatelessWidget {
-  const _LineFilterButton({
+class _ContentTabButton<T> extends StatelessWidget {
+  const _ContentTabButton({
     required this.option,
+    required this.labelWidth,
     required this.selected,
     required this.onSelected,
     required this.enabled,
@@ -169,6 +217,7 @@ class _LineFilterButton<T> extends StatelessWidget {
   });
 
   final WenyouFilterOption<T> option;
+  final double labelWidth;
   final bool selected;
   final ValueChanged<T> onSelected;
   final bool enabled;
@@ -183,127 +232,51 @@ class _LineFilterButton<T> extends StatelessWidget {
       child: InkWell(
         onTap: enabled ? () => onSelected(option.value) : null,
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                child: Text(
-                  option.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: false,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: selected ? tokens.brandForeground : tokens.mutedText,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (selected)
-                Positioned(
-                  right: tokens.space8,
-                  bottom: 0,
-                  left: tokens.space8,
-                  child: Container(
-                    height: 2,
-                    decoration: BoxDecoration(
-                      color: tokens.brandForeground,
-                      borderRadius: BorderRadius.circular(tokens.radiusPill),
-                    ),
-                  ),
-                ),
-            ],
+          constraints: BoxConstraints(
+            minWidth: tokens.minimumTouchTarget,
+            minHeight: tokens.minimumTouchTarget,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class WenyouCategoryFilterBar<T> extends StatelessWidget {
-  const WenyouCategoryFilterBar({
-    required this.options,
-    required this.selected,
-    required this.onSelected,
-    required this.semanticsLabel,
-    this.keyPrefix = 'category-filter',
-    super.key,
-  });
-
-  final List<WenyouFilterOption<T>> options;
-  final T selected;
-  final ValueChanged<T> onSelected;
-  final String semanticsLabel;
-  final String keyPrefix;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      label: semanticsLabel,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.softPanel,
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        child: SizedBox(
-          height: tokens.minimumTouchTarget,
-          child: ListView.separated(
-            padding: EdgeInsets.all(tokens.space4),
-            scrollDirection: Axis.horizontal,
-            itemCount: options.length,
-            separatorBuilder: (_, _) => SizedBox(width: tokens.space4),
-            itemBuilder: (context, index) {
-              final option = options[index];
-              final isSelected = option.value == selected;
-              return Semantics(
-                button: true,
-                selected: isSelected,
-                child: InkWell(
-                  key: ValueKey('$keyPrefix-${option.value}'),
-                  onTap: () => onSelected(option.value),
-                  borderRadius: BorderRadius.circular(tokens.radius12),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: isSelected ? tokens.panel : Colors.transparent,
-                      border: isSelected
-                          ? Border.all(color: tokens.border)
-                          : null,
-                      borderRadius: BorderRadius.circular(tokens.radius12),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? tokens.brandForeground
-                                  : tokens.mutedText,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          SizedBox(width: tokens.space8),
-                          Text(
-                            option.label,
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                ),
-                          ),
-                        ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final indicatorWidth = math.min(
+                labelWidth + tokens.space8,
+                math.max(0.0, constraints.maxWidth - tokens.space16),
+              );
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+                    child: Text(
+                      option.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: selected
+                            ? tokens.brandForeground
+                            : tokens.mutedText,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   ),
-                ),
+                  if (selected)
+                    Positioned(
+                      bottom: 0,
+                      child: Container(
+                        width: indicatorWidth,
+                        height: 2,
+                        decoration: BoxDecoration(
+                          color: tokens.brandForeground,
+                          borderRadius: BorderRadius.circular(
+                            tokens.radiusPill,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),

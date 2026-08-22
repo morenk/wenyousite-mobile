@@ -16,7 +16,11 @@ import 'package:wenyousite_mobile/features/notifications/application/notificatio
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('游客看到安全登录引导且保留通知回跳', (tester) async {
     final router = _router();
     addTearDown(router.dispose);
@@ -47,6 +51,8 @@ void main() {
     expect(find.text('互动'), findsOneWidget);
     expect(find.text('订阅'), findsOneWidget);
     expect(find.text('系统'), findsOneWidget);
+    expect(find.byKey(const Key('notification-filter-tabs')), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
     expect(find.text('回复与提及'), findsNothing);
     expect(find.text('骰子猫 回复了你', findRichText: true), findsOneWidget);
     expect(find.text('雾港见'), findsOneWidget);
@@ -56,6 +62,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('主题=thread-1，帖子=post-7'), findsOneWidget);
     expect(repository.readIds, ['notification-1']);
+  });
+
+  testWidgets('消息中心与通知分类页签视觉保持一致', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final repository = _FakeRepository(items: [_item('notification-1')]);
+    final container = await _authenticatedContainer(
+      repository,
+      directMessagesEnabled: true,
+      directUnread: 2,
+    );
+    addTearDown(container.dispose);
+    const visualKey = Key('notification-tabs-visual');
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const RepaintBoundary(
+            key: visualKey,
+            child: MessageCenterPage(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChoiceChip), findsNothing);
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/notification_tabs_360.png'),
+    );
   });
 
   testWidgets('楼中楼通知直接进入父楼层回复页', (tester) async {

@@ -103,34 +103,26 @@ class _DirectMessageViewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Material(
-      color: tokens.panel,
-      child: WenyouContentFrame(
-        top: tokens.space8,
-        bottom: tokens.space12,
-        child: WenyouContentTabs<DirectConversationView>(
-          key: const Key('direct-message-view-tabs'),
-          keyPrefix: 'direct-message-view',
-          semanticsLabel: '私聊会话栏目',
-          fillAvailableWidth: true,
-          enabled: enabled,
-          options: [
-            for (final view in DirectConversationView.values)
-              WenyouFilterOption(
-                value: view,
-                keyValue: view.name,
-                label:
-                    view == DirectConversationView.requests &&
-                        unread.pendingRequests > 0
-                    ? '${view.label} ${unread.pendingRequests}'
-                    : view.label,
-              ),
-          ],
-          selected: selected,
-          onSelected: onSelected,
-        ),
-      ),
+    return WenyouContentTabs<DirectConversationView>(
+      key: const Key('direct-message-view-tabs'),
+      keyPrefix: 'direct-message-view',
+      semanticsLabel: '私聊会话栏目',
+      placement: WenyouTabPlacement.page,
+      enabled: enabled,
+      options: [
+        for (final view in DirectConversationView.values)
+          WenyouFilterOption(
+            value: view,
+            keyValue: view.name,
+            label:
+                view == DirectConversationView.requests &&
+                    unread.pendingRequests > 0
+                ? '${view.label} ${unread.pendingRequests}'
+                : view.label,
+          ),
+      ],
+      selected: selected,
+      onSelected: onSelected,
     );
   }
 }

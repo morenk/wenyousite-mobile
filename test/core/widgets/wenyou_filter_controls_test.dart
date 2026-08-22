@@ -4,8 +4,16 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('内容页签保留 48dp 命中区并由点击切换', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 200);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     var selected = 0;
 
     Widget buildTabs() {
@@ -16,7 +24,7 @@ void main() {
             builder: (context, setState) => WenyouContentTabs<int>(
               semanticsLabel: '内容栏目',
               keyPrefix: 'test-tab',
-              fillAvailableWidth: true,
+              placement: WenyouTabPlacement.embedded,
               options: const [
                 WenyouFilterOption(value: 0, label: '主题'),
                 WenyouFilterOption(value: 1, label: '动态'),
@@ -32,6 +40,8 @@ void main() {
     await tester.pumpWidget(buildTabs());
 
     expect(tester.getSize(find.byKey(const ValueKey('test-tab-0'))).height, 48);
+    expect(tester.getSize(find.byKey(const ValueKey('test-tab-0'))).width, 180);
+    expect(tester.getSize(find.byKey(const ValueKey('test-tab-1'))).width, 180);
     expect(find.bySemanticsLabel('内容栏目'), findsOneWidget);
 
     await tester.drag(find.bySemanticsLabel('内容栏目'), const Offset(-120, 0));
@@ -67,9 +77,9 @@ void main() {
     expect(tester.getSize(find.byKey(const Key('framed-content'))).width, 600);
   });
 
-  testWidgets('四栏内容页签在 320dp 窄屏保持单行且不溢出', (tester) async {
+  testWidgets('四栏内容页签在 360dp 等宽铺满且不溢出', (tester) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(320, 240);
+    tester.view.physicalSize = const Size(360, 240);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
@@ -79,7 +89,7 @@ void main() {
         home: Scaffold(
           body: WenyouContentTabs<int>(
             semanticsLabel: '搜索结果栏目',
-            fillAvailableWidth: true,
+            placement: WenyouTabPlacement.embedded,
             options: const [
               WenyouFilterOption(value: 0, label: '动态'),
               WenyouFilterOption(value: 1, label: '主题帖'),
@@ -94,6 +104,129 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+    for (var index = 0; index < 4; index++) {
+      expect(
+        tester.getSize(find.byKey(ValueKey('content-tab-$index'))).width,
+        90,
+      );
+    }
     expect(tester.getSize(find.text('楼层内容')).height, lessThan(24));
   });
+
+  testWidgets('长分类和放大字号自动横滑并把选中项带入视口', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 240);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: WenyouContentTabs<int>(
+            semanticsLabel: '主题分类',
+            keyPrefix: 'long-tab',
+            placement: WenyouTabPlacement.embedded,
+            options: const [
+              WenyouFilterOption(value: 0, label: '全部主题分类'),
+              WenyouFilterOption(value: 1, label: '角色扮演专区'),
+              WenyouFilterOption(value: 2, label: '桌面游戏交流'),
+              WenyouFilterOption(value: 3, label: '世界观与设定'),
+              WenyouFilterOption(value: 4, label: '站务与系统公告'),
+            ],
+            selected: 4,
+            onSelected: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final horizontalScroll = find.byWidgetPredicate(
+      (widget) =>
+          widget is SingleChildScrollView &&
+          widget.scrollDirection == Axis.horizontal,
+    );
+    expect(horizontalScroll, findsOneWidget);
+    expect(tester.takeException(), isNull);
+    final selectedRect = tester.getRect(
+      find.byKey(const ValueKey('long-tab-4')),
+    );
+    expect(selectedRect.left, greaterThanOrEqualTo(0));
+    expect(selectedRect.right, lessThanOrEqualTo(320));
+  });
+
+  testWidgets('标准页签视觉保持稳定', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 160);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    const visualKey = Key('standard-tabs-visual');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => RepaintBoundary(
+              key: visualKey,
+              child: ColoredBox(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Column(
+                  children: [
+                    WenyouContentTabs<int>(
+                      semanticsLabel: '两栏页签',
+                      placement: WenyouTabPlacement.page,
+                      options: const [
+                        WenyouFilterOption(value: 0, label: '发现'),
+                        WenyouFilterOption(value: 1, label: '关注'),
+                      ],
+                      selected: 0,
+                      onSelected: (_) {},
+                    ),
+                    const SizedBox(height: 16),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: _FourTabGoldenFixture(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await expectLater(
+      find.byKey(visualKey),
+      matchesGoldenFile('goldens/standard_content_tabs_360.png'),
+    );
+  });
+}
+
+class _FourTabGoldenFixture extends StatelessWidget {
+  const _FourTabGoldenFixture();
+
+  @override
+  Widget build(BuildContext context) {
+    return WenyouContentTabs<int>(
+      semanticsLabel: '四栏页签',
+      placement: WenyouTabPlacement.embedded,
+      options: const [
+        WenyouFilterOption(value: 0, label: '动态'),
+        WenyouFilterOption(value: 1, label: '主题帖'),
+        WenyouFilterOption(value: 2, label: '楼层内容'),
+        WenyouFilterOption(value: 3, label: '用户'),
+      ],
+      selected: 1,
+      onSelected: (_) {},
+    );
+  }
 }

@@ -47,28 +47,25 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
       ),
       body: Column(
         children: [
-          WenyouContentFrame(
-            top: context.wenyouTokens.space12,
-            bottom: context.wenyouTokens.space12,
-            child: WenyouContentTabs<MomentFeedMode>(
-              key: const Key('moment-feed-filter'),
-              keyPrefix: 'moment-feed',
-              semanticsLabel: '动态信息流',
-              options: const [
-                WenyouFilterOption(
-                  value: MomentFeedMode.discover,
-                  label: '发现',
-                  keyValue: 'discover',
-                ),
-                WenyouFilterOption(
-                  value: MomentFeedMode.following,
-                  label: '关注',
-                  keyValue: 'following',
-                ),
-              ],
-              selected: _mode,
-              onSelected: (mode) => setState(() => _mode = mode),
-            ),
+          WenyouContentTabs<MomentFeedMode>(
+            key: const Key('moment-feed-filter'),
+            keyPrefix: 'moment-feed',
+            semanticsLabel: '动态信息流',
+            placement: WenyouTabPlacement.page,
+            options: const [
+              WenyouFilterOption(
+                value: MomentFeedMode.discover,
+                label: '发现',
+                keyValue: 'discover',
+              ),
+              WenyouFilterOption(
+                value: MomentFeedMode.following,
+                label: '关注',
+                keyValue: 'following',
+              ),
+            ],
+            selected: _mode,
+            onSelected: (mode) => setState(() => _mode = mode),
           ),
           Expanded(
             child: _mode == MomentFeedMode.following && !session.isAuthenticated

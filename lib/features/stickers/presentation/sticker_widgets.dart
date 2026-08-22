@@ -128,7 +128,7 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
       key: const Key('sticker-picker-tabs'),
       keyPrefix: 'sticker-picker',
       semanticsLabel: '表情收藏栏目',
-      fillAvailableWidth: true,
+      placement: WenyouTabPlacement.embedded,
       options: [
         WenyouFilterOption(
           value: false,
