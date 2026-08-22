@@ -5,8 +5,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
 
@@ -20,9 +22,13 @@ class RichEditorSession extends ChangeNotifier {
     required this.onMarkdownChanged,
     this.codecDebounce = const Duration(milliseconds: 120),
     Future<String?> Function()? readClipboardText,
+    Future<void> Function(String text)? writeClipboardText,
+    WenyouEditorClipboardStore? clipboardStore,
     RichEditorSelectionPlacement initialSelection =
         RichEditorSelectionPlacement.start,
-  }) : _readClipboardText = readClipboardText ?? _readSystemClipboardText {
+  }) : _readClipboardText = readClipboardText ?? _readSystemClipboardText,
+       _writeClipboardText = writeClipboardText ?? _writeSystemClipboardText,
+       _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
     final decoded = MarkdownDeltaCodec.decode(initialMarkdown);
     _issues = decoded.issues;
     _lastMarkdown = initialMarkdown;
@@ -32,7 +38,7 @@ class RichEditorSession extends ChangeNotifier {
       selection: _selectionFor(document, initialSelection, null),
       config: QuillControllerConfig(
         clipboardConfig: QuillClipboardConfig(
-          onClipboardPaste: _pasteInternalReference,
+          onClipboardPaste: _pasteClipboard,
         ),
       ),
     )..addListener(_onDocumentChanged);
@@ -42,6 +48,8 @@ class RichEditorSession extends ChangeNotifier {
   final Duration codecDebounce;
   final ValueChanged<String> onMarkdownChanged;
   final Future<String?> Function() _readClipboardText;
+  final Future<void> Function(String text) _writeClipboardText;
+  final WenyouEditorClipboardStore _clipboardStore;
 
   late final QuillController controller;
   final FocusNode focusNode = FocusNode();
@@ -64,6 +72,92 @@ class RichEditorSession extends ChangeNotifier {
       controller.document.toPlainText().trimRight().length;
 
   set readOnly(bool value) => controller.readOnly = value;
+
+  Map<ShortcutActivator, Intent> get clipboardShortcuts => const {
+    SingleActivator(LogicalKeyboardKey.keyC, control: true):
+        _EditorClipboardIntent(WenyouEditorClipboardAction.copy),
+    SingleActivator(LogicalKeyboardKey.keyC, meta: true):
+        _EditorClipboardIntent(WenyouEditorClipboardAction.copy),
+    SingleActivator(LogicalKeyboardKey.keyX, control: true):
+        _EditorClipboardIntent(WenyouEditorClipboardAction.cut),
+    SingleActivator(LogicalKeyboardKey.keyX, meta: true):
+        _EditorClipboardIntent(WenyouEditorClipboardAction.cut),
+    SingleActivator(LogicalKeyboardKey.keyV, control: true):
+        _EditorClipboardIntent(WenyouEditorClipboardAction.paste),
+    SingleActivator(LogicalKeyboardKey.keyV, meta: true):
+        _EditorClipboardIntent(WenyouEditorClipboardAction.paste),
+  };
+
+  Map<Type, Action<Intent>> get clipboardActions => {
+    _EditorClipboardIntent: CallbackAction<Intent>(
+      onInvoke: (intent) {
+        final clipboardIntent = intent as _EditorClipboardIntent;
+        switch (clipboardIntent.action) {
+          case WenyouEditorClipboardAction.copy:
+            unawaited(copySelection());
+          case WenyouEditorClipboardAction.cut:
+            unawaited(copySelection(cut: true));
+          case WenyouEditorClipboardAction.paste:
+            unawaited(controller.clipboardPaste());
+        }
+        return null;
+      },
+    ),
+  };
+
+  Widget buildContextMenu(
+    BuildContext context,
+    QuillRawEditorState rawEditorState,
+  ) {
+    final items = rawEditorState.contextMenuButtonItems
+        .map((item) {
+          final type = item.type;
+          if (type != ContextMenuButtonType.copy &&
+              type != ContextMenuButtonType.cut) {
+            return item;
+          }
+          return ContextMenuButtonItem(
+            type: type,
+            onPressed: () {
+              unawaited(copySelection(cut: type == ContextMenuButtonType.cut));
+              rawEditorState.hideToolbar();
+            },
+          );
+        })
+        .toList(growable: false);
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: rawEditorState.contextMenuAnchors,
+      buttonItems: items,
+    );
+  }
+
+  Future<bool> copySelection({bool cut = false}) async {
+    if ((cut && controller.readOnly) || controller.selection.isCollapsed) {
+      return false;
+    }
+    final selection = controller.selection;
+    final start = selection.start;
+    final length = selection.end - start;
+    final delta = controller.document.toDelta().slice(start, selection.end);
+    final fallback = _clipboardStore.capture(
+      delta: delta,
+      plainTextFallback: controller.document.getPlainText(start, length),
+      operation: cut
+          ? WenyouEditorClipboardOperation.cut
+          : WenyouEditorClipboardOperation.copy,
+    );
+    await _writeClipboardText(fallback);
+    if (cut) {
+      controller.replaceText(
+        start,
+        length,
+        '',
+        TextSelection.collapsed(offset: start),
+      );
+    }
+    flush();
+    return true;
+  }
 
   /// Applies an authoritative Markdown revision after the current build.
   void scheduleExternalMarkdown({
@@ -166,8 +260,20 @@ class RichEditorSession extends ChangeNotifier {
     flush();
   }
 
-  Future<bool> _pasteInternalReference() async {
+  Future<bool> _pasteClipboard() async {
     final clipboardText = await _readClipboardText();
+    if (clipboardText == null) return false;
+    final resolution = _clipboardStore.resolve(clipboardText);
+    if (resolution.delta case final delta?) {
+      _replaceSelectionWithDelta(delta);
+      flush();
+      return true;
+    }
+    if (resolution.usePlainText) {
+      _replaceSelectionWithDelta(Delta()..insert(clipboardText));
+      flush();
+      return true;
+    }
     final selection = controller.selection;
     final selectedText = selection.isCollapsed
         ? ''
@@ -176,7 +282,7 @@ class RichEditorSession extends ChangeNotifier {
             selection.end - selection.start,
           );
     final paste = resolveInternalReferencePaste(
-      clipboardText: clipboardText ?? '',
+      clipboardText: clipboardText,
       selectedText: selectedText,
     );
     if (paste == null) return false;
@@ -194,6 +300,19 @@ class RichEditorSession extends ChangeNotifier {
   static Future<String?> _readSystemClipboardText() async {
     final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
     return clipboard?.text;
+  }
+
+  static Future<void> _writeSystemClipboardText(String text) =>
+      Clipboard.setData(ClipboardData(text: text));
+
+  void _replaceSelectionWithDelta(Delta delta) {
+    final selection = controller.selection;
+    controller.replaceText(
+      selection.start,
+      selection.end - selection.start,
+      delta,
+      TextSelection.collapsed(offset: selection.start + delta.length),
+    );
   }
 
   void _replaceSelectionWithBlockEmbed(Embeddable embed) {
@@ -285,4 +404,12 @@ class RichEditorSession extends ChangeNotifier {
     scrollController.dispose();
     super.dispose();
   }
+}
+
+enum WenyouEditorClipboardAction { copy, cut, paste }
+
+class _EditorClipboardIntent extends Intent {
+  const _EditorClipboardIntent(this.action);
+
+  final WenyouEditorClipboardAction action;
 }

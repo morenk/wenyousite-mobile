@@ -25,7 +25,7 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 `MarkdownDeltaCodec` 已接入主题和帖子编辑器。`MarkdownRichLineDecoder` 先把可精确往返的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和 0～3 级列表解析为不依赖 Quill 的中立行模型，Codec 再验证候选能编码回完全相同的 canonical 输入后映射为 Delta 属性。任务列表、表格、围栏代码、历史标题级别等尚未支持的结构在编辑会话中显示为可解释的源码文字；序列化时 `wenyou_literal_line` 会转义 Markdown 标点并提交为 Markdown v3 安全字面文本，因此它们不会作为原始不支持结构继续生效，也不属于源码无损提交。用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 提升为稳定 embed 或行属性。未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed；未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作会阻止序列化。
 
-源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。编辑页提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder。仅上述明确支持且通过精确回编码验证的普通 Markdown 进入 WYSIWYG；其余结构保持可解释的源码显示，并在保存时安全字面化，不宣称任意 Markdown 都已所见即所得或能原样提交。
+源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。编辑页提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder。编辑器剪贴板保存结构化选区和 Markdown 文本回退，匹配的复制载荷在每次粘贴时重建骰子 UUID，剪切载荷仅首次保留原 UUID；载荷失配、过期或无法通过 Codec 安全编码时只按普通文本插入。仅上述明确支持且通过精确回编码验证的普通 Markdown 进入 WYSIWYG；其余结构保持可解释的源码显示，并在保存时安全字面化，不宣称任意 Markdown 都已所见即所得或能原样提交。
 
 ## 往返不变量
 
@@ -36,12 +36,14 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 5. Delta 永不作为本地快照的权威格式；每次快照保存完整 Markdown，避免插件升级锁死数据。
 6. 解码失败不得覆盖原草稿；可读取但不受支持的结构在本次编辑会话中保留可理解源码，保存时明确转为安全字面文本，不伪装成原结构无损往返。
 7. 新增的 Quill 属性必须在序列化前通过白名单、组合与 URL 安全检查；无法证明无损时阻止快照和提交。
+8. 骰子 copy-paste 必须为每个节点生成新 UUID；cut-paste 首次保留 UUID，重复粘贴转为 copy 语义；mention、sticker 等其他节点不改写身份字段。
 
 ## 测试门禁
 
 - `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v2-fixtures.json` 的 canonical、visible 和幂等用例全部通过。
 - 为普通 Markdown、用户提及、全体玩家、骰子、表情、普通图片、空段和代码转义维护双向 Codec 黄金用例。
 - 每种自定义 embed 至少覆盖解析、编辑后序列化、未知版本保留和恶意 URL降级。
+- 剪贴板覆盖同编辑器、跨编辑器、多骰子、剪切后重复粘贴、普通文本回退和其他协议节点保持。
 - Flutter Quill 升级必须独立 `chore`，重新运行全部 Codec 黄金语料并人工冒烟 Android 输入、选择、撤销/重做和粘贴。
 
 参考：[Flutter Quill](https://pub.dev/packages/flutter_quill)、[markdown_quill 限制](https://pub.dev/packages/markdown_quill)、[编辑器模块](../modules/editor.md)。

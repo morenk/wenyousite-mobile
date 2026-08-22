@@ -421,6 +421,11 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                               placeholder: _placeholder(widget.target.kind),
                               customStyles: wenyouEditorTextStyles(context),
                               embedBuilders: wenyouEditorEmbedBuilders(),
+                              customShortcuts:
+                                  _editorSession.clipboardShortcuts,
+                              customActions: _editorSession.clipboardActions,
+                              contextMenuBuilder:
+                                  _editorSession.buildContextMenu,
                             ),
                           ),
                         ),

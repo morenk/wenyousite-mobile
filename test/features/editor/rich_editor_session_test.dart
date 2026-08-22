@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
@@ -154,4 +155,112 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('复制骰子后粘贴会生成新身份并保留其他协议节点', (tester) async {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    const markdown =
+        '[@张三](/users/user-zhang) [[dice:v1:$nodeId:2d6+1]] '
+        '![表情](https://cdn.example.com/stickers/a.webp '
+        '"wenyousite-sticker:v1:cm1234567890123456789012")';
+    String? clipboardText;
+    final emitted = <String>[];
+    final store = WenyouEditorClipboardStore();
+    final session = RichEditorSession(
+      initialMarkdown: markdown,
+      onMarkdownChanged: emitted.add,
+      clipboardStore: store,
+      readClipboardText: () async => clipboardText,
+      writeClipboardText: (text) async => clipboardText = text,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      TextSelection(
+        baseOffset: 0,
+        extentOffset: session.controller.document.length - 1,
+      ),
+      ChangeSource.local,
+    );
+
+    expect(await session.copySelection(), isTrue);
+    session.controller.updateSelection(
+      TextSelection.collapsed(offset: session.controller.document.length - 1),
+      ChangeSource.local,
+    );
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final result = emitted.last;
+    final ids = _diceNodeIds(result);
+    expect(ids, hasLength(2));
+    expect(ids.toSet(), hasLength(2));
+    expect(result.split('[@张三](/users/user-zhang)'), hasLength(3));
+    expect(result.split('wenyousite-sticker:v1:'), hasLength(3));
+  });
+
+  testWidgets('剪切首次粘贴保留身份，再次粘贴改为复制语义', (tester) async {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    String? clipboardText;
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '[[dice:v1:$nodeId:1d20]]',
+      onMarkdownChanged: emitted.add,
+      clipboardStore: WenyouEditorClipboardStore(),
+      readClipboardText: () async => clipboardText,
+      writeClipboardText: (text) async => clipboardText = text,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+      ChangeSource.local,
+    );
+
+    expect(await session.copySelection(cut: true), isTrue);
+    expect(await session.controller.clipboardPaste(), isTrue);
+    expect(_diceNodeIds(emitted.last), [nodeId]);
+
+    session.controller.updateSelection(
+      TextSelection.collapsed(offset: session.controller.document.length - 1),
+      ChangeSource.local,
+    );
+    expect(await session.controller.clipboardPaste(), isTrue);
+    final ids = _diceNodeIds(emitted.last);
+    expect(ids, hasLength(2));
+    expect(ids.first, nodeId);
+    expect(ids.last, isNot(nodeId));
+  });
+
+  testWidgets('跨编辑器复制骰子仍生成新身份', (tester) async {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    String? clipboardText;
+    final store = WenyouEditorClipboardStore();
+    final source = RichEditorSession(
+      initialMarkdown: '[[dice:v1:$nodeId:1d20]]',
+      onMarkdownChanged: (_) {},
+      clipboardStore: store,
+      readClipboardText: () async => clipboardText,
+      writeClipboardText: (text) async => clipboardText = text,
+    );
+    final targetOutput = <String>[];
+    final target = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: targetOutput.add,
+      clipboardStore: store,
+      readClipboardText: () async => clipboardText,
+      writeClipboardText: (text) async => clipboardText = text,
+    );
+    addTearDown(source.dispose);
+    addTearDown(target.dispose);
+    source.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+      ChangeSource.local,
+    );
+
+    expect(await source.copySelection(), isTrue);
+    expect(await target.controller.clipboardPaste(), isTrue);
+    final pastedId = _diceNodeIds(targetOutput.last).single;
+    expect(pastedId, isNot(nodeId));
+  });
 }
+
+List<String> _diceNodeIds(String markdown) => RegExp(
+  r'\[\[dice:v1:([0-9a-f-]{36}):',
+).allMatches(markdown).map((match) => match.group(1)!).toList();
