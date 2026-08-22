@@ -33,6 +33,8 @@ class WenyouEditorClipboardStore {
   final Duration maximumAge;
   _EditorClipboardPayload? _payload;
 
+  void clear() => _payload = null;
+
   String capture({
     required Delta delta,
     required String plainTextFallback,

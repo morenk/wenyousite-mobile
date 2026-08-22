@@ -16,6 +16,10 @@ class MarkdownDiceContract {
     r'^\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):([^\]\r\n]{1,32})\]\]',
     caseSensitive: false,
   );
+  static final _nodeAtOffset = RegExp(
+    r'\[\[dice:v1:([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):([^\]\r\n]{1,32})\]\]',
+    caseSensitive: false,
+  );
   static final uuidV4 = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
     caseSensitive: false,
@@ -115,18 +119,18 @@ class MarkdownDiceContract {
         }
         final delimiter = '`' * runLength;
         final closing = line.indexOf(delimiter, index + runLength);
-        if (closing == -1) {
-          output.write(line.substring(index));
-          break;
+        if (closing >= 0) {
+          output.write(line.substring(index, closing + runLength));
+          index = closing + runLength;
+          continue;
         }
-        output.write(line.substring(index, closing + runLength));
-        index = closing + runLength;
-        continue;
       }
-      final match = nodeAtStart.firstMatch(line.substring(index));
+      // Match against the original line at the current offset. Avoiding a new
+      // suffix string for every character keeps malformed protocol text linear.
+      final match = _nodeAtOffset.matchAsPrefix(line, index);
       if (match != null && normalizeNotation(match.group(2)!) != null) {
         onNode?.call(match);
-        index += match.group(0)!.length;
+        index = match.end;
         continue;
       }
       output.write(line[index]);

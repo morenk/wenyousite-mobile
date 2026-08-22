@@ -26,6 +26,25 @@ void main() {
     );
   });
 
+  test('骰子三字段在边界值外分别给出错误', () {
+    expect(
+      validateEditorDiceInputs(quantity: '0', sides: '1', modifier: '-10001'),
+      (quantity: '需为 1～100', sides: '需为 2～1000', modifier: '需为 -10000～10000'),
+    );
+    expect(
+      validateEditorDiceInputs(
+        quantity: '100',
+        sides: '1000',
+        modifier: '+10000',
+      ),
+      noEditorDiceInputErrors,
+    );
+    expect(
+      validateEditorDiceInputs(quantity: '', sides: 'abc', modifier: '+'),
+      (quantity: '需为 1～100', sides: '需为 2～1000', modifier: '需为 -10000～10000'),
+    );
+  });
+
   for (final width in const [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 工具栏按可用宽度提升常用命令', (tester) async {
       tester.view.physicalSize = Size(width, 640);
@@ -258,6 +277,9 @@ void main() {
       ),
       '3',
     );
+    for (final sides in const [4, 6, 8, 10, 12, 20, 100]) {
+      expect(find.byKey(Key('editor-dice-quick-d$sides')), findsOneWidget);
+    }
     await tester.tap(find.byKey(const Key('editor-dice-quick-d6')));
     await tester.pump();
     expect(
@@ -401,6 +423,7 @@ void main() {
     expect(find.byKey(const Key('editor-submit')), findsNothing);
     expect(find.text('当前正文 20/20'), findsOneWidget);
     expect(find.byKey(const Key('editor-dice-limit')), findsOneWidget);
+    expect(find.byType(FilledButton), findsOneWidget);
     var insert = tester.widget<FilledButton>(
       find.byKey(const Key('editor-dice-insert')),
     );
@@ -422,49 +445,77 @@ void main() {
       insert.style?.foregroundColor?.resolve(<WidgetState>{}),
       AppTheme.light.colorScheme.onPrimary,
     );
+
+    await tester.tap(find.byKey(const Key('editor-dice-insert')));
+    await tester.pumpAndSettle();
+    expect(
+      RegExp(
+        r'\[\[dice:v1:',
+      ).allMatches(MarkdownDeltaCodec.encode(controller.document.toDelta())),
+      hasLength(20),
+    );
   });
 
-  testWidgets('320dp 与两倍字体下骰子字段改为纵向并保持任务可滚动', (tester) async {
-    tester.view.physicalSize = const Size(320, 640);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final controller = QuillController.basic();
-    addTearDown(controller.dispose);
+  for (final width in const [320.0, 360.0, 600.0]) {
+    testWidgets('$width dp、两倍字体和键盘态下骰子任务可滚动且不溢出', (tester) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 440);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      final controller = QuillController.basic();
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: const TextScaler.linear(2)),
-          child: child!,
-        ),
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.bottomCenter,
-            child: WenyouEditorToolbar(
-              controller: controller,
-              enabled: true,
-              onInsertImage: () async {},
-              onSaveDraft: () async {},
-              onSubmit: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: WenyouEditorToolbar(
+                controller: controller,
+                enabled: true,
+                onInsertImage: () async {},
+                onSaveDraft: () async {},
+                onSubmit: () {},
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('editor-more')));
-    await tester.pump();
-    await tester.tap(find.byTooltip('骰子'));
-    await tester.pump();
+      );
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pump();
+      await tester.tap(find.byTooltip('骰子'));
+      await tester.pump();
 
-    expect(find.byKey(const Key('editor-task-tray-scroll')), findsOneWidget);
-    expect(find.byKey(const Key('editor-dice-insert')), findsOneWidget);
-    expect(find.byKey(const Key('editor-submit')), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      final trayScroll = find.byKey(const Key('editor-task-tray-scroll'));
+      final scrollable = find.descendant(
+        of: trayScroll,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
+      );
+      expect(trayScroll, findsOneWidget);
+      expect(scrollable, findsOneWidget);
+      expect(find.byKey(const Key('editor-dice-insert')), findsOneWidget);
+      expect(find.byKey(const Key('editor-submit')), findsNothing);
+      final position = tester.state<ScrollableState>(scrollable).position;
+      expect(position.maxScrollExtent, greaterThan(0));
+      await tester.drag(trayScroll, const Offset(0, -120));
+      await tester.pump();
+      expect(position.pixels, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('可扩展面板在键盘收起时为系统导航区保留空间', (tester) async {
     tester.view.physicalSize = const Size(360, 640);

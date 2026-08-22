@@ -259,6 +259,71 @@ void main() {
     final pastedId = _diceNodeIds(targetOutput.last).single;
     expect(pastedId, isNot(nodeId));
   });
+
+  testWidgets('只读编辑器允许复制骰子但拒绝剪切', (tester) async {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    const markdown = '[[dice:v1:$nodeId:1d20]]';
+    String? clipboardText;
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: markdown,
+      onMarkdownChanged: emitted.add,
+      clipboardStore: WenyouEditorClipboardStore(),
+      readClipboardText: () async => clipboardText,
+      writeClipboardText: (text) async => clipboardText = text,
+    );
+    addTearDown(session.dispose);
+    session.readOnly = true;
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+      ChangeSource.local,
+    );
+
+    expect(await session.copySelection(), isTrue);
+    expect(clipboardText, markdown);
+    expect(await session.copySelection(cut: true), isFalse);
+    session.controller.updateSelection(
+      TextSelection.collapsed(offset: session.controller.document.length - 1),
+      ChangeSource.local,
+    );
+    expect(await session.controller.clipboardPaste(), isTrue);
+    expect(session.flush(), isTrue);
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      markdown,
+    );
+    expect(emitted, isEmpty);
+  });
+
+  testWidgets('写入系统剪贴板失败后不应残留可粘贴的内部载荷', (tester) async {
+    const nodeId = '550e8400-e29b-41d4-a716-446655440000';
+    const markdown = '[[dice:v1:$nodeId:1d20]]';
+    final emitted = <String>[];
+    final store = WenyouEditorClipboardStore();
+    final session = RichEditorSession(
+      initialMarkdown: markdown,
+      onMarkdownChanged: emitted.add,
+      clipboardStore: store,
+      readClipboardText: () async => markdown,
+      writeClipboardText: (_) async => throw StateError('剪贴板不可用'),
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+      ChangeSource.local,
+    );
+
+    await expectLater(session.copySelection(), throwsStateError);
+    expect(session.flush(), isTrue);
+    final resolution = store.resolve(markdown);
+    expect(resolution.delta, isNull);
+    expect(resolution.usePlainText, isFalse);
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      markdown,
+    );
+    expect(emitted, isEmpty);
+  });
 }
 
 List<String> _diceNodeIds(String markdown) => RegExp(

@@ -37,16 +37,78 @@ void main() {
     expect(controller.state.actionFailure?.userMessage, contains('5 个'));
   });
 
-  test('正文草稿允许骰子-only，并阻止当前正文第 21 个骰子', () async {
+  test('正文草稿的新建路径覆盖 0、20、21 个骰子边界', () async {
     final repository = _FakeRepository(drafts: []);
     final controller = ContentDraftsController(repository, autoStart: false);
     addTearDown(controller.dispose);
     await controller.load();
 
-    expect(await controller.saveToNextSlot(_diceMarkdown(1)), isTrue);
+    expect(await controller.saveToNextSlot(''), isFalse);
+    expect(controller.state.actionFailure?.userMessage, '当前正文为空，先写一点内容再保存。');
+    expect(repository.createSlots, isEmpty);
+
+    expect(await controller.saveToNextSlot(_diceMarkdown(20)), isTrue);
+    expect(repository.createdContents.single, _diceMarkdown(20));
+
     expect(await controller.saveToNextSlot(_diceMarkdown(21)), isFalse);
-    expect(controller.state.actionFailure?.userMessage, contains('20 个骰子'));
+    expect(
+      controller.state.actionFailure?.userMessage,
+      '当前正文最多可插入 20 个骰子，请删除一个后再保存。',
+    );
     expect(repository.createSlots, hasLength(1));
+  });
+
+  test('草稿覆盖路径允许纯骰子和 20 个边界，第 21 个不请求仓储', () async {
+    final repository = _FakeRepository(drafts: [_draft(slot: 1)]);
+    final controller = ContentDraftsController(repository, autoStart: false);
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    var current = controller.state.draftAt(1)!;
+    expect(await controller.overwrite(current, _diceMarkdown(1)), isTrue);
+    expect(repository.updatedContents.single, _diceMarkdown(1));
+
+    current = controller.state.draftAt(1)!;
+    expect(await controller.overwrite(current, _diceMarkdown(20)), isTrue);
+    expect(repository.updatedContents.last, _diceMarkdown(20));
+
+    current = controller.state.draftAt(1)!;
+    expect(await controller.overwrite(current, _diceMarkdown(21)), isFalse);
+    expect(
+      controller.state.actionFailure?.userMessage,
+      '当前正文最多可插入 20 个骰子，请删除一个后再保存。',
+    );
+    expect(repository.updateVersions, hasLength(2));
+  });
+
+  test('两份独立草稿可各自保存 20 个骰子，不跨槽位聚合', () async {
+    final repository = _FakeRepository(drafts: []);
+    final controller = ContentDraftsController(repository, autoStart: false);
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(
+      await controller.createAtSlot(_diceMarkdown(20, namespace: 0), 1),
+      isTrue,
+    );
+    expect(
+      await controller.createAtSlot(_diceMarkdown(20, namespace: 1), 2),
+      isTrue,
+    );
+    expect(repository.createSlots, [1, 2]);
+    expect(repository.createdContents, hasLength(2));
+  });
+
+  test('代码、行内代码、转义和非法协议中的伪骰子不占用草稿上限', () async {
+    final repository = _FakeRepository(drafts: []);
+    final controller = ContentDraftsController(repository, autoStart: false);
+    addTearDown(controller.dispose);
+    await controller.load();
+    final content =
+        '${_ignoredDiceMarkdown()}\n${_diceMarkdown(20, namespace: 5)}';
+
+    expect(await controller.saveToNextSlot(content), isTrue);
+    expect(repository.createdContents.single, content);
   });
 
   test('版本冲突读取最新版并保留待覆盖正文，用户确认后才重试', () async {
@@ -88,10 +150,24 @@ void main() {
   });
 }
 
-String _diceMarkdown(int count) => List.generate(count, (index) {
-  final suffix = index.toString().padLeft(12, '0');
-  return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
-}).join(' ');
+String _diceMarkdown(int count, {int namespace = 0}) =>
+    List.generate(count, (index) {
+      final suffix = (namespace * 100 + index).toString().padLeft(12, '0');
+      return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
+    }).join(' ');
+
+String _ignoredDiceMarkdown() {
+  return [
+    '草稿文字',
+    '~~~text',
+    _diceMarkdown(21),
+    '~~~',
+    '`${_diceMarkdown(1)}`',
+    r'\[[dice:v1:00000000-0000-4000-8000-000000000099:1d6]]',
+    '[[dice:v1:not-a-uuid:1d6]]',
+    '[[dice:v1:00000000-0000-4000-8000-000000000098:101d6]]',
+  ].join('\n');
+}
 
 class _FakeRepository implements ContentDraftRepository {
   _FakeRepository({
@@ -102,13 +178,16 @@ class _FakeRepository implements ContentDraftRepository {
   final List<ContentDraft> _drafts;
   final bool conflictOnce;
   final List<int?> createSlots = [];
+  final List<String> createdContents = [];
   final List<int> updateVersions = [];
+  final List<String> updatedContents = [];
   final List<String> removedIds = [];
   var _didConflict = false;
 
   @override
   Future<ContentDraft> create(String content, {int? slot}) async {
     createSlots.add(slot);
+    createdContents.add(content);
     final selected =
         slot ??
         [1, 2, 3, 4, 5].firstWhere(
@@ -160,6 +239,7 @@ class _FakeRepository implements ContentDraftRepository {
     required int version,
   }) async {
     updateVersions.add(version);
+    updatedContents.add(content);
     if (conflictOnce && !_didConflict) {
       _didConflict = true;
       throw const ApiFailure(

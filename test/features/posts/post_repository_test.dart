@@ -66,10 +66,22 @@ void main() {
     expect(detail.threadTitle, '远行主题');
     expect(detail.subthreadTitle, '主线');
     expect(detail.author.avatarUrl, isNull);
+    expect(
+      detail.diceRolls.single.nodeId,
+      '550e8400-e29b-41d4-a716-446655440000',
+    );
+    expect(detail.diceRolls.single.notation, '2d6+1');
+    expect(detail.diceRolls.single.results, [4, 5]);
+    expect(detail.diceRolls.single.total, 10);
     expect(page.cursor, 'cursor-2');
     expect(page.hasMore, isTrue);
     expect(page.items.single.parentPostId, 'floor');
     expect(page.items.single.replyToAuthor?.username, '作者甲');
+    expect(
+      page.items.single.diceRolls.single.nodeId,
+      '550e8400-e29b-41d4-a716-446655440001',
+    );
+    expect(page.items.single.diceRolls.single.results, [6]);
   });
 
   test('创建、编辑、正文 upsert 与删除严格透传幂等和版本载荷', () async {
@@ -175,9 +187,15 @@ void main() {
     expect(updatePayload.content, '编辑后的内容');
     expect(updatePayload.version, 3);
     expect(updated.version, 4);
+    expect(created.diceRolls.single.notation, '1d20');
+    expect(updated.diceRolls.single.total, 16);
     expect(bodyPayload.content, '子贴正文');
     expect(bodyPayload.version, 8);
     expect(body.isBody, isTrue);
+    expect(
+      body.diceRolls.single.nodeId,
+      '550e8400-e29b-41d4-a716-446655440002',
+    );
     verify(() => api.postsRemove(id: 'created')).called(1);
   });
 }
@@ -227,7 +245,18 @@ PostResponseDto _postDto({
       ..version = version
       ..createdAt = DateTime.utc(2026, 8, 10)
       ..updatedAt = DateTime.utc(2026, 8, 10)
-      ..author.replace(_authorDto()),
+      ..author.replace(_authorDto())
+      ..diceRolls.add(
+        _diceRollDto(
+          postId: id,
+          nodeId: body
+              ? '550E8400-E29B-41D4-A716-446655440002'
+              : '550E8400-E29B-41D4-A716-446655440000',
+          notation: body ? '2d6' : '1d20',
+          results: body ? const [3, 4] : const [16],
+          total: body ? 7 : 16,
+        ),
+      ),
   );
 }
 
@@ -256,7 +285,16 @@ PostDetailResponseDto _detailDto() {
           ..id = 'subthread'
           ..title = '主线',
       )
-      ..count.update((count) => count.replies = 2),
+      ..count.update((count) => count.replies = 2)
+      ..diceRolls.add(
+        _diceRollDto(
+          postId: 'floor',
+          nodeId: '550E8400-E29B-41D4-A716-446655440000',
+          notation: '2d6+1',
+          results: const [4, 5],
+          total: 10,
+        ),
+      ),
   );
 }
 
@@ -281,6 +319,38 @@ ReplyResponseDto _replyDto() {
           ..id = 'floor'
           ..authorId = 'author-1'
           ..author.replace(_authorDto()),
+      )
+      ..diceRolls.add(
+        _diceRollDto(
+          postId: 'reply',
+          nodeId: '550E8400-E29B-41D4-A716-446655440001',
+          notation: '1d6',
+          results: const [6],
+          total: 6,
+        ),
       ),
+  );
+}
+
+DiceRollResponseDto _diceRollDto({
+  required String postId,
+  required String nodeId,
+  required String notation,
+  required List<int> results,
+  required int total,
+}) {
+  return DiceRollResponseDto(
+    (builder) => builder
+      ..id = 'roll-$postId'
+      ..postId = postId
+      ..nodeId = nodeId
+      ..protocolVersion = 1
+      ..notation = notation
+      ..quantity = results.length
+      ..sides = notation.contains('20') ? 20 : 6
+      ..modifier = notation.contains('+1') ? 1 : 0
+      ..results.addAll(results)
+      ..total = total
+      ..createdAt = DateTime.utc(2026, 8, 10),
   );
 }

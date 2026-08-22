@@ -61,7 +61,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.5.0-dev.20260822.1`；Markdown v3；后端 `5ea0c8d7cb725d4a362ccc7d56c2413b5f827fe4`；Foundation `v6.2.0`（`4ad1eb8`）。
+契约 `5.5.0-dev.20260822.1`；Markdown v3；后端 `15ed84d9000bf46989d18a18855c5950ba7f9b10`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 

@@ -146,7 +146,12 @@ class RichEditorSession extends ChangeNotifier {
           ? WenyouEditorClipboardOperation.cut
           : WenyouEditorClipboardOperation.copy,
     );
-    await _writeClipboardText(fallback);
+    try {
+      await _writeClipboardText(fallback);
+    } on Object {
+      _clipboardStore.clear();
+      rethrow;
+    }
     if (cut) {
       controller.replaceText(
         start,
@@ -261,6 +266,9 @@ class RichEditorSession extends ChangeNotifier {
   }
 
   Future<bool> _pasteClipboard() async {
+    // `true` means the paste was handled. Consume it in read-only mode so
+    // Quill does not fall back to the platform clipboard and attempt a write.
+    if (controller.readOnly) return true;
     final clipboardText = await _readClipboardText();
     if (clipboardText == null) return false;
     final resolution = _clipboardStore.resolve(clipboardText);

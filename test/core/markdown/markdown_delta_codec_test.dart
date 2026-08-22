@@ -261,6 +261,46 @@ void main() {
     );
   });
 
+  test('畸形骰子 Quill embed 拒绝序列化而不是绕过协议约束', () {
+    const validNodeId = '550e8400-e29b-41d4-a716-446655440000';
+
+    Delta diceDelta(Object? payload) => Delta()
+      ..insert({MarkdownDeltaCodec.diceEmbed: payload})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+
+    final malformedPayloads = <Object?>[
+      'not-a-map',
+      <String, Object?>{},
+      {'version': 2, 'nodeId': validNodeId, 'notation': '1d20'},
+      {'version': 1, 'nodeId': 'not-a-uuid', 'notation': '1d20'},
+      {'version': 1, 'nodeId': validNodeId, 'notation': '0d6'},
+      {'version': 1, 'nodeId': validNodeId, 'notation': '1d1001'},
+      {'version': 1, 'nodeId': validNodeId, 'notation': 20},
+    ];
+
+    for (final payload in malformedPayloads) {
+      expect(
+        () => MarkdownDeltaCodec.encode(diceDelta(payload)),
+        throwsA(isA<MarkdownCodecException>()),
+        reason: '畸形骰子载荷不得静默序列化：$payload',
+      );
+    }
+  });
+
+  test('重复骰子 UUID 按大小写无关判重', () {
+    const lower = '550e8400-e29b-41d4-a716-446655440000';
+    const upper = '550E8400-E29B-41D4-A716-446655440000';
+    final document = MarkdownDeltaCodec.decode(
+      '[[dice:v1:$lower:1d20]] [[dice:v1:$upper:2d6]]',
+    );
+
+    expect(document.issues, hasLength(1));
+    expect(document.issues.single.kind, MarkdownCodecIssueKind.duplicateDice);
+    expect(MarkdownDeltaCodec.extractExtensionNodes(document.delta), [
+      {'type': 'dice', 'nodeId': lower, 'notation': '1d20'},
+    ]);
+  });
+
   test('空 Markdown 仍生成合法终止换行且编码回空字符串', () {
     final document = MarkdownDeltaCodec.decode('');
 

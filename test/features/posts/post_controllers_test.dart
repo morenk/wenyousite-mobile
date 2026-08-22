@@ -259,33 +259,114 @@ void main() {
     expect(repository.removedIds, ['floor']);
   });
 
-  test('子贴正文必须包含文字，楼层和回复仍允许仅含骰子', () async {
+  test('子贴 BODY 拒绝空正文和纯骰子，且不请求仓储', () async {
+    final repository = _FakePostRepository();
+    final body = PostComposerController(repository, _bodyTarget);
+    addTearDown(body.dispose);
+
+    body.updateContent('');
+    expect(await body.submit(), isNull);
+    expect(body.state.failure?.userMessage, '子贴正文需要包含文字，骰子可作为补充。');
+    expect(repository.bodyRequests, isEmpty);
+
+    body.updateContent(_diceMarkdown(20));
+    expect(await body.submit(), isNull);
+    expect(body.state.failure?.userMessage, '子贴正文需要包含文字，骰子可作为补充。');
+    expect(repository.bodyRequests, isEmpty);
+  });
+
+  test('子贴 BODY 在 20 个骰子边界可写入，第 21 个优先返回上限错误', () async {
+    final repository = _FakePostRepository();
+    final body = PostComposerController(repository, _bodyTarget);
+    addTearDown(body.dispose);
+
+    final maximum = '子贴文字 ${_diceMarkdown(20)}';
+    body.updateContent(maximum);
+    expect(await body.submit(), isNotNull);
+    expect(repository.bodyRequests.single.content, maximum);
+
+    body.updateContent('子贴文字 ${_diceMarkdown(21)}');
+    expect(await body.submit(), isNull);
+    expect(body.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
+    expect(repository.bodyRequests, hasLength(1));
+  });
+
+  test('楼层和楼中楼回复均允许纯骰子，且每份 Post 独立拥有 20 个', () async {
+    final repository = _FakePostRepository();
+    final body = PostComposerController(repository, _bodyTarget);
+    final floor = PostComposerController(repository, _createFloorTarget);
+    final reply = PostComposerController(repository, _createReplyTarget);
+    addTearDown(body.dispose);
+    addTearDown(floor.dispose);
+    addTearDown(reply.dispose);
+
+    body.updateContent('子贴文字 ${_diceMarkdown(20, namespace: 0)}');
+    floor.updateContent(_diceMarkdown(20, namespace: 1));
+    reply.updateContent(_diceMarkdown(20, namespace: 2));
+
+    expect(await body.submit(), isNotNull);
+    expect(await floor.submit(), isNotNull);
+    expect(await reply.submit(), isNotNull);
+    expect(repository.bodyRequests, hasLength(1));
+    expect(repository.createInputs, hasLength(2));
+    expect(repository.createInputs[0].parentPostId, isNull);
+    expect(repository.createInputs[1].parentPostId, 'floor');
+    expect(repository.createInputs[1].replyToPostId, 'floor');
+  });
+
+  test('楼层和回复创建路径均在 0 和 21 个骰子时拦截仓储请求', () async {
+    for (final target in [_createFloorTarget, _createReplyTarget]) {
+      final repository = _FakePostRepository();
+      final composer = PostComposerController(repository, target);
+      addTearDown(composer.dispose);
+
+      composer.updateContent('');
+      expect(await composer.submit(), isNull);
+      expect(composer.state.failure?.userMessage, '正文和骰子不能同时为空。');
+      expect(repository.createInputs, isEmpty);
+
+      composer.updateContent(_diceMarkdown(21));
+      expect(await composer.submit(), isNull);
+      expect(composer.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
+      expect(repository.createInputs, isEmpty);
+    }
+  });
+
+  test('编辑路径允许纯骰子及 20 个边界，并在第 21 个时零调用', () async {
+    final repository = _FakePostRepository();
+    final editor = PostComposerController(repository, _editTarget);
+    addTearDown(editor.dispose);
+
+    editor.updateContent(_diceMarkdown(1));
+    expect(await editor.submit(), isNotNull);
+    expect(repository.updateRequests, hasLength(1));
+
+    editor.updateContent(_diceMarkdown(20));
+    expect(await editor.submit(), isNotNull);
+    expect(repository.updateRequests, hasLength(2));
+
+    editor.updateContent(_diceMarkdown(21));
+    expect(await editor.submit(), isNull);
+    expect(editor.state.failure?.userMessage, '当前正文最多可插入 20 个骰子，请删除一个后重试。');
+    expect(repository.updateRequests, hasLength(2));
+  });
+
+  test('代码、行内代码、转义和非法协议中的伪骰子不占用 Post 上限', () async {
     final repository = _FakePostRepository();
     final body = PostComposerController(repository, _bodyTarget);
     final floor = PostComposerController(repository, _createFloorTarget);
     addTearDown(body.dispose);
     addTearDown(floor.dispose);
-    final diceOnly = _diceMarkdown(1);
+    final content =
+        '${_ignoredDiceMarkdown()}\n${_diceMarkdown(20, namespace: 5)}';
 
-    body.updateContent(diceOnly);
-    expect(await body.submit(), isNull);
-    expect(body.state.failure?.userMessage, contains('子贴正文需要包含文字'));
-    expect(repository.bodyRequests, isEmpty);
+    body.updateContent(content);
+    floor.updateContent(content);
 
-    floor.updateContent(diceOnly);
+    expect(await body.submit(), isNotNull);
     expect(await floor.submit(), isNotNull);
-    expect(repository.createInputs.single.content, diceOnly);
-  });
-
-  test('每份帖子正文独立阻止第 21 个骰子', () async {
-    final repository = _FakePostRepository();
-    final floor = PostComposerController(repository, _createFloorTarget);
-    addTearDown(floor.dispose);
-
-    floor.updateContent(_diceMarkdown(21));
-    expect(await floor.submit(), isNull);
-    expect(floor.state.failure?.userMessage, contains('最多可插入 20 个骰子'));
-    expect(repository.createInputs, isEmpty);
+    expect(repository.bodyRequests.single.content, content);
+    expect(repository.createInputs.single.content, content);
   });
 
   test('帖子删除重放返回 POST_NOT_FOUND 时收敛为已经删除', () async {
@@ -308,10 +389,25 @@ void main() {
 const _author = PostAuthor(id: 'author-1', username: '作者甲', level: 3);
 const _otherAuthor = PostAuthor(id: 'author-2', username: '作者乙', level: 2);
 
-String _diceMarkdown(int count) => List.generate(count, (index) {
-  final suffix = index.toString().padLeft(12, '0');
-  return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
-}).join(' ');
+String _diceMarkdown(int count, {int namespace = 0}) =>
+    List.generate(count, (index) {
+      final suffix = (namespace * 100 + index).toString().padLeft(12, '0');
+      return '[[dice:v1:00000000-0000-4000-8000-$suffix:1d6]]';
+    }).join(' ');
+
+String _ignoredDiceMarkdown() {
+  final nodes = _diceMarkdown(21);
+  return [
+    '可见文字',
+    '```text',
+    nodes,
+    '```',
+    '`${_diceMarkdown(1)}`',
+    r'\[[dice:v1:00000000-0000-4000-8000-000000000099:1d6]]',
+    '[[dice:v1:not-a-uuid:1d6]]',
+    '[[dice:v1:00000000-0000-4000-8000-000000000098:1d1]]',
+  ].join('\n');
+}
 
 PostItem _post(
   String id, {
@@ -361,6 +457,18 @@ const PostComposerTarget _createFloorTarget = (
   version: null,
   initialContent: '',
   label: '发表楼层',
+);
+
+const PostComposerTarget _createReplyTarget = (
+  kind: PostComposerKind.createReply,
+  threadId: 'thread',
+  subthreadId: 'subthread',
+  postId: null,
+  parentPostId: 'floor',
+  replyToPostId: 'floor',
+  version: null,
+  initialContent: '',
+  label: '回复楼主',
 );
 
 const PostComposerTarget _editTarget = (
