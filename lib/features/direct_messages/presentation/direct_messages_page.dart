@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
@@ -105,34 +106,29 @@ class _DirectMessageViewBar extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Material(
       color: tokens.panel,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.space12,
-          tokens.space8,
-          tokens.space12,
-          tokens.space12,
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<DirectConversationView>(
-            showSelectedIcon: false,
-            selected: {selected},
-            onSelectionChanged: enabled
-                ? (values) => onSelected(values.single)
-                : null,
-            segments: [
-              for (final view in DirectConversationView.values)
-                ButtonSegment(
-                  value: view,
-                  label: Text(
+      child: WenyouContentFrame(
+        top: tokens.space8,
+        bottom: tokens.space12,
+        child: WenyouContentTabs<DirectConversationView>(
+          key: const Key('direct-message-view-tabs'),
+          keyPrefix: 'direct-message-view',
+          semanticsLabel: '私聊会话栏目',
+          fillAvailableWidth: true,
+          enabled: enabled,
+          options: [
+            for (final view in DirectConversationView.values)
+              WenyouFilterOption(
+                value: view,
+                keyValue: view.name,
+                label:
                     view == DirectConversationView.requests &&
-                            unread.pendingRequests > 0
-                        ? '${view.label} ${unread.pendingRequests}'
-                        : view.label,
-                  ),
-                ),
-            ],
-          ),
+                        unread.pendingRequests > 0
+                    ? '${view.label} ${unread.pendingRequests}'
+                    : view.label,
+              ),
+          ],
+          selected: selected,
+          onSelected: onSelected,
         ),
       ),
     );

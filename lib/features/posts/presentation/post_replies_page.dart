@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -15,9 +16,12 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -77,14 +81,17 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final target = (rootPostId: rootPostId, focusedReplyId: focusedReplyId);
     final provider = postDiscussionControllerProvider(target);
     final actionsProvider = postActionControllerProvider(threadId);
+    final authorsProvider = postDiscussionAuthorsProvider(threadId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       ref
         ..invalidate(provider)
-        ..invalidate(actionsProvider);
+        ..invalidate(actionsProvider)
+        ..invalidate(authorsProvider);
     });
     final state = ref.watch(provider);
     final actions = ref.watch(actionsProvider);
+    final discussionAuthors = ref.watch(authorsProvider);
     final threadContext = ref
         .watch(postThreadContextProvider(threadId))
         .valueOrNull;
@@ -103,7 +110,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         if (!didPop) _goToRoot(context);
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: WenyouReadingAppBar(
           leading: routeCanPop
               ? null
               : BackButton(onPressed: () => _goBack(context)),
@@ -145,10 +152,11 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                           canReport: threadContext?.canReport ?? false,
                           canManageThread:
                               threadContext?.canManageThread ?? false,
-                          onOrder: (order) =>
-                              ref.read(provider.notifier).setOrder(order),
-                          onAuthor: (authorId) =>
-                              ref.read(provider.notifier).setAuthor(authorId),
+                          discussionAuthors: discussionAuthors,
+                          onRetryAuthors: () => ref.invalidate(authorsProvider),
+                          onApply: (order, authorId) => ref
+                              .read(provider.notifier)
+                              .applyFilters(order: order, authorId: authorId),
                           onLoadMore: () =>
                               ref.read(provider.notifier).loadMore(),
                           onRetry: () => ref
@@ -182,7 +190,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                         context,
                         ref,
                         provider,
-                        _replyTarget(readyRoot, readyRoot),
+                        postReplyTarget(readyRoot, readyRoot),
                       )
                     : () => context.pushNamed(
                         'login',
@@ -401,8 +409,9 @@ class _DiscussionList extends StatelessWidget {
     required this.scrollController,
     required this.canReport,
     required this.canManageThread,
-    required this.onOrder,
-    required this.onAuthor,
+    required this.discussionAuthors,
+    required this.onRetryAuthors,
+    required this.onApply,
     required this.onLoadMore,
     required this.onRetry,
     required this.onCompose,
@@ -418,8 +427,9 @@ class _DiscussionList extends StatelessWidget {
   final ScrollController scrollController;
   final bool canReport;
   final bool canManageThread;
-  final ValueChanged<PostReplyOrder> onOrder;
-  final ValueChanged<String?> onAuthor;
+  final AsyncValue<List<PostDiscussionAuthor>> discussionAuthors;
+  final VoidCallback onRetryAuthors;
+  final void Function(PostReplyOrder order, String? authorId) onApply;
   final VoidCallback onLoadMore;
   final VoidCallback onRetry;
   final ValueChanged<PostComposerTarget> onCompose;
@@ -429,10 +439,7 @@ class _DiscussionList extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final root = state.root!;
-    final authors = <String, PostAuthor>{
-      root.author.id: root.author,
-      for (final reply in state.replies) reply.author.id: reply.author,
-    };
+    final authors = discussionAuthors.valueOrNull ?? const [];
     final horizontal = wenyouHorizontalPagePadding(context);
     final leadingWidgets = <Widget>[
       if (actions.failure != null) ...[
@@ -454,18 +461,22 @@ class _DiscussionList extends StatelessWidget {
             ? _reportLocation(root, root.id)
             : null,
         onReply: authenticated
-            ? () => onCompose(_replyTarget(root, root))
+            ? () => onCompose(postReplyTarget(root, root))
             : null,
-        onEdit: () => onCompose(_editTarget(root, '编辑原楼层')),
+        onEdit: () => onCompose(postEditTarget(root, '编辑原楼层')),
         onDelete: () => onDelete(root, true),
       ),
       SizedBox(height: tokens.space12),
       PostReplyFilters(
         state: state,
         replyCount: root.replyCount,
-        authors: authors.values.toList(growable: false),
-        onOrder: onOrder,
-        onAuthor: onAuthor,
+        authors: authors,
+        authorsLoading: discussionAuthors.isLoading,
+        authorsFailure: discussionAuthors.hasError
+            ? mapApplicationFailure(discussionAuthors.error!, '回复者列表加载失败，请重试。')
+            : null,
+        onRetryAuthors: onRetryAuthors,
+        onApply: onApply,
       ),
       SizedBox(height: tokens.space12),
       if (state.transientFailure != null) ...[
@@ -538,9 +549,9 @@ class _DiscussionList extends StatelessWidget {
                             ? _reportLocation(root, reply.id)
                             : null,
                         onReply: authenticated
-                            ? () => onCompose(_replyTarget(root, reply))
+                            ? () => onCompose(postReplyTarget(root, reply))
                             : null,
-                        onEdit: () => onCompose(_editTarget(reply, '编辑回复')),
+                        onEdit: () => onCompose(postEditTarget(reply, '编辑回复')),
                         onDelete: () => onDelete(reply, false),
                       ),
                     ],
@@ -835,7 +846,7 @@ class _DiscussionFailure extends StatelessWidget {
           icon: WenyouIconIds.metricReplies,
           title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论加载失败',
           message: failure?.userMessage ?? '请稍后重试。',
-          detail: _failureDetail(failure),
+          detail: wenyouRequestDetail(failure),
           action: onRetry == null
               ? null
               : FilledButton(onPressed: onRetry, child: const Text('重试')),
@@ -860,34 +871,6 @@ class _RouteMismatch extends StatelessWidget {
       ),
     );
   }
-}
-
-PostComposerTarget _replyTarget(PostItem root, PostItem target) {
-  return (
-    kind: PostComposerKind.createReply,
-    threadId: root.threadId,
-    subthreadId: root.subthreadId,
-    postId: null,
-    parentPostId: root.id,
-    replyToPostId: target.id,
-    version: null,
-    initialContent: '',
-    label: '回复 @${target.author.username}',
-  );
-}
-
-PostComposerTarget _editTarget(PostItem post, String label) {
-  return (
-    kind: PostComposerKind.editPost,
-    threadId: post.threadId,
-    subthreadId: post.subthreadId,
-    postId: post.id,
-    parentPostId: post.parentPostId,
-    replyToPostId: post.replyToPostId,
-    version: post.version,
-    initialContent: post.content,
-    label: label,
-  );
 }
 
 String? _failureDetail(ApiFailure? failure) {

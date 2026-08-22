@@ -125,6 +125,8 @@ void main() {
       {},
     );
     final textMinimum = theme.textButtonTheme.style!.minimumSize!.resolve({});
+    final segmentedMinimum = theme.segmentedButtonTheme.style!.minimumSize!
+        .resolve({});
 
     expect(tokens, isNotNull);
     expect(theme.colorScheme.primary, WenyouThemeTokens.light.brandForeground);
@@ -177,7 +179,20 @@ void main() {
     );
     expect(filledMinimum!.height, 48);
     expect(textMinimum!.height, 48);
+    expect(segmentedMinimum!.height, 48);
     expect(filledMinimum.width, 0);
+    expect(
+      theme.chipTheme.selectedColor,
+      WenyouThemeTokens.light.accentedBackground,
+    );
+    expect(
+      theme.listTileTheme.minVerticalPadding,
+      WenyouThemeTokens.light.space12,
+    );
+    expect(
+      theme.badgeTheme.backgroundColor,
+      WenyouThemeTokens.light.brandForeground,
+    );
     expect(
       theme.dialogTheme.elevation,
       WenyouOverlayContract.elevation['popup'],

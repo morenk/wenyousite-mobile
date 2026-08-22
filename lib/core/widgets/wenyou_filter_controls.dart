@@ -4,10 +4,15 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 @immutable
 class WenyouFilterOption<T> {
-  const WenyouFilterOption({required this.value, required this.label});
+  const WenyouFilterOption({
+    required this.value,
+    required this.label,
+    this.keyValue,
+  });
 
   final T value;
   final String label;
+  final Object? keyValue;
 }
 
 class WenyouLineFilterBar<T> extends StatelessWidget {
@@ -30,7 +35,88 @@ class WenyouLineFilterBar<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _WenyouLineSelectionBar<T>(
+      options: options,
+      selected: selected,
+      onSelected: onSelected,
+      semanticsLabel: semanticsLabel,
+      keyPrefix: keyPrefix,
+      centered: centered,
+      enabled: true,
+    );
+  }
+}
+
+/// Primary navigation between sibling content views inside the same page.
+///
+/// This is intentionally tap-driven. Pages keep ownership of the selected
+/// value and swap their content without installing a swipeable [TabBarView].
+class WenyouContentTabs<T> extends StatelessWidget {
+  const WenyouContentTabs({
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+    required this.semanticsLabel,
+    this.keyPrefix = 'content-tab',
+    this.fillAvailableWidth = false,
+    this.enabled = true,
+    super.key,
+  });
+
+  final List<WenyouFilterOption<T>> options;
+  final T selected;
+  final ValueChanged<T> onSelected;
+  final String semanticsLabel;
+  final String keyPrefix;
+  final bool fillAvailableWidth;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return _WenyouLineSelectionBar<T>(
+      options: options,
+      selected: selected,
+      onSelected: onSelected,
+      semanticsLabel: semanticsLabel,
+      keyPrefix: keyPrefix,
+      centered: fillAvailableWidth,
+      fillAvailableWidth: fillAvailableWidth,
+      enabled: enabled,
+    );
+  }
+}
+
+class _WenyouLineSelectionBar<T> extends StatelessWidget {
+  const _WenyouLineSelectionBar({
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+    required this.semanticsLabel,
+    required this.keyPrefix,
+    required this.centered,
+    required this.enabled,
+    this.fillAvailableWidth = false,
+  });
+
+  final List<WenyouFilterOption<T>> options;
+  final T selected;
+  final ValueChanged<T> onSelected;
+  final String semanticsLabel;
+  final String keyPrefix;
+  final bool centered;
+  final bool fillAvailableWidth;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    Widget button(WenyouFilterOption<T> option) => _LineFilterButton<T>(
+      key: ValueKey('$keyPrefix-${option.keyValue ?? option.value}'),
+      option: option,
+      selected: option.value == selected,
+      onSelected: onSelected,
+      enabled: enabled,
+    );
     return Semantics(
       container: true,
       explicitChildNodes: true,
@@ -41,20 +127,19 @@ class WenyouLineFilterBar<T> extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
+            if (fillAvailableWidth) {
+              return Row(
+                children: [
+                  for (final option in options) Expanded(child: button(option)),
+                ],
+              );
+            }
             final row = Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: centered
                   ? MainAxisAlignment.center
                   : MainAxisAlignment.start,
-              children: [
-                for (final option in options)
-                  _LineFilterButton<T>(
-                    key: ValueKey('$keyPrefix-${option.value}'),
-                    option: option,
-                    selected: option.value == selected,
-                    onSelected: onSelected,
-                  ),
-              ],
+              children: [for (final option in options) button(option)],
             );
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -79,12 +164,14 @@ class _LineFilterButton<T> extends StatelessWidget {
     required this.option,
     required this.selected,
     required this.onSelected,
+    required this.enabled,
     super.key,
   });
 
   final WenyouFilterOption<T> option;
   final bool selected;
   final ValueChanged<T> onSelected;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -92,8 +179,9 @@ class _LineFilterButton<T> extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
+      enabled: enabled,
       child: InkWell(
-        onTap: () => onSelected(option.value),
+        onTap: enabled ? () => onSelected(option.value) : null,
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
           child: Stack(
@@ -103,6 +191,9 @@ class _LineFilterButton<T> extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: tokens.space12),
                 child: Text(
                   option.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: selected ? tokens.brandForeground : tokens.mutedText,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

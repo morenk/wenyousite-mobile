@@ -59,13 +59,18 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
               0,
             ),
             child: WenyouConstrainedWidth(
-              child: WenyouLineFilterBar<BookmarkContentTab>(
+              child: WenyouContentTabs<BookmarkContentTab>(
                 key: const Key('bookmark-content-filter'),
                 keyPrefix: 'bookmark-content',
                 semanticsLabel: '收藏内容',
+                fillAvailableWidth: true,
                 options: [
                   for (final tab in BookmarkContentTab.values)
-                    WenyouFilterOption(value: tab, label: tab.label),
+                    WenyouFilterOption(
+                      value: tab,
+                      label: tab.label,
+                      keyValue: tab.name,
+                    ),
                 ],
                 selected: _tab,
                 onSelected: (tab) => setState(() => _tab = tab),
@@ -136,8 +141,9 @@ class BookmarkListView extends ConsumerWidget {
     final state = ref.watch(bookmarkListControllerProvider);
     final notifier = ref.read(bookmarkListControllerProvider.notifier);
     return switch (state.phase) {
-      BookmarkListPhase.loading => const Center(
-        child: CircularProgressIndicator(),
+      BookmarkListPhase.loading => const WenyouPageBody(
+        maxWidth: 600,
+        child: WenyouListSkeleton(label: '正在加载收藏内容'),
       ),
       BookmarkListPhase.failed => WenyouPageBody(
         maxWidth: 600,

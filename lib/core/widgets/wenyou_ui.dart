@@ -41,6 +41,61 @@ class WenyouConstrainedWidth extends StatelessWidget {
   }
 }
 
+/// Applies the shared responsive horizontal gutter and content width to a
+/// page region without taking over scrolling.
+class WenyouContentFrame extends StatelessWidget {
+  const WenyouContentFrame({
+    required this.child,
+    this.top = 0,
+    this.bottom = 0,
+    this.maxWidth,
+    super.key,
+  });
+
+  final Widget child;
+  final double top;
+  final double bottom;
+  final double? maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontal = wenyouHorizontalPagePadding(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
+      child: WenyouConstrainedWidth(maxWidth: maxWidth, child: child),
+    );
+  }
+}
+
+/// Compact top chrome for continuous-reading detail pages.
+class WenyouReadingAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  const WenyouReadingAppBar({
+    this.leading,
+    this.title,
+    this.actions,
+    super.key,
+  });
+
+  final Widget? leading;
+  final Widget? title;
+  final List<Widget>? actions;
+
+  @override
+  Size get preferredSize =>
+      Size.fromHeight(WenyouControlContract.minimumTarget);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      toolbarHeight: preferredSize.height,
+      leading: leading,
+      title: title,
+      actions: actions,
+    );
+  }
+}
+
 class WenyouPageBody extends StatelessWidget {
   const WenyouPageBody({
     required this.child,

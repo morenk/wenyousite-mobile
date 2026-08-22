@@ -306,36 +306,20 @@ class _MeDashboard extends ConsumerStatefulWidget {
   ConsumerState<_MeDashboard> createState() => _MeDashboardState();
 }
 
-class _MeDashboardState extends ConsumerState<_MeDashboard>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _MeDashboardState extends ConsumerState<_MeDashboard> {
   final Set<int> _visitedTabs = {0};
   var _activeIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: MeContentTab.values.length,
-      vsync: this,
-    )..addListener(_handleTabChanged);
-  }
-
-  @override
-  void dispose() {
-    _tabController
-      ..removeListener(_handleTabChanged)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _handleTabChanged() {
-    final index = _tabController.index;
-    if (_activeIndex == index && _visitedTabs.contains(index)) return;
-    _activeIndex = index;
-    _visitedTabs.add(index);
-    setState(() {});
-    final tab = MeContentTab.values[index].publicUserTab;
+  void _selectTab(MeContentTab selected) {
+    if (_activeIndex == selected.index &&
+        _visitedTabs.contains(selected.index)) {
+      return;
+    }
+    setState(() {
+      _activeIndex = selected.index;
+      _visitedTabs.add(selected.index);
+    });
+    final tab = selected.publicUserTab;
     if (tab != null) {
       unawaited(
         ref
@@ -376,25 +360,25 @@ class _MeDashboardState extends ConsumerState<_MeDashboard>
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: horizontal),
               child: WenyouConstrainedWidth(
-                child: WenyouLineFilterBar<MeContentTab>(
+                child: WenyouContentTabs<MeContentTab>(
                   key: const Key('me-content-tabs'),
                   keyPrefix: 'me-content',
                   semanticsLabel: '我的主页内容',
-                  centered: true,
+                  fillAvailableWidth: true,
                   options: [
                     for (final tab in MeContentTab.values)
                       WenyouFilterOption(value: tab, label: tab.label),
                   ],
                   selected: MeContentTab.values[_activeIndex],
-                  onSelected: (tab) => _tabController.animateTo(tab.index),
+                  onSelected: _selectTab,
                 ),
               ),
             ),
           ),
         ),
       ],
-      body: TabBarView(
-        controller: _tabController,
+      body: IndexedStack(
+        index: _activeIndex,
         children: [
           for (var index = 0; index < MeContentTab.values.length; index++)
             _visitedTabs.contains(index)

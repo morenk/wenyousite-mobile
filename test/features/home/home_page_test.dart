@@ -41,8 +41,8 @@ void main() {
     expect(findFoundationIcon(WenyouIconIds.metricTips), findsOneWidget);
     expect(find.textContaining('成员'), findsNothing);
     expect(
-      tester.getTopLeft(find.text('温柔测试员')).dy,
-      lessThan(tester.getTopLeft(find.text('星海旅团')).dy),
+      tester.getTopLeft(find.text('星海旅团')).dy,
+      lessThan(tester.getTopLeft(find.text('温柔测试员')).dy),
     );
     expect(
       tester.getSize(find.byKey(const Key('home-thread-thread-1'))).height,

@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -123,30 +124,25 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
   }
 
   Widget _buildTabs(StickerCollection? collection, {bool compact = false}) {
-    return SegmentedButton<bool>(
-      showSelectedIcon: false,
-      segments: [
-        ButtonSegment(
+    return WenyouContentTabs<bool>(
+      key: const Key('sticker-picker-tabs'),
+      keyPrefix: 'sticker-picker',
+      semanticsLabel: '表情收藏栏目',
+      fillAvailableWidth: true,
+      options: [
+        WenyouFilterOption(
           value: false,
-          icon: compact ? null : const WenyouIcon(WenyouIconIds.actionLike),
-          label: Text(
-            collection == null
-                ? '收藏'
-                : compact
-                ? '收藏 ${collection.items.length}'
-                : '收藏 ${collection.items.length}/${collection.limit}',
-          ),
+          keyValue: 'saved',
+          label: collection == null
+              ? '收藏'
+              : compact
+              ? '收藏 ${collection.items.length}'
+              : '收藏 ${collection.items.length}/${collection.limit}',
         ),
-        ButtonSegment(
-          value: true,
-          icon: compact ? null : const WenyouIcon(WenyouIconIds.statusHistory),
-          label: const Text('最近'),
-        ),
+        const WenyouFilterOption(value: true, keyValue: 'recent', label: '最近'),
       ],
-      selected: {_recent},
-      onSelectionChanged: (selection) {
-        setState(() => _recent = selection.single);
-      },
+      selected: _recent,
+      onSelected: (value) => setState(() => _recent = value),
     );
   }
 

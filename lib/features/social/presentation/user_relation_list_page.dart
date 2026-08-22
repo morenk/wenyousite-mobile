@@ -21,8 +21,9 @@ class UserRelationListPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(_title(target.kind))),
       body: switch (state.phase) {
-        UserRelationListPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        UserRelationListPhase.loading => WenyouPageBody(
+          maxWidth: 600,
+          child: WenyouListSkeleton(label: '正在加载${_title(target.kind)}'),
         ),
         UserRelationListPhase.failed => WenyouPageBody(
           maxWidth: 600,

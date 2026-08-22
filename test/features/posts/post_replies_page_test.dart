@@ -23,8 +23,10 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_ports.
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -797,6 +799,9 @@ void main() {
         overrides: [
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+          postDiscussionAuthorDirectoryProvider.overrideWithValue(
+            const _FakePostDiscussionAuthorDirectory(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -905,6 +910,9 @@ void main() {
         overrides: [
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+          postDiscussionAuthorDirectoryProvider.overrideWithValue(
+            const _FakePostDiscussionAuthorDirectory(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -927,6 +935,14 @@ void main() {
     await tester.tap(
       find.widgetWithText(RadioListTile<PostReplyOrder>, '最新回复在前'),
     );
+    await tester.pump();
+
+    expect(
+      find.byKey(const Key('post-replies-settings-sheet')),
+      findsOneWidget,
+    );
+    expect(find.text('最早在前'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
     await tester.pumpAndSettle();
 
     expect(find.text('最新在前'), findsOneWidget);
@@ -938,6 +954,8 @@ void main() {
     await tester.tap(find.byKey(const Key('post-replies-settings')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(RadioListTile<String>, '自己'));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
     await tester.pumpAndSettle();
 
     expect(find.text('最新在前 · 自己'), findsOneWidget);
@@ -1106,6 +1124,29 @@ class _FakePostRepository implements PostRepository {
   Future<void> remove(String postId) async {
     removedIds.add(postId);
     replies.removeWhere((post) => post.id == postId);
+  }
+}
+
+class _FakePostDiscussionAuthorDirectory
+    implements PostDiscussionAuthorDirectory {
+  const _FakePostDiscussionAuthorDirectory();
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchAuthors(String threadId) async {
+    return [
+      PostDiscussionAuthor(
+        userId: _rootAuthor.id,
+        username: _rootAuthor.username,
+        role: PostDiscussionAuthorRole.owner,
+        joinedAt: DateTime.utc(2026, 8, 1),
+      ),
+      PostDiscussionAuthor(
+        userId: _author.id,
+        username: _author.username,
+        role: PostDiscussionAuthorRole.player,
+        joinedAt: DateTime.utc(2026, 8, 2),
+      ),
+    ];
   }
 }
 

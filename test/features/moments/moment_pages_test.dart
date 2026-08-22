@@ -287,13 +287,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('动态详情').hitTestable(), findsOneWidget);
+    expect(find.text('动态').hitTestable(), findsOneWidget);
     await tester.drag(
       find.byKey(const PageStorageKey('moment-detail-scroll')),
       const Offset(0, -500),
     );
     await tester.pumpAndSettle();
-    expect(find.text('动态详情').hitTestable(), findsOneWidget);
+    expect(find.text('动态').hitTestable(), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
 
     await tester.drag(
@@ -301,7 +301,7 @@ void main() {
       const Offset(0, 120),
     );
     await tester.pumpAndSettle();
-    expect(find.text('动态详情').hitTestable(), findsOneWidget);
+    expect(find.text('动态').hitTestable(), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
   });
 

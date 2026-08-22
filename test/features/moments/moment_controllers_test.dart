@@ -36,7 +36,7 @@ void main() {
     expect(controller.state.items.single.bookmarkCount, 5);
   });
 
-  test('评论失败重试复用同一请求 ID，并刷新主评论与作者候选', () async {
+  test('评论失败重试复用同一请求 ID，详情初次加载同时取得作者候选', () async {
     final repository = _DetailRepository(failFirstComment: true);
     var requestIndex = 0;
     final controller = MomentDetailController(
@@ -78,13 +78,69 @@ void main() {
       controller.state.replyPages['comment-root']?.items.single.id,
       'comment-reply',
     );
-    await controller.selectCommentOrder(MomentCommentOrder.oldest);
-    await controller.selectCommentAuthor('user-1');
+    final callsBeforeFilter = repository.commentsCalls;
+    await controller.applyCommentFilters(
+      order: MomentCommentOrder.oldest,
+      authorId: 'user-1',
+    );
+    expect(repository.commentsCalls, callsBeforeFilter + 1);
     expect(repository.orders.last, MomentCommentOrder.oldest);
     expect(repository.authorIds.last, 'user-1');
     expect(await controller.removeComment('comment-reply'), isTrue);
     expect(repository.removedCommentIds, ['comment-reply']);
     expect(controller.state.phase, MomentLoadPhase.ready);
+  });
+
+  test('评论作者候选失败不阻塞正文与评论，并可独立重试', () async {
+    final repository = _DetailRepository(failFirstAuthors: true);
+    final controller = MomentDetailController(
+      repository,
+      'moment-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.state.phase, MomentLoadPhase.ready);
+    expect(controller.state.detail?.card.title, '今日微光');
+    expect(controller.state.comments.single.id, 'comment-root');
+    expect(controller.state.commentAuthors, isEmpty);
+    expect(controller.state.commentAuthorsFailure?.userMessage, '作者暂时不可用');
+    final commentsCalls = repository.commentsCalls;
+
+    await controller.retryCommentAuthors();
+
+    expect(controller.state.commentAuthors.single.username, '温柔测试员');
+    expect(controller.state.commentAuthorsFailure, isNull);
+    expect(repository.commentsCalls, commentsCalls);
+  });
+
+  test('评论筛选不会取消仍在加载的作者候选', () async {
+    final pendingAuthors = Completer<List<MomentAuthor>>();
+    final repository = _DetailRepository(
+      onAuthors: () => pendingAuthors.future,
+    );
+    final controller = MomentDetailController(
+      repository,
+      'moment-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    expect(controller.state.isLoadingCommentAuthors, isTrue);
+
+    await controller.applyCommentFilters(
+      order: MomentCommentOrder.oldest,
+      authorId: null,
+    );
+    pendingAuthors.complete([_author()]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.state.isLoadingCommentAuthors, isFalse);
+    expect(controller.state.commentAuthors.single.username, '温柔测试员');
   });
 
   test('评论筛选变化后忽略旧筛选条件下晚返回的楼中楼', () async {
@@ -170,9 +226,16 @@ class _FeedRepository extends Fake implements MomentRepository {
 }
 
 class _DetailRepository extends Fake implements MomentRepository {
-  _DetailRepository({this.failFirstComment = false, this.onReplies});
+  _DetailRepository({
+    this.failFirstComment = false,
+    this.failFirstAuthors = false,
+    this.onAuthors,
+    this.onReplies,
+  });
 
   final bool failFirstComment;
+  final bool failFirstAuthors;
+  final Future<List<MomentAuthor>> Function()? onAuthors;
   final Future<CursorPage<MomentComment>> Function({required String? authorId})?
   onReplies;
   final commentRequestIds = <String>[];
@@ -181,6 +244,7 @@ class _DetailRepository extends Fake implements MomentRepository {
   final removedCommentIds = <String>[];
   var commentsCalls = 0;
   var _failedComment = false;
+  var _failedAuthors = false;
 
   @override
   Future<MomentDetail> fetchDetail(String momentId) async => _detail();
@@ -201,6 +265,11 @@ class _DetailRepository extends Fake implements MomentRepository {
 
   @override
   Future<List<MomentAuthor>> fetchCommentAuthors(String momentId) async {
+    if (onAuthors case final callback?) return callback();
+    if (failFirstAuthors && !_failedAuthors) {
+      _failedAuthors = true;
+      throw const ApiFailure(userMessage: '作者暂时不可用');
+    }
     return [_author()];
   }
 

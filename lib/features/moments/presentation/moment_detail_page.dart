@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -60,17 +61,21 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     });
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
-      appBar: AppBar(
+      appBar: WenyouReadingAppBar(
         leading: BackButton(
           key: const Key('moment-detail-back'),
           onPressed: _leaveDetail,
         ),
-        title: const Text('动态详情'),
+        title: const Text('动态'),
         actions: _momentAppBarActions(state, provider),
       ),
       body: switch (state.phase) {
-        MomentLoadPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        MomentLoadPhase.loading => const Align(
+          alignment: Alignment.topCenter,
+          child: WenyouContentFrame(
+            top: 16,
+            child: WenyouDetailSkeleton(label: '正在加载动态详情'),
+          ),
         ),
         MomentLoadPhase.failed => _MomentDetailFailure(
           failure: state.failure,
@@ -86,7 +91,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(
-                child: MomentContentPadding(
+                child: WenyouContentFrame(
                   top: context.wenyouTokens.space16,
                   child: _MomentDetailPanel(
                     detail: state.detail!,
@@ -106,21 +111,21 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                 ),
               ),
               SliverToBoxAdapter(
-                child: MomentContentPadding(
+                child: WenyouContentFrame(
                   top: context.wenyouTokens.space12,
                   child: _CommentFilters(
                     state: state,
-                    onOrder: (order) =>
-                        ref.read(provider.notifier).selectCommentOrder(order),
-                    onAuthor: (authorId) => ref
+                    onApply: (order, authorId) => ref
                         .read(provider.notifier)
-                        .selectCommentAuthor(authorId),
+                        .applyCommentFilters(order: order, authorId: authorId),
+                    onRetryAuthors: () =>
+                        ref.read(provider.notifier).retryCommentAuthors(),
                   ),
                 ),
               ),
               if (state.comments.isEmpty)
                 SliverToBoxAdapter(
-                  child: MomentContentPadding(
+                  child: WenyouContentFrame(
                     top: context.wenyouTokens.space12,
                     child: const WenyouEmptyState(
                       icon: WenyouIconIds.metricComments,
@@ -134,7 +139,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   itemCount: state.comments.length,
                   itemBuilder: (context, index) {
                     final comment = state.comments[index];
-                    return MomentContentPadding(
+                    return WenyouContentFrame(
                       top: index == 0 ? context.wenyouTokens.space12 : 0,
                       child: Column(
                         children: [
@@ -164,7 +169,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                 ),
               if (state.hasMoreComments || state.isLoadingMoreComments)
                 SliverToBoxAdapter(
-                  child: MomentContentPadding(
+                  child: WenyouContentFrame(
                     top: context.wenyouTokens.space12,
                     child: Center(
                       child: state.isLoadingMoreComments
@@ -452,6 +457,11 @@ class _MomentDetailPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                card.title,
+                style: Theme.of(context).textTheme.wenyouDetailTitle,
+              ),
+              SizedBox(height: tokens.space12),
               MomentAuthorLine(
                 author: card.author,
                 createdAt: card.createdAt,
@@ -459,11 +469,6 @@ class _MomentDetailPanel extends StatelessWidget {
                   'user-profile',
                   pathParameters: {'userId': card.author.id},
                 ),
-              ),
-              SizedBox(height: tokens.space16),
-              Text(
-                card.title,
-                style: Theme.of(context).textTheme.wenyouDetailTitle,
               ),
             ],
           ),
@@ -590,112 +595,40 @@ class _DetailAction extends StatelessWidget {
 class _CommentFilters extends StatelessWidget {
   const _CommentFilters({
     required this.state,
-    required this.onOrder,
-    required this.onAuthor,
+    required this.onApply,
+    required this.onRetryAuthors,
   });
 
   final MomentDetailState state;
-  final ValueChanged<MomentCommentOrder> onOrder;
-  final ValueChanged<String?> onAuthor;
+  final void Function(MomentCommentOrder order, String? authorId) onApply;
+  final VoidCallback onRetryAuthors;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final selectedAuthor = state.commentAuthors
-        .where((author) => author.id == state.commentAuthorId)
-        .firstOrNull;
-    return Row(
-      children: [
-        PopupMenuButton<MomentCommentOrder>(
-          key: const Key('moment-comment-order'),
-          initialValue: state.commentOrder,
-          tooltip: '评论排序',
-          onSelected: onOrder,
-          itemBuilder: (context) => [
-            for (final order in MomentCommentOrder.values)
-              PopupMenuItem(
-                value: order,
-                child: Text(
-                  order == MomentCommentOrder.newest ? '最新在前' : '最早在前',
-                ),
-              ),
-          ],
-          child: _CompactFilterButton(
-            icon: WenyouIconIds.actionSort,
-            label: state.commentOrder == MomentCommentOrder.newest
-                ? '最新在前'
-                : '最早在前',
+    return WenyouDiscussionControls<MomentCommentOrder>(
+      countLabel:
+          '${state.detail?.card.commentCount ?? state.comments.length} 条评论',
+      countKey: const Key('moment-comments-count'),
+      settingsKey: const Key('moment-comment-settings'),
+      sheetKey: const Key('moment-comment-settings-sheet'),
+      order: state.commentOrder,
+      defaultOrder: MomentCommentOrder.newest,
+      orderOptions: [
+        for (final order in MomentCommentOrder.values)
+          WenyouDiscussionOrderOption(
+            value: order,
+            label: order == MomentCommentOrder.newest ? '最新在前' : '最早在前',
           ),
-        ),
-        const Spacer(),
-        TextButton.icon(
-          key: const Key('moment-comment-author-filter'),
-          onPressed: () => _showAuthorFilter(context),
-          icon: WenyouIcon(
-            WenyouIconIds.actionFilter,
-            size: 20,
-            color: selectedAuthor == null
-                ? tokens.mutedText
-                : tokens.brandForeground,
-          ),
-          label: Text(selectedAuthor?.username ?? '筛选'),
-        ),
       ],
-    );
-  }
-
-  Future<void> _showAuthorFilter(BuildContext context) async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => RadioGroup<String>(
-        groupValue: state.commentAuthorId ?? '',
-        onChanged: (value) => Navigator.pop(context, value),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            const ListTile(title: Text('只看某位作者')),
-            const RadioListTile<String>(value: '', title: Text('全部作者')),
-            for (final author in state.commentAuthors)
-              RadioListTile<String>(
-                value: author.id,
-                title: Text(author.username),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (context.mounted && selected != null) {
-      final authorId = selected.isEmpty ? null : selected;
-      if (authorId != state.commentAuthorId) onAuthor(authorId);
-    }
-  }
-}
-
-class _CompactFilterButton extends StatelessWidget {
-  const _CompactFilterButton({required this.icon, required this.label});
-
-  final String icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            WenyouIcon(icon, size: 20),
-            SizedBox(width: tokens.space4),
-            Text(label),
-            const WenyouIcon(WenyouIconIds.navigationExpand, size: 20),
-          ],
-        ),
-      ),
+      authorId: state.commentAuthorId,
+      authorsLoading: state.isLoadingCommentAuthors,
+      authorsFailure: state.commentAuthorsFailure,
+      onRetryAuthors: onRetryAuthors,
+      authors: [
+        for (final author in state.commentAuthors)
+          WenyouDiscussionAuthorOption(id: author.id, label: author.username),
+      ],
+      onApply: (selection) => onApply(selection.order, selection.authorId),
     );
   }
 }
@@ -814,7 +747,7 @@ class _MomentDetailFailure extends StatelessWidget {
   Widget build(BuildContext context) {
     final notFound =
         failure?.httpStatus == 404 || failure?.businessCode == 40415;
-    return MomentContentPadding(
+    return WenyouContentFrame(
       top: 16,
       child: WenyouPanel(
         child: WenyouEmptyState(

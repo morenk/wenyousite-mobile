@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
@@ -35,17 +36,21 @@ class PublicUserContentArea extends ConsumerWidget {
             children: [
               const WenyouSectionHeader(title: '公开内容'),
               SizedBox(height: tokens.space12),
-              Row(
-                children: [
+              WenyouContentTabs<PublicUserContentTab>(
+                key: const Key('public-user-content-tabs'),
+                keyPrefix: 'public-user',
+                semanticsLabel: '用户公开内容',
+                fillAvailableWidth: true,
+                options: [
                   for (final tab in state.availableTabs)
-                    Expanded(
-                      child: _ContentTabButton(
-                        tab: tab,
-                        selected: tab == state.activeTab,
-                        onTap: () => notifier.selectTab(tab),
-                      ),
+                    WenyouFilterOption(
+                      value: tab,
+                      label: tab.label,
+                      keyValue: '${tab.name}-tab',
                     ),
                 ],
+                selected: state.activeTab,
+                onSelected: notifier.selectTab,
               ),
             ],
           ),
@@ -108,56 +113,6 @@ class PublicUserContentSectionView extends StatelessWidget {
         isSelf: isSelf,
       ),
     };
-  }
-}
-
-class _ContentTabButton extends StatelessWidget {
-  const _ContentTabButton({
-    required this.tab,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final PublicUserContentTab tab;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final color = selected ? tokens.focus : tokens.mutedText;
-    return Semantics(
-      selected: selected,
-      button: true,
-      child: InkWell(
-        key: Key('public-user-${tab.name}-tab'),
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: selected ? tokens.brandForeground : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-            ),
-            child: Center(
-              child: Text(
-                tab.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: color,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -366,20 +321,7 @@ class _ContentLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: tokens.space12),
-          const Text('正在加载公开内容…'),
-        ],
-      ),
-    );
+    return const WenyouListSkeleton(label: '正在加载公开内容', itemCount: 2);
   }
 }
 

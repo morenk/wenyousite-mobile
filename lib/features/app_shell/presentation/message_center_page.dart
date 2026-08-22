@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_messages_page.dart';
@@ -155,41 +156,31 @@ class _MessageSectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
     return Material(
-      color: tokens.panel,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.space12,
-          tokens.space8,
-          tokens.space12,
-          tokens.space8,
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<String>(
-            showSelectedIcon: false,
-            selected: {selected},
-            onSelectionChanged: (values) => onSelected(values.single),
-            segments: [
-              ButtonSegment(
-                value: MessageCenterSections.notifications,
-                icon: const WenyouIcon(WenyouIconIds.statusNotifications),
-                label: Text(_labelWithCount('通知', notificationUnread)),
+      color: Theme.of(context).colorScheme.surface,
+      child: WenyouContentFrame(
+        top: context.wenyouTokens.space8,
+        bottom: context.wenyouTokens.space8,
+        child: WenyouContentTabs<String>(
+          key: const Key('message-section-tabs'),
+          keyPrefix: 'message-section',
+          semanticsLabel: '消息栏目',
+          fillAvailableWidth: true,
+          options: [
+            WenyouFilterOption(
+              value: MessageCenterSections.notifications,
+              label: _labelWithCount('通知', notificationUnread),
+            ),
+            WenyouFilterOption(
+              value: MessageCenterSections.directMessages,
+              label: _labelWithCount(
+                WenyouNavigationContract.labels['directMessages'] ?? '私聊',
+                directUnread,
               ),
-              ButtonSegment(
-                value: MessageCenterSections.directMessages,
-                icon: const WenyouIcon(WenyouIconIds.navigationMessages),
-                label: Text(
-                  _labelWithCount(
-                    WenyouNavigationContract.labels['directMessages'] ?? '私聊',
-                    directUnread,
-                  ),
-                  key: const Key('notification-open-direct-messages'),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
+          selected: selected,
+          onSelected: onSelected,
         ),
       ),
     );

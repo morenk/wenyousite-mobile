@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
@@ -160,44 +161,18 @@ class _SearchTabs extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.wenyouTokens;
-    return Row(
+    return WenyouContentTabs<SearchResultTab>(
       key: const Key('search-tabs'),
-      children: [
+      keyPrefix: 'search-tab',
+      semanticsLabel: '搜索结果栏目',
+      fillAvailableWidth: true,
+      options: [
         for (final tab in _visibleTabs)
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: state.activeTab == tab
-                        ? tokens.brandForeground
-                        : tokens.border,
-                    width: state.activeTab == tab ? 2 : 1,
-                  ),
-                ),
-              ),
-              child: TextButton(
-                key: Key('search-tab-${tab.name}'),
-                onPressed: () =>
-                    ref.read(searchControllerProvider.notifier).selectTab(tab),
-                style: TextButton.styleFrom(
-                  minimumSize: Size(0, tokens.minimumTouchTarget),
-                  padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-                  foregroundColor: state.activeTab == tab
-                      ? tokens.brandForeground
-                      : tokens.mutedText,
-                ),
-                child: Text(
-                  tab.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                  softWrap: false,
-                ),
-              ),
-            ),
-          ),
+          WenyouFilterOption(value: tab, label: tab.label, keyValue: tab.name),
       ],
+      selected: state.activeTab,
+      onSelected: (tab) =>
+          ref.read(searchControllerProvider.notifier).selectTab(tab),
     );
   }
 }

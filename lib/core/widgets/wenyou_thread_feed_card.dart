@@ -44,14 +44,14 @@ class ThreadFeedCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ThreadHeader(thread: thread, categoryName: categoryName),
-                SizedBox(height: tokens.space12),
                 Text(
                   thread.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.wenyouListTitle,
                 ),
+                SizedBox(height: tokens.space12),
+                _ThreadHeader(thread: thread, categoryName: categoryName),
                 if (thread.coverImageUrls.isNotEmpty) ...[
                   SizedBox(height: tokens.space12),
                   _ThreadCover(

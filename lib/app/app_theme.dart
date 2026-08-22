@@ -206,6 +206,61 @@ abstract final class AppTheme {
           width: 2,
         ),
       ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: WidgetStatePropertyAll(controlSize),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: tokens.space12),
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? tokens.brandForeground
+                : tokens.mutedText,
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? tokens.accentedBackground
+                : tokens.panel,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: tokens.border)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(tokens.radius12),
+            ),
+          ),
+          animationDuration: tokens.feedbackDuration,
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: tokens.panel,
+        selectedColor: tokens.accentedBackground,
+        disabledColor: tokens.softPanel,
+        side: BorderSide(color: tokens.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+        labelStyle: textTheme.labelMedium?.copyWith(color: tokens.text),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: tokens.brandForeground,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        minVerticalPadding: tokens.space12,
+        contentPadding: EdgeInsets.symmetric(horizontal: tokens.space16),
+        iconColor: tokens.mutedText,
+        textColor: tokens.text,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radius12),
+        ),
+      ),
+      badgeTheme: BadgeThemeData(
+        backgroundColor: tokens.brandForeground,
+        textColor: tokens.panel,
+        textStyle: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+        padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: tokens.panel,
         indicatorColor: tokens.accentedBackground,

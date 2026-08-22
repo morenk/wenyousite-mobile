@@ -99,7 +99,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     };
     return [
       SliverToBoxAdapter(
-        child: _HomeContent(
+        child: WenyouContentFrame(
           top: 16,
           child: _HomeFilters(
             state: state,
@@ -116,7 +116,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       if (state.transientFailure != null)
         SliverToBoxAdapter(
-          child: _HomeContent(
+          child: WenyouContentFrame(
             top: 12,
             child: _HomeTransientError(
               failure: state.transientFailure!,
@@ -155,7 +155,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final thread = state.items[index];
-              return _HomeContent(
+              return WenyouContentFrame(
                 top: 12,
                 child: HomeThreadCard(
                   key: Key('home-thread-${thread.id}'),
@@ -182,7 +182,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       if (state.items.isNotEmpty)
         SliverToBoxAdapter(
-          child: _HomeContent(
+          child: WenyouContentFrame(
             top: 12,
             bottom: 112,
             child: _HomeFeedFooter(
@@ -196,23 +196,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.child, this.top = 0, this.bottom = 0});
-
-  final Widget child;
-  final double top;
-  final double bottom;
-
-  @override
-  Widget build(BuildContext context) {
-    final horizontal = wenyouHorizontalPagePadding(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
-      child: WenyouConstrainedWidth(child: child),
-    );
-  }
-}
-
 class _HomeCenteredState extends StatelessWidget {
   const _HomeCenteredState({required this.child, this.topPadding = 16});
 
@@ -223,7 +206,7 @@ class _HomeCenteredState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
-      child: _HomeContent(top: topPadding, bottom: 112, child: child),
+      child: WenyouContentFrame(top: topPadding, bottom: 112, child: child),
     );
   }
 }

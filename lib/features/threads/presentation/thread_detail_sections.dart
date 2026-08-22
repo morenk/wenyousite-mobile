@@ -22,28 +22,6 @@ import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-class ThreadDetailContent extends StatelessWidget {
-  const ThreadDetailContent({
-    required this.child,
-    this.top = 0,
-    this.bottom = 0,
-    super.key,
-  });
-
-  final Widget child;
-  final double top;
-  final double bottom;
-
-  @override
-  Widget build(BuildContext context) {
-    final horizontal = wenyouHorizontalPagePadding(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
-      child: WenyouConstrainedWidth(child: child),
-    );
-  }
-}
-
 class ThreadDetailLoadingState extends StatelessWidget {
   const ThreadDetailLoadingState({super.key});
 
@@ -51,7 +29,7 @@ class ThreadDetailLoadingState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
-      child: const ThreadDetailContent(
+      child: const WenyouContentFrame(
         top: 16,
         child: WenyouDetailSkeleton(label: '正在加载主题正文和楼层'),
       ),
@@ -74,7 +52,7 @@ class ThreadDetailFatalState extends StatelessWidget {
     final notFound = failure?.httpStatus == 404;
     return Align(
       alignment: Alignment.topCenter,
-      child: ThreadDetailContent(
+      child: WenyouContentFrame(
         top: 16,
         child: WenyouPanel(
           child: WenyouEmptyState(

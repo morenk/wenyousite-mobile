@@ -140,8 +140,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     _openReplyTargetWhenReady(state, resolvedTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 48,
+      appBar: WenyouReadingAppBar(
         leading: BackButton(
           key: const Key('thread-detail-back'),
           onPressed: _leaveDetail,
@@ -555,7 +554,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
     return [
       SliverToBoxAdapter(
-        child: ThreadDetailContent(
+        child: WenyouContentFrame(
           top: 8,
           child: ThreadDetailOverview(
             detail: detail,
@@ -568,7 +567,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (state.transientFailure != null &&
           state.retryAction == ThreadDetailRetryAction.refresh)
         SliverToBoxAdapter(
-          child: ThreadDetailContent(
+          child: WenyouContentFrame(
             top: 12,
             child: ThreadDetailTransientFailure(
               failure: state.transientFailure!,
@@ -579,7 +578,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       if (detail.subthreads.isEmpty)
         SliverFillRemaining(
           hasScrollBody: false,
-          child: ThreadDetailContent(
+          child: WenyouContentFrame(
             top: 12,
             bottom: 40,
             child: const WenyouPanel(
@@ -593,14 +592,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         )
       else ...[
         SliverToBoxAdapter(
-          child: ThreadDetailContent(
+          child: WenyouContentFrame(
             top: 12,
             child: ThreadSubthreadBody(subthread: selected!),
           ),
         ),
         if (actions.failure != null)
           SliverToBoxAdapter(
-            child: ThreadDetailContent(
+            child: WenyouContentFrame(
               top: 12,
               child: WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
@@ -613,7 +612,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ),
         if (targetState != null)
           SliverToBoxAdapter(
-            child: ThreadDetailContent(
+            child: WenyouContentFrame(
               top: 12,
               child: ThreadTargetPostStatus(
                 targetState: targetState,
@@ -642,7 +641,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ),
         if (state.isLoadingFloors)
           const SliverToBoxAdapter(
-            child: ThreadDetailContent(
+            child: WenyouContentFrame(
               top: 12,
               child: ThreadFloorsLoadingState(),
             ),
@@ -650,7 +649,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         else if (state.transientFailure != null &&
             state.retryAction == ThreadDetailRetryAction.floors)
           SliverToBoxAdapter(
-            child: ThreadDetailContent(
+            child: WenyouContentFrame(
               top: 12,
               child: ThreadDetailTransientFailure(
                 failure: state.transientFailure!,
@@ -660,7 +659,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           )
         else if (displayedFloors.isEmpty)
           const SliverToBoxAdapter(
-            child: ThreadDetailContent(
+            child: WenyouContentFrame(
               top: 12,
               child: WenyouPanel(
                 child: WenyouEmptyState(
@@ -678,7 +677,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               final focused =
                   usableTarget?.focusedReplyId == null &&
                   usableTarget?.floor.id == floor.id;
-              return ThreadDetailContent(
+              return WenyouContentFrame(
                 top: index == 0 ? 12 : 0,
                 child: Column(
                   children: [
@@ -732,7 +731,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             }, childCount: displayedFloors.length),
           ),
         SliverToBoxAdapter(
-          child: ThreadDetailContent(
+          child: WenyouContentFrame(
             top: 12,
             bottom:
                 context.wenyouTokens.minimumTouchTarget +

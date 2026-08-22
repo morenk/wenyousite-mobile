@@ -109,20 +109,24 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
   }
 
   Future<void> setOrder(PostReplyOrder order) async {
-    if (order == state.order || state.phase != PostDiscussionPhase.ready) {
-      return;
-    }
-    state = state.copyWith(order: order);
-    await load();
+    await applyFilters(order: order, authorId: state.authorId);
   }
 
   Future<void> setAuthor(String? authorId) async {
+    await applyFilters(order: state.order, authorId: authorId);
+  }
+
+  Future<void> applyFilters({
+    required PostReplyOrder order,
+    required String? authorId,
+  }) async {
     final normalized = authorId?.trim();
     final next = normalized == null || normalized.isEmpty ? null : normalized;
-    if (next == state.authorId || state.phase != PostDiscussionPhase.ready) {
+    if ((order == state.order && next == state.authorId) ||
+        state.phase != PostDiscussionPhase.ready) {
       return;
     }
-    state = state.copyWith(authorId: next);
+    state = state.copyWith(order: order, authorId: next);
     await load();
   }
 

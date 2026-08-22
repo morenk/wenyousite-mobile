@@ -17,8 +17,9 @@ class LoginSessionsPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('登录终端')),
       body: switch (state.phase) {
-        LoginSessionsPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        LoginSessionsPhase.loading => const WenyouPageBody(
+          maxWidth: 600,
+          child: WenyouListSkeleton(label: '正在加载登录终端'),
         ),
         LoginSessionsPhase.failed => WenyouPageBody(
           maxWidth: 600,

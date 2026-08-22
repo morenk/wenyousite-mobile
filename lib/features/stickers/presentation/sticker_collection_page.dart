@@ -32,8 +32,9 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('表情包')),
       body: switch (state.phase) {
-        StickerCollectionPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        StickerCollectionPhase.loading => const WenyouPageBody(
+          maxWidth: 680,
+          child: WenyouListSkeleton(label: '正在加载表情收藏', showAvatar: false),
         ),
         StickerCollectionPhase.failed => WenyouPageBody(
           maxWidth: 680,

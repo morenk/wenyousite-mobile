@@ -11,28 +11,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
-class MomentContentPadding extends StatelessWidget {
-  const MomentContentPadding({
-    required this.child,
-    this.top = 0,
-    this.bottom = 0,
-    super.key,
-  });
-
-  final Widget child;
-  final double top;
-  final double bottom;
-
-  @override
-  Widget build(BuildContext context) {
-    final horizontal = wenyouHorizontalPagePadding(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
-      child: WenyouConstrainedWidth(child: child),
-    );
-  }
-}
-
 class MomentCardTile extends StatelessWidget {
   const MomentCardTile({
     required this.moment,

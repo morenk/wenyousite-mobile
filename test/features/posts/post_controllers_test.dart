@@ -148,7 +148,7 @@ void main() {
     expect(controller.state.retryAction, isNull);
   });
 
-  test('切换回复排序保留已选择的作者筛选', () async {
+  test('一次应用回复顺序与作者筛选只重新加载一次', () async {
     final repository = _FakePostRepository(
       posts: {'root': _post('root')},
       onReplies: ({cursor, required order, authorId}) async =>
@@ -161,9 +161,13 @@ void main() {
     addTearDown(controller.dispose);
 
     await controller.load();
-    await controller.setAuthor('author-1');
-    await controller.setOrder(PostReplyOrder.newest);
+    final callsBeforeFilter = repository.replyRequests.length;
+    await controller.applyFilters(
+      order: PostReplyOrder.newest,
+      authorId: 'author-1',
+    );
 
+    expect(repository.replyRequests.length, callsBeforeFilter + 1);
     expect(controller.state.authorId, 'author-1');
     expect(repository.replyRequests.last.authorId, 'author-1');
     expect(repository.replyRequests.last.order, PostReplyOrder.newest);

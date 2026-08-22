@@ -105,14 +105,18 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
             0,
           ),
           child: WenyouConstrainedWidth(
-            child: WenyouLineFilterBar<_MeThreadTab>(
+            child: WenyouContentTabs<_MeThreadTab>(
               key: const Key('me-thread-filter'),
               keyPrefix: 'me-thread',
               semanticsLabel: '我的帖子',
-              centered: true,
+              fillAvailableWidth: true,
               options: [
                 for (final tab in _MeThreadTab.values)
-                  WenyouFilterOption(value: tab, label: tab.label),
+                  WenyouFilterOption(
+                    value: tab,
+                    label: tab.label,
+                    keyValue: tab.name,
+                  ),
               ],
               selected: _threadTab,
               onSelected: (tab) {

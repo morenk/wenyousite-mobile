@@ -11,7 +11,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_waterfall_card.dart';
-import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 
 class MomentFeedPage extends ConsumerStatefulWidget {
   const MomentFeedPage({super.key});
@@ -48,18 +47,23 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
       ),
       body: Column(
         children: [
-          MomentContentPadding(
+          WenyouContentFrame(
             top: context.wenyouTokens.space12,
             bottom: context.wenyouTokens.space12,
-            child: WenyouLineFilterBar<MomentFeedMode>(
+            child: WenyouContentTabs<MomentFeedMode>(
               key: const Key('moment-feed-filter'),
               keyPrefix: 'moment-feed',
               semanticsLabel: '动态信息流',
               options: const [
-                WenyouFilterOption(value: MomentFeedMode.discover, label: '发现'),
+                WenyouFilterOption(
+                  value: MomentFeedMode.discover,
+                  label: '发现',
+                  keyValue: 'discover',
+                ),
                 WenyouFilterOption(
                   value: MomentFeedMode.following,
                   label: '关注',
+                  keyValue: 'following',
                 ),
               ],
               selected: _mode,
@@ -222,7 +226,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       return [
         SliverFillRemaining(
           hasScrollBody: false,
-          child: MomentContentPadding(
+          child: WenyouContentFrame(
             top: 16,
             bottom: 80,
             child: WenyouPanel(
@@ -249,7 +253,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       return [
         SliverFillRemaining(
           hasScrollBody: false,
-          child: MomentContentPadding(
+          child: WenyouContentFrame(
             top: 16,
             bottom: 80,
             child: WenyouPanel(
@@ -304,7 +308,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         ),
       ),
       SliverToBoxAdapter(
-        child: MomentContentPadding(
+        child: WenyouContentFrame(
           top: 12,
           bottom: 112,
           child: Center(
@@ -430,7 +434,7 @@ class _FollowingLoginState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MomentContentPadding(
+    return WenyouContentFrame(
       top: 16,
       bottom: 80,
       child: WenyouPanel(

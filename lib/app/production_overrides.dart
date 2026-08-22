@@ -28,6 +28,7 @@ import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart'
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
+import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
@@ -172,6 +173,9 @@ List<Override> productionProviderOverrides() => [
   ),
   threadDetailRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadDetailRepositoryProvider),
+  ),
+  postDiscussionAuthorDirectoryProvider.overrideWith(
+    (ref) => ref.watch(apiPostDiscussionAuthorDirectoryProvider),
   ),
   threadInvitationRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadInvitationRepositoryProvider),
