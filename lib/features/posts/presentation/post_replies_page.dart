@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
@@ -22,7 +23,6 @@ import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.d
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
-import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_states.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -59,7 +59,10 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   var _targetRevealReleased = false;
   var _openingComposer = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
-  final _authorFilterRestore = PostDiscussionAuthorFilterRestoreCoordinator();
+  final _authorFilterRestore =
+      DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
+        authorIdOf: (author) => author.userId,
+      );
 
   String get threadId => widget.threadId;
   String get rootPostId => widget.rootPostId;

@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -13,7 +14,6 @@ import 'package:wenyousite_mobile/features/posts/application/post_discussion_aut
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
-import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
@@ -57,7 +57,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   var _revealScheduled = false;
   var _targetRevealReleased = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
-  final _authorFilterRestore = PostDiscussionAuthorFilterRestoreCoordinator();
+  final _authorFilterRestore =
+      DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
+        authorIdOf: (author) => author.userId,
+      );
 
   @override
   void dispose() {

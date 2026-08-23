@@ -1,20 +1,22 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 
-typedef PostDiscussionAuthorSnapshot = ({
+typedef DiscussionAuthorFilterSnapshot<Author> = ({
   String? selectedAuthorId,
-  AsyncValue<List<PostDiscussionAuthor>> authors,
+  AsyncValue<List<Author>> authors,
 });
 
-class PostDiscussionAuthorFilterRestoreCoordinator {
+class DiscussionAuthorFilterRestoreCoordinator<Author> {
+  DiscussionAuthorFilterRestoreCoordinator({required this.authorIdOf});
+
+  final String Function(Author author) authorIdOf;
   String? _pendingSignature;
 
   void scheduleIfMissing({
     required String? scopeId,
     required String? selectedAuthorId,
-    required AsyncValue<List<PostDiscussionAuthor>> authors,
-    required PostDiscussionAuthorSnapshot Function() readCurrent,
+    required AsyncValue<List<Author>> authors,
+    required DiscussionAuthorFilterSnapshot<Author> Function() readCurrent,
     required Future<void> Function() clearAuthor,
     required bool Function() isMounted,
   }) {
@@ -24,7 +26,7 @@ class PostDiscussionAuthorFilterRestoreCoordinator {
         authors.isLoading ||
         authors.hasError ||
         loadedAuthors == null ||
-        loadedAuthors.any((author) => author.userId == selectedAuthorId)) {
+        _containsAuthor(loadedAuthors, selectedAuthorId)) {
       return;
     }
     final signature = '$scopeId:$selectedAuthorId';
@@ -42,13 +44,17 @@ class PostDiscussionAuthorFilterRestoreCoordinator {
           currentAuthors.isLoading ||
           currentAuthors.hasError ||
           currentValues == null ||
-          currentValues.any((author) => author.userId == selectedAuthorId)) {
+          _containsAuthor(currentValues, selectedAuthorId)) {
         _release(signature);
         return;
       }
       await clearAuthor();
       _release(signature);
     });
+  }
+
+  bool _containsAuthor(List<Author> authors, String selectedAuthorId) {
+    return authors.any((author) => authorIdOf(author) == selectedAuthorId);
   }
 
   void _release(String signature) {
