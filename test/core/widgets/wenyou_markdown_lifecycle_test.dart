@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/rendering.dart' show RenderParagraph, ScrollCacheExtent;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -28,14 +28,8 @@ void main() {
 
     expect(find.byKey(const Key('wenyou-markdown-plain-text')), findsOneWidget);
     expect(find.byType(MarkdownBody), findsNothing);
-    await tester.tap(
-      find
-          .descendant(
-            of: find.byKey(const Key('wenyou-markdown-plain-text')),
-            matching: find.byType(SelectableText),
-          )
-          .first,
-    );
+    expect(find.byType(SelectionArea), findsOneWidget);
+    await tester.tap(find.text('第一段纯文字\n仍是纯文字'));
     expect(taps, 1);
   });
 
@@ -54,6 +48,12 @@ void main() {
       );
 
       expect(find.byType(MarkdownBody), findsOneWidget, reason: data);
+      expect(
+        tester.widget<MarkdownBody>(find.byType(MarkdownBody)).selectable,
+        isFalse,
+        reason: data,
+      );
+      expect(find.byType(SelectionArea), findsOneWidget, reason: data);
       expect(
         find.byKey(const Key('wenyou-markdown-plain-text')),
         findsNothing,
@@ -92,6 +92,96 @@ void main() {
     expect(identical(firstBody, secondBody), isTrue);
     await tester.tap(find.text('已解析正文'));
     expect(tappedVersion, 2);
+  });
+
+  testWidgets('纯文字与格式正文区域的纵向拖动交给父滚动页', (tester) async {
+    final fixtures = [
+      List.filled(36, '纯文字正文用于验证纵向拖动。').join('\n\n'),
+      List.filled(36, '**格式正文用于验证纵向拖动。**').join('\n\n'),
+    ];
+
+    for (final data in fixtures) {
+      final controller = ScrollController(keepScrollOffset: false);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ListView(
+              controller: controller,
+              children: [
+                WenyouMarkdown(
+                  key: const Key('scrollable-markdown-body'),
+                  data: data,
+                ),
+                const SizedBox(height: 800),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final start =
+          tester.getTopLeft(find.byKey(const Key('scrollable-markdown-body'))) +
+          const Offset(80, 120);
+      await tester.dragFrom(start, const Offset(0, -180));
+      await tester.pumpAndSettle();
+
+      expect(controller.offset, greaterThan(0), reason: data);
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    }
+  });
+
+  testWidgets('长按拖动选择可跨越纯文字与格式正文段落', (tester) async {
+    for (final data in const [
+      'First paragraph words\n\nSecond paragraph words',
+      '**First paragraph words**\n\nSecond paragraph words',
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(body: WenyouMarkdown(data: data)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final paragraphs = tester
+          .renderObjectList<RenderParagraph>(
+            find.descendant(
+              of: find.byType(WenyouMarkdown),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is RichText &&
+                    (widget.text.toPlainText().startsWith('First') ||
+                        widget.text.toPlainText().startsWith('Second')),
+              ),
+            ),
+          )
+          .toList();
+      expect(paragraphs, hasLength(2), reason: data);
+      final gesture = await tester.startGesture(
+        _textOffsetToPosition(paragraphs.first, 8),
+      );
+      addTearDown(gesture.removePointer);
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(paragraphs.first.selections, isNotEmpty, reason: data);
+      await gesture.moveTo(_textOffsetToPosition(paragraphs.last, 8));
+      await tester.pump();
+
+      expect(
+        paragraphs.first.selections.single.isCollapsed,
+        isFalse,
+        reason: data,
+      );
+      expect(
+        paragraphs.last.selections.single.isCollapsed,
+        isFalse,
+        reason: data,
+      );
+      await gesture.up();
+    }
   });
 
   testWidgets('长讨论楼层滑出缓存邻域后仍驻留且回来不重建', (tester) async {
@@ -148,6 +238,14 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     expect(disposals, contains(0));
   });
+}
+
+Offset _textOffsetToPosition(RenderParagraph paragraph, int offset) {
+  const caret = Rect.fromLTWH(0, 0, 2, 20);
+  final localOffset =
+      paragraph.getOffsetForCaret(TextPosition(offset: offset), caret) +
+      Offset(0, paragraph.preferredLineHeight - 2);
+  return paragraph.localToGlobal(localOffset);
 }
 
 class _LifecycleProbe extends StatefulWidget {

@@ -602,7 +602,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('楼层正文按真实视口高度渐变折叠并可展开收起', (tester) async {
+  testWidgets('楼层正文按真实视口高度折叠且展开后可从正文区域滚动', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -645,6 +645,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(collapsed, findsNothing);
     expect(find.text('收起'), findsOneWidget);
+
+    final scrollController = tester
+        .widget<CustomScrollView>(find.byType(CustomScrollView))
+        .controller!;
+    final offsetBeforeBodyDrag = scrollController.offset;
+    final visibleBodyText = find.text('这是用于验证楼层正文真实布局高度的一段文字。').hitTestable();
+    expect(visibleBodyText, findsWidgets);
+    await tester.drag(visibleBodyText.first, const Offset(0, -180));
+    await tester.pumpAndSettle();
+    expect(scrollController.offset, greaterThan(offsetBeforeBodyDrag));
 
     await tester.ensureVisible(toggle);
     await tester.pumpAndSettle();

@@ -122,58 +122,64 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   Widget build(BuildContext context) => _renderedBody ??= _buildBody();
 
   Widget _buildBody() {
+    final Widget body;
     if (_usesPlainTextFastPath) {
       final paragraphs = _normalizedData.split(_plainTextParagraphBreak);
-      return Column(
+      body = Column(
         key: const Key('wenyou-markdown-plain-text'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < paragraphs.length; index++) ...[
             if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
-            SelectableText(
-              paragraphs[index],
-              style: _styleSheet?.p,
+            GestureDetector(
+              behavior: HitTestBehavior.translucent,
               onTap: widget.onTapText == null ? null : _handleTapText,
+              child: Text(paragraphs[index], style: _styleSheet?.p),
             ),
           ],
         ],
       );
+    } else {
+      body = GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: widget.onTapText == null ? null : _handleTapText,
+        child: MarkdownBody(
+          data: _normalizedData,
+          selectable: false,
+          softLineBreak: true,
+          styleSheet: _styleSheet,
+          inlineSyntaxes: [
+            _InternalReferenceInlineSyntax(),
+            _UserMentionInlineSyntax(),
+            _AllPlayersMentionInlineSyntax(),
+            _DiceInlineSyntax(),
+          ],
+          builders: {
+            'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
+              _internalReferences,
+              (reference) => _openInternalReference(context, reference),
+            ),
+            'wenyou-dice': _DiceMarkdownBuilder(
+              _diceLabels,
+              _diceSemantics,
+              _diceDetails,
+            ),
+            'wenyou-mention': _MentionMarkdownBuilder(
+              (location) => _openInternalLocation(context, location),
+            ),
+            'code': _InlineCodeMarkdownBuilder(),
+          },
+          onTapLink: (_, href, _) => _openLink(context, href),
+          imageBuilder: (uri, title, alt) => _MarkdownImage(
+            uri: uri,
+            title: title,
+            alt: alt,
+            onSave: widget.onSaveImage == null ? null : _saveImage,
+          ),
+        ),
+      );
     }
-    return MarkdownBody(
-      data: _normalizedData,
-      selectable: true,
-      softLineBreak: true,
-      styleSheet: _styleSheet,
-      inlineSyntaxes: [
-        _InternalReferenceInlineSyntax(),
-        _UserMentionInlineSyntax(),
-        _AllPlayersMentionInlineSyntax(),
-        _DiceInlineSyntax(),
-      ],
-      builders: {
-        'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
-          _internalReferences,
-          (reference) => _openInternalReference(context, reference),
-        ),
-        'wenyou-dice': _DiceMarkdownBuilder(
-          _diceLabels,
-          _diceSemantics,
-          _diceDetails,
-        ),
-        'wenyou-mention': _MentionMarkdownBuilder(
-          (location) => _openInternalLocation(context, location),
-        ),
-        'code': _InlineCodeMarkdownBuilder(),
-      },
-      onTapLink: (_, href, _) => _openLink(context, href),
-      onTapText: widget.onTapText == null ? null : _handleTapText,
-      imageBuilder: (uri, title, alt) => _MarkdownImage(
-        uri: uri,
-        title: title,
-        alt: alt,
-        onSave: widget.onSaveImage == null ? null : _saveImage,
-      ),
-    );
+    return SelectionArea(child: body);
   }
 
   void _prepareData() {

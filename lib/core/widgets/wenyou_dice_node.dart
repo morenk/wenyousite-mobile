@@ -103,6 +103,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
 
     if (!_actionable) {
       return Semantics(
+        container: true,
         label: widget.semanticLabel,
         excludeSemantics: true,
         child: content,
@@ -110,6 +111,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
     }
 
     return Semantics(
+      container: true,
       button: true,
       label: widget.semanticLabel,
       hint: WenyouElementContract.diceSettledSemanticsHint,
