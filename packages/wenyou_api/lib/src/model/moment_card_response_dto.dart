@@ -29,6 +29,7 @@ part 'moment_card_response_dto.g.dart';
 /// * [tipTotal]
 /// * [viewerLiked]
 /// * [viewerBookmarked]
+/// * [canInteract] - 是否允许新增点赞、评论、收藏和加油；字段缺失时客户端按 true 兼容旧服务
 /// * [createdAt]
 /// * [updatedAt]
 @BuiltValue()
@@ -80,6 +81,10 @@ abstract class MomentCardResponseDto implements Built<MomentCardResponseDto, Mom
 
   @BuiltValueField(wireName: r'viewerBookmarked')
   bool get viewerBookmarked;
+
+  /// 是否允许新增点赞、评论、收藏和加油；字段缺失时客户端按 true 兼容旧服务
+  @BuiltValueField(wireName: r'canInteract')
+  bool? get canInteract;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
@@ -185,6 +190,13 @@ class _$MomentCardResponseDtoSerializer implements PrimitiveSerializer<MomentCar
       object.viewerBookmarked,
       specifiedType: const FullType(bool),
     );
+    if (object.canInteract != null) {
+      yield r'canInteract';
+      yield serializers.serialize(
+        object.canInteract,
+        specifiedType: const FullType(bool),
+      );
+    }
     yield r'createdAt';
     yield serializers.serialize(
       object.createdAt,
@@ -323,6 +335,13 @@ class _$MomentCardResponseDtoSerializer implements PrimitiveSerializer<MomentCar
             specifiedType: const FullType(bool),
           ) as bool;
           result.viewerBookmarked = valueDes;
+          break;
+        case r'canInteract':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.canInteract = valueDes;
           break;
         case r'createdAt':
           final valueDes = serializers.deserialize(

@@ -202,6 +202,8 @@ class _$MomentCardResponseDto extends MomentCardResponseDto {
   @override
   final bool viewerBookmarked;
   @override
+  final bool? canInteract;
+  @override
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
@@ -226,6 +228,7 @@ class _$MomentCardResponseDto extends MomentCardResponseDto {
     required this.tipTotal,
     required this.viewerLiked,
     required this.viewerBookmarked,
+    this.canInteract,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -257,6 +260,7 @@ class _$MomentCardResponseDto extends MomentCardResponseDto {
         tipTotal == other.tipTotal &&
         viewerLiked == other.viewerLiked &&
         viewerBookmarked == other.viewerBookmarked &&
+        canInteract == other.canInteract &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -279,6 +283,7 @@ class _$MomentCardResponseDto extends MomentCardResponseDto {
     _$hash = $jc(_$hash, tipTotal.hashCode);
     _$hash = $jc(_$hash, viewerLiked.hashCode);
     _$hash = $jc(_$hash, viewerBookmarked.hashCode);
+    _$hash = $jc(_$hash, canInteract.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -303,6 +308,7 @@ class _$MomentCardResponseDto extends MomentCardResponseDto {
           ..add('tipTotal', tipTotal)
           ..add('viewerLiked', viewerLiked)
           ..add('viewerBookmarked', viewerBookmarked)
+          ..add('canInteract', canInteract)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -382,6 +388,10 @@ class MomentCardResponseDtoBuilder
   set viewerBookmarked(bool? viewerBookmarked) =>
       _$this._viewerBookmarked = viewerBookmarked;
 
+  bool? _canInteract;
+  bool? get canInteract => _$this._canInteract;
+  set canInteract(bool? canInteract) => _$this._canInteract = canInteract;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -412,6 +422,7 @@ class MomentCardResponseDtoBuilder
       _tipTotal = $v.tipTotal;
       _viewerLiked = $v.viewerLiked;
       _viewerBookmarked = $v.viewerBookmarked;
+      _canInteract = $v.canInteract;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -505,6 +516,7 @@ class MomentCardResponseDtoBuilder
               r'MomentCardResponseDto',
               'viewerBookmarked',
             ),
+            canInteract: canInteract,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
               r'MomentCardResponseDto',

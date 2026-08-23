@@ -1,5 +1,6 @@
 # 移动端变更记录
 
+- 同步后端契约 `5.8.1-dev.20260823.1`（revision `2e931d29dd2de0ed5ad31571ae565a3b8066f8a0`）并重新生成客户端；动态卡片、详情、搜索和本人收藏响应新增可选 `canInteract`，动态与评论媒体参数补齐 CUID 约束；互动权限投影的移动端消费另开功能切片。
 - 修复 Android 冷启动零尺寸预热帧触发布局异常并继发 Flutter inactive-elements 红屏的问题：预热阶段只保留纯白画布，拿到有效窗口尺寸后才居中显示完整品牌内容；Android/iOS 系统启动层同步改为纯白且不单独显示 Logo，Flutter 品牌页从实际可见首帧起至少稳定展示 700ms。
 - Foundation 固定依赖升级到 `v6.4.0`：Android 接入 adaptive/monochrome/legacy 应用图标与品牌启动层，iOS 同步 AppIcon 和静态 LaunchScreen；Flutter 启动首帧展示 96dp 标识、“温油站”和“最温油的文字共创社区”，登录/注册与首页标题栏分别使用 48dp、24dp 标识，并以自动化哈希检查防止原生资源漂移。
 - 同步后端契约 `5.8.0-dev.20260823.1`（revision `bec22b547da8154b74493d90d1e46e8d3e54d1ba`）并重新生成客户端；主题列表、草稿、详情、邀请预览与订阅响应新增可空 `categoryInfo` 分类展示投影，分类黄金 fixture 升级至 v3；旧 `category` 保持兼容，移动端消费新投影另开功能切片。
