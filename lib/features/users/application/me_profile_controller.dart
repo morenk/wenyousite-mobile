@@ -16,6 +16,8 @@ class MeProfileState {
     this.phase = MeProfilePhase.loading,
     this.profile,
     this.failure,
+    this.isRefreshing = false,
+    this.refreshFailure,
     this.submitting,
     this.submissionFailure,
     this.failedAction,
@@ -25,6 +27,8 @@ class MeProfileState {
   final MeProfilePhase phase;
   final MeProfileModel? profile;
   final ApiFailure? failure;
+  final bool isRefreshing;
+  final ApiFailure? refreshFailure;
   final MeProfileAction? submitting;
   final ApiFailure? submissionFailure;
   final MeProfileAction? failedAction;
@@ -36,11 +40,14 @@ class MeProfileState {
     MeProfilePhase? phase,
     MeProfileModel? profile,
     ApiFailure? failure,
+    bool? isRefreshing,
+    ApiFailure? refreshFailure,
     MeProfileAction? submitting,
     ApiFailure? submissionFailure,
     MeProfileAction? failedAction,
     String? successMessage,
     bool clearFailure = false,
+    bool clearRefreshFailure = false,
     bool clearSubmission = false,
     bool clearFeedback = false,
   }) {
@@ -48,6 +55,10 @@ class MeProfileState {
       phase: phase ?? this.phase,
       profile: profile ?? this.profile,
       failure: clearFailure ? null : (failure ?? this.failure),
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      refreshFailure: clearRefreshFailure
+          ? null
+          : (refreshFailure ?? this.refreshFailure),
       submitting: clearSubmission ? null : (submitting ?? this.submitting),
       submissionFailure: clearFeedback
           ? null
@@ -81,6 +92,36 @@ class MeProfileController extends StateNotifier<MeProfileState> {
       state = MeProfileState(
         phase: MeProfilePhase.failed,
         failure: _asFailure(error, '本人资料加载失败，请稍后重试。'),
+      );
+    }
+  }
+
+  Future<void> refresh() async {
+    if (state.phase != MeProfilePhase.ready || state.profile == null) {
+      await load();
+      return;
+    }
+    if (state.isRefreshing) return;
+    final epoch = ++_epoch;
+    state = state.copyWith(
+      isRefreshing: true,
+      clearFailure: true,
+      clearRefreshFailure: true,
+    );
+    try {
+      final profile = await _repository.fetchMe();
+      if (!_isCurrent(epoch)) return;
+      state = state.copyWith(
+        phase: MeProfilePhase.ready,
+        profile: profile,
+        isRefreshing: false,
+        clearRefreshFailure: true,
+      );
+    } on Object catch (error) {
+      if (!_isCurrent(epoch)) return;
+      state = state.copyWith(
+        isRefreshing: false,
+        refreshFailure: _asFailure(error, '个人资料刷新失败，请稍后重试。'),
       );
     }
   }

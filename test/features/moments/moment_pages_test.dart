@@ -67,6 +67,24 @@ void main() {
     expect(repository.feedModes, [MomentFeedMode.discover]);
   });
 
+  testWidgets('动态信息流通过滚动通知在接近底部时继续分页', (tester) async {
+    final repository = _PagingPageRepository();
+    await tester.pumpWidget(_feedApp(repository));
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    await tester.pumpAndSettle();
+
+    expect(repository.cursors, [null, 'next']);
+    expect(find.byKey(const Key('moment-card-moment-next')), findsOneWidget);
+  });
+
   testWidgets('360dp 动态信息流使用双列瀑布布局并保留 48dp 点赞目标', (tester) async {
     expect(
       WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed'],
@@ -1283,6 +1301,34 @@ class _PendingPageRepository extends _PageRepository {
   }) {
     feedModes.add(mode);
     return feed.future;
+  }
+}
+
+class _PagingPageRepository extends _PageRepository {
+  final cursors = <String?>[];
+
+  @override
+  Future<CursorPage<MomentCard>> fetchFeed({
+    required MomentFeedMode mode,
+    String? cursor,
+    int limit = 20,
+  }) async {
+    feedModes.add(mode);
+    cursors.add(cursor);
+    if (cursor == 'next') {
+      return CursorPage(
+        items: [_card(id: 'moment-next', title: '分页动态')],
+        hasMore: false,
+      );
+    }
+    return CursorPage(
+      items: [
+        for (var index = 0; index < 30; index++)
+          _card(id: 'moment-$index', title: '动态 $index'),
+      ],
+      cursor: 'next',
+      hasMore: true,
+    );
   }
 }
 

@@ -29,6 +29,8 @@ class PublicUserState {
     this.replies = const PublicUserContentSection(),
     this.bookmarks = const PublicUserContentSection(),
     this.showAllContent = false,
+    this.isRefreshing = false,
+    this.transientFailure,
   });
 
   final PublicUserPhase phase;
@@ -43,6 +45,8 @@ class PublicUserState {
   final PublicUserContentSection<PublicUserReplyModel> replies;
   final PublicUserContentSection<PublicUserThreadModel> bookmarks;
   final bool showAllContent;
+  final bool isRefreshing;
+  final ApiFailure? transientFailure;
 
   List<PublicUserContentTab> get availableTabs => showAllContent
       ? PublicUserContentTab.values
@@ -61,6 +65,9 @@ class PublicUserState {
     PublicUserContentSection<PublicUserReplyModel>? replies,
     PublicUserContentSection<PublicUserThreadModel>? bookmarks,
     bool? showAllContent,
+    bool? isRefreshing,
+    ApiFailure? transientFailure,
+    bool clearTransientFailure = false,
   }) {
     return PublicUserState(
       phase: phase ?? this.phase,
@@ -75,6 +82,10 @@ class PublicUserState {
       replies: replies ?? this.replies,
       bookmarks: bookmarks ?? this.bookmarks,
       showAllContent: showAllContent ?? this.showAllContent,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      transientFailure: clearTransientFailure
+          ? null
+          : (transientFailure ?? this.transientFailure),
     );
   }
 }
@@ -173,6 +184,17 @@ class PublicUserController extends StateNotifier<PublicUserState> {
     return _loadTab(state.activeTab, _profileEpoch);
   }
 
+  Future<void> refreshOverview() {
+    return _refreshContent(
+      PublicUserContentTab.replies,
+      includeActivitySummary: true,
+    );
+  }
+
+  Future<void> refreshActive() {
+    return _refreshContent(state.activeTab);
+  }
+
   Future<void> loadMoreActive() async {
     if (state.phase != PublicUserPhase.ready ||
         state.activeTab == PublicUserContentTab.replies) {
@@ -241,6 +263,89 @@ class PublicUserController extends StateNotifier<PublicUserState> {
           failure: _asFailure(error, '加载更多用户内容失败，请重试。'),
         ),
       );
+    }
+  }
+
+  Future<void> _refreshContent(
+    PublicUserContentTab tab, {
+    bool includeActivitySummary = false,
+  }) async {
+    if (state.phase != PublicUserPhase.ready || state.isRefreshing) return;
+    final profileEpoch = _profileEpoch;
+    state = state.copyWith(isRefreshing: true, clearTransientFailure: true);
+    final failures = await Future.wait<ApiFailure?>([
+      if (includeActivitySummary) _refreshActivitySummary(profileEpoch),
+      _refreshTab(tab, profileEpoch),
+    ]);
+    if (!_isProfileCurrent(profileEpoch)) return;
+    final failure = failures.whereType<ApiFailure>().firstOrNull;
+    state = state.copyWith(
+      isRefreshing: false,
+      transientFailure: failure,
+      clearTransientFailure: failure == null,
+    );
+  }
+
+  Future<ApiFailure?> _refreshActivitySummary(int profileEpoch) async {
+    if (state.activityPhase != PublicUserActivityPhase.ready ||
+        state.activitySummary == null) {
+      await _loadActivitySummary(profileEpoch);
+      return state.activityPhase == PublicUserActivityPhase.failed
+          ? state.activityFailure
+          : null;
+    }
+    try {
+      final summary = await _repository.fetchActivitySummary(userId);
+      if (!_isProfileCurrent(profileEpoch)) return null;
+      state = state.copyWith(
+        activityPhase: PublicUserActivityPhase.ready,
+        activitySummary: summary,
+      );
+      return null;
+    } on Object catch (error) {
+      if (!_isProfileCurrent(profileEpoch)) return null;
+      return _asFailure(error, '创作概览刷新失败，请稍后重试。');
+    }
+  }
+
+  Future<ApiFailure?> _refreshTab(
+    PublicUserContentTab tab,
+    int profileEpoch,
+  ) async {
+    final phase = _sectionPhase(tab);
+    if (phase == PublicUserContentPhase.loading) return null;
+    if (phase != PublicUserContentPhase.ready) {
+      await _loadTab(tab, profileEpoch);
+      return _sectionFailure(tab);
+    }
+    final sectionEpoch = _nextSectionEpoch(tab);
+    try {
+      if (tab == PublicUserContentTab.replies) {
+        final items = await _repository.fetchRecentReplies(userId);
+        if (!_isSectionCurrent(profileEpoch, tab, sectionEpoch)) return null;
+        state = state.copyWith(
+          replies: PublicUserContentSection(
+            phase: PublicUserContentPhase.ready,
+            items: items,
+          ),
+        );
+      } else {
+        final page = await _fetchThreadPage(tab);
+        if (!_isSectionCurrent(profileEpoch, tab, sectionEpoch)) return null;
+        _setThreadSection(
+          tab,
+          PublicUserContentSection(
+            phase: PublicUserContentPhase.ready,
+            items: page.items,
+            cursor: page.cursor,
+            hasMore: page.hasMore,
+          ),
+        );
+      }
+      return null;
+    } on Object catch (error) {
+      if (!_isSectionCurrent(profileEpoch, tab, sectionEpoch)) return null;
+      return _asFailure(error, '${tab.description}刷新失败，请稍后重试。');
     }
   }
 
@@ -361,6 +466,15 @@ class PublicUserController extends StateNotifier<PublicUserState> {
       PublicUserContentTab.played => state.played.phase,
       PublicUserContentTab.replies => state.replies.phase,
       PublicUserContentTab.bookmarks => state.bookmarks.phase,
+    };
+  }
+
+  ApiFailure? _sectionFailure(PublicUserContentTab tab) {
+    return switch (tab) {
+      PublicUserContentTab.created => state.created.failure,
+      PublicUserContentTab.played => state.played.failure,
+      PublicUserContentTab.replies => state.replies.failure,
+      PublicUserContentTab.bookmarks => state.bookmarks.failure,
     };
   }
 

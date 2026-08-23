@@ -17,12 +17,17 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_ports.
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
+import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -117,6 +122,99 @@ void main() {
     expect(find.text('注销账号'), findsNothing);
     expect(find.text('公开最近回复'), findsNothing);
     expect(repository.fetchCalls, 1);
+  });
+
+  testWidgets('动态列表回到顶部后继续展开资料头并只从整页顶部刷新', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final profileRepository = _FakeMeProfileRepository();
+    final publicRepository = _FakePublicUserRepository();
+    final walletRepository = _FakeWalletRepository();
+    final momentRepository = _FakeProfileMomentRepository();
+    final container = await _authenticatedContainer(
+      profileRepository,
+      publicUserRepository: publicRepository,
+      walletRepository: walletRepository,
+      momentRepository: momentRepository,
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: MePage(
+            userMoments: MeUserMomentsIntegration(
+              builder: (userId) => MomentFeedList(
+                target: MomentFeedTarget.user(userId),
+                emptyTitle: '还没有发布动态',
+                emptyMessage: '',
+                pullToRefreshEnabled: false,
+              ),
+              refresh: (userId) => container
+                  .read(
+                    momentFeedControllerProvider(
+                      MomentFeedTarget.user(userId),
+                    ).notifier,
+                  )
+                  .refresh(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('动态'));
+    await tester.pumpAndSettle();
+
+    final nested = tester.widget<NestedScrollView>(
+      find.byType(NestedScrollView),
+    );
+    final outer = nested.controller!;
+    final moments = find.byType(CustomScrollView);
+    expect(moments, findsOneWidget);
+    final initialProfileCalls = profileRepository.fetchCalls;
+    final initialWalletCalls = walletRepository.walletCalls;
+    final initialMomentCalls = momentRepository.userCalls;
+
+    expect(outer.offset, greaterThan(0));
+    await tester.drag(moments, const Offset(0, 700));
+    await tester.pumpAndSettle();
+
+    expect(outer.offset, closeTo(0, 0.1));
+    expect(find.byKey(const Key('me-profile-header')), findsOneWidget);
+    expect(profileRepository.fetchCalls, initialProfileCalls);
+    expect(walletRepository.walletCalls, initialWalletCalls);
+    expect(momentRepository.userCalls, initialMomentCalls);
+
+    await tester.drag(moments, const Offset(0, -1800));
+    await tester.pumpAndSettle();
+    expect(outer.offset, greaterThan(0));
+
+    await tester.drag(moments, const Offset(0, 2400));
+    await tester.pumpAndSettle();
+
+    expect(outer.offset, closeTo(0, 0.1));
+    expect(profileRepository.fetchCalls, initialProfileCalls);
+    expect(walletRepository.walletCalls, initialWalletCalls);
+    expect(momentRepository.userCalls, initialMomentCalls);
+
+    await tester.drag(moments, const Offset(0, 400));
+    await tester.pumpAndSettle();
+
+    expect(profileRepository.fetchCalls, initialProfileCalls + 1);
+    expect(walletRepository.walletCalls, initialWalletCalls + 1);
+    expect(momentRepository.userCalls, initialMomentCalls + 1);
+    expect(publicRepository.activityCalls, 1);
+    expect(publicRepository.replyCalls, 1);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
   });
 
   testWidgets('本人中心以同级温油入口展示余额并复用主题卡片', (tester) async {
@@ -726,6 +824,7 @@ Future<ProviderContainer> _authenticatedContainer(
   AvatarRepository? avatarRepository,
   PublicUserRepository? publicUserRepository,
   WalletRepository? walletRepository,
+  MomentRepository? momentRepository,
   bool stickersEnabled = false,
 }) async {
   final container = ProviderContainer(
@@ -740,6 +839,8 @@ Future<ProviderContainer> _authenticatedContainer(
       walletRepositoryProvider.overrideWithValue(
         walletRepository ?? _FakeWalletRepository(),
       ),
+      if (momentRepository != null)
+        momentRepositoryProvider.overrideWithValue(momentRepository),
       avatarImagePickerPortProvider.overrideWithValue(
         avatarPicker ?? _FakeAvatarPicker(null),
       ),
@@ -1128,6 +1229,46 @@ class _FakeWalletRepository implements WalletRepository {
     required String amount,
     required String clientRequestId,
   }) => throw UnimplementedError();
+}
+
+class _FakeProfileMomentRepository extends Fake implements MomentRepository {
+  int userCalls = 0;
+
+  @override
+  Future<CursorPage<MomentCard>> fetchUserMoments({
+    required String userId,
+    String? cursor,
+    int limit = 20,
+  }) async {
+    userCalls += 1;
+    return CursorPage(
+      items: [
+        for (var index = 0; index < 40; index++) _profileMomentCard(index),
+      ],
+      hasMore: false,
+    );
+  }
+}
+
+MomentCard _profileMomentCard(int index) {
+  final timestamp = DateTime.utc(2026, 8, 20, 12);
+  return MomentCard(
+    id: 'profile-moment-$index',
+    author: const MomentAuthor(id: 'user-1', username: '温柔测试员', level: 4),
+    title: '动态 $index',
+    contentExcerpt: '用于验证个人主页联动滚动的动态内容。',
+    coverType: MomentCoverType.text,
+    textCoverTheme: MomentTextCoverTheme.mint,
+    imageCount: 0,
+    likeCount: 0,
+    commentCount: 0,
+    bookmarkCount: 0,
+    tipTotal: '0',
+    viewerLiked: false,
+    viewerBookmarked: false,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  );
 }
 
 final _profile = MeProfileModel(

@@ -8,6 +8,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -24,16 +25,24 @@ import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
-class MePage extends ConsumerWidget {
-  const MePage({this.userMomentsBuilder, super.key});
+void _showRefreshFailure(BuildContext context, ApiFailure failure) {
+  final requestId = failure.requestId;
+  final message = requestId == null
+      ? failure.userMessage
+      : '${failure.userMessage}（问题编号：$requestId）';
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
 
-  final MeUserMomentsBuilder? userMomentsBuilder;
+class MePage extends ConsumerWidget {
+  const MePage({this.userMoments, super.key});
+
+  final MeUserMomentsIntegration? userMoments;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
     if (!session.isAuthenticated) return const _GuestMePage();
-    return _AuthenticatedMePage(userMomentsBuilder: userMomentsBuilder);
+    return _AuthenticatedMePage(userMoments: userMoments);
   }
 }
 
@@ -69,9 +78,9 @@ class _GuestMePage extends StatelessWidget {
 }
 
 class _AuthenticatedMePage extends ConsumerWidget {
-  const _AuthenticatedMePage({required this.userMomentsBuilder});
+  const _AuthenticatedMePage({required this.userMoments});
 
-  final MeUserMomentsBuilder? userMomentsBuilder;
+  final MeUserMomentsIntegration? userMoments;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,6 +88,14 @@ class _AuthenticatedMePage extends ConsumerWidget {
     final notifier = ref.read(meProfileControllerProvider.notifier);
     final stickersEnabled = ref.watch(stickersEnabledProvider);
     final profile = state.profile;
+    ref.listen(
+      meProfileControllerProvider.select((value) => value.refreshFailure),
+      (previous, next) {
+        if (next != null && next != previous) {
+          _showRefreshFailure(context, next);
+        }
+      },
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的'),
@@ -145,7 +162,7 @@ class _AuthenticatedMePage extends ConsumerWidget {
         ),
         MeProfilePhase.ready => _MeDashboard(
           profile: state.profile!,
-          userMomentsBuilder: userMomentsBuilder,
+          userMoments: userMoments,
         ),
       },
     );
@@ -293,10 +310,10 @@ class _MePageList extends StatelessWidget {
 }
 
 class _MeDashboard extends ConsumerStatefulWidget {
-  const _MeDashboard({required this.profile, required this.userMomentsBuilder});
+  const _MeDashboard({required this.profile, required this.userMoments});
 
   final MeProfileModel profile;
-  final MeUserMomentsBuilder? userMomentsBuilder;
+  final MeUserMomentsIntegration? userMoments;
 
   @override
   ConsumerState<_MeDashboard> createState() => _MeDashboardState();
@@ -304,7 +321,15 @@ class _MeDashboard extends ConsumerStatefulWidget {
 
 class _MeDashboardState extends ConsumerState<_MeDashboard> {
   final Set<int> _visitedTabs = {0};
+  final ScrollController _outerScrollController = ScrollController();
   var _activeIndex = 0;
+  var _refreshGestureEligible = false;
+
+  @override
+  void dispose() {
+    _outerScrollController.dispose();
+    super.dispose();
+  }
 
   void _selectTab(MeContentTab selected) {
     if (_activeIndex == selected.index &&
@@ -331,64 +356,120 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
     final walletProvider = walletControllerProvider(walletSessionKey(ref));
     final walletState = ref.watch(walletProvider);
     final horizontal = wenyouHorizontalPagePadding(context);
-    return NestedScrollView(
-      key: const PageStorageKey('me-dashboard-scroll'),
-      headerSliverBuilder: (context, innerBoxIsScrolled) => [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              horizontal,
-              tokens.space16,
-              horizontal,
-              tokens.space12,
-            ),
-            child: WenyouConstrainedWidth(
-              child: _ProfileOverview(
-                profile: widget.profile,
-                walletState: walletState,
+    ref.listen(
+      meUserContentControllerProvider(
+        widget.profile.id,
+      ).select((value) => value.transientFailure),
+      (previous, next) {
+        if (next != null && next != previous) {
+          _showRefreshFailure(context, next);
+        }
+      },
+    );
+    return RefreshIndicator(
+      key: const Key('me-dashboard-refresh'),
+      semanticsLabel: '刷新我的主页',
+      notificationPredicate: _refreshNotificationPredicate,
+      onRefresh: _refreshDashboard,
+      child: NestedScrollView(
+        key: const PageStorageKey('me-dashboard-scroll'),
+        controller: _outerScrollController,
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                horizontal,
+                tokens.space16,
+                horizontal,
+                tokens.space12,
+              ),
+              child: WenyouConstrainedWidth(
+                child: _ProfileOverview(
+                  profile: widget.profile,
+                  walletState: walletState,
+                ),
               ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: WenyouContentTabs<MeContentTab>(
-            key: const Key('me-content-tabs'),
-            keyPrefix: 'me-content',
-            semanticsLabel: '我的主页内容',
-            placement: WenyouTabPlacement.page,
-            options: [
-              for (final tab in MeContentTab.values)
-                WenyouFilterOption(value: tab, label: tab.label),
-            ],
-            selected: MeContentTab.values[_activeIndex],
-            onSelected: _selectTab,
+          SliverToBoxAdapter(
+            child: WenyouContentTabs<MeContentTab>(
+              key: const Key('me-content-tabs'),
+              keyPrefix: 'me-content',
+              semanticsLabel: '我的主页内容',
+              placement: WenyouTabPlacement.page,
+              options: [
+                for (final tab in MeContentTab.values)
+                  WenyouFilterOption(value: tab, label: tab.label),
+              ],
+              selected: MeContentTab.values[_activeIndex],
+              onSelected: _selectTab,
+            ),
           ),
-        ),
-      ],
-      body: IndexedStack(
-        index: _activeIndex,
-        children: [
-          for (var index = 0; index < MeContentTab.values.length; index++)
-            _visitedTabs.contains(index)
-                ? MeContentTabBody(
-                    key: PageStorageKey('me-content-tab-$index'),
-                    tab: MeContentTab.values[index],
-                    userId: widget.profile.id,
-                    onRefreshChrome: _refreshChrome,
-                    userMomentsBuilder: widget.userMomentsBuilder,
-                  )
-                : const SizedBox.expand(),
         ],
+        body: IndexedStack(
+          index: _activeIndex,
+          children: [
+            for (var index = 0; index < MeContentTab.values.length; index++)
+              _visitedTabs.contains(index)
+                  ? MeContentTabBody(
+                      key: PageStorageKey('me-content-tab-$index'),
+                      tab: MeContentTab.values[index],
+                      userId: widget.profile.id,
+                      userMomentsBuilder: widget.userMoments?.builder,
+                    )
+                  : const SizedBox.expand(),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _refreshChrome() {
+  bool _refreshNotificationPredicate(ScrollNotification notification) {
+    if (notification.depth != 1 || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+    if (notification is ScrollStartNotification) {
+      _refreshGestureEligible =
+          !_outerScrollController.hasClients ||
+          _outerScrollController.position.pixels <=
+              _outerScrollController.position.minScrollExtent;
+      return _refreshGestureEligible;
+    }
+    final eligible = _refreshGestureEligible;
+    if (notification is ScrollEndNotification) {
+      _refreshGestureEligible = false;
+    }
+    return eligible;
+  }
+
+  Future<void> _refreshDashboard() async {
+    final activeTab = MeContentTab.values[_activeIndex];
     final walletProvider = walletControllerProvider(walletSessionKey(ref));
-    return Future.wait([
-      ref.read(meProfileControllerProvider.notifier).load(),
-      ref.read(walletProvider.notifier).refresh(),
+    await Future.wait([
+      ref.read(meProfileControllerProvider.notifier).refresh(),
+      _refreshWallet(walletProvider),
+      switch (activeTab) {
+        MeContentTab.overview =>
+          ref
+              .read(meUserContentControllerProvider(widget.profile.id).notifier)
+              .refreshOverview(),
+        MeContentTab.moments =>
+          widget.userMoments?.refresh(widget.profile.id) ?? Future.value(),
+        MeContentTab.threads =>
+          ref
+              .read(meUserContentControllerProvider(widget.profile.id).notifier)
+              .refreshActive(),
+      },
     ]);
+  }
+
+  Future<void> _refreshWallet(
+    AutoDisposeStateNotifierProvider<WalletController, WalletState> provider,
+  ) async {
+    await ref.read(provider.notifier).retrySummary();
+    if (!mounted) return;
+    final failure = ref.read(provider).summaryFailure;
+    if (failure != null) _showRefreshFailure(context, failure);
   }
 }
 

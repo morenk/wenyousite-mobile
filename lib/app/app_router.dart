@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_c
 import 'package:wenyousite_mobile/features/direct_messages/presentation/new_direct_conversation_page.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
@@ -39,6 +40,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_p
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/public_user_page.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
@@ -94,13 +96,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: AppRoutePaths.me,
                 name: AppRouteNames.me,
                 builder: (context, state) => MePage(
-                  userMomentsBuilder: (userId, additionalRefresh) =>
-                      MomentFeedList(
-                        target: MomentFeedTarget.user(userId),
-                        emptyTitle: '还没有发布动态',
-                        emptyMessage: '',
-                        additionalRefresh: additionalRefresh,
-                      ),
+                  userMoments: MeUserMomentsIntegration(
+                    builder: (userId) => MomentFeedList(
+                      target: MomentFeedTarget.user(userId),
+                      emptyTitle: '还没有发布动态',
+                      emptyMessage: '',
+                      pullToRefreshEnabled: false,
+                    ),
+                    refresh: (userId) => ref
+                        .read(
+                          momentFeedControllerProvider(
+                            MomentFeedTarget.user(userId),
+                          ).notifier,
+                        )
+                        .refresh(),
+                  ),
                 ),
               ),
             ],

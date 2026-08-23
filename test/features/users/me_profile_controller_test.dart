@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
@@ -102,11 +104,58 @@ void main() {
     expect(controller.state.profile?.followingCount, 7);
     expect(controller.state.profile?.updatedAt, DateTime.utc(2026, 8, 10, 12));
   });
+
+  test('刷新期间保留已加载资料并在成功后结束忙碌状态', () async {
+    final refreshed = Completer<MeProfileModel>();
+    final repository = _FakeMeProfileRepository(
+      onFetch: (call) => call == 1 ? Future.value(_profile) : refreshed.future,
+    );
+    final controller = MeProfileController(repository, autoStart: false);
+    await controller.load();
+
+    final operation = controller.refresh();
+
+    expect(controller.state.phase, MeProfilePhase.ready);
+    expect(controller.state.profile, same(_profile));
+    expect(controller.state.isRefreshing, isTrue);
+
+    refreshed.complete(_profile);
+    await operation;
+
+    expect(controller.state.phase, MeProfilePhase.ready);
+    expect(controller.state.isRefreshing, isFalse);
+    expect(controller.state.refreshFailure, isNull);
+  });
+
+  test('刷新失败保留旧资料并记录非阻断问题编号', () async {
+    final repository = _FakeMeProfileRepository(
+      onFetch: (call) async {
+        if (call == 1) return _profile;
+        throw const ApiFailure(
+          userMessage: '个人资料刷新失败，请稍后重试。',
+          requestId: 'profile-refresh-request',
+        );
+      },
+    );
+    final controller = MeProfileController(repository, autoStart: false);
+    await controller.load();
+
+    await controller.refresh();
+
+    expect(controller.state.phase, MeProfilePhase.ready);
+    expect(controller.state.profile, same(_profile));
+    expect(controller.state.isRefreshing, isFalse);
+    expect(
+      controller.state.refreshFailure?.requestId,
+      'profile-refresh-request',
+    );
+  });
 }
 
 class _FakeMeProfileRepository implements MeProfileRepository {
-  _FakeMeProfileRepository({this.onUpdate});
+  _FakeMeProfileRepository({this.onFetch, this.onUpdate});
 
+  final Future<MeProfileModel> Function(int call)? onFetch;
   final Future<MeProfileUpdateResult> Function(MeProfilePatch patch)? onUpdate;
   int fetchCalls = 0;
   int updateCalls = 0;
@@ -115,7 +164,7 @@ class _FakeMeProfileRepository implements MeProfileRepository {
   @override
   Future<MeProfileModel> fetchMe() async {
     fetchCalls += 1;
-    return _profile;
+    return onFetch?.call(fetchCalls) ?? _profile;
   }
 
   @override

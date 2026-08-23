@@ -85,6 +85,77 @@ void main() {
     expect(repository.bookmarkCalls, 1);
   });
 
+  test('概览刷新失败时保留创作汇总与最近回复', () async {
+    var refreshShouldFail = false;
+    final repository = _FakePublicUserRepository(
+      onActivity: (call) async {
+        if (refreshShouldFail) {
+          throw const ApiFailure(
+            userMessage: '创作概览刷新失败，请稍后重试。',
+            requestId: 'activity-refresh-request',
+          );
+        }
+        return _activitySummary;
+      },
+      onReplies: (call) async {
+        if (refreshShouldFail) {
+          throw const ApiFailure(
+            userMessage: '最近回复刷新失败，请稍后重试。',
+            requestId: 'replies-refresh-request',
+          );
+        }
+        return [_reply];
+      },
+    );
+    final controller = PublicUserController(
+      repository,
+      'user-1',
+      selfContentOnly: true,
+      initialTab: PublicUserContentTab.replies,
+      autoStart: false,
+    );
+    await controller.load();
+    final previousSummary = controller.state.activitySummary;
+    final previousReplies = controller.state.replies.items;
+
+    refreshShouldFail = true;
+    await controller.refreshOverview();
+
+    expect(controller.state.phase, PublicUserPhase.ready);
+    expect(controller.state.activityPhase, PublicUserActivityPhase.ready);
+    expect(controller.state.activitySummary, same(previousSummary));
+    expect(controller.state.replies.phase, PublicUserContentPhase.ready);
+    expect(controller.state.replies.items, same(previousReplies));
+    expect(controller.state.isRefreshing, isFalse);
+    expect(
+      controller.state.transientFailure?.requestId,
+      'activity-refresh-request',
+    );
+    expect(repository.activityCalls, 2);
+    expect(repository.replyCalls, 2);
+  });
+
+  test('刷新当前主题页签不读取概览或未显示内容', () async {
+    final repository = _FakePublicUserRepository();
+    final controller = PublicUserController(
+      repository,
+      'user-1',
+      selfContentOnly: true,
+      initialTab: PublicUserContentTab.created,
+      autoStart: false,
+    );
+    await controller.load();
+
+    await controller.refreshActive();
+
+    expect(repository.createdCalls, 2);
+    expect(repository.activityCalls, 1);
+    expect(repository.playedCalls, 0);
+    expect(repository.replyCalls, 0);
+    expect(repository.bookmarkCalls, 0);
+    expect(controller.state.created.phase, PublicUserContentPhase.ready);
+  });
+
   test('主题分页按 ID 去重，cursor 失效后重新加载第一页', () async {
     var firstPageCalls = 0;
     final repository = _FakePublicUserRepository(
@@ -124,10 +195,16 @@ void main() {
 }
 
 class _FakePublicUserRepository implements PublicUserRepository {
-  _FakePublicUserRepository({PublicUserProfileModel? profile, this.onCreated})
-    : profile = profile ?? _profile();
+  _FakePublicUserRepository({
+    PublicUserProfileModel? profile,
+    this.onActivity,
+    this.onReplies,
+    this.onCreated,
+  }) : profile = profile ?? _profile();
 
   final PublicUserProfileModel profile;
+  final Future<PublicUserActivitySummary> Function(int call)? onActivity;
+  final Future<List<PublicUserReplyModel>> Function(int call)? onReplies;
   final Future<CursorPage<PublicUserThreadModel>> Function(String? cursor)?
   onCreated;
   int createdCalls = 0;
@@ -140,12 +217,7 @@ class _FakePublicUserRepository implements PublicUserRepository {
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
     activityCalls += 1;
-    return const PublicUserActivitySummary(
-      momentCount: 3,
-      createdThreadCount: 2,
-      playedThreadCount: 1,
-      replyCount: 4,
-    );
+    return onActivity?.call(activityCalls) ?? _activitySummary;
   }
 
   @override
@@ -186,7 +258,7 @@ class _FakePublicUserRepository implements PublicUserRepository {
   @override
   Future<List<PublicUserReplyModel>> fetchRecentReplies(String userId) async {
     replyCalls += 1;
-    return [_reply];
+    return onReplies?.call(replyCalls) ?? [_reply];
   }
 
   @override
@@ -202,6 +274,13 @@ class _FakePublicUserRepository implements PublicUserRepository {
     );
   }
 }
+
+const _activitySummary = PublicUserActivitySummary(
+  momentCount: 3,
+  createdThreadCount: 2,
+  playedThreadCount: 1,
+  replyCount: 4,
+);
 
 PublicUserProfileModel _profile({
   bool showRecentReplies = true,

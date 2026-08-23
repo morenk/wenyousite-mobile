@@ -111,46 +111,33 @@ class MomentFeedList extends ConsumerStatefulWidget {
     required this.target,
     required this.emptyTitle,
     required this.emptyMessage,
-    this.additionalRefresh,
+    this.pullToRefreshEnabled = true,
     super.key,
   });
 
   final MomentFeedTarget target;
   final String emptyTitle;
   final String emptyMessage;
-  final Future<void> Function()? additionalRefresh;
+  final bool pullToRefreshEnabled;
 
   @override
   ConsumerState<MomentFeedList> createState() => _MomentFeedListState();
 }
 
 class _MomentFeedListState extends ConsumerState<MomentFeedList> {
-  final _scrollController = ScrollController();
-
   bool get _usesTwoColumnWaterfall =>
       WenyouCollectionContract.mobileDomainLayoutExceptions['moments-feed'] ==
       'two-column-waterfall';
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_loadMoreNearEnd);
-  }
-
-  @override
-  void dispose() {
-    _scrollController
-      ..removeListener(_loadMoreNearEnd)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _loadMoreNearEnd() {
-    if (!_scrollController.hasClients ||
-        _scrollController.position.extentAfter > 480) {
-      return;
+  bool _loadMoreNearEnd(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical ||
+        notification.metrics.extentAfter > 480 ||
+        (notification is! ScrollUpdateNotification &&
+            notification is! OverscrollNotification)) {
+      return false;
     }
     ref.read(momentFeedControllerProvider(widget.target).notifier).loadMore();
+    return false;
   }
 
   @override
@@ -167,21 +154,23 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         ).showSnackBar(SnackBar(content: Text(next.userMessage)));
       }
     });
+    final scrollView = NotificationListener<ScrollNotification>(
+      onNotification: _loadMoreNearEnd,
+      child: CustomScrollView(
+        key: PageStorageKey('moment-feed-${widget.target.hashCode}'),
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: _slivers(context, state, provider),
+      ),
+    );
     return Semantics(
       container: true,
       label: '动态瀑布流',
-      child: RefreshIndicator(
-        onRefresh: () => Future.wait([
-          ref.read(provider.notifier).refresh(),
-          if (widget.additionalRefresh case final refresh?) refresh(),
-        ]),
-        child: CustomScrollView(
-          key: PageStorageKey('moment-feed-${widget.target.hashCode}'),
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: _slivers(context, state, provider),
-        ),
-      ),
+      child: widget.pullToRefreshEnabled
+          ? RefreshIndicator(
+              onRefresh: () => ref.read(provider.notifier).refresh(),
+              child: scrollView,
+            )
+          : scrollView,
     );
   }
 
