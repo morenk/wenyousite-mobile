@@ -7,7 +7,6 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
@@ -23,6 +22,7 @@ import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.d
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_states.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -139,17 +139,17 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
             maxWidth: 600,
             child: WenyouDetailSkeleton(label: '正在加载楼中楼讨论'),
           ),
-          PostDiscussionPhase.failed => _DiscussionFailure(
+          PostDiscussionPhase.failed => PostDiscussionFailure(
             failure: state.failure,
             onRetry: () => ref.read(provider.notifier).load(),
           ),
-          PostDiscussionPhase.restricted => _DiscussionFailure(
+          PostDiscussionPhase.restricted => PostDiscussionFailure(
             failure: state.failure,
             onRetry: null,
           ),
           PostDiscussionPhase.ready =>
             state.root?.threadId != threadId
-                ? const _RouteMismatch()
+                ? const PostRouteMismatch()
                 : NotificationListener<ScrollNotification>(
                     onNotification: _handleUserScroll,
                     child: NotificationListener<ScrollMetricsNotification>(
@@ -871,47 +871,6 @@ class _PostAuthorLine extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _DiscussionFailure extends StatelessWidget {
-  const _DiscussionFailure({required this.failure, required this.onRetry});
-
-  final ApiFailure? failure;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouPageBody(
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.metricReplies,
-          title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论加载失败',
-          message: failure?.userMessage ?? '请稍后重试。',
-          detail: wenyouRequestDetail(failure),
-          action: onRetry == null
-              ? null
-              : FilledButton(onPressed: onRetry, child: const Text('重试')),
-        ),
-      ),
-    );
-  }
-}
-
-class _RouteMismatch extends StatelessWidget {
-  const _RouteMismatch();
-
-  @override
-  Widget build(BuildContext context) {
-    return const WenyouPageBody(
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.actionUnlink,
-          title: '楼层不属于当前主题',
-          message: '请返回主题详情后重新打开。',
-        ),
-      ),
     );
   }
 }
