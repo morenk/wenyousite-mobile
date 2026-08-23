@@ -225,6 +225,7 @@ Map<String, Object?> _threadEnvelope({String threadId = 'thread-1'}) {
           'title': '主线',
           'sortOrder': 1,
           'postingPolicy': 'PARTICIPANTS',
+          'postingCapability': {'canPost': true, 'denialReason': null},
           'version': 1,
           'lastPostAt': createdAt,
           'deletedAt': null,
