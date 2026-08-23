@@ -30,7 +30,7 @@
 
 ## 5. API operationId 与生成类型
 
-- 阅读：`postsFindFloors` 使用查询参数 order 与可选 authorId 读取主楼层，`postsFindById` 定位目标，`postsFindReplies` 读取独立讨论；主楼与独立讨论的角色作者目录都复用 threads 的 `threadMembersFindAll`。
+- 阅读：`postsFindFloors` 使用查询参数 order 与可选 authorId 读取主楼层，`postsFindById` 定位目标，`postsFindReplies` 读取独立讨论；契约已提供 `postsFindFloorAuthors` 与 `postsFindReplyAuthors` 两个范围化作者目录，当前实现仍复用 threads 的 `threadMembersFindAll`，范围化端点记录为后续独立迁移切片。
 - 写入：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`；提及候选复用 editor 的 `usersMentionCandidates`；社区举报复用 reports 的 `reportsCreate`。
 - 主要生成类型：`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto`、`PostResponseDto`、`CreatePostDto`、`UpdatePostDto`、`UpsertBodyDto`、`ApiPaginationMeta`。
 
@@ -86,11 +86,11 @@
 
 ## 12. 已知限制和后续功能
 
-帖子待确认创建只在当前不可随意关闭的编辑会话内保留，应用进程被系统终止后不自动恢复或发送；用户应先用五槽位草稿保存长正文。主楼发言者与独立页回复者筛选共用主题成员角色目录，只覆盖楼主、协作者和已标记玩家；成员角色在设置面板打开期间发生变化时，下次目录刷新才采用新事实。提及继续使用独立的主题候选接口，不与讨论筛选目录混用。图片密集正文的解码性能与更完整的已有 Markdown 富文本还原仍需后续专项处理。
+帖子待确认创建只在当前不可随意关闭的编辑会话内保留，应用进程被系统终止后不自动恢复或发送；用户应先用五槽位草稿保存长正文。主楼发言者与独立页回复者筛选当前共用主题成员角色目录，只覆盖楼主、协作者和已标记玩家；契约 5.6 已提供子贴/主楼范围化作者目录，后续将以独立切片迁移，迁移前成员角色在设置面板打开期间发生变化时仍在下次目录刷新采用新事实。提及继续使用独立的主题候选接口，不与讨论筛选目录混用。图片密集正文的解码性能与更完整的已有 Markdown 富文本还原仍需后续专项处理。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.5.0-dev.20260822.1`；Markdown v3；后端 `15ed84d9000bf46989d18a18855c5950ba7f9b10`；Foundation `v6.2.0`（`4ad1eb8`）。
+契约 `5.6.0-dev.20260823.1`；Markdown v3；后端 `82bdfc13e0388c0ca7193b58c1b00f1873cab469`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 

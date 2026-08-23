@@ -36,9 +36,10 @@
 
 ## 5. API operationId 与生成类型
 
-主楼层列表的 `postsFindFloors` 向后端传入 `order=OLDEST|NEWEST` 和可选 authorId，默认“OLDEST + 全部发言者”；authorId 只从 `threadMembersFindAll` 投影出的楼主、协作者和已标记玩家中选择。顺序或发言者变化时客户端清空 cursor 并从当前子贴首页重载，两项在同一次“应用”中变化也只发起一次请求；加载更多、`40007` 首页恢复和同子贴刷新继续携带当前组合。用户切换子贴时仅清除 authorId，排序继续保留。后端筛选范围只包含主楼层，服务端内嵌楼中楼预览保持原样。
+主楼层列表的 `postsFindFloors` 向后端传入 `order=OLDEST|NEWEST` 和可选 authorId，默认“OLDEST + 全部发言者”；当前 authorId 从 `threadMembersFindAll` 投影出的楼主、协作者和已标记玩家中选择，契约 5.6 新增的子贴范围化 `postsFindFloorAuthors` 记录为后续独立迁移切片。顺序或发言者变化时客户端清空 cursor 并从当前子贴首页重载，两项在同一次“应用”中变化也只发起一次请求；加载更多、`40007` 首页恢复和同子贴刷新继续携带当前组合。用户切换子贴时仅清除 authorId，排序继续保留。后端筛选范围只包含主楼层，服务端内嵌楼中楼预览保持原样。
 
 - 当前读取：`threadsFindById`、用于目标定位的 `postsFindById`；普通详情响应已经包含子贴集合、子贴正文 ID/版本、主题标签、统计、互动状态和 capability 等可选登录态投影，不额外请求子贴列表。独立管理工作台使用 `subthreadsFindAll` 取得规范目录，并在编辑前使用 `subthreadsFindById` 取得最新版和所属主题事实。
+- 后续讨论作者目录：`postsFindFloorAuthors` 与 `postsFindReplyAuthors` 已进入生成客户端，当前不改变已上线的 `threadMembersFindAll` 目录数据流，待 posts 独立切片迁移并补齐权限与筛选回归。
 - 当前主题内搜索：search 模块调用 `threadSearchSearchPosts`，使用 `ThreadSearchSearchPosts200Response` 与 `SearchPostResponseDto`。
 - 当前互动与成员：`threadsLike`、`threadsUnlike`、`bookmarksCreate`、`bookmarksRemove`、`subscriptionsFindAll`、`subscriptionsCreate`、`subscriptionsRemove`、`threadMembersFindAll`、`threadMembersUpdateMember`、`threadMembersExitMember`。
 - 主要生成类型：`ThreadDetailResponseDto`、`ThreadCapabilitiesResponseDto`、`SubscriptionResponseDto`、`CreateSubscriptionDto`、`ThreadMemberResponseDto`、`ThreadLikeResponseDto`、`BookmarkResponseDto`、`ThreadSubthreadResponseDto`。
@@ -123,11 +124,11 @@
 
 ## 12. 已知限制和后续功能
 
-当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 全站/主题内搜索定位 + 点赞收藏订阅举报 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。当前详情契约尚未提供综合 `canPost` capability，客户端不能提前确认楼主双向拉黑等服务端事实；发表入口仍由服务端按发言策略最终复核并可能返回权限提示。`subscriptionsFindAll` 也尚无按主题筛选或分页参数，移动端当前读取本人完整订阅后再按主题过滤；需要后端契约切片后才能消除无界读取。V1 不做举报审核管理、子贴级标签或 Android App Links。
+当前完成“详情 + 完整子贴目录/正文读写 + 主题标签发现/管理 + 楼层读写/楼中楼 + 全站/主题内搜索定位 + 点赞收藏订阅举报 + 创建发布 + 已有主题元数据管理/删除 + 成员身份管理/自行退出玩家 + 私密邀请”。当前详情契约尚未提供综合 `canPost` capability，客户端不能提前确认楼主双向拉黑等服务端事实；发表入口仍由服务端按发言策略最终复核并可能返回权限提示。`subscriptionsFindAll` 也尚无按主题筛选或分页参数，移动端当前读取本人完整订阅后再按主题过滤；需要后端契约切片后才能消除无界读取。契约 5.6 的范围化楼层/回复作者目录尚未接入，当前继续复用主题成员角色目录。V1 不做举报审核管理、子贴级标签或 Android App Links。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.5.0-dev.20260822.1`；Markdown v3；后端 `15ed84d9000bf46989d18a18855c5950ba7f9b10`；Foundation `v6.2.0`（`4ad1eb8`）。
+契约 `5.6.0-dev.20260823.1`；Markdown v3；后端 `82bdfc13e0388c0ca7193b58c1b00f1873cab469`；Foundation `v6.2.0`（`4ad1eb8`）。
 
 ## 14. 相关代码与架构文档
 

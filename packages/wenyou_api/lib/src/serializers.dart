@@ -170,6 +170,7 @@ import 'package:wenyou_api/src/model/direct_message_sticker_response_dto.dart';
 import 'package:wenyou_api/src/model/direct_message_user_response_dto.dart';
 import 'package:wenyou_api/src/model/direct_messages_recall200_response.dart';
 import 'package:wenyou_api/src/model/direct_unread_count_response_dto.dart';
+import 'package:wenyou_api/src/model/discussion_author_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_default_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_slot_usage_response_dto.dart';
@@ -291,8 +292,10 @@ import 'package:wenyou_api/src/model/post_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/post_thread_response_dto.dart';
 import 'package:wenyou_api/src/model/posts_create201_response.dart';
 import 'package:wenyou_api/src/model/posts_find_by_id200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_floor_authors200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floors200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_replies200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_reply_authors200_response.dart';
 import 'package:wenyou_api/src/model/posts_remove200_response.dart';
 import 'package:wenyou_api/src/model/posts_update200_response.dart';
 import 'package:wenyou_api/src/model/posts_upsert_body200_response.dart';
@@ -625,6 +628,7 @@ part 'serializers.g.dart';
   DirectMessageUserResponseDto,
   DirectMessagesRecall200Response,
   DirectUnreadCountResponseDto,
+  DiscussionAuthorResponseDto,
   DraftDefaultSubthreadResponseDto,
   DraftResponseDto,
   DraftSlotUsageResponseDto,
@@ -746,8 +750,10 @@ part 'serializers.g.dart';
   PostThreadResponseDto,
   PostsCreate201Response,
   PostsFindById200Response,
+  PostsFindFloorAuthors200Response,
   PostsFindFloors200Response,
   PostsFindReplies200Response,
+  PostsFindReplyAuthors200Response,
   PostsRemove200Response,
   PostsUpdate200Response,
   PostsUpsertBody200Response,

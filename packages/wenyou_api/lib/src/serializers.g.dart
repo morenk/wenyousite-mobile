@@ -193,6 +193,8 @@ Serializers _$serializers =
           ..add(DirectMessageUserResponseDto.serializer)
           ..add(DirectMessagesRecall200Response.serializer)
           ..add(DirectUnreadCountResponseDto.serializer)
+          ..add(DiscussionAuthorResponseDto.serializer)
+          ..add(DiscussionAuthorResponseDtoRoleEnum.serializer)
           ..add(DraftDefaultSubthreadResponseDto.serializer)
           ..add(DraftResponseDto.serializer)
           ..add(DraftSlotUsageResponseDto.serializer)
@@ -352,8 +354,10 @@ Serializers _$serializers =
           ..add(PostThreadResponseDto.serializer)
           ..add(PostsCreate201Response.serializer)
           ..add(PostsFindById200Response.serializer)
+          ..add(PostsFindFloorAuthors200Response.serializer)
           ..add(PostsFindFloors200Response.serializer)
           ..add(PostsFindReplies200Response.serializer)
+          ..add(PostsFindReplyAuthors200Response.serializer)
           ..add(PostsRemove200Response.serializer)
           ..add(PostsUpdate200Response.serializer)
           ..add(PostsUpsertBody200Response.serializer)
@@ -737,6 +741,18 @@ Serializers _$serializers =
               const FullType(DirectMessageResponseDto),
             ]),
             () => ListBuilder<DirectMessageResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiscussionAuthorResponseDto),
+            ]),
+            () => ListBuilder<DiscussionAuthorResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DiscussionAuthorResponseDto),
+            ]),
+            () => ListBuilder<DiscussionAuthorResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(DraftResponseDto)]),

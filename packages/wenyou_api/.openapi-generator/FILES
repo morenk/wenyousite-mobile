@@ -200,6 +200,7 @@ lib/src/model/direct_message_sticker_response_dto.dart
 lib/src/model/direct_message_user_response_dto.dart
 lib/src/model/direct_messages_recall200_response.dart
 lib/src/model/direct_unread_count_response_dto.dart
+lib/src/model/discussion_author_response_dto.dart
 lib/src/model/draft_default_subthread_response_dto.dart
 lib/src/model/draft_response_dto.dart
 lib/src/model/draft_slot_usage_response_dto.dart
@@ -321,8 +322,10 @@ lib/src/model/post_subthread_response_dto.dart
 lib/src/model/post_thread_response_dto.dart
 lib/src/model/posts_create201_response.dart
 lib/src/model/posts_find_by_id200_response.dart
+lib/src/model/posts_find_floor_authors200_response.dart
 lib/src/model/posts_find_floors200_response.dart
 lib/src/model/posts_find_replies200_response.dart
+lib/src/model/posts_find_reply_authors200_response.dart
 lib/src/model/posts_remove200_response.dart
 lib/src/model/posts_update200_response.dart
 lib/src/model/posts_upsert_body200_response.dart
