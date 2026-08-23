@@ -20,6 +20,9 @@ part 'notification_payload_response_dto.g.dart';
 /// * [preview]
 /// * [subthreadTitle]
 /// * [threadTitle]
+/// * [threadId]
+/// * [oldRole]
+/// * [newRole]
 /// * [momentTitle]
 /// * [totalCount]
 /// * [likers]
@@ -52,6 +55,17 @@ abstract class NotificationPayloadResponseDto implements Built<NotificationPaylo
 
   @BuiltValueField(wireName: r'threadTitle')
   String? get threadTitle;
+
+  @BuiltValueField(wireName: r'threadId')
+  String? get threadId;
+
+  @BuiltValueField(wireName: r'oldRole')
+  NotificationPayloadResponseDtoOldRoleEnum? get oldRole;
+  // enum oldRoleEnum {  COLLABORATOR,  PARTICIPANT,  };
+
+  @BuiltValueField(wireName: r'newRole')
+  NotificationPayloadResponseDtoNewRoleEnum? get newRole;
+  // enum newRoleEnum {  COLLABORATOR,  PARTICIPANT,  };
 
   @BuiltValueField(wireName: r'momentTitle')
   String? get momentTitle;
@@ -148,6 +162,27 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
       yield serializers.serialize(
         object.threadTitle,
         specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.threadId != null) {
+      yield r'threadId';
+      yield serializers.serialize(
+        object.threadId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.oldRole != null) {
+      yield r'oldRole';
+      yield serializers.serialize(
+        object.oldRole,
+        specifiedType: const FullType.nullable(NotificationPayloadResponseDtoOldRoleEnum),
+      );
+    }
+    if (object.newRole != null) {
+      yield r'newRole';
+      yield serializers.serialize(
+        object.newRole,
+        specifiedType: const FullType.nullable(NotificationPayloadResponseDtoNewRoleEnum),
       );
     }
     if (object.momentTitle != null) {
@@ -291,6 +326,30 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
           if (valueDes == null) continue;
           result.threadTitle = valueDes;
           break;
+        case r'threadId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.threadId = valueDes;
+          break;
+        case r'oldRole':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(NotificationPayloadResponseDtoOldRoleEnum),
+          ) as NotificationPayloadResponseDtoOldRoleEnum?;
+          if (valueDes == null) continue;
+          result.oldRole = valueDes;
+          break;
+        case r'newRole':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(NotificationPayloadResponseDtoNewRoleEnum),
+          ) as NotificationPayloadResponseDtoNewRoleEnum?;
+          if (valueDes == null) continue;
+          result.newRole = valueDes;
+          break;
         case r'momentTitle':
           final valueDes = serializers.deserialize(
             value,
@@ -404,4 +463,38 @@ class NotificationPayloadResponseDtoSchemaVersionEnum extends EnumClass {
 
   static BuiltSet<NotificationPayloadResponseDtoSchemaVersionEnum> get values => _$notificationPayloadResponseDtoSchemaVersionEnumValues;
   static NotificationPayloadResponseDtoSchemaVersionEnum valueOf(String name) => _$notificationPayloadResponseDtoSchemaVersionEnumValueOf(name);
+}
+
+class NotificationPayloadResponseDtoOldRoleEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'COLLABORATOR')
+  static const NotificationPayloadResponseDtoOldRoleEnum COLLABORATOR = _$notificationPayloadResponseDtoOldRoleEnum_COLLABORATOR;
+  @BuiltValueEnumConst(wireName: r'PARTICIPANT')
+  static const NotificationPayloadResponseDtoOldRoleEnum PARTICIPANT = _$notificationPayloadResponseDtoOldRoleEnum_PARTICIPANT;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const NotificationPayloadResponseDtoOldRoleEnum unknownDefaultOpenApi = _$notificationPayloadResponseDtoOldRoleEnum_unknownDefaultOpenApi;
+
+  static Serializer<NotificationPayloadResponseDtoOldRoleEnum> get serializer => _$notificationPayloadResponseDtoOldRoleEnumSerializer;
+
+  const NotificationPayloadResponseDtoOldRoleEnum._(String name): super(name);
+
+  static BuiltSet<NotificationPayloadResponseDtoOldRoleEnum> get values => _$notificationPayloadResponseDtoOldRoleEnumValues;
+  static NotificationPayloadResponseDtoOldRoleEnum valueOf(String name) => _$notificationPayloadResponseDtoOldRoleEnumValueOf(name);
+}
+
+class NotificationPayloadResponseDtoNewRoleEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'COLLABORATOR')
+  static const NotificationPayloadResponseDtoNewRoleEnum COLLABORATOR = _$notificationPayloadResponseDtoNewRoleEnum_COLLABORATOR;
+  @BuiltValueEnumConst(wireName: r'PARTICIPANT')
+  static const NotificationPayloadResponseDtoNewRoleEnum PARTICIPANT = _$notificationPayloadResponseDtoNewRoleEnum_PARTICIPANT;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const NotificationPayloadResponseDtoNewRoleEnum unknownDefaultOpenApi = _$notificationPayloadResponseDtoNewRoleEnum_unknownDefaultOpenApi;
+
+  static Serializer<NotificationPayloadResponseDtoNewRoleEnum> get serializer => _$notificationPayloadResponseDtoNewRoleEnumSerializer;
+
+  const NotificationPayloadResponseDtoNewRoleEnum._(String name): super(name);
+
+  static BuiltSet<NotificationPayloadResponseDtoNewRoleEnum> get values => _$notificationPayloadResponseDtoNewRoleEnumValues;
+  static NotificationPayloadResponseDtoNewRoleEnum valueOf(String name) => _$notificationPayloadResponseDtoNewRoleEnumValueOf(name);
 }

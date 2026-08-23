@@ -104,6 +104,8 @@ class _$ThreadSubthreadResponseDto extends ThreadSubthreadResponseDto {
   @override
   final ThreadSubthreadResponseDtoPostingPolicyEnum postingPolicy;
   @override
+  final PostingCapabilityResponseDto postingCapability;
+  @override
   final num version;
   @override
   final DateTime? lastPostAt;
@@ -126,6 +128,7 @@ class _$ThreadSubthreadResponseDto extends ThreadSubthreadResponseDto {
     required this.title,
     required this.sortOrder,
     required this.postingPolicy,
+    required this.postingCapability,
     required this.version,
     this.lastPostAt,
     this.deletedAt,
@@ -151,6 +154,7 @@ class _$ThreadSubthreadResponseDto extends ThreadSubthreadResponseDto {
         title == other.title &&
         sortOrder == other.sortOrder &&
         postingPolicy == other.postingPolicy &&
+        postingCapability == other.postingCapability &&
         version == other.version &&
         lastPostAt == other.lastPostAt &&
         deletedAt == other.deletedAt &&
@@ -167,6 +171,7 @@ class _$ThreadSubthreadResponseDto extends ThreadSubthreadResponseDto {
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, sortOrder.hashCode);
     _$hash = $jc(_$hash, postingPolicy.hashCode);
+    _$hash = $jc(_$hash, postingCapability.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, lastPostAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
@@ -185,6 +190,7 @@ class _$ThreadSubthreadResponseDto extends ThreadSubthreadResponseDto {
           ..add('title', title)
           ..add('sortOrder', sortOrder)
           ..add('postingPolicy', postingPolicy)
+          ..add('postingCapability', postingCapability)
           ..add('version', version)
           ..add('lastPostAt', lastPostAt)
           ..add('deletedAt', deletedAt)
@@ -222,6 +228,13 @@ class ThreadSubthreadResponseDtoBuilder
   set postingPolicy(
     ThreadSubthreadResponseDtoPostingPolicyEnum? postingPolicy,
   ) => _$this._postingPolicy = postingPolicy;
+
+  PostingCapabilityResponseDtoBuilder? _postingCapability;
+  PostingCapabilityResponseDtoBuilder get postingCapability =>
+      _$this._postingCapability ??= PostingCapabilityResponseDtoBuilder();
+  set postingCapability(
+    PostingCapabilityResponseDtoBuilder? postingCapability,
+  ) => _$this._postingCapability = postingCapability;
 
   num? _version;
   num? get version => _$this._version;
@@ -263,6 +276,7 @@ class ThreadSubthreadResponseDtoBuilder
       _title = $v.title;
       _sortOrder = $v.sortOrder;
       _postingPolicy = $v.postingPolicy;
+      _postingCapability = $v.postingCapability.toBuilder();
       _version = $v.version;
       _lastPostAt = $v.lastPostAt;
       _deletedAt = $v.deletedAt;
@@ -318,6 +332,7 @@ class ThreadSubthreadResponseDtoBuilder
               r'ThreadSubthreadResponseDto',
               'postingPolicy',
             ),
+            postingCapability: postingCapability.build(),
             version: BuiltValueNullFieldError.checkNotNull(
               version,
               r'ThreadSubthreadResponseDto',
@@ -336,6 +351,9 @@ class ThreadSubthreadResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'postingCapability';
+        postingCapability.build();
+
         _$failedField = 'bodyPost';
         _bodyPost?.build();
         _$failedField = 'count';

@@ -328,6 +328,8 @@ Serializers _$serializers =
           ..add(NotificationMomentCommentResponseDto.serializer)
           ..add(NotificationMomentResponseDto.serializer)
           ..add(NotificationPayloadResponseDto.serializer)
+          ..add(NotificationPayloadResponseDtoNewRoleEnum.serializer)
+          ..add(NotificationPayloadResponseDtoOldRoleEnum.serializer)
           ..add(NotificationPayloadResponseDtoSchemaVersionEnum.serializer)
           ..add(NotificationPostResponseDto.serializer)
           ..add(NotificationResponseDto.serializer)
@@ -355,6 +357,8 @@ Serializers _$serializers =
           ..add(PostResponseDtoKindEnum.serializer)
           ..add(PostSubthreadResponseDto.serializer)
           ..add(PostThreadResponseDto.serializer)
+          ..add(PostingCapabilityResponseDto.serializer)
+          ..add(PostingCapabilityResponseDtoDenialReasonEnum.serializer)
           ..add(PostsCreate201Response.serializer)
           ..add(PostsFindById200Response.serializer)
           ..add(PostsFindFloorAuthors200Response.serializer)
@@ -553,6 +557,7 @@ Serializers _$serializers =
           ..add(UsersFollowUserFollowers200Response.serializer)
           ..add(UsersFollowUserFollowing200Response.serializer)
           ..add(UsersGetMe200Response.serializer)
+          ..add(UsersGetMyCollaboratedThreads200Response.serializer)
           ..add(UsersGetUser200Response.serializer)
           ..add(UsersGetUserActivitySummary200Response.serializer)
           ..add(UsersGetUserBookmarks200Response.serializer)
@@ -1031,6 +1036,12 @@ Serializers _$serializers =
               const FullType(ThreadCategoryResponseDto),
             ]),
             () => ListBuilder<ThreadCategoryResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ThreadListItemResponseDto),
+            ]),
+            () => ListBuilder<ThreadListItemResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

@@ -5,6 +5,7 @@
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/thread_subthread_count_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/posting_capability_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_body_post_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -19,6 +20,7 @@ part 'thread_subthread_response_dto.g.dart';
 /// * [title]
 /// * [sortOrder]
 /// * [postingPolicy]
+/// * [postingCapability]
 /// * [version]
 /// * [lastPostAt]
 /// * [deletedAt]
@@ -42,6 +44,9 @@ abstract class ThreadSubthreadResponseDto implements Built<ThreadSubthreadRespon
   @BuiltValueField(wireName: r'postingPolicy')
   ThreadSubthreadResponseDtoPostingPolicyEnum get postingPolicy;
   // enum postingPolicyEnum {  PARTICIPANTS,  COLLABORATORS,  PLAYERS,  };
+
+  @BuiltValueField(wireName: r'postingCapability')
+  PostingCapabilityResponseDto get postingCapability;
 
   @BuiltValueField(wireName: r'version')
   num get version;
@@ -108,6 +113,11 @@ class _$ThreadSubthreadResponseDtoSerializer implements PrimitiveSerializer<Thre
     yield serializers.serialize(
       object.postingPolicy,
       specifiedType: const FullType(ThreadSubthreadResponseDtoPostingPolicyEnum),
+    );
+    yield r'postingCapability';
+    yield serializers.serialize(
+      object.postingCapability,
+      specifiedType: const FullType(PostingCapabilityResponseDto),
     );
     yield r'version';
     yield serializers.serialize(
@@ -196,6 +206,13 @@ class _$ThreadSubthreadResponseDtoSerializer implements PrimitiveSerializer<Thre
             specifiedType: const FullType(ThreadSubthreadResponseDtoPostingPolicyEnum),
           ) as ThreadSubthreadResponseDtoPostingPolicyEnum;
           result.postingPolicy = valueDes;
+          break;
+        case r'postingCapability':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(PostingCapabilityResponseDto),
+          ) as PostingCapabilityResponseDto;
+          result.postingCapability.replace(valueDes);
           break;
         case r'version':
           final valueDes = serializers.deserialize(

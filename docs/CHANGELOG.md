@@ -1,5 +1,6 @@
 # 移动端变更记录
 
+- 同步后端契约 `5.9.0-dev.20260823.1`（revision `24d6fccf818acf78b89af9b24a0f75578998f98e`）并重新生成客户端；新增本人协作主题分页、子贴必填发言能力投影与协作者任免通知字段，移动端行为接入另开功能切片。
 - 同步后端契约 `5.8.1-dev.20260823.1`（revision `2e931d29dd2de0ed5ad31571ae565a3b8066f8a0`）并重新生成客户端；动态卡片、详情、搜索和本人收藏响应新增可选 `canInteract`，动态与评论媒体参数补齐 CUID 约束；互动权限投影的移动端消费另开功能切片。
 - 修复 Android 冷启动零尺寸预热帧触发布局异常并继发 Flutter inactive-elements 红屏的问题：预热阶段只保留纯白画布，拿到有效窗口尺寸后才居中显示完整品牌内容；Android/iOS 系统启动层同步改为纯白且不单独显示 Logo，Flutter 品牌页从实际可见首帧起至少稳定展示 700ms。
 - Foundation 固定依赖升级到 `v6.4.0`：Android 接入 adaptive/monochrome/legacy 应用图标与品牌启动层，iOS 同步 AppIcon 和静态 LaunchScreen；Flutter 启动首帧展示 96dp 标识、“温油站”和“最温油的文字共创社区”，登录/注册与首页标题栏分别使用 48dp、24dp 标识，并以自动化哈希检查防止原生资源漂移。

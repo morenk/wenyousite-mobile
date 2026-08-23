@@ -36,9 +36,83 @@ _$notificationPayloadResponseDtoSchemaVersionEnumValues =
       ],
     );
 
+const NotificationPayloadResponseDtoOldRoleEnum
+_$notificationPayloadResponseDtoOldRoleEnum_COLLABORATOR =
+    const NotificationPayloadResponseDtoOldRoleEnum._('COLLABORATOR');
+const NotificationPayloadResponseDtoOldRoleEnum
+_$notificationPayloadResponseDtoOldRoleEnum_PARTICIPANT =
+    const NotificationPayloadResponseDtoOldRoleEnum._('PARTICIPANT');
+const NotificationPayloadResponseDtoOldRoleEnum
+_$notificationPayloadResponseDtoOldRoleEnum_unknownDefaultOpenApi =
+    const NotificationPayloadResponseDtoOldRoleEnum._('unknownDefaultOpenApi');
+
+NotificationPayloadResponseDtoOldRoleEnum
+_$notificationPayloadResponseDtoOldRoleEnumValueOf(String name) {
+  switch (name) {
+    case 'COLLABORATOR':
+      return _$notificationPayloadResponseDtoOldRoleEnum_COLLABORATOR;
+    case 'PARTICIPANT':
+      return _$notificationPayloadResponseDtoOldRoleEnum_PARTICIPANT;
+    case 'unknownDefaultOpenApi':
+      return _$notificationPayloadResponseDtoOldRoleEnum_unknownDefaultOpenApi;
+    default:
+      return _$notificationPayloadResponseDtoOldRoleEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<NotificationPayloadResponseDtoOldRoleEnum>
+_$notificationPayloadResponseDtoOldRoleEnumValues =
+    BuiltSet<NotificationPayloadResponseDtoOldRoleEnum>(
+      const <NotificationPayloadResponseDtoOldRoleEnum>[
+        _$notificationPayloadResponseDtoOldRoleEnum_COLLABORATOR,
+        _$notificationPayloadResponseDtoOldRoleEnum_PARTICIPANT,
+        _$notificationPayloadResponseDtoOldRoleEnum_unknownDefaultOpenApi,
+      ],
+    );
+
+const NotificationPayloadResponseDtoNewRoleEnum
+_$notificationPayloadResponseDtoNewRoleEnum_COLLABORATOR =
+    const NotificationPayloadResponseDtoNewRoleEnum._('COLLABORATOR');
+const NotificationPayloadResponseDtoNewRoleEnum
+_$notificationPayloadResponseDtoNewRoleEnum_PARTICIPANT =
+    const NotificationPayloadResponseDtoNewRoleEnum._('PARTICIPANT');
+const NotificationPayloadResponseDtoNewRoleEnum
+_$notificationPayloadResponseDtoNewRoleEnum_unknownDefaultOpenApi =
+    const NotificationPayloadResponseDtoNewRoleEnum._('unknownDefaultOpenApi');
+
+NotificationPayloadResponseDtoNewRoleEnum
+_$notificationPayloadResponseDtoNewRoleEnumValueOf(String name) {
+  switch (name) {
+    case 'COLLABORATOR':
+      return _$notificationPayloadResponseDtoNewRoleEnum_COLLABORATOR;
+    case 'PARTICIPANT':
+      return _$notificationPayloadResponseDtoNewRoleEnum_PARTICIPANT;
+    case 'unknownDefaultOpenApi':
+      return _$notificationPayloadResponseDtoNewRoleEnum_unknownDefaultOpenApi;
+    default:
+      return _$notificationPayloadResponseDtoNewRoleEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<NotificationPayloadResponseDtoNewRoleEnum>
+_$notificationPayloadResponseDtoNewRoleEnumValues =
+    BuiltSet<NotificationPayloadResponseDtoNewRoleEnum>(
+      const <NotificationPayloadResponseDtoNewRoleEnum>[
+        _$notificationPayloadResponseDtoNewRoleEnum_COLLABORATOR,
+        _$notificationPayloadResponseDtoNewRoleEnum_PARTICIPANT,
+        _$notificationPayloadResponseDtoNewRoleEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 Serializer<NotificationPayloadResponseDtoSchemaVersionEnum>
 _$notificationPayloadResponseDtoSchemaVersionEnumSerializer =
     _$NotificationPayloadResponseDtoSchemaVersionEnumSerializer();
+Serializer<NotificationPayloadResponseDtoOldRoleEnum>
+_$notificationPayloadResponseDtoOldRoleEnumSerializer =
+    _$NotificationPayloadResponseDtoOldRoleEnumSerializer();
+Serializer<NotificationPayloadResponseDtoNewRoleEnum>
+_$notificationPayloadResponseDtoNewRoleEnumSerializer =
+    _$NotificationPayloadResponseDtoNewRoleEnumSerializer();
 
 class _$NotificationPayloadResponseDtoSchemaVersionEnumSerializer
     implements
@@ -76,6 +150,80 @@ class _$NotificationPayloadResponseDtoSchemaVersionEnumSerializer
   );
 }
 
+class _$NotificationPayloadResponseDtoOldRoleEnumSerializer
+    implements PrimitiveSerializer<NotificationPayloadResponseDtoOldRoleEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'COLLABORATOR': 'COLLABORATOR',
+    'PARTICIPANT': 'PARTICIPANT',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'COLLABORATOR': 'COLLABORATOR',
+    'PARTICIPANT': 'PARTICIPANT',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    NotificationPayloadResponseDtoOldRoleEnum,
+  ];
+  @override
+  final String wireName = 'NotificationPayloadResponseDtoOldRoleEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    NotificationPayloadResponseDtoOldRoleEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  NotificationPayloadResponseDtoOldRoleEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => NotificationPayloadResponseDtoOldRoleEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$NotificationPayloadResponseDtoNewRoleEnumSerializer
+    implements PrimitiveSerializer<NotificationPayloadResponseDtoNewRoleEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'COLLABORATOR': 'COLLABORATOR',
+    'PARTICIPANT': 'PARTICIPANT',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'COLLABORATOR': 'COLLABORATOR',
+    'PARTICIPANT': 'PARTICIPANT',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    NotificationPayloadResponseDtoNewRoleEnum,
+  ];
+  @override
+  final String wireName = 'NotificationPayloadResponseDtoNewRoleEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    NotificationPayloadResponseDtoNewRoleEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  NotificationPayloadResponseDtoNewRoleEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => NotificationPayloadResponseDtoNewRoleEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   @override
   final NotificationPayloadResponseDtoSchemaVersionEnum schemaVersion;
@@ -91,6 +239,12 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   final String? subthreadTitle;
   @override
   final String? threadTitle;
+  @override
+  final String? threadId;
+  @override
+  final NotificationPayloadResponseDtoOldRoleEnum? oldRole;
+  @override
+  final NotificationPayloadResponseDtoNewRoleEnum? newRole;
   @override
   final String? momentTitle;
   @override
@@ -122,6 +276,9 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
     this.preview,
     this.subthreadTitle,
     this.threadTitle,
+    this.threadId,
+    this.oldRole,
+    this.newRole,
     this.momentTitle,
     this.totalCount,
     this.likers,
@@ -152,6 +309,9 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
         preview == other.preview &&
         subthreadTitle == other.subthreadTitle &&
         threadTitle == other.threadTitle &&
+        threadId == other.threadId &&
+        oldRole == other.oldRole &&
+        newRole == other.newRole &&
         momentTitle == other.momentTitle &&
         totalCount == other.totalCount &&
         likers == other.likers &&
@@ -173,6 +333,9 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, subthreadTitle.hashCode);
     _$hash = $jc(_$hash, threadTitle.hashCode);
+    _$hash = $jc(_$hash, threadId.hashCode);
+    _$hash = $jc(_$hash, oldRole.hashCode);
+    _$hash = $jc(_$hash, newRole.hashCode);
     _$hash = $jc(_$hash, momentTitle.hashCode);
     _$hash = $jc(_$hash, totalCount.hashCode);
     _$hash = $jc(_$hash, likers.hashCode);
@@ -196,6 +359,9 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
           ..add('preview', preview)
           ..add('subthreadTitle', subthreadTitle)
           ..add('threadTitle', threadTitle)
+          ..add('threadId', threadId)
+          ..add('oldRole', oldRole)
+          ..add('newRole', newRole)
           ..add('momentTitle', momentTitle)
           ..add('totalCount', totalCount)
           ..add('likers', likers)
@@ -248,6 +414,20 @@ class NotificationPayloadResponseDtoBuilder
   String? _threadTitle;
   String? get threadTitle => _$this._threadTitle;
   set threadTitle(String? threadTitle) => _$this._threadTitle = threadTitle;
+
+  String? _threadId;
+  String? get threadId => _$this._threadId;
+  set threadId(String? threadId) => _$this._threadId = threadId;
+
+  NotificationPayloadResponseDtoOldRoleEnum? _oldRole;
+  NotificationPayloadResponseDtoOldRoleEnum? get oldRole => _$this._oldRole;
+  set oldRole(NotificationPayloadResponseDtoOldRoleEnum? oldRole) =>
+      _$this._oldRole = oldRole;
+
+  NotificationPayloadResponseDtoNewRoleEnum? _newRole;
+  NotificationPayloadResponseDtoNewRoleEnum? get newRole => _$this._newRole;
+  set newRole(NotificationPayloadResponseDtoNewRoleEnum? newRole) =>
+      _$this._newRole = newRole;
 
   String? _momentTitle;
   String? get momentTitle => _$this._momentTitle;
@@ -304,6 +484,9 @@ class NotificationPayloadResponseDtoBuilder
       _preview = $v.preview;
       _subthreadTitle = $v.subthreadTitle;
       _threadTitle = $v.threadTitle;
+      _threadId = $v.threadId;
+      _oldRole = $v.oldRole;
+      _newRole = $v.newRole;
       _momentTitle = $v.momentTitle;
       _totalCount = $v.totalCount;
       _likers = $v.likers?.toBuilder();
@@ -348,6 +531,9 @@ class NotificationPayloadResponseDtoBuilder
             preview: preview,
             subthreadTitle: subthreadTitle,
             threadTitle: threadTitle,
+            threadId: threadId,
+            oldRole: oldRole,
+            newRole: newRole,
             momentTitle: momentTitle,
             totalCount: totalCount,
             likers: _likers?.build(),

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.8.1-dev.20260823.1",
+  "contractVersion": "5.9.0-dev.20260823.1",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
@@ -62,6 +62,7 @@
     { "operationId": "usersGetUserMomentBookmarks", "category": "planned_moments", "reason": "后端 5.2.0 新增公开动态收藏分页；需与用户主页动态收藏分区、隐私空态和分页定位作为独立切片接入，本切片仅接入详情快捷修改收藏夹。" },
     { "operationId": "postsFindFloorAuthors", "category": "planned_posts", "reason": "后端 5.6.0 新增子贴范围化楼层作者目录；移动端当前继续复用已接入的主题成员角色目录，后续与楼层筛选仓储迁移和权限回归作为独立切片接入。" },
     { "operationId": "postsFindReplyAuthors", "category": "planned_posts", "reason": "后端 5.6.0 新增主楼范围化回复作者目录；移动端当前继续复用已接入的主题成员角色目录，后续与独立讨论筛选仓储迁移和权限回归作为独立切片接入。" },
+    { "operationId": "usersGetMyCollaboratedThreads", "category": "planned_threads", "reason": "后端 5.9.0 新增本人协作主题分页；需与资料入口、协作者任免通知、权限撤销后的管理页退出和列表刷新作为同一切片接入。" },
     { "operationId": "draftsFindAll", "category": "superseded_aggregate", "reason": "正文草稿改用 draftsState 在同一服务端快照内读取草稿与槽位用量，避免两次请求产生版本漂移；不再单独读取草稿列表。" },
     { "operationId": "draftsSlotUsage", "category": "superseded_aggregate", "reason": "正文草稿改用 draftsState 在同一服务端快照内读取草稿与槽位用量，避免两次请求产生版本漂移；不再单独读取槽位用量。" },
     { "operationId": "threadsUpdate", "category": "superseded_aggregate", "reason": "已有主题管理统一使用聚合保存，确保主题、默认子贴正文和标签在同一组乐观锁版本下提交；移动端不再单独调用元数据 PATCH。" }

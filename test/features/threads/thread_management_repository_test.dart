@@ -286,6 +286,9 @@ ThreadDetailResponseDto _detail({
             ..sortOrder = 0
             ..postingPolicy =
                 ThreadSubthreadResponseDtoPostingPolicyEnum.PARTICIPANTS
+            ..postingCapability.update(
+              (capability) => capability.canPost = true,
+            )
             ..version = 3
             ..createdAt = now
             ..bodyPost.update(

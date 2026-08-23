@@ -293,6 +293,7 @@ import 'package:wenyou_api/src/model/post_detail_response_dto.dart';
 import 'package:wenyou_api/src/model/post_response_dto.dart';
 import 'package:wenyou_api/src/model/post_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/post_thread_response_dto.dart';
+import 'package:wenyou_api/src/model/posting_capability_response_dto.dart';
 import 'package:wenyou_api/src/model/posts_create201_response.dart';
 import 'package:wenyou_api/src/model/posts_find_by_id200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floor_authors200_response.dart';
@@ -454,6 +455,7 @@ import 'package:wenyou_api/src/model/users_follow_unfollow200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_user_followers200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_user_following200_response.dart';
 import 'package:wenyou_api/src/model/users_get_me200_response.dart';
+import 'package:wenyou_api/src/model/users_get_my_collaborated_threads200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_activity_summary200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_bookmarks200_response.dart';
@@ -755,6 +757,7 @@ part 'serializers.g.dart';
   PostResponseDto,
   PostSubthreadResponseDto,
   PostThreadResponseDto,
+  PostingCapabilityResponseDto,
   PostsCreate201Response,
   PostsFindById200Response,
   PostsFindFloorAuthors200Response,
@@ -916,6 +919,7 @@ part 'serializers.g.dart';
   UsersFollowUserFollowers200Response,
   UsersFollowUserFollowing200Response,
   UsersGetMe200Response,
+  UsersGetMyCollaboratedThreads200Response,
   UsersGetUser200Response,
   UsersGetUserActivitySummary200Response,
   UsersGetUserBookmarks200Response,

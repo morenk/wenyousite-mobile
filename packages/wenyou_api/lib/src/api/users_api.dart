@@ -24,6 +24,7 @@ import 'package:wenyou_api/src/model/users_follow_unfollow200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_user_followers200_response.dart';
 import 'package:wenyou_api/src/model/users_follow_user_following200_response.dart';
 import 'package:wenyou_api/src/model/users_get_me200_response.dart';
+import 'package:wenyou_api/src/model/users_get_my_collaborated_threads200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_activity_summary200_response.dart';
 import 'package:wenyou_api/src/model/users_get_user_bookmarks200_response.dart';
@@ -917,6 +918,95 @@ class UsersApi {
     }
 
     return Response<UsersGetMe200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 获取当前用户担任协作者的已发布主题帖（含公开与私密主题）
+  ///
+  ///
+  /// Parameters:
+  /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
+  /// * [limit] - 每页条数（默认 20，最大 50）
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [UsersGetMyCollaboratedThreads200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<UsersGetMyCollaboratedThreads200Response>> usersGetMyCollaboratedThreads({
+    String? cursor,
+    num? limit = 20,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/users/me/collaborated-threads';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (cursor != null) r'cursor': encodeQueryParameter(_serializers, cursor, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(num)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    UsersGetMyCollaboratedThreads200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(UsersGetMyCollaboratedThreads200Response),
+      ) as UsersGetMyCollaboratedThreads200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<UsersGetMyCollaboratedThreads200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

@@ -571,6 +571,7 @@ ThreadSubthreadResponseDto _subthread({
       ..title = title
       ..sortOrder = sortOrder
       ..postingPolicy = postingPolicy
+      ..postingCapability.update((capability) => capability.canPost = true)
       ..version = 1
       ..lastPostAt = lastPostAt
       ..deletedAt = deletedAt
