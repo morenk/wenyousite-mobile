@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -27,9 +28,15 @@ class _WenyouInstantKeyboardInsetsState
   AppLifecycleState _lifecycleState =
       WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
 
+  bool get _usesAndroidBridge =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   @override
   void initState() {
     super.initState();
+    if (_usesAndroidBridge && _lifecycleState != AppLifecycleState.resumed) {
+      _targetBottomPhysicalPixels = 0;
+    }
     WidgetsBinding.instance.addObserver(this);
     _channel.setMethodCallHandler(_handlePlatformCall);
   }
@@ -44,15 +51,18 @@ class _WenyouInstantKeyboardInsetsState
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
-    if (_targetBottomPhysicalPixels == null) return;
-    setState(() => _targetBottomPhysicalPixels = null);
+    if (!_usesAndroidBridge || state == AppLifecycleState.resumed) return;
+    if (_targetBottomPhysicalPixels == 0 || !mounted) return;
+    setState(() => _targetBottomPhysicalPixels = 0);
   }
 
   Future<void> _handlePlatformCall(MethodCall call) async {
     if (call.method != 'keyboardInsetTargetChanged') return;
     final arguments = call.arguments;
     if (arguments is! Map) return;
-    if (_lifecycleState != AppLifecycleState.resumed) return;
+    if (!_usesAndroidBridge || _lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
     final bottom = arguments['bottomPhysicalPixels'];
     if (bottom is! num || !bottom.isFinite || bottom < 0 || !mounted) return;
     final target = bottom.toDouble();

@@ -28,6 +28,8 @@ class MainActivity : FlutterActivity() {
     }
 
     private var keyboardInsetsChannel: MethodChannel? = null
+    private var keyboardInsetsActive = false
+    private var appliedKeyboardInsetBottom = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -78,27 +80,53 @@ class MainActivity : FlutterActivity() {
                 flutterEngine.dartExecutor.binaryMessenger,
                 KEYBOARD_INSETS_CHANNEL,
             )
-        installInstantKeyboardInsets(keyboardInsetsChannel!!)
+        installInstantKeyboardInsets()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        keyboardInsetsActive = true
+    }
+
+    override fun onPause() {
+        keyboardInsetsActive = false
+        // Publish the neutral state before Flutter receives the inactive
+        // lifecycle event, so it never falls back to a stale engine inset.
+        dispatchKeyboardInsetTarget(0)
+        super.onPause()
     }
 
     override fun onPostResume() {
         super.onPostResume()
-        dispatchCurrentKeyboardInsetAfterLayout()
+        resetAndRequestKeyboardInsets()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) dispatchCurrentKeyboardInsetAfterLayout()
-    }
-
-    private fun dispatchCurrentKeyboardInsetAfterLayout() {
-        window.decorView.post {
-            keyboardInsetsChannel?.let(::dispatchKeyboardInsetTarget)
+        if (hasFocus) {
+            resetAndRequestKeyboardInsets()
+        } else {
+            appliedKeyboardInsetBottom = 0
+            dispatchKeyboardInsetTarget(0)
         }
     }
 
-    private fun installInstantKeyboardInsets(channel: MethodChannel) {
+    private fun installInstantKeyboardInsets() {
         val decorView = window.decorView
+        ViewCompat.setOnApplyWindowInsetsListener(decorView) { view, insets ->
+            appliedKeyboardInsetBottom =
+                if (
+                    keyboardInsetsActive &&
+                    decorView.hasWindowFocus() &&
+                    insets.isVisible(WindowInsetsCompat.Type.ime())
+                ) {
+                    insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                } else {
+                    0
+            }
+            dispatchKeyboardInsetTarget(appliedKeyboardInsetBottom)
+            ViewCompat.onApplyWindowInsets(view, insets)
+        }
         ViewCompat.setWindowInsetsAnimationCallback(
             decorView,
             object : WindowInsetsAnimationCompat.Callback(
@@ -110,9 +138,10 @@ class MainActivity : FlutterActivity() {
                 ): WindowInsetsAnimationCompat.BoundsCompat {
                     if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
                         // Android has completed its end-state layout before onStart.
-                        // Send that final IME inset once and never forward animation
-                        // progress, so Flutter chrome does not chase every IME frame.
-                        dispatchKeyboardInsetTarget(channel)
+                        // The apply-insets listener has captured that final IME
+                        // inset. Reuse it and never forward animation progress, so
+                        // Flutter chrome does not chase every IME frame.
+                        dispatchKeyboardInsetTarget(appliedKeyboardInsetBottom)
                     }
                     return bounds
                 }
@@ -124,22 +153,28 @@ class MainActivity : FlutterActivity() {
 
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
-                        dispatchKeyboardInsetTarget(channel)
+                        ViewCompat.requestApplyInsets(decorView)
                     }
                 }
             },
         )
+        ViewCompat.requestApplyInsets(decorView)
     }
 
-    private fun dispatchKeyboardInsetTarget(channel: MethodChannel) {
-        val bottom =
-            ViewCompat.getRootWindowInsets(window.decorView)
-                ?.getInsets(WindowInsetsCompat.Type.ime())
-                ?.bottom
-                ?: 0
-        channel.invokeMethod(
+    private fun resetAndRequestKeyboardInsets() {
+        appliedKeyboardInsetBottom = 0
+        dispatchKeyboardInsetTarget(0)
+        window.decorView.post {
+            if (keyboardInsetsActive && window.decorView.hasWindowFocus()) {
+                ViewCompat.requestApplyInsets(window.decorView)
+            }
+        }
+    }
+
+    private fun dispatchKeyboardInsetTarget(bottomPhysicalPixels: Int) {
+        keyboardInsetsChannel?.invokeMethod(
             "keyboardInsetTargetChanged",
-            mapOf("bottomPhysicalPixels" to bottom.toDouble()),
+            mapOf("bottomPhysicalPixels" to bottomPhysicalPixels.toDouble()),
         )
     }
 
