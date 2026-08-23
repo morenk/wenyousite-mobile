@@ -16,7 +16,7 @@
 
 登录页 `/auth/login` 可从“我的”或受保护动作进入，并通过 `returnTo` 保存仓库内目标；注册页 `/auth/register` 与找回页 `/auth/forgot-password` 从登录页进入并继承同一安全目标。找回页发送验证码后替换为 `/auth/reset-password`，邮箱仅通过内存路由数据传递，重置页也可独立进入并重新发送验证码。创建主题入口登录或注册成功后恢复 `/compose/thread`；重置成功只返回登录并继续保留原目标。“我的”通过受保护的 `/me/security/sessions`、`/me/security/password`、`/me/security/email` 与 `/me/security/delete-account` 分别进入终端管理、修改密码、更换邮箱和账号注销。注销成功后统一进入 `/home` 游客态，不保留返回破坏性表单的目标。
 
-登录页还常驻公开 `/appeals` 入口，使收到 `40108/40109` 的账号不需要先建立普通会话即可查看治理决定并申诉；该页面的账号密码和专用凭据由 moderation 独立管理。
+登录页还常驻公开 `/appeals` 入口，使收到 `40108/40109` 的账号不需要先建立普通会话即可查看治理决定并申诉；登录与注册面板顶部统一显示 Foundation 48dp 装饰标识及相邻可见“温油站”名称，找回、重置和账号错误页不重复堆叠品牌。申诉页面的账号密码和专用凭据由 moderation 独立管理。
 
 ## 4. 用户操作流程
 
@@ -58,7 +58,7 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用品牌头、面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -67,6 +67,7 @@
 - [x] 并发 `40101` 只发起一次刷新并轮转双 Token，原请求最多重放一次。
 - [x] 邮箱验证码注册显式发送 mobile 头，双 Token 原子写入并恢复受保护目标。
 - [x] 登录、注册在 360、400、600dp 宽度无溢出，输入框语义图标保持默认 20dp 并在 48dp 前缀区域居中，同时保留 Widget Key、无障碍错误语义和 48dp 主操作。
+- [x] 登录与注册复用 Foundation 48dp 装饰品牌标识和可见名称，TalkBack 不重复朗读标识。
 - [x] 契约 4.14 移除 `emailVerified`、登录后验证端点和 `EMAIL_NOT_VERIFIED` 分支；注册完成后直接按统一注册用户身份恢复原目标。
 - [ ] 撤销与锁定进入正确状态。
 - [x] 注销要求固定短语和二次确认，远端成功后清除本机双 Token，局部清理失败不会重放破坏性端点。
@@ -82,8 +83,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

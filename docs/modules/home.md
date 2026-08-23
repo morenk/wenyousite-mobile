@@ -8,7 +8,7 @@
 
 ## 2. 用户角色与使用场景
 
-游客和用户都能浏览公开主题；首页发现只展示楼主账号尚未注销的主题，已注销楼主的公开历史内容仍由显式搜索承接。登录用户在卡片上看到与自身相关的关系状态。
+游客和用户都能浏览公开主题；首页标题栏以 Foundation 24dp 装饰标识和相邻“温油站”名称提供紧凑品牌识别。首页发现只展示楼主账号尚未注销的主题，已注销楼主的公开历史内容仍由显式搜索承接。登录用户在卡片上看到与自身相关的关系状态。
 
 ## 3. 页面、入口和导航关系
 
@@ -57,6 +57,7 @@
 - [x] 加载、空、错、重试、到底、去重和无效 cursor 状态完整。
 - [x] 页面切换后 Riverpod 保留筛选，`PageStorageKey` 保留滚动位置。
 - [x] 主题卡片整卡进入正确的公开主题详情，系统返回后筛选、已加载数据与滚动分支不丢失。
+- [x] 首页标题栏使用 Foundation 24dp 装饰标识、8dp 间距和可见名称，不产生重复语义朗读。
 
 ## 12. 已知限制和后续功能
 
@@ -64,8 +65,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。

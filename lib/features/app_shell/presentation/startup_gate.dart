@@ -48,7 +48,7 @@ class _StartupGateState extends ConsumerState<StartupGate>
     final updateAction = ref.watch(mobileUpdateControllerProvider);
     return switch (state.status) {
       StartupStatus.ready => widget.child,
-      StartupStatus.checking => const _CheckingPage(),
+      StartupStatus.checking => const StartupCheckingPage(),
       StartupStatus.recommendedUpdate => _UpdatePage(
         update: state.update!,
         action: _actionFor(updateAction, state.update!),
@@ -99,38 +99,70 @@ class _StartupGateState extends ConsumerState<StartupGate>
   }
 }
 
-class _CheckingPage extends StatelessWidget {
-  const _CheckingPage();
+class StartupCheckingPage extends StatelessWidget {
+  const StartupCheckingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Scaffold(
-      body: WenyouPageBody(
-        maxWidth: 420,
-        child: WenyouPanel(
-          child: Semantics(
-            label: '正在准备温油站',
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                SizedBox(height: tokens.space16),
-                Text(
-                  '正在连接温油站',
-                  style: Theme.of(context).textTheme.wenyouStatusTitle,
+      backgroundColor: tokens.brandSurface,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final markTop =
+                (constraints.maxHeight - WenyouBrandContract.startupMarkSize) /
+                2;
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: tokens.space24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Semantics(
+                  container: true,
+                  label: '正在准备温油站',
+                  child: Column(
+                    children: [
+                      SizedBox(height: markTop),
+                      const WenyouBrandMark.decorative(
+                        key: Key('startup-brand-mark'),
+                        size: WenyouBrandContract.startupMarkSize,
+                      ),
+                      SizedBox(height: tokens.space16),
+                      Text(
+                        WenyouBrandContract.name,
+                        style: Theme.of(context).textTheme.wenyouPageTitle
+                            .copyWith(color: tokens.brandForeground),
+                      ),
+                      SizedBox(height: tokens.space8),
+                      Text(
+                        WenyouBrandContract.tagline,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.wenyouSubsectionTitle
+                            .copyWith(color: tokens.brandForeground),
+                      ),
+                      SizedBox(height: tokens.space32),
+                      CircularProgressIndicator(color: tokens.brandForeground),
+                      SizedBox(height: tokens.space12),
+                      Text(
+                        '正在连接温油站',
+                        style: Theme.of(context).textTheme.wenyouStatusTitle
+                            .copyWith(color: tokens.brandForeground),
+                      ),
+                      SizedBox(height: tokens.space8),
+                      Text(
+                        '正在确认是否可以正常使用。',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: tokens.brandForeground,
+                        ),
+                      ),
+                      SizedBox(height: tokens.space24),
+                    ],
+                  ),
                 ),
-                SizedBox(height: tokens.space8),
-                Text(
-                  '正在确认是否可以正常使用。',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

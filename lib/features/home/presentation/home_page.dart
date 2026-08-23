@@ -48,7 +48,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     final state = ref.watch(homeFeedControllerProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('温油站'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const WenyouBrandMark.decorative(
+              key: Key('home-brand-mark'),
+              size: WenyouBrandContract.appBarMarkSize,
+            ),
+            SizedBox(width: context.wenyouTokens.space8),
+            const Text(WenyouBrandContract.name),
+          ],
+        ),
         actions: [
           IconButton(
             key: const Key('home-open-search'),

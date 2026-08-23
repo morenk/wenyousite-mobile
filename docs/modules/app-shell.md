@@ -14,7 +14,7 @@
 
 ## 3. 页面、入口和导航关系
 
-启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 从 `/meta.mobileCompatibility` 的 HTTPS 地址在页内下载 RainS3 APK，验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实。消息中心的“通知 / 私聊”使用共享等宽内容页签，只响应明确点按并通过规范 URL 保存栏目，不把横滑手势同时解释为切页。
+启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入。系统启动层只承担 Flutter 第一帧之前不可避免的过渡，显示 Foundation 柔粉底色与屏幕中心静态标识；Flutter 检查首帧保持 96dp 标识在同一中心坐标，只在其下补出 22sp“温油站”、16sp“最温油的文字共创社区”和检查状态，用户不感知为两张加载页。四个分支与壳容器间瞬时切换并保留状态；Android 真实业务页入栈和返回由应用主题统一提供 180ms 水平位移，不缩放或淡化当前页。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 从 `/meta.mobileCompatibility` 的 HTTPS 地址在页内下载 RainS3 APK，验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实。消息中心的“通知 / 私聊”使用共享等宽内容页签，只响应明确点按并通过规范 URL 保存栏目，不把横滑手势同时解释为切页。
 
 ## 4. 用户操作流程
 
@@ -44,7 +44,7 @@
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)。app 组合层只连接 capability 与跨 feature 缓存失效等接口，不持有业务页面状态。更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)。app 组合层只连接 capability 与跨 feature 缓存失效等接口，不持有业务页面状态。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 
@@ -56,10 +56,12 @@
 - [x] 登录用户底栏展示通知与私聊合计角标，并可进入包含“通知 / 私聊”共享等宽页签的消息中心；页签仅点按切换并保持规范 URL。
 - [x] 私聊 capability 映射到业务入口，登录用户回前台时同步私聊未读与请求角标。
 - [x] 四分支使用 IndexedStack 保留页面状态；底栏中央发布动作在任一分支都先显示稳定类型选择，首页与动态顶栏可进入全站搜索。
+- [x] Android 普通页面进入与返回只使用 180ms 水平位移，不叠加缩放或淡化；主分支和无来源栈兜底瞬时切换，减少动态效果时全部零时长。
 - [x] 登录会话就绪后自动签到，同一会话重复构建不重复触发且失败不阻断应用壳。
 - [x] Android 带键盘或不带键盘切到后台再返回时，即使 Flutter 引擎仍保留旧 `viewInsets`，后台与恢复等待期也保持零高度；后台迟到回调、仅失焦恢复和系统恢复键盘均不会留下空白或重复避让。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
+- [x] Android adaptive/monochrome/legacy 图标、Android 12+ 与旧版启动层、iOS AppIcon/LaunchScreen 均与 Foundation v6.4.0 哈希一致；Flutter 启动首帧品牌尺寸、文案、字体和底色有 Widget 回归。
 - [ ] Android 8+ 模拟器通过启动冒烟。
 
 ## 12. 已知限制和后续功能
@@ -68,8 +70,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/application/app_shell_ports.dart`、`lib/features/app_shell/data/`、`lib/main.dart`、`android/app/src/main/kotlin/site/wenyou/app/MainActivity.kt`、`test/features/app_shell/mobile_update_service_test.dart`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/features/app_shell/application/app_shell_ports.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/features/app_shell/data/`、`lib/main.dart`、`android/app/src/main/res/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/startup_brand_test.dart`、`test/tool/foundation_brand_assets_test.dart`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

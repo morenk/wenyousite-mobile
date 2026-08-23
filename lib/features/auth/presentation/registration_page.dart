@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/registration_controller.dart';
+import 'package:wenyousite_mobile/features/auth/presentation/auth_brand_header.dart';
 
 class RegistrationPage extends ConsumerStatefulWidget {
   const RegistrationPage({this.returnTo, super.key});
@@ -69,9 +70,16 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       body: WenyouPageBody(
         maxWidth: 480,
         child: WenyouPanel(
-          child: state.step == RegistrationStep.email
-              ? _buildEmailStep(context, state)
-              : _buildVerifyStep(context, state),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AuthBrandHeader(),
+              SizedBox(height: context.wenyouTokens.space24),
+              state.step == RegistrationStep.email
+                  ? _buildEmailStep(context, state)
+                  : _buildVerifyStep(context, state),
+            ],
+          ),
         ),
       ),
     );

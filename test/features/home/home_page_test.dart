@@ -22,6 +22,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('发现主题'), findsNothing);
+    final brandMark = tester.widget<WenyouBrandMark>(
+      find.byKey(const Key('home-brand-mark')),
+    );
+    expect(brandMark.size, WenyouBrandContract.appBarMarkSize);
+    expect(brandMark.semanticLabel, isNull);
     expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('向星海出发'), findsOneWidget);

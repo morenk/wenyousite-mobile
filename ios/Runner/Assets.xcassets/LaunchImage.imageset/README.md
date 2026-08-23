@@ -1,5 +1,3 @@
-# Launch Screen Assets
+# 温油站启动标识
 
-You can customize the launch screen with your own desired assets by replacing the image files in this directory.
-
-You can also do it by opening your Flutter project's Xcode project with `open ios/Runner.xcworkspace`, selecting `Runner/Assets.xcassets` in the Project Navigator and dropping in the desired images.
+本目录的 1x/2x/3x 静态启动标识同步自 Foundation v6.4.0 `brand_assets/platform/apple/launch`。品牌文案由 Flutter 第一帧呈现，不写入 LaunchScreen。
