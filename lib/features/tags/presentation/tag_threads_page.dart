@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -70,9 +71,6 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
     provider,
   ) {
     final tokens = context.wenyouTokens;
-    final categoryNames = {
-      for (final category in state.categories) category.slug: category.name,
-    };
     final transientCount = state.transientFailure == null ? 0 : 1;
     final contentCount = state.items.isEmpty ? 1 : state.items.length;
     final footerCount = state.items.isEmpty ? 0 : 1;
@@ -167,14 +165,13 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                 child: HomeThreadCard(
                   key: Key('tag-thread-${thread.id}'),
                   thread: thread,
-                  categoryName:
-                      categoryNames[thread.categorySlug] ?? thread.categorySlug,
+                  category: resolveThreadCategoryPresentation(
+                    thread.categorySlug,
+                    categories: state.categories,
+                  ),
                   onTap: () => context.pushNamed(
                     'thread-detail',
                     pathParameters: {'threadId': thread.id},
-                    extra:
-                        categoryNames[thread.categorySlug] ??
-                        thread.categorySlug,
                   ),
                   onTagTap: (tag) => context.pushNamed(
                     'tag-threads',

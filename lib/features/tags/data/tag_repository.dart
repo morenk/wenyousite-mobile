@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -254,10 +255,14 @@ class ApiTagRepository implements TagRepository {
       if (!ids.add(item.id)) {
         throw const ApiFailure(userMessage: '主题分类暂时无法显示，请稍后重试。');
       }
+      final slug = _requiredText(item.slug, '分类标识');
       return HomeCategory(
         id: _requiredText(item.id, '分类 ID'),
-        slug: _requiredText(item.slug, '分类标识'),
-        name: _requiredText(item.name, '分类名称'),
+        slug: slug,
+        name: ThreadCategoryPresentation.catalog(
+          slug: slug,
+          label: _requiredText(item.name, '分类名称'),
+        ).label,
         description: _optionalText(item.description),
         sortOrder: item.sortOrder.toInt(),
       );

@@ -39,4 +39,42 @@ void main() {
           '${violations.join('\n')}',
     );
   });
+
+  test('展示层禁止把存储标识与线上值当作用户 label', () {
+    final forbiddenSinks = <RegExp>[
+      RegExp(r'categoryName\s*:'),
+      RegExp(
+        r'(?:Text\s*\(|label\s*:|title\s*:|message\s*:|tooltip\s*:|semanticsLabel\s*:)[^\r\n;,]*(?:\.categorySlug|\.wireValue|\.slug|\.code)\b',
+      ),
+      RegExp(r'\$\{[^}]*\.(?:categorySlug|wireValue|slug|code)\}'),
+    ];
+    final violations = <String>[];
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File ||
+          !entity.path.endsWith('.dart') ||
+          (!entity.path.contains(
+                '${Platform.pathSeparator}presentation${Platform.pathSeparator}',
+              ) &&
+              !entity.path.contains(
+                '${Platform.pathSeparator}widgets${Platform.pathSeparator}',
+              ))) {
+        continue;
+      }
+      final lines = entity.readAsLinesSync();
+      for (var index = 0; index < lines.length; index++) {
+        if (forbiddenSinks.any((pattern) => pattern.hasMatch(lines[index]))) {
+          violations.add('${entity.path}:${index + 1}: ${lines[index].trim()}');
+        }
+      }
+    }
+
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          '展示文案必须使用产品 label，不得直接渲染 slug/wireValue/code：\n'
+          '${violations.join('\n')}',
+    );
+  });
 }

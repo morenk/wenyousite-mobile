@@ -30,14 +30,12 @@ import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.da
 class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
     required this.threadId,
-    this.categoryNameHint,
     this.targetPostId,
     this.subthreadIdHint,
     super.key,
   });
 
   final String threadId;
-  final String? categoryNameHint;
   final String? targetPostId;
   final String? subthreadIdHint;
 

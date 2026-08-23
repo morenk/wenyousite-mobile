@@ -6,6 +6,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -28,7 +29,14 @@ class ThreadInvitationPage extends ConsumerWidget {
         ),
         ThreadInvitationAccessPhase.failed => _InvitationFailure(
           failure: state.failure,
-          onRetry: () => ref.read(provider.notifier).load(),
+          onRetry: () async {
+            await Future.wait([
+              ref.read(provider.notifier).load(),
+              ref
+                  .read(threadCategoryCatalogControllerProvider.notifier)
+                  .refresh(),
+            ]);
+          },
         ),
         ThreadInvitationAccessPhase.ready => _InvitationReady(
           token: token,
@@ -48,6 +56,9 @@ class _InvitationReady extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preview = state.preview!;
+    final category = ref
+        .watch(threadCategoryCatalogControllerProvider)
+        .resolve(preview.categorySlug);
     final tokens = context.wenyouTokens;
     return WenyouPageBody(
       maxWidth: 520,
@@ -73,10 +84,11 @@ class _InvitationReady extends ConsumerWidget {
                   spacing: tokens.space8,
                   runSpacing: tokens.space8,
                   children: [
-                    _InviteFact(
-                      icon: WenyouIconIds.contentFolderOpen,
-                      label: preview.categorySlug ?? '未分类',
-                    ),
+                    if (category != null)
+                      _InviteFact(
+                        icon: WenyouIconIds.contentFolderOpen,
+                        label: category.label,
+                      ),
                     _InviteFact(
                       icon: WenyouIconIds.actionReport,
                       label: preview.status.label,

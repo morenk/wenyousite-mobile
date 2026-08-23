@@ -28,6 +28,8 @@
 
 四个用户可见 Tab 独立保存 idle/loading/ready/failed 状态；动态和楼层内容额外保存不透明 cursor、hasMore、加载更多和局部错误。搜索仓储接口位于 `search/application`，`main.dart` 组合根绑定 API data 适配器，两个搜索控制器不直接导入 data。主题结果直接映射为 threads/core 的共享主题卡模型，只消费 `coverImages` 的唯一安全 HTTP(S) 首图，并保留搜索端点自己的相关度排序。控制器共享 query 与请求代次，只有最新代次可写回状态。`ThreadPostSearchController(threadId)` 隔离每个主题的关键词、分页和请求代次；所有列表按稳定 ID 去重。后端综合搜索读模型继续保留兼容映射，但移动端不把它暴露为结果类型或入口。
 
+搜索结果不把 `categorySlug` 交给卡片。进程内共享的公开分类目录合并并发读取，卡片只接收强类型展示值；首次目录加载失败时显示“分类暂不可用”且不遮断搜索结果，下拉刷新或重试会同时刷新目录。
+
 契约中的 `searchSearchThreads` 已支持可选 cursor/limit 和带 `meta` 的分页响应；当前移动端仓储仍使用 `Future<List<SearchThreadResult>> searchThreads(String query)`，省略 cursor/limit 并消费兼容首批结果，因此单个关键词最多读取服务端默认的 50 条主题结果。完成端口、控制器和页面的 cursor 分页前，本模块保持 `in_progress`。
 
 ## 7. 鉴权、权限和隐私规则
@@ -56,6 +58,7 @@
 - [x] 快速改词时旧响应不能覆盖新结果。
 - [x] 动态、主题帖、用户和楼层内容结果使用稳定详情路径；楼层内容可切换子贴并补齐目标上下文。
 - [x] 主题搜索只展示首图，超契约多图响应也不显示额外计数；已注销作者的公开历史结果不在客户端过滤。
+- [x] 主题结果将 `DEDUCTION` 解析为“演绎”，目录失败与原始 slug 都有防泄露回归。
 - [x] 主题详情进入主题内搜索，私密访问由服务端复核，跨主题结果被拒绝。
 - [x] 未输入、关键词过短、空、错、重试、加载更多、竞态与无效 cursor 状态有自动测试。
 - [x] 全站与主题内页面在 360dp、400dp、600dp 的布局和 48dp 主操作有 Widget 测试。

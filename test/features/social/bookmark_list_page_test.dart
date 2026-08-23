@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_folder_catalog_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
+
+import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
   testWidgets('本人收藏展示摘要、进入主题并可原地取消', (tester) async {
@@ -20,6 +23,8 @@ void main() {
 
     expect(find.text('稍后继续阅读或参与的内容。'), findsNothing);
     expect(find.text('雾港来信'), findsOneWidget);
+    expect(find.textContaining('演绎'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
     expect(find.text('骰子猫'), findsOneWidget);
     expect(find.text('Lv.3'), findsOneWidget);
     expect(find.byKey(const Key('home-thread-card-thread-1')), findsOneWidget);
@@ -304,7 +309,12 @@ GoRouter _router({String initialLocation = '/'}) {
 
 Widget _app(BookmarkListRepository repository, GoRouter router) {
   return ProviderScope(
-    overrides: [bookmarkListRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      bookmarkListRepositoryProvider.overrideWithValue(repository),
+      threadCategoryCatalogRepositoryProvider.overrideWithValue(
+        FakeThreadCategoryCatalogRepository(),
+      ),
+    ],
     child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
   );
 }
@@ -454,7 +464,7 @@ BookmarkListItem _item(String bookmarkId, {String? folderId}) {
     folderId: folderId,
     threadId: bookmarkId == 'bookmark-1' ? 'thread-1' : 'thread-2',
     title: bookmarkId == 'bookmark-1' ? '雾港来信' : '收藏 $bookmarkId',
-    categorySlug: 'RPG',
+    categorySlug: 'DEDUCTION',
     status: BookmarkedThreadStatus.recruiting,
     isPrivate: false,
     isPinned: true,

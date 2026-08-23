@@ -160,10 +160,8 @@ Widget _stackApp(Dio dio) {
     routes: [
       GoRoute(
         path: '/threads/:threadId',
-        builder: (context, state) => ThreadDetailPage(
-          threadId: state.pathParameters['threadId']!,
-          categoryNameHint: '角色扮演',
-        ),
+        builder: (context, state) =>
+            ThreadDetailPage(threadId: state.pathParameters['threadId']!),
       ),
     ],
   );

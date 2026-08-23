@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -41,7 +42,10 @@ class ApiThreadComposeRepository implements ThreadComposeRepository {
               .map(
                 (category) => ThreadComposeCategory(
                   slug: category.slug,
-                  name: category.name,
+                  name: ThreadCategoryPresentation.catalog(
+                    slug: category.slug,
+                    label: category.name,
+                  ).label,
                   description: category.description,
                   sortOrder: category.sortOrder.toInt(),
                 ),

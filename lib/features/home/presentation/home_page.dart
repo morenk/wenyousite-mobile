@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -94,9 +95,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ];
     }
 
-    final categoryNames = {
-      for (final category in state.categories) category.slug: category.name,
-    };
     return [
       SliverToBoxAdapter(
         child: _HomeFilters(
@@ -157,14 +155,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: HomeThreadCard(
                   key: Key('home-thread-${thread.id}'),
                   thread: thread,
-                  categoryName:
-                      categoryNames[thread.categorySlug] ?? thread.categorySlug,
+                  category: resolveThreadCategoryPresentation(
+                    thread.categorySlug,
+                    categories: state.categories,
+                  ),
                   onTap: () => context.pushNamed(
                     'thread-detail',
                     pathParameters: {'threadId': thread.id},
-                    extra:
-                        categoryNames[thread.categorySlug] ??
-                        thread.categorySlug,
                   ),
                   onTagTap: (tag) => context.pushNamed(
                     'tag-threads',

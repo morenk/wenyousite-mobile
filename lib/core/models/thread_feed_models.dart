@@ -1,3 +1,6 @@
+export 'package:wenyousite_mobile/core/models/thread_category_presentation.dart'
+    show HomeCategory;
+
 enum HomeThreadStatus {
   recruiting('招募中'),
   closed('已停招'),
@@ -7,22 +10,6 @@ enum HomeThreadStatus {
   const HomeThreadStatus(this.label);
 
   final String label;
-}
-
-class HomeCategory {
-  const HomeCategory({
-    required this.id,
-    required this.slug,
-    required this.name,
-    required this.sortOrder,
-    this.description,
-  });
-
-  final String id;
-  final String slug;
-  final String name;
-  final String? description;
-  final int sortOrder;
 }
 
 class HomeThreadTag {

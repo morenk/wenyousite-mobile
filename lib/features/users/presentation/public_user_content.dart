@@ -157,7 +157,7 @@ class _ThreadSection extends StatelessWidget {
           ThreadFeedCard(
             key: Key('user-thread-${section.items[index].id}'),
             thread: section.items[index],
-            categoryName: null,
+            category: null,
             onTap: () => context.pushNamed(
               'thread-detail',
               pathParameters: {'threadId': section.items[index].id},

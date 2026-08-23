@@ -84,6 +84,30 @@ void main() {
     expect(find.text('星海旅团'), findsOneWidget);
   });
 
+  testWidgets('首页分类元信息只展示用户 label，未知值固定降级', (tester) async {
+    await tester.pumpWidget(
+      _homeApp(
+        _FakeHomeRepository(
+          categories: const [
+            HomeCategory(
+              id: 'category-deduction',
+              slug: 'DEDUCTION',
+              name: '演绎',
+              sortOrder: 1,
+            ),
+          ],
+          items: [_deductionThread, _historicalThread],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('演绎'), findsWidgets);
+    expect(find.textContaining('历史分类'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
+    expect(find.textContaining('ARCHIVED_WORLD'), findsNothing);
+  });
+
   testWidgets('首页不显示右上刷新按钮但仍可下拉刷新', (tester) async {
     final repository = _FakeHomeRepository();
     await tester.pumpWidget(_homeApp(repository));
@@ -302,23 +326,28 @@ Widget _homeApp(HomeRepository repository) {
 }
 
 class _FakeHomeRepository implements HomeRepository {
-  _FakeHomeRepository({this.failFirstRequest = false, this.items});
+  _FakeHomeRepository({
+    this.failFirstRequest = false,
+    this.items,
+    this.categories = const [
+      HomeCategory(
+        id: 'category-rpg',
+        slug: 'RPG',
+        name: '角色扮演',
+        description: '角色扮演主题',
+        sortOrder: 1,
+      ),
+    ],
+  });
 
   final bool failFirstRequest;
   final List<HomeThreadCardModel>? items;
+  final List<HomeCategory> categories;
   int threadCalls = 0;
   HomeFeedQuery? lastQuery;
 
   @override
-  Future<List<HomeCategory>> fetchCategories() async => const [
-    HomeCategory(
-      id: 'category-rpg',
-      slug: 'RPG',
-      name: '角色扮演',
-      description: '角色扮演主题',
-      sortOrder: 1,
-    ),
-  ];
+  Future<List<HomeCategory>> fetchCategories() async => categories;
 
   @override
   Future<CursorPage<HomeThreadCardModel>> fetchThreads({
@@ -355,6 +384,30 @@ final _thread = HomeThreadCardModel(
   postCount: 12,
   tipTotal: '8',
   lastActivityAt: DateTime.now().subtract(const Duration(minutes: 5)),
+);
+
+final _deductionThread = HomeThreadCardModel(
+  id: 'thread-deduction',
+  title: '演绎主题',
+  categorySlug: 'DEDUCTION',
+  status: HomeThreadStatus.recruiting,
+  ownerName: '楼主',
+  ownerLevel: 1,
+  memberCount: 1,
+  postCount: 1,
+  lastActivityAt: DateTime.utc(2026, 8, 10),
+);
+
+final _historicalThread = HomeThreadCardModel(
+  id: 'thread-historical',
+  title: '旧分类主题',
+  categorySlug: 'ARCHIVED_WORLD',
+  status: HomeThreadStatus.closed,
+  ownerName: '楼主',
+  ownerLevel: 1,
+  memberCount: 1,
+  postCount: 1,
+  lastActivityAt: DateTime.utc(2026, 8, 10),
 );
 
 final _threadWithCover = HomeThreadCardModel(

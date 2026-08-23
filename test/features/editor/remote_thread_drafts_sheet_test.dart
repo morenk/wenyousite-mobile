@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/remote_thread_drafts_sheet.dart';
+
+import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
   testWidgets('360dp 草稿箱展示当前项并二次确认删除其他云端草稿', (tester) async {
@@ -29,6 +32,9 @@ void main() {
           remoteThreadDraftsControllerProvider.overrideWith(
             (ref) => controller,
           ),
+          threadCategoryCatalogRepositoryProvider.overrideWithValue(
+            FakeThreadCategoryCatalogRepository(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -41,6 +47,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('当前草稿'), findsOneWidget);
+    expect(find.textContaining('演绎'), findsNWidgets(2));
+    expect(find.textContaining('DEDUCTION'), findsNothing);
     expect(find.text('正在编辑'), findsOneWidget);
     expect(
       tester
@@ -71,7 +79,7 @@ ThreadRemoteDraftSummary _summary(String id, String title) {
   return ThreadRemoteDraftSummary(
     id: id,
     title: title,
-    categorySlug: 'TRPG',
+    categorySlug: 'DEDUCTION',
     visibility: ThreadComposeVisibility.private,
     tags: const ['跑团', '奇幻'],
     createdAt: DateTime.utc(2026, 8, 9),

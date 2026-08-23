@@ -1359,10 +1359,7 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const ThreadDetailPage(
-            threadId: 'thread-1',
-            categoryNameHint: '角色扮演',
-          ),
+          home: const ThreadDetailPage(threadId: 'thread-1'),
         ),
       ),
     );
@@ -1524,10 +1521,8 @@ void main() {
         GoRoute(
           path: '/threads/:threadId',
           name: 'thread-detail',
-          builder: (_, state) => ThreadDetailPage(
-            threadId: state.pathParameters['threadId']!,
-            categoryNameHint: state.extra as String?,
-          ),
+          builder: (_, state) =>
+              ThreadDetailPage(threadId: state.pathParameters['threadId']!),
         ),
       ],
     );
@@ -2214,7 +2209,6 @@ Widget _detailApp(
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
-    categoryNameHint: '角色扮演',
     targetPostId: targetPostId,
     subthreadIdHint: subthreadIdHint,
   );
@@ -2275,7 +2269,6 @@ Widget _detailRouterApp(
         path: '/threads/:threadId',
         builder: (context, state) => ThreadDetailPage(
           threadId: state.pathParameters['threadId']!,
-          categoryNameHint: '角色扮演',
           targetPostId: state.uri.queryParameters['post'],
         ),
       ),

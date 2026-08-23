@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -38,6 +40,7 @@ class BookmarkListView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = bookmarkListControllerProvider(folderId);
     final state = ref.watch(provider);
+    final categoryCatalog = ref.watch(threadCategoryCatalogControllerProvider);
     final notifier = ref.read(provider.notifier);
     return switch (state.phase) {
       BookmarkListPhase.loading => const WenyouPageBody(
@@ -63,12 +66,28 @@ class BookmarkListView extends ConsumerWidget {
       ),
       BookmarkListPhase.ready => _ReadyBookmarkList(
         state: state,
+        categoryCatalog: categoryCatalog,
         onRefresh: () => Future.wait([
           notifier.refresh(),
+          ref.read(threadCategoryCatalogControllerProvider.notifier).refresh(),
           if (additionalRefresh case final refresh?) refresh(),
         ]),
-        onRetryFolders: notifier.reloadFolders,
-        onRetryList: notifier.retrySelectedFolder,
+        onRetryFolders: () async {
+          await Future.wait([
+            notifier.reloadFolders(),
+            ref
+                .read(threadCategoryCatalogControllerProvider.notifier)
+                .refresh(),
+          ]);
+        },
+        onRetryList: () async {
+          await Future.wait([
+            notifier.retrySelectedFolder(),
+            ref
+                .read(threadCategoryCatalogControllerProvider.notifier)
+                .refresh(),
+          ]);
+        },
         onMove: (item) async {
           final folderId = await _showMoveFolderSheet(
             context,
@@ -103,6 +122,7 @@ class BookmarkListView extends ConsumerWidget {
 class _ReadyBookmarkList extends StatelessWidget {
   const _ReadyBookmarkList({
     required this.state,
+    required this.categoryCatalog,
     required this.onRefresh,
     required this.onRetryFolders,
     required this.onRetryList,
@@ -113,6 +133,7 @@ class _ReadyBookmarkList extends StatelessWidget {
   });
 
   final BookmarkListState state;
+  final ThreadCategoryCatalogState categoryCatalog;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onRetryFolders;
   final Future<void> Function() onRetryList;
@@ -235,6 +256,9 @@ class _ReadyBookmarkList extends StatelessWidget {
                 _CenteredContent(
                   child: _BookmarkThreadListItem(
                     item: state.items[index],
+                    category: categoryCatalog.resolve(
+                      state.items[index].categorySlug,
+                    ),
                     folderName: state
                         .folderById(state.items[index].folderId)
                         ?.name,
@@ -305,6 +329,7 @@ class _ReadyBookmarkList extends StatelessWidget {
 class _BookmarkThreadListItem extends StatelessWidget {
   const _BookmarkThreadListItem({
     required this.item,
+    required this.category,
     required this.folderName,
     required this.canMove,
     required this.pendingAction,
@@ -314,6 +339,7 @@ class _BookmarkThreadListItem extends StatelessWidget {
   });
 
   final BookmarkListItem item;
+  final ThreadCategoryPresentation? category;
   final String? folderName;
   final bool canMove;
   final BookmarkPendingAction? pendingAction;
@@ -332,11 +358,10 @@ class _BookmarkThreadListItem extends StatelessWidget {
       children: [
         ThreadFeedCard(
           thread: _threadModel(item),
-          categoryName: item.categorySlug,
+          category: category,
           onTap: () => context.pushNamed(
             'thread-detail',
             pathParameters: {'threadId': item.threadId},
-            extra: item.categorySlug,
           ),
           onTagTap: (tag) => context.pushNamed(
             'tag-threads',

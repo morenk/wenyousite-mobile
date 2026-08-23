@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
@@ -44,6 +45,7 @@ import 'package:wenyousite_mobile/features/social/data/user_relation_repository.
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
@@ -112,6 +114,9 @@ List<Override> productionProviderOverrides() => [
   ),
   homeRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiHomeRepositoryProvider),
+  ),
+  threadCategoryCatalogRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiThreadCategoryCatalogRepositoryProvider),
   ),
   moderationAppealRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiModerationAppealRepositoryProvider),

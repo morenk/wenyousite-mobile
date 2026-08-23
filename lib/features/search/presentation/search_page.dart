@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -63,7 +64,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       appBar: AppBar(title: const Text('搜索')),
       body: RefreshIndicator(
         onRefresh: state.hasQuery
-            ? () => ref.read(searchControllerProvider.notifier).refreshActive()
+            ? () => Future.wait([
+                ref.read(searchControllerProvider.notifier).refreshActive(),
+                ref
+                    .read(threadCategoryCatalogControllerProvider.notifier)
+                    .refresh(),
+              ])
             : () async {},
         child: ListView(
           key: const PageStorageKey('search-results-scroll'),
@@ -227,8 +233,7 @@ class _OverviewSectionBody extends ConsumerWidget {
       SearchSectionPhase.loading => const _SearchLoadingState(),
       SearchSectionPhase.failed => _SearchErrorState(
         failure: state.failure,
-        onRetry: () =>
-            ref.read(searchControllerProvider.notifier).retryActive(),
+        onRetry: () => _retrySearchAndCategories(ref),
       ),
       SearchSectionPhase.ready
           when state.items.isEmpty || state.items.single.isEmpty =>
@@ -433,8 +438,7 @@ class _SectionBody<T> extends ConsumerWidget {
       SearchSectionPhase.loading => const _SearchLoadingState(),
       SearchSectionPhase.failed => _SearchErrorState(
         failure: state.failure,
-        onRetry: () =>
-            ref.read(searchControllerProvider.notifier).retryActive(),
+        onRetry: () => _retrySearchAndCategories(ref),
       ),
       SearchSectionPhase.ready when state.items.isEmpty => WenyouPanel(
         child: WenyouEmptyState(
@@ -454,6 +458,13 @@ class _SectionBody<T> extends ConsumerWidget {
       ),
     };
   }
+}
+
+Future<void> _retrySearchAndCategories(WidgetRef ref) async {
+  await Future.wait([
+    ref.read(searchControllerProvider.notifier).retryActive(),
+    ref.read(threadCategoryCatalogControllerProvider.notifier).refresh(),
+  ]);
 }
 
 class _PostSectionBody extends ConsumerWidget {
@@ -513,21 +524,23 @@ class _PostSectionBody extends ConsumerWidget {
   }
 }
 
-class _ThreadResultCard extends StatelessWidget {
+class _ThreadResultCard extends ConsumerWidget {
   const _ThreadResultCard({required this.item});
 
   final SearchThreadResult item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final category = ref
+        .watch(threadCategoryCatalogControllerProvider)
+        .resolve(item.categorySlug);
     return HomeThreadCard(
       key: Key('search-thread-${item.id}'),
       thread: item,
-      categoryName: item.categorySlug,
+      category: category,
       onTap: () => context.pushNamed(
         'thread-detail',
         pathParameters: {'threadId': item.id},
-        extra: item.categorySlug,
       ),
       onTagTap: (tag) =>
           context.pushNamed('tag-threads', pathParameters: {'tagId': tag.id}),

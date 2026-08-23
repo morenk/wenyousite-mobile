@@ -280,12 +280,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.threadDetail,
         name: AppRouteNames.threadDetail,
         pageBuilder: (context, state) {
-          final extra = state.extra;
           return NoTransitionPage<void>(
             key: state.pageKey,
             child: ThreadDetailPage(
               threadId: state.pathParameters['threadId']!,
-              categoryNameHint: extra is String ? extra : null,
               targetPostId: state.uri.queryParameters['post'],
               subthreadIdHint: state.uri.queryParameters['subthread'],
             ),

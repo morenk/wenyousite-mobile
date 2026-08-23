@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -11,6 +12,8 @@ import 'package:wenyousite_mobile/features/search/application/search_controller.
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
+
+import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
   testWidgets('搜索页按动态、主题帖、楼层内容和用户四个页签惰性展示结果', (tester) async {
@@ -23,6 +26,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('星海旅团'), findsOneWidget);
+    expect(find.textContaining('演绎'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
     expect(find.byKey(const Key('home-thread-card-thread-1')), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(find.text('12'), findsOneWidget);
@@ -82,6 +87,25 @@ void main() {
     expect(repository.threadCalls, 2);
   });
 
+  testWidgets('分类目录失败不遮断搜索且不回退显示 slug', (tester) async {
+    await tester.pumpWidget(
+      _searchApp(
+        _FakeSearchRepository(),
+        categoryRepository: FakeThreadCategoryCatalogRepository(
+          failure: StateError('offline'),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('search-query-input')), '星海');
+    await tester.tap(find.byKey(const Key('search-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('星海旅团'), findsOneWidget);
+    expect(find.textContaining('分类暂不可用'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
+  });
+
   testWidgets('三类结果分别进入稳定主题、用户和帖子目标路径', (tester) async {
     final repository = _FakeSearchRepository();
     final router = GoRouter(
@@ -114,6 +138,9 @@ void main() {
         overrides: [
           searchControllerProvider.overrideWith(
             (ref) => SearchController(repository),
+          ),
+          threadCategoryCatalogRepositoryProvider.overrideWithValue(
+            FakeThreadCategoryCatalogRepository(),
           ),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -207,11 +234,17 @@ void main() {
   }
 }
 
-Widget _searchApp(SearchRepository repository) {
+Widget _searchApp(
+  SearchRepository repository, {
+  ThreadCategoryCatalogRepository? categoryRepository,
+}) {
   return ProviderScope(
     overrides: [
       searchControllerProvider.overrideWith(
         (ref) => SearchController(repository),
+      ),
+      threadCategoryCatalogRepositoryProvider.overrideWithValue(
+        categoryRepository ?? FakeThreadCategoryCatalogRepository(),
       ),
     ],
     child: MaterialApp(theme: AppTheme.light, home: const SearchPage()),
@@ -295,7 +328,7 @@ SearchThreadResult _threadResult() {
   return SearchThreadResult(
     id: 'thread-1',
     title: '星海旅团',
-    categorySlug: 'RPG',
+    categorySlug: 'DEDUCTION',
     status: HomeThreadStatus.recruiting,
     ownerId: 'user-1',
     ownerName: '温柔测试员',

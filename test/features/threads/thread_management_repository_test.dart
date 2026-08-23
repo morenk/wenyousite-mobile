@@ -40,6 +40,8 @@ void main() {
     expect(result.thread.status, ThreadManagementStatus.recruiting);
     expect(result.categories.map((item) => item.slug), ['ARCHIVED', 'RPG']);
     expect(result.categories.first.isSelectable, isFalse);
+    expect(result.categories.first.name, '历史分类');
+    expect(result.categories.first.name, isNot('ARCHIVED'));
   });
 
   test('协作者更新只发送已变化字段与当前 version', () async {

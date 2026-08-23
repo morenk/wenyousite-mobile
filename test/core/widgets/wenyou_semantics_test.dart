@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_feed_card.dart';
@@ -31,7 +32,7 @@ void main() {
               tipTotal: '0',
               lastActivityAt: DateTime(2026, 8, 11),
             ),
-            categoryName: '现代',
+            category: ThreadCategoryPresentation.named('现代'),
             onTap: () {},
           ),
         ),

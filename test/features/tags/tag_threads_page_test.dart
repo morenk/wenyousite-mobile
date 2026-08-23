@@ -14,6 +14,8 @@ void main() {
     await _pumpPage(tester, _FakeTagRepository());
 
     expect(find.text('#太空歌剧'), findsWidgets);
+    expect(find.textContaining('演绎'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
     expect(find.byKey(const Key('tag-thread-thread-1')), findsOneWidget);
     await tester.tap(find.byKey(const Key('tag-thread-thread-1')));
     await tester.pumpAndSettle();
@@ -76,7 +78,12 @@ class _FakeTagRepository implements TagRepository {
         isActive: true,
       ),
       categories: const [
-        HomeCategory(id: 'category-1', slug: 'RPG', name: '角色扮演', sortOrder: 1),
+        HomeCategory(
+          id: 'category-1',
+          slug: 'DEDUCTION',
+          name: '演绎',
+          sortOrder: 1,
+        ),
       ],
       page: CursorPage(items: [_thread], hasMore: false),
     );
@@ -131,7 +138,7 @@ class _FakeTagRepository implements TagRepository {
 final _thread = HomeThreadCardModel(
   id: 'thread-1',
   title: '星海旅团',
-  categorySlug: 'RPG',
+  categorySlug: 'DEDUCTION',
   status: HomeThreadStatus.recruiting,
   isPinned: false,
   ownerId: 'owner-1',

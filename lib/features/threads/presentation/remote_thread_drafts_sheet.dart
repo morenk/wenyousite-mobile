@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
@@ -50,9 +51,18 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
               tooltip: '刷新云端草稿',
               onPressed: state.isRemoving
                   ? null
-                  : () => ref
-                        .read(remoteThreadDraftsControllerProvider.notifier)
-                        .load(),
+                  : () async {
+                      await Future.wait([
+                        ref
+                            .read(remoteThreadDraftsControllerProvider.notifier)
+                            .load(),
+                        ref
+                            .read(
+                              threadCategoryCatalogControllerProvider.notifier,
+                            )
+                            .refresh(),
+                      ]);
+                    },
               icon: const WenyouIcon(WenyouIconIds.actionRefresh),
             ),
           ),
@@ -87,8 +97,14 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         message: state.failure?.userMessage ?? '请检查网络后重试。',
         detail: _requestDetail(state.failure),
         action: FilledButton.icon(
-          onPressed: () =>
+          onPressed: () async {
+            await Future.wait([
               ref.read(remoteThreadDraftsControllerProvider.notifier).load(),
+              ref
+                  .read(threadCategoryCatalogControllerProvider.notifier)
+                  .refresh(),
+            ]);
+          },
           icon: const WenyouIcon(WenyouIconIds.actionRefresh),
           label: const Text('重试'),
         ),
@@ -155,7 +171,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
   }
 }
 
-class _DraftCard extends StatelessWidget {
+class _DraftCard extends ConsumerWidget {
   const _DraftCard({
     required this.draft,
     required this.isCurrent,
@@ -173,10 +189,13 @@ class _DraftCard extends StatelessWidget {
   final VoidCallback? onRemove;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
+    final category = ref
+        .watch(threadCategoryCatalogControllerProvider)
+        .resolve(draft.categorySlug);
     final metadata = <String>[
-      draft.categorySlug ?? '未分类',
+      ?category?.label,
       draft.visibility.label,
       '${draft.subthreadCount} 个子贴',
       '${draft.postCount} 个帖子',

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
@@ -44,7 +45,10 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
               .map(
                 (item) => ThreadManagementCategory(
                   slug: item.slug,
-                  name: item.name,
+                  name: ThreadCategoryPresentation.catalog(
+                    slug: item.slug,
+                    label: item.name,
+                  ).label,
                   description: item.description,
                   sortOrder: item.sortOrder.toInt(),
                 ),
@@ -58,7 +62,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
           0,
           ThreadManagementCategory(
             slug: currentCategory,
-            name: currentCategory,
+            name: '历史分类',
             sortOrder: -1,
             isSelectable: false,
           ),

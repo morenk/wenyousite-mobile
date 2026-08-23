@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -35,7 +36,10 @@ class ApiHomeRepository implements HomeRepository {
                 (item) => HomeCategory(
                   id: item.id,
                   slug: item.slug,
-                  name: item.name,
+                  name: ThreadCategoryPresentation.catalog(
+                    slug: item.slug,
+                    label: item.name,
+                  ).label,
                   description: item.description,
                   sortOrder: item.sortOrder.toInt(),
                 ),

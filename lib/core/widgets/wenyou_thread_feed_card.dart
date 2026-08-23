@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
@@ -12,14 +13,14 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 class ThreadFeedCard extends StatelessWidget {
   const ThreadFeedCard({
     required this.thread,
-    required this.categoryName,
+    required this.category,
     required this.onTap,
     this.onTagTap,
     super.key,
   });
 
   final ThreadFeedCardModel thread;
-  final String? categoryName;
+  final ThreadCategoryPresentation? category;
   final VoidCallback onTap;
   final ValueChanged<HomeThreadTag>? onTagTap;
 
@@ -51,7 +52,7 @@ class ThreadFeedCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.wenyouListTitle,
                 ),
                 SizedBox(height: tokens.space12),
-                _ThreadHeader(thread: thread, categoryName: categoryName),
+                _ThreadHeader(thread: thread, category: category),
                 if (thread.coverImageUrls.isNotEmpty) ...[
                   SizedBox(height: tokens.space12),
                   _ThreadCover(
@@ -87,10 +88,10 @@ class ThreadFeedCard extends StatelessWidget {
 typedef HomeThreadCard = ThreadFeedCard;
 
 class _ThreadHeader extends StatelessWidget {
-  const _ThreadHeader({required this.thread, required this.categoryName});
+  const _ThreadHeader({required this.thread, required this.category});
 
   final ThreadFeedCardModel thread;
-  final String? categoryName;
+  final ThreadCategoryPresentation? category;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +111,7 @@ class _ThreadHeader extends StatelessWidget {
             children: [
               _ThreadAuthor(thread: thread),
               SizedBox(height: tokens.space4),
-              _ThreadContextLine(thread: thread, categoryName: categoryName),
+              _ThreadContextLine(thread: thread, category: category),
             ],
           ),
         ),
@@ -120,16 +121,16 @@ class _ThreadHeader extends StatelessWidget {
 }
 
 class _ThreadContextLine extends StatelessWidget {
-  const _ThreadContextLine({required this.thread, required this.categoryName});
+  const _ThreadContextLine({required this.thread, required this.category});
 
   final HomeThreadCardModel thread;
-  final String? categoryName;
+  final ThreadCategoryPresentation? category;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final labels = <String>[
-      ?categoryName,
+      ?category?.label,
       thread.status.label,
       if (!thread.isPublished) '草稿',
       if (thread.isPrivate) '私密',

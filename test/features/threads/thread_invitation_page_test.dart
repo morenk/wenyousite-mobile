@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
+
+import '../../support/fake_thread_category_catalog.dart';
 
 void main() {
   testWidgets('预览私密主题并接受邀请后进入稳定主题路径', (tester) async {
@@ -14,6 +17,8 @@ void main() {
     await _pumpPage(tester, repository);
 
     expect(find.text('星海密谈'), findsOneWidget);
+    expect(find.text('演绎'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
     expect(find.text('楼主 楼主'), findsOneWidget);
     expect(find.text('8 位参与人'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-invite-join')));
@@ -36,6 +41,16 @@ void main() {
 
     expect(repository.joinCalls, 0);
     expect(find.text('主题详情 thread-1'), findsOneWidget);
+  });
+
+  testWidgets('邀请预览缺少分类时显示未分类', (tester) async {
+    await _pumpPage(
+      tester,
+      _PageRepository(previewValue: _preview(categorySlug: null)),
+    );
+
+    expect(find.text('未分类'), findsOneWidget);
+    expect(find.textContaining('DEDUCTION'), findsNothing);
   });
 
   testWidgets('加入失败时保留预览并可显式重试', (tester) async {
@@ -116,6 +131,9 @@ Future<void> _pumpPage(
   final container = ProviderContainer(
     overrides: [
       threadInvitationRepositoryProvider.overrideWithValue(repository),
+      threadCategoryCatalogRepositoryProvider.overrideWithValue(
+        FakeThreadCategoryCatalogRepository(),
+      ),
     ],
   );
   final router = GoRouter(
@@ -196,11 +214,14 @@ class _PageRepository implements ThreadInvitationRepository {
   }
 }
 
-ThreadInvitationPreview _preview({bool alreadyJoined = false}) {
+ThreadInvitationPreview _preview({
+  bool alreadyJoined = false,
+  String? categorySlug = 'DEDUCTION',
+}) {
   return ThreadInvitationPreview(
     threadId: 'thread-1',
     title: '星海密谈',
-    categorySlug: 'RPG',
+    categorySlug: categorySlug,
     status: ThreadInvitationStatus.recruiting,
     ownerId: 'owner-1',
     ownerName: '楼主',
