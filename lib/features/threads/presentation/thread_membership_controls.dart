@@ -91,9 +91,7 @@ class ThreadMembershipControls extends ConsumerWidget {
         .read(threadPlayerExitControllerProvider(threadId).notifier)
         .exit();
     if (!context.mounted || !succeeded) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('已退出玩家身份。')));
+    showWenyouSnackBar(context, '已退出玩家身份。');
     await onExited();
   }
 }

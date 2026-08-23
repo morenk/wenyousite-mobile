@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 /// Returns whether [uri] points to a route owned by Wenyou.
 ///
@@ -37,9 +38,11 @@ Uri? internalWenyouLocation(Uri uri) {
 void openInternalWenyouLink(BuildContext context, Uri uri) {
   final location = internalWenyouLocation(uri);
   if (location == null || !_isSupportedWenyouPath(location.path)) {
-    ScaffoldMessenger.of(
+    showWenyouSnackBar(
       context,
-    ).showSnackBar(const SnackBar(content: Text('这个站内目标暂时无法打开。')));
+      '这个站内目标暂时无法打开。',
+      pacing: WenyouSnackBarPacing.extended,
+    );
     return;
   }
   context.push(location.toString());

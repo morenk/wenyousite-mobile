@@ -33,7 +33,7 @@ void main() {
   stdout.writeln(
     'Architecture checks passed: request policies, domain boundaries, '
     'layering, feature dependencies, cycles, file size, version and '
-    'dependency and route-transition hygiene.',
+    'dependency, transient-feedback and route-transition hygiene.',
   );
 }
 
@@ -69,6 +69,7 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkEditorPublicSurface(dartFiles, failures, root);
   _checkFoundationIconBoundary(dartFiles, failures, root);
   _checkSharedTabBoundary(dartFiles, failures, root);
+  _checkSnackBarBoundary(dartFiles, failures, root);
   _checkRouteTransitionBoundary(dartFiles, failures, root);
   _checkVersionConsistency(failures, root);
   _checkDirectDependencies(dartFiles, failures, root);
@@ -79,6 +80,32 @@ List<String> collectArchitectureFailures(Directory root) {
 
   failures.sort();
   return failures;
+}
+
+void _checkSnackBarBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const sharedPolicy = 'lib/core/widgets/wenyou_snack_bar.dart';
+  const forbiddenPatterns = <String, String>{
+    r'\bSnackBar\s*\(': 'constructs SnackBar',
+    r'\bSnackBarAction\s*\(': 'constructs SnackBarAction',
+    r'\.showSnackBar\s*\(': 'calls showSnackBar',
+  };
+
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (path == sharedPolicy) continue;
+    final source = file.readAsStringSync();
+    for (final entry in forbiddenPatterns.entries) {
+      if (RegExp(entry.key).hasMatch(source)) {
+        failures.add(
+          '$path ${entry.value} outside the shared transient-feedback policy',
+        );
+      }
+    }
+  }
 }
 
 void _checkRouteTransitionBoundary(

@@ -138,14 +138,20 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
     try {
       await Clipboard.setData(ClipboardData(text: link.url.toString()));
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(generated ? '新邀请已生成并复制，旧链接已失效。' : '邀请链接已复制。')),
+      showWenyouSnackBar(
+        context,
+        generated ? '新邀请已生成并复制，旧链接已失效。' : '邀请链接已复制。',
+        pacing: generated
+            ? WenyouSnackBarPacing.extended
+            : WenyouSnackBarPacing.brief,
       );
     } on Object {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
+      showWenyouSnackBar(
         context,
-      ).showSnackBar(const SnackBar(content: Text('邀请已生成，但自动复制失败，请长按上方链接复制。')));
+        '邀请已生成，但自动复制失败，请长按上方链接复制。',
+        pacing: WenyouSnackBarPacing.extended,
+      );
     }
   }
 }

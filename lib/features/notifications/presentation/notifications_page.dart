@@ -80,9 +80,11 @@ class NotificationSection extends ConsumerWidget {
     if (!item.isRead) unawaited(notifier.markRead(item.id));
     final deletedHint = item.target.deletedHint;
     if (deletedHint != null) {
-      ScaffoldMessenger.of(
+      showWenyouSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text(deletedHint)));
+        deletedHint,
+        pacing: WenyouSnackBarPacing.extended,
+      );
       return;
     }
     final location = notificationTargetLocation(item.target);
@@ -115,9 +117,7 @@ class NotificationSection extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
     final succeeded = await notifier.remove(id);
     if (!context.mounted || !succeeded) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('通知已删除。')));
+    showWenyouSnackBar(context, '通知已删除。');
   }
 }
 

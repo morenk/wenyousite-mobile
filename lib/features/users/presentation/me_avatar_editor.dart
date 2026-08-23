@@ -140,9 +140,7 @@ class MeAvatarEditor extends ConsumerWidget {
       unawaited(WenyouCachedImage.evictFromCache(previousUrl));
     }
     if (navigator.mounted) {
-      ScaffoldMessenger.maybeOf(
-        navigator.context,
-      )?.showSnackBar(const SnackBar(content: Text('头像已更新。')));
+      showWenyouSnackBar(navigator.context, '头像已更新。');
     }
   }
 
@@ -200,9 +198,7 @@ class MeAvatarEditor extends ConsumerWidget {
     if (previousUrl != null) {
       unawaited(WenyouCachedImage.evictFromCache(previousUrl));
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message);
   }
 
   String _progressMessage(AvatarState state) {

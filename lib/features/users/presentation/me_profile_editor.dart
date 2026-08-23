@@ -347,9 +347,7 @@ class _MeProfileEditorState extends ConsumerState<MeProfileEditor> {
   void _showSuccess() {
     final message = ref.read(meProfileControllerProvider).successMessage;
     if (message == null) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message);
     ref.read(meProfileControllerProvider.notifier).clearFeedback();
   }
 

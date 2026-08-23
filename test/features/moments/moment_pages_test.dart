@@ -206,7 +206,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('动态收藏默认入夹并在五秒提示中修改收藏夹', (tester) async {
+  testWidgets('动态收藏默认入夹并在四秒提示中修改收藏夹', (tester) async {
     final repository = _PageRepository();
     final folderRepository = _MomentFolderRepository();
     final container = ProviderContainer(
@@ -806,6 +806,18 @@ void main() {
     final publish = find.byKey(const Key('moment-compose-submit'));
     expect(publish, findsOneWidget);
     expect(tester.getBottomRight(publish).dy, lessThanOrEqualTo(752));
+
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('已恢复上次的草稿'), findsNothing);
+    expect(find.text('重新开始'), findsNothing);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('moment-compose-title')))
+          .controller!
+          .text,
+      '未完成的标题',
+    );
 
     await tester.enterText(
       find.byKey(const Key('moment-compose-title')),

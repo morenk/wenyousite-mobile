@@ -71,8 +71,13 @@ void main() {
       find.byKey(const Key('thread-bookmark-change-folder')),
       findsOneWidget,
     );
-    await tester.pump(const Duration(seconds: 6));
+    await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
+    expect(find.text('已收藏到默认收藏夹。'), findsNothing);
+    expect(
+      find.byKey(const Key('thread-bookmark-change-folder')),
+      findsNothing,
+    );
     expect(bookmarkRepository.moves, isEmpty);
 
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));

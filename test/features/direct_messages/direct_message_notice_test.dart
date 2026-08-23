@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
 
 void main() {
@@ -23,6 +24,8 @@ void main() {
 
     final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
     expect(snackBar.behavior, SnackBarBehavior.floating);
+    expect(snackBar.duration, wenyouBriefSnackBarDuration);
+    expect(snackBar.persist, isFalse);
     expect(
       (snackBar.margin! as EdgeInsets).bottom,
       greaterThanOrEqualTo(directMessageNoticeComposerClearance),

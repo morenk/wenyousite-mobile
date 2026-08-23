@@ -149,9 +149,11 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
       next,
     ) {
       if (next != null && next != previous) {
-        ScaffoldMessenger.of(
+        showWenyouSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text(next.userMessage)));
+          next.userMessage,
+          pacing: WenyouSnackBarPacing.extended,
+        );
       }
     });
     final scrollView = NotificationListener<ScrollNotification>(

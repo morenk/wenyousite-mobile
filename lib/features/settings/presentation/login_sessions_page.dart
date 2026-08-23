@@ -76,9 +76,7 @@ class LoginSessionsPage extends ConsumerWidget {
     if (confirmed != true) return;
     final succeeded = await notifier.revokeSession(session.id);
     if (!context.mounted || !succeeded) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('该登录终端已退出。')));
+    showWenyouSnackBar(context, '该登录终端已退出。');
   }
 }
 

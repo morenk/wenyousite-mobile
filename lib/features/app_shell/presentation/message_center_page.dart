@@ -134,9 +134,7 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
         .read(notificationListControllerProvider.notifier)
         .markAllRead();
     if (!mounted || !succeeded) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('已全部标记为已读。')));
+    showWenyouSnackBar(context, '已全部标记为已读。');
   }
 }
 

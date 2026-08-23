@@ -293,6 +293,38 @@ void main() {
     );
   });
 
+  test('production UI must use the shared transient-feedback policy', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      "final action = SnackBarAction(label: '重试', onPressed: retry);\n"
+      "final bar = SnackBar(content: Text('完成'), action: action);\n"
+      'messenger.showSnackBar(bar);\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path constructs SnackBar outside the shared transient-feedback policy',
+        '$path constructs SnackBarAction outside the shared transient-feedback policy',
+        '$path calls showSnackBar outside the shared transient-feedback policy',
+      ]),
+    );
+  });
+
+  test('shared transient-feedback policy may wrap Material SnackBar', () {
+    _write(
+      root,
+      'lib/core/widgets/wenyou_snack_bar.dart',
+      "final action = SnackBarAction(label: '重试', onPressed: retry);\n"
+          "final bar = SnackBar(content: Text('完成'), action: action);\n"
+          'messenger.showSnackBar(bar);\n',
+    );
+
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
   test('page transitions must use the shared navigation policy', () {
     const path = 'lib/features/alpha/presentation/page.dart';
     _write(

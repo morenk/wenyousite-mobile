@@ -823,6 +823,8 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         .importDirectMessage(widget.message.id);
     if (!mounted) return;
     final state = ref.read(stickerCollectionControllerProvider);
+    final failed =
+        result == null || result.status == StickerImportStatus.failed;
     final message = result == null
         ? state.transientFailure?.userMessage ?? '收藏表情失败，请稍后重试。'
         : switch (result.status) {
@@ -832,7 +834,13 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
             StickerImportStatus.completed => '已添加到表情收藏。',
             StickerImportStatus.failed => '表情处理失败，请换一张图片。',
           };
-    showDirectMessageNotice(context, message);
+    showDirectMessageNotice(
+      context,
+      message,
+      pacing: failed
+          ? WenyouSnackBarPacing.extended
+          : WenyouSnackBarPacing.brief,
+    );
   }
 }
 

@@ -54,9 +54,11 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       next,
     ) {
       if (next != null && next != previous) {
-        ScaffoldMessenger.of(
+        showWenyouSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text(next.userMessage)));
+          next.userMessage,
+          pacing: WenyouSnackBarPacing.extended,
+        );
       }
     });
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
@@ -287,20 +289,13 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
   }) async {
     final succeeded = await controller.toggleBookmark();
     if (!mounted || !succeeded || wasBookmarked) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 5),
-          content: const Text('已收藏到默认收藏夹。'),
-          action: SnackBarAction(
-            key: const Key('moment-bookmark-change-folder'),
-            label: '修改收藏夹',
-            onPressed: () => unawaited(_changeBookmarkFolder()),
-          ),
-        ),
-      );
+    showWenyouSnackBar(
+      context,
+      '已收藏到默认收藏夹。',
+      actionLabel: '修改收藏夹',
+      actionKey: const Key('moment-bookmark-change-folder'),
+      onAction: () => unawaited(_changeBookmarkFolder()),
+    );
   }
 
   Future<void> _changeBookmarkFolder() async {
@@ -313,9 +308,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           .moveBookmark(widget.momentId, folderId),
     );
     if (!mounted || folder == null) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('已移动到“${folder.name}”。')));
+    showWenyouSnackBar(context, '已移动到“${folder.name}”。');
   }
 
   void _openLogin() {

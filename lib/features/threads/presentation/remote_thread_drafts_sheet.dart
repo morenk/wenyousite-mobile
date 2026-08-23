@@ -164,9 +164,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         .read(remoteThreadDraftsControllerProvider.notifier)
         .remove(draft);
     if (removed && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('云端草稿已删除。')));
+      showWenyouSnackBar(context, '云端草稿已删除。');
     }
   }
 }

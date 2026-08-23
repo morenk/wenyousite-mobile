@@ -140,9 +140,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
       unawaited(WenyouCachedImage.evictFromCache(url));
     }
     if (navigator.mounted) {
-      ScaffoldMessenger.maybeOf(
-        navigator.context,
-      )?.showSnackBar(const SnackBar(content: Text('主页背景已更新。')));
+      showWenyouSnackBar(navigator.context, '主页背景已更新。');
     }
   }
 
@@ -203,9 +201,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
     for (final url in oldUrls) {
       unawaited(WenyouCachedImage.evictFromCache(url));
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message);
   }
 
   String _progressMessage(ProfileCoverState state) {

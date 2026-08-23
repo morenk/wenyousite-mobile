@@ -522,9 +522,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (saved == null) return;
     ref.invalidate(remoteThreadDraftsControllerProvider);
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('已保存到云端草稿')));
+    showWenyouSnackBar(context, '已保存到云端草稿');
   }
 
   Future<void> _handleRemoteDraftAction(ThreadRemoteDraftAction action) async {

@@ -171,9 +171,7 @@ class _InvitationReady extends ConsumerWidget {
         .read(threadInvitationAccessControllerProvider(token).notifier)
         .join();
     if (result == null || !context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('已加入私密主题。')));
+    showWenyouSnackBar(context, '已加入私密主题。');
     context.go(AppRouteLocations.thread(result.threadId));
   }
 }

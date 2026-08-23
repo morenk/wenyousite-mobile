@@ -54,9 +54,11 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
         .verifyCode(_codeController.text);
     if (!succeeded) return;
     if (mounted) {
-      ScaffoldMessenger.of(
+      showWenyouSnackBar(
         context,
-      ).showSnackBar(const SnackBar(content: Text('邮箱已更换，请重新登录。')));
+        '邮箱已更换，请重新登录。',
+        pacing: WenyouSnackBarPacing.extended,
+      );
     }
     // 清会话会触发全局路由守卫，页面可能已被卸载；使用提前捕获的路由
     // 覆盖守卫的原页面回跳，避免重新登录后再次进入凭据表单。

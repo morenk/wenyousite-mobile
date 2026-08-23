@@ -151,9 +151,7 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
     try {
       final message = await widget.onSaveImage!();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      showWenyouSnackBar(context, message);
     } on Object catch (error) {
       if (!mounted) return;
       setState(() {

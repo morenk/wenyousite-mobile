@@ -149,9 +149,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             .read(provider.notifier)
             .applyFloorFilters(order: current.floorOrder, authorId: null);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(
+        showWenyouSnackBar(
           context,
-        ).showSnackBar(const SnackBar(content: Text('已取消发言者筛选，以显示目标楼层。')));
+          '已取消发言者筛选，以显示目标楼层。',
+          pacing: WenyouSnackBarPacing.extended,
+        );
       },
     );
     if (!targetExcludedByFilter) {
@@ -886,9 +888,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .read(postActionControllerProvider(widget.threadId).notifier)
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('楼层已删除。')));
+    showWenyouSnackBar(context, '楼层已删除。');
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refresh();

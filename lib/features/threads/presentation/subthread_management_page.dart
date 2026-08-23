@@ -325,9 +325,7 @@ class _SubthreadRow extends ConsumerWidget {
         .read(subthreadManagementControllerProvider(threadId).notifier)
         .remove(item);
     if (succeeded && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('子贴已删除。')));
+      showWenyouSnackBar(context, '子贴已删除。');
     }
   }
 }

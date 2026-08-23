@@ -51,9 +51,7 @@ class UserRelationListPage extends ConsumerWidget {
           onUnblock: (userId) async {
             final succeeded = await notifier.unblock(userId);
             if (!context.mounted || !succeeded) return;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('已取消拉黑。')));
+            showWenyouSnackBar(context, '已取消拉黑。');
           },
           onDismissFailure: notifier.clearActionFailure,
         ),

@@ -485,15 +485,12 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     }
     if (!mounted || draft == null) return;
     _applyDraft(draft);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('已恢复上次的草稿'),
-        action: SnackBarAction(
-          key: const Key('moment-draft-reset'),
-          label: widget.momentId == null ? '重新开始' : '恢复原内容',
-          onPressed: () => unawaited(_restoreBaseline()),
-        ),
-      ),
+    showWenyouSnackBar(
+      context,
+      '已恢复上次的草稿',
+      actionLabel: widget.momentId == null ? '重新开始' : '恢复原内容',
+      actionKey: const Key('moment-draft-reset'),
+      onAction: () => unawaited(_restoreBaseline()),
     );
   }
 
@@ -612,9 +609,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   }
 
   void _showFeedback(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
   }
 }
 

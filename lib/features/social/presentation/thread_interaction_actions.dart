@@ -193,9 +193,11 @@ class ThreadInteractionActions extends ConsumerWidget {
     if (failure == null) {
       final message = notifier.takeIndeterminateNotice();
       if (message != null) {
-        ScaffoldMessenger.of(
+        showWenyouSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+          message,
+          pacing: WenyouSnackBarPacing.extended,
+        );
       }
       return;
     }
@@ -203,9 +205,7 @@ class ThreadInteractionActions extends ConsumerWidget {
     final message = requestId == null
         ? failure.userMessage
         : '${failure.userMessage}（问题编号：$requestId）';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
   }
 
   void _showSuccess(
@@ -214,9 +214,7 @@ class ThreadInteractionActions extends ConsumerWidget {
   ) {
     final message = notifier.takeSuccessMessage();
     if (message == null) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message);
   }
 
   void _showBookmarkSuccess(
@@ -227,22 +225,14 @@ class ThreadInteractionActions extends ConsumerWidget {
   ) {
     final message = notifier.takeSuccessMessage();
     if (message == null) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 5),
-          content: Text(message),
-          action: SnackBarAction(
-            key: const Key('thread-bookmark-change-folder'),
-            label: '修改收藏夹',
-            onPressed: () => unawaited(
-              _changeBookmarkFolder(context, repository, bookmarkId),
-            ),
-          ),
-        ),
-      );
+    showWenyouSnackBar(
+      context,
+      message,
+      actionLabel: '修改收藏夹',
+      actionKey: const Key('thread-bookmark-change-folder'),
+      onAction: () =>
+          unawaited(_changeBookmarkFolder(context, repository, bookmarkId)),
+    );
   }
 
   Future<void> _changeBookmarkFolder(
@@ -256,8 +246,6 @@ class ThreadInteractionActions extends ConsumerWidget {
       moveToFolder: (folderId) => repository.move(bookmarkId, folderId),
     );
     if (!context.mounted || folder == null) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('已移动到“${folder.name}”。')));
+    showWenyouSnackBar(context, '已移动到“${folder.name}”。');
   }
 }

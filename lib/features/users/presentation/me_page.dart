@@ -30,7 +30,7 @@ void _showRefreshFailure(BuildContext context, ApiFailure failure) {
   final message = requestId == null
       ? failure.userMessage
       : '${failure.userMessage}（问题编号：$requestId）';
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
 }
 
 class MePage extends ConsumerWidget {
@@ -714,9 +714,7 @@ class _LogoutAction extends ConsumerWidget {
         .submit();
     if (succeeded && context.mounted) {
       context.go(AppRouteLocations.me);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已安全退出当前账号。')));
+      showWenyouSnackBar(context, '已安全退出当前账号。');
     }
   }
 
@@ -743,9 +741,7 @@ class _LogoutAction extends ConsumerWidget {
     await ref.read(logoutControllerProvider.notifier).forceLocalLogout();
     if (context.mounted) {
       context.go(AppRouteLocations.me);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('这台设备的登录信息已清除。')));
+      showWenyouSnackBar(context, '这台设备的登录信息已清除。');
     }
   }
 }

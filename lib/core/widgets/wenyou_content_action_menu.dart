@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_modal_action_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
 enum PostCardAction { copyText, copyLink, reply, edit, delete, report }
 
@@ -125,9 +126,7 @@ Future<void> copyPostCardValue(
     try {
       await Clipboard.setData(ClipboardData(text: value));
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(successMessage)));
+      showWenyouSnackBar(context, successMessage);
       return;
     } on Object {
       if (!context.mounted) return;

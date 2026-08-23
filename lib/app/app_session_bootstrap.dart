@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 
 class AppSessionBootstrap extends ConsumerStatefulWidget {
@@ -47,13 +48,11 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap> {
     final userId = ref.read(sessionControllerProvider.notifier).currentUserId;
     ref.read(profileCacheInvalidatorProvider)(userId);
     if (!result.claimedNow) return;
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(
-          '今日签到获得 ${result.rewardAmount} 升温油和 '
-          '${result.experienceAwarded} 经验。',
-        ),
-      ),
+    showWenyouSnackBar(
+      context,
+      '今日签到获得 ${result.rewardAmount} 升温油和 '
+      '${result.experienceAwarded} 经验。',
+      pacing: WenyouSnackBarPacing.extended,
     );
   }
 }

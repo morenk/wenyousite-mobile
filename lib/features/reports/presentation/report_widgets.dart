@@ -70,9 +70,11 @@ Future<void> showWenyouReportFlow({
         _ReportDialog(target: target, targetLabel: targetLabel),
   );
   if (!context.mounted || outcome == null) return;
-  ScaffoldMessenger.of(
+  showWenyouSnackBar(
     context,
-  ).showSnackBar(const SnackBar(content: Text('举报已提交，管理员会根据站点规范进行审核。')));
+    '举报已提交，管理员会根据站点规范进行审核。',
+    pacing: WenyouSnackBarPacing.extended,
+  );
 }
 
 class _ReportDialog extends ConsumerStatefulWidget {

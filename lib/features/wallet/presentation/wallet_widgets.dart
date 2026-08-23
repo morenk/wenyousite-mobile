@@ -100,8 +100,9 @@ Future<void> showWenyouTipFlow({
   ref.read(profileCacheInvalidatorProvider)(target.recipientUserId);
   await onSuccess?.call(result);
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('已加油 ${WenyouAmount.format(result.grossAmount)} 升')),
+  showWenyouSnackBar(
+    context,
+    '已加油 ${WenyouAmount.format(result.grossAmount)} 升',
   );
 }
 

@@ -250,14 +250,11 @@ class _MemberCard extends ConsumerWidget {
                       : () async {
                           final succeeded = await notifier.togglePlayer(member);
                           if (!context.mounted || !succeeded) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                member.playerMarked
-                                    ? '已收回 ${member.username} 的玩家标记。'
-                                    : '已将 ${member.username} 标记为玩家。',
-                              ),
-                            ),
+                          showWenyouSnackBar(
+                            context,
+                            member.playerMarked
+                                ? '已收回 ${member.username} 的玩家标记。'
+                                : '已将 ${member.username} 标记为玩家。',
                           );
                         },
                   icon:
@@ -341,10 +338,9 @@ class _MemberCard extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
     final succeeded = await notifier.toggleCollaborator(member);
     if (!context.mounted || !succeeded) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(promoting ? '已任命 ${member.username} 为协作者。' : '已移除协作者身份。'),
-      ),
+    showWenyouSnackBar(
+      context,
+      promoting ? '已任命 ${member.username} 为协作者。' : '已移除协作者身份。',
     );
   }
 }

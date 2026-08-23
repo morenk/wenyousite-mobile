@@ -150,8 +150,6 @@ class UserRelationActions extends ConsumerWidget {
   void _showSuccess(BuildContext context, UserRelationController notifier) {
     final message = notifier.takeSuccessMessage();
     if (message == null) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showWenyouSnackBar(context, message);
   }
 }

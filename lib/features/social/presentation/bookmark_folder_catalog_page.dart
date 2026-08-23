@@ -72,9 +72,7 @@ class BookmarkFolderCatalogPage extends ConsumerWidget {
     notifier.clearActionFailure();
     final folder = await _showCreateFolderDialog(context, ref, notifier);
     if (!context.mounted || folder == null) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('已新建“${folder.name}”。')));
+    showWenyouSnackBar(context, '已新建“${folder.name}”。');
     await context.pushNamed<void>(
       'me-bookmark-folder',
       pathParameters: {'folderId': folder.id},

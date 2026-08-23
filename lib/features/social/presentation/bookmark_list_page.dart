@@ -101,17 +101,13 @@ class BookmarkListView extends ConsumerWidget {
             folderId,
           );
           if (!context.mounted || !succeeded) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('已移动到“${folder?.name ?? '收藏夹'}”。')),
-          );
+          showWenyouSnackBar(context, '已移动到“${folder?.name ?? '收藏夹'}”。');
         },
         onLoadMore: notifier.loadMore,
         onRemove: (bookmarkId) async {
           final succeeded = await notifier.removeBookmark(bookmarkId);
           if (!context.mounted || !succeeded) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('已取消收藏。')));
+          showWenyouSnackBar(context, '已取消收藏。');
         },
         onDismissFailure: notifier.clearActionFailure,
       ),

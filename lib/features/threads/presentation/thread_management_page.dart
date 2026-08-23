@@ -429,9 +429,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         .save(_draft);
     if (!succeeded || !mounted) return false;
     _changed = true;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('主题设置已保存。')));
+    showWenyouSnackBar(context, '主题设置已保存。');
     return true;
   }
 
@@ -545,9 +543,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final succeeded = await notifier.overwriteConflict();
     if (succeeded && mounted) {
       _changed = true;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已用当前内容更新主题。')));
+      showWenyouSnackBar(context, '已用当前内容更新主题。');
     }
   }
 
@@ -582,9 +578,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         .read(threadManagementControllerProvider(widget.threadId).notifier)
         .remove();
     if (!succeeded || !mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('主题已删除。')));
+    showWenyouSnackBar(context, '主题已删除。');
     _allowPop = true;
     context.go(AppRouteLocations.home);
   }
