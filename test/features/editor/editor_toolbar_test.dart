@@ -262,7 +262,7 @@ void main() {
     await tester.tap(find.byTooltip('骰子'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
-    expect(find.text('预览：1d20 = ?'), findsOneWidget);
+    expect(find.text('1d20 = ? · 0/20'), findsOneWidget);
     await tester.enterText(
       find.descendant(
         of: find.byKey(const Key('editor-dice-quantity')),
@@ -278,10 +278,15 @@ void main() {
       '3',
     );
     for (final sides in const [4, 6, 8, 10, 12, 20, 100]) {
+      expect(find.byKey(Key('editor-dice-quick-d$sides')), findsNothing);
+    }
+    await tester.tap(find.byKey(const Key('editor-dice-quick-sides')));
+    await tester.pumpAndSettle();
+    for (final sides in const [4, 6, 8, 10, 12, 20, 100]) {
       expect(find.byKey(Key('editor-dice-quick-d$sides')), findsOneWidget);
     }
     await tester.tap(find.byKey(const Key('editor-dice-quick-d6')));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(
       tester
           .widget<TextField>(
@@ -306,7 +311,19 @@ void main() {
           ?.text,
       '3',
     );
-    expect(find.text('预览：2d6+3 = ?'), findsOneWidget);
+    expect(find.text('2d6+3 = ? · 0/20'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(
+              of: find.byKey(const Key('editor-dice-sides')),
+              matching: find.byType(TextField),
+            ),
+          )
+          .focusNode
+          ?.hasFocus,
+      isTrue,
+    );
     expect(find.byKey(const Key('editor-submit')), findsNothing);
     await tester.tap(find.byKey(const Key('editor-dice-insert')));
     await tester.pumpAndSettle();
@@ -355,12 +372,12 @@ void main() {
       '101',
     );
     await tester.pump();
-    expect(find.text('预览：—'), findsOneWidget);
+    expect(find.text('表达式未完成 · 0/20'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('editor-dice-insert')));
     await tester.pump();
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
-    expect(find.text('需为 1～100'), findsOneWidget);
+    expect(find.text('骰子数需为 1～100'), findsOneWidget);
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       isNot(contains('[[dice:')),
@@ -374,8 +391,8 @@ void main() {
       '1',
     );
     await tester.pump();
-    expect(find.text('需为 1～100'), findsNothing);
-    expect(find.text('预览：1d20 = ?'), findsOneWidget);
+    expect(find.text('骰子数需为 1～100'), findsNothing);
+    expect(find.text('1d20 = ? · 0/20'), findsOneWidget);
 
     await tester.enterText(
       find.descendant(
@@ -387,7 +404,90 @@ void main() {
     await tester.tap(find.byKey(const Key('editor-dice-insert')));
     await tester.pump();
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
-    expect(find.text('需为 -10000～10000'), findsOneWidget);
+    expect(find.text('修正需为 -10000～10000'), findsOneWidget);
+  });
+
+  testWidgets('骰子在当前编辑器会话复用上次成功值且忽略取消输入', (tester) async {
+    final controller = QuillController.basic();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Finder diceField(String key) => find.descendant(
+      of: find.byKey(Key(key)),
+      matching: find.byType(TextField),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(diceField('editor-dice-quantity'))
+          .controller
+          ?.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+    );
+
+    await tester.enterText(diceField('editor-dice-quantity'), '02');
+    await tester.enterText(diceField('editor-dice-sides'), '006');
+    await tester.enterText(diceField('editor-dice-modifier'), '+03');
+    await tester.tap(find.byKey(const Key('editor-dice-insert')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(diceField('editor-dice-quantity'))
+          .controller
+          ?.text,
+      '2',
+    );
+    expect(
+      tester.widget<TextField>(diceField('editor-dice-sides')).controller?.text,
+      '6',
+    );
+    expect(
+      tester
+          .widget<TextField>(diceField('editor-dice-modifier'))
+          .controller
+          ?.text,
+      '3',
+    );
+    expect(find.text('2d6+3 = ? · 1/20'), findsOneWidget);
+
+    await tester.enterText(diceField('editor-dice-quantity'), '101');
+    await tester.tap(find.byTooltip('返回格式工具'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(diceField('editor-dice-quantity'))
+          .controller
+          ?.text,
+      '2',
+    );
+    expect(find.text('2d6+3 = ? · 1/20'), findsOneWidget);
   });
 
   testWidgets('骰子任务只保留深品牌色插入操作，并按当前正文限制 20 个', (tester) async {
@@ -421,7 +521,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const Key('editor-submit')), findsNothing);
-    expect(find.text('当前正文 20/20'), findsOneWidget);
+    expect(find.text('已达 20/20，请先删除一个骰子'), findsOneWidget);
     expect(find.byKey(const Key('editor-dice-limit')), findsOneWidget);
     expect(find.byType(FilledButton), findsOneWidget);
     var insert = tester.widget<FilledButton>(
@@ -432,7 +532,7 @@ void main() {
     controller.replaceText(0, 1, '', const TextSelection.collapsed(offset: 0));
     await tester.pump();
 
-    expect(find.text('当前正文 19/20'), findsOneWidget);
+    expect(find.text('1d20 = ? · 19/20'), findsOneWidget);
     insert = tester.widget<FilledButton>(
       find.byKey(const Key('editor-dice-insert')),
     );

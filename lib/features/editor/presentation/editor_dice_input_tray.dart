@@ -72,7 +72,7 @@ String? canonicalDiceNotation({
   );
 }
 
-class EditorDiceInputTray extends StatelessWidget {
+class EditorDiceInputTray extends StatefulWidget {
   const EditorDiceInputTray({
     required this.quantityController,
     required this.sidesController,
@@ -97,200 +97,322 @@ class EditorDiceInputTray extends StatelessWidget {
   final VoidCallback onInputChanged;
 
   @override
+  State<EditorDiceInputTray> createState() => _EditorDiceInputTrayState();
+}
+
+class _EditorDiceInputTrayState extends State<EditorDiceInputTray> {
+  late final FocusNode _quantityFocusNode;
+  late final FocusNode _sidesFocusNode;
+  late final FocusNode _modifierFocusNode;
+  late final Listenable _inputs;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityFocusNode = FocusNode(debugLabel: 'dice quantity');
+    _sidesFocusNode = FocusNode(debugLabel: 'dice sides');
+    _modifierFocusNode = FocusNode(debugLabel: 'dice modifier');
+    _inputs = Listenable.merge([
+      widget.quantityController,
+      widget.sidesController,
+      widget.modifierController,
+    ]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final text = widget.quantityController.text;
+      widget.quantityController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: text.length,
+      );
+      _quantityFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _quantityFocusNode.dispose();
+    _sidesFocusNode.dispose();
+    _modifierFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final inputs = Listenable.merge([
-      quantityController,
-      sidesController,
-      modifierController,
-    ]);
-    final fields = [
-      _DiceNumberField(
-        key: const Key('editor-dice-quantity'),
-        controller: quantityController,
-        label: WenyouElementContract.diceQuantityLabel,
-        error: errors.quantity,
-        autofocus: true,
-        maxLength: 3,
-        signed: false,
-        textInputAction: TextInputAction.next,
-        onChanged: onInputChanged,
+    final quantityField = _DiceNumberField(
+      key: const Key('editor-dice-quantity'),
+      controller: widget.quantityController,
+      focusNode: _quantityFocusNode,
+      label: WenyouElementContract.diceQuantityLabel,
+      error: widget.errors.quantity,
+      autofocus: true,
+      maxLength: 3,
+      signed: false,
+      textInputAction: TextInputAction.next,
+      onChanged: widget.onInputChanged,
+      onSubmitted: _sidesFocusNode.requestFocus,
+    );
+    final sidesField = _DiceNumberField(
+      key: const Key('editor-dice-sides'),
+      controller: widget.sidesController,
+      focusNode: _sidesFocusNode,
+      label: WenyouElementContract.diceSidesLabel,
+      error: widget.errors.sides,
+      maxLength: 4,
+      signed: false,
+      textInputAction: TextInputAction.next,
+      onChanged: widget.onInputChanged,
+      onSubmitted: _modifierFocusNode.requestFocus,
+      suffix: _DiceQuickSidesMenu(
+        controller: widget.sidesController,
+        focusNode: _sidesFocusNode,
+        onChanged: widget.onInputChanged,
       ),
-      _DiceNumberField(
-        key: const Key('editor-dice-sides'),
-        controller: sidesController,
-        label: WenyouElementContract.diceSidesLabel,
-        error: errors.sides,
-        maxLength: 4,
-        signed: false,
-        textInputAction: TextInputAction.next,
-        onChanged: onInputChanged,
-      ),
-      _DiceNumberField(
-        key: const Key('editor-dice-modifier'),
-        controller: modifierController,
-        label: WenyouElementContract.diceModifierLabel,
-        error: errors.modifier,
-        maxLength: 6,
-        signed: true,
-        textInputAction: TextInputAction.done,
-        onChanged: onInputChanged,
-        onSubmitted: onConfirm,
-      ),
-    ];
-    return EditorTaskTray(
-      title: WenyouElementContract.diceInsertionTitle,
-      onBack: onBack,
-      onInsert: onConfirm,
-      insertEnabled: insertEnabled,
-      insertKey: const Key('editor-dice-insert'),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked =
-                  constraints.maxWidth < 340 ||
-                  MediaQuery.textScalerOf(context).scale(16) >= 21;
-              if (stacked) {
-                return Column(
-                  children: [
-                    for (var index = 0; index < fields.length; index++) ...[
-                      fields[index],
-                      if (index < fields.length - 1)
-                        SizedBox(height: tokens.space8),
-                    ],
-                  ],
-                );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var index = 0; index < fields.length; index++) ...[
-                    Expanded(child: fields[index]),
-                    if (index < fields.length - 1)
-                      SizedBox(width: tokens.space8),
-                  ],
-                ],
-              );
-            },
-          ),
-          SizedBox(height: tokens.space8),
-          ListenableBuilder(
-            listenable: inputs,
-            builder: (context, _) {
-              final selectedSides = int.tryParse(sidesController.text.trim());
-              final notation = canonicalDiceNotation(
-                quantity: quantityController.text,
-                sides: sidesController.text,
-                modifier: modifierController.text,
-              );
+    );
+    final modifierField = _DiceNumberField(
+      key: const Key('editor-dice-modifier'),
+      controller: widget.modifierController,
+      focusNode: _modifierFocusNode,
+      label: WenyouElementContract.diceModifierLabel,
+      error: widget.errors.modifier,
+      maxLength: 6,
+      signed: true,
+      textInputAction: TextInputAction.done,
+      onChanged: widget.onInputChanged,
+      onSubmitted: widget.onConfirm,
+    );
+    return ListenableBuilder(
+      listenable: _inputs,
+      builder: (context, _) => EditorTaskTray(
+        title: WenyouElementContract.diceInsertionTitle,
+        headerSupport: _buildHeaderSupport(context),
+        onBack: widget.onBack,
+        onInsert: widget.onConfirm,
+        insertEnabled: widget.insertEnabled,
+        insertKey: const Key('editor-dice-insert'),
+        showInsertIcon: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final useTwoRows =
+                constraints.maxWidth < 300 ||
+                MediaQuery.textScalerOf(context).scale(16) >= 24;
+            if (useTwoRows) {
               return Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SingleChildScrollView(
-                    key: const Key('editor-dice-quick-sides'),
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final sides
-                            in WenyouElementContract.diceQuickSides) ...[
-                          ChoiceChip(
-                            key: ValueKey('editor-dice-quick-d$sides'),
-                            label: Text('d$sides'),
-                            selected: selectedSides == sides,
-                            showCheckmark: false,
-                            onSelected: (_) {
-                              sidesController.text = '$sides';
-                              sidesController.selection =
-                                  TextSelection.collapsed(
-                                    offset: sidesController.text.length,
-                                  );
-                              onInputChanged();
-                            },
-                          ),
-                          SizedBox(width: tokens.space8),
-                        ],
-                      ],
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: quantityField),
+                      _diceSeparator(context),
+                      Expanded(child: sidesField),
+                    ],
                   ),
                   SizedBox(height: tokens.space8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Semantics(
-                          liveRegion: true,
-                          label: notation == null
-                              ? '骰子预览不可用'
-                              : '骰子预览 $notation，待掷',
-                          excludeSemantics: true,
-                          child: Text(
-                            notation == null ? '预览：—' : '预览：$notation = ?',
-                            key: const Key('editor-dice-preview'),
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: notation == null
-                                      ? tokens.mutedText
-                                      : tokens.brandForeground,
-                                  fontFamily:
-                                      WenyouFoundationTypography.utility,
-                                  fontFamilyFallback: WenyouFoundationTypography
-                                      .chineseFallback,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '当前正文 $currentCount/${MarkdownDiceContract.maximumNodesPerPost}',
-                        key: const Key('editor-dice-count'),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
-                      ),
-                    ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: constraints.maxWidth * .55,
+                      child: modifierField,
+                    ),
                   ),
                 ],
               );
-            },
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 8, child: quantityField),
+                _diceSeparator(context),
+                Expanded(flex: 11, child: sidesField),
+                SizedBox(width: tokens.space8),
+                Expanded(flex: 10, child: modifierField),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderSupport(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final maximum = MarkdownDiceContract.maximumNodesPerPost;
+    final firstError = _firstDiceError(widget.errors);
+    final notation = canonicalDiceNotation(
+      quantity: widget.quantityController.text,
+      sides: widget.sidesController.text,
+      modifier: widget.modifierController.text,
+    );
+    late final String visibleText;
+    late final String semanticLabel;
+    late final Color color;
+    late final Key key;
+    if (!widget.insertEnabled) {
+      visibleText = '已达 $maximum/$maximum，请先删除一个骰子';
+      semanticLabel = '当前正文已达 $maximum/$maximum，请先删除一个骰子';
+      color = Theme.of(context).colorScheme.error;
+      key = const Key('editor-dice-limit');
+    } else if (firstError != null) {
+      visibleText = firstError;
+      semanticLabel = '$firstError；当前正文 ${widget.currentCount}/$maximum';
+      color = Theme.of(context).colorScheme.error;
+      key = const Key('editor-dice-status');
+    } else if (notation == null) {
+      visibleText = '表达式未完成 · ${widget.currentCount}/$maximum';
+      semanticLabel = '骰子表达式未完成；当前正文 ${widget.currentCount}/$maximum';
+      color = tokens.mutedText;
+      key = const Key('editor-dice-status');
+    } else {
+      visibleText = '$notation = ? · ${widget.currentCount}/$maximum';
+      semanticLabel = '骰子预览 $notation，待掷；当前正文 ${widget.currentCount}/$maximum';
+      color = tokens.mutedText;
+      key = const Key('editor-dice-status');
+    }
+    return Semantics(
+      key: key,
+      liveRegion: true,
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: Text(
+        visibleText,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: color,
+          fontFamily: firstError == null && widget.insertEnabled
+              ? WenyouFoundationTypography.utility
+              : null,
+          fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
+
+  Widget _diceSeparator(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+        child: Align(
+          alignment: Alignment.center,
+          widthFactor: 1,
+          child: Text(
+            'd',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: tokens.mutedText,
+              fontFamily: WenyouFoundationTypography.utility,
+            ),
           ),
-          if (!insertEnabled) ...[
-            SizedBox(height: tokens.space4),
-            Semantics(
-              liveRegion: true,
+        ),
+      ),
+    );
+  }
+}
+
+String? _firstDiceError(EditorDiceInputErrors errors) {
+  if (errors.quantity != null) {
+    return '${WenyouElementContract.diceQuantityLabel}${errors.quantity}';
+  }
+  if (errors.sides != null) {
+    return '${WenyouElementContract.diceSidesLabel}${errors.sides}';
+  }
+  if (errors.modifier != null) {
+    return '${WenyouElementContract.diceModifierLabel}${errors.modifier}';
+  }
+  return null;
+}
+
+class _DiceQuickSidesMenu extends StatelessWidget {
+  const _DiceQuickSidesMenu({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final selectedSides = int.tryParse(controller.text.trim());
+    return PopupMenuButton<int>(
+      key: const Key('editor-dice-quick-sides'),
+      tooltip: '选择常用面数',
+      requestFocus: false,
+      position: PopupMenuPosition.under,
+      initialValue: selectedSides,
+      onCanceled: _restoreFocus,
+      onSelected: (sides) {
+        controller.value = TextEditingValue(
+          text: '$sides',
+          selection: TextSelection.collapsed(offset: '$sides'.length),
+        );
+        onChanged();
+        _restoreFocus();
+      },
+      itemBuilder: (context) => [
+        for (final sides in WenyouElementContract.diceQuickSides)
+          PopupMenuItem<int>(
+            key: ValueKey('editor-dice-quick-d$sides'),
+            value: sides,
+            height: tokens.minimumTouchTarget,
+            child: Semantics(
+              selected: selectedSides == sides,
               child: Text(
-                '当前正文最多可插入 ${MarkdownDiceContract.maximumNodesPerPost} 个骰子，请先删除一个。',
-                key: const Key('editor-dice-limit'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
+                'd$sides',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: selectedSides == sides
+                      ? tokens.brandForeground
+                      : tokens.text,
+                  fontFamily: WenyouFoundationTypography.utility,
+                  fontWeight: selectedSides == sides
+                      ? FontWeight.w700
+                      : FontWeight.w400,
                 ),
               ),
             ),
-          ],
-        ],
+          ),
+      ],
+      child: SizedBox.square(
+        dimension: tokens.minimumTouchTarget,
+        child: const Center(
+          child: WenyouIcon(WenyouIconIds.editorChevronDown, size: 18),
+        ),
       ),
     );
+  }
+
+  void _restoreFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (focusNode.canRequestFocus) focusNode.requestFocus();
+    });
   }
 }
 
 class _DiceNumberField extends StatelessWidget {
   const _DiceNumberField({
     required this.controller,
+    required this.focusNode,
     required this.label,
     required this.error,
     required this.maxLength,
     required this.signed,
     required this.textInputAction,
     required this.onChanged,
+    required this.onSubmitted,
     this.autofocus = false,
-    this.onSubmitted,
+    this.suffix,
     super.key,
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final String label;
   final String? error;
   final int maxLength;
@@ -298,15 +420,25 @@ class _DiceNumberField extends StatelessWidget {
   final bool autofocus;
   final TextInputAction textInputAction;
   final VoidCallback onChanged;
-  final VoidCallback? onSubmitted;
+  final VoidCallback onSubmitted;
+  final Widget? suffix;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final decorationTheme = Theme.of(context).inputDecorationTheme;
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       autofocus: autofocus,
       keyboardType: TextInputType.numberWithOptions(signed: signed),
       textInputAction: textInputAction,
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+        fontFamily: WenyouFoundationTypography.utility,
+        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
       inputFormatters: [
         if (signed)
           TextInputFormatter.withFunction((oldValue, newValue) {
@@ -321,10 +453,24 @@ class _DiceNumberField extends StatelessWidget {
       decoration: InputDecoration(
         isDense: true,
         labelText: label,
-        errorText: error,
+        suffixIcon: suffix,
+        suffixIconConstraints: suffix == null
+            ? null
+            : BoxConstraints(
+                minWidth: tokens.minimumTouchTarget,
+                minHeight: tokens.minimumTouchTarget,
+              ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: tokens.space12,
+          vertical: tokens.space12,
+        ),
+        enabledBorder: error == null ? null : decorationTheme.errorBorder,
+        focusedBorder: error == null
+            ? null
+            : decorationTheme.focusedErrorBorder,
       ),
       onChanged: (_) => onChanged(),
-      onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
+      onSubmitted: (_) => onSubmitted(),
     );
   }
 }

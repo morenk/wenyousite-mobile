@@ -44,6 +44,18 @@ class WenyouEditorCapabilities {
 
 typedef WenyouComposerDock = WenyouEditorToolbar;
 
+typedef _EditorDiceInputValue = ({
+  String quantity,
+  String sides,
+  String modifier,
+});
+
+_EditorDiceInputValue get _defaultEditorDiceInput => (
+  quantity: '${WenyouElementContract.diceDefaultQuantity}',
+  sides: '${WenyouElementContract.diceDefaultSides}',
+  modifier: '${WenyouElementContract.diceDefaultModifier}',
+);
+
 class WenyouEditorToolbarController extends ChangeNotifier {
   VoidCallback? _closeTray;
   bool _trayOpen = false;
@@ -120,6 +132,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   late final TextEditingController _diceQuantityController;
   late final TextEditingController _diceSidesController;
   late final TextEditingController _diceModifierController;
+  late _EditorDiceInputValue _lastSuccessfulDiceInput;
   TextSelection? _preservedSelection;
   String? _linkLabelError;
   String? _linkUrlError;
@@ -130,14 +143,15 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     super.initState();
     _linkLabelController = TextEditingController();
     _linkUrlController = TextEditingController();
+    _lastSuccessfulDiceInput = _defaultEditorDiceInput;
     _diceQuantityController = TextEditingController(
-      text: '${WenyouElementContract.diceDefaultQuantity}',
+      text: _lastSuccessfulDiceInput.quantity,
     );
     _diceSidesController = TextEditingController(
-      text: '${WenyouElementContract.diceDefaultSides}',
+      text: _lastSuccessfulDiceInput.sides,
     );
     _diceModifierController = TextEditingController(
-      text: '${WenyouElementContract.diceDefaultModifier}',
+      text: _lastSuccessfulDiceInput.modifier,
     );
     widget.controller.addListener(_onControllerChanged);
     _syncToolbarController();
@@ -149,6 +163,8 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
+      _lastSuccessfulDiceInput = _defaultEditorDiceInput;
+      _applyDiceInput(_lastSuccessfulDiceInput);
     }
     if (oldWidget.toolbarController != widget.toolbarController) {
       oldWidget.toolbarController?._detach(_closeTray);
@@ -746,11 +762,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
   void _openDiceTray() {
     _preservedSelection = widget.controller.selection;
-    _diceQuantityController.text =
-        '${WenyouElementContract.diceDefaultQuantity}';
-    _diceSidesController.text = '${WenyouElementContract.diceDefaultSides}';
-    _diceModifierController.text =
-        '${WenyouElementContract.diceDefaultModifier}';
+    _applyDiceInput(_lastSuccessfulDiceInput);
     _setTray(_EditorTray.dice);
   }
 
@@ -776,6 +788,12 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       modifier: _diceModifierController.text,
     );
     if (normalized == null) return;
+    _lastSuccessfulDiceInput = (
+      quantity: '${int.parse(_diceQuantityController.text.trim())}',
+      sides: '${int.parse(_diceSidesController.text.trim())}',
+      modifier:
+          '${int.tryParse(_diceModifierController.text.trim()) ?? WenyouElementContract.diceDefaultModifier}',
+    );
     final selection = _preservedSelection ?? widget.controller.selection;
     widget.controller.replaceText(
       selection.start,
@@ -788,6 +806,19 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       TextSelection.collapsed(offset: selection.start + 1),
     );
     _setTray(_EditorTray.none);
+  }
+
+  void _applyDiceInput(_EditorDiceInputValue input) {
+    void replace(TextEditingController controller, String value) {
+      controller.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    }
+
+    replace(_diceQuantityController, input.quantity);
+    replace(_diceSidesController, input.sides);
+    replace(_diceModifierController, input.modifier);
   }
 
   void _clearLinkErrors() {

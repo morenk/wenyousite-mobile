@@ -8,8 +8,10 @@ class EditorTaskTray extends StatelessWidget {
     required this.onBack,
     required this.onInsert,
     required this.child,
+    this.headerSupport,
     this.insertEnabled = true,
     this.insertKey,
+    this.showInsertIcon = true,
     super.key,
   });
 
@@ -18,6 +20,8 @@ class EditorTaskTray extends StatelessWidget {
   final VoidCallback onInsert;
   final bool insertEnabled;
   final Key? insertKey;
+  final Widget? headerSupport;
+  final bool showInsertIcon;
   final Widget child;
 
   @override
@@ -53,34 +57,51 @@ class EditorTaskTray extends StatelessWidget {
                   icon: const WenyouIcon(WenyouIconIds.navigationBack),
                 ),
                 Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      ?headerSupport,
+                    ],
                   ),
                 ),
-                FilledButton.icon(
-                  key: insertKey,
-                  style: ButtonStyle(
-                    minimumSize: WidgetStatePropertyAll(
-                      Size(80, tokens.minimumTouchTarget),
+                if (showInsertIcon)
+                  FilledButton.icon(
+                    key: insertKey,
+                    style: _insertStyle(
+                      tokens: tokens,
+                      scheme: scheme,
+                      minimumWidth: 80,
                     ),
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.disabled)
-                          ? tokens.border
-                          : scheme.primary,
+                    onPressed: insertEnabled ? onInsert : null,
+                    icon: const WenyouIcon(
+                      WenyouIconIds.actionConfirm,
+                      size: 18,
                     ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.disabled)
-                          ? tokens.mutedText
-                          : scheme.onPrimary,
-                    ),
+                    label: const Text('插入'),
+                  )
+                else
+                  FilledButton(
+                    key: insertKey,
+                    style:
+                        _insertStyle(
+                          tokens: tokens,
+                          scheme: scheme,
+                          minimumWidth: 64,
+                        ).copyWith(
+                          padding: WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: tokens.space16),
+                          ),
+                        ),
+                    onPressed: insertEnabled ? onInsert : null,
+                    child: const Text('插入'),
                   ),
-                  onPressed: insertEnabled ? onInsert : null,
-                  icon: const WenyouIcon(WenyouIconIds.actionConfirm, size: 18),
-                  label: const Text('插入'),
-                ),
               ],
             ),
           ),
@@ -97,6 +118,28 @@ class EditorTaskTray extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  ButtonStyle _insertStyle({
+    required WenyouThemeTokens tokens,
+    required ColorScheme scheme,
+    required double minimumWidth,
+  }) {
+    return ButtonStyle(
+      minimumSize: WidgetStatePropertyAll(
+        Size(minimumWidth, tokens.minimumTouchTarget),
+      ),
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? tokens.border
+            : scheme.primary,
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? tokens.mutedText
+            : scheme.onPrimary,
       ),
     );
   }

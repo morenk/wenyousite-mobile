@@ -483,7 +483,7 @@ void main() {
     expect(find.byKey(const Key('editor-dice-tray')), findsOneWidget);
     expect(find.byKey(const Key('editor-dice-insert')), findsOneWidget);
     expect(find.byKey(const Key('editor-submit')), findsNothing);
-    expect(find.byKey(const Key('editor-dice-count')), findsOneWidget);
+    expect(find.byKey(const Key('editor-dice-status')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('post-composer-sheet')),
