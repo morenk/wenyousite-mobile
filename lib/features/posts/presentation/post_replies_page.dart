@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -397,8 +396,6 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
 }
 
 class _DiscussionList extends StatelessWidget {
-  static const _contentCacheExtent = 4000.0;
-
   const _DiscussionList({
     required this.state,
     required this.actions,
@@ -492,7 +489,6 @@ class _DiscussionList extends StatelessWidget {
     return CustomScrollView(
       key: const Key('post-replies-list'),
       controller: scrollController,
-      scrollCacheExtent: const ScrollCacheExtent.pixels(_contentCacheExtent),
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverPadding(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -47,7 +46,6 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
 }
 
 class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
-  static const _contentCacheExtent = 4000.0;
   static const _loadMoreThreshold = 2400.0;
 
   final _scrollController = ScrollController();
@@ -194,9 +192,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               child: CustomScrollView(
                 key: PageStorageKey('thread-detail-${widget.threadId}'),
                 controller: _scrollController,
-                scrollCacheExtent: const ScrollCacheExtent.pixels(
-                  _contentCacheExtent,
-                ),
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   ..._buildReadySlivers(

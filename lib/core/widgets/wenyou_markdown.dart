@@ -54,17 +54,13 @@ class WenyouMarkdown extends StatefulWidget {
   State<WenyouMarkdown> createState() => _WenyouMarkdownState();
 }
 
-class _WenyouMarkdownState extends State<WenyouMarkdown>
-    with AutomaticKeepAliveClientMixin<WenyouMarkdown> {
+class _WenyouMarkdownState extends State<WenyouMarkdown> {
   late final ValueNotifier<Map<String, String>> _diceLabels;
   late final ValueNotifier<Map<String, String>> _diceSemantics;
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
   List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -112,7 +108,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return MarkdownBody(
       data: _normalizedData,
       selectable: true,
