@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -208,9 +209,18 @@ void main() {
     final commentCard = find.byKey(
       const Key('moment-comment-card-comment-root'),
     );
+    final commentParagraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == '主评论',
+      ),
+    );
     final commentRect = tester.getRect(commentCard);
     await tester.longPressAt(
-      Offset(commentRect.right - 12, commentRect.top + 24),
+      Offset(
+        commentRect.right - 12,
+        commentParagraph.localToGlobal(Offset.zero).dy +
+            commentParagraph.preferredLineHeight / 2,
+      ),
     );
     await tester.pumpAndSettle();
     expect(

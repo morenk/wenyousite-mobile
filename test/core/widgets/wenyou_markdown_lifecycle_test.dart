@@ -250,6 +250,41 @@ void main() {
     expect(longPresses, 1);
   });
 
+  testWidgets('文字同行右侧空白长按转交楼层操作而不保留选区', (tester) async {
+    var longPresses = 0;
+    const text = 'Short floor text';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: text,
+            onLongPressNonText: () => longPresses += 1,
+          ),
+        ),
+      ),
+    );
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == text,
+      ),
+    );
+    final selectionArea = tester.getRect(find.byType(SelectionArea));
+    final blankPosition = Offset(
+      selectionArea.right - 16,
+      paragraph.localToGlobal(Offset.zero).dy +
+          paragraph.preferredLineHeight / 2,
+    );
+
+    await tester.longPressAt(blankPosition);
+    await tester.pump();
+
+    expect(longPresses, 1);
+    expect(paragraph.selections, isEmpty);
+  });
+
   testWidgets('长讨论楼层滑出缓存邻域后仍驻留且回来不重建', (tester) async {
     final controller = ScrollController();
     final builds = <int, int>{};

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -107,5 +108,43 @@ void main() {
     expect(label.maxLines, isNull);
     expect(label.overflow, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('评论文字同行右侧空白长按转交评论操作', (tester) async {
+    var longPresses = 0;
+    const text = '短评论';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SizedBox(
+            width: 320,
+            child: WenyouInternalReferenceText(
+              content: text,
+              selectable: true,
+              onLongPressNonText: () => longPresses += 1,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == text,
+      ),
+    );
+    final area = tester.getRect(find.byType(SelectionArea));
+    await tester.longPressAt(
+      Offset(
+        area.right - 12,
+        paragraph.localToGlobal(Offset.zero).dy +
+            paragraph.preferredLineHeight / 2,
+      ),
+    );
+    await tester.pump();
+
+    expect(longPresses, 1);
+    expect(paragraph.selections, isEmpty);
   });
 }

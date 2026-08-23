@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -246,8 +247,20 @@ void main() {
     await tester.tap(find.byKey(const Key('test-user-back')));
     await tester.pumpAndSettle();
 
-    await tester.longPress(
-      find.byKey(const Key('thread-floor-number-floor-1')),
+    final floorParagraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == '第一层内容',
+      ),
+    );
+    final floorCardRect = tester.getRect(
+      find.byKey(const Key('thread-floor-card-floor-1')),
+    );
+    await tester.longPressAt(
+      Offset(
+        floorCardRect.right - 12,
+        floorParagraph.localToGlobal(Offset.zero).dy +
+            floorParagraph.preferredLineHeight / 2,
+      ),
     );
     await tester.pumpAndSettle();
     final modalMenu = find.byKey(const Key('wenyou-modal-action-menu'));

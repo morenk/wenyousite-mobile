@@ -10,7 +10,7 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('操作窗口固定居中，暗区不关闭并提供显式关闭按钮', (tester) async {
+  testWidgets('操作窗口固定居中，暗区和显式关闭按钮均可退出', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -87,6 +87,10 @@ void main() {
     );
 
     await tester.tapAt(const Offset(8, 8));
+    await tester.pump();
+    expect(menu, findsNothing);
+
+    await tester.tap(find.byKey(const Key('modal-trigger')));
     await tester.pump();
     expect(menu, findsOneWidget);
 

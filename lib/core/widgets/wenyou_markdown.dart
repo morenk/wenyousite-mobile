@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
 
 export 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart'
     show WenyouDiceRollDetail;
@@ -195,10 +196,16 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         ),
       );
     }
-    return SelectionArea(
-      key: _selectionAreaKey,
-      onSelectionChanged: _handleSelectionChanged,
-      child: body,
+    return WenyouSelectableActionRegion(
+      selectionAreaKey: _selectionAreaKey,
+      onLongPressBlank: widget.onLongPressNonText == null
+          ? null
+          : _handleBlankLongPress,
+      child: SelectionArea(
+        key: _selectionAreaKey,
+        onSelectionChanged: _handleSelectionChanged,
+        child: body,
+      ),
     );
   }
 
@@ -227,6 +234,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   }
 
   void _handleNonTextLongPress() {
+    _clearSelection();
+    widget.onLongPressNonText?.call();
+  }
+
+  void _handleBlankLongPress() {
     _clearSelection();
     widget.onLongPressNonText?.call();
   }

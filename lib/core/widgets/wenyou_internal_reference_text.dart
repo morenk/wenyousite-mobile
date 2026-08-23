@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
 
 class WenyouInternalReferenceText extends StatefulWidget {
   const WenyouInternalReferenceText({
@@ -78,12 +79,18 @@ class _WenyouInternalReferenceTextState
             child: layout,
           );
     if (!widget.selectable) return tappableLayout;
-    return SelectionArea(
-      key: _selectionAreaKey,
-      onSelectionChanged: (content) {
-        _hasSelection = content?.plainText.isNotEmpty == true;
-      },
-      child: tappableLayout,
+    return WenyouSelectableActionRegion(
+      selectionAreaKey: _selectionAreaKey,
+      onLongPressBlank: widget.onLongPressNonText == null
+          ? null
+          : _handleNonTextLongPress,
+      child: SelectionArea(
+        key: _selectionAreaKey,
+        onSelectionChanged: (content) {
+          _hasSelection = content?.plainText.isNotEmpty == true;
+        },
+        child: tappableLayout,
+      ),
     );
   }
 

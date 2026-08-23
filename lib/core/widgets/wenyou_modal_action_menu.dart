@@ -55,7 +55,7 @@ class _WenyouModalActionMenuState<T> extends State<WenyouModalActionMenu<T>> {
     final selection = await showDialog<_ModalActionSelection<T>>(
       context: context,
       useRootNavigator: true,
-      barrierDismissible: false,
+      barrierDismissible: true,
       barrierLabel: '关闭${widget.semanticLabel}',
       animationStyle: AnimationStyle.noAnimation,
       builder: (dialogContext) => _WenyouActionDialog<T>(
