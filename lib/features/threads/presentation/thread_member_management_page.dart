@@ -80,15 +80,7 @@ class _MembersReadyState extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          WenyouPanel(
-            child: WenyouSectionHeader(
-              title: bootstrap.threadTitle,
-              subtitle:
-                  '${bootstrap.members.length} 位参与人。回复后会自动进入候选池；玩家标记与协作者身份由管理者维护。',
-            ),
-          ),
           if (state.failure != null) ...[
-            SizedBox(height: tokens.space12),
             WenyouStatusBanner(
               key: const Key('thread-members-action-failure'),
               tone: WenyouStatusTone.error,
@@ -112,7 +104,7 @@ class _MembersReadyState extends ConsumerWidget {
             ),
           ],
           if (state.actionOutcome != null) ...[
-            SizedBox(height: tokens.space12),
+            if (state.failure != null) SizedBox(height: tokens.space12),
             WenyouWriteOutcomeBanner(
               key: const Key('thread-members-write-outcome'),
               status: state.actionOutcome!,
@@ -127,13 +119,13 @@ class _MembersReadyState extends ConsumerWidget {
               refreshKey: const Key('thread-members-refresh-result'),
             ),
           ],
-          SizedBox(height: tokens.space12),
+          if (state.failure != null || state.actionOutcome != null)
+            SizedBox(height: tokens.space12),
           if (bootstrap.members.isEmpty)
             const WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusGroupUnavailable,
                 title: '还没有参与人',
-                message: '回复过主题的用户可设为玩家或协作者。',
               ),
             )
           else

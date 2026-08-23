@@ -73,12 +73,7 @@ class _SubthreadDirectory extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
-                child: WenyouSectionHeader(
-                  title: '子贴内容',
-                  subtitle: '主正文位于“主题设置”；这里维护其他子贴的标题、权限、正文和顺序。',
-                ),
-              ),
+              const Expanded(child: WenyouSectionHeader(title: '子贴内容')),
               IconButton(
                 key: const Key('subthread-management-refresh'),
                 tooltip: '刷新子贴',
@@ -122,14 +117,13 @@ class _SubthreadDirectory extends ConsumerWidget {
             key: const Key('subthread-management-create'),
             onPressed: state.isBusy ? null : () => _openCreate(context, ref),
             icon: const WenyouIcon(WenyouIconIds.actionAdd),
-            label: const Text('添加子贴并填写正文'),
+            label: const Text('添加子贴'),
           ),
           SizedBox(height: tokens.space16),
           if (items.isEmpty)
             const WenyouEmptyState(
               icon: WenyouIconIds.contentList,
               title: '还没有其他子贴',
-              message: '添加子贴时可以同时填写正文，也可以先留空。',
             )
           else
             DecoratedBox(

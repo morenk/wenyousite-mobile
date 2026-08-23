@@ -88,9 +88,9 @@ void main() {
       isFalse,
     );
 
-    completer.complete('图片正在处理，完成后会出现在收藏中。');
+    completer.complete('图片处理中…');
     await tester.pumpAndSettle();
-    expect(find.text('图片正在处理，完成后会出现在收藏中。'), findsOneWidget);
+    expect(find.text('图片处理中…'), findsOneWidget);
     expect(calls, 1);
   });
 

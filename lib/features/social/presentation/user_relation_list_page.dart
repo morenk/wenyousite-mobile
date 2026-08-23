@@ -119,7 +119,6 @@ class _ReadyRelationList extends StatelessWidget {
                 child: WenyouEmptyState(
                   icon: _emptyIcon(target.kind),
                   title: _emptyTitle(target.kind),
-                  message: _emptyMessage(target.kind),
                 ),
               ),
             )
@@ -227,12 +226,6 @@ String _emptyTitle(UserRelationListKind kind) => switch (kind) {
   UserRelationListKind.following => '还没有关注任何人',
   UserRelationListKind.followers => '还没有粉丝',
   UserRelationListKind.blocks => '黑名单为空',
-};
-
-String _emptyMessage(UserRelationListKind kind) => switch (kind) {
-  UserRelationListKind.following => '',
-  UserRelationListKind.followers => '',
-  UserRelationListKind.blocks => '',
 };
 
 String _emptyIcon(UserRelationListKind kind) => switch (kind) {

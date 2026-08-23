@@ -333,11 +333,7 @@ class _ContentEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WenyouPanel(
-      child: WenyouEmptyState(
-        icon: _emptyIcon(tab),
-        title: _emptyTitle(tab),
-        message: '',
-      ),
+      child: WenyouEmptyState(icon: _emptyIcon(tab), title: _emptyTitle(tab)),
     );
   }
 }

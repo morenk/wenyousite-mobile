@@ -125,7 +125,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 children: [
                   const WenyouSectionHeader(
                     title: '设置新的登录密码',
-                    subtitle: '输入邮箱、邮件中的 6 位验证码和新密码。成功后该账号的所有终端都会退出。',
+                    subtitle: '重置成功后，账号会在所有设备上退出。',
                   ),
                   if (requestedEmail != null && requestedEmail.isNotEmpty) ...[
                     SizedBox(height: tokens.space20),

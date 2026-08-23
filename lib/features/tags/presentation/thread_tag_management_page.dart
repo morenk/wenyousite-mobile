@@ -86,24 +86,14 @@ class _ThreadTagManagementPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                WenyouSectionHeader(
-                  title: bootstrap.threadTitle,
-                  subtitle: '每个主题最多 5 个标签。',
-                ),
+                WenyouSectionHeader(title: bootstrap.threadTitle),
                 SizedBox(height: tokens.space16),
                 Text(
                   '已选标签 ${bootstrap.tags.length}/$maxThreadTagCount',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 SizedBox(height: tokens.space8),
-                if (bootstrap.tags.isEmpty)
-                  Text(
-                    '尚未添加标签。搜索或输入名称即可添加；同名标签会自动复用。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                  )
-                else
+                if (bootstrap.tags.isNotEmpty)
                   Wrap(
                     spacing: tokens.space8,
                     runSpacing: tokens.space8,
@@ -140,10 +130,7 @@ class _ThreadTagManagementPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const WenyouSectionHeader(
-                  title: '搜索与添加',
-                  subtitle: '名称只能包含中英文、数字、下划线和 #。',
-                ),
+                const WenyouSectionHeader(title: '搜索与添加'),
                 SizedBox(height: tokens.space16),
                 TextField(
                   key: const Key('thread-tag-search'),
@@ -154,6 +141,7 @@ class _ThreadTagManagementPageState
                   decoration: InputDecoration(
                     labelText: '搜索标签',
                     hintText: '例如：无限流',
+                    helperText: '仅支持中英文、数字、下划线和 #',
                     prefixIcon: const WenyouIcon(WenyouIconIds.actionSearch),
                     suffixIcon: state.isSearching
                         ? const Padding(

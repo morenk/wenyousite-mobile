@@ -70,7 +70,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               children: [
                 const WenyouSectionHeader(
                   title: '通过注册邮箱找回',
-                  subtitle: '输入邮箱后，我们会发送 6 位重置验证码。为保护账号，结果不会透露邮箱是否已注册。',
+                  subtitle: '为保护账号，页面不会显示邮箱是否已注册。',
                 ),
                 SizedBox(height: tokens.space24),
                 TextFormField(

@@ -90,10 +90,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const WenyouSectionHeader(
-              title: '验证新邮箱',
-              subtitle: '先用当前密码确认身份，再向新邮箱发送 6 位验证码。',
-            ),
+            const WenyouSectionHeader(title: '验证新邮箱'),
             SizedBox(height: tokens.space24),
             WenyouPasswordField(
               textFieldKey: const Key('change-email-password'),

@@ -87,10 +87,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(
-            title: '创建温油站账号',
-            subtitle: '先验证邮箱，再设置用户名和密码。验证码不会保存在这台设备上。',
-          ),
+          const WenyouSectionHeader(title: '创建温油站账号'),
           SizedBox(height: tokens.space24),
           TextFormField(
             key: const Key('register-email'),

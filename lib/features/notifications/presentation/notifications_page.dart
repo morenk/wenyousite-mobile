@@ -207,7 +207,6 @@ class _ReadyNotificationList extends StatelessWidget {
                 title: state.filter == NotificationFilters.all
                     ? '暂无通知'
                     : '这个分类暂无通知',
-                message: '',
               ),
             )
           else

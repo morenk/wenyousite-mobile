@@ -191,7 +191,7 @@ class _ActiveSearchResults extends ConsumerWidget {
         child: WenyouEmptyState(
           icon: WenyouIconIds.editorHeading,
           title: '动态和楼层内容搜索至少需要 2 个字符',
-          message: '主题和用户名仍然支持单字符搜索。',
+          message: '单字符只能搜索主题和用户名。',
         ),
       );
     }
@@ -236,7 +236,6 @@ class _OverviewSectionBody extends ConsumerWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.statusNoResults,
             title: '没有综合匹配结果',
-            message: '',
           ),
         ),
       SearchSectionPhase.ready => _OverviewResults(result: state.items.single),

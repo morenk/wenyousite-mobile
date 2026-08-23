@@ -167,11 +167,13 @@ class _ReadyDrafts extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                state.usage.isFull ? '槽位已满，可覆盖或删除下面的旧草稿。' : '快速保存会自动选择第一个空闲槽位。',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              SizedBox(height: tokens.space8),
+              if (state.usage.isFull) ...[
+                Text(
+                  '槽位已满，请先覆盖或删除旧草稿。',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                SizedBox(height: tokens.space8),
+              ],
               SizedBox(
                 height: tokens.minimumTouchTarget,
                 child: FilledButton.icon(

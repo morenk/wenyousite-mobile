@@ -167,10 +167,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const WenyouSectionHeader(
-              title: '主题设置',
-              subtitle: '主题信息、标签和主正文会在一次保存中同时更新。',
-            ),
+            const WenyouSectionHeader(title: '主题设置'),
             SizedBox(height: tokens.space16),
             TextFormField(
               key: const Key('thread-management-title'),
@@ -268,9 +265,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             ),
             SizedBox(height: tokens.space8),
             Text(
-              thread.isOwner
-                  ? _visibility.description
-                  : '协作者可以维护标题、分区、状态、标签和正文；可见范围仅楼主可修改。',
+              thread.isOwner ? _visibility.description : '仅楼主可修改可见范围。',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
@@ -292,14 +287,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 ),
               ],
             ),
-            if (_tagNames.isEmpty)
-              Text(
-                '还没有添加标签。',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-              )
-            else
+            if (_tagNames.isNotEmpty)
               Wrap(
                 spacing: tokens.space8,
                 runSpacing: tokens.space8,
@@ -671,14 +659,7 @@ class _ThreadTagSelectorDialogState extends State<_ThreadTagSelectorDialog> {
               style: Theme.of(context).textTheme.labelMedium,
             ),
             SizedBox(height: tokens.space8),
-            if (_tags.isEmpty)
-              Text(
-                '还没有添加标签。',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-              )
-            else
+            if (_tags.isNotEmpty)
               Wrap(
                 spacing: tokens.space8,
                 runSpacing: tokens.space8,

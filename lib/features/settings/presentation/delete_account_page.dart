@@ -97,10 +97,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  WenyouSectionHeader(
-                    title: '这是不可恢复的操作',
-                    subtitle: '请先确认下面每项影响，再决定是否继续。',
-                  ),
+                  WenyouSectionHeader(title: '这是不可恢复的操作'),
                   SizedBox(height: tokens.space16),
                   const _DeletionConsequence(
                     icon: WenyouIconIds.actionDevices,
@@ -131,10 +128,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const WenyouSectionHeader(
-                      title: '输入确认文字',
-                      subtitle: '请输入“注销账号”四个字，随后还会进行最后一次确认。',
-                    ),
+                    const WenyouSectionHeader(title: '输入确认文字'),
                     SizedBox(height: tokens.space16),
                     TextFormField(
                       key: const Key('delete-account-phrase'),

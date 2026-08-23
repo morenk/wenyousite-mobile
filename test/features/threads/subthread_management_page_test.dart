@@ -21,6 +21,9 @@ void main() {
       find.byKey(const Key('subthread-management-create')),
       findsOneWidget,
     );
+    expect(find.text('添加子贴'), findsOneWidget);
+    expect(find.text('添加子贴并填写正文'), findsNothing);
+    expect(find.textContaining('主正文位于'), findsNothing);
   });
 
   testWidgets('新建子贴可在全屏编辑器同时填写正文', (tester) async {

@@ -71,7 +71,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
             Text('验证受限账号', style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: tokens.space8),
             Text(
-              '暂停或封禁账号无法建立普通登录会话。验证账号密码后，会签发一个仅能读取本人决定和提交申诉的 15 分钟凭据。',
+              '受限账号验证密码后可查看本人决定并提交申诉，验证有效 15 分钟。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             SizedBox(height: tokens.space16),
@@ -146,7 +146,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
             ),
             SizedBox(height: tokens.space12),
             Text(
-              '专用凭据只保存在当前页面内存中，离开页面即清除；不会替换或恢复普通登录状态。',
+              '离开此页后需重新验证；不会恢复账号登录。',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
@@ -179,7 +179,6 @@ class _LoadingState extends StatelessWidget {
       child: WenyouEmptyState(
         icon: WenyouIconIds.moderationDecision,
         title: '正在读取治理决定',
-        message: '只会显示当前账号近 30 天的公开处置信息。',
         action: CircularProgressIndicator(),
       ),
     );
@@ -227,7 +226,6 @@ class _DecisionList extends ConsumerWidget {
         child: WenyouEmptyState(
           icon: WenyouIconIds.moderationAppeal,
           title: '近 30 天没有治理决定',
-          message: '当前账号没有可展示或可申诉的决定。',
         ),
       );
     }

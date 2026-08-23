@@ -632,7 +632,7 @@ class WenyouEmptyState extends StatelessWidget {
   const WenyouEmptyState({
     required this.icon,
     required this.title,
-    required this.message,
+    this.message,
     this.detail,
     this.action,
     super.key,
@@ -640,7 +640,7 @@ class WenyouEmptyState extends StatelessWidget {
 
   final String icon;
   final String title;
-  final String message;
+  final String? message;
   final String? detail;
   final Widget? action;
 
@@ -669,10 +669,10 @@ class WenyouEmptyState extends StatelessWidget {
             style: Theme.of(context).textTheme.wenyouStatusTitle,
           ),
         ),
-        if (message.trim().isNotEmpty) ...[
+        if (message?.trim().isNotEmpty ?? false) ...[
           SizedBox(height: tokens.space8),
           Text(
-            message,
+            message!,
             textAlign: TextAlign.center,
             style: Theme.of(
               context,

@@ -83,7 +83,6 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
             ) ??
             _MeExternalContentFallback(
               title: '我的动态',
-              message: '',
               onPressed: () => context.pushNamed(
                 'user-moments',
                 pathParameters: {'userId': widget.userId},
@@ -177,12 +176,10 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
 class _MeExternalContentFallback extends StatelessWidget {
   const _MeExternalContentFallback({
     required this.title,
-    required this.message,
     required this.onPressed,
   });
 
   final String title;
-  final String message;
   final VoidCallback onPressed;
 
   @override
@@ -196,7 +193,6 @@ class _MeExternalContentFallback extends StatelessWidget {
             child: WenyouEmptyState(
               icon: WenyouIconIds.navigationMoments,
               title: title,
-              message: message,
               action: OutlinedButton(
                 onPressed: onPressed,
                 child: const Text('打开列表'),

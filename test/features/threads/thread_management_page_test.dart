@@ -58,6 +58,7 @@ void main() {
     await _pumpPage(tester, repository);
 
     expect(find.text('主题设置'), findsWidgets);
+    expect(find.textContaining('会在一次保存中同时更新'), findsNothing);
     expect(find.byKey(const Key('thread-management-delete')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('thread-management-title')),
@@ -103,7 +104,7 @@ void main() {
           ),
         );
     expect(visibility.onChanged, isNull);
-    expect(find.textContaining('可见范围仅楼主可修改'), findsOneWidget);
+    expect(find.text('仅楼主可修改可见范围。'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
   });
 

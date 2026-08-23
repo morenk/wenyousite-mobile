@@ -616,7 +616,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               child: WenyouEmptyState(
                 icon: WenyouIconIds.contentTopic,
                 title: '这个主题还没有子贴',
-                message: '',
               ),
             ),
           ),

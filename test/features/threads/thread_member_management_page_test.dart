@@ -13,7 +13,8 @@ void main() {
     final repository = _FakeRepository(bootstrap: _bootstrap());
     await _pumpPage(tester, repository);
 
-    expect(find.text('2 位参与人。回复后会自动进入候选池；玩家标记与协作者身份由管理者维护。'), findsOneWidget);
+    expect(find.text('星海旅团'), findsNothing);
+    expect(find.textContaining('回复后会自动进入候选池'), findsNothing);
     expect(
       find.byKey(const ValueKey('thread-member-player-player-1')),
       findsOneWidget,

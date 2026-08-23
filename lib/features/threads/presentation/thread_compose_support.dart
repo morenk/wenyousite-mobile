@@ -333,16 +333,10 @@ class ThreadComposeLocalSaveStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, label) = switch (state.localSnapshotStatus) {
-      LocalSnapshotStatus.idle => (
-        WenyouIconIds.actionEdit,
-        '内容有变更，稍后自动保存到这台设备',
-      ),
-      LocalSnapshotStatus.saving => (WenyouIconIds.actionSync, '正在保存到这台设备…'),
-      LocalSnapshotStatus.saved => (WenyouIconIds.statusSuccess, '已保存到这台设备'),
-      LocalSnapshotStatus.failed => (
-        WenyouIconIds.statusError,
-        '本地保存失败，请先不要退出',
-      ),
+      LocalSnapshotStatus.idle => (WenyouIconIds.actionEdit, '有未保存的修改'),
+      LocalSnapshotStatus.saving => (WenyouIconIds.actionSync, '正在保存草稿…'),
+      LocalSnapshotStatus.saved => (WenyouIconIds.statusSuccess, '草稿已保存'),
+      LocalSnapshotStatus.failed => (WenyouIconIds.statusError, '保存失败，请先不要退出'),
     };
     return Semantics(
       liveRegion: true,

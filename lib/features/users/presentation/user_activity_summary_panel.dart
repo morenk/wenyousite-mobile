@@ -25,7 +25,7 @@ class UserActivitySummaryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(title: '创作概览', subtitle: '公开内容与共同创作足迹'),
+          const WenyouSectionHeader(title: '创作概览'),
           SizedBox(height: tokens.space12),
           switch (state.activityPhase) {
             PublicUserActivityPhase.idle || PublicUserActivityPhase.loading =>

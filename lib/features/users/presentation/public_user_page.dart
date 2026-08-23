@@ -88,7 +88,6 @@ class PublicUserPage extends ConsumerWidget {
                         child: WenyouEmptyState(
                           icon: WenyouIconIds.statusUserUnavailable,
                           title: '已注销用户',
-                          message: '该账号已经注销，公开资料不再展示。',
                         ),
                       )
                     : Column(

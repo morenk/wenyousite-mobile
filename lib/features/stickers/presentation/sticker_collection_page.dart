@@ -89,10 +89,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const WenyouSectionHeader(
-                  title: '我的表情包',
-                  subtitle: '可从相册添加，也可在帖子图片或私聊图片旁收藏。长按拖动即可排序。',
-                ),
+                const WenyouSectionHeader(title: '我的表情包'),
                 SizedBox(height: tokens.space12),
                 if (state.transientFailure != null) ...[
                   WenyouStatusBanner(
@@ -206,7 +203,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                       if (collection.pendingImports.isNotEmpty) ...[
                         SizedBox(height: tokens.space12),
                         Text(
-                          '正在处理 ${collection.pendingImports.length} 个表情，页面会自动刷新。',
+                          '正在处理 ${collection.pendingImports.length} 个表情…',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -219,7 +216,6 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                     child: WenyouEmptyState(
                       icon: WenyouIconIds.actionAddReaction,
                       title: '还没有收藏表情',
-                      message: '从相册添加一张图片，或在帖子与私聊图片旁点按收藏。',
                     ),
                   )
                 else
@@ -396,7 +392,6 @@ class _StickersUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.actionAddReaction,
             title: '表情包功能当前未开放',
-            message: '表情包暂不可用，请稍后再试。',
           ),
         ),
       ),

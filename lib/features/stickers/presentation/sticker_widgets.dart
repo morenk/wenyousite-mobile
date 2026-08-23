@@ -194,7 +194,6 @@ class _StickerPickerPanelState extends ConsumerState<StickerPickerPanel> {
             ? WenyouIconIds.statusHistory
             : WenyouIconIds.actionAddReaction,
         title: _recent ? '还没有最近使用' : '还没有收藏表情',
-        message: _recent ? '' : '可从相册添加，或收藏站内图片。',
       );
     }
     return LayoutBuilder(
@@ -359,7 +358,7 @@ class StickerPostMarkdown extends ConsumerWidget {
                 throw failure ?? const ApiFailure(userMessage: '收藏表情失败，请稍后重试。');
               }
               return switch (result.status) {
-                StickerImportStatus.processing => '图片正在处理，完成后会出现在收藏中。',
+                StickerImportStatus.processing => '图片处理中…',
                 StickerImportStatus.completed when result.alreadySaved =>
                   '已经收藏过这个表情。',
                 StickerImportStatus.completed => '已添加到表情收藏。',

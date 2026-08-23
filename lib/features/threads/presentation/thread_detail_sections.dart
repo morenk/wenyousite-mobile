@@ -245,10 +245,7 @@ class ThreadTargetPostStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return targetState.when(
-      loading: () => const WenyouStatusBanner(
-        message: '正在定位搜索结果…',
-        detail: '会自动切换到所属子贴并展示目标上下文。',
-      ),
+      loading: () => const WenyouStatusBanner(message: '正在定位搜索结果…'),
       error: (error, _) {
         final failure = error is ApiFailure ? error : null;
         return WenyouStatusBanner(

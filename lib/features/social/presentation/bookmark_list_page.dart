@@ -95,7 +95,6 @@ class _MomentBookmarksFallback extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMoments,
             title: '动态收藏',
-            message: '',
             action: OutlinedButton(
               onPressed: onPressed,
               child: const Text('打开列表'),
@@ -712,11 +711,6 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '用分类把想继续阅读的主题帖收在一起。',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                SizedBox(height: tokens.space16),
                 TextFormField(
                   key: const Key('bookmark-folder-name'),
                   autofocus: true,

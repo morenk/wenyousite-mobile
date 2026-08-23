@@ -493,7 +493,6 @@ class _DirectConversationUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
             title: '私聊功能当前未开放',
-            message: '私聊暂不可用，请稍后再试。',
           ),
         ),
       ),

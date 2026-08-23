@@ -51,7 +51,6 @@ class _GuestMePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.identityMember,
             title: '当前以游客身份浏览',
-            message: '登录后可查看和管理本人资料、公开范围与账号会话。',
             action: SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -116,8 +115,7 @@ class _AuthenticatedMePage extends ConsumerWidget {
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.identityMember,
-                title: '已恢复登录会话',
-                message: '正在读取本人资料…',
+                title: '正在读取本人资料',
                 action: CircularProgressIndicator(),
               ),
             ),
@@ -172,7 +170,6 @@ class MeEditPage extends ConsumerWidget {
               child: WenyouEmptyState(
                 icon: WenyouIconIds.identityMember,
                 title: '正在读取资料',
-                message: '头像、简介与公开范围马上就好。',
                 action: CircularProgressIndicator(),
               ),
             ),
@@ -228,7 +225,6 @@ class MeSettingsPage extends ConsumerWidget {
               child: WenyouEmptyState(
                 icon: WenyouIconIds.actionSettings,
                 title: '正在读取账号状态',
-                message: '正在确认邮箱和安全设置…',
                 action: CircularProgressIndicator(),
               ),
             ),
@@ -422,7 +418,6 @@ class _AccountSecurityPanel extends StatelessWidget {
             enabled: !disabled,
             leading: const WenyouIcon(WenyouIconIds.actionDevices),
             title: const Text('登录终端'),
-            subtitle: const Text('查看并退出其他活跃终端'),
             trailing: const WenyouIcon(WenyouIconIds.navigationNext),
             onTap: disabled ? null : () => context.pushNamed('login-sessions'),
           ),
@@ -442,7 +437,6 @@ class _AccountSecurityPanel extends StatelessWidget {
             enabled: !disabled,
             leading: const WenyouIcon(WenyouIconIds.actionMention),
             title: const Text('更换邮箱'),
-            subtitle: const Text('使用当前密码和新邮箱验证码确认'),
             trailing: const WenyouIcon(WenyouIconIds.navigationNext),
             onTap: disabled ? null : () => context.pushNamed('change-email'),
           ),
@@ -562,7 +556,7 @@ class _LogoutPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const WenyouSectionHeader(title: '当前会话', subtitle: '退出这台设备上的账号。'),
+          const WenyouSectionHeader(title: '当前会话'),
           SizedBox(height: tokens.space16),
           const _LogoutAction(),
         ],
@@ -620,7 +614,6 @@ class _LogoutAction extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('退出当前账号？'),
-        content: const Text('将退出这台设备上的账号并清除登录信息。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),

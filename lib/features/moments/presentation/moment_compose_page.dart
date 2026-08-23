@@ -514,7 +514,6 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('离开动态编辑？'),
-        content: const Text('当前修改会自动保存在这台设备上，下次进入时可以继续编辑。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -661,7 +660,7 @@ class _MomentImagesEditor extends StatelessWidget {
         children: [
           WenyouSectionHeader(
             title: '图片 ${images.length}/9',
-            subtitle: '长按拖动排序；封面只在信息流裁切，详情始终完整展示。',
+            subtitle: '封面仅影响信息流展示，详情仍显示完整图片。',
             trailing: IconButton.filledTonal(
               key: const Key('moment-compose-add-image'),
               onPressed: onAdd,
@@ -706,7 +705,6 @@ class _MomentImagesEditor extends StatelessWidget {
             const WenyouEmptyState(
               icon: WenyouIconIds.contentGallery,
               title: '还没有图片',
-              message: '可以发布纯文字动态；添加图片后可指定其中一张为封面。',
             ),
           ] else ...[
             SizedBox(height: tokens.space12),

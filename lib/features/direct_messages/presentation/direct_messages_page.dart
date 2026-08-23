@@ -160,7 +160,6 @@ class _DirectConversationList extends StatelessWidget {
                 DirectConversationView.requests => '暂无消息请求',
                 DirectConversationView.archived => '暂无归档会话',
               },
-              message: '',
             ),
           ],
         ),
@@ -358,7 +357,6 @@ class _DirectMessagesUnavailablePage extends StatelessWidget {
           child: WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
             title: '私聊功能当前未开放',
-            message: '私聊暂不可用，请稍后再试。',
           ),
         ),
       ),

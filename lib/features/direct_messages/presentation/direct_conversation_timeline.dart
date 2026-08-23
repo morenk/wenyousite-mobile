@@ -182,7 +182,6 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
           WenyouEmptyState(
             icon: WenyouIconIds.navigationMessages,
             title: '暂无可显示消息',
-            message: '',
           ),
         ],
       );

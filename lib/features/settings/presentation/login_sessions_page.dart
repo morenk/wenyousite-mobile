@@ -110,9 +110,7 @@ class _ReadyLoginSessions extends StatelessWidget {
           tokens.space32,
         ),
         children: [
-          const _CenteredContent(child: _SessionGuidance()),
           if (state.actionFailure != null) ...[
-            SizedBox(height: tokens.space12),
             _CenteredContent(
               child: WenyouFailureBanner(
                 failure: state.actionFailure!,
@@ -125,7 +123,7 @@ class _ReadyLoginSessions extends StatelessWidget {
             ),
           ],
           if (state.actionOutcome != null) ...[
-            SizedBox(height: tokens.space12),
+            if (state.actionFailure != null) SizedBox(height: tokens.space12),
             _CenteredContent(
               child: WenyouWriteOutcomeBanner(
                 key: const Key('login-session-write-outcome'),
@@ -138,7 +136,8 @@ class _ReadyLoginSessions extends StatelessWidget {
               ),
             ),
           ],
-          SizedBox(height: tokens.space12),
+          if (state.actionFailure != null || state.actionOutcome != null)
+            SizedBox(height: tokens.space12),
           if (state.sessions.isEmpty)
             const _CenteredContent(
               child: WenyouPanel(
@@ -163,33 +162,6 @@ class _ReadyLoginSessions extends StatelessWidget {
                 ),
               ),
             ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SessionGuidance extends StatelessWidget {
-  const _SessionGuidance();
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const WenyouSectionHeader(
-            title: '账号安全',
-            subtitle: '查看当前登录的设备，并退出不认识的登录。',
-          ),
-          SizedBox(height: tokens.space12),
-          Text(
-            '为保护隐私，这里只显示终端平台和活动时间，不展示浏览器或设备原始标识。',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-          ),
         ],
       ),
     );

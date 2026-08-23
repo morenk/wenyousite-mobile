@@ -438,7 +438,6 @@ class _FollowingLoginState extends StatelessWidget {
         child: WenyouEmptyState(
           icon: WenyouIconIds.identityMembers,
           title: '登录后查看关注动态',
-          message: '',
           action: FilledButton.icon(
             key: const Key('moment-following-login'),
             onPressed: onLogin,

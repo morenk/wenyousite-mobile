@@ -121,7 +121,7 @@ class StickerCollectionController
       }
       _requestIds.remove(source.requestKey);
       final message = switch (result.status) {
-        StickerImportStatus.processing => '图片正在处理，完成后会出现在收藏中。',
+        StickerImportStatus.processing => '图片处理中…',
         StickerImportStatus.completed when result.alreadySaved => '已经收藏过这个表情。',
         StickerImportStatus.completed => '已添加到表情收藏。',
         StickerImportStatus.failed => throw StateError('handled above'),

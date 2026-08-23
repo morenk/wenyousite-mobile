@@ -255,7 +255,6 @@ class _WalletTransactionsPanel extends StatelessWidget {
             const WenyouEmptyState(
               icon: WenyouIconIds.economyTransaction,
               title: '暂无收支记录',
-              message: '',
             )
           else ...[
             for (var index = 0; index < state.transactions.length; index++) ...[

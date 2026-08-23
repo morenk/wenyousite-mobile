@@ -45,7 +45,6 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         children: [
           WenyouSectionHeader(
             title: '云端主题草稿',
-            subtitle: '可在其他设备上继续编辑。',
             trailing: IconButton(
               key: const Key('remote-drafts-refresh'),
               tooltip: '刷新云端草稿',
@@ -98,7 +97,6 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         const WenyouEmptyState(
           icon: WenyouIconIds.statusSynced,
           title: '还没有云端主题草稿',
-          message: '',
         ),
       RemoteThreadDraftsPhase.ready => ListView.separated(
         key: const Key('remote-drafts-list'),

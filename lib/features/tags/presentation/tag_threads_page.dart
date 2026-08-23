@@ -154,7 +154,6 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                   child: WenyouEmptyState(
                     icon: WenyouIconIds.actionAddReaction,
                     title: '这个标签下还没有公开主题',
-                    message: '标签本身仍然有效，稍后可以下拉刷新。',
                   ),
                 ),
               ),

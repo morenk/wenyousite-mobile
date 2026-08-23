@@ -130,7 +130,6 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                     child: const WenyouEmptyState(
                       icon: WenyouIconIds.metricComments,
                       title: '还没有评论',
-                      message: '可以留下第一条评论。',
                     ),
                   ),
                 )

@@ -62,4 +62,24 @@ void main() {
     expect(find.bySemanticsLabel('创建第一个主题开始交流。'), findsOneWidget);
     semantics.dispose();
   });
+
+  testWidgets('空状态可只展示标题并保留标题语义', (tester) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouEmptyState(
+            icon: WenyouIconIds.contentThread,
+            title: '暂无主题',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('暂无主题'), findsOneWidget);
+    expect(find.byType(Text), findsOneWidget);
+    semantics.dispose();
+  });
 }

@@ -105,7 +105,6 @@ class _ThreadPostSearchPageState extends ConsumerState<ThreadPostSearchPage> {
                 child: WenyouEmptyState(
                   icon: WenyouIconIds.actionSearch,
                   title: '输入关键词搜索当前主题',
-                  message: '会覆盖这个主题下的全部子贴、楼层与楼中楼。',
                 ),
               )
             else if (!state.isQueryValid)

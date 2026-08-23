@@ -513,7 +513,6 @@ class _DiscussionList extends StatelessWidget {
                 child: WenyouEmptyState(
                   icon: WenyouIconIds.metricReplies,
                   title: '还没有回复',
-                  message: '成为这段讨论的第一位回复者。',
                 ),
               ),
             ),

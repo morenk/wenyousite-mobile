@@ -67,10 +67,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const WenyouSectionHeader(
-                  title: '欢迎回到温油站',
-                  subtitle: '使用邮箱或用户名登录。登录后会继续刚才的操作。',
-                ),
+                const WenyouSectionHeader(title: '欢迎回到温油站'),
                 if (invalidationMessage != null) ...[
                   SizedBox(height: tokens.space20),
                   WenyouStatusBanner(
