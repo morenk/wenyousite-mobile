@@ -3,6 +3,8 @@ abstract final class AppRouteLocations {
   static const me = AppRoutePaths.me;
   static const meEdit = AppRoutePaths.meEdit;
   static const meSettings = AppRoutePaths.meSettings;
+  static const meBookmarks = AppRoutePaths.meBookmarks;
+  static const meBookmarkThreads = AppRoutePaths.meBookmarkThreads;
   static const moments = AppRoutePaths.moments;
   static const notifications = AppRoutePaths.notifications;
   static const search = AppRoutePaths.search;
@@ -52,6 +54,9 @@ abstract final class AppRouteLocations {
   static String user(String userId) => _fromSegments(['users', userId]);
 
   static String moment(String momentId) => _fromSegments(['moments', momentId]);
+
+  static String meBookmarkFolder(String folderId, {String? name}) =>
+      _fromSegments(['me', 'bookmarks', 'folders', folderId], {'name': ?name});
 
   static String _fromSegments(
     List<String> segments, [
@@ -107,6 +112,8 @@ abstract final class AppRoutePaths {
   static const meFollowers = '/me/followers';
   static const meBlocks = '/me/blocks';
   static const meBookmarks = '/me/bookmarks';
+  static const meBookmarkThreads = '/me/bookmarks/threads';
+  static const meBookmarkFolder = '/me/bookmarks/folders/:folderId';
   static const meStickers = '/me/stickers';
   static const loginSessions = '/me/security/sessions';
   static const changePassword = '/me/security/password';
@@ -155,6 +162,8 @@ abstract final class AppRouteNames {
   static const meFollowers = 'me-followers';
   static const meBlocks = 'me-blocks';
   static const meBookmarks = 'me-bookmarks';
+  static const meBookmarkThreads = 'me-bookmark-threads';
+  static const meBookmarkFolder = 'me-bookmark-folder';
   static const meStickers = 'me-stickers';
   static const loginSessions = 'login-sessions';
   static const changePassword = 'change-password';

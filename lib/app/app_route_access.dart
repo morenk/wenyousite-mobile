@@ -10,6 +10,7 @@ abstract final class AppRouteAccessPolicy {
     if (_authenticatedLocations.contains(location) ||
         _threadManagementPattern.hasMatch(location) ||
         _momentEditPattern.hasMatch(location) ||
+        _bookmarkFolderPattern.hasMatch(location) ||
         _directMessagePattern.hasMatch(location) ||
         _invitationPattern.hasMatch(location)) {
       return AppRouteAccess.authenticated;
@@ -35,6 +36,7 @@ abstract final class AppRouteAccessPolicy {
     AppRoutePaths.meFollowers,
     AppRoutePaths.meBlocks,
     AppRoutePaths.meBookmarks,
+    AppRoutePaths.meBookmarkThreads,
     AppRoutePaths.meStickers,
     AppRoutePaths.loginSessions,
     AppRoutePaths.changePassword,
@@ -44,6 +46,9 @@ abstract final class AppRouteAccessPolicy {
 
   static final _momentEditPattern = RegExp(
     r'^/moments/(?:[^/]+|:momentId)/edit$',
+  );
+  static final _bookmarkFolderPattern = RegExp(
+    r'^/me/bookmarks/folders/(?:[^/]+|:folderId)$',
   );
   static final _threadManagementPattern = RegExp(
     r'^/threads/(?:[^/]+|:threadId)/manage(?:/(?:members|tags)|/subthreads(?:/new|/(?:[^/]+|:subthreadId)/edit)?)?$',

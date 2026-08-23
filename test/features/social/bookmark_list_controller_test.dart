@@ -8,6 +8,24 @@ import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 void main() {
+  test('从收藏夹内容路由进入时首屏直接请求目标收藏夹', () async {
+    final repository = _FakeRepository(
+      fetchHandler: ({cursor, folderId}) async => CursorPage(
+        items: [_item('bookmark-1', folderId: folderId)],
+        hasMore: false,
+      ),
+    );
+    final controller = BookmarkListController(
+      repository,
+      initialFolderId: 'folder-custom',
+    );
+    addTearDown(controller.dispose);
+    await _settle();
+
+    expect(repository.requests.single.folderId, 'folder-custom');
+    expect(controller.state.selectedFolderId, 'folder-custom');
+  });
+
   test('首次读取和加载更多原样回传服务端游标与当前分类', () async {
     final repository = _FakeRepository(
       fetchHandler: ({cursor, folderId}) async => switch (cursor) {

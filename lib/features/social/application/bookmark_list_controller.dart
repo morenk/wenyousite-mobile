@@ -8,8 +8,15 @@ import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.da
 export 'package:wenyousite_mobile/features/social/application/social_states.dart';
 
 class BookmarkListController extends StateNotifier<BookmarkListState> {
-  BookmarkListController(this._repository)
-    : super(const BookmarkListState.loading()) {
+  BookmarkListController(this._repository, {String? initialFolderId})
+    : super(
+        BookmarkListState(
+          phase: BookmarkListPhase.loading,
+          selectedFolderId: initialFolderId,
+          isLoadingFolders: true,
+          isRefreshingList: true,
+        ),
+      ) {
     load();
   }
 
@@ -408,12 +415,11 @@ Future<_CaptureResult<T>> _capture<T>(Future<T> future) async {
   }
 }
 
-final bookmarkListControllerProvider =
-    StateNotifierProvider.autoDispose<
-      BookmarkListController,
-      BookmarkListState
-    >(
-      (ref) =>
-          BookmarkListController(ref.watch(bookmarkListRepositoryProvider)),
+final bookmarkListControllerProvider = StateNotifierProvider.autoDispose
+    .family<BookmarkListController, BookmarkListState, String?>(
+      (ref, initialFolderId) => BookmarkListController(
+        ref.watch(bookmarkListRepositoryProvider),
+        initialFolderId: initialFolderId,
+      ),
       dependencies: [bookmarkListRepositoryProvider],
     );

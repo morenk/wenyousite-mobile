@@ -132,6 +132,29 @@ void main() {
     );
   });
 
+  test('收藏总览和收藏夹内容页均受会话保护', () {
+    for (final location in [
+      '/me/bookmarks',
+      '/me/bookmarks/threads',
+      '/me/bookmarks/folders/folder-1',
+    ]) {
+      final redirect = resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: location,
+        uri: Uri.parse(location),
+      );
+      expect(Uri.parse(redirect!).queryParameters['returnTo'], location);
+      expect(
+        resolveSessionRedirect(
+          session: const SessionState.authenticated(),
+          matchedLocation: location,
+          uri: Uri.parse(location),
+        ),
+        isNull,
+      );
+    }
+  });
+
   test('主题管理页受会话保护并保留动态主题目标', () {
     final redirect = resolveSessionRedirect(
       session: const SessionState.guest(),

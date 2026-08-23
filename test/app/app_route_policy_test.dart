@@ -18,6 +18,9 @@ void main() {
       '/threads/thread-1/manage/subthreads/sub-1/edit',
       '/moments/moment-1/edit',
       '/join/invite-token',
+      '/me/bookmarks/threads',
+      '/me/bookmarks/folders/:folderId',
+      '/me/bookmarks/folders/folder-1',
     ]) {
       expect(
         AppRouteAccessPolicy.forLocation(location),
@@ -57,6 +60,10 @@ void main() {
     expect(
       AppRouteLocations.subthreadEdit('thread/1', 'sub/2'),
       '/threads/thread%2F1/manage/subthreads/sub%2F2/edit',
+    );
+    expect(
+      AppRouteLocations.meBookmarkFolder('folder/1', name: '跑团 资料'),
+      '/me/bookmarks/folders/folder%2F1?name=%E8%B7%91%E5%9B%A2+%E8%B5%84%E6%96%99',
     );
   });
 }
