@@ -21,14 +21,28 @@ class StartupGate extends ConsumerStatefulWidget {
 
 class _StartupGateState extends ConsumerState<StartupGate>
     with WidgetsBindingObserver {
+  static const _minimumBrandDuration = Duration(milliseconds: 700);
+
+  Timer? _brandTimer;
+  bool _canRevealApp = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
   }
 
+  void _markBrandVisible() {
+    if (_brandTimer != null || _canRevealApp) return;
+    _brandTimer = Timer(_minimumBrandDuration, () {
+      if (!mounted) return;
+      setState(() => _canRevealApp = true);
+    });
+  }
+
   @override
   void dispose() {
+    _brandTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -47,8 +61,13 @@ class _StartupGateState extends ConsumerState<StartupGate>
     final state = ref.watch(startupControllerProvider);
     final updateAction = ref.watch(mobileUpdateControllerProvider);
     return switch (state.status) {
+      StartupStatus.ready when !_canRevealApp => StartupCheckingPage(
+        onVisible: _markBrandVisible,
+      ),
       StartupStatus.ready => widget.child,
-      StartupStatus.checking => const StartupCheckingPage(),
+      StartupStatus.checking => StartupCheckingPage(
+        onVisible: _markBrandVisible,
+      ),
       StartupStatus.recommendedUpdate => _UpdatePage(
         update: state.update!,
         action: _actionFor(updateAction, state.update!),
@@ -100,69 +119,84 @@ class _StartupGateState extends ConsumerState<StartupGate>
 }
 
 class StartupCheckingPage extends StatelessWidget {
-  const StartupCheckingPage({super.key});
+  const StartupCheckingPage({this.onVisible, super.key});
+
+  final VoidCallback? onVisible;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Scaffold(
-      backgroundColor: tokens.brandSurface,
+      backgroundColor: tokens.background,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final markTop =
-                (constraints.maxHeight - WenyouBrandContract.startupMarkSize) /
-                2;
-            return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: tokens.space24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Semantics(
-                  container: true,
-                  label: '正在准备温油站',
-                  child: Column(
-                    children: [
-                      SizedBox(height: markTop),
-                      const WenyouBrandMark.decorative(
-                        key: Key('startup-brand-mark'),
-                        size: WenyouBrandContract.startupMarkSize,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: tokens.space24),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
+                return const SizedBox.shrink();
+              }
+              final onVisible = this.onVisible;
+              if (onVisible != null) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => onVisible(),
+                );
+              }
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: Semantics(
+                      container: true,
+                      label: '正在准备温油站',
+                      child: Column(
+                        key: const Key('startup-brand-content'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const WenyouBrandMark.decorative(
+                            key: Key('startup-brand-mark'),
+                            size: WenyouBrandContract.startupMarkSize,
+                          ),
+                          SizedBox(height: tokens.space16),
+                          Text(
+                            WenyouBrandContract.name,
+                            style: Theme.of(context).textTheme.wenyouPageTitle
+                                .copyWith(color: tokens.brandForeground),
+                          ),
+                          SizedBox(height: tokens.space8),
+                          Text(
+                            WenyouBrandContract.tagline,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .wenyouSubsectionTitle
+                                .copyWith(color: tokens.brandForeground),
+                          ),
+                          SizedBox(height: tokens.space32),
+                          CircularProgressIndicator(
+                            color: tokens.brandForeground,
+                          ),
+                          SizedBox(height: tokens.space12),
+                          Text(
+                            '正在连接温油站',
+                            style: Theme.of(context).textTheme.wenyouStatusTitle
+                                .copyWith(color: tokens.brandForeground),
+                          ),
+                          SizedBox(height: tokens.space8),
+                          Text(
+                            '正在确认是否可以正常使用。',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: tokens.brandForeground),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: tokens.space16),
-                      Text(
-                        WenyouBrandContract.name,
-                        style: Theme.of(context).textTheme.wenyouPageTitle
-                            .copyWith(color: tokens.brandForeground),
-                      ),
-                      SizedBox(height: tokens.space8),
-                      Text(
-                        WenyouBrandContract.tagline,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.wenyouSubsectionTitle
-                            .copyWith(color: tokens.brandForeground),
-                      ),
-                      SizedBox(height: tokens.space32),
-                      CircularProgressIndicator(color: tokens.brandForeground),
-                      SizedBox(height: tokens.space12),
-                      Text(
-                        '正在连接温油站',
-                        style: Theme.of(context).textTheme.wenyouStatusTitle
-                            .copyWith(color: tokens.brandForeground),
-                      ),
-                      SizedBox(height: tokens.space8),
-                      Text(
-                        '正在确认是否可以正常使用。',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: tokens.brandForeground,
-                        ),
-                      ),
-                      SizedBox(height: tokens.space24),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

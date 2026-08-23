@@ -36,7 +36,13 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, WenyouFoundationPalette.primary);
+    expect(scaffold.backgroundColor, WenyouFoundationPalette.background);
+    expect(scaffold.backgroundColor, const Color(0xFFFFFFFF));
+    final contentCenter = tester.getCenter(
+      find.byKey(const Key('startup-brand-content')),
+    );
+    expect(contentCenter.dx, closeTo(180, 0.01));
+    expect(contentCenter.dy, closeTo(400, 0.01));
     final name = tester.widget<Text>(find.text(WenyouBrandContract.name));
     final tagline = tester.widget<Text>(find.text(WenyouBrandContract.tagline));
     expect(name.style?.fontSize, 22);

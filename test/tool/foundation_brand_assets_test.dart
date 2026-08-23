@@ -93,7 +93,7 @@ void main() {
     }
   });
 
-  test('Android 启动与图标资源声明 adaptive、monochrome 和品牌底色', () async {
+  test('系统启动过渡保持纯白且应用图标声明 adaptive 与 monochrome', () async {
     final adaptive = await File(
       'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml',
     ).readAsString();
@@ -106,12 +106,24 @@ void main() {
     final launch = await File(
       'android/app/src/main/res/drawable/launch_background.xml',
     ).readAsString();
+    final android12Launch = await File(
+      'android/app/src/main/res/values-v31/styles.xml',
+    ).readAsString();
+    final iosLaunch = await File(
+      'ios/Runner/Base.lproj/LaunchScreen.storyboard',
+    ).readAsString();
 
     expect(adaptive, contains('ic_launcher_foreground'));
     expect(adaptive, contains('ic_launcher_background'));
     expect(monochrome, contains('<monochrome'));
     expect(colors, contains('#F3C6DD'));
-    expect(launch, contains('@drawable/launch_mark'));
+    expect(launch, contains('@android:color/white'));
+    expect(launch, isNot(contains('@drawable/launch_mark')));
+    expect(android12Launch, contains('@drawable/splash_transparent'));
+    expect(android12Launch, contains('@android:color/white'));
+    expect(android12Launch, isNot(contains('@drawable/launch_mark')));
+    expect(iosLaunch, isNot(contains('LaunchImage')));
+    expect(iosLaunch, contains('red="1" green="1" blue="1" alpha="1"'));
   });
 }
 

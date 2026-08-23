@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_router.dart';
+import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -17,6 +18,7 @@ import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.
 import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/startup_gate.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -29,6 +31,49 @@ import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
 void main() {
+  testWidgets('启动品牌页在真机零尺寸预热帧只保留空白且不产生红屏', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Align(
+          child: SizedBox.square(
+            dimension: 0,
+            child: const StartupCheckingPage(),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('startup-brand-mark')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('启动检查快速完成仍先稳定展示品牌首帧且不触发框架红屏', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+
+    expect(find.byKey(const Key('startup-brand-mark')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pump(const Duration(milliseconds: 699));
+    expect(find.byKey(const Key('startup-brand-mark')), findsOneWidget);
+    expect(find.byKey(const Key('home-category-menu')), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('startup-brand-mark')), findsNothing);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('兼容契约下游客进入四分支首页并从顶部搜索', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
