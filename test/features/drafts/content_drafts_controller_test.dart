@@ -24,6 +24,124 @@ void main() {
     expect(controller.state.draftAt(1)?.version, first.version + 1);
   });
 
+  test('开启后防抖创建槽位 1 并以最新版本继续自动更新', () async {
+    final repository = _FakeRepository(drafts: []);
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      autoSaveDebounce: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(controller.enableAutoSave('  自动正文  '), isTrue);
+    await _settleAutoSave();
+
+    expect(repository.createSlots, [1]);
+    expect(repository.createRequestIds, [_requestId]);
+    expect(repository.createdContents, ['  自动正文  ']);
+    expect(controller.state.autoSaveEnabled, isTrue);
+    expect(controller.state.autoSaveStatus, ContentDraftAutoSaveStatus.saved);
+
+    controller.updateAutoSaveContent('  自动正文第二版  ');
+    await _settleAutoSave();
+
+    expect(repository.updateVersions, [1]);
+    expect(repository.updatedContents, ['  自动正文第二版  ']);
+    expect(controller.state.draftAt(1)?.version, 2);
+  });
+
+  test('自动保存冲突后关闭开关并保留可见错误', () async {
+    final repository = _FakeRepository(
+      drafts: [_draft(slot: 1)],
+      conflictOnce: true,
+    );
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      autoSaveDebounce: Duration.zero,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(controller.enableAutoSave('本机新正文'), isTrue);
+    await _settleAutoSave();
+
+    expect(controller.state.autoSaveEnabled, isFalse);
+    expect(controller.state.autoSaveStatus, ContentDraftAutoSaveStatus.error);
+    expect(controller.state.autoSaveFailure?.userMessage, contains('其他位置'));
+    expect(controller.state.draftAt(1)?.content, '旧正文');
+  });
+
+  test('重新加载发现槽位 1 已在其他位置更新时停止自动保存', () async {
+    final repository = _FakeRepository(drafts: [_draft(slot: 1)]);
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      autoSaveDebounce: Duration.zero,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(controller.enableAutoSave('旧正文'), isTrue);
+    await _settleAutoSave();
+    repository.replaceExternally(_draft(slot: 1, version: 4));
+
+    await controller.load();
+
+    expect(controller.state.autoSaveEnabled, isFalse);
+    expect(controller.state.autoSaveStatus, ContentDraftAutoSaveStatus.error);
+    expect(controller.state.autoSaveFailure?.userMessage, contains('其他位置'));
+    expect(controller.state.draftAt(1)?.version, 4);
+  });
+
+  test('自动创建结果不明后对同一正文重试复用原请求 ID', () async {
+    final repository = _FakeRepository(drafts: [], createFailureOnce: true);
+    var requestIdCalls = 0;
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      autoSaveDebounce: Duration.zero,
+      requestIdFactory: () =>
+          requestIdCalls++ == 0 ? _requestId : _secondRequestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(controller.enableAutoSave('待确认正文'), isTrue);
+    await _settleAutoSave();
+    expect(controller.state.autoSaveEnabled, isFalse);
+
+    expect(controller.enableAutoSave('待确认正文'), isTrue);
+    await _settleAutoSave();
+
+    expect(repository.createRequestIds, [_requestId, _requestId]);
+    expect(requestIdCalls, 1);
+    expect(controller.state.draftAt(1)?.content, '待确认正文');
+    expect(controller.state.autoSaveStatus, ContentDraftAutoSaveStatus.saved);
+  });
+
+  test('手动创建结果不明后对同一操作重试复用原请求 ID', () async {
+    final repository = _FakeRepository(drafts: [], createFailureOnce: true);
+    var requestIdCalls = 0;
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      requestIdFactory: () =>
+          requestIdCalls++ == 0 ? _requestId : _secondRequestId,
+    );
+    addTearDown(controller.dispose);
+    await controller.load();
+
+    expect(await controller.createAtSlot('手动正文', 2), isFalse);
+    expect(await controller.createAtSlot('手动正文', 2), isTrue);
+
+    expect(repository.createRequestIds, [_requestId, _requestId]);
+    expect(requestIdCalls, 1);
+    expect(controller.state.draftAt(2)?.content, '手动正文');
+  });
+
   test('五槽已满时阻止自动保存且不发送创建请求', () async {
     final repository = _FakeRepository(
       drafts: [for (var slot = 1; slot <= 5; slot++) _draft(slot: slot)],
@@ -146,9 +264,19 @@ void main() {
 
     expect(await controller.remove(controller.state.draftAt(3)!), isTrue);
     expect(repository.removedIds, ['draft-3']);
+    expect(repository.removeVersions, [3]);
     expect(controller.state.drafts.map((draft) => draft.slot), [1]);
   });
 }
+
+Future<void> _settleAutoSave() async {
+  await Future<void>.delayed(Duration.zero);
+  await Future<void>.delayed(Duration.zero);
+  await Future<void>.delayed(Duration.zero);
+}
+
+const _requestId = '11111111-1111-4111-8111-111111111111';
+const _secondRequestId = '22222222-2222-4222-8222-222222222222';
 
 String _diceMarkdown(int count, {int namespace = 0}) =>
     List.generate(count, (index) {
@@ -173,21 +301,35 @@ class _FakeRepository implements ContentDraftRepository {
   _FakeRepository({
     required List<ContentDraft> drafts,
     this.conflictOnce = false,
+    this.createFailureOnce = false,
   }) : _drafts = [...drafts];
 
   final List<ContentDraft> _drafts;
   final bool conflictOnce;
+  final bool createFailureOnce;
   final List<int?> createSlots = [];
   final List<String> createdContents = [];
+  final List<String> createRequestIds = [];
   final List<int> updateVersions = [];
   final List<String> updatedContents = [];
   final List<String> removedIds = [];
+  final List<int> removeVersions = [];
   var _didConflict = false;
+  var _didFailCreate = false;
 
   @override
-  Future<ContentDraft> create(String content, {int? slot}) async {
+  Future<ContentDraft> create(
+    String content, {
+    int? slot,
+    required String clientRequestId,
+  }) async {
     createSlots.add(slot);
     createdContents.add(content);
+    createRequestIds.add(clientRequestId);
+    if (createFailureOnce && !_didFailCreate) {
+      _didFailCreate = true;
+      throw const ApiFailure(userMessage: '保存结果暂时无法确认');
+    }
     final selected =
         slot ??
         [1, 2, 3, 4, 5].firstWhere(
@@ -227,8 +369,9 @@ class _FakeRepository implements ContentDraftRepository {
   }
 
   @override
-  Future<void> remove(String id) async {
+  Future<void> remove(String id, {required int version}) async {
     removedIds.add(id);
+    removeVersions.add(version);
     _drafts.removeWhere((draft) => draft.id == id);
   }
 
@@ -267,6 +410,8 @@ class _FakeRepository implements ContentDraftRepository {
       ..removeWhere((item) => item.id == draft.id)
       ..add(draft);
   }
+
+  void replaceExternally(ContentDraft draft) => _replace(draft);
 }
 
 ContentDraft _draft({

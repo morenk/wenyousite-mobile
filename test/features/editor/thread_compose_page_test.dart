@@ -424,9 +424,11 @@ void main() {
   testWidgets('工具栏正文草稿与顶栏云端主题草稿保持独立入口', (tester) async {
     final controller = await _readyController(_MemorySnapshotStore());
     controller.updateBody('当前主题正文');
+    final contentDraftRepository = _FakeContentDraftRepository();
     final contentDraftsController = ContentDraftsController(
-      _FakeContentDraftRepository(),
+      contentDraftRepository,
       autoStart: false,
+      autoSaveDebounce: Duration.zero,
     );
     await contentDraftsController.load();
     await _pumpPage(
@@ -447,8 +449,28 @@ void main() {
     expect(find.byKey(const Key('content-drafts-list')), findsOneWidget);
     expect(find.text('只保存当前正文 · 已用 1/5'), findsOneWidget);
 
-    await tester.tapAt(const Offset(12, 12));
+    await tester.tap(find.byKey(const Key('content-drafts-auto-save-switch')));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('开启'));
+    await tester.pumpAndSettle();
+    expect(contentDraftRepository.updatedContents, ['当前主题正文']);
+
+    await tester.tap(find.byTooltip('关闭正文草稿'));
+    await tester.pumpAndSettle();
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('compose-body')),
+    );
+    const automaticContent = '关闭面板后继续自动保存';
+    editor.controller.replaceText(
+      0,
+      editor.controller.document.length - 1,
+      automaticContent,
+      const TextSelection.collapsed(offset: automaticContent.length),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(contentDraftRepository.updatedContents.last, automaticContent);
+
     await tester.tap(find.byKey(const Key('compose-remote-drafts')));
     await tester.pumpAndSettle();
 
@@ -514,7 +536,7 @@ Future<void> _pumpPage(
         threadComposeControllerProvider.overrideWith((ref) => controller),
         if (contentDraftsController != null)
           contentDraftsControllerProvider.overrideWith(
-            (ref) => contentDraftsController,
+            (ref, sessionKey) => contentDraftsController,
           ),
         if (picker != null)
           editorImagePickerPortProvider.overrideWithValue(picker),
@@ -632,7 +654,7 @@ class _FakeRepository implements ThreadComposeRepository {
 }
 
 class _FakeContentDraftRepository implements ContentDraftRepository {
-  final _draft = ContentDraft(
+  ContentDraft _draft = ContentDraft(
     id: 'content-draft-one',
     userId: 'user-one',
     slot: 1,
@@ -641,9 +663,14 @@ class _FakeContentDraftRepository implements ContentDraftRepository {
     createdAt: DateTime.utc(2026, 8, 9),
     updatedAt: DateTime.utc(2026, 8, 10),
   );
+  final List<String> updatedContents = [];
 
   @override
-  Future<ContentDraft> create(String content, {int? slot}) async => _draft;
+  Future<ContentDraft> create(
+    String content, {
+    int? slot,
+    required String clientRequestId,
+  }) async => _draft;
 
   @override
   Future<ContentDraftCollection> fetchCollection() async {
@@ -661,14 +688,26 @@ class _FakeContentDraftRepository implements ContentDraftRepository {
   Future<ContentDraft> fetchById(String id) async => _draft;
 
   @override
-  Future<void> remove(String id) async {}
+  Future<void> remove(String id, {required int version}) async {}
 
   @override
   Future<ContentDraft> update({
     required String id,
     required String content,
     required int version,
-  }) async => _draft;
+  }) async {
+    updatedContents.add(content);
+    _draft = ContentDraft(
+      id: _draft.id,
+      userId: _draft.userId,
+      slot: _draft.slot,
+      content: content,
+      version: version + 1,
+      createdAt: _draft.createdAt,
+      updatedAt: _draft.updatedAt.add(const Duration(minutes: 1)),
+    );
+    return _draft;
+  }
 }
 
 class _MemorySnapshotStore implements EditorSnapshotStore {

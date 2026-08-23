@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -250,6 +251,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   bool _closing = false;
   bool _preparingClose = false;
   final Object _uploadTaskId = Object();
+  final Object _contentDraftSessionKey = Object();
 
   bool get _uploading =>
       ref.read(mediaUploadTaskControllerProvider(_uploadTaskId)).isBusy;
@@ -268,6 +270,11 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         ref
             .read(postComposerControllerProvider(widget.target).notifier)
             .updateContent(markdown);
+        ref
+            .read(
+              contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+            )
+            .updateAutoSaveContent(markdown);
         widget.onDraftChanged?.call(markdown);
       },
     )..addListener(_onEditorSessionChanged);
@@ -290,6 +297,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     });
     final provider = postComposerControllerProvider(widget.target);
     final state = ref.watch(provider);
+    final contentDraftsState = ref.watch(
+      contentDraftsControllerProvider(_contentDraftSessionKey),
+    );
     final uploadState = ref.watch(
       mediaUploadTaskControllerProvider(_uploadTaskId),
     );
@@ -522,6 +532,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                       ? _insertSticker
                       : null,
                   onSaveDraft: _openContentDrafts,
+                  draftStatusLabel: contentDraftsState.autoSaveToolbarLabel,
                   onSubmit: _submit,
                   isSubmitting: state.isSubmitting,
                   submitLabel: _submitLabel(widget.target.kind),
@@ -643,6 +654,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     final state = ref.read(postComposerControllerProvider(widget.target));
     await showContentDraftsSheet(
       context: context,
+      draftSessionKey: _contentDraftSessionKey,
       currentContent: state.content,
       onRestore: (content) {
         if (!mounted ||
@@ -653,6 +665,11 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         ref
             .read(postComposerControllerProvider(widget.target).notifier)
             .restoreContent(content);
+        ref
+            .read(
+              contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+            )
+            .updateAutoSaveContent(content);
       },
     );
   }

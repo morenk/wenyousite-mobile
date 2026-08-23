@@ -99,6 +99,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     this.submitLabel = '发送',
     this.characterCount,
     this.characterLimit,
+    this.draftStatusLabel,
     this.toolbarController,
     this.surface = WenyouComposerSurface.page,
     this.capabilities = WenyouEditorCapabilities.richMarkdown,
@@ -117,6 +118,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final String submitLabel;
   final int? characterCount;
   final int? characterLimit;
+  final String? draftStatusLabel;
   final WenyouEditorToolbarController? toolbarController;
   final WenyouComposerSurface surface;
   final WenyouEditorCapabilities capabilities;
@@ -610,7 +612,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     return WenyouEditorToolbarButton(
       key: const Key('editor-content-drafts'),
       icon: WenyouIconIds.editorContentDrafts,
-      label: '正文草稿',
+      label: _draftActionLabel,
       enabled: widget.enabled,
       onPressed: () => _runExternal(widget.onSaveDraft),
     );
@@ -632,12 +634,16 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                   }
                 : null,
             icon: const WenyouIcon(WenyouIconIds.editorContentDrafts),
-            label: const Text('正文草稿'),
+            label: Text(_draftActionLabel),
           ),
         ),
       ),
     );
   }
+
+  String get _draftActionLabel => widget.draftStatusLabel == null
+      ? '正文草稿'
+      : '正文草稿 · ${widget.draftStatusLabel}';
 
   bool _draftFitsInToolbarRow(double availableWidth) {
     if (!widget.capabilities.drafts) return true;

@@ -45,6 +45,28 @@ void main() {
     expect(find.text('正文已保存到槽位 2。'), findsOneWidget);
   });
 
+  testWidgets('槽位 1 已有内容时确认后开启并显示自动保存状态', (tester) async {
+    final repository = _FakeRepository([_draft(slot: 1)]);
+    final controller = ContentDraftsController(
+      repository,
+      autoStart: false,
+      autoSaveDebounce: Duration.zero,
+      requestIdFactory: () => _requestId,
+    );
+    await controller.load();
+    await _pumpSheet(tester, controller, currentContent: '自动保存正文');
+
+    await tester.tap(find.byKey(const Key('content-drafts-auto-save-switch')));
+    await tester.pumpAndSettle();
+    expect(find.text('开启自动保存？'), findsOneWidget);
+    await tester.tap(find.text('开启'));
+    await tester.pumpAndSettle();
+
+    expect(repository.updateVersions, [3]);
+    expect(controller.state.autoSaveEnabled, isTrue);
+    expect(find.text('当前正文已自动保存'), findsOneWidget);
+  });
+
   testWidgets('恢复最新版前明确确认，且回调只返回正文', (tester) async {
     final controller = await _readyController([_draft(slot: 1)]);
     String? restored;
@@ -143,12 +165,15 @@ Future<void> _pumpSheet(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        contentDraftsControllerProvider.overrideWith((ref) => controller),
+        contentDraftsControllerProvider.overrideWith(
+          (ref, sessionKey) => controller,
+        ),
       ],
       child: MaterialApp(
         theme: AppTheme.light,
         home: Scaffold(
           body: ContentDraftsSheet(
+            draftSessionKey: _testDraftSessionKey,
             currentContent: currentContent,
             onRestore: onRestore ?? (_) {},
           ),
@@ -156,7 +181,7 @@ Future<void> _pumpSheet(
       ),
     ),
   );
-  await tester.pump();
+  await tester.pumpAndSettle();
 }
 
 class _FakeRepository implements ContentDraftRepository {
@@ -167,11 +192,16 @@ class _FakeRepository implements ContentDraftRepository {
   final bool conflictOnce;
   final List<int?> createdSlots = [];
   final List<String> removedIds = [];
+  final List<int> removeVersions = [];
   final List<int> updateVersions = [];
   var _didConflict = false;
 
   @override
-  Future<ContentDraft> create(String content, {int? slot}) async {
+  Future<ContentDraft> create(
+    String content, {
+    int? slot,
+    required String clientRequestId,
+  }) async {
     createdSlots.add(slot);
     final selected = slot ?? 2;
     final saved = _draft(slot: selected, content: content, version: 1);
@@ -210,8 +240,9 @@ class _FakeRepository implements ContentDraftRepository {
   }
 
   @override
-  Future<void> remove(String id) async {
+  Future<void> remove(String id, {required int version}) async {
     removedIds.add(id);
+    removeVersions.add(version);
     _drafts.removeWhere((draft) => draft.id == id);
   }
 
@@ -246,6 +277,9 @@ class _FakeRepository implements ContentDraftRepository {
     return saved;
   }
 }
+
+final Object _testDraftSessionKey = Object();
+const _requestId = '11111111-1111-4111-8111-111111111111';
 
 ContentDraft _draft({
   required int slot,

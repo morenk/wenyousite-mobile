@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -38,6 +39,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final Object _uploadTaskId = Object();
+  final Object _contentDraftSessionKey = Object();
 
   bool _applyingInputs = false;
   bool _allowPop = false;
@@ -53,9 +55,14 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     WidgetsBinding.instance.addObserver(this);
     _editorSession = RichEditorSession(
       initialMarkdown: '',
-      onMarkdownChanged: (markdown) => ref
-          .read(threadComposeControllerProvider.notifier)
-          .updateBody(markdown),
+      onMarkdownChanged: (markdown) {
+        ref.read(threadComposeControllerProvider.notifier).updateBody(markdown);
+        ref
+            .read(
+              contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+            )
+            .updateAutoSaveContent(markdown);
+      },
     )..addListener(_onEditorSessionChanged);
     _titleController.addListener(_onTitleChanged);
     _tagsController.addListener(_onTagsChanged);
@@ -325,6 +332,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     ? _insertSticker
                     : null,
                 onSaveDraft: _openContentDrafts,
+                draftStatusLabel: ref
+                    .watch(
+                      contentDraftsControllerProvider(_contentDraftSessionKey),
+                    )
+                    .autoSaveToolbarLabel,
                 characterCount: _editorSession.characterCount,
                 characterLimit: 10000,
                 toolbarController: _toolbarController,
@@ -433,6 +445,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
       _titleController.text = state.title;
       _tagsController.text = state.tags.join(' ');
       _editorSession.applyExternalMarkdown(state.body);
+      ref
+          .read(
+            contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+          )
+          .updateAutoSaveContent(state.body);
     } finally {
       _applyingInputs = false;
     }
@@ -561,10 +578,18 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     final currentBody = ref.read(threadComposeControllerProvider).body;
     await showContentDraftsSheet(
       context: context,
+      draftSessionKey: _contentDraftSessionKey,
       currentContent: currentBody,
-      onRestore: (content) => ref
-          .read(threadComposeControllerProvider.notifier)
-          .restoreContentDraft(content),
+      onRestore: (content) {
+        ref
+            .read(threadComposeControllerProvider.notifier)
+            .restoreContentDraft(content);
+        ref
+            .read(
+              contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+            )
+            .updateAutoSaveContent(content);
+      },
     );
   }
 

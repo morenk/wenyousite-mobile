@@ -3,6 +3,8 @@ import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.da
 
 enum ContentDraftsPhase { loading, ready, failed }
 
+enum ContentDraftAutoSaveStatus { idle, waiting, saving, saved, error }
+
 const _unset = Object();
 
 class ContentDraftsState {
@@ -16,6 +18,9 @@ class ContentDraftsState {
     this.actionFailure,
     this.successMessage,
     this.conflict,
+    this.autoSaveEnabled = false,
+    this.autoSaveStatus = ContentDraftAutoSaveStatus.idle,
+    this.autoSaveFailure,
   });
 
   final ContentDraftsPhase phase;
@@ -27,8 +32,22 @@ class ContentDraftsState {
   final ApiFailure? actionFailure;
   final String? successMessage;
   final ContentDraftConflict? conflict;
+  final bool autoSaveEnabled;
+  final ContentDraftAutoSaveStatus autoSaveStatus;
+  final ApiFailure? autoSaveFailure;
 
-  bool get isBusy => pendingSlot != null || pendingDraftId != null;
+  bool get isBusy =>
+      pendingSlot != null ||
+      pendingDraftId != null ||
+      autoSaveStatus == ContentDraftAutoSaveStatus.saving;
+
+  String? get autoSaveToolbarLabel => switch (autoSaveStatus) {
+    ContentDraftAutoSaveStatus.idle => null,
+    ContentDraftAutoSaveStatus.waiting => '自动保存已开启',
+    ContentDraftAutoSaveStatus.saving => '自动保存中',
+    ContentDraftAutoSaveStatus.saved => '自动保存完成',
+    ContentDraftAutoSaveStatus.error => '自动保存失败',
+  };
 
   ContentDraft? draftAt(int slot) {
     for (final draft in drafts) {
@@ -47,6 +66,9 @@ class ContentDraftsState {
     Object? actionFailure = _unset,
     Object? successMessage = _unset,
     Object? conflict = _unset,
+    bool? autoSaveEnabled,
+    ContentDraftAutoSaveStatus? autoSaveStatus,
+    Object? autoSaveFailure = _unset,
   }) {
     return ContentDraftsState(
       phase: phase ?? this.phase,
@@ -70,6 +92,11 @@ class ContentDraftsState {
       conflict: identical(conflict, _unset)
           ? this.conflict
           : conflict as ContentDraftConflict?,
+      autoSaveEnabled: autoSaveEnabled ?? this.autoSaveEnabled,
+      autoSaveStatus: autoSaveStatus ?? this.autoSaveStatus,
+      autoSaveFailure: identical(autoSaveFailure, _unset)
+          ? this.autoSaveFailure
+          : autoSaveFailure as ApiFailure?,
     );
   }
 }

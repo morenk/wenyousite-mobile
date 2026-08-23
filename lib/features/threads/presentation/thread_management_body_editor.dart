@@ -3,6 +3,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -77,6 +78,7 @@ class _ThreadManagementBodyEditorState
   late final RichEditorSession _session;
   final _toolbar = WenyouEditorToolbarController();
   final Object _uploadTaskId = Object();
+  final Object _contentDraftSessionKey = Object();
   var _externalRevision = 0;
   late String _markdown;
 
@@ -90,6 +92,11 @@ class _ThreadManagementBodyEditorState
       onMarkdownChanged: (markdown) {
         _markdown = markdown;
         widget.onChanged(markdown);
+        ref
+            .read(
+              contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+            )
+            .updateAutoSaveContent(markdown);
       },
     )..addListener(_onSessionChanged);
     widget.controller._attach(_session, _toolbar);
@@ -104,6 +111,11 @@ class _ThreadManagementBodyEditorState
     }
     if (oldWidget.initialMarkdown != widget.initialMarkdown) {
       _markdown = widget.initialMarkdown;
+      ref
+          .read(
+            contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+          )
+          .updateAutoSaveContent(widget.initialMarkdown);
       _session.scheduleExternalMarkdown(
         markdown: widget.initialMarkdown,
         revision: ++_externalRevision,
@@ -124,6 +136,9 @@ class _ThreadManagementBodyEditorState
 
   @override
   Widget build(BuildContext context) {
+    final contentDraftsState = ref.watch(
+      contentDraftsControllerProvider(_contentDraftSessionKey),
+    );
     final tokens = context.wenyouTokens;
     final uploadState = ref.watch(
       mediaUploadTaskControllerProvider(_uploadTaskId),
@@ -229,6 +244,7 @@ class _ThreadManagementBodyEditorState
               ? _insertSticker
               : null,
           onSaveDraft: _openDrafts,
+          draftStatusLabel: contentDraftsState.autoSaveToolbarLabel,
           onSubmit: widget.showSubmit ? widget.onSubmit : null,
           submitLabel: widget.submitLabel,
           characterCount: _session.characterCount,
@@ -247,10 +263,16 @@ class _ThreadManagementBodyEditorState
     if (!_session.flush()) return;
     await showContentDraftsSheet(
       context: context,
+      draftSessionKey: _contentDraftSessionKey,
       currentContent: _markdown,
       onRestore: (content) {
         _markdown = content;
         widget.onChanged(content);
+        ref
+            .read(
+              contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
+            )
+            .updateAutoSaveContent(content);
         _session.scheduleExternalMarkdown(
           markdown: content,
           revision: ++_externalRevision,

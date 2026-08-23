@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.da
 
 Future<void> showContentDraftsSheet({
   required BuildContext context,
+  required Object draftSessionKey,
   required String currentContent,
   required ValueChanged<String> onRestore,
 }) {
@@ -22,6 +23,7 @@ Future<void> showContentDraftsSheet({
     builder: (context) => FractionallySizedBox(
       heightFactor: 0.9,
       child: ContentDraftsSheet(
+        draftSessionKey: draftSessionKey,
         currentContent: currentContent,
         onRestore: onRestore,
       ),
@@ -29,20 +31,40 @@ Future<void> showContentDraftsSheet({
   );
 }
 
-class ContentDraftsSheet extends ConsumerWidget {
+class ContentDraftsSheet extends ConsumerStatefulWidget {
   const ContentDraftsSheet({
+    required this.draftSessionKey,
     required this.currentContent,
     required this.onRestore,
     super.key,
   });
 
+  final Object draftSessionKey;
   final String currentContent;
   final ValueChanged<String> onRestore;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(contentDraftsControllerProvider);
-    final controller = ref.read(contentDraftsControllerProvider.notifier);
+  ConsumerState<ContentDraftsSheet> createState() => _ContentDraftsSheetState();
+}
+
+class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(
+      () => ref
+          .read(
+            contentDraftsControllerProvider(widget.draftSessionKey).notifier,
+          )
+          .load(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = contentDraftsControllerProvider(widget.draftSessionKey);
+    final state = ref.watch(provider);
+    final controller = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,9 +118,10 @@ class ContentDraftsSheet extends ConsumerWidget {
               onRetry: controller.load,
             ),
             ContentDraftsPhase.ready => _ReadyDrafts(
+              draftSessionKey: widget.draftSessionKey,
               state: state,
-              currentContent: currentContent,
-              onRestore: onRestore,
+              currentContent: widget.currentContent,
+              onRestore: widget.onRestore,
             ),
           },
         ),
@@ -109,11 +132,13 @@ class ContentDraftsSheet extends ConsumerWidget {
 
 class _ReadyDrafts extends ConsumerWidget {
   const _ReadyDrafts({
+    required this.draftSessionKey,
     required this.state,
     required this.currentContent,
     required this.onRestore,
   });
 
+  final Object draftSessionKey;
   final ContentDraftsState state;
   final String currentContent;
   final ValueChanged<String> onRestore;
@@ -121,7 +146,9 @@ class _ReadyDrafts extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
-    final controller = ref.read(contentDraftsControllerProvider.notifier);
+    final controller = ref.read(
+      contentDraftsControllerProvider(draftSessionKey).notifier,
+    );
     final canSave =
         MarkdownContent.hasVisibleContent(currentContent) &&
         currentContent.length <= 10000;
@@ -134,6 +161,59 @@ class _ReadyDrafts extends ConsumerWidget {
         tokens.space24,
       ),
       children: [
+        WenyouPanel(
+          key: const Key('content-drafts-auto-save'),
+          padding: EdgeInsets.all(tokens.space12),
+          color: tokens.softPanel,
+          child: Row(
+            children: [
+              const WenyouIcon(WenyouIconIds.actionSync),
+              SizedBox(width: tokens.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '槽位 1 自动保存',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    SizedBox(height: tokens.space4),
+                    Text(
+                      _autoSaveDescription(state),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                key: const Key('content-drafts-auto-save-switch'),
+                value: state.autoSaveEnabled,
+                onChanged:
+                    state.isBusy || state.phase != ContentDraftsPhase.ready
+                    ? null
+                    : (enabled) => _toggleAutoSave(
+                        context,
+                        controller,
+                        enabled: enabled,
+                      ),
+              ),
+            ],
+          ),
+        ),
+        if (state.autoSaveFailure != null) ...[
+          SizedBox(height: tokens.space12),
+          WenyouStatusBanner(
+            key: const Key('content-drafts-auto-save-failure'),
+            message: state.autoSaveFailure!.userMessage,
+            detail: state.autoSaveFailure!.requestId == null
+                ? null
+                : '问题编号：${state.autoSaveFailure!.requestId}',
+            tone: WenyouStatusTone.error,
+          ),
+        ],
+        SizedBox(height: tokens.space12),
         if (state.actionFailure != null) ...[
           WenyouStatusBanner(
             key: const Key('content-drafts-action-failure'),
@@ -196,6 +276,7 @@ class _ReadyDrafts extends ConsumerWidget {
         SizedBox(height: tokens.space12),
         for (var slot = 1; slot <= state.usage.maxSlots; slot++) ...[
           _DraftSlotCard(
+            draftSessionKey: draftSessionKey,
             slot: slot,
             draft: state.draftAt(slot),
             currentContent: currentContent,
@@ -207,6 +288,41 @@ class _ReadyDrafts extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _toggleAutoSave(
+    BuildContext context,
+    ContentDraftsController controller, {
+    required bool enabled,
+  }) async {
+    if (!enabled) {
+      controller.disableAutoSave();
+      return;
+    }
+    if (!await controller.refreshForAutoSave() || !context.mounted) return;
+    final slotOne = controller.draftAt(1);
+    if (slotOne != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        useRootNavigator: false,
+        builder: (context) => AlertDialog(
+          title: const Text('开启自动保存？'),
+          content: const Text('开启后，当前编辑器正文会持续覆盖槽位 1。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('开启'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+    }
+    controller.enableAutoSave(currentContent);
   }
 
   Future<void> _confirmConflictRetry(
@@ -239,6 +355,7 @@ class _ReadyDrafts extends ConsumerWidget {
 
 class _DraftSlotCard extends ConsumerWidget {
   const _DraftSlotCard({
+    required this.draftSessionKey,
     required this.slot,
     required this.draft,
     required this.currentContent,
@@ -247,6 +364,7 @@ class _DraftSlotCard extends ConsumerWidget {
     required this.onRestore,
   });
 
+  final Object draftSessionKey;
   final int slot;
   final ContentDraft? draft;
   final String currentContent;
@@ -280,7 +398,11 @@ class _DraftSlotCard extends ConsumerWidget {
                   onPressed: !canSave || state.isBusy
                       ? null
                       : () => ref
-                            .read(contentDraftsControllerProvider.notifier)
+                            .read(
+                              contentDraftsControllerProvider(
+                                draftSessionKey,
+                              ).notifier,
+                            )
                             .createAtSlot(currentContent, slot),
                   child: pending
                       ? const SizedBox.square(
@@ -373,7 +495,7 @@ class _DraftSlotCard extends ConsumerWidget {
     ContentDraft item,
   ) async {
     final fresh = await ref
-        .read(contentDraftsControllerProvider.notifier)
+        .read(contentDraftsControllerProvider(draftSessionKey).notifier)
         .fetchFreshForRestore(item.id);
     if (fresh == null || !context.mounted) return;
     final needsConfirmation =
@@ -429,7 +551,7 @@ class _DraftSlotCard extends ConsumerWidget {
     );
     if (confirmed == true) {
       await ref
-          .read(contentDraftsControllerProvider.notifier)
+          .read(contentDraftsControllerProvider(draftSessionKey).notifier)
           .overwrite(item, currentContent);
     }
   }
@@ -444,7 +566,11 @@ class _DraftSlotCard extends ConsumerWidget {
       useRootNavigator: false,
       builder: (context) => AlertDialog(
         title: Text('删除槽位 ${item.slot}？'),
-        content: const Text('这条正文草稿删除后无法恢复。当前编辑器内容不会受影响。'),
+        content: Text(
+          item.slot == 1 && state.autoSaveEnabled
+              ? '删除后无法恢复，并会同时关闭当前编辑器的自动保存。当前编辑器内容不会受影响。'
+              : '这条正文草稿删除后无法恢复。当前编辑器内容不会受影响。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -458,7 +584,9 @@ class _DraftSlotCard extends ConsumerWidget {
       ),
     );
     if (confirmed == true) {
-      await ref.read(contentDraftsControllerProvider.notifier).remove(item);
+      await ref
+          .read(contentDraftsControllerProvider(draftSessionKey).notifier)
+          .remove(item);
     }
   }
 }
@@ -517,6 +645,16 @@ class _LoadFailure extends StatelessWidget {
 String? _requestDetail(ContentDraftsState state) {
   final requestId = state.actionFailure?.requestId;
   return requestId == null ? null : '问题编号：$requestId';
+}
+
+String _autoSaveDescription(ContentDraftsState state) {
+  return switch (state.autoSaveStatus) {
+    ContentDraftAutoSaveStatus.idle => '开启后，当前编辑器正文会自动更新到槽位 1',
+    ContentDraftAutoSaveStatus.waiting => '已开启，编辑后自动更新到槽位 1',
+    ContentDraftAutoSaveStatus.saving => '正在保存到云端…',
+    ContentDraftAutoSaveStatus.saved => '当前正文已自动保存',
+    ContentDraftAutoSaveStatus.error => '自动保存失败并已关闭，请重新开启',
+  };
 }
 
 extension on String {

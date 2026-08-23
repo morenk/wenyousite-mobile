@@ -6,7 +6,11 @@ abstract interface class ContentDraftRepository {
 
   Future<ContentDraft> fetchById(String id);
 
-  Future<ContentDraft> create(String content, {int? slot});
+  Future<ContentDraft> create(
+    String content, {
+    int? slot,
+    required String clientRequestId,
+  });
 
   Future<ContentDraft> update({
     required String id,
@@ -14,7 +18,7 @@ abstract interface class ContentDraftRepository {
     required int version,
   });
 
-  Future<void> remove(String id);
+  Future<void> remove(String id, {required int version});
 }
 
 final contentDraftRepositoryProvider = Provider<ContentDraftRepository>((ref) {
@@ -31,7 +35,11 @@ class _UnboundContentDraftRepository implements ContentDraftRepository {
   Future<ContentDraft> fetchById(String id) => Future.error(_error());
 
   @override
-  Future<ContentDraft> create(String content, {int? slot}) {
+  Future<ContentDraft> create(
+    String content, {
+    int? slot,
+    required String clientRequestId,
+  }) {
     return Future.error(_error());
   }
 
@@ -45,7 +53,8 @@ class _UnboundContentDraftRepository implements ContentDraftRepository {
   }
 
   @override
-  Future<void> remove(String id) => Future.error(_error());
+  Future<void> remove(String id, {required int version}) =>
+      Future.error(_error());
 }
 
 StateError _error() => StateError('正文草稿仓储尚未在应用组合根绑定。');
