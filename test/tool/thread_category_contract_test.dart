@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('主题分类 v2 契约不再暴露颜色字段', () {
+  test('主题分类 v3 契约保持纯文本并固定历史展示投影', () {
     final fixtures = Directory('contracts')
         .listSync()
         .whereType<File>()
@@ -18,13 +18,16 @@ void main() {
     expect(fixtures, hasLength(1));
     expect(
       fixtures.single.path.replaceAll('\\', '/'),
-      endsWith('thread-category-v2-fixtures.json'),
+      endsWith('thread-category-v3-fixtures.json'),
     );
     final fixture =
         jsonDecode(fixtures.single.readAsStringSync()) as Map<String, dynamic>;
-    expect(fixture['version'], 2);
+    expect(fixture['version'], 3);
     for (final definition in fixture['definitions'] as List<dynamic>) {
-      expect(definition as Map<String, dynamic>, isNot(contains('color')));
+      final value = definition as Map<String, dynamic>;
+      expect(value, isNot(contains('color')));
+      expect(value, isNot(contains('icon')));
+      expect(value, isNot(contains('mergedIntoId')));
     }
 
     final openApi =
@@ -33,6 +36,16 @@ void main() {
     final schemas =
         (openApi['components'] as Map<String, dynamic>)['schemas']
             as Map<String, dynamic>;
+    final categoryInfo =
+        schemas['ThreadCategoryInfoDto'] as Map<String, dynamic>;
+    expect(
+      (categoryInfo['properties'] as Map<String, dynamic>).keys,
+      unorderedEquals(['slug', 'name', 'isActive']),
+    );
+    expect(
+      categoryInfo['required'] as List<dynamic>,
+      unorderedEquals(['slug', 'name', 'isActive']),
+    );
     for (final name in const [
       'ThreadCategoryResponseDto',
       'CreateThreadCategoryDto',
