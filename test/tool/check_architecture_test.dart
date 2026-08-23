@@ -293,6 +293,56 @@ void main() {
     );
   });
 
+  test('page transitions must use the shared navigation policy', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      'final first = MaterialPageRoute<void>(builder: build);\n'
+      'final second = NoTransitionPage<void>(child: child);\n'
+      'final third = CustomTransitionPage<void>(child: child);\n'
+      'final fourth = PageRouteBuilder<void>(pageBuilder: build);\n'
+      'final fifth = CupertinoPageRoute<void>(builder: build);\n'
+      'final theme = PageTransitionsTheme(builders: builders);\n'
+      'class LocalBuilder extends PageTransitionsBuilder {}\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path uses MaterialPageRoute outside the shared navigation policy',
+        '$path uses NoTransitionPage outside the shared navigation policy',
+        '$path uses CustomTransitionPage outside the shared navigation policy',
+        '$path uses PageRouteBuilder outside the shared navigation policy',
+        '$path uses CupertinoPageRoute outside the shared navigation policy',
+        '$path configures PageTransitionsTheme outside the app theme',
+        '$path defines PageTransitionsBuilder outside the shared navigation policy',
+      ]),
+    );
+  });
+
+  test('shared policy and the composer nested route remain allowed', () {
+    _write(
+      root,
+      'lib/core/navigation/wenyou_page_transitions.dart',
+      'final first = MaterialPageRoute<void>(builder: build);\n'
+          'final second = NoTransitionPage<void>(child: child);\n'
+          'final third = PageRouteBuilder<void>(pageBuilder: build);\n',
+    );
+    _write(
+      root,
+      'lib/features/posts/presentation/post_composer_sheet.dart',
+      'final route = PageRouteBuilder<void>(pageBuilder: build);\n',
+    );
+    _write(
+      root,
+      'lib/app/app_theme.dart',
+      'final theme = PageTransitionsTheme(builders: builders);\n',
+    );
+
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
   test('golden tests must load Foundation fonts', () {
     const path = 'test/features/alpha/page_test.dart';
     const goldenMatcher = 'matchesGoldenFile';

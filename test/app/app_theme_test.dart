@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 
 void main() {
   test('移动主题完整映射 Foundation 核心 Token', () {
@@ -205,6 +206,9 @@ void main() {
       theme.popupMenuTheme.elevation,
       WenyouOverlayContract.elevation['popup'],
     );
+    final androidTransition =
+        theme.pageTransitionsTheme.builders[TargetPlatform.android];
+    expect(androidTransition, isA<WenyouPageTransitionsBuilder>());
   });
 }
 

@@ -22,6 +22,7 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 - presentation 不新增 data 依赖，application 不新增 data/presentation 依赖，domain 不新增外层依赖；data 只能导入 application 的 `*_ports.dart` 实现端口，不能反向读取 controller/state 或 presentation；
 - 非生成 Dart 文件不得超过 900 行；现有超限债务以精确行数为基线，只能收紧；
 - 页面不新增字面量路径导航；
+- 页面不独立构造路由转场；普通页、瞬时兜底和全屏媒体统一走 `core/navigation` 共享策略，仅帖子编辑器的嵌套 Navigator 初始路由是精确例外；
 - 生产代码不直接使用 `Icons.*`、`IconData` 或 `Icon(...)`，业务含义统一映射到 Foundation 语义图标；
 - README 与 pubspec 版本一致；
 - README 中的 Foundation 版本与 `pubspec.yaml` 固定 Tag 一致；

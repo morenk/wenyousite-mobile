@@ -33,7 +33,7 @@ void main() {
   stdout.writeln(
     'Architecture checks passed: request policies, domain boundaries, '
     'layering, feature dependencies, cycles, file size, version and '
-    'dependency hygiene.',
+    'dependency and route-transition hygiene.',
   );
 }
 
@@ -69,6 +69,7 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkEditorPublicSurface(dartFiles, failures, root);
   _checkFoundationIconBoundary(dartFiles, failures, root);
   _checkSharedTabBoundary(dartFiles, failures, root);
+  _checkRouteTransitionBoundary(dartFiles, failures, root);
   _checkVersionConsistency(failures, root);
   _checkDirectDependencies(dartFiles, failures, root);
   _checkRawRequestFlags(dartFiles, failures, root);
@@ -78,6 +79,53 @@ List<String> collectArchitectureFailures(Directory root) {
 
   failures.sort();
   return failures;
+}
+
+void _checkRouteTransitionBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const sharedPolicy = 'lib/core/navigation/wenyou_page_transitions.dart';
+  const appTheme = 'lib/app/app_theme.dart';
+  const nestedNavigatorException =
+      'lib/features/posts/presentation/post_composer_sheet.dart';
+  const centralizedConstructors = <String>[
+    'NoTransitionPage',
+    'CustomTransitionPage',
+    'MaterialPageRoute',
+    'CupertinoPageRoute',
+  ];
+
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (path == sharedPolicy) continue;
+    final source = file.readAsStringSync();
+    for (final constructor in centralizedConstructors) {
+      if (RegExp('\\b$constructor(?:<[^>]+>)?\\s*\\(').hasMatch(source)) {
+        failures.add(
+          '$path uses $constructor outside the shared navigation policy',
+        );
+      }
+    }
+    if (RegExp(r'\bextends\s+PageTransitionsBuilder\b').hasMatch(source)) {
+      failures.add(
+        '$path defines PageTransitionsBuilder outside the shared navigation policy',
+      );
+    }
+    if (path != appTheme &&
+        RegExp(r'\bPageTransitionsTheme\s*\(').hasMatch(source)) {
+      failures.add(
+        '$path configures PageTransitionsTheme outside the app theme',
+      );
+    }
+    if (path != nestedNavigatorException &&
+        RegExp(r'\bPageRouteBuilder(?:<[^>]+>)?\s*\(').hasMatch(source)) {
+      failures.add(
+        '$path uses PageRouteBuilder outside the shared navigation policy',
+      );
+    }
+  }
 }
 
 void _checkSharedTabBoundary(

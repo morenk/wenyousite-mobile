@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
@@ -32,12 +33,14 @@ class PostRepliesPage extends ConsumerStatefulWidget {
     required this.threadId,
     required this.rootPostId,
     this.focusedReplyId,
+    this.timeReference,
     super.key,
   });
 
   final String threadId;
   final String rootPostId;
   final String? focusedReplyId;
+  final DateTime? timeReference;
 
   @override
   ConsumerState<PostRepliesPage> createState() => _PostRepliesPageState();
@@ -174,6 +177,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                           onRetry: () => ref
                               .read(provider.notifier)
                               .retryTransientFailure(),
+                          timeReference: widget.timeReference,
                           onCompose: (target) =>
                               _compose(context, ref, provider, target),
                           onDelete: (post, root) => _delete(
@@ -302,23 +306,18 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     return false;
   }
 
-  void _goBack(BuildContext context) {
-    if (Navigator.of(context).canPop()) {
-      context.pop();
-      return;
-    }
-    _goToRoot(context);
-  }
+  void _goBack(BuildContext context) =>
+      Navigator.of(context).canPop() ? context.pop() : _goToRoot(context);
 
-  void _goToRoot(BuildContext context) {
-    context.go(AppRouteLocations.thread(threadId, postId: rootPostId));
-  }
+  void _goToRoot(BuildContext context) => context.go(
+    AppRouteLocations.thread(threadId, postId: rootPostId),
+    extra: WenyouRouteTransitionIntent.instantFallback,
+  );
 
   Widget _returnToRootAction(BuildContext context) {
     return IconButton(
       tooltip: '返回原楼层',
-      onPressed: () =>
-          context.go(AppRouteLocations.thread(threadId, postId: rootPostId)),
+      onPressed: () => _goToRoot(context),
       icon: const WenyouIcon(WenyouIconIds.contentLayers),
     );
   }
@@ -421,6 +420,7 @@ class _DiscussionList extends StatelessWidget {
     required this.onApply,
     required this.onLoadMore,
     required this.onRetry,
+    required this.timeReference,
     required this.onCompose,
     required this.onDelete,
   });
@@ -439,6 +439,7 @@ class _DiscussionList extends StatelessWidget {
   final void Function(PostReplyOrder order, String? authorId) onApply;
   final VoidCallback onLoadMore;
   final VoidCallback onRetry;
+  final DateTime? timeReference;
   final ValueChanged<PostComposerTarget> onCompose;
   final void Function(PostItem post, bool root) onDelete;
 
@@ -462,6 +463,7 @@ class _DiscussionList extends StatelessWidget {
           key: const Key('post-discussion-root'),
           post: root,
           root: true,
+          timeReference: timeReference,
           canEdit: root.isAuthoredBy(viewerId),
           canDelete: root.isAuthoredBy(viewerId) || canManageThread,
           pending: actions.pendingPostId == root.id,
@@ -547,6 +549,7 @@ class _DiscussionList extends StatelessWidget {
                         _PostCard(
                           key: Key('post-reply-${reply.id}'),
                           post: reply,
+                          timeReference: timeReference,
                           focused: reply.id == focusedReplyId,
                           targetFrameKey: reply.id == focusedReplyId
                               ? targetKey
@@ -636,6 +639,7 @@ class _PostCard extends ConsumerWidget {
     this.onDelete,
     this.reportReturnTo,
     this.targetFrameKey,
+    this.timeReference,
     super.key,
   });
 
@@ -650,6 +654,7 @@ class _PostCard extends ConsumerWidget {
   final VoidCallback? onDelete;
   final String? reportReturnTo;
   final Key? targetFrameKey;
+  final DateTime? timeReference;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -667,7 +672,11 @@ class _PostCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _PostAuthorLine(post: post, root: root),
+            _PostAuthorLine(
+              post: post,
+              root: root,
+              timeReference: timeReference,
+            ),
             SizedBox(height: root ? tokens.space12 : tokens.space8),
             if (post.isDeleted)
               Text(
@@ -783,10 +792,15 @@ class _PostCard extends ConsumerWidget {
 }
 
 class _PostAuthorLine extends StatelessWidget {
-  const _PostAuthorLine({required this.post, required this.root});
+  const _PostAuthorLine({
+    required this.post,
+    required this.root,
+    required this.timeReference,
+  });
 
   final PostItem post;
   final bool root;
+  final DateTime? timeReference;
 
   @override
   Widget build(BuildContext context) {
@@ -843,7 +857,10 @@ class _PostAuthorLine extends StatelessWidget {
                       '回复 @${post.replyToAuthor!.username}'
                     else if (!root)
                       '回复',
-                    formatWenyouRelativeTime(post.createdAt),
+                    formatWenyouRelativeTime(
+                      post.createdAt,
+                      now: timeReference,
+                    ),
                   ].join(' · '),
                   style: Theme.of(
                     context,

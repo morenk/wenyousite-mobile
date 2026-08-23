@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
@@ -522,12 +523,10 @@ Future<void> openMomentGallery(
   List<MomentMedia> images,
   int initialIndex,
 ) {
-  return Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (_) =>
-          _MomentGalleryViewer(images: images, initialIndex: initialIndex),
-    ),
+  return pushWenyouFullscreenPage<void>(
+    context: context,
+    builder: (_) =>
+        _MomentGalleryViewer(images: images, initialIndex: initialIndex),
   );
 }
 

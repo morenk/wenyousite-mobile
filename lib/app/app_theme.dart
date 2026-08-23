@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 
 abstract final class AppTheme {
   static const primary = WenyouFoundationPalette.primary;
@@ -93,6 +94,9 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       textTheme: textTheme,
       extensions: const [tokens],
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {TargetPlatform.android: WenyouPageTransitionsBuilder()},
+      ),
       scaffoldBackgroundColor: tokens.background,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,

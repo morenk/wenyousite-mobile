@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
@@ -618,14 +619,12 @@ class _MarkdownImage extends StatelessWidget {
       child: InkWell(
         key: ValueKey('markdown-image-$uri'),
         borderRadius: BorderRadius.circular(tokens.radius12),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            fullscreenDialog: true,
-            builder: (_) => ContentImageViewerPage(
-              url: uri.toString(),
-              alt: imageAlt,
-              onSaveImage: onSave == null ? null : () => onSave!(uri),
-            ),
+        onTap: () => pushWenyouFullscreenPage<void>(
+          context: context,
+          builder: (_) => ContentImageViewerPage(
+            url: uri.toString(),
+            alt: imageAlt,
+            onSaveImage: onSave == null ? null : () => onSave!(uri),
           ),
         ),
         child: imageContent,

@@ -1294,9 +1294,13 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const RepaintBoundary(
+          home: RepaintBoundary(
             key: visualKey,
-            child: PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+            child: PostRepliesPage(
+              threadId: 'thread',
+              rootPostId: 'root',
+              timeReference: _visualTimeReference,
+            ),
           ),
         ),
       ),
@@ -1722,6 +1726,7 @@ const _otherAuthor = PostAuthor(id: 'author-2', username: '他人', level: 2);
 const _rootAuthor = PostAuthor(id: 'root-author', username: '楼层作者', level: 4);
 
 final _rootCreatedAt = DateTime.utc(2026, 8, 20, 12);
+final _visualTimeReference = DateTime.utc(2026, 8, 22, 12);
 
 final _root = _rootWithContent('原楼层内容');
 

@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -203,11 +204,9 @@ class _ImageEmbedBuilder extends EmbedBuilder {
       label: label,
       child: InkWell(
         borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            fullscreenDialog: true,
-            builder: (_) => ContentImageViewerPage(url: url, alt: alt ?? ''),
-          ),
+        onTap: () => pushWenyouFullscreenPage<void>(
+          context: context,
+          builder: (_) => ContentImageViewerPage(url: url, alt: alt ?? ''),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),

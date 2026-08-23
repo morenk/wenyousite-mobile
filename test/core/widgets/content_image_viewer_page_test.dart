@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 
@@ -18,12 +19,11 @@ void main() {
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ContentImageViewerPage(
-                    url: 'https://cdn.example.com/story.png',
-                    alt: '雾港地图',
-                  ),
+              onPressed: () => pushWenyouFullscreenPage<void>(
+                context: context,
+                builder: (_) => const ContentImageViewerPage(
+                  url: 'https://cdn.example.com/story.png',
+                  alt: '雾港地图',
                 ),
               ),
               child: const Text('查看图片'),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
@@ -57,9 +58,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return AppScaffold(navigationShell: navigationShell);
-        },
+        pageBuilder: (context, state, navigationShell) =>
+            wenyouInstantPage<void>(
+              key: state.pageKey,
+              child: AppScaffold(navigationShell: navigationShell),
+            ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -146,10 +149,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.momentDetail,
         name: AppRouteNames.momentDetail,
-        pageBuilder: (context, state) => NoTransitionPage<void>(
-          key: state.pageKey,
-          child: MomentDetailPage(momentId: state.pathParameters['momentId']!),
-        ),
+        builder: (context, state) =>
+            MomentDetailPage(momentId: state.pathParameters['momentId']!),
       ),
       GoRoute(
         path: AppRoutePaths.userMoments,
@@ -216,14 +217,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.postReplies,
         name: AppRouteNames.postReplies,
-        pageBuilder: (context, state) {
-          return NoTransitionPage<void>(
-            key: state.pageKey,
-            child: PostRepliesPage(
-              threadId: state.pathParameters['threadId']!,
-              rootPostId: state.pathParameters['postId']!,
-              focusedReplyId: state.uri.queryParameters['post'],
-            ),
+        builder: (context, state) {
+          return PostRepliesPage(
+            threadId: state.pathParameters['threadId']!,
+            rootPostId: state.pathParameters['postId']!,
+            focusedReplyId: state.uri.queryParameters['post'],
           );
         },
       ),
@@ -290,14 +288,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.threadDetail,
         name: AppRouteNames.threadDetail,
         pageBuilder: (context, state) {
-          return NoTransitionPage<void>(
-            key: state.pageKey,
-            child: ThreadDetailPage(
-              threadId: state.pathParameters['threadId']!,
-              targetPostId: state.uri.queryParameters['post'],
-              subthreadIdHint: state.uri.queryParameters['subthread'],
-            ),
+          final extra = state.extra;
+          final child = ThreadDetailPage(
+            threadId: state.pathParameters['threadId']!,
+            targetPostId: state.uri.queryParameters['post'],
+            subthreadIdHint: state.uri.queryParameters['subthread'],
           );
+          if (extra == WenyouRouteTransitionIntent.instantFallback) {
+            return wenyouInstantPage<void>(key: state.pageKey, child: child);
+          }
+          return wenyouStandardPage<void>(key: state.pageKey, child: child);
         },
       ),
       GoRoute(
