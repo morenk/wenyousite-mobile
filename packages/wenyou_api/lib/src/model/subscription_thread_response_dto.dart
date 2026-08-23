@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,6 +15,7 @@ part 'subscription_thread_response_dto.g.dart';
 /// * [id]
 /// * [title]
 /// * [category] - 动态分类 slug
+/// * [categoryInfo]
 @BuiltValue()
 abstract class SubscriptionThreadResponseDto implements Built<SubscriptionThreadResponseDto, SubscriptionThreadResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -25,6 +27,9 @@ abstract class SubscriptionThreadResponseDto implements Built<SubscriptionThread
   /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
   String? get category;
+
+  @BuiltValueField(wireName: r'categoryInfo')
+  ThreadCategoryInfoDto? get categoryInfo;
 
   SubscriptionThreadResponseDto._();
 
@@ -63,6 +68,11 @@ class _$SubscriptionThreadResponseDtoSerializer implements PrimitiveSerializer<S
     yield object.category == null ? null : serializers.serialize(
       object.category,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'categoryInfo';
+    yield object.categoryInfo == null ? null : serializers.serialize(
+      object.categoryInfo,
+      specifiedType: const FullType.nullable(ThreadCategoryInfoDto),
     );
   }
 
@@ -108,6 +118,14 @@ class _$SubscriptionThreadResponseDtoSerializer implements PrimitiveSerializer<S
           ) as String?;
           if (valueDes == null) continue;
           result.category = valueDes;
+          break;
+        case r'categoryInfo':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ThreadCategoryInfoDto),
+          ) as ThreadCategoryInfoDto?;
+          if (valueDes == null) continue;
+          result.categoryInfo.replace(valueDes);
           break;
         default:
           unhandled.add(key);

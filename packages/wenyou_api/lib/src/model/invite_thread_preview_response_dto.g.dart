@@ -97,6 +97,8 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
   @override
   final String? category;
   @override
+  final ThreadCategoryInfoDto? categoryInfo;
+  @override
   final InviteThreadPreviewResponseDtoStatusEnum status;
   @override
   final InviteOwnerResponseDto owner;
@@ -113,6 +115,7 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
     required this.id,
     required this.title,
     this.category,
+    this.categoryInfo,
     required this.status,
     required this.owner,
     required this.memberCount,
@@ -134,6 +137,7 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
         id == other.id &&
         title == other.title &&
         category == other.category &&
+        categoryInfo == other.categoryInfo &&
         status == other.status &&
         owner == other.owner &&
         memberCount == other.memberCount &&
@@ -146,6 +150,7 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
+    _$hash = $jc(_$hash, categoryInfo.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, owner.hashCode);
     _$hash = $jc(_$hash, memberCount.hashCode);
@@ -160,6 +165,7 @@ class _$InviteThreadPreviewResponseDto extends InviteThreadPreviewResponseDto {
           ..add('id', id)
           ..add('title', title)
           ..add('category', category)
+          ..add('categoryInfo', categoryInfo)
           ..add('status', status)
           ..add('owner', owner)
           ..add('memberCount', memberCount)
@@ -187,6 +193,12 @@ class InviteThreadPreviewResponseDtoBuilder
   String? _category;
   String? get category => _$this._category;
   set category(String? category) => _$this._category = category;
+
+  ThreadCategoryInfoDtoBuilder? _categoryInfo;
+  ThreadCategoryInfoDtoBuilder get categoryInfo =>
+      _$this._categoryInfo ??= ThreadCategoryInfoDtoBuilder();
+  set categoryInfo(ThreadCategoryInfoDtoBuilder? categoryInfo) =>
+      _$this._categoryInfo = categoryInfo;
 
   InviteThreadPreviewResponseDtoStatusEnum? _status;
   InviteThreadPreviewResponseDtoStatusEnum? get status => _$this._status;
@@ -216,6 +228,7 @@ class InviteThreadPreviewResponseDtoBuilder
       _id = $v.id;
       _title = $v.title;
       _category = $v.category;
+      _categoryInfo = $v.categoryInfo?.toBuilder();
       _status = $v.status;
       _owner = $v.owner.toBuilder();
       _memberCount = $v.memberCount;
@@ -255,6 +268,7 @@ class InviteThreadPreviewResponseDtoBuilder
               'title',
             ),
             category: category,
+            categoryInfo: _categoryInfo?.build(),
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'InviteThreadPreviewResponseDto',
@@ -275,6 +289,9 @@ class InviteThreadPreviewResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'categoryInfo';
+        _categoryInfo?.build();
+
         _$failedField = 'owner';
         owner.build();
       } catch (e) {

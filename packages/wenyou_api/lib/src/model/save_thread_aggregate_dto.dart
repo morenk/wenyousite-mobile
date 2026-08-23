@@ -13,7 +13,7 @@ part 'save_thread_aggregate_dto.g.dart';
 ///
 /// Properties:
 /// * [title]
-/// * [category] - 管理员配置的分类 slug
+/// * [category] - 管理员配置的分类 slug；服务端会去除首尾空白并转为大写
 /// * [status]
 /// * [visibility]
 /// * [published] - 仅允许从草稿发布，不允许撤回
@@ -27,7 +27,7 @@ abstract class SaveThreadAggregateDto implements Built<SaveThreadAggregateDto, S
   @BuiltValueField(wireName: r'title')
   String? get title;
 
-  /// 管理员配置的分类 slug
+  /// 管理员配置的分类 slug；服务端会去除首尾空白并转为大写
   @BuiltValueField(wireName: r'category')
   String? get category;
 

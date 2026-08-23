@@ -171,6 +171,8 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
   @override
   final String? category;
   @override
+  final ThreadCategoryInfoDto? categoryInfo;
+  @override
   final ThreadListItemResponseDtoStatusEnum status;
   @override
   final ThreadListItemResponseDtoVisibilityEnum visibility;
@@ -207,6 +209,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
     required this.id,
     required this.title,
     this.category,
+    this.categoryInfo,
     required this.status,
     required this.visibility,
     required this.published,
@@ -238,6 +241,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
         id == other.id &&
         title == other.title &&
         category == other.category &&
+        categoryInfo == other.categoryInfo &&
         status == other.status &&
         visibility == other.visibility &&
         published == other.published &&
@@ -260,6 +264,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
+    _$hash = $jc(_$hash, categoryInfo.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, visibility.hashCode);
     _$hash = $jc(_$hash, published.hashCode);
@@ -284,6 +289,7 @@ class _$ThreadListItemResponseDto extends ThreadListItemResponseDto {
           ..add('id', id)
           ..add('title', title)
           ..add('category', category)
+          ..add('categoryInfo', categoryInfo)
           ..add('status', status)
           ..add('visibility', visibility)
           ..add('published', published)
@@ -318,6 +324,12 @@ class ThreadListItemResponseDtoBuilder
   String? _category;
   String? get category => _$this._category;
   set category(String? category) => _$this._category = category;
+
+  ThreadCategoryInfoDtoBuilder? _categoryInfo;
+  ThreadCategoryInfoDtoBuilder get categoryInfo =>
+      _$this._categoryInfo ??= ThreadCategoryInfoDtoBuilder();
+  set categoryInfo(ThreadCategoryInfoDtoBuilder? categoryInfo) =>
+      _$this._categoryInfo = categoryInfo;
 
   ThreadListItemResponseDtoStatusEnum? _status;
   ThreadListItemResponseDtoStatusEnum? get status => _$this._status;
@@ -397,6 +409,7 @@ class ThreadListItemResponseDtoBuilder
       _id = $v.id;
       _title = $v.title;
       _category = $v.category;
+      _categoryInfo = $v.categoryInfo?.toBuilder();
       _status = $v.status;
       _visibility = $v.visibility;
       _published = $v.published;
@@ -446,6 +459,7 @@ class ThreadListItemResponseDtoBuilder
               'title',
             ),
             category: category,
+            categoryInfo: _categoryInfo?.build(),
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'ThreadListItemResponseDto',
@@ -496,6 +510,9 @@ class ThreadListItemResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'categoryInfo';
+        _categoryInfo?.build();
+
         _$failedField = 'owner';
         owner.build();
         _$failedField = 'defaultSubthread';

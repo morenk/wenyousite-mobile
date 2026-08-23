@@ -15,7 +15,7 @@ class _$AdminDashboardDistributionsResponseDto
   @override
   final BuiltList<AdminDashboardDistributionItemDto> reportsByReason;
   @override
-  final BuiltList<AdminDashboardDistributionItemDto> threadsByCategory;
+  final BuiltList<AdminDashboardCategoryDistributionItemDto> threadsByCategory;
   @override
   final BuiltList<AdminDashboardDistributionItemDto> activeSanctionsByType;
 
@@ -108,12 +108,12 @@ class AdminDashboardDistributionsResponseDtoBuilder
     ListBuilder<AdminDashboardDistributionItemDto>? reportsByReason,
   ) => _$this._reportsByReason = reportsByReason;
 
-  ListBuilder<AdminDashboardDistributionItemDto>? _threadsByCategory;
-  ListBuilder<AdminDashboardDistributionItemDto> get threadsByCategory =>
-      _$this._threadsByCategory ??=
-          ListBuilder<AdminDashboardDistributionItemDto>();
+  ListBuilder<AdminDashboardCategoryDistributionItemDto>? _threadsByCategory;
+  ListBuilder<AdminDashboardCategoryDistributionItemDto>
+  get threadsByCategory => _$this._threadsByCategory ??=
+      ListBuilder<AdminDashboardCategoryDistributionItemDto>();
   set threadsByCategory(
-    ListBuilder<AdminDashboardDistributionItemDto>? threadsByCategory,
+    ListBuilder<AdminDashboardCategoryDistributionItemDto>? threadsByCategory,
   ) => _$this._threadsByCategory = threadsByCategory;
 
   ListBuilder<AdminDashboardDistributionItemDto>? _activeSanctionsByType;

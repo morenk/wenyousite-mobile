@@ -170,6 +170,8 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
   @override
   final String? category;
   @override
+  final ThreadCategoryInfoDto? categoryInfo;
+  @override
   final SearchThreadResponseDtoStatusEnum status;
   @override
   final SearchThreadResponseDtoVisibilityEnum visibility;
@@ -208,6 +210,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
     required this.id,
     required this.title,
     this.category,
+    this.categoryInfo,
     required this.status,
     required this.visibility,
     required this.published,
@@ -240,6 +243,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
         id == other.id &&
         title == other.title &&
         category == other.category &&
+        categoryInfo == other.categoryInfo &&
         status == other.status &&
         visibility == other.visibility &&
         published == other.published &&
@@ -263,6 +267,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
+    _$hash = $jc(_$hash, categoryInfo.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, visibility.hashCode);
     _$hash = $jc(_$hash, published.hashCode);
@@ -288,6 +293,7 @@ class _$SearchThreadResponseDto extends SearchThreadResponseDto {
           ..add('id', id)
           ..add('title', title)
           ..add('category', category)
+          ..add('categoryInfo', categoryInfo)
           ..add('status', status)
           ..add('visibility', visibility)
           ..add('published', published)
@@ -323,6 +329,12 @@ class SearchThreadResponseDtoBuilder
   String? _category;
   String? get category => _$this._category;
   set category(String? category) => _$this._category = category;
+
+  ThreadCategoryInfoDtoBuilder? _categoryInfo;
+  ThreadCategoryInfoDtoBuilder get categoryInfo =>
+      _$this._categoryInfo ??= ThreadCategoryInfoDtoBuilder();
+  set categoryInfo(ThreadCategoryInfoDtoBuilder? categoryInfo) =>
+      _$this._categoryInfo = categoryInfo;
 
   SearchThreadResponseDtoStatusEnum? _status;
   SearchThreadResponseDtoStatusEnum? get status => _$this._status;
@@ -406,6 +418,7 @@ class SearchThreadResponseDtoBuilder
       _id = $v.id;
       _title = $v.title;
       _category = $v.category;
+      _categoryInfo = $v.categoryInfo?.toBuilder();
       _status = $v.status;
       _visibility = $v.visibility;
       _published = $v.published;
@@ -456,6 +469,7 @@ class SearchThreadResponseDtoBuilder
               'title',
             ),
             category: category,
+            categoryInfo: _categoryInfo?.build(),
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'SearchThreadResponseDto',
@@ -507,6 +521,9 @@ class SearchThreadResponseDtoBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'categoryInfo';
+        _categoryInfo?.build();
+
         _$failedField = 'owner';
         owner.build();
         _$failedField = 'defaultSubthread';

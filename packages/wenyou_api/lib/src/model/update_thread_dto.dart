@@ -13,7 +13,7 @@ part 'update_thread_dto.g.dart';
 ///
 /// Properties:
 /// * [title]
-/// * [category] - 管理员配置的分类 slug
+/// * [category] - 管理员配置的分类 slug；服务端会去除首尾空白并转为大写
 /// * [status]
 /// * [visibility] - 可见性（PUBLIC=公开, PRIVATE=仅成员）
 /// * [published] - 设为 true 发布草稿。发布时校验 title/category 是否填写、是否至少有一个子贴含楼层。发布后通知粉丝
@@ -23,7 +23,7 @@ abstract class UpdateThreadDto implements Built<UpdateThreadDto, UpdateThreadDto
   @BuiltValueField(wireName: r'title')
   String? get title;
 
-  /// 管理员配置的分类 slug
+  /// 管理员配置的分类 slug；服务端会去除首尾空白并转为大写
   @BuiltValueField(wireName: r'category')
   String? get category;
 

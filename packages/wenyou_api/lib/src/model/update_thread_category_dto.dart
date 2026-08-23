@@ -13,7 +13,7 @@ part 'update_thread_category_dto.g.dart';
 /// Properties:
 /// * [name]
 /// * [description]
-/// * [icon]
+/// * [icon] - 兼容旧管理客户端；文本分类不再使用图标键
 /// * [sortOrder]
 /// * [isActive]
 /// * [reason] - 管理员审计原因
@@ -25,6 +25,8 @@ abstract class UpdateThreadCategoryDto implements Built<UpdateThreadCategoryDto,
   @BuiltValueField(wireName: r'description')
   String? get description;
 
+  /// 兼容旧管理客户端；文本分类不再使用图标键
+  @Deprecated('icon has been deprecated')
   @BuiltValueField(wireName: r'icon')
   String? get icon;
 

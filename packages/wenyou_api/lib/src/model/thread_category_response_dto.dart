@@ -15,7 +15,7 @@ part 'thread_category_response_dto.g.dart';
 /// * [slug]
 /// * [name]
 /// * [description]
-/// * [icon]
+/// * [icon] - 兼容预留字段；文本分类不使用图标键
 /// * [sortOrder]
 /// * [isActive]
 /// * [mergedIntoId] - 合并目标分类 ID；未合并时为 null
@@ -35,6 +35,8 @@ abstract class ThreadCategoryResponseDto implements Built<ThreadCategoryResponse
   @BuiltValueField(wireName: r'description')
   String? get description;
 
+  /// 兼容预留字段；文本分类不使用图标键
+  @Deprecated('icon has been deprecated')
   @BuiltValueField(wireName: r'icon')
   String? get icon;
 
@@ -45,6 +47,7 @@ abstract class ThreadCategoryResponseDto implements Built<ThreadCategoryResponse
   bool get isActive;
 
   /// 合并目标分类 ID；未合并时为 null
+  @Deprecated('mergedIntoId has been deprecated')
   @BuiltValueField(wireName: r'mergedIntoId')
   String? get mergedIntoId;
 

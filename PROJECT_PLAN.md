@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：`0.3.0+87`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
-- 后端契约：`5.7.0-dev.20260823.1`，revision `719c7e62aa744ad13a1257bb9cfb29147d55eabe`。
+- 后端契约：`5.8.0-dev.20260823.1`，revision `bec22b547da8154b74493d90d1e46e8d3e54d1ba`。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.3.0`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
@@ -19,6 +19,7 @@
 
 ## 持续债务
 
+- 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。
 - `searchSearchThreads` 已支持 cursor/limit 分页，但移动端仍走不传参数的兼容调用，单次最多读取 50 条；完成移动端分页前搜索模块保持 `in_progress`。
 - 动态评论通知仍只进入动态详情，尚未消费已经稳定的 `momentsCommentContext` 与 `momentCommentNavigation` 黄金旅程。
 - 动态详情已接入“默认收藏 + 5 秒内修改收藏夹”；本人动态收藏仍需按收藏夹筛选，公开用户页仍需接入公开动态收藏分页。

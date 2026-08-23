@@ -35,6 +35,7 @@ import 'package:wenyou_api/src/model/admin_challenge_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_challenge_verify_dto.dart';
 import 'package:wenyou_api/src/model/admin_content_moderation_response_dto.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_activity_metrics_dto.dart';
+import 'package:wenyou_api/src/model/admin_dashboard_category_distribution_item_dto.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_distribution_item_dto.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_distributions200_response.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_distributions_response_dto.dart';
@@ -382,6 +383,7 @@ import 'package:wenyou_api/src/model/tags_search200_response.dart';
 import 'package:wenyou_api/src/model/thread_body_post_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_capabilities_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_categories_list200_response.dart';
+import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:wenyou_api/src/model/thread_category_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_count_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_detail_response_dto.dart';
@@ -495,6 +497,7 @@ part 'serializers.g.dart';
   AdminChallengeVerifyDto,
   AdminContentModerationResponseDto,
   AdminDashboardActivityMetricsDto,
+  AdminDashboardCategoryDistributionItemDto,
   AdminDashboardDistributionItemDto,
   AdminDashboardDistributions200Response,
   AdminDashboardDistributionsResponseDto,
@@ -842,6 +845,7 @@ part 'serializers.g.dart';
   ThreadBodyPostResponseDto,
   ThreadCapabilitiesResponseDto,
   ThreadCategoriesList200Response,
+  ThreadCategoryInfoDto,
   ThreadCategoryResponseDto,
   ThreadCountResponseDto,
   ThreadDetailResponseDto,

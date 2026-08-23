@@ -11,16 +11,16 @@ part 'create_thread_category_dto.g.dart';
 /// CreateThreadCategoryDto
 ///
 /// Properties:
-/// * [slug] - 稳定机器标识，创建后不可修改
+/// * [slug] - 稳定机器标识；服务端会去除首尾空白并转为大写，创建后不可修改
 /// * [name]
 /// * [description]
-/// * [icon]
+/// * [icon] - 兼容旧管理客户端；文本分类不再使用图标键
 /// * [sortOrder]
 /// * [isActive]
 /// * [reason] - 管理员审计原因
 @BuiltValue()
 abstract class CreateThreadCategoryDto implements Built<CreateThreadCategoryDto, CreateThreadCategoryDtoBuilder> {
-  /// 稳定机器标识，创建后不可修改
+  /// 稳定机器标识；服务端会去除首尾空白并转为大写，创建后不可修改
   @BuiltValueField(wireName: r'slug')
   String get slug;
 
@@ -30,6 +30,8 @@ abstract class CreateThreadCategoryDto implements Built<CreateThreadCategoryDto,
   @BuiltValueField(wireName: r'description')
   String? get description;
 
+  /// 兼容旧管理客户端；文本分类不再使用图标键
+  @Deprecated('icon has been deprecated')
   @BuiltValueField(wireName: r'icon')
   String? get icon;
 

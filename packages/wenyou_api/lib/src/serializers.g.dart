@@ -36,6 +36,7 @@ Serializers _$serializers =
           ..add(AdminContentModerationResponseDto.serializer)
           ..add(AdminContentModerationResponseDtoTargetTypeEnum.serializer)
           ..add(AdminDashboardActivityMetricsDto.serializer)
+          ..add(AdminDashboardCategoryDistributionItemDto.serializer)
           ..add(AdminDashboardDistributionItemDto.serializer)
           ..add(AdminDashboardDistributions200Response.serializer)
           ..add(AdminDashboardDistributionsResponseDto.serializer)
@@ -469,6 +470,7 @@ Serializers _$serializers =
           ..add(ThreadBodyPostResponseDto.serializer)
           ..add(ThreadCapabilitiesResponseDto.serializer)
           ..add(ThreadCategoriesList200Response.serializer)
+          ..add(ThreadCategoryInfoDto.serializer)
           ..add(ThreadCategoryResponseDto.serializer)
           ..add(ThreadCountResponseDto.serializer)
           ..add(ThreadDetailResponseDto.serializer)
@@ -598,9 +600,9 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
-              const FullType(AdminDashboardDistributionItemDto),
+              const FullType(AdminDashboardCategoryDistributionItemDto),
             ]),
-            () => ListBuilder<AdminDashboardDistributionItemDto>(),
+            () => ListBuilder<AdminDashboardCategoryDistributionItemDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

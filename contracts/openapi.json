@@ -4255,8 +4255,11 @@
             "name": "category",
             "required": false,
             "in": "query",
-            "description": "按动态分类 slug 筛选",
+            "description": "按动态分类 slug 筛选；服务端会去除首尾空白并转为大写",
             "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[A-Z][A-Z0-9_]{0,49}$",
               "example": "MYSTERY",
               "type": "string"
             }
@@ -17562,7 +17565,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "5.7.0-dev.20260823.1",
+    "version": "5.8.0-dev.20260823.1",
     "contact": {}
   },
   "tags": [
@@ -18544,6 +18547,32 @@
           "mediaId"
         ]
       },
+      "ThreadCategoryInfoDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "MYSTERY",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]{0,49}$"
+          },
+          "name": {
+            "type": "string",
+            "example": "悬疑推理",
+            "description": "分类注册表中的当前名称"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "当前是否允许新主题选择该分类"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "isActive"
+        ]
+      },
       "ThreadListDefaultSubthreadResponseDto": {
         "type": "object",
         "properties": {
@@ -18659,6 +18688,16 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "description": "分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -18736,6 +18775,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",
@@ -18907,6 +18947,16 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "description": "分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -18984,6 +19034,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",
@@ -19797,6 +19848,16 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "description": "分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -19882,6 +19943,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",
@@ -20054,6 +20116,15 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -20112,6 +20183,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",
@@ -20138,6 +20210,16 @@
             "nullable": true,
             "example": "MYSTERY",
             "description": "动态分类 slug"
+          },
+          "categoryInfo": {
+            "nullable": true,
+            "description": "分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -20216,6 +20298,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",
@@ -20250,7 +20333,10 @@
           "category": {
             "type": "string",
             "example": "MYSTERY",
-            "description": "管理员配置的主题帖分类 slug；草稿可暂不选择"
+            "description": "管理员配置的主题帖分类 slug；服务端会去除首尾空白并转为大写，草稿可暂不选择",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]{0,49}$"
           },
           "content": {
             "type": "string",
@@ -20552,6 +20638,16 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "description": "分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -20667,6 +20763,7 @@
           "title",
           "ownerId",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",
@@ -20699,7 +20796,10 @@
           "category": {
             "type": "string",
             "example": "MYSTERY",
-            "description": "管理员配置的分类 slug"
+            "description": "管理员配置的分类 slug；服务端会去除首尾空白并转为大写",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]{0,49}$"
           },
           "status": {
             "type": "string",
@@ -20746,7 +20846,10 @@
           "category": {
             "type": "string",
             "example": "MYSTERY",
-            "description": "管理员配置的分类 slug"
+            "description": "管理员配置的分类 slug；服务端会去除首尾空白并转为大写",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]{0,49}$"
           },
           "status": {
             "type": "string",
@@ -20887,6 +20990,15 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -20918,6 +21030,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "owner",
           "memberCount",
@@ -21362,7 +21475,10 @@
           },
           "slug": {
             "type": "string",
-            "example": "MYSTERY"
+            "example": "MYSTERY",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]{0,49}$"
           },
           "name": {
             "type": "string",
@@ -21375,7 +21491,9 @@
           "icon": {
             "type": "string",
             "nullable": true,
-            "example": "search"
+            "example": "search",
+            "deprecated": true,
+            "description": "兼容预留字段；文本分类不使用图标键"
           },
           "sortOrder": {
             "type": "number"
@@ -21386,6 +21504,7 @@
           "mergedIntoId": {
             "type": "string",
             "nullable": true,
+            "deprecated": true,
             "description": "合并目标分类 ID；未合并时为 null"
           },
           "createdAt": {
@@ -23061,12 +23180,22 @@
             "nullable": true,
             "example": "MYSTERY",
             "description": "动态分类 slug"
+          },
+          "categoryInfo": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
           }
         },
         "required": [
           "id",
           "title",
-          "category"
+          "category",
+          "categoryInfo"
         ]
       },
       "SubscriptionResponseDto": {
@@ -25071,6 +25200,35 @@
           "count"
         ]
       },
+      "AdminDashboardCategoryDistributionItemDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "USER"
+          },
+          "count": {
+            "type": "number",
+            "example": 42
+          },
+          "name": {
+            "type": "string",
+            "example": "角色扮演",
+            "description": "当前分类名称"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true,
+            "description": "分类当前是否可供新建和筛选选择"
+          }
+        },
+        "required": [
+          "key",
+          "count",
+          "name",
+          "isActive"
+        ]
+      },
       "AdminDashboardDistributionsResponseDto": {
         "type": "object",
         "properties": {
@@ -25095,7 +25253,7 @@
           "threadsByCategory": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AdminDashboardDistributionItemDto"
+              "$ref": "#/components/schemas/AdminDashboardCategoryDistributionItemDto"
             }
           },
           "activeSanctionsByType": {
@@ -25119,7 +25277,10 @@
           "slug": {
             "type": "string",
             "example": "MYSTERY",
-            "description": "稳定机器标识，创建后不可修改"
+            "description": "稳定机器标识；服务端会去除首尾空白并转为大写，创建后不可修改",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Z][A-Z0-9_]{0,49}$"
           },
           "name": {
             "type": "string",
@@ -25134,7 +25295,9 @@
           "icon": {
             "type": "string",
             "example": "search",
-            "maxLength": 50
+            "maxLength": 50,
+            "deprecated": true,
+            "description": "兼容旧管理客户端；文本分类不再使用图标键"
           },
           "sortOrder": {
             "type": "number",
@@ -25172,7 +25335,9 @@
           "icon": {
             "type": "string",
             "maxLength": 50,
-            "nullable": true
+            "nullable": true,
+            "deprecated": true,
+            "description": "兼容旧管理客户端；文本分类不再使用图标键"
           },
           "sortOrder": {
             "type": "number",
@@ -25373,6 +25538,16 @@
             "example": "MYSTERY",
             "description": "动态分类 slug"
           },
+          "categoryInfo": {
+            "nullable": true,
+            "description": "分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadCategoryInfoDto"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -25454,6 +25629,7 @@
           "id",
           "title",
           "category",
+          "categoryInfo",
           "status",
           "visibility",
           "published",

@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/admin_dashboard_category_distribution_item_dto.dart';
 import 'package:wenyou_api/src/model/admin_dashboard_distribution_item_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -30,7 +31,7 @@ abstract class AdminDashboardDistributionsResponseDto implements Built<AdminDash
   BuiltList<AdminDashboardDistributionItemDto> get reportsByReason;
 
   @BuiltValueField(wireName: r'threadsByCategory')
-  BuiltList<AdminDashboardDistributionItemDto> get threadsByCategory;
+  BuiltList<AdminDashboardCategoryDistributionItemDto> get threadsByCategory;
 
   @BuiltValueField(wireName: r'activeSanctionsByType')
   BuiltList<AdminDashboardDistributionItemDto> get activeSanctionsByType;
@@ -76,7 +77,7 @@ class _$AdminDashboardDistributionsResponseDtoSerializer implements PrimitiveSer
     yield r'threadsByCategory';
     yield serializers.serialize(
       object.threadsByCategory,
-      specifiedType: const FullType(BuiltList, [FullType(AdminDashboardDistributionItemDto)]),
+      specifiedType: const FullType(BuiltList, [FullType(AdminDashboardCategoryDistributionItemDto)]),
     );
     yield r'activeSanctionsByType';
     yield serializers.serialize(
@@ -130,8 +131,8 @@ class _$AdminDashboardDistributionsResponseDtoSerializer implements PrimitiveSer
         case r'threadsByCategory':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(AdminDashboardDistributionItemDto)]),
-          ) as BuiltList<AdminDashboardDistributionItemDto>;
+            specifiedType: const FullType(BuiltList, [FullType(AdminDashboardCategoryDistributionItemDto)]),
+          ) as BuiltList<AdminDashboardCategoryDistributionItemDto>;
           result.threadsByCategory.replace(valueDes);
           break;
         case r'activeSanctionsByType':

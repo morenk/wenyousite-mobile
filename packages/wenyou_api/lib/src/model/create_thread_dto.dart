@@ -14,7 +14,7 @@ part 'create_thread_dto.g.dart';
 /// Properties:
 /// * [clientRequestId] - 客户端创建幂等键；同一次提交和网络重试必须复用
 /// * [title] - 主题帖标题（可为空，发布时校验）
-/// * [category] - 管理员配置的主题帖分类 slug；草稿可暂不选择
+/// * [category] - 管理员配置的主题帖分类 slug；服务端会去除首尾空白并转为大写，草稿可暂不选择
 /// * [content] - 默认子贴正文（kind=BODY，可选，留空仅创建空子贴）
 /// * [subthreadTitle] - 默认子贴标题（可选，不填则取主题帖标题）
 /// * [tagNames] - 主题帖标签名称列表
@@ -29,7 +29,7 @@ abstract class CreateThreadDto implements Built<CreateThreadDto, CreateThreadDto
   @BuiltValueField(wireName: r'title')
   String? get title;
 
-  /// 管理员配置的主题帖分类 slug；草稿可暂不选择
+  /// 管理员配置的主题帖分类 slug；服务端会去除首尾空白并转为大写，草稿可暂不选择
   @BuiltValueField(wireName: r'category')
   String? get category;
 

@@ -64,7 +64,7 @@ V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.7.0-dev.20260823.1`；Markdown v3；后端 `719c7e62aa744ad13a1257bb9cfb29147d55eabe`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.8.0-dev.20260823.1`；Markdown v3；后端 `bec22b547da8154b74493d90d1e46e8d3e54d1ba`；Foundation `v6.3.0`（`73ed49e`）。
 
 ## 14. 相关代码与架构文档
 

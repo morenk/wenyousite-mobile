@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/thread_capabilities_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_tag_relation_response_dto.dart';
@@ -22,6 +23,7 @@ part 'thread_detail_response_dto.g.dart';
 /// * [title]
 /// * [ownerId]
 /// * [category] - 动态分类 slug
+/// * [categoryInfo] - 分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底
 /// * [status]
 /// * [visibility]
 /// * [published]
@@ -60,6 +62,10 @@ abstract class ThreadDetailResponseDto implements Built<ThreadDetailResponseDto,
   /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
   String? get category;
+
+  /// 分类展示读模型；名称来自当前分类注册表，历史未知 slug 使用 slug 兜底
+  @BuiltValueField(wireName: r'categoryInfo')
+  ThreadCategoryInfoDto? get categoryInfo;
 
   @BuiltValueField(wireName: r'status')
   ThreadDetailResponseDtoStatusEnum get status;
@@ -180,6 +186,11 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
     yield object.category == null ? null : serializers.serialize(
       object.category,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'categoryInfo';
+    yield object.categoryInfo == null ? null : serializers.serialize(
+      object.categoryInfo,
+      specifiedType: const FullType.nullable(ThreadCategoryInfoDto),
     );
     yield r'status';
     yield serializers.serialize(
@@ -365,6 +376,14 @@ class _$ThreadDetailResponseDtoSerializer implements PrimitiveSerializer<ThreadD
           ) as String?;
           if (valueDes == null) continue;
           result.category = valueDes;
+          break;
+        case r'categoryInfo':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ThreadCategoryInfoDto),
+          ) as ThreadCategoryInfoDto?;
+          if (valueDes == null) continue;
+          result.categoryInfo.replace(valueDes);
           break;
         case r'status':
           final valueDes = serializers.deserialize(

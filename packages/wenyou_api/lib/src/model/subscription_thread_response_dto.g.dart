@@ -13,6 +13,8 @@ class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
   final String title;
   @override
   final String? category;
+  @override
+  final ThreadCategoryInfoDto? categoryInfo;
 
   factory _$SubscriptionThreadResponseDto([
     void Function(SubscriptionThreadResponseDtoBuilder)? updates,
@@ -22,6 +24,7 @@ class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
     required this.id,
     required this.title,
     this.category,
+    this.categoryInfo,
   }) : super._();
   @override
   SubscriptionThreadResponseDto rebuild(
@@ -38,7 +41,8 @@ class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
     return other is SubscriptionThreadResponseDto &&
         id == other.id &&
         title == other.title &&
-        category == other.category;
+        category == other.category &&
+        categoryInfo == other.categoryInfo;
   }
 
   @override
@@ -47,6 +51,7 @@ class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, title.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
+    _$hash = $jc(_$hash, categoryInfo.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -56,7 +61,8 @@ class _$SubscriptionThreadResponseDto extends SubscriptionThreadResponseDto {
     return (newBuiltValueToStringHelper(r'SubscriptionThreadResponseDto')
           ..add('id', id)
           ..add('title', title)
-          ..add('category', category))
+          ..add('category', category)
+          ..add('categoryInfo', categoryInfo))
         .toString();
   }
 }
@@ -81,6 +87,12 @@ class SubscriptionThreadResponseDtoBuilder
   String? get category => _$this._category;
   set category(String? category) => _$this._category = category;
 
+  ThreadCategoryInfoDtoBuilder? _categoryInfo;
+  ThreadCategoryInfoDtoBuilder get categoryInfo =>
+      _$this._categoryInfo ??= ThreadCategoryInfoDtoBuilder();
+  set categoryInfo(ThreadCategoryInfoDtoBuilder? categoryInfo) =>
+      _$this._categoryInfo = categoryInfo;
+
   SubscriptionThreadResponseDtoBuilder() {
     SubscriptionThreadResponseDto._defaults(this);
   }
@@ -91,6 +103,7 @@ class SubscriptionThreadResponseDtoBuilder
       _id = $v.id;
       _title = $v.title;
       _category = $v.category;
+      _categoryInfo = $v.categoryInfo?.toBuilder();
       _$v = null;
     }
     return this;
@@ -110,21 +123,38 @@ class SubscriptionThreadResponseDtoBuilder
   SubscriptionThreadResponseDto build() => _build();
 
   _$SubscriptionThreadResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$SubscriptionThreadResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'SubscriptionThreadResponseDto',
-            'id',
-          ),
-          title: BuiltValueNullFieldError.checkNotNull(
-            title,
-            r'SubscriptionThreadResponseDto',
-            'title',
-          ),
-          category: category,
+    _$SubscriptionThreadResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$SubscriptionThreadResponseDto._(
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'SubscriptionThreadResponseDto',
+              'id',
+            ),
+            title: BuiltValueNullFieldError.checkNotNull(
+              title,
+              r'SubscriptionThreadResponseDto',
+              'title',
+            ),
+            category: category,
+            categoryInfo: _categoryInfo?.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'categoryInfo';
+        _categoryInfo?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'SubscriptionThreadResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

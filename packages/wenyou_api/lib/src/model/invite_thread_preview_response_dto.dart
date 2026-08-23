@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:wenyou_api/src/model/invite_owner_response_dto.dart';
+import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -16,6 +17,7 @@ part 'invite_thread_preview_response_dto.g.dart';
 /// * [id] - 主题帖 ID
 /// * [title] - 主题帖标题
 /// * [category] - 动态分类 slug
+/// * [categoryInfo]
 /// * [status] - 主题帖状态
 /// * [owner] - 楼主信息
 /// * [memberCount] - 当前参与人数
@@ -33,6 +35,9 @@ abstract class InviteThreadPreviewResponseDto implements Built<InviteThreadPrevi
   /// 动态分类 slug
   @BuiltValueField(wireName: r'category')
   String? get category;
+
+  @BuiltValueField(wireName: r'categoryInfo')
+  ThreadCategoryInfoDto? get categoryInfo;
 
   /// 主题帖状态
   @BuiltValueField(wireName: r'status')
@@ -88,6 +93,11 @@ class _$InviteThreadPreviewResponseDtoSerializer implements PrimitiveSerializer<
     yield object.category == null ? null : serializers.serialize(
       object.category,
       specifiedType: const FullType.nullable(String),
+    );
+    yield r'categoryInfo';
+    yield object.categoryInfo == null ? null : serializers.serialize(
+      object.categoryInfo,
+      specifiedType: const FullType.nullable(ThreadCategoryInfoDto),
     );
     yield r'status';
     yield serializers.serialize(
@@ -153,6 +163,14 @@ class _$InviteThreadPreviewResponseDtoSerializer implements PrimitiveSerializer<
           ) as String?;
           if (valueDes == null) continue;
           result.category = valueDes;
+          break;
+        case r'categoryInfo':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ThreadCategoryInfoDto),
+          ) as ThreadCategoryInfoDto?;
+          if (valueDes == null) continue;
+          result.categoryInfo.replace(valueDes);
           break;
         case r'status':
           final valueDes = serializers.deserialize(
