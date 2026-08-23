@@ -278,13 +278,9 @@ void main() {
       '3',
     );
     for (final sides in const [4, 6, 8, 10, 12, 20, 100]) {
-      expect(find.byKey(Key('editor-dice-quick-d$sides')), findsNothing);
-    }
-    await tester.tap(find.byKey(const Key('editor-dice-quick-sides')));
-    await tester.pumpAndSettle();
-    for (final sides in const [4, 6, 8, 10, 12, 20, 100]) {
       expect(find.byKey(Key('editor-dice-quick-d$sides')), findsOneWidget);
     }
+    expect(find.byType(PopupMenuButton<int>), findsNothing);
     await tester.tap(find.byKey(const Key('editor-dice-quick-d6')));
     await tester.pumpAndSettle();
     expect(
@@ -337,6 +333,78 @@ void main() {
       MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(markdown).delta),
       markdown,
     );
+  });
+
+  testWidgets('320dp 键盘态常用面数在托盘内横滑并保持输入焦点', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+    final controller = QuillController.basic();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pumpAndSettle();
+
+    final rail = find.byKey(const Key('editor-dice-quick-sides'));
+    final horizontalScrollable = find.descendant(
+      of: rail,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Scrollable && widget.axisDirection == AxisDirection.right,
+      ),
+    );
+    final d4 = find.byKey(const Key('editor-dice-quick-d4'));
+    final d100 = find.byKey(const Key('editor-dice-quick-d100'));
+    expect(horizontalScrollable, findsOneWidget);
+    expect(find.byType(PopupMenuButton<int>), findsNothing);
+    expect(tester.getSize(d4).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(d4).height, greaterThanOrEqualTo(48));
+    expect(tester.getBottomRight(rail).dy, lessThanOrEqualTo(500));
+    final position = tester
+        .state<ScrollableState>(horizontalScrollable)
+        .position;
+    expect(position.maxScrollExtent, greaterThan(0));
+
+    await tester.drag(rail, const Offset(-240, 0));
+    await tester.pump();
+    await tester.drag(rail, const Offset(-240, 0));
+    await tester.pump();
+
+    expect(position.pixels, greaterThan(0));
+    expect(d100.hitTestable(), findsOneWidget);
+    await tester.tap(d100);
+    await tester.pumpAndSettle();
+
+    final sidesField = find.descendant(
+      of: find.byKey(const Key('editor-dice-sides')),
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(sidesField).controller?.text, '100');
+    expect(tester.widget<TextField>(sidesField).focusNode?.hasFocus, isTrue);
+    expect(tester.widget<ChoiceChip>(d100).selected, isTrue);
+    expect(find.text('1d100 = ? · 0/20'), findsOneWidget);
+    expect(tester.getBottomRight(rail).dy, lessThanOrEqualTo(500));
   });
 
   testWidgets('骰子字段无效时保留插入器并给出任务内错误', (tester) async {

@@ -163,11 +163,6 @@ class _EditorDiceInputTrayState extends State<EditorDiceInputTray> {
       textInputAction: TextInputAction.next,
       onChanged: widget.onInputChanged,
       onSubmitted: _modifierFocusNode.requestFocus,
-      suffix: _DiceQuickSidesMenu(
-        controller: widget.sidesController,
-        focusNode: _sidesFocusNode,
-        onChanged: widget.onInputChanged,
-      ),
     );
     final modifierField = _DiceNumberField(
       key: const Key('editor-dice-modifier'),
@@ -196,38 +191,50 @@ class _EditorDiceInputTrayState extends State<EditorDiceInputTray> {
             final useTwoRows =
                 constraints.maxWidth < 300 ||
                 MediaQuery.textScalerOf(context).scale(16) >= 24;
-            if (useTwoRows) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+            final fields = useTwoRows
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: quantityField),
+                          _diceSeparator(context),
+                          Expanded(child: sidesField),
+                        ],
+                      ),
+                      SizedBox(height: tokens.space8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          width: constraints.maxWidth * .55,
+                          child: modifierField,
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: quantityField),
+                      Expanded(flex: 8, child: quantityField),
                       _diceSeparator(context),
-                      Expanded(child: sidesField),
+                      Expanded(flex: 11, child: sidesField),
+                      SizedBox(width: tokens.space8),
+                      Expanded(flex: 10, child: modifierField),
                     ],
-                  ),
-                  SizedBox(height: tokens.space8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: constraints.maxWidth * .55,
-                      child: modifierField,
-                    ),
-                  ),
-                ],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+                  );
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(flex: 8, child: quantityField),
-                _diceSeparator(context),
-                Expanded(flex: 11, child: sidesField),
-                SizedBox(width: tokens.space8),
-                Expanded(flex: 10, child: modifierField),
+                fields,
+                SizedBox(height: tokens.space8),
+                _DiceQuickSidesRail(
+                  controller: widget.sidesController,
+                  focusNode: _sidesFocusNode,
+                  onChanged: widget.onInputChanged,
+                ),
               ],
             );
           },
@@ -326,8 +333,8 @@ String? _firstDiceError(EditorDiceInputErrors errors) {
   return null;
 }
 
-class _DiceQuickSidesMenu extends StatelessWidget {
-  const _DiceQuickSidesMenu({
+class _DiceQuickSidesRail extends StatelessWidget {
+  const _DiceQuickSidesRail({
     required this.controller,
     required this.focusNode,
     required this.onChanged,
@@ -341,51 +348,63 @@ class _DiceQuickSidesMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final selectedSides = int.tryParse(controller.text.trim());
-    return PopupMenuButton<int>(
+    return Semantics(
       key: const Key('editor-dice-quick-sides'),
-      tooltip: '选择常用面数',
-      requestFocus: false,
-      position: PopupMenuPosition.under,
-      initialValue: selectedSides,
-      onCanceled: _restoreFocus,
-      onSelected: (sides) {
-        controller.value = TextEditingValue(
-          text: '$sides',
-          selection: TextSelection.collapsed(offset: '$sides'.length),
-        );
-        onChanged();
-        _restoreFocus();
-      },
-      itemBuilder: (context) => [
-        for (final sides in WenyouElementContract.diceQuickSides)
-          PopupMenuItem<int>(
-            key: ValueKey('editor-dice-quick-d$sides'),
-            value: sides,
-            height: tokens.minimumTouchTarget,
-            child: Semantics(
-              selected: selectedSides == sides,
-              child: Text(
-                'd$sides',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: selectedSides == sides
-                      ? tokens.brandForeground
-                      : tokens.text,
-                  fontFamily: WenyouFoundationTypography.utility,
-                  fontWeight: selectedSides == sides
-                      ? FontWeight.w700
-                      : FontWeight.w400,
+      container: true,
+      label: '常用面数',
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (
+              var index = 0;
+              index < WenyouElementContract.diceQuickSides.length;
+              index++
+            ) ...[
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: tokens.minimumTouchTarget,
+                  minHeight: tokens.minimumTouchTarget,
+                ),
+                child: ChoiceChip(
+                  key: ValueKey(
+                    'editor-dice-quick-d${WenyouElementContract.diceQuickSides[index]}',
+                  ),
+                  showCheckmark: false,
+                  label: Text(
+                    'd${WenyouElementContract.diceQuickSides[index]}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontFamily: WenyouFoundationTypography.utility,
+                      fontWeight:
+                          selectedSides ==
+                              WenyouElementContract.diceQuickSides[index]
+                          ? FontWeight.w700
+                          : FontWeight.w400,
+                    ),
+                  ),
+                  selected:
+                      selectedSides ==
+                      WenyouElementContract.diceQuickSides[index],
+                  onSelected: (_) =>
+                      _select(WenyouElementContract.diceQuickSides[index]),
                 ),
               ),
-            ),
-          ),
-      ],
-      child: SizedBox.square(
-        dimension: tokens.minimumTouchTarget,
-        child: const Center(
-          child: WenyouIcon(WenyouIconIds.editorChevronDown, size: 18),
+              if (index < WenyouElementContract.diceQuickSides.length - 1)
+                SizedBox(width: tokens.space4),
+            ],
+          ],
         ),
       ),
     );
+  }
+
+  void _select(int sides) {
+    controller.value = TextEditingValue(
+      text: '$sides',
+      selection: TextSelection.collapsed(offset: '$sides'.length),
+    );
+    onChanged();
+    _restoreFocus();
   }
 
   void _restoreFocus() {
@@ -407,7 +426,6 @@ class _DiceNumberField extends StatelessWidget {
     required this.onChanged,
     required this.onSubmitted,
     this.autofocus = false,
-    this.suffix,
     super.key,
   });
 
@@ -421,7 +439,6 @@ class _DiceNumberField extends StatelessWidget {
   final TextInputAction textInputAction;
   final VoidCallback onChanged;
   final VoidCallback onSubmitted;
-  final Widget? suffix;
 
   @override
   Widget build(BuildContext context) {
@@ -453,13 +470,6 @@ class _DiceNumberField extends StatelessWidget {
       decoration: InputDecoration(
         isDense: true,
         labelText: label,
-        suffixIcon: suffix,
-        suffixIconConstraints: suffix == null
-            ? null
-            : BoxConstraints(
-                minWidth: tokens.minimumTouchTarget,
-                minHeight: tokens.minimumTouchTarget,
-              ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: tokens.space12,
           vertical: tokens.space12,
