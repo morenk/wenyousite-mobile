@@ -184,6 +184,72 @@ void main() {
     }
   });
 
+  testWidgets('正文长按优先选字，选区消失前点击不会触发回复', (tester) async {
+    var taps = 0;
+    var nonTextLongPresses = 0;
+    const text = 'Selectable floor content';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: text,
+            onTapText: () => taps += 1,
+            onLongPressNonText: () => nonTextLongPresses += 1,
+          ),
+        ),
+      ),
+    );
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == text,
+      ),
+    );
+    final position = _textOffsetToPosition(paragraph, 8);
+    final gesture = await tester.startGesture(position);
+    addTearDown(gesture.removePointer);
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.up();
+    await tester.pump();
+
+    expect(paragraph.selections, isNotEmpty);
+    expect(nonTextLongPresses, 0);
+    expect(taps, 0);
+
+    await tester.tapAt(position);
+    await tester.pump();
+    expect(taps, 0);
+    expect(paragraph.selections, isEmpty);
+
+    await tester.tapAt(position);
+    await tester.pump();
+    expect(taps, 1);
+  });
+
+  testWidgets('正文内非文字节点长按转交楼层操作', (tester) async {
+    var longPresses = 0;
+    const nodeId = '00000000-0000-4000-8000-000000000001';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: '[[dice:v1:$nodeId:1d6]]',
+            onLongPressNonText: () => longPresses += 1,
+          ),
+        ),
+      ),
+    );
+
+    await tester.longPress(find.byKey(const ValueKey('wenyou-dice-$nodeId')));
+    await tester.pump();
+
+    expect(longPresses, 1);
+  });
+
   testWidgets('长讨论楼层滑出缓存邻域后仍驻留且回来不重建', (tester) async {
     final controller = ScrollController();
     final builds = <int, int>{};

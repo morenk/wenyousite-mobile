@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_modal_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
-enum PostCardAction { copyText, copyLink, reply, edit, delete, report }
+enum PostCardAction { copyText, copyLink, edit, delete, report }
 
 void _ignorePopoverAction() {}
 
@@ -14,14 +14,12 @@ class PostCardActionMenu extends StatelessWidget {
     required this.anchorBuilder,
     required this.onSelected,
     required this.canCopyText,
-    required this.canReply,
     required this.canEdit,
     required this.canDelete,
     required this.canReport,
     required this.pending,
     this.canCopyLink = true,
     this.copyLinkLabel = '复制链接',
-    this.replyLabel = '回复',
     this.semanticLabel = '内容操作',
     this.actionKeyPrefix,
     super.key,
@@ -30,14 +28,12 @@ class PostCardActionMenu extends StatelessWidget {
   final WenyouPopoverAnchorBuilder anchorBuilder;
   final ValueChanged<PostCardAction> onSelected;
   final bool canCopyText;
-  final bool canReply;
   final bool canEdit;
   final bool canDelete;
   final bool canReport;
   final bool pending;
   final bool canCopyLink;
   final String copyLinkLabel;
-  final String replyLabel;
   final String semanticLabel;
   final String? actionKeyPrefix;
 
@@ -51,7 +47,7 @@ class PostCardActionMenu extends StatelessWidget {
         WenyouPopoverAction(
           value: PostCardAction.copyText,
           icon: WenyouIconIds.actionCopy,
-          label: '复制',
+          label: '复制内容',
           semanticsLabel: '复制内容',
           key: _actionKey('copy'),
         ),
@@ -59,17 +55,9 @@ class PostCardActionMenu extends StatelessWidget {
         WenyouPopoverAction(
           value: PostCardAction.copyLink,
           icon: WenyouIconIds.editorLink,
-          label: '链接',
+          label: '复制链接',
           semanticsLabel: copyLinkLabel,
           key: _actionKey('link'),
-        ),
-      if (canReply)
-        WenyouPopoverAction(
-          value: PostCardAction.reply,
-          icon: WenyouIconIds.actionReply,
-          label: replyLabel,
-          enabled: !pending,
-          key: _actionKey('reply'),
         ),
       if (canEdit)
         WenyouPopoverAction(

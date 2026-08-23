@@ -127,7 +127,7 @@ class ThreadSubthreadBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final body = subthread.body;
-    final content = Padding(
+    Widget buildContent(VoidCallback? openActions) => Padding(
       padding: EdgeInsets.symmetric(horizontal: tokens.space4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,6 +164,7 @@ class ThreadSubthreadBody extends StatelessWidget {
               diceDetails: _diceDetails(body.diceRolls),
               enablePlainTextFastPath: false,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+              onLongPressNonText: openActions,
             )
           else
             StickerPostMarkdown(
@@ -175,16 +176,20 @@ class ThreadSubthreadBody extends StatelessWidget {
               diceDetails: _diceDetails(body.diceRolls),
               enablePlainTextFastPath: false,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
+              onLongPressNonText: openActions,
             ),
         ],
       ),
     );
     if (body == null || body.markdown.trim().isEmpty) {
-      return Semantics(container: true, label: '当前子贴暂无正文', child: content);
+      return Semantics(
+        container: true,
+        label: '当前子贴暂无正文',
+        child: buildContent(null),
+      );
     }
     return PostCardActionMenu(
       canCopyText: true,
-      canReply: false,
       canEdit: canManage,
       canDelete: false,
       canReport: false,
@@ -201,9 +206,7 @@ class ThreadSubthreadBody extends StatelessWidget {
             );
           case PostCardAction.edit:
             onEdit(threadDetailBodyTarget(detail, subthread));
-          case PostCardAction.reply ||
-              PostCardAction.delete ||
-              PostCardAction.report:
+          case PostCardAction.delete || PostCardAction.report:
             break;
         }
       },
@@ -211,12 +214,12 @@ class ThreadSubthreadBody extends StatelessWidget {
         key: Key('thread-body-container-${subthread.id}'),
         container: true,
         label: '当前子贴正文',
-        hint: canManage ? '长按打开正文操作，可编辑正文' : '长按打开正文操作',
+        hint: canManage ? '长按文字选择，长按其他区域打开正文操作，可编辑正文' : '长按文字选择，长按其他区域打开正文操作',
         onLongPress: handle.open,
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onLongPress: handle.open,
-          child: content,
+          child: buildContent(handle.open),
         ),
       ),
     );
@@ -357,7 +360,6 @@ class ThreadFloorCard extends ConsumerWidget {
     final viewportHeight = MediaQuery.sizeOf(context).height;
     return PostCardActionMenu(
       canCopyText: !floor.isDeleted,
-      canReply: !floor.isDeleted,
       canEdit: !floor.isDeleted && canEdit,
       canDelete: !floor.isDeleted && canDelete,
       canReport: !floor.isDeleted && reportReturnTo != null,
@@ -372,7 +374,7 @@ class ThreadFloorCard extends ConsumerWidget {
         label: floor.floorNumber == null
             ? '回复楼层'
             : '回复第 ${floor.floorNumber} 楼',
-        hint: '点击回复，长按打开楼层操作',
+        hint: '点击回复，长按文字选择，长按其他区域打开楼层操作',
         onTap: pending || floor.isDeleted ? null : onReply,
         onLongPress: handle.open,
         child: GestureDetector(
@@ -448,6 +450,7 @@ class ThreadFloorCard extends ConsumerWidget {
                         onInternalLink: (uri) =>
                             _showInternalLinkNotice(context, uri),
                         onTapText: pending ? null : onReply,
+                        onLongPressNonText: handle.open,
                       ),
                     ),
                   if (floor.replyCount > 0) ...[
@@ -480,8 +483,6 @@ class ThreadFloorCard extends ConsumerWidget {
         await copyPostCardValue(context, floor.body.markdown, '内容已复制');
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
-      case PostCardAction.reply:
-        onReply();
       case PostCardAction.edit:
         onEdit();
       case PostCardAction.delete:

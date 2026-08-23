@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
@@ -36,6 +37,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.onInternalLink,
     this.onSaveImage,
     this.onTapText,
+    this.onLongPressNonText,
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
@@ -49,6 +51,7 @@ class WenyouMarkdown extends StatefulWidget {
   final ValueChanged<Uri>? onInternalLink;
   final Future<String> Function(Uri uri)? onSaveImage;
   final VoidCallback? onTapText;
+  final VoidCallback? onLongPressNonText;
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
@@ -58,6 +61,7 @@ class WenyouMarkdown extends StatefulWidget {
 }
 
 class _WenyouMarkdownState extends State<WenyouMarkdown> {
+  final _selectionAreaKey = GlobalKey<SelectionAreaState>();
   late final ValueNotifier<Map<String, String>> _diceLabels;
   late final ValueNotifier<Map<String, String>> _diceSemantics;
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
@@ -66,6 +70,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
   var _usesPlainTextFastPath = false;
+  var _hasSelection = false;
 
   @override
   void initState() {
@@ -105,7 +110,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       _renderedBody = null;
     }
     if ((oldWidget.onTapText == null) != (widget.onTapText == null) ||
-        (oldWidget.onSaveImage == null) != (widget.onSaveImage == null)) {
+        (oldWidget.onSaveImage == null) != (widget.onSaveImage == null) ||
+        (oldWidget.onLongPressNonText == null) !=
+            (widget.onLongPressNonText == null)) {
       _renderedBody = null;
     }
   }
@@ -158,11 +165,17 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
             'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
               _internalReferences,
               (reference) => _openInternalReference(context, reference),
+              onLongPress: widget.onLongPressNonText == null
+                  ? null
+                  : _handleNonTextLongPress,
             ),
             'wenyou-dice': _DiceMarkdownBuilder(
               _diceLabels,
               _diceSemantics,
               _diceDetails,
+              onLongPress: widget.onLongPressNonText == null
+                  ? null
+                  : _handleNonTextLongPress,
             ),
             'wenyou-mention': _MentionMarkdownBuilder(
               (location) => _openInternalLocation(context, location),
@@ -175,11 +188,18 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
             title: title,
             alt: alt,
             onSave: widget.onSaveImage == null ? null : _saveImage,
+            onLongPress: widget.onLongPressNonText == null
+                ? null
+                : _handleNonTextLongPress,
           ),
         ),
       );
     }
-    return SelectionArea(child: body);
+    return SelectionArea(
+      key: _selectionAreaKey,
+      onSelectionChanged: _handleSelectionChanged,
+      child: body,
+    );
   }
 
   void _prepareData() {
@@ -194,7 +214,30 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     _renderedBody = null;
   }
 
-  void _handleTapText() => widget.onTapText?.call();
+  void _handleTapText() {
+    if (_hasSelection) {
+      _clearSelection();
+      return;
+    }
+    widget.onTapText?.call();
+  }
+
+  void _handleSelectionChanged(SelectedContent? content) {
+    _hasSelection = content?.plainText.isNotEmpty == true;
+  }
+
+  void _handleNonTextLongPress() {
+    _clearSelection();
+    widget.onLongPressNonText?.call();
+  }
+
+  void _clearSelection() {
+    if (!_hasSelection) return;
+    final selectableRegion = _selectionAreaKey.currentState?.selectableRegion;
+    selectableRegion?.hideToolbar();
+    selectableRegion?.clearSelection();
+    _hasSelection = false;
+  }
 
   Future<String> _saveImage(Uri uri) => widget.onSaveImage!(uri);
 
@@ -460,10 +503,15 @@ class _InternalReferenceInlineSyntax extends md.InlineSyntax {
 }
 
 class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
-  _InternalReferenceMarkdownBuilder(this.references, this.onTap);
+  _InternalReferenceMarkdownBuilder(
+    this.references,
+    this.onTap, {
+    this.onLongPress,
+  });
 
   final List<InternalReferencePortal> references;
   final ValueChanged<InternalReference> onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -481,6 +529,7 @@ class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
       label: portal.label,
       style: parentStyle,
       onTap: () => onTap(portal.reference),
+      onLongPress: onLongPress,
     );
   }
 }
@@ -508,12 +557,14 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
   _DiceMarkdownBuilder(
     this.labelsByNodeId,
     this.semanticsByNodeId,
-    this.detailsByNodeId,
-  );
+    this.detailsByNodeId, {
+    this.onLongPress,
+  });
 
   final ValueListenable<Map<String, String>> labelsByNodeId;
   final ValueListenable<Map<String, String>> semanticsByNodeId;
   final ValueListenable<Map<String, WenyouDiceRollDetail>> detailsByNodeId;
+  final VoidCallback? onLongPress;
 
   @override
   Widget? visitElementAfterWithContext(
@@ -554,6 +605,7 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
                   settled: settled,
                   style: style,
                   detail: detail,
+                  onLongPress: onLongPress,
                 );
               },
             ),
@@ -565,12 +617,19 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
 }
 
 class _MarkdownImage extends StatelessWidget {
-  const _MarkdownImage({required this.uri, this.title, this.alt, this.onSave});
+  const _MarkdownImage({
+    required this.uri,
+    this.title,
+    this.alt,
+    this.onSave,
+    this.onLongPress,
+  });
 
   final Uri uri;
   final String? title;
   final String? alt;
   final Future<String> Function(Uri uri)? onSave;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -578,9 +637,13 @@ class _MarkdownImage extends StatelessWidget {
     if (!MarkdownContent.isSafeImage(uri)) {
       return Semantics(
         label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
-        child: WenyouIcon(
-          WenyouIconIds.statusImageUnavailable,
-          color: tokens.mutedText,
+        onLongPress: onLongPress,
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          child: WenyouIcon(
+            WenyouIconIds.statusImageUnavailable,
+            color: tokens.mutedText,
+          ),
         ),
       );
     }
@@ -613,7 +676,8 @@ class _MarkdownImage extends StatelessWidget {
       return Semantics(
         image: true,
         label: alt?.trim().isNotEmpty == true ? alt!.trim() : '收藏表情',
-        child: imageContent,
+        onLongPress: onLongPress,
+        child: GestureDetector(onLongPress: onLongPress, child: imageContent),
       );
     }
     final imageAlt = alt?.trim() ?? '';
@@ -622,9 +686,11 @@ class _MarkdownImage extends StatelessWidget {
       button: true,
       image: true,
       label: descriptiveAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$descriptiveAlt',
+      onLongPress: onLongPress,
       child: InkWell(
         key: ValueKey('markdown-image-$uri'),
         borderRadius: BorderRadius.circular(tokens.radius12),
+        onLongPress: onLongPress,
         onTap: () => pushWenyouFullscreenPage<void>(
           context: context,
           builder: (_) => ContentImageViewerPage(

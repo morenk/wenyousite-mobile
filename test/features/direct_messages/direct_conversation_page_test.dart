@@ -409,6 +409,36 @@ void main() {
     expect(last.bottomLeft.x, lessThan(last.bottomRight.x));
   });
 
+  testWidgets('本人发送的纯图片不再套消息气泡', (tester) async {
+    final repository = _FakeRepository(messages: [_outgoingImageMessage()]);
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    for (var frame = 0; frame < 8; frame += 1) {
+      await tester.pump(const Duration(milliseconds: 80));
+    }
+
+    final surface = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('direct-message-surface-outgoing-image')),
+    );
+    expect((surface.decoration as BoxDecoration).color, Colors.transparent);
+    expect(
+      tester
+          .widget<Padding>(
+            find.byKey(
+              const ValueKey('direct-message-content-padding-outgoing-image'),
+            ),
+          )
+          .padding,
+      EdgeInsets.zero,
+    );
+  });
+
   testWidgets('陌生消息请求图片默认隐藏，接受后才开放发送', (tester) async {
     final repository = _FakeRepository(
       conversation: _incomingRequest(),
@@ -439,6 +469,21 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('点击查看陌生人图片'), findsNothing);
+    final imageSurface = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('direct-message-surface-incoming-image')),
+    );
+    final imageDecoration = imageSurface.decoration as BoxDecoration;
+    expect(imageDecoration.color, Colors.transparent);
+    expect(
+      tester
+          .widget<Padding>(
+            find.byKey(
+              const ValueKey('direct-message-content-padding-incoming-image'),
+            ),
+          )
+          .padding,
+      EdgeInsets.zero,
+    );
   });
 
   testWidgets('阅读历史时收到新消息不抢滚动并显示回到底部入口', (tester) async {
@@ -1162,5 +1207,22 @@ DirectMessage _incomingImageMessage() {
       isSticker: false,
     ),
     createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+  );
+}
+
+DirectMessage _outgoingImageMessage() {
+  return DirectMessage(
+    id: 'outgoing-image',
+    conversationId: 'conversation-1',
+    senderId: 'user-1',
+    recipientId: 'user-2',
+    media: const DirectMessageMedia(
+      id: 'media-outgoing',
+      url: 'https://cdn.wenyou.site/outgoing-image.png',
+      width: 800,
+      height: 1169,
+      isSticker: false,
+    ),
+    createdAt: DateTime.now().subtract(const Duration(minutes: 1)),
   );
 }

@@ -153,7 +153,7 @@ void main() {
     await tester.tap(find.byKey(const Key('wenyou-dice-detail-close')));
     await tester.pumpAndSettle();
     await tester.longPress(
-      find.byKey(const Key('thread-body-container-subthread-1')),
+      find.byKey(const ValueKey('wenyou-dice-$bodyDiceId')),
     );
     await tester.pumpAndSettle();
     expect(
@@ -166,6 +166,10 @@ void main() {
     );
     expect(
       find.byKey(const Key('thread-body-action-subthread-1-edit')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('thread-body-action-subthread-1-reply')),
       findsNothing,
     );
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
@@ -242,7 +246,9 @@ void main() {
     await tester.tap(find.byKey(const Key('test-user-back')));
     await tester.pumpAndSettle();
 
-    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-number-floor-1')),
+    );
     await tester.pumpAndSettle();
     final modalMenu = find.byKey(const Key('wenyou-modal-action-menu'));
     expect(modalMenu, findsOneWidget);
@@ -256,6 +262,10 @@ void main() {
     expect(
       find.byKey(const Key('thread-floor-action-floor-1-link')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-reply')),
+      findsNothing,
     );
     expect(find.text('举报'), findsAtLeastNWidgets(1));
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
@@ -318,7 +328,7 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.longPress(
-      find.byKey(const Key('thread-floor-card-floor-own')),
+      find.byKey(const Key('thread-floor-number-floor-own')),
     );
     await tester.pumpAndSettle();
     expect(
@@ -351,7 +361,9 @@ void main() {
       180,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-number-floor-1')),
+    );
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('thread-floor-action-floor-1-report')),
@@ -380,7 +392,7 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.longPress(
-      find.byKey(const Key('thread-floor-card-floor-deleted')),
+      find.byKey(const Key('thread-floor-number-floor-deleted')),
     );
     await tester.pumpAndSettle();
     expect(
@@ -2048,9 +2060,10 @@ void main() {
     expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
     expect(find.byKey(const Key('thread-body-edit')), findsNothing);
     expect(find.byKey(const Key('thread-detail-edit-body')), findsNothing);
-    await tester.longPress(
+    final bodyRect = tester.getRect(
       find.byKey(const Key('thread-body-container-subthread-1')),
     );
+    await tester.longPressAt(Offset(bodyRect.right - 12, bodyRect.top + 12));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('thread-body-action-subthread-1-copy')),
@@ -2112,7 +2125,9 @@ void main() {
       findsNothing,
     );
 
-    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-number-floor-1')),
+    );
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('thread-floor-action-floor-1-delete')),

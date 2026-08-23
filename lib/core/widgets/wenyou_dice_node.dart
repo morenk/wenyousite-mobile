@@ -33,6 +33,7 @@ class WenyouDiceNode extends StatefulWidget {
     required this.settled,
     required this.style,
     this.detail,
+    this.onLongPress,
     super.key,
   });
 
@@ -41,6 +42,7 @@ class WenyouDiceNode extends StatefulWidget {
   final bool settled;
   final TextStyle style;
   final WenyouDiceRollDetail? detail;
+  final VoidCallback? onLongPress;
 
   @override
   State<WenyouDiceNode> createState() => _WenyouDiceNodeState();
@@ -106,7 +108,8 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
         container: true,
         label: widget.semanticLabel,
         excludeSemantics: true,
-        child: content,
+        onLongPress: widget.onLongPress,
+        child: GestureDetector(onLongPress: widget.onLongPress, child: content),
       );
     }
 
@@ -118,6 +121,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
       expanded: _expanded,
       excludeSemantics: true,
       onTap: _openDetail,
+      onLongPress: widget.onLongPress,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -132,6 +136,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
             );
           }),
           onTap: _openDetail,
+          onLongPress: widget.onLongPress,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minWidth: tokens.minimumTouchTarget,

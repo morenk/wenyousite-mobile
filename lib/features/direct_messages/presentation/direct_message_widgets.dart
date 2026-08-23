@@ -547,8 +547,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         : ref.watch(
             stickerCollectionControllerProvider.select((state) => state.isBusy),
           );
-    final pureSticker =
-        media?.isSticker == true && widget.message.content == null;
+    final pureMedia =
+        widget.message.content == null &&
+        (media != null || widget.message.localDraft != null);
     final sending =
         widget.message.deliveryState == DirectMessageDeliveryState.sending;
     final failed =
@@ -680,8 +681,11 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                   behavior: HitTestBehavior.opaque,
                   onLongPress: openActions,
                   child: DecoratedBox(
+                    key: ValueKey(
+                      'direct-message-surface-${widget.message.id}',
+                    ),
                     decoration: BoxDecoration(
-                      color: pureSticker
+                      color: pureMedia
                           ? Colors.transparent
                           : widget.mine
                           ? tokens.brandSurface
@@ -702,7 +706,10 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                       ),
                     ),
                     child: Padding(
-                      padding: pureSticker
+                      key: ValueKey(
+                        'direct-message-content-padding-${widget.message.id}',
+                      ),
+                      padding: pureMedia
                           ? EdgeInsets.zero
                           : EdgeInsets.symmetric(
                               horizontal: tokens.space12,

@@ -191,7 +191,7 @@ void main() {
 
     await tester.pumpWidget(_postRepliesApp(container));
     await _pumpUi(tester);
-    await tester.longPress(find.byKey(const Key('post-reply-reply-own')));
+    await _longPressPostMetadata(tester, 'reply-own');
     await _pumpUi(tester);
     await tester.tap(
       find.byKey(const Key('post-card-action-reply-own-delete')),
@@ -219,14 +219,14 @@ void main() {
 
     await tester.pumpWidget(_postRepliesApp(container));
     await _pumpUi(tester);
-    await tester.longPress(find.byKey(const Key('post-card-root')));
+    await _longPressPostMetadata(tester, 'root');
     await _pumpUi(tester);
 
     expect(find.byKey(const Key('post-card-action-root-report')), findsNothing);
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await _pumpUi(tester);
 
-    await tester.longPress(find.byKey(const Key('post-reply-deleted-reply')));
+    await _longPressPostMetadata(tester, 'deleted-reply');
     await _pumpUi(tester);
 
     expect(
@@ -268,7 +268,7 @@ void main() {
       ),
     );
     await _pumpUi(tester);
-    await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
+    await _longPressPostMetadata(tester, 'reply-other');
     await _pumpUi(tester);
 
     final reportAction = find.byKey(
@@ -305,7 +305,7 @@ void main() {
 
     await tester.pumpWidget(_postRepliesApp(container));
     await _pumpUi(tester);
-    await tester.longPress(find.byKey(const Key('post-reply-reply-own')));
+    await _longPressPostMetadata(tester, 'reply-own');
     await _pumpUi(tester);
     await tester.tap(find.byKey(const Key('post-card-action-reply-own-edit')));
     await _pumpUi(tester);
@@ -595,16 +595,17 @@ void main() {
     expect(find.byType(AnimatedContainer), findsNothing);
     expect(tester.takeException(), isNull);
 
-    await tester.longPress(find.byKey(const Key('post-card-root')));
+    await _longPressPostMetadata(tester, 'root');
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('post-card-action-root-link')), findsOneWidget);
+    expect(find.byKey(const Key('post-card-action-root-reply')), findsNothing);
     expect(find.text('举报'), findsAtLeastNWidgets(1));
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();
 
-    await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
+    await _longPressPostMetadata(tester, 'reply-other');
     await tester.pumpAndSettle();
-    expect(find.text('复制'), findsOneWidget);
+    expect(find.text('复制内容'), findsOneWidget);
     expect(
       find.byKey(const Key('post-card-action-reply-other-link')),
       findsOneWidget,
@@ -683,7 +684,7 @@ void main() {
     expect(authorDirectory.replyCalls, 2);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
-    await tester.longPress(find.byKey(const Key('post-reply-created')));
+    await _longPressPostMetadata(tester, 'created');
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('post-card-action-created-edit')),
@@ -708,7 +709,7 @@ void main() {
     expect(authorDirectory.replyCalls, 2);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
-    await tester.longPress(find.byKey(const Key('post-reply-created')));
+    await _longPressPostMetadata(tester, 'created');
     await tester.pumpAndSettle();
     await tester.tap(find.text('删除'));
     await tester.pumpAndSettle();
@@ -815,7 +816,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
+    await _longPressPostMetadata(tester, 'reply-other');
     await tester.pumpAndSettle();
 
     expect(
@@ -1551,6 +1552,12 @@ Future<void> _pumpUi(WidgetTester tester, [int frames = 6]) async {
   for (var frame = 0; frame < frames; frame += 1) {
     await tester.pump(const Duration(milliseconds: 80));
   }
+}
+
+Future<void> _longPressPostMetadata(WidgetTester tester, String postId) async {
+  final card = find.byKey(Key('post-card-$postId'));
+  final rect = tester.getRect(card);
+  await tester.longPressAt(Offset(rect.right - 12, rect.top + 24));
 }
 
 Future<void> _confirmImageCrop(WidgetTester tester) async {

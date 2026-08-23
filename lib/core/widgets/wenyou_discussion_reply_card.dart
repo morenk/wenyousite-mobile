@@ -33,6 +33,7 @@ class WenyouDiscussionReplyCard extends StatelessWidget {
       label: semanticsLabel,
       hint: canTap ? tapHint : (onLongPress == null ? null : '长按打开操作'),
       onTap: canTap ? onTap : null,
+      onLongPress: onLongPress,
       child: Material(
         color: tokens.softPanel,
         borderRadius: BorderRadius.circular(tokens.radius12),

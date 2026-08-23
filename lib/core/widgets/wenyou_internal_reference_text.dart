@@ -5,25 +5,41 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
-class WenyouInternalReferenceText extends StatelessWidget {
+class WenyouInternalReferenceText extends StatefulWidget {
   const WenyouInternalReferenceText({
     required this.content,
     this.style,
     this.selectable = false,
+    this.onTapText,
+    this.onLongPressNonText,
     super.key,
   });
 
   final String content;
   final TextStyle? style;
   final bool selectable;
+  final VoidCallback? onTapText;
+  final VoidCallback? onLongPressNonText;
+
+  @override
+  State<WenyouInternalReferenceText> createState() =>
+      _WenyouInternalReferenceTextState();
+}
+
+class _WenyouInternalReferenceTextState
+    extends State<WenyouInternalReferenceText> {
+  final _selectionAreaKey = GlobalKey<SelectionAreaState>();
+  var _hasSelection = false;
 
   @override
   Widget build(BuildContext context) {
-    final resolvedStyle = DefaultTextStyle.of(context).style.merge(style);
+    final resolvedStyle = DefaultTextStyle.of(
+      context,
+    ).style.merge(widget.style);
     final children = <Widget>[];
     final plainText = StringBuffer();
     var portalIndex = 0;
-    for (final segment in tokenizeInternalReferenceText(content)) {
+    for (final segment in tokenizeInternalReferenceText(widget.content)) {
       switch (segment) {
         case InternalReferencePlainText(:final value):
           plainText.write(value);
@@ -40,6 +56,9 @@ class WenyouInternalReferenceText extends StatelessWidget {
               label: label,
               style: resolvedStyle,
               onTap: () => openInternalWenyouLink(context, reference.location),
+              onLongPress: widget.onLongPressNonText == null
+                  ? null
+                  : _handleNonTextLongPress,
             ),
           );
       }
@@ -51,7 +70,42 @@ class WenyouInternalReferenceText extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: children,
     );
-    return selectable ? SelectionArea(child: layout) : layout;
+    final tappableLayout = widget.onTapText == null
+        ? layout
+        : GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _handleTapText,
+            child: layout,
+          );
+    if (!widget.selectable) return tappableLayout;
+    return SelectionArea(
+      key: _selectionAreaKey,
+      onSelectionChanged: (content) {
+        _hasSelection = content?.plainText.isNotEmpty == true;
+      },
+      child: tappableLayout,
+    );
+  }
+
+  void _handleTapText() {
+    if (_hasSelection) {
+      _clearSelection();
+      return;
+    }
+    widget.onTapText?.call();
+  }
+
+  void _handleNonTextLongPress() {
+    _clearSelection();
+    widget.onLongPressNonText?.call();
+  }
+
+  void _clearSelection() {
+    if (!_hasSelection) return;
+    final selectableRegion = _selectionAreaKey.currentState?.selectableRegion;
+    selectableRegion?.hideToolbar();
+    selectableRegion?.clearSelection();
+    _hasSelection = false;
   }
 }
 
@@ -62,6 +116,7 @@ class WenyouInternalReferenceChip extends StatefulWidget {
   const WenyouInternalReferenceChip({
     required this.label,
     required this.onTap,
+    this.onLongPress,
     this.style,
     this.surfaceKey,
     super.key,
@@ -69,6 +124,7 @@ class WenyouInternalReferenceChip extends StatefulWidget {
 
   final String label;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final TextStyle? style;
   final Key? surfaceKey;
 
@@ -93,6 +149,7 @@ class _WenyouInternalReferenceChipState
       link: true,
       label: '站内传送门：${widget.label}',
       onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
       excludeSemantics: true,
       child: FocusableActionDetector(
         mouseCursor: SystemMouseCursors.click,
@@ -113,6 +170,7 @@ class _WenyouInternalReferenceChipState
           behavior: HitTestBehavior.opaque,
           excludeFromSemantics: true,
           onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
           onTapCancel: () => setState(() => _pressed = false),

@@ -21,9 +21,9 @@ class WenyouModalActionMenu<T> extends StatefulWidget {
   });
 
   static const double actionWidth = 72;
-  static const double actionHeight = 72;
+  static const double actionMinHeight = 72;
   static const double panelPadding = 12;
-  static const int maxActionsPerRow = 3;
+  static const int maxActions = 6;
 
   final List<WenyouPopoverAction<T>> actions;
   final WenyouPopoverAnchorBuilder anchorBuilder;
@@ -107,16 +107,26 @@ class _WenyouActionDialog<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columns = math.min(
-      actions.length,
-      WenyouModalActionMenu.maxActionsPerRow,
+    assert(actions.length <= WenyouModalActionMenu.maxActions);
+    final columns = switch (actions.length) {
+      <= 3 => actions.length,
+      4 => 2,
+      _ => 3,
+    };
+    final width = math.max(
+      WenyouModalActionMenu.actionWidth * 2 +
+          WenyouModalActionMenu.panelPadding * 2,
+      columns * WenyouModalActionMenu.actionWidth +
+          WenyouModalActionMenu.panelPadding * 2,
     );
-    final width =
-        columns * WenyouModalActionMenu.actionWidth +
-        WenyouModalActionMenu.panelPadding * 2;
+    final rows = <List<WenyouPopoverAction<T>>>[
+      for (var start = 0; start < actions.length; start += columns)
+        actions.sublist(start, math.min(start + columns, actions.length)),
+    ];
     return Dialog(
       key: const Key('wenyou-modal-action-menu'),
       insetPadding: EdgeInsets.all(context.wenyouTokens.space24),
+      constraints: const BoxConstraints(minWidth: 0),
       child: SizedBox(
         width: width,
         child: Semantics(
@@ -125,13 +135,33 @@ class _WenyouActionDialog<T> extends StatelessWidget {
           label: semanticLabel,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IconButton(
-                key: const Key('wenyou-modal-action-close'),
-                tooltip: '关闭',
-                onPressed: onClose,
-                icon: const WenyouIcon(WenyouIconIds.actionClose),
+              Padding(
+                padding: EdgeInsets.only(
+                  left: context.wenyouTokens.space12,
+                  top: context.wenyouTokens.space4,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        semanticLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      key: const Key('wenyou-modal-action-close'),
+                      tooltip: '关闭$semanticLabel',
+                      onPressed: onClose,
+                      icon: const WenyouIcon(WenyouIconIds.actionClose),
+                    ),
+                  ],
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -140,14 +170,30 @@ class _WenyouActionDialog<T> extends StatelessWidget {
                   WenyouModalActionMenu.panelPadding,
                   WenyouModalActionMenu.panelPadding,
                 ),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (final action in actions)
-                      _ModalActionButton<T>(
-                        action: action,
-                        onPressed: () => onSelected(action.value),
+                    for (
+                      var rowIndex = 0;
+                      rowIndex < rows.length;
+                      rowIndex++
+                    ) ...[
+                      if (rowIndex > 0)
+                        SizedBox(height: context.wenyouTokens.space4),
+                      IntrinsicHeight(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (final action in rows[rowIndex])
+                              _ModalActionButton<T>(
+                                action: action,
+                                onPressed: () => onSelected(action.value),
+                              ),
+                          ],
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -173,14 +219,18 @@ class _ModalActionButton<T> extends StatelessWidget {
         ? Theme.of(context).colorScheme.error
         : tokens.text;
     final enabled = action.enabled && !action.loading;
-    return SizedBox(
+    return ConstrainedBox(
       key: action.key,
-      width: WenyouModalActionMenu.actionWidth,
-      height: WenyouModalActionMenu.actionHeight,
+      constraints: const BoxConstraints(
+        minWidth: WenyouModalActionMenu.actionWidth,
+        maxWidth: WenyouModalActionMenu.actionWidth,
+        minHeight: WenyouModalActionMenu.actionMinHeight,
+      ),
       child: Semantics(
         button: true,
         enabled: enabled,
         label: action.semanticsLabel ?? action.label,
+        excludeSemantics: true,
         child: InkWell(
           onTap: enabled ? onPressed : null,
           borderRadius: BorderRadius.circular(tokens.radius12),
@@ -190,22 +240,22 @@ class _ModalActionButton<T> extends StatelessWidget {
               vertical: tokens.space8,
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (action.loading)
-                  SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: tokens.brandForeground,
-                    ),
-                  )
-                else
-                  WenyouIcon(
-                    action.icon,
-                    size: 22,
-                    color: action.enabled ? color : tokens.mutedText,
-                  ),
+                SizedBox.square(
+                  dimension: 22,
+                  child: action.loading
+                      ? CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: tokens.brandForeground,
+                        )
+                      : WenyouIcon(
+                          action.icon,
+                          size: 22,
+                          color: action.enabled ? color : tokens.mutedText,
+                        ),
+                ),
                 SizedBox(height: tokens.space4),
                 Text(
                   action.label,

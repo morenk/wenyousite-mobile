@@ -681,7 +681,7 @@ class _PostCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     final canTapReply = onReply != null && !pending && !post.isDeleted;
-    final card = WenyouTransientTargetFrame(
+    Widget buildCard(VoidCallback openActions) => WenyouTransientTargetFrame(
       key: targetFrameKey,
       targetId: focused ? post.id : null,
       announcement: '已定位到目标回复',
@@ -732,6 +732,7 @@ class _PostCard extends ConsumerWidget {
                 bodyFontSize: 17,
                 bodyHeight: 1.8,
                 onTapText: canTapReply ? onReply : null,
+                onLongPressNonText: openActions,
               ),
           ],
         ),
@@ -739,7 +740,6 @@ class _PostCard extends ConsumerWidget {
     );
     return PostCardActionMenu(
       canCopyText: !post.isDeleted,
-      canReply: onReply != null,
       canEdit: canEdit,
       canDelete: canDelete,
       canReport: reportReturnTo != null,
@@ -751,8 +751,10 @@ class _PostCard extends ConsumerWidget {
         container: true,
         button: canTapReply,
         hint: canTapReply
-            ? (root ? '点击回复楼层，长按打开楼层操作' : '点击回复这条回复，长按打开回复操作')
-            : (root ? '长按打开楼层操作' : '长按打开回复操作'),
+            ? (root
+                  ? '点击回复楼层，长按文字选择，长按其他区域打开楼层操作'
+                  : '点击回复这条回复，长按文字选择，长按其他区域打开回复操作')
+            : (root ? '长按文字选择，长按其他区域打开楼层操作' : '长按文字选择，长按其他区域打开回复操作'),
         onTap: canTapReply ? onReply : null,
         onLongPress: handle.open,
         child: GestureDetector(
@@ -760,7 +762,7 @@ class _PostCard extends ConsumerWidget {
           behavior: HitTestBehavior.opaque,
           onTap: canTapReply ? onReply : null,
           onLongPress: handle.open,
-          child: card,
+          child: buildCard(handle.open),
         ),
       ),
     );
@@ -776,8 +778,6 @@ class _PostCard extends ConsumerWidget {
         await copyPostCardValue(context, post.content, '内容已复制');
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
-      case PostCardAction.reply:
-        onReply?.call();
       case PostCardAction.edit:
         onEdit?.call();
       case PostCardAction.delete:

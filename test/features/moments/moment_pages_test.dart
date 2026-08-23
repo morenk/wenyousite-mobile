@@ -200,7 +200,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('moment-comment-action-comment-root-report')),
+      findsNothing,
+    );
+    await tester.tap(find.text('主评论'));
+    await tester.pump();
+
+    final commentCard = find.byKey(
+      const Key('moment-comment-card-comment-root'),
+    );
+    final commentRect = tester.getRect(commentCard);
+    await tester.longPressAt(
+      Offset(commentRect.right - 12, commentRect.top + 24),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('moment-comment-action-comment-root-report')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('moment-comment-action-comment-root-reply')),
+      findsNothing,
     );
     await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
     await tester.pumpAndSettle();

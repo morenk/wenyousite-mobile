@@ -33,7 +33,7 @@ class MomentCommentBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final canReply = !comment.deleted && onReply != null && !busy;
-    final content = Column(
+    Widget buildContent(VoidCallback openActions) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         MomentAuthorLine(
@@ -64,6 +64,9 @@ class MomentCommentBody extends StatelessWidget {
             WenyouInternalReferenceText(
               content: comment.content!,
               style: Theme.of(context).textTheme.bodyMedium,
+              selectable: true,
+              onTapText: canReply ? onReply : null,
+              onLongPressNonText: openActions,
             ),
           if (comment.media != null) ...[
             SizedBox(height: tokens.space8),
@@ -71,6 +74,7 @@ class MomentCommentBody extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: InkWell(
                 onTap: () => openMomentGallery(context, [comment.media!], 0),
+                onLongPress: openActions,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: compact ? 180 : 240,
@@ -94,14 +98,17 @@ class MomentCommentBody extends StatelessWidget {
             SizedBox(height: tokens.space8),
             Align(
               alignment: Alignment.centerLeft,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 160,
-                  maxHeight: 160,
-                ),
-                child: WenyouCachedImage(
-                  imageUrl: comment.sticker!.mediumUrl,
-                  fit: BoxFit.contain,
+              child: GestureDetector(
+                onLongPress: openActions,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 160,
+                    maxHeight: 160,
+                  ),
+                  child: WenyouCachedImage(
+                    imageUrl: comment.sticker!.mediumUrl,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
@@ -111,6 +118,7 @@ class MomentCommentBody extends StatelessWidget {
     );
 
     Widget buildCommentCard(VoidCallback openActions) {
+      final content = buildContent(openActions);
       if (compact) {
         return WenyouDiscussionReplyCard(
           key: Key('moment-comment-card-${comment.id}'),
@@ -118,7 +126,7 @@ class MomentCommentBody extends StatelessWidget {
           enabled: canReply,
           onTap: canReply ? onReply : null,
           onLongPress: openActions,
-          tapHint: '点击回复这条回复，长按打开回复操作',
+          tapHint: '点击回复，长按文字选择，长按其他区域打开回复操作',
           child: content,
         );
       }
@@ -128,7 +136,7 @@ class MomentCommentBody extends StatelessWidget {
         container: true,
         button: canReply,
         label: '${comment.author.username} 的评论',
-        hint: canReply ? '点击回复这条评论，长按打开评论操作' : '长按打开评论操作',
+        hint: canReply ? '点击回复这条评论，长按文字选择，长按其他区域打开评论操作' : '长按文字选择，长按其他区域打开评论操作',
         onTap: canReply ? onReply : null,
         onLongPress: openActions,
         child: GestureDetector(
@@ -150,7 +158,6 @@ class MomentCommentBody extends StatelessWidget {
     return PostCardActionMenu(
       canCopyText: !comment.deleted && comment.content?.isNotEmpty == true,
       canCopyLink: false,
-      canReply: !comment.deleted && onReply != null,
       canEdit: false,
       canDelete: !comment.deleted && onDelete != null,
       canReport: !comment.deleted && reportReturnTo != null,
@@ -171,8 +178,6 @@ class MomentCommentBody extends StatelessWidget {
         await copyPostCardValue(context, comment.content!, '内容已复制');
       case PostCardAction.copyLink:
         return;
-      case PostCardAction.reply:
-        onReply?.call();
       case PostCardAction.edit:
         return;
       case PostCardAction.delete:

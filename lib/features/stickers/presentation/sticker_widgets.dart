@@ -311,6 +311,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     this.diceDetails = const {},
     this.onInternalLink,
     this.onTapText,
+    this.onLongPressNonText,
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
@@ -324,6 +325,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final Map<String, WenyouDiceRollDetail> diceDetails;
   final ValueChanged<Uri>? onInternalLink;
   final VoidCallback? onTapText;
+  final VoidCallback? onLongPressNonText;
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
@@ -341,6 +343,7 @@ class StickerPostMarkdown extends ConsumerWidget {
       diceDetails: diceDetails,
       onInternalLink: onInternalLink,
       onTapText: onTapText,
+      onLongPressNonText: onLongPressNonText,
       bodyFontSize: bodyFontSize,
       bodyHeight: bodyHeight,
       enablePlainTextFastPath: enablePlainTextFastPath,
