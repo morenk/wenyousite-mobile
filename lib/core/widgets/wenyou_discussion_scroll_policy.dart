@@ -1,12 +1,32 @@
-import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
-import 'package:flutter/widgets.dart' show WidgetsBinding;
+import 'package:flutter/widgets.dart';
 
-/// Keeps the visible discussion plus two viewports on either side laid out.
-///
-/// This stays viewport-relative across phone sizes without retaining every
-/// Markdown subtree in a long discussion.
+/// Prepares the visible discussion plus two viewports on either side.
+/// Materialized rows are then retained by [DiscussionKeepAlive].
 const discussionScrollCacheExtent = ScrollCacheExtent.viewport(2.0);
+
+/// Retains a discussion row after its first layout so returning to already-read
+/// content never reparses and relays out its Markdown subtree.
+class DiscussionKeepAlive extends StatefulWidget {
+  const DiscussionKeepAlive({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  State<DiscussionKeepAlive> createState() => _DiscussionKeepAliveState();
+}
+
+class _DiscussionKeepAliveState extends State<DiscussionKeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
 
 /// Starts one discussion text prefetch task after the current frame is
 /// delivered, without scheduling duplicates during intervening rebuilds.

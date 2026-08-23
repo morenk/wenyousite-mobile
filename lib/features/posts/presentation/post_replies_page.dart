@@ -452,27 +452,29 @@ class _DiscussionList extends StatelessWidget {
       if (actions.failure != null) ...[
         WenyouStatusBanner(
           message: actions.failure!.userMessage,
-          detail: _failureDetail(actions.failure),
+          detail: wenyouRequestDetail(actions.failure),
           tone: WenyouStatusTone.error,
         ),
         SizedBox(height: tokens.space12),
       ],
-      _PostCard(
-        key: const Key('post-discussion-root'),
-        post: root,
-        root: true,
-        canEdit: root.isAuthoredBy(viewerId),
-        canDelete: root.isAuthoredBy(viewerId) || canManageThread,
-        pending: actions.pendingPostId == root.id,
-        reportReturnTo:
-            canReport && !root.isDeleted && !root.isAuthoredBy(viewerId)
-            ? _reportLocation(root, root.id)
-            : null,
-        onReply: authenticated
-            ? () => onCompose(postReplyTarget(root, root))
-            : null,
-        onEdit: () => onCompose(postEditTarget(root, '编辑原楼层')),
-        onDelete: () => onDelete(root, true),
+      DiscussionKeepAlive(
+        child: _PostCard(
+          key: const Key('post-discussion-root'),
+          post: root,
+          root: true,
+          canEdit: root.isAuthoredBy(viewerId),
+          canDelete: root.isAuthoredBy(viewerId) || canManageThread,
+          pending: actions.pendingPostId == root.id,
+          reportReturnTo:
+              canReport && !root.isDeleted && !root.isAuthoredBy(viewerId)
+              ? _reportLocation(root, root.id)
+              : null,
+          onReply: authenticated
+              ? () => onCompose(postReplyTarget(root, root))
+              : null,
+          onEdit: () => onCompose(postEditTarget(root, '编辑原楼层')),
+          onDelete: () => onDelete(root, true),
+        ),
       ),
       SizedBox(height: tokens.space12),
       PostReplyFilters(
@@ -490,7 +492,7 @@ class _DiscussionList extends StatelessWidget {
       if (state.transientFailure != null) ...[
         WenyouStatusBanner(
           message: state.transientFailure!.userMessage,
-          detail: _failureDetail(state.transientFailure),
+          detail: wenyouRequestDetail(state.transientFailure),
           tone: WenyouStatusTone.error,
           action: TextButton(onPressed: onRetry, child: const Text('重试')),
         ),
@@ -536,35 +538,38 @@ class _DiscussionList extends StatelessWidget {
               itemCount: state.replies.length,
               itemBuilder: (context, index) {
                 final reply = state.replies[index];
-                return WenyouConstrainedWidth(
+                return DiscussionKeepAlive(
                   key: ValueKey('post-reply-item-${reply.id}'),
-                  child: Column(
-                    children: [
-                      if (index > 0) Divider(height: tokens.space24),
-                      _PostCard(
-                        key: Key('post-reply-${reply.id}'),
-                        post: reply,
-                        focused: reply.id == focusedReplyId,
-                        targetFrameKey: reply.id == focusedReplyId
-                            ? targetKey
-                            : null,
-                        canEdit: reply.isAuthoredBy(viewerId),
-                        canDelete:
-                            reply.isAuthoredBy(viewerId) || canManageThread,
-                        pending: actions.pendingPostId == reply.id,
-                        reportReturnTo:
-                            canReport &&
-                                !reply.isDeleted &&
-                                !reply.isAuthoredBy(viewerId)
-                            ? _reportLocation(root, reply.id)
-                            : null,
-                        onReply: authenticated
-                            ? () => onCompose(postReplyTarget(root, reply))
-                            : null,
-                        onEdit: () => onCompose(postEditTarget(reply, '编辑回复')),
-                        onDelete: () => onDelete(reply, false),
-                      ),
-                    ],
+                  child: WenyouConstrainedWidth(
+                    child: Column(
+                      children: [
+                        if (index > 0) Divider(height: tokens.space24),
+                        _PostCard(
+                          key: Key('post-reply-${reply.id}'),
+                          post: reply,
+                          focused: reply.id == focusedReplyId,
+                          targetFrameKey: reply.id == focusedReplyId
+                              ? targetKey
+                              : null,
+                          canEdit: reply.isAuthoredBy(viewerId),
+                          canDelete:
+                              reply.isAuthoredBy(viewerId) || canManageThread,
+                          pending: actions.pendingPostId == reply.id,
+                          reportReturnTo:
+                              canReport &&
+                                  !reply.isDeleted &&
+                                  !reply.isAuthoredBy(viewerId)
+                              ? _reportLocation(root, reply.id)
+                              : null,
+                          onReply: authenticated
+                              ? () => onCompose(postReplyTarget(root, reply))
+                              : null,
+                          onEdit: () =>
+                              onCompose(postEditTarget(reply, '编辑回复')),
+                          onDelete: () => onDelete(reply, false),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -892,9 +897,4 @@ class _RouteMismatch extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _failureDetail(ApiFailure? failure) {
-  final requestId = failure?.requestId;
-  return requestId == null ? null : '问题编号：$requestId';
 }

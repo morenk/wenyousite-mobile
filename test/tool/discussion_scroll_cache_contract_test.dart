@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('主题详情与独立讨论固定预渲染前后各两个视口', () {
+  test('主题详情与独立讨论预渲染两屏并保活已读正文', () {
     for (final entry in const [
       (
         path: 'lib/features/threads/presentation/thread_detail_page.dart',
@@ -26,6 +26,7 @@ void main() {
       );
       expect(source, isNot(contains('ScrollCacheExtent.pixels(4000)')));
       expect(source, contains('DiscussionPrefetchScheduler'), reason: path);
+      expect(source, contains('DiscussionKeepAlive'), reason: path);
       expect(source, contains(entry.prefetch), reason: path);
       expect(source, contains('findChildIndexCallback'), reason: path);
     }
@@ -34,6 +35,7 @@ void main() {
       'lib/core/widgets/wenyou_discussion_scroll_policy.dart',
     ).readAsStringSync();
     expect(policy, contains('ScrollCacheExtent.viewport(2.0)'));
+    expect(policy, contains('AutomaticKeepAliveClientMixin'));
     expect(policy, contains('addPostFrameCallback'));
   });
 }

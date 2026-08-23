@@ -710,7 +710,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                 final focused =
                     usableTarget?.focusedReplyId == null &&
                     usableTarget?.floor.id == floor.id;
-                return KeyedSubtree(
+                return DiscussionKeepAlive(
                   key: ValueKey('thread-floor-item-${floor.id}'),
                   child: WenyouContentFrame(
                     top: index == 0 ? 12 : 0,

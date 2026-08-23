@@ -63,6 +63,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   late String _normalizedData;
   List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
+  Widget? _renderedBody;
   var _usesPlainTextFastPath = false;
 
   @override
@@ -78,6 +79,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _styleSheet = _createStyleSheet(context);
+    _renderedBody = null;
   }
 
   @override
@@ -99,6 +101,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     if (oldWidget.bodyFontSize != widget.bodyFontSize ||
         oldWidget.bodyHeight != widget.bodyHeight) {
       _styleSheet = _createStyleSheet(context);
+      _renderedBody = null;
+    }
+    if ((oldWidget.onTapText == null) != (widget.onTapText == null) ||
+        (oldWidget.onSaveImage == null) != (widget.onSaveImage == null)) {
+      _renderedBody = null;
     }
   }
 
@@ -111,7 +118,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _renderedBody ??= _buildBody();
+
+  Widget _buildBody() {
     if (_usesPlainTextFastPath) {
       final paragraphs = _normalizedData.split(_plainTextParagraphBreak);
       return Column(
@@ -123,7 +132,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
             SelectableText(
               paragraphs[index],
               style: _styleSheet?.p,
-              onTap: widget.onTapText,
+              onTap: widget.onTapText == null ? null : _handleTapText,
             ),
           ],
         ],
@@ -156,12 +165,12 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         'code': _InlineCodeMarkdownBuilder(),
       },
       onTapLink: (_, href, _) => _openLink(context, href),
-      onTapText: widget.onTapText,
+      onTapText: widget.onTapText == null ? null : _handleTapText,
       imageBuilder: (uri, title, alt) => _MarkdownImage(
         uri: uri,
         title: title,
         alt: alt,
-        onSave: widget.onSaveImage,
+        onSave: widget.onSaveImage == null ? null : _saveImage,
       ),
     );
   }
@@ -175,7 +184,12 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         widget.enablePlainTextFastPath &&
         prepared.references.isEmpty &&
         _isUnambiguousPlainText(prepared.data);
+    _renderedBody = null;
   }
+
+  void _handleTapText() => widget.onTapText?.call();
+
+  Future<String> _saveImage(Uri uri) => widget.onSaveImage!(uri);
 
   MarkdownStyleSheet _createStyleSheet(BuildContext context) {
     final tokens = context.wenyouTokens;

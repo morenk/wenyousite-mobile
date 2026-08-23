@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 
 import '../../support/foundation_test_fonts.dart';
@@ -61,7 +62,39 @@ void main() {
     }
   });
 
-  testWidgets('长讨论保留两屏缓存邻域，离开邻域后仍释放正文', (tester) async {
+  testWidgets('父组件刷新时复用已构建 Markdown 且回调保持最新', (tester) async {
+    late StateSetter rebuildHost;
+    var callbackVersion = 1;
+    var tappedVersion = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              rebuildHost = setState;
+              return WenyouMarkdown(
+                data: '**已解析正文**',
+                onTapText: () => tappedVersion = callbackVersion,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    final firstBody = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    rebuildHost(() => callbackVersion = 2);
+    await tester.pump();
+    final secondBody = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+
+    expect(identical(firstBody, secondBody), isTrue);
+    await tester.tap(find.text('已解析正文'));
+    expect(tappedVersion, 2);
+  });
+
+  testWidgets('长讨论楼层滑出缓存邻域后仍驻留且回来不重建', (tester) async {
     final controller = ScrollController();
     final builds = <int, int>{};
     final disposals = <int>{};
@@ -76,12 +109,17 @@ void main() {
             scrollCacheExtent: const ScrollCacheExtent.viewport(2.0),
             itemExtent: 160,
             itemCount: 60,
-            itemBuilder: (context, index) => _LifecycleProbe(
-              key: ValueKey('markdown-$index'),
-              index: index,
-              onBuild: () =>
-                  builds.update(index, (count) => count + 1, ifAbsent: () => 1),
-              onDispose: () => disposals.add(index),
+            itemBuilder: (context, index) => DiscussionKeepAlive(
+              child: _LifecycleProbe(
+                key: ValueKey('markdown-$index'),
+                index: index,
+                onBuild: () => builds.update(
+                  index,
+                  (count) => count + 1,
+                  ifAbsent: () => 1,
+                ),
+                onDispose: () => disposals.add(index),
+              ),
             ),
           ),
         ),
@@ -94,10 +132,10 @@ void main() {
     controller.jumpTo(controller.position.maxScrollExtent);
     await tester.pump();
 
-    expect(disposals, contains(0));
+    expect(disposals, isNot(contains(0)));
     expect(
       find.byKey(const ValueKey('markdown-0'), skipOffstage: false),
-      findsNothing,
+      findsOneWidget,
     );
     expect(find.byKey(const ValueKey('markdown-59')), findsOneWidget);
 
@@ -105,7 +143,10 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('markdown-0')), findsOneWidget);
-    expect(builds[0], 2);
+    expect(builds[0], 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(disposals, contains(0));
   });
 }
 
