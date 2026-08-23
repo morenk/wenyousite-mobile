@@ -59,9 +59,79 @@ _$createUploadUrlDtoContentTypeEnumValues =
       ],
     );
 
+const CreateUploadUrlDtoPurposeEnum _$createUploadUrlDtoPurposeEnum_AVATAR =
+    const CreateUploadUrlDtoPurposeEnum._('AVATAR');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_PROFILE_COVER =
+    const CreateUploadUrlDtoPurposeEnum._('PROFILE_COVER');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_DIRECT_MESSAGE =
+    const CreateUploadUrlDtoPurposeEnum._('DIRECT_MESSAGE');
+const CreateUploadUrlDtoPurposeEnum _$createUploadUrlDtoPurposeEnum_MOMENT =
+    const CreateUploadUrlDtoPurposeEnum._('MOMENT');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_MOMENT_COMMENT =
+    const CreateUploadUrlDtoPurposeEnum._('MOMENT_COMMENT');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_RICH_CONTENT =
+    const CreateUploadUrlDtoPurposeEnum._('RICH_CONTENT');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_STICKER_SOURCE =
+    const CreateUploadUrlDtoPurposeEnum._('STICKER_SOURCE');
+const CreateUploadUrlDtoPurposeEnum _$createUploadUrlDtoPurposeEnum_LEGACY =
+    const CreateUploadUrlDtoPurposeEnum._('LEGACY');
+const CreateUploadUrlDtoPurposeEnum
+_$createUploadUrlDtoPurposeEnum_unknownDefaultOpenApi =
+    const CreateUploadUrlDtoPurposeEnum._('unknownDefaultOpenApi');
+
+CreateUploadUrlDtoPurposeEnum _$createUploadUrlDtoPurposeEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'AVATAR':
+      return _$createUploadUrlDtoPurposeEnum_AVATAR;
+    case 'PROFILE_COVER':
+      return _$createUploadUrlDtoPurposeEnum_PROFILE_COVER;
+    case 'DIRECT_MESSAGE':
+      return _$createUploadUrlDtoPurposeEnum_DIRECT_MESSAGE;
+    case 'MOMENT':
+      return _$createUploadUrlDtoPurposeEnum_MOMENT;
+    case 'MOMENT_COMMENT':
+      return _$createUploadUrlDtoPurposeEnum_MOMENT_COMMENT;
+    case 'RICH_CONTENT':
+      return _$createUploadUrlDtoPurposeEnum_RICH_CONTENT;
+    case 'STICKER_SOURCE':
+      return _$createUploadUrlDtoPurposeEnum_STICKER_SOURCE;
+    case 'LEGACY':
+      return _$createUploadUrlDtoPurposeEnum_LEGACY;
+    case 'unknownDefaultOpenApi':
+      return _$createUploadUrlDtoPurposeEnum_unknownDefaultOpenApi;
+    default:
+      return _$createUploadUrlDtoPurposeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<CreateUploadUrlDtoPurposeEnum>
+_$createUploadUrlDtoPurposeEnumValues = BuiltSet<CreateUploadUrlDtoPurposeEnum>(
+  const <CreateUploadUrlDtoPurposeEnum>[
+    _$createUploadUrlDtoPurposeEnum_AVATAR,
+    _$createUploadUrlDtoPurposeEnum_PROFILE_COVER,
+    _$createUploadUrlDtoPurposeEnum_DIRECT_MESSAGE,
+    _$createUploadUrlDtoPurposeEnum_MOMENT,
+    _$createUploadUrlDtoPurposeEnum_MOMENT_COMMENT,
+    _$createUploadUrlDtoPurposeEnum_RICH_CONTENT,
+    _$createUploadUrlDtoPurposeEnum_STICKER_SOURCE,
+    _$createUploadUrlDtoPurposeEnum_LEGACY,
+    _$createUploadUrlDtoPurposeEnum_unknownDefaultOpenApi,
+  ],
+);
+
 Serializer<CreateUploadUrlDtoContentTypeEnum>
 _$createUploadUrlDtoContentTypeEnumSerializer =
     _$CreateUploadUrlDtoContentTypeEnumSerializer();
+Serializer<CreateUploadUrlDtoPurposeEnum>
+_$createUploadUrlDtoPurposeEnumSerializer =
+    _$CreateUploadUrlDtoPurposeEnumSerializer();
 
 class _$CreateUploadUrlDtoContentTypeEnumSerializer
     implements PrimitiveSerializer<CreateUploadUrlDtoContentTypeEnum> {
@@ -104,6 +174,53 @@ class _$CreateUploadUrlDtoContentTypeEnumSerializer
   );
 }
 
+class _$CreateUploadUrlDtoPurposeEnumSerializer
+    implements PrimitiveSerializer<CreateUploadUrlDtoPurposeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'AVATAR': 'AVATAR',
+    'PROFILE_COVER': 'PROFILE_COVER',
+    'DIRECT_MESSAGE': 'DIRECT_MESSAGE',
+    'MOMENT': 'MOMENT',
+    'MOMENT_COMMENT': 'MOMENT_COMMENT',
+    'RICH_CONTENT': 'RICH_CONTENT',
+    'STICKER_SOURCE': 'STICKER_SOURCE',
+    'LEGACY': 'LEGACY',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'AVATAR': 'AVATAR',
+    'PROFILE_COVER': 'PROFILE_COVER',
+    'DIRECT_MESSAGE': 'DIRECT_MESSAGE',
+    'MOMENT': 'MOMENT',
+    'MOMENT_COMMENT': 'MOMENT_COMMENT',
+    'RICH_CONTENT': 'RICH_CONTENT',
+    'STICKER_SOURCE': 'STICKER_SOURCE',
+    'LEGACY': 'LEGACY',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[CreateUploadUrlDtoPurposeEnum];
+  @override
+  final String wireName = 'CreateUploadUrlDtoPurposeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    CreateUploadUrlDtoPurposeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  CreateUploadUrlDtoPurposeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateUploadUrlDtoPurposeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$CreateUploadUrlDto extends CreateUploadUrlDto {
   @override
   final String filename;
@@ -111,6 +228,8 @@ class _$CreateUploadUrlDto extends CreateUploadUrlDto {
   final CreateUploadUrlDtoContentTypeEnum contentType;
   @override
   final num size;
+  @override
+  final CreateUploadUrlDtoPurposeEnum? purpose;
 
   factory _$CreateUploadUrlDto([
     void Function(CreateUploadUrlDtoBuilder)? updates,
@@ -120,6 +239,7 @@ class _$CreateUploadUrlDto extends CreateUploadUrlDto {
     required this.filename,
     required this.contentType,
     required this.size,
+    this.purpose,
   }) : super._();
   @override
   CreateUploadUrlDto rebuild(
@@ -136,7 +256,8 @@ class _$CreateUploadUrlDto extends CreateUploadUrlDto {
     return other is CreateUploadUrlDto &&
         filename == other.filename &&
         contentType == other.contentType &&
-        size == other.size;
+        size == other.size &&
+        purpose == other.purpose;
   }
 
   @override
@@ -145,6 +266,7 @@ class _$CreateUploadUrlDto extends CreateUploadUrlDto {
     _$hash = $jc(_$hash, filename.hashCode);
     _$hash = $jc(_$hash, contentType.hashCode);
     _$hash = $jc(_$hash, size.hashCode);
+    _$hash = $jc(_$hash, purpose.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -154,7 +276,8 @@ class _$CreateUploadUrlDto extends CreateUploadUrlDto {
     return (newBuiltValueToStringHelper(r'CreateUploadUrlDto')
           ..add('filename', filename)
           ..add('contentType', contentType)
-          ..add('size', size))
+          ..add('size', size)
+          ..add('purpose', purpose))
         .toString();
   }
 }
@@ -176,6 +299,11 @@ class CreateUploadUrlDtoBuilder
   num? get size => _$this._size;
   set size(num? size) => _$this._size = size;
 
+  CreateUploadUrlDtoPurposeEnum? _purpose;
+  CreateUploadUrlDtoPurposeEnum? get purpose => _$this._purpose;
+  set purpose(CreateUploadUrlDtoPurposeEnum? purpose) =>
+      _$this._purpose = purpose;
+
   CreateUploadUrlDtoBuilder() {
     CreateUploadUrlDto._defaults(this);
   }
@@ -186,6 +314,7 @@ class CreateUploadUrlDtoBuilder
       _filename = $v.filename;
       _contentType = $v.contentType;
       _size = $v.size;
+      _purpose = $v.purpose;
       _$v = null;
     }
     return this;
@@ -223,6 +352,7 @@ class CreateUploadUrlDtoBuilder
             r'CreateUploadUrlDto',
             'size',
           ),
+          purpose: purpose,
         );
     replace(_$result);
     return _$result;

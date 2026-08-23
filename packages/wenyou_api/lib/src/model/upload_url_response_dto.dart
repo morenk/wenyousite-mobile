@@ -13,8 +13,8 @@ part 'upload_url_response_dto.g.dart';
 /// Properties:
 /// * [uploadUrl] - 对象存储预签名 PUT 地址
 /// * [mediaId] - 媒体记录 ID，后续确认和轮询使用
-/// * [objectKey] - 对象存储 key
-/// * [publicUrl] - 原图公开访问地址
+/// * [objectKey] - 本次 PUT 使用的临时对象 key；客户端不得据此拼接读取地址
+/// * [publicUrl] - 处理完成后的正式媒体地址；静态图为归一化母版，GIF 为保留的动画原件
 @BuiltValue()
 abstract class UploadUrlResponseDto implements Built<UploadUrlResponseDto, UploadUrlResponseDtoBuilder> {
   /// 对象存储预签名 PUT 地址
@@ -25,11 +25,11 @@ abstract class UploadUrlResponseDto implements Built<UploadUrlResponseDto, Uploa
   @BuiltValueField(wireName: r'mediaId')
   String get mediaId;
 
-  /// 对象存储 key
+  /// 本次 PUT 使用的临时对象 key；客户端不得据此拼接读取地址
   @BuiltValueField(wireName: r'objectKey')
   String get objectKey;
 
-  /// 原图公开访问地址
+  /// 处理完成后的正式媒体地址；静态图为归一化母版，GIF 为保留的动画原件
   @BuiltValueField(wireName: r'publicUrl')
   String get publicUrl;
 

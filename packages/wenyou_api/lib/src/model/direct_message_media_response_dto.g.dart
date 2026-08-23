@@ -21,6 +21,8 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
   final num? width;
   @override
   final num? height;
+  @override
+  final bool animated;
 
   factory _$DirectMessageMediaResponseDto([
     void Function(DirectMessageMediaResponseDtoBuilder)? updates,
@@ -34,6 +36,7 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
     this.contentType,
     this.width,
     this.height,
+    required this.animated,
   }) : super._();
   @override
   DirectMessageMediaResponseDto rebuild(
@@ -54,7 +57,8 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
         mediumUrl == other.mediumUrl &&
         contentType == other.contentType &&
         width == other.width &&
-        height == other.height;
+        height == other.height &&
+        animated == other.animated;
   }
 
   @override
@@ -67,6 +71,7 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
     _$hash = $jc(_$hash, contentType.hashCode);
     _$hash = $jc(_$hash, width.hashCode);
     _$hash = $jc(_$hash, height.hashCode);
+    _$hash = $jc(_$hash, animated.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -80,7 +85,8 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
           ..add('mediumUrl', mediumUrl)
           ..add('contentType', contentType)
           ..add('width', width)
-          ..add('height', height))
+          ..add('height', height)
+          ..add('animated', animated))
         .toString();
   }
 }
@@ -121,6 +127,10 @@ class DirectMessageMediaResponseDtoBuilder
   num? get height => _$this._height;
   set height(num? height) => _$this._height = height;
 
+  bool? _animated;
+  bool? get animated => _$this._animated;
+  set animated(bool? animated) => _$this._animated = animated;
+
   DirectMessageMediaResponseDtoBuilder() {
     DirectMessageMediaResponseDto._defaults(this);
   }
@@ -135,6 +145,7 @@ class DirectMessageMediaResponseDtoBuilder
       _contentType = $v.contentType;
       _width = $v.width;
       _height = $v.height;
+      _animated = $v.animated;
       _$v = null;
     }
     return this;
@@ -172,6 +183,11 @@ class DirectMessageMediaResponseDtoBuilder
           contentType: contentType,
           width: width,
           height: height,
+          animated: BuiltValueNullFieldError.checkNotNull(
+            animated,
+            r'DirectMessageMediaResponseDto',
+            'animated',
+          ),
         );
     replace(_$result);
     return _$result;

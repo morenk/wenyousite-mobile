@@ -18,6 +18,7 @@ part 'direct_message_media_response_dto.g.dart';
 /// * [contentType]
 /// * [width]
 /// * [height]
+/// * [animated]
 @BuiltValue()
 abstract class DirectMessageMediaResponseDto implements Built<DirectMessageMediaResponseDto, DirectMessageMediaResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -40,6 +41,9 @@ abstract class DirectMessageMediaResponseDto implements Built<DirectMessageMedia
 
   @BuiltValueField(wireName: r'height')
   num? get height;
+
+  @BuiltValueField(wireName: r'animated')
+  bool get animated;
 
   DirectMessageMediaResponseDto._();
 
@@ -98,6 +102,11 @@ class _$DirectMessageMediaResponseDtoSerializer implements PrimitiveSerializer<D
     yield object.height == null ? null : serializers.serialize(
       object.height,
       specifiedType: const FullType.nullable(num),
+    );
+    yield r'animated';
+    yield serializers.serialize(
+      object.animated,
+      specifiedType: const FullType(bool),
     );
   }
 
@@ -175,6 +184,13 @@ class _$DirectMessageMediaResponseDtoSerializer implements PrimitiveSerializer<D
           ) as num?;
           if (valueDes == null) continue;
           result.height = valueDes;
+          break;
+        case r'animated':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.animated = valueDes;
           break;
         default:
           unhandled.add(key);

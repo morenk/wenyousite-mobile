@@ -218,7 +218,8 @@ Response<SearchSearchMoments200Response> _momentsResponse({
                         ..feedUrl = null
                         ..mediumUrl = null
                         ..width = 640
-                        ..height = 480,
+                        ..height = 480
+                        ..animated = false,
                     ).toBuilder()
                   : null
               ..imageCount = unsafeCover ? 1 : 0

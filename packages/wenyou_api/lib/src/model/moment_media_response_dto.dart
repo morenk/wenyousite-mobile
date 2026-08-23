@@ -16,8 +16,10 @@ part 'moment_media_response_dto.g.dart';
 /// * [thumbnailUrl]
 /// * [feedUrl]
 /// * [mediumUrl]
+/// * [contentType]
 /// * [width]
 /// * [height]
+/// * [animated]
 @BuiltValue()
 abstract class MomentMediaResponseDto implements Built<MomentMediaResponseDto, MomentMediaResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -35,11 +37,17 @@ abstract class MomentMediaResponseDto implements Built<MomentMediaResponseDto, M
   @BuiltValueField(wireName: r'mediumUrl')
   String? get mediumUrl;
 
+  @BuiltValueField(wireName: r'contentType')
+  String? get contentType;
+
   @BuiltValueField(wireName: r'width')
   num? get width;
 
   @BuiltValueField(wireName: r'height')
   num? get height;
+
+  @BuiltValueField(wireName: r'animated')
+  bool get animated;
 
   MomentMediaResponseDto._();
 
@@ -89,6 +97,11 @@ class _$MomentMediaResponseDtoSerializer implements PrimitiveSerializer<MomentMe
       object.mediumUrl,
       specifiedType: const FullType.nullable(String),
     );
+    yield r'contentType';
+    yield object.contentType == null ? null : serializers.serialize(
+      object.contentType,
+      specifiedType: const FullType.nullable(String),
+    );
     yield r'width';
     yield object.width == null ? null : serializers.serialize(
       object.width,
@@ -98,6 +111,11 @@ class _$MomentMediaResponseDtoSerializer implements PrimitiveSerializer<MomentMe
     yield object.height == null ? null : serializers.serialize(
       object.height,
       specifiedType: const FullType.nullable(num),
+    );
+    yield r'animated';
+    yield serializers.serialize(
+      object.animated,
+      specifiedType: const FullType(bool),
     );
   }
 
@@ -160,6 +178,14 @@ class _$MomentMediaResponseDtoSerializer implements PrimitiveSerializer<MomentMe
           if (valueDes == null) continue;
           result.mediumUrl = valueDes;
           break;
+        case r'contentType':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.contentType = valueDes;
+          break;
         case r'width':
           final valueDes = serializers.deserialize(
             value,
@@ -175,6 +201,13 @@ class _$MomentMediaResponseDtoSerializer implements PrimitiveSerializer<MomentMe
           ) as num?;
           if (valueDes == null) continue;
           result.height = valueDes;
+          break;
+        case r'animated':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.animated = valueDes;
           break;
         default:
           unhandled.add(key);

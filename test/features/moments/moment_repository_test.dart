@@ -431,7 +431,8 @@ MomentMediaResponseDto _mediaDto({
       ..feedUrl = 'https://cdn.example.com/feed.webp'
       ..mediumUrl = 'https://cdn.example.com/medium.webp'
       ..width = 1200
-      ..height = 800,
+      ..height = 800
+      ..animated = false,
   );
 }
 

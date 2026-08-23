@@ -14,7 +14,7 @@ part 'media_response_dto.g.dart';
 /// Properties:
 /// * [id]
 /// * [userId]
-/// * [url] - 原图公开访问地址
+/// * [url] - 正式媒体地址；静态图为归一化母版，GIF 为保留的动画原件
 /// * [thumbnailUrl] - 处理完成后的 300px WebP 缩略图地址
 /// * [feedUrl] - 处理完成后的 480px 等比例 WebP 信息流图片地址
 /// * [mediumUrl] - 处理完成后的 800px WebP 中图地址
@@ -23,6 +23,8 @@ part 'media_response_dto.g.dart';
 /// * [size] - 声明或经确认的文件大小（字节）
 /// * [width]
 /// * [height]
+/// * [purpose]
+/// * [animated] - 是否为保留动画的 GIF
 /// * [status]
 /// * [createdAt]
 @BuiltValue()
@@ -33,7 +35,7 @@ abstract class MediaResponseDto implements Built<MediaResponseDto, MediaResponse
   @BuiltValueField(wireName: r'userId')
   String get userId;
 
-  /// 原图公开访问地址
+  /// 正式媒体地址；静态图为归一化母版，GIF 为保留的动画原件
   @BuiltValueField(wireName: r'url')
   String get url;
 
@@ -66,6 +68,14 @@ abstract class MediaResponseDto implements Built<MediaResponseDto, MediaResponse
 
   @BuiltValueField(wireName: r'height')
   num? get height;
+
+  @BuiltValueField(wireName: r'purpose')
+  MediaResponseDtoPurposeEnum get purpose;
+  // enum purposeEnum {  AVATAR,  PROFILE_COVER,  DIRECT_MESSAGE,  MOMENT,  MOMENT_COMMENT,  RICH_CONTENT,  STICKER_SOURCE,  LEGACY,  };
+
+  /// 是否为保留动画的 GIF
+  @BuiltValueField(wireName: r'animated')
+  bool get animated;
 
   @BuiltValueField(wireName: r'status')
   MediaResponseDtoStatusEnum get status;
@@ -151,6 +161,16 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
     yield object.height == null ? null : serializers.serialize(
       object.height,
       specifiedType: const FullType.nullable(num),
+    );
+    yield r'purpose';
+    yield serializers.serialize(
+      object.purpose,
+      specifiedType: const FullType(MediaResponseDtoPurposeEnum),
+    );
+    yield r'animated';
+    yield serializers.serialize(
+      object.animated,
+      specifiedType: const FullType(bool),
     );
     yield r'status';
     yield serializers.serialize(
@@ -269,6 +289,20 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
           if (valueDes == null) continue;
           result.height = valueDes;
           break;
+        case r'purpose':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(MediaResponseDtoPurposeEnum),
+          ) as MediaResponseDtoPurposeEnum;
+          result.purpose = valueDes;
+          break;
+        case r'animated':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.animated = valueDes;
+          break;
         case r'status':
           final valueDes = serializers.deserialize(
             value,
@@ -310,6 +344,35 @@ class _$MediaResponseDtoSerializer implements PrimitiveSerializer<MediaResponseD
     );
     return result.build();
   }
+}
+
+class MediaResponseDtoPurposeEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'AVATAR')
+  static const MediaResponseDtoPurposeEnum AVATAR = _$mediaResponseDtoPurposeEnum_AVATAR;
+  @BuiltValueEnumConst(wireName: r'PROFILE_COVER')
+  static const MediaResponseDtoPurposeEnum PROFILE_COVER = _$mediaResponseDtoPurposeEnum_PROFILE_COVER;
+  @BuiltValueEnumConst(wireName: r'DIRECT_MESSAGE')
+  static const MediaResponseDtoPurposeEnum DIRECT_MESSAGE = _$mediaResponseDtoPurposeEnum_DIRECT_MESSAGE;
+  @BuiltValueEnumConst(wireName: r'MOMENT')
+  static const MediaResponseDtoPurposeEnum MOMENT = _$mediaResponseDtoPurposeEnum_MOMENT;
+  @BuiltValueEnumConst(wireName: r'MOMENT_COMMENT')
+  static const MediaResponseDtoPurposeEnum MOMENT_COMMENT = _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT;
+  @BuiltValueEnumConst(wireName: r'RICH_CONTENT')
+  static const MediaResponseDtoPurposeEnum RICH_CONTENT = _$mediaResponseDtoPurposeEnum_RICH_CONTENT;
+  @BuiltValueEnumConst(wireName: r'STICKER_SOURCE')
+  static const MediaResponseDtoPurposeEnum STICKER_SOURCE = _$mediaResponseDtoPurposeEnum_STICKER_SOURCE;
+  @BuiltValueEnumConst(wireName: r'LEGACY')
+  static const MediaResponseDtoPurposeEnum LEGACY = _$mediaResponseDtoPurposeEnum_LEGACY;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const MediaResponseDtoPurposeEnum unknownDefaultOpenApi = _$mediaResponseDtoPurposeEnum_unknownDefaultOpenApi;
+
+  static Serializer<MediaResponseDtoPurposeEnum> get serializer => _$mediaResponseDtoPurposeEnumSerializer;
+
+  const MediaResponseDtoPurposeEnum._(String name): super(name);
+
+  static BuiltSet<MediaResponseDtoPurposeEnum> get values => _$mediaResponseDtoPurposeEnumValues;
+  static MediaResponseDtoPurposeEnum valueOf(String name) => _$mediaResponseDtoPurposeEnumValueOf(name);
 }
 
 class MediaResponseDtoStatusEnum extends EnumClass {

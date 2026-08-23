@@ -455,7 +455,8 @@ DirectMessageResponseDto _stickerMessageDto() {
     (builder) => builder
       ..id = 'sticker-1'
       ..url = 'https://cdn.wenyou.site/sticker.gif'
-      ..thumbnailUrl = 'https://cdn.wenyou.site/sticker-thumb.png',
+      ..thumbnailUrl = 'https://cdn.wenyou.site/sticker-thumb.png'
+      ..animated = true,
   );
   return DirectMessageResponseDto(
     (builder) => builder

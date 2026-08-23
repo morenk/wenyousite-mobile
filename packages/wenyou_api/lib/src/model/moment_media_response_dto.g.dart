@@ -18,9 +18,13 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
   @override
   final String? mediumUrl;
   @override
+  final String? contentType;
+  @override
   final num? width;
   @override
   final num? height;
+  @override
+  final bool animated;
 
   factory _$MomentMediaResponseDto([
     void Function(MomentMediaResponseDtoBuilder)? updates,
@@ -32,8 +36,10 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
     this.thumbnailUrl,
     this.feedUrl,
     this.mediumUrl,
+    this.contentType,
     this.width,
     this.height,
+    required this.animated,
   }) : super._();
   @override
   MomentMediaResponseDto rebuild(
@@ -53,8 +59,10 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
         thumbnailUrl == other.thumbnailUrl &&
         feedUrl == other.feedUrl &&
         mediumUrl == other.mediumUrl &&
+        contentType == other.contentType &&
         width == other.width &&
-        height == other.height;
+        height == other.height &&
+        animated == other.animated;
   }
 
   @override
@@ -65,8 +73,10 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
     _$hash = $jc(_$hash, thumbnailUrl.hashCode);
     _$hash = $jc(_$hash, feedUrl.hashCode);
     _$hash = $jc(_$hash, mediumUrl.hashCode);
+    _$hash = $jc(_$hash, contentType.hashCode);
     _$hash = $jc(_$hash, width.hashCode);
     _$hash = $jc(_$hash, height.hashCode);
+    _$hash = $jc(_$hash, animated.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -79,8 +89,10 @@ class _$MomentMediaResponseDto extends MomentMediaResponseDto {
           ..add('thumbnailUrl', thumbnailUrl)
           ..add('feedUrl', feedUrl)
           ..add('mediumUrl', mediumUrl)
+          ..add('contentType', contentType)
           ..add('width', width)
-          ..add('height', height))
+          ..add('height', height)
+          ..add('animated', animated))
         .toString();
   }
 }
@@ -109,6 +121,10 @@ class MomentMediaResponseDtoBuilder
   String? get mediumUrl => _$this._mediumUrl;
   set mediumUrl(String? mediumUrl) => _$this._mediumUrl = mediumUrl;
 
+  String? _contentType;
+  String? get contentType => _$this._contentType;
+  set contentType(String? contentType) => _$this._contentType = contentType;
+
   num? _width;
   num? get width => _$this._width;
   set width(num? width) => _$this._width = width;
@@ -116,6 +132,10 @@ class MomentMediaResponseDtoBuilder
   num? _height;
   num? get height => _$this._height;
   set height(num? height) => _$this._height = height;
+
+  bool? _animated;
+  bool? get animated => _$this._animated;
+  set animated(bool? animated) => _$this._animated = animated;
 
   MomentMediaResponseDtoBuilder() {
     MomentMediaResponseDto._defaults(this);
@@ -129,8 +149,10 @@ class MomentMediaResponseDtoBuilder
       _thumbnailUrl = $v.thumbnailUrl;
       _feedUrl = $v.feedUrl;
       _mediumUrl = $v.mediumUrl;
+      _contentType = $v.contentType;
       _width = $v.width;
       _height = $v.height;
+      _animated = $v.animated;
       _$v = null;
     }
     return this;
@@ -166,8 +188,14 @@ class MomentMediaResponseDtoBuilder
           thumbnailUrl: thumbnailUrl,
           feedUrl: feedUrl,
           mediumUrl: mediumUrl,
+          contentType: contentType,
           width: width,
           height: height,
+          animated: BuiltValueNullFieldError.checkNotNull(
+            animated,
+            r'MomentMediaResponseDto',
+            'animated',
+          ),
         );
     replace(_$result);
     return _$result;

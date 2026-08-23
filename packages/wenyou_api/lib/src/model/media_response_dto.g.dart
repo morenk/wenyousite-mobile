@@ -6,6 +6,65 @@ part of 'media_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_AVATAR =
+    const MediaResponseDtoPurposeEnum._('AVATAR');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_PROFILE_COVER =
+    const MediaResponseDtoPurposeEnum._('PROFILE_COVER');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_DIRECT_MESSAGE =
+    const MediaResponseDtoPurposeEnum._('DIRECT_MESSAGE');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_MOMENT =
+    const MediaResponseDtoPurposeEnum._('MOMENT');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT =
+    const MediaResponseDtoPurposeEnum._('MOMENT_COMMENT');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_RICH_CONTENT =
+    const MediaResponseDtoPurposeEnum._('RICH_CONTENT');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_STICKER_SOURCE =
+    const MediaResponseDtoPurposeEnum._('STICKER_SOURCE');
+const MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnum_LEGACY =
+    const MediaResponseDtoPurposeEnum._('LEGACY');
+const MediaResponseDtoPurposeEnum
+_$mediaResponseDtoPurposeEnum_unknownDefaultOpenApi =
+    const MediaResponseDtoPurposeEnum._('unknownDefaultOpenApi');
+
+MediaResponseDtoPurposeEnum _$mediaResponseDtoPurposeEnumValueOf(String name) {
+  switch (name) {
+    case 'AVATAR':
+      return _$mediaResponseDtoPurposeEnum_AVATAR;
+    case 'PROFILE_COVER':
+      return _$mediaResponseDtoPurposeEnum_PROFILE_COVER;
+    case 'DIRECT_MESSAGE':
+      return _$mediaResponseDtoPurposeEnum_DIRECT_MESSAGE;
+    case 'MOMENT':
+      return _$mediaResponseDtoPurposeEnum_MOMENT;
+    case 'MOMENT_COMMENT':
+      return _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT;
+    case 'RICH_CONTENT':
+      return _$mediaResponseDtoPurposeEnum_RICH_CONTENT;
+    case 'STICKER_SOURCE':
+      return _$mediaResponseDtoPurposeEnum_STICKER_SOURCE;
+    case 'LEGACY':
+      return _$mediaResponseDtoPurposeEnum_LEGACY;
+    case 'unknownDefaultOpenApi':
+      return _$mediaResponseDtoPurposeEnum_unknownDefaultOpenApi;
+    default:
+      return _$mediaResponseDtoPurposeEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<MediaResponseDtoPurposeEnum>
+_$mediaResponseDtoPurposeEnumValues =
+    BuiltSet<MediaResponseDtoPurposeEnum>(const <MediaResponseDtoPurposeEnum>[
+      _$mediaResponseDtoPurposeEnum_AVATAR,
+      _$mediaResponseDtoPurposeEnum_PROFILE_COVER,
+      _$mediaResponseDtoPurposeEnum_DIRECT_MESSAGE,
+      _$mediaResponseDtoPurposeEnum_MOMENT,
+      _$mediaResponseDtoPurposeEnum_MOMENT_COMMENT,
+      _$mediaResponseDtoPurposeEnum_RICH_CONTENT,
+      _$mediaResponseDtoPurposeEnum_STICKER_SOURCE,
+      _$mediaResponseDtoPurposeEnum_LEGACY,
+      _$mediaResponseDtoPurposeEnum_unknownDefaultOpenApi,
+    ]);
+
 const MediaResponseDtoStatusEnum _$mediaResponseDtoStatusEnum_UPLOADING =
     const MediaResponseDtoStatusEnum._('UPLOADING');
 const MediaResponseDtoStatusEnum _$mediaResponseDtoStatusEnum_PROCESSING =
@@ -44,8 +103,58 @@ final BuiltSet<MediaResponseDtoStatusEnum> _$mediaResponseDtoStatusEnumValues =
       _$mediaResponseDtoStatusEnum_unknownDefaultOpenApi,
     ]);
 
+Serializer<MediaResponseDtoPurposeEnum>
+_$mediaResponseDtoPurposeEnumSerializer =
+    _$MediaResponseDtoPurposeEnumSerializer();
 Serializer<MediaResponseDtoStatusEnum> _$mediaResponseDtoStatusEnumSerializer =
     _$MediaResponseDtoStatusEnumSerializer();
+
+class _$MediaResponseDtoPurposeEnumSerializer
+    implements PrimitiveSerializer<MediaResponseDtoPurposeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'AVATAR': 'AVATAR',
+    'PROFILE_COVER': 'PROFILE_COVER',
+    'DIRECT_MESSAGE': 'DIRECT_MESSAGE',
+    'MOMENT': 'MOMENT',
+    'MOMENT_COMMENT': 'MOMENT_COMMENT',
+    'RICH_CONTENT': 'RICH_CONTENT',
+    'STICKER_SOURCE': 'STICKER_SOURCE',
+    'LEGACY': 'LEGACY',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'AVATAR': 'AVATAR',
+    'PROFILE_COVER': 'PROFILE_COVER',
+    'DIRECT_MESSAGE': 'DIRECT_MESSAGE',
+    'MOMENT': 'MOMENT',
+    'MOMENT_COMMENT': 'MOMENT_COMMENT',
+    'RICH_CONTENT': 'RICH_CONTENT',
+    'STICKER_SOURCE': 'STICKER_SOURCE',
+    'LEGACY': 'LEGACY',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[MediaResponseDtoPurposeEnum];
+  @override
+  final String wireName = 'MediaResponseDtoPurposeEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    MediaResponseDtoPurposeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  MediaResponseDtoPurposeEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => MediaResponseDtoPurposeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$MediaResponseDtoStatusEnumSerializer
     implements PrimitiveSerializer<MediaResponseDtoStatusEnum> {
@@ -110,6 +219,10 @@ class _$MediaResponseDto extends MediaResponseDto {
   @override
   final num? height;
   @override
+  final MediaResponseDtoPurposeEnum purpose;
+  @override
+  final bool animated;
+  @override
   final MediaResponseDtoStatusEnum status;
   @override
   final DateTime createdAt;
@@ -130,6 +243,8 @@ class _$MediaResponseDto extends MediaResponseDto {
     this.size,
     this.width,
     this.height,
+    required this.purpose,
+    required this.animated,
     required this.status,
     required this.createdAt,
   }) : super._();
@@ -156,6 +271,8 @@ class _$MediaResponseDto extends MediaResponseDto {
         size == other.size &&
         width == other.width &&
         height == other.height &&
+        purpose == other.purpose &&
+        animated == other.animated &&
         status == other.status &&
         createdAt == other.createdAt;
   }
@@ -174,6 +291,8 @@ class _$MediaResponseDto extends MediaResponseDto {
     _$hash = $jc(_$hash, size.hashCode);
     _$hash = $jc(_$hash, width.hashCode);
     _$hash = $jc(_$hash, height.hashCode);
+    _$hash = $jc(_$hash, purpose.hashCode);
+    _$hash = $jc(_$hash, animated.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jf(_$hash);
@@ -194,6 +313,8 @@ class _$MediaResponseDto extends MediaResponseDto {
           ..add('size', size)
           ..add('width', width)
           ..add('height', height)
+          ..add('purpose', purpose)
+          ..add('animated', animated)
           ..add('status', status)
           ..add('createdAt', createdAt))
         .toString();
@@ -248,6 +369,15 @@ class MediaResponseDtoBuilder
   num? get height => _$this._height;
   set height(num? height) => _$this._height = height;
 
+  MediaResponseDtoPurposeEnum? _purpose;
+  MediaResponseDtoPurposeEnum? get purpose => _$this._purpose;
+  set purpose(MediaResponseDtoPurposeEnum? purpose) =>
+      _$this._purpose = purpose;
+
+  bool? _animated;
+  bool? get animated => _$this._animated;
+  set animated(bool? animated) => _$this._animated = animated;
+
   MediaResponseDtoStatusEnum? _status;
   MediaResponseDtoStatusEnum? get status => _$this._status;
   set status(MediaResponseDtoStatusEnum? status) => _$this._status = status;
@@ -274,6 +404,8 @@ class MediaResponseDtoBuilder
       _size = $v.size;
       _width = $v.width;
       _height = $v.height;
+      _purpose = $v.purpose;
+      _animated = $v.animated;
       _status = $v.status;
       _createdAt = $v.createdAt;
       _$v = null;
@@ -325,6 +457,16 @@ class MediaResponseDtoBuilder
           size: size,
           width: width,
           height: height,
+          purpose: BuiltValueNullFieldError.checkNotNull(
+            purpose,
+            r'MediaResponseDto',
+            'purpose',
+          ),
+          animated: BuiltValueNullFieldError.checkNotNull(
+            animated,
+            r'MediaResponseDto',
+            'animated',
+          ),
           status: BuiltValueNullFieldError.checkNotNull(
             status,
             r'MediaResponseDto',

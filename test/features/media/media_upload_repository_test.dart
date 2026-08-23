@@ -314,6 +314,8 @@ MediaResponseDto _media(MediaResponseDtoStatusEnum status) {
       ..size = 5
       ..width = 1200
       ..height = 800
+      ..purpose = MediaResponseDtoPurposeEnum.LEGACY
+      ..animated = false
       ..status = status
       ..createdAt = DateTime.utc(2026, 8, 10),
   );

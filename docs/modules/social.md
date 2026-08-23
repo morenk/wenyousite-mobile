@@ -83,7 +83,7 @@ threads 页面消费主题互动和订阅控制器，moments 详情使用同一�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.9.0-dev.20260823.1`；Markdown v3；后端 `24d6fccf818acf78b89af9b24a0f75578998f98e`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `230fad50efd1e3dd600cf29ba887a8e1c0745523`；Foundation `v6.3.0`（`73ed49e`）。
 
 ## 14. 相关代码与架构文档
 
