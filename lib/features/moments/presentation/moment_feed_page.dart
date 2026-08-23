@@ -35,14 +35,6 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
             tooltip: '搜索',
             icon: const WenyouIcon(WenyouIconIds.actionSearch),
           ),
-          IconButton(
-            key: const Key('moment-open-bookmarks'),
-            onPressed: () => session.isAuthenticated
-                ? context.pushNamed('moment-bookmarks')
-                : _openLogin(context, '/moments/bookmarks'),
-            tooltip: '动态收藏',
-            icon: const WenyouIcon(WenyouIconIds.actionBookmark),
-          ),
         ],
       ),
       body: Column(

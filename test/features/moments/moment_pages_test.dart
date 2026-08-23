@@ -42,6 +42,7 @@ void main() {
     expect(find.text('今日微光'), findsWidgets);
     expect(find.byKey(const Key('moment-card-moment-1')), findsOneWidget);
     expect(find.byKey(const Key('moment-open-search')), findsOneWidget);
+    expect(find.byKey(const Key('moment-open-bookmarks')), findsNothing);
     expect(repository.feedModes, [MomentFeedMode.discover]);
 
     await tester.tap(find.text('关注'));

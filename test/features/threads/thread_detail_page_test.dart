@@ -28,6 +28,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import '../../support/foundation_test_fonts.dart';
 
@@ -840,6 +841,135 @@ void main() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
+  testWidgets('多子贴切换栏滚动后冻结并在切换时回到新正文开头', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _FakeThreadDetailRepository(
+      mainFloors: [_longMainFloor, _longSecondFloor],
+    );
+    await tester.pumpWidget(_detailApp(repository));
+    await tester.pumpAndSettle();
+
+    final scrollView = find.byType(CustomScrollView);
+    await tester.drag(scrollView, const Offset(0, -650));
+    await tester.pumpAndSettle();
+
+    final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    final stickyHeader = find.byKey(
+      const Key('thread-subthread-sticky-header'),
+    );
+    expect(tester.getTopLeft(stickyHeader).dy, closeTo(appBarBottom, 1));
+    expect(find.byKey(const Key('thread-subthread-menu')), findsOneWidget);
+    final scrollController = tester
+        .widget<CustomScrollView>(scrollView)
+        .controller!;
+    final previousOffset = scrollController.offset;
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(find.text('主线正文'), findsNothing);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
+    expect(scrollController.offset, lessThan(previousOffset));
+    expect(
+      tester.getTopLeft(find.text('支线正文')).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(stickyHeader).dy),
+    );
+  });
+
+  testWidgets('360dp 两倍字号下冻结栏保持双行标题与 48dp 操作区', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final coordinator = ThreadDetailSubthreadScrollCoordinator();
+    addTearDown(coordinator.dispose);
+    const longTitle = '第一幕：穿过漫长星海之后所有玩家终于抵达共同约定的远方';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: CustomScrollView(
+          controller: coordinator.controller,
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ThreadDetailSubthreadHeaderSliver(
+              subthreads: [
+                const ThreadSubthreadModel(
+                  id: 'subthread-1',
+                  title: longTitle,
+                  sortOrder: 1,
+                  postCount: 8,
+                  postingPolicyLabel: '参与者发言',
+                  body: ThreadBodyModel(markdown: '主线正文'),
+                ),
+                _detail.subthreads.last,
+              ],
+              selectedSubthreadId: 'subthread-1',
+              onSelected: (_) async {},
+              scrollCoordinator: coordinator,
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 1000)),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(tester.widget<Text>(find.text(longTitle)).maxLines, 2);
+    expect(
+      tester.getSize(find.byKey(const Key('thread-subthread-previous'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      tester
+          .getTopLeft(find.byKey(const Key('thread-subthread-sticky-header')))
+          .dy,
+      closeTo(0, 1),
+    );
+  });
+
+  testWidgets('单子贴的目录栏随正文滚走而不冻结', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final detail = _copyThreadDetail(
+      _detail,
+      subthreads: [_detail.subthreads.first],
+    );
+    await tester.pumpWidget(
+      _detailApp(
+        _FakeThreadDetailRepository(
+          detail: detail,
+          mainFloors: [_longMainFloor, _longSecondFloor],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('thread-subthread-sticky-header')).hitTestable(),
+      findsNothing,
+    );
+  });
+
   testWidgets('站内传送门的 subthread 坐标直接打开指定子贴', (tester) async {
     await tester.pumpWidget(
       _detailApp(_FakeThreadDetailRepository(), subthreadIdHint: 'subthread-2'),
@@ -896,7 +1026,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('thread-floors-settings')));
+    final settings = find.byKey(const Key('thread-floors-settings'));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 80));
+    await tester.pumpAndSettle();
+    await tester.tap(settings);
     await tester.pumpAndSettle();
     await tester.tap(find.text('下一位接力者'));
     await tester.tap(find.byKey(const Key('discussion-settings-apply')));

@@ -46,7 +46,7 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
 }
 
 class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
-  final _scrollController = ScrollController();
+  final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
   final _composerDrafts = <String, String>{};
   String? _lastRevealSignature;
@@ -61,7 +61,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _subthreadScroll.dispose();
     super.dispose();
   }
 
@@ -183,7 +183,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               onRefresh: () => ref.read(provider.notifier).refresh(),
               child: CustomScrollView(
                 key: PageStorageKey('thread-detail-${widget.threadId}'),
-                controller: _scrollController,
+                controller: _subthreadScroll.controller,
                 scrollCacheExtent: discussionScrollCacheExtent,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
@@ -485,13 +485,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         _revealAttempts = 0;
         return;
       }
-      if (!_scrollController.hasClients || _revealAttempts >= 6) return;
+      if (!_subthreadScroll.controller.hasClients || _revealAttempts >= 6) {
+        return;
+      }
       if (targetIndex < 0) return;
       _revealAttempts += 1;
-      final position = _scrollController.position;
+      final position = _subthreadScroll.controller.position;
       final fraction = (targetIndex + 1) / (displayedFloors.length + 1);
       final estimated = position.maxScrollExtent * fraction;
-      _scrollController.jumpTo(
+      _subthreadScroll.controller.jumpTo(
         estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
       );
       if (mounted) setState(() {});
@@ -573,13 +575,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       SliverToBoxAdapter(
         child: WenyouContentFrame(
           top: 8,
-          child: ThreadDetailOverview(
-            detail: detail,
-            selectedSubthreadId: state.selectedSubthreadId,
-            onSubthreadSelected: (id) =>
-                ref.read(provider.notifier).selectSubthread(id),
-          ),
+          child: ThreadDetailOverview(detail: detail),
         ),
+      ),
+      ThreadDetailSubthreadHeaderSliver(
+        subthreads: detail.subthreads,
+        selectedSubthreadId: state.selectedSubthreadId,
+        scrollCoordinator: _subthreadScroll,
+        onSelected: ref.read(provider.notifier).selectSubthread,
       ),
       if (state.transientFailure != null &&
           state.retryAction == ThreadDetailRetryAction.refresh)
@@ -609,6 +612,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       else ...[
         SliverToBoxAdapter(
           child: WenyouContentFrame(
+            key: _subthreadScroll.bodyKey,
             top: 12,
             child: ThreadSubthreadBody(detail, selected!, onEdit: _compose),
           ),
