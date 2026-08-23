@@ -187,17 +187,12 @@ class _ReadyDrafts extends ConsumerWidget {
                   ],
                 ),
               ),
-              Switch(
-                key: const Key('content-drafts-auto-save-switch'),
+              _AutoSaveSwitch(
                 value: state.autoSaveEnabled,
-                onChanged:
-                    state.isBusy || state.phase != ContentDraftsPhase.ready
-                    ? null
-                    : (enabled) => _toggleAutoSave(
-                        context,
-                        controller,
-                        enabled: enabled,
-                      ),
+                enabled:
+                    !state.isBusy && state.phase == ContentDraftsPhase.ready,
+                onChanged: (enabled) =>
+                    _toggleAutoSave(context, controller, enabled: enabled),
               ),
             ],
           ),
@@ -350,6 +345,68 @@ class _ReadyDrafts extends ConsumerWidget {
       ),
     );
     if (confirmed == true) await controller.retryConflict();
+  }
+}
+
+class _AutoSaveSwitch extends StatelessWidget {
+  const _AutoSaveSwitch({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value ? '已开启' : '已关闭',
+          key: const Key('content-drafts-auto-save-state'),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: enabled
+                ? (value ? tokens.brandForeground : tokens.text)
+                : tokens.mutedText,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Switch(
+          key: const Key('content-drafts-auto-save-switch'),
+          value: value,
+          onChanged: enabled ? onChanged : null,
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return tokens.mutedText;
+            }
+            return states.contains(WidgetState.selected)
+                ? colorScheme.onPrimary
+                : tokens.text;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return tokens.softPanel;
+            }
+            return states.contains(WidgetState.selected)
+                ? colorScheme.primary
+                : tokens.panel;
+          }),
+          trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return colorScheme.primary;
+            }
+            return states.contains(WidgetState.disabled)
+                ? tokens.border
+                : tokens.mutedText;
+          }),
+        ),
+      ],
+    );
   }
 }
 

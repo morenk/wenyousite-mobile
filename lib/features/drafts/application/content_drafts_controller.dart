@@ -297,6 +297,8 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
 
   bool enableAutoSave(String currentContent) {
     if (state.phase != ContentDraftsPhase.ready || state.isBusy) return false;
+    final retryAfterFailure =
+        state.autoSaveStatus == ContentDraftAutoSaveStatus.error;
     _latestContent = currentContent;
     _autoSaveDraft = state.draftAt(1);
     if (_autoSaveDraft != null) {
@@ -312,7 +314,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       successMessage: null,
       conflict: null,
     );
-    _scheduleAutoSave();
+    if (retryAfterFailure) _scheduleAutoSave();
     return true;
   }
 
@@ -330,8 +332,9 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
   }
 
   void updateAutoSaveContent(String content) {
+    final changed = content != _latestContent;
     _latestContent = content;
-    if (!state.autoSaveEnabled) return;
+    if (!state.autoSaveEnabled || !changed) return;
     _autoSaveRevision += 1;
     _scheduleAutoSave();
   }

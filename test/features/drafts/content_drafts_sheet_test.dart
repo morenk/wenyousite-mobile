@@ -8,7 +8,11 @@ import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('360dp 窄屏完整展示用量和五个槽位且无横向溢出', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
@@ -24,6 +28,10 @@ void main() {
     expect(find.text('只保存当前正文 · 已用 2/5'), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-1')), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-2')), findsOneWidget);
+    await expectLater(
+      find.byKey(const Key('content-drafts-auto-save')),
+      matchesGoldenFile('goldens/content_drafts_auto_save_off_360.png'),
+    );
     await tester.ensureVisible(find.byKey(const Key('content-draft-slot-5')));
     expect(find.byKey(const Key('content-draft-slot-5')), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -56,15 +64,26 @@ void main() {
     await controller.load();
     await _pumpSheet(tester, controller, currentContent: '自动保存正文');
 
+    expect(find.text('已关闭'), findsOneWidget);
+    expect(
+      tester
+          .widget<Switch>(
+            find.byKey(const Key('content-drafts-auto-save-switch')),
+          )
+          .onChanged,
+      isNotNull,
+    );
+
     await tester.tap(find.byKey(const Key('content-drafts-auto-save-switch')));
     await tester.pumpAndSettle();
     expect(find.text('开启自动保存？'), findsOneWidget);
     await tester.tap(find.text('开启'));
     await tester.pumpAndSettle();
 
-    expect(repository.updateVersions, [3]);
+    expect(repository.updateVersions, isEmpty);
     expect(controller.state.autoSaveEnabled, isTrue);
-    expect(find.text('当前正文已自动保存'), findsOneWidget);
+    expect(find.text('已开启'), findsOneWidget);
+    expect(find.text('已开启，编辑后自动更新到槽位 1'), findsOneWidget);
   });
 
   testWidgets('恢复最新版前明确确认，且回调只返回正文', (tester) async {

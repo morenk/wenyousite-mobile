@@ -453,7 +453,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('开启'));
     await tester.pumpAndSettle();
-    expect(contentDraftRepository.updatedContents, ['当前主题正文']);
+    expect(contentDraftRepository.updatedContents, isEmpty);
 
     await tester.tap(find.byTooltip('关闭正文草稿'));
     await tester.pumpAndSettle();
@@ -469,7 +469,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
-    expect(contentDraftRepository.updatedContents.last, automaticContent);
+    expect(contentDraftRepository.updatedContents, [automaticContent]);
 
     await tester.tap(find.byKey(const Key('compose-remote-drafts')));
     await tester.pumpAndSettle();

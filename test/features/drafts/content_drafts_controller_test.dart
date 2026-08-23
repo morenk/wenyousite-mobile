@@ -24,7 +24,7 @@ void main() {
     expect(controller.state.draftAt(1)?.version, first.version + 1);
   });
 
-  test('开启后防抖创建槽位 1 并以最新版本继续自动更新', () async {
+  test('开启只建立基线，正文变化后防抖创建槽位 1 并继续自动更新', () async {
     final repository = _FakeRepository(drafts: []);
     final controller = ContentDraftsController(
       repository,
@@ -38,9 +38,20 @@ void main() {
     expect(controller.enableAutoSave('  自动正文  '), isTrue);
     await _settleAutoSave();
 
+    expect(repository.createSlots, isEmpty);
+    expect(controller.state.autoSaveEnabled, isTrue);
+    expect(controller.state.autoSaveStatus, ContentDraftAutoSaveStatus.waiting);
+
+    controller.updateAutoSaveContent('  自动正文  ');
+    await _settleAutoSave();
+    expect(repository.createSlots, isEmpty);
+
+    controller.updateAutoSaveContent('  自动正文第一版  ');
+    await _settleAutoSave();
+
     expect(repository.createSlots, [1]);
     expect(repository.createRequestIds, [_requestId]);
-    expect(repository.createdContents, ['  自动正文  ']);
+    expect(repository.createdContents, ['  自动正文第一版  ']);
     expect(controller.state.autoSaveEnabled, isTrue);
     expect(controller.state.autoSaveStatus, ContentDraftAutoSaveStatus.saved);
 
@@ -65,7 +76,8 @@ void main() {
     addTearDown(controller.dispose);
     await controller.load();
 
-    expect(controller.enableAutoSave('本机新正文'), isTrue);
+    expect(controller.enableAutoSave('旧正文'), isTrue);
+    controller.updateAutoSaveContent('本机新正文');
     await _settleAutoSave();
 
     expect(controller.state.autoSaveEnabled, isFalse);
@@ -109,7 +121,8 @@ void main() {
     addTearDown(controller.dispose);
     await controller.load();
 
-    expect(controller.enableAutoSave('待确认正文'), isTrue);
+    expect(controller.enableAutoSave(''), isTrue);
+    controller.updateAutoSaveContent('待确认正文');
     await _settleAutoSave();
     expect(controller.state.autoSaveEnabled, isFalse);
 
