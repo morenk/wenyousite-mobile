@@ -362,7 +362,7 @@ void main() {
     expect(repository.sentDrafts, isEmpty);
   });
 
-  testWidgets('连续消息保持紧凑分组且组末才有方向尾角', (tester) async {
+  testWidgets('连续消息保持分组且组末才有方向尾角', (tester) async {
     final createdAt = DateTime.now().subtract(const Duration(minutes: 2));
     final repository = _FakeRepository(
       messages: [

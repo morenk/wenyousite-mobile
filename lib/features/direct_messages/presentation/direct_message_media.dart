@@ -1,8 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
+import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+
+const _directMessageImageMaxDimension = 280.0;
 
 class DirectMessageOptimisticMediaPlaceholder extends StatelessWidget {
   const DirectMessageOptimisticMediaPlaceholder({
@@ -41,7 +47,9 @@ class DirectMessageImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final maxDimension = media.isSticker ? 160.0 : 280.0;
+    final maxDimension = media.isSticker
+        ? WenyouImageContract.stickerDisplayMax
+        : _directMessageImageMaxDimension;
     return Semantics(
       button: true,
       image: true,
@@ -56,28 +64,37 @@ class DirectMessageImage extends StatelessWidget {
               maxWidth: maxDimension,
               maxHeight: maxDimension,
             ),
-            child: WenyouCachedImage(
-              imageUrl: media.displayUrl,
-              fit: BoxFit.contain,
-              cacheWidth: maxDimension.ceil(),
-              cacheHeight: maxDimension.ceil(),
-              placeholder: (_, _) => SizedBox.square(
-                dimension: 96,
-                child: ColoredBox(
-                  color: tokens.softPanel,
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-              ),
-              errorWidget: (_, _, _) => SizedBox.square(
-                dimension: 96,
-                child: ColoredBox(
-                  color: tokens.softPanel,
-                  child: WenyouIcon(
-                    WenyouIconIds.statusImageUnavailable,
-                    color: tokens.mutedText,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final geometry = _DirectMessageImageGeometry.resolve(
+                  media: media,
+                  constraints: constraints,
+                  maxDimension: maxDimension,
+                );
+                final image = WenyouCachedImage(
+                  imageUrl: media.displayUrl,
+                  width: geometry.size?.width,
+                  height: geometry.size?.height,
+                  fit: BoxFit.contain,
+                  cacheWidth: geometry.cacheWidth,
+                  cacheHeight: geometry.cacheHeight,
+                  placeholder: (_, _) => _DirectMessageImageState(
+                    size: geometry.size,
+                    loading: true,
                   ),
-                ),
-              ),
+                  errorWidget: (_, _, _) => _DirectMessageImageState(
+                    size: geometry.size,
+                    loading: false,
+                  ),
+                );
+                final size = geometry.size;
+                if (size == null) return image;
+                return SizedBox.fromSize(
+                  key: ValueKey('direct-message-image-frame-${media.id}'),
+                  size: size,
+                  child: image,
+                );
+              },
             ),
           ),
         ),
@@ -85,44 +102,88 @@ class DirectMessageImage extends StatelessWidget {
     );
   }
 
-  Future<void> _showImage(BuildContext context) {
-    return showDialog<void>(
+  Future<void> _showImage(BuildContext context) async {
+    await pushWenyouFullscreenPage<void>(
       context: context,
-      useSafeArea: true,
-      builder: (dialogContext) => Dialog.fullscreen(
-        backgroundColor: Colors.black.withValues(alpha: 0.92),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: InteractiveViewer(
-                minScale: 0.8,
-                maxScale: 4,
-                child: Center(
-                  child: WenyouCachedImage(
-                    imageUrl: media.url,
-                    fit: BoxFit.contain,
-                    errorWidget: (_, _, _) => const WenyouIcon(
-                      WenyouIconIds.statusImageUnavailable,
-                      color: Colors.white,
-                      size: 48,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topRight,
-                child: IconButton.filledTonal(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  tooltip: '关闭大图',
-                  icon: const WenyouIcon(WenyouIconIds.actionClose),
-                ),
-              ),
-            ),
-          ],
-        ),
+      builder: (_) => ContentImageViewerPage(
+        url: media.url,
+        alt: media.isSticker ? '私聊表情' : '私聊图片',
       ),
     );
+  }
+}
+
+class _DirectMessageImageGeometry {
+  const _DirectMessageImageGeometry({
+    required this.size,
+    required this.cacheWidth,
+    required this.cacheHeight,
+  });
+
+  factory _DirectMessageImageGeometry.resolve({
+    required DirectMessageMedia media,
+    required BoxConstraints constraints,
+    required double maxDimension,
+  }) {
+    final maxWidth = constraints.hasBoundedWidth
+        ? math.min(constraints.maxWidth, maxDimension)
+        : maxDimension;
+    final maxHeight = constraints.hasBoundedHeight
+        ? math.min(constraints.maxHeight, maxDimension)
+        : maxDimension;
+    final width = media.width;
+    final height = media.height;
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return _DirectMessageImageGeometry(
+        size: null,
+        cacheWidth: maxWidth.ceil(),
+        cacheHeight: null,
+      );
+    }
+
+    final source = Size(width.toDouble(), height.toDouble());
+    final destination = applyBoxFit(
+      BoxFit.contain,
+      source,
+      Size(maxWidth, maxHeight),
+    ).destination;
+    final widthLimited = source.aspectRatio >= maxWidth / maxHeight;
+    return _DirectMessageImageGeometry(
+      size: destination,
+      cacheWidth: widthLimited ? destination.width.ceil() : null,
+      cacheHeight: widthLimited ? null : destination.height.ceil(),
+    );
+  }
+
+  final Size? size;
+  final int? cacheWidth;
+  final int? cacheHeight;
+}
+
+class _DirectMessageImageState extends StatelessWidget {
+  const _DirectMessageImageState({required this.size, required this.loading});
+
+  final Size? size;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final content = ColoredBox(
+      color: tokens.softPanel,
+      child: Center(
+        child: loading
+            ? const CircularProgressIndicator()
+            : WenyouIcon(
+                WenyouIconIds.statusImageUnavailable,
+                color: tokens.mutedText,
+              ),
+      ),
+    );
+    final reservedSize = size;
+    if (reservedSize == null) {
+      return SizedBox.square(dimension: 96, child: content);
+    }
+    return SizedBox.fromSize(size: reservedSize, child: content);
   }
 }

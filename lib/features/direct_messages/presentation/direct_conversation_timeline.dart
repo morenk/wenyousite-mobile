@@ -261,10 +261,14 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
                 next.senderId != message.senderId ||
                 next.createdAt.difference(message.createdAt) >=
                     const Duration(minutes: 5);
+            final bottomSpacing = next == null
+                ? tokens.space12
+                : groupEnds
+                ? tokens.space16
+                : tokens.space8;
             return Padding(
-              padding: EdgeInsets.only(
-                bottom: groupEnds ? tokens.space12 : tokens.space4,
-              ),
+              key: ValueKey('direct-message-item-${message.id}'),
+              padding: EdgeInsets.only(bottom: bottomSpacing),
               child: Column(
                 children: [
                   if (showTime) ...[
