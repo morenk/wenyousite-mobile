@@ -36,7 +36,7 @@
 
 ## 6. 状态模型和数据流
 
-主题详情继续维护所选子贴的楼层页。独立讨论以主楼层 ID 为 family key，分离主楼层、回复页、cursor、排序、作者筛选、刷新、后台预取和分页错误；一次应用顺序与作者只触发一次首页重载，分页合并按 ID 去重并按时间重排。`isPrefetchingFloors` 与 `isPrefetchingReplies` 只描述当前文字页串行预取任务，筛选、子贴、刷新和会话请求 epoch 变化会立即使旧任务失效，迟到页不得合并。角色作者目录由 posts application 的独立 autoDispose family 读取完整主题成员后投影为楼主、协作者、玩家，并按角色再按加入时间排序；它与回复列表加载/失败隔离，切号时自动失效。刷新失败与加载更多失败记录各自重试来源，不会互相误用；读取、刷新或分页收到 403/404 时立即进入 restricted 终态并清空主楼层、回复与 cursor，防止旧私密内容继续显示。主题可见性和管理能力通过 posts application 的只读 `PostThreadContext` 端口获取，不直接读取 threads 页面状态。帖子读写端口位于 `posts/application`，API 适配器由 `main.dart` 组合根绑定，三个控制器不导入具体 data 仓储。帖子编辑器只持有 Markdown、当前版本、提交结果、待确认创建和冲突最新版；图片上传会话由 `media/application` 独立管理，不进入 `PostComposerState`；删除使用独立串行状态。相关 family 监听稳定账号会话作用域，Token 刷新不重建内容，切号或会话结束才释放。
+主题详情继续维护所选子贴的楼层页。独立讨论以主楼层 ID 为 family key，分离主楼层、回复页、cursor、排序、作者筛选、刷新、后台预取和分页错误；一次应用顺序与作者只触发一次首页重载，分页合并按 ID 去重并按时间重排。`isPrefetchingFloors` 与 `isPrefetchingReplies` 只描述当前文字页串行预取任务，筛选、子贴、刷新和会话请求 epoch 变化会立即使旧任务失效，迟到页不得合并。角色作者目录由 posts application 的独立 autoDispose family 读取完整主题成员后投影为楼主、协作者、玩家，并按角色再按加入时间排序；它与回复列表加载/失败隔离，切号时自动失效。刷新失败与加载更多失败记录各自重试来源，不会互相误用；读取、刷新或分页收到 403/404 时立即进入 restricted 终态并清空主楼层、回复与 cursor，防止旧私密内容继续显示。主题可见性和管理能力通过 posts application 的只读 `PostThreadContext` 端口获取，不直接读取 threads 页面状态。帖子读写端口位于 `posts/application`，API 适配器由 `main.dart` 组合根绑定，三个控制器不导入具体 data 仓储。帖子编辑器只持有 Markdown、当前版本、提交结果、待确认创建和冲突最新版；图片上传会话由 `media/application` 独立管理，不进入 `PostComposerState`；删除使用独立串行状态。相关 family 监听稳定账号会话作用域，Token 刷新不重建内容；切号或会话结束会关闭旧编辑器、清空页面内草稿并释放旧状态，迟到的旧账号加载、草稿回调或提交结果不得进入新会话。
 
 主题详情控制器额外维护主楼顺序与作者组合及同一请求 epoch；加载更多、刷新与 `40007` 恢复持续携带当前组合，迟到的旧筛选响应会被丢弃。目标主楼若被当前作者筛选排除，页面先清除作者筛选并提示，再按服务端目标事实定位，不直接注入筛选外内容。
 
@@ -66,6 +66,7 @@
 - [x] 主题楼层、内嵌楼中楼和独立讨论头像均以稳定作者 ID 进入个人主页，48dp 点击不会打开回复编辑器或讨论页。
 - [x] 主楼层/楼中楼目标定位校验父子贴关系；具体回复深链直接进入稳定独立讨论路由，返回后不重复打开；首屏外目标在 Sliver 懒构建后仍会滚入真实视口，定位后的用户纵向拖动不会被布局变化拉回目标。
 - [x] 独立回复页完成排序、角色作者筛选、分页、目标补齐、刷新、空错状态和 360dp 布局，并以阅读视觉基线固定无卡片连续讨论流；普通参与人不会进入候选。
+- [x] 独立回复页覆盖首屏 5xx 与问题编号重试、分页失败保留窗口和原 cursor、创建/编辑/删除失败保稿或保留原内容，以及重试只追加一次。
 - [x] 独立讨论点击具体回复会用主楼层作为 `parentPostId`、被点击回复作为 `replyToPostId`；已删除、提交中或游客状态不触发误回复。
 - [x] 独立讨论正文区不重复主题/子贴语境；回复总数与单一设置入口保持同一紧凑控制行，排序与作者筛选在按需面板完整可达；本地草稿显式应用后只重载一次，恢复默认仅在需要时出现，候选失败可独立重试；楼层与回复以分隔线形成扁平连续列表。
 - [x] 楼层和回复创建复用稳定幂等键；不明确结果后的继续编辑只产生一次逻辑创建；主题详情与动态详情的内嵌回复预览共用统一软面板呈现。
@@ -75,8 +76,11 @@
 - [x] 楼层、回复和正文编辑携带版本，冲突读取最新版且只有二次确认才覆盖。
 - [x] 作者编辑/删除、管理者删除普通楼层与独立回复、重复删除收敛、BODY 禁止普通删除和游客登录门槛均有状态或页面测试。
 - [x] 生成 API 仓储测试覆盖全部七个帖子 operationId 的筛选、版本和写入载荷。
+- [x] 帖子读取/写入响应在映射前校验请求 ID、主题/子贴摘要、BODY/FLOOR 层级、父楼层、回复目标、作者、骰子、`clientRequestId` 和续页 cursor；空 envelope 与错配回包 fail-closed，同时保留后端允许的顶层楼层 `replyToPostId` 语义。
+- [x] 真实生成客户端 + Dio 组合测试证明楼层筛选保留不透明 cursor，楼中楼创建携带精确 `parentPostId`、`replyToPostId` 和稳定幂等键。
 - [x] 楼层、回复、正文创建和编辑器均传递真实主题上下文，提及候选失败可恢复且原子节点可安全提交。
 - [x] 主题详情与独立讨论的楼层/回复统一使用居中遮罩长按菜单，暗区阻断背景点击并提供显式关闭入口；独立页使用权威主题上下文开放公开非本人举报和管理者删除，私密、本人与已删除内容安全隐藏，查询参数不能扩大权限。
+- [x] 切号丢弃旧账号迟到首屏；切号或退出精确关闭旧帖子编辑器及其草稿、贴纸、裁剪或冲突子弹窗，清空账号内存草稿且不误关同帧打开的新业务页，新账号重开时不读取旧稿。
 - [x] 子贴 BODY 正文长按复用同一中央菜单：读者只能复制正文和公开链接，管理者额外可直接编辑；空 BODY 为管理者提供添加入口。
 - [x] 楼层/回复半屏编辑器点击暗区或关闭按钮立即收起，同一页面再次打开相同目标会恢复本地输入且不自动写入云端。
 - [x] 主题详情与独立讨论的普通正文图片没有常驻覆盖按钮，登录与游客均可进入共享原图页；收藏表情只在能力允许时从顶栏按需菜单触发，进行中禁止重复提交。
@@ -94,4 +98,4 @@
 
 ## 14. 相关代码与架构文档
 
-帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。
+帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。

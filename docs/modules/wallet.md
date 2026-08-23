@@ -18,7 +18,7 @@
 
 登录会话恢复或新登录完成后，全局签到引导在本次进程内对当前会话调用一次签到端点；只有服务端返回 `claimedNow=true` 才提示本次获得的 1～3 升温油和经验，重复调用由北京时间日期键幂等。钱包页并发读取余额统计和流水，两部分独立失败、独立重试；下拉刷新重新读取两部分，流水按服务端不透明 cursor 加载更多。
 
-加油弹窗默认 2 升，只接受不小于 2 且不超过 PostgreSQL bigint 上限的十进制正整数字符串。一次用户操作生成 UUID v4；网络或不明确失败后，以相同金额重试会复用原 `clientRequestId`，修改金额或成功后的下一次操作才生成新 ID。成功只确认本次加油金额，不在弹窗或成功提示中解释抽成与到账；随后刷新付款人钱包、收款人公开统计及当前主题/动态详情。
+加油弹窗默认 2 升，只接受不小于 2 且不超过 PostgreSQL bigint 上限的十进制正整数字符串。一次用户操作生成 UUID v4；网络或不明确失败后，以相同金额重试会复用原 `clientRequestId`，修改金额或成功后的下一次操作才生成新 ID。提交在途时禁用字段与按钮，并阻止 Android 系统返回关闭弹窗；只有结果明确后才恢复退出能力。成功只确认本次加油金额，不在弹窗或成功提示中解释抽成与到账；随后刷新付款人钱包、收款人公开统计及当前主题/动态详情。
 
 ## 5. API operationId 与生成类型
 
@@ -36,7 +36,7 @@
 
 ## 8. 本地存储、缓存及失效规则
 
-钱包、签到结果、流水、cursor 和加油待确认请求只存在于当前 Riverpod/弹窗生命周期，不写 Drift、SharedPreferences 或文件。退出、切号或会话失效后释放旧状态。签到成功失效本人资料、钱包和本人公开资料；加油成功失效钱包、目标用户资料及当前详情。关闭失败弹窗表示用户放弃该操作，重新打开会创建新的用户操作与请求 ID。
+钱包、签到结果、流水、cursor 和加油待确认请求只存在于当前 Riverpod/弹窗生命周期，不写 Drift、SharedPreferences 或文件。退出、切号或会话失效后释放旧状态。签到成功失效本人资料、钱包和本人公开资料；加油成功失效钱包、目标用户资料及当前详情。提交在途时弹窗不能关闭，避免释放仍需确认的幂等状态；关闭已经明确失败的弹窗表示用户放弃该操作，重新打开会创建新的用户操作与请求 ID。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
@@ -55,6 +55,7 @@ app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通
 - [x] 签到只在本次实际领取时提示，重复 Widget 构建不重复调用。
 - [x] 签到和用户加油通过组合层精确失效本人或收款人的资料缓存。
 - [x] 同金额失败重试复用 UUID，改金额和成功后的下一次操作轮换 UUID。
+- [x] 加油提交中系统返回不会关闭弹窗或产生第二次请求；在途成功仍返回结果，不明确失败后的同金额重试复用原 `clientRequestId`。
 - [x] 金额、小数、前导零、bigint 溢出、未知枚举、重复流水和缺失 cursor 均 fail-closed。
 - [x] 余额/流水局部失败、分页、`40007` 恢复、三类业务错误和空响应有自动测试。
 - [x] 钱包页在 360dp、400dp、600dp 展示长金额和流水无横向溢出。
@@ -71,4 +72,4 @@ app-shell 只负责会话就绪后的签到触发与非阻断提示；wallet 通
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/wallet/application/wallet_repository_ports.dart`、`lib/features/wallet/data/`、`lib/main.dart`。参见[应用壳](app-shell.md)、[用户](users.md)、[主题](threads.md)、[动态](moments.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+代码入口：`lib/features/wallet/application/wallet_repository_ports.dart`、`lib/features/wallet/data/`、`lib/main.dart`。参见[应用壳](app-shell.md)、[用户](users.md)、[主题](threads.md)、[动态](moments.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[API 生成和覆盖审计](../architecture/api-generation.md)与[主题帖测试审计](../architecture/thread-detail-test-audit.md)。

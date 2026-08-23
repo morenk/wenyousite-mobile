@@ -77,7 +77,6 @@ class ThreadDetailBottomBar extends StatelessWidget {
                         ),
                         ThreadSubscriptionControls(
                           threadId: detail.id,
-                          viewerUserId: detail.currentUserId,
                           hasAutomaticUpdates: detail.hasAutomaticUpdates,
                           compact: true,
                         ),

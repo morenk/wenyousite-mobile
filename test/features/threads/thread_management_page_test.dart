@@ -53,6 +53,42 @@ void main() {
     );
   });
 
+  testWidgets('整页加载失败显示问题编号并可原地重试', (tester) async {
+    final repository = _FakeRepository(
+      initial: _bootstrap(),
+      loadFailure: const ApiFailure(
+        userMessage: '主题管理信息暂时不可用',
+        requestId: 'thread-management-load-request-id',
+      ),
+      failLoadOnce: true,
+    );
+    await _pumpPage(tester, repository);
+
+    expect(find.text('主题管理信息加载失败'), findsOneWidget);
+    expect(find.text('问题编号：thread-management-load-request-id'), findsOneWidget);
+    expect(find.byKey(const Key('thread-management-save')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('thread-management-load-retry')));
+    await tester.pumpAndSettle();
+
+    expect(repository.loadCalls, 2);
+    expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
+    expect(find.byKey(const Key('thread-management-save')), findsOneWidget);
+  });
+
+  testWidgets('无管理权限时不渲染保存、邀请或删除入口', (tester) async {
+    final repository = _FakeRepository(initial: _bootstrap(canManage: false));
+    await _pumpPage(tester, repository);
+
+    expect(find.text('当前账号没有管理这个主题的权限。'), findsOneWidget);
+    expect(find.byKey(const Key('thread-management-save')), findsNothing);
+    expect(find.byKey(const Key('thread-management-title')), findsNothing);
+    expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
+    expect(find.byKey(const Key('thread-management-delete')), findsNothing);
+    expect(repository.lastDraft, isNull);
+    expect(repository.removeCalls, 0);
+  });
+
   testWidgets('楼主修改标题并保存后返回主题详情调用方', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
@@ -88,11 +124,48 @@ void main() {
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
   });
 
-  testWidgets('协作者可编辑常规信息但不能修改可见性或删除主题', (tester) async {
-    await _pumpPage(
-      tester,
-      _FakeRepository(initial: _bootstrap(isOwner: false)),
+  testWidgets('主题保存失败保留当前表单并恢复重试入口', (tester) async {
+    final repository = _FakeRepository(
+      initial: _bootstrap(),
+      updateFailure: const ApiFailure(
+        userMessage: '主题保存失败',
+        requestId: 'thread-management-save-request-id',
+      ),
     );
+    await _pumpPage(tester, repository);
+    await tester.enterText(
+      find.byKey(const Key('thread-management-title')),
+      '待重试的主题标题',
+    );
+
+    await tester.ensureVisible(find.byKey(const Key('thread-management-save')));
+    await tester.tap(find.byKey(const Key('thread-management-save')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastDraft?.title, '待重试的主题标题');
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(const Key('thread-management-title')),
+          )
+          .controller!
+          .text,
+      '待重试的主题标题',
+    );
+    final failure = find.byKey(const Key('thread-management-failure'));
+    await tester.ensureVisible(failure);
+    expect(find.text('问题编号：thread-management-save-request-id'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('thread-management-save')))
+          .onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('协作者可编辑常规信息但不能修改可见性或删除主题', (tester) async {
+    final repository = _FakeRepository(initial: _bootstrap(isOwner: false));
+    await _pumpPage(tester, repository);
 
     final visibility = tester
         .widget<DropdownButtonFormField<ThreadManagementVisibility>>(
@@ -106,6 +179,16 @@ void main() {
     expect(visibility.onChanged, isNull);
     expect(find.text('仅楼主可修改可见范围。'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('thread-management-title')),
+      '协作者修改的标题',
+    );
+    await tester.tap(find.byKey(const Key('thread-management-save')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastDraft?.title, '协作者修改的标题');
+    expect(repository.lastDraft?.visibility, ThreadManagementVisibility.public);
   });
 
   testWidgets('只有已发布私密主题楼主看到邀请链接管理', (tester) async {
@@ -137,6 +220,41 @@ void main() {
 
     expect(repository.removeCalls, 1);
     expect(find.text('首页占位'), findsOneWidget);
+  });
+
+  testWidgets('主题删除失败留在管理页并恢复原设置', (tester) async {
+    final repository = _FakeRepository(
+      initial: _bootstrap(),
+      removeFailure: const ApiFailure(
+        userMessage: '主题删除失败',
+        requestId: 'thread-management-delete-request-id',
+      ),
+    );
+    await _pumpPage(tester, repository);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('thread-management-delete')),
+    );
+    await tester.tap(find.byKey(const Key('thread-management-delete')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-management-delete-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(repository.removeCalls, 1);
+    expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
+    expect(find.text('原主题'), findsOneWidget);
+    expect(
+      find.text('问题编号：thread-management-delete-request-id'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.byKey(const Key('thread-management-delete')),
+          )
+          .onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets('版本冲突保留表单并允许采用云端最新版', (tester) async {
@@ -290,11 +408,19 @@ class _FakeRepository implements ThreadManagementRepository {
     required this.initial,
     ThreadManagementBootstrap? latest,
     this.conflictOnce = false,
+    this.loadFailure,
+    this.failLoadOnce = false,
+    this.updateFailure,
+    this.removeFailure,
   }) : latest = latest ?? initial;
 
   final ThreadManagementBootstrap initial;
   final ThreadManagementBootstrap latest;
   final bool conflictOnce;
+  ApiFailure? loadFailure;
+  final bool failLoadOnce;
+  final ApiFailure? updateFailure;
+  final ApiFailure? removeFailure;
   int loadCalls = 0;
   int removeCalls = 0;
   bool _didConflict = false;
@@ -303,12 +429,18 @@ class _FakeRepository implements ThreadManagementRepository {
   @override
   Future<ThreadManagementBootstrap> load(String threadId) async {
     loadCalls += 1;
+    final failure = loadFailure;
+    if (failure != null) {
+      if (failLoadOnce) loadFailure = null;
+      throw failure;
+    }
     return loadCalls == 1 ? initial : latest;
   }
 
   @override
   Future<void> remove(String threadId) async {
     removeCalls += 1;
+    if (removeFailure != null) throw removeFailure!;
   }
 
   @override
@@ -317,6 +449,7 @@ class _FakeRepository implements ThreadManagementRepository {
     required ThreadManagementDraft draft,
   }) async {
     lastDraft = draft;
+    if (updateFailure != null) throw updateFailure!;
     if (conflictOnce && !_didConflict) {
       _didConflict = true;
       throw const ApiFailure(
@@ -343,6 +476,7 @@ ThreadManagementBootstrap _bootstrap({
   int version = 1,
   String title = '原主题',
   bool isOwner = true,
+  bool canManage = true,
   ThreadManagementVisibility visibility = ThreadManagementVisibility.public,
 }) {
   return ThreadManagementBootstrap(
@@ -354,7 +488,7 @@ ThreadManagementBootstrap _bootstrap({
       visibility: visibility,
       version: version,
       published: true,
-      canManage: true,
+      canManage: canManage,
       isOwner: isOwner,
     ),
     categories: const [

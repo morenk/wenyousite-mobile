@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
@@ -12,14 +13,16 @@ class ThreadSubscriptionController
     extends StateNotifier<ThreadSubscriptionState> {
   ThreadSubscriptionController(
     this._repository,
-    this.target, {
+    this.threadId, {
+    this.viewerUserId,
     this._reconciler = const WriteReconciler(),
   }) : super(const ThreadSubscriptionState.loading()) {
     load();
   }
 
   final ThreadSubscriptionRepository _repository;
-  final ThreadSubscriptionTarget target;
+  final String threadId;
+  final String? viewerUserId;
   final WriteReconciler _reconciler;
   var _loadEpoch = 0;
   var _candidateEpoch = 0;
@@ -30,13 +33,10 @@ class ThreadSubscriptionController
     final candidateEpoch = ++_candidateEpoch;
     state = const ThreadSubscriptionState.loading();
     final subscriptionsFuture = _capture(
-      _repository.fetchSubscriptions(target.threadId),
+      _repository.fetchSubscriptions(threadId),
     );
     final candidatesFuture = _capture(
-      _repository.fetchCandidates(
-        target.threadId,
-        viewerUserId: target.viewerUserId,
-      ),
+      _repository.fetchCandidates(threadId, viewerUserId: viewerUserId),
     );
     final subscriptionsResult = await subscriptionsFuture;
     if (!mounted || epoch != _loadEpoch) return;
@@ -69,10 +69,7 @@ class ThreadSubscriptionController
     final epoch = ++_candidateEpoch;
     state = _copyState(isLoadingCandidates: true, clearCandidateFailure: true);
     final result = await _capture(
-      _repository.fetchCandidates(
-        target.threadId,
-        viewerUserId: target.viewerUserId,
-      ),
+      _repository.fetchCandidates(threadId, viewerUserId: viewerUserId),
     );
     if (!mounted || epoch != _candidateEpoch) return;
     _completeCandidates(result);
@@ -132,7 +129,7 @@ class ThreadSubscriptionController
           write: () async {
             if (desiredSubscribed) {
               return _repository.create(
-                threadId: target.threadId,
+                threadId: threadId,
                 type: type,
                 targetUserId: targetUserId,
               );
@@ -140,11 +137,11 @@ class ThreadSubscriptionController
             await _repository.remove(existing.id);
             return null;
           },
-          read: () => _repository.fetchSubscriptions(target.threadId),
+          read: () => _repository.fetchSubscriptions(threadId),
           targetReached: (subscriptions) {
             final found = subscriptions.any(
               (item) =>
-                  item.threadId == target.threadId &&
+                  item.threadId == threadId &&
                   item.type == type &&
                   item.targetUserId == targetUserId,
             );
@@ -331,13 +328,17 @@ Future<({T? value, Object? error})> _capture<T>(Future<T> future) async {
 }
 
 final threadSubscriptionControllerProvider = StateNotifierProvider.autoDispose
-    .family<
-      ThreadSubscriptionController,
-      ThreadSubscriptionState,
-      ThreadSubscriptionTarget
-    >((ref, target) {
-      return ThreadSubscriptionController(
-        ref.watch(threadSubscriptionRepositoryProvider),
-        target,
-      );
-    }, dependencies: [threadSubscriptionRepositoryProvider]);
+    .family<ThreadSubscriptionController, ThreadSubscriptionState, String>(
+      (ref, threadId) {
+        final sessionScope = ref.watch(sessionScopeProvider);
+        return ThreadSubscriptionController(
+          ref.watch(threadSubscriptionRepositoryProvider),
+          threadId,
+          viewerUserId: sessionScope.accountId,
+        );
+      },
+      dependencies: [
+        threadSubscriptionRepositoryProvider,
+        sessionScopeProvider,
+      ],
+    );

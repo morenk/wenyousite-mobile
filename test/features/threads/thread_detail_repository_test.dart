@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -150,6 +151,44 @@ void main() {
     expect(target.focusedReplyId, isNull);
   });
 
+  test('楼层列表与帖子定位允许顶层楼层携带 replyToPostId', () async {
+    final threadsApi = _MockThreadsApi();
+    final postsApi = _MockPostsApi();
+    when(
+      () => postsApi.postsFindFloors(
+        subthreadId: 'subthread-early',
+        cursor: null,
+        limit: 20,
+        order: 'OLDEST',
+        authorId: null,
+      ),
+    ).thenAnswer(
+      (_) async => _nullableFloorsResponse(
+        _floorsEnvelope(floors: [_floor(replyToPostId: 'reply-target')]),
+      ),
+    );
+    when(() => postsApi.postsFindById(id: 'floor-7')).thenAnswer(
+      (_) async => _postDetailResponse(
+        _postDetail(
+          id: 'floor-7',
+          floorNumber: 7,
+          replyToPostId: 'reply-target',
+          content: '目标楼层',
+        ),
+      ),
+    );
+    final repository = ApiThreadDetailRepository(threadsApi, postsApi);
+
+    final page = await repository.fetchFloors(subthreadId: 'subthread-early');
+    final target = await repository.fetchPostTarget('floor-7');
+
+    expect(page.items.single.id, 'floor-7');
+    expect(page.items.single.floorNumber, 7);
+    expect(target.floor.id, 'floor-7');
+    expect(target.focusedReplyId, isNull);
+    verifyNever(() => postsApi.postsFindById(id: 'reply-target'));
+  });
+
   test('楼中楼定位补取父楼层并注入目标回复', () async {
     final threadsApi = _MockThreadsApi();
     final postsApi = _MockPostsApi();
@@ -179,20 +218,221 @@ void main() {
     expect(target.floor.replies.single.id, 'reply-7');
     expect(target.floor.replies.single.body.markdown, '目标回复');
   });
+
+  test('主题详情拒绝空响应、错主题和跨主题子贴', () async {
+    final responses = <Response<ThreadsFindById200Response>>[
+      Response(requestOptions: RequestOptions(path: '/threads/thread-1')),
+      _threadDetailResponse(
+        detail: _threadDetail().rebuild(
+          (builder) => builder.id = 'other-thread',
+        ),
+      ),
+      _threadDetailResponse(
+        detail: _threadDetail().rebuild(
+          (builder) => builder.subthreads[0] = builder.subthreads[0].rebuild(
+            (subthread) => subthread.threadId = 'other-thread',
+          ),
+        ),
+      ),
+      _threadDetailResponse(
+        detail: _threadDetail().rebuild(
+          (builder) => builder.defaultSubthreadId = 'missing-subthread',
+        ),
+      ),
+    ];
+
+    for (final response in responses) {
+      final threadsApi = _MockThreadsApi();
+      when(
+        () => threadsApi.threadsFindById(id: 'thread-1'),
+      ).thenAnswer((_) async => response);
+
+      await expectLater(
+        ApiThreadDetailRepository(
+          threadsApi,
+          _MockPostsApi(),
+        ).fetchThread('thread-1'),
+        throwsA(isA<ApiFailure>()),
+      );
+    }
+  });
+
+  test('主题详情允许恢复窗口暂无默认子贴', () async {
+    final threadsApi = _MockThreadsApi();
+    when(() => threadsApi.threadsFindById(id: 'thread-1')).thenAnswer(
+      (_) async => _threadDetailResponse(
+        detail: _threadDetail().rebuild(
+          (builder) => builder.defaultSubthreadId = null,
+        ),
+      ),
+    );
+
+    final detail = await ApiThreadDetailRepository(
+      threadsApi,
+      _MockPostsApi(),
+    ).fetchThread('thread-1');
+
+    expect(detail.defaultSubthreadId, isNull);
+    expect(detail.subthreads, isNotEmpty);
+  });
+
+  test('楼层列表拒绝空响应、无效游标和层级或归属错配', () async {
+    final invalidEnvelopes = <PostsFindFloors200Response?>[
+      null,
+      _floorsEnvelope(hasMore: true),
+      _floorsEnvelope(cursor: '', hasMore: true),
+      _floorsEnvelope(
+        floors: [
+          _floor().rebuild(
+            (builder) => builder.subthreadId = 'other-subthread',
+          ),
+        ],
+      ),
+      _floorsEnvelope(
+        floors: [
+          _floor().rebuild(
+            (builder) => builder
+              ..kind = FloorResponseDtoKindEnum.BODY
+              ..floorNumber = null,
+          ),
+        ],
+      ),
+      _floorsEnvelope(
+        floors: [
+          _floor().rebuild((builder) => builder.parentPostId = 'parent'),
+        ],
+      ),
+      _floorsEnvelope(
+        floors: [
+          _floor().rebuild(
+            (builder) => builder.replies[0] = builder.replies[0].rebuild(
+              (reply) => reply.parentPostId = 'other-floor',
+            ),
+          ),
+        ],
+      ),
+      _floorsEnvelope(
+        floors: [
+          _floor().rebuild(
+            (builder) => builder.replies[0] = builder.replies[0].rebuild(
+              (reply) => reply.threadId = 'other-thread',
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    for (final envelope in invalidEnvelopes) {
+      final postsApi = _MockPostsApi();
+      when(
+        () => postsApi.postsFindFloors(
+          subthreadId: 'subthread-early',
+          cursor: null,
+          limit: 20,
+          order: 'OLDEST',
+          authorId: null,
+        ),
+      ).thenAnswer((_) async => _nullableFloorsResponse(envelope));
+
+      await expectLater(
+        ApiThreadDetailRepository(
+          _MockThreadsApi(),
+          postsApi,
+        ).fetchFloors(subthreadId: 'subthread-early'),
+        throwsA(isA<ApiFailure>()),
+      );
+    }
+  });
+
+  test('帖子定位拒绝错请求 ID、BODY 和父楼摘要错配', () async {
+    final invalidTargets = <PostDetailResponseDto?>[
+      null,
+      _postDetail(id: 'other-reply', parentPostId: 'floor-7', content: '回复'),
+      _postDetail(
+        id: 'reply-7',
+        parentPostId: 'floor-7',
+        content: '回复',
+      ).rebuild((builder) => builder.kind = PostDetailResponseDtoKindEnum.BODY),
+      _postDetail(
+        id: 'reply-7',
+        parentPostId: 'floor-7',
+        content: '回复',
+      ).rebuild((builder) => builder.parentPost.id = 'other-floor'),
+    ];
+
+    for (final detail in invalidTargets) {
+      final postsApi = _MockPostsApi();
+      when(
+        () => postsApi.postsFindById(id: 'reply-7'),
+      ).thenAnswer((_) async => _nullablePostDetailResponse(detail));
+      when(() => postsApi.postsFindById(id: 'floor-7')).thenAnswer(
+        (_) async => _postDetailResponse(
+          _postDetail(id: 'floor-7', floorNumber: 7, content: '父楼层'),
+        ),
+      );
+
+      await expectLater(
+        ApiThreadDetailRepository(
+          _MockThreadsApi(),
+          postsApi,
+        ).fetchPostTarget('reply-7'),
+        throwsA(isA<ApiFailure>()),
+      );
+      verifyNever(() => postsApi.postsFindById(id: 'floor-7'));
+    }
+  });
+
+  test('楼中楼定位拒绝跨主题、跨子贴或非根楼层的父帖子', () async {
+    final invalidParents = [
+      _postDetail(id: 'floor-7', floorNumber: 7, content: '父楼层').rebuild(
+        (builder) => builder
+          ..threadId = 'other-thread'
+          ..thread.id = 'other-thread',
+      ),
+      _postDetail(id: 'floor-7', floorNumber: 7, content: '父楼层').rebuild(
+        (builder) => builder
+          ..subthreadId = 'other-subthread'
+          ..subthread.id = 'other-subthread',
+      ),
+      _postDetail(id: 'floor-7', parentPostId: 'grand-floor', content: '非根楼层'),
+    ];
+
+    for (final parent in invalidParents) {
+      final postsApi = _MockPostsApi();
+      when(() => postsApi.postsFindById(id: 'reply-7')).thenAnswer(
+        (_) async => _postDetailResponse(
+          _postDetail(id: 'reply-7', parentPostId: 'floor-7', content: '回复'),
+        ),
+      );
+      when(
+        () => postsApi.postsFindById(id: 'floor-7'),
+      ).thenAnswer((_) async => _postDetailResponse(parent));
+
+      await expectLater(
+        ApiThreadDetailRepository(
+          _MockThreadsApi(),
+          postsApi,
+        ).fetchPostTarget('reply-7'),
+        throwsA(isA<ApiFailure>()),
+      );
+    }
+  });
 }
 
 class _MockThreadsApi extends Mock implements ThreadsApi {}
 
 class _MockPostsApi extends Mock implements PostsApi {}
 
-Response<ThreadsFindById200Response> _threadDetailResponse() {
+Response<ThreadsFindById200Response> _threadDetailResponse({
+  ThreadDetailResponseDto? detail,
+}) {
   return Response<ThreadsFindById200Response>(
     requestOptions: RequestOptions(path: '/api/v1/threads/thread-1'),
     data: ThreadsFindById200Response(
       (response) => response
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
-        ..data.replace(_threadDetail()),
+        ..data.replace(detail ?? _threadDetail()),
     ),
   );
 }
@@ -361,7 +601,34 @@ Response<PostsFindFloors200Response> _floorsResponse() {
   );
 }
 
-FloorResponseDto _floor() {
+PostsFindFloors200Response _floorsEnvelope({
+  List<FloorResponseDto>? floors,
+  String? cursor,
+  bool hasMore = false,
+}) {
+  return PostsFindFloors200Response(
+    (response) => response
+      ..code = ApiSuccessEnvelopeCodeEnum.number0
+      ..message = 'ok'
+      ..meta.update(
+        (meta) => meta
+          ..cursor = cursor
+          ..hasMore = hasMore,
+      )
+      ..data.addAll(floors ?? [_floor()]),
+  );
+}
+
+Response<PostsFindFloors200Response> _nullableFloorsResponse(
+  PostsFindFloors200Response? envelope,
+) {
+  return Response(
+    requestOptions: RequestOptions(path: '/subthreads/subthread-early/posts'),
+    data: envelope,
+  );
+}
+
+FloorResponseDto _floor({String? replyToPostId}) {
   final createdAt = DateTime.utc(2026, 8, 9, 13);
   return FloorResponseDto(
     (floor) => floor
@@ -371,6 +638,7 @@ FloorResponseDto _floor() {
       ..authorId = 'floor-author'
       ..kind = FloorResponseDtoKindEnum.FLOOR
       ..floorNumber = 7
+      ..replyToPostId = replyToPostId
       ..content = '楼层正文 {{dice:FLOOR-ROLL}}'
       ..diceRolls.add(
         _diceRoll(
@@ -482,15 +750,27 @@ Response<PostsFindById200Response> _postDetailResponse(
   );
 }
 
+Response<PostsFindById200Response> _nullablePostDetailResponse(
+  PostDetailResponseDto? detail,
+) {
+  if (detail == null) {
+    return Response(
+      requestOptions: RequestOptions(path: '/api/v1/posts/reply-7'),
+    );
+  }
+  return _postDetailResponse(detail);
+}
+
 PostDetailResponseDto _postDetail({
   required String id,
   required String content,
   int? floorNumber,
   String? parentPostId,
+  String? replyToPostId,
 }) {
   final createdAt = DateTime.utc(2026, 8, 10, 8);
-  return PostDetailResponseDto(
-    (post) => post
+  return PostDetailResponseDto((post) {
+    post
       ..id = id
       ..threadId = 'thread-1'
       ..subthreadId = 'subthread-early'
@@ -498,6 +778,7 @@ PostDetailResponseDto _postDetail({
       ..kind = PostDetailResponseDtoKindEnum.FLOOR
       ..floorNumber = floorNumber
       ..parentPostId = parentPostId
+      ..replyToPostId = replyToPostId
       ..content = content
       ..version = 1
       ..createdAt = createdAt
@@ -513,6 +794,13 @@ PostDetailResponseDto _postDetail({
           ..id = 'subthread-early'
           ..title = '主线',
       )
-      ..count.update((count) => count.replies = parentPostId == null ? 3 : 0),
-  );
+      ..count.update((count) => count.replies = parentPostId == null ? 3 : 0);
+    if (parentPostId != null) {
+      post.parentPost.update(
+        (parent) => parent
+          ..id = parentPostId
+          ..floorNumber = 7,
+      );
+    }
+  });
 }

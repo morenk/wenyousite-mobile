@@ -11,7 +11,7 @@ import 'package:wenyousite_mobile/features/social/domain/thread_subscription_mod
 void main() {
   test('初始并发读取当前主题订阅和玩家候选', () async {
     final repository = _FakeRepository();
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
 
     await _settle();
@@ -28,7 +28,7 @@ void main() {
         requestId: 'candidate-request-id',
       ),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
 
     await _settle();
@@ -50,7 +50,7 @@ void main() {
   test('玩家候选悬停时官方订阅先进入可操作状态且写入不会被迟到结果覆盖', () async {
     final candidates = Completer<List<ThreadSubscriptionCandidate>>();
     final repository = _FakeRepository(candidateCompleter: candidates);
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
 
     while (controller.state.phase != ThreadSubscriptionPhase.ready) {
@@ -78,7 +78,7 @@ void main() {
     final repository = _FakeRepository(
       candidateFailure: const ApiFailure(userMessage: '玩家列表暂时不可用'),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -95,7 +95,7 @@ void main() {
 
   test('官方订阅创建与取消使用服务端记录 ID', () async {
     final repository = _FakeRepository();
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -109,7 +109,7 @@ void main() {
   test('玩家订阅按目标独立切换并串行化写入', () async {
     final completer = Completer<ThreadSubscriptionRecord>();
     final repository = _FakeRepository(createCompleter: completer);
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -135,7 +135,7 @@ void main() {
         requestId: 'subscription-request-id',
       ),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -156,7 +156,7 @@ void main() {
       ],
       failure: _timeoutFailure('timeout-request-id'),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -189,7 +189,7 @@ void main() {
         requestId: 'duplicate-request-id',
       ),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -203,7 +203,7 @@ void main() {
       subscriptionReads: const [[], []],
       failure: _timeoutFailure('unknown-request-id'),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -224,7 +224,7 @@ void main() {
         businessCode: 40300,
       ),
     );
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -236,7 +236,7 @@ void main() {
 
   test('已失效玩家候选不发送创建请求', () async {
     final repository = _FakeRepository();
-    final controller = ThreadSubscriptionController(repository, _target);
+    final controller = _controller(repository);
     addTearDown(controller.dispose);
     await _settle();
 
@@ -322,10 +322,13 @@ class _FakeRepository implements ThreadSubscriptionRepository {
   }
 }
 
-const _target = ThreadSubscriptionTarget(
-  threadId: 'thread-1',
-  viewerUserId: 'viewer-1',
-);
+ThreadSubscriptionController _controller(_FakeRepository repository) {
+  return ThreadSubscriptionController(
+    repository,
+    'thread-1',
+    viewerUserId: 'viewer-1',
+  );
+}
 
 ThreadSubscriptionRecord _record({required String id, String? targetUserId}) {
   return ThreadSubscriptionRecord(

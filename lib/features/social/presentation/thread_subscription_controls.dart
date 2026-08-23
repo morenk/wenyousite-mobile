@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
@@ -14,14 +15,12 @@ class ThreadSubscriptionControls extends ConsumerWidget {
   const ThreadSubscriptionControls({
     required this.threadId,
     required this.hasAutomaticUpdates,
-    this.viewerUserId,
     this.compact = false,
     super.key,
   });
 
   final String threadId;
   final bool hasAutomaticUpdates;
-  final String? viewerUserId;
   final bool compact;
 
   @override
@@ -31,11 +30,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
     );
     if (!authenticated || hasAutomaticUpdates) return const SizedBox.shrink();
 
-    final target = ThreadSubscriptionTarget(
-      threadId: threadId,
-      viewerUserId: viewerUserId,
-    );
-    final provider = threadSubscriptionControllerProvider(target);
+    final provider = threadSubscriptionControllerProvider(threadId);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
@@ -63,11 +58,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
           key: const Key('thread-subscription-menu'),
           onPressed: state.isPending
               ? null
-              : () => _showPlayerSheet(
-                  context,
-                  target,
-                  includeThreadToggle: true,
-                ),
+              : () => _showPlayerSheet(context, ref, includeThreadToggle: true),
           tooltip: state.threadSubscription == null ? '管理更新订阅' : '已订阅官方更新，管理订阅',
           icon: WenyouIcon(
             state.threadSubscription == null
@@ -137,7 +128,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
                     key: const Key('thread-subscription-players'),
                     onPressed: state.isPending
                         ? null
-                        : () => _showPlayerSheet(context, target),
+                        : () => _showPlayerSheet(context, ref),
                     icon: const WenyouIcon(WenyouIconIds.identityMembers),
                     label: Text(
                       state.isLoadingCandidates
@@ -182,9 +173,10 @@ class ThreadSubscriptionControls extends ConsumerWidget {
 
   Future<void> _showPlayerSheet(
     BuildContext context,
-    ThreadSubscriptionTarget target, {
+    WidgetRef ref, {
     bool includeThreadToggle = false,
   }) {
+    final openedScope = ref.read(sessionScopeProvider);
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -192,7 +184,8 @@ class ThreadSubscriptionControls extends ConsumerWidget {
       builder: (_) => FractionallySizedBox(
         heightFactor: 0.72,
         child: _PlayerSubscriptionSheet(
-          target: target,
+          threadId: threadId,
+          openedScope: openedScope,
           includeThreadToggle: includeThreadToggle,
         ),
       ),
@@ -202,16 +195,28 @@ class ThreadSubscriptionControls extends ConsumerWidget {
 
 class _PlayerSubscriptionSheet extends ConsumerWidget {
   const _PlayerSubscriptionSheet({
-    required this.target,
+    required this.threadId,
+    required this.openedScope,
     this.includeThreadToggle = false,
   });
 
-  final ThreadSubscriptionTarget target;
+  final String threadId;
+  final SessionScope openedScope;
   final bool includeThreadToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final provider = threadSubscriptionControllerProvider(target);
+    final sheetRoute = ModalRoute.of<void>(context);
+    final currentScope = ref.watch(sessionScopeProvider);
+    if (currentScope != openedScope) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && sheetRoute?.isActive == true) {
+          sheetRoute!.navigator?.removeRoute(sheetRoute);
+        }
+      });
+      return const SizedBox.shrink();
+    }
+    final provider = threadSubscriptionControllerProvider(threadId);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;

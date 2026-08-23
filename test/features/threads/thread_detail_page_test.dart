@@ -253,6 +253,128 @@ void main() {
     );
   });
 
+  testWidgets('举报入口对楼主、私密主题、本人楼层和已删除楼层安全隐藏', (tester) async {
+    final ownerDetail = _copyThreadDetail(
+      _managerDetail,
+      subthreads: _managerDetail.subthreads,
+      isCurrentUserOwner: true,
+      currentUserId: 'user-1',
+    );
+    await tester.pumpWidget(
+      await _authenticatedDetailApp(
+        _FakeThreadDetailRepository(detail: ownerDetail),
+        userId: 'user-1',
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-detail-report')), findsNothing);
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
+
+    const ownFloorAuthor = ThreadAuthorModel(
+      id: 'collaborator-1',
+      username: '协作者',
+      level: 4,
+    );
+    final ownFloor = ThreadFloorModel(
+      id: 'floor-own',
+      floorNumber: 1,
+      author: ownFloorAuthor,
+      body: const ThreadBodyModel(markdown: '本人楼层'),
+      createdAt: _recentFixtureTime,
+      isDeleted: false,
+      replyCount: 0,
+      replies: const [],
+    );
+    await tester.pumpWidget(
+      await _authenticatedDetailApp(
+        _FakeThreadDetailRepository(
+          detail: _managerDetail,
+          mainFloors: [ownFloor],
+        ),
+        userId: 'collaborator-1',
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('thread-floor-card-floor-own')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-card-floor-own')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-own-report')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
+    await tester.pumpAndSettle();
+
+    final privateDetail = _copyThreadDetail(
+      _managerDetail,
+      subthreads: _managerDetail.subthreads,
+      isPrivate: true,
+      currentUserId: 'collaborator-1',
+    );
+    await tester.pumpWidget(
+      await _authenticatedDetailApp(
+        _FakeThreadDetailRepository(detail: privateDetail),
+        userId: 'collaborator-1',
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-detail-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-detail-report')), findsNothing);
+    await tester.tapAt(const Offset(12, 12));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('thread-floor-card-floor-1')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.longPress(find.byKey(const Key('thread-floor-card-floor-1')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-report')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
+    await tester.pumpAndSettle();
+
+    final deletedFloor = ThreadFloorModel(
+      id: 'floor-deleted',
+      floorNumber: 2,
+      author: _playerAuthor,
+      body: const ThreadBodyModel(markdown: '已删除楼层'),
+      createdAt: _recentFixtureTime,
+      isDeleted: true,
+      replyCount: 0,
+      replies: const [],
+    );
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(mainFloors: [deletedFloor])),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('thread-floor-card-floor-deleted')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-card-floor-deleted')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-deleted-report')),
+      findsNothing,
+    );
+  });
+
   testWidgets('主楼设置一次应用排序和发言者，筛选空态可恢复全部楼层', (tester) async {
     final repository = _FakeThreadDetailRepository();
     await tester.pumpWidget(_detailApp(repository));
@@ -1458,6 +1580,58 @@ void main() {
     expect(repository.targetPostIds, ['floor-1', 'floor-1']);
   });
 
+  testWidgets('切号关闭主题详情旧编辑器并清空账号内存草稿', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        threadDetailRepositoryProvider.overrideWithValue(
+          _FakeThreadDetailRepository(),
+        ),
+        threadSubscriptionRepositoryProvider.overrideWithValue(
+          _FakeThreadSubscriptionRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('account-a'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const ThreadDetailPage(threadId: 'thread-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-floor-compose')));
+    await tester.pumpAndSettle();
+    await _replacePostComposerText(tester, '账号 A 的未发布楼层');
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('account-b'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    await tester.tap(find.byKey(const Key('thread-floor-compose')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .controller
+          .document
+          .toPlainText()
+          .trim(),
+      isEmpty,
+    );
+  });
+
   testWidgets('登录用户点击零回复楼层正文直接回复且不显示回复按钮', (tester) async {
     final repository = _FakeThreadDetailRepository(mainFloor: _sideFloor);
     final container = ProviderContainer(
@@ -1635,7 +1809,7 @@ void main() {
     addTearDown(container.dispose);
     await container
         .read(sessionControllerProvider.notifier)
-        .authenticate(_tokensFor('user-1'));
+        .authenticate(_tokensFor('collaborator-1'));
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -1753,7 +1927,7 @@ void main() {
       addTearDown(container.dispose);
       await container
           .read(sessionControllerProvider.notifier)
-          .authenticate(_tokensFor('user-1'));
+          .authenticate(_tokensFor('collaborator-1'));
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -1800,7 +1974,7 @@ void main() {
     addTearDown(container.dispose);
     await container
         .read(sessionControllerProvider.notifier)
-        .authenticate(_tokensFor('user-1'));
+        .authenticate(_tokensFor('collaborator-1'));
     const visualKey = Key('thread-detail-manager-text-first-visual');
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -1853,7 +2027,7 @@ void main() {
     addTearDown(container.dispose);
     await container
         .read(sessionControllerProvider.notifier)
-        .authenticate(_tokensFor('user-1'));
+        .authenticate(_tokensFor('collaborator-1'));
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -1924,6 +2098,35 @@ Widget _detailApp(
       home: visualKey == null
           ? page
           : RepaintBoundary(key: visualKey, child: page),
+    ),
+  );
+}
+
+Future<Widget> _authenticatedDetailApp(
+  ThreadDetailRepository repository, {
+  required String userId,
+}) async {
+  final container = ProviderContainer(
+    overrides: [
+      tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+      sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+      stickersEnabledProvider.overrideWithValue(false),
+      threadDetailRepositoryProvider.overrideWithValue(repository),
+      threadSubscriptionRepositoryProvider.overrideWithValue(
+        _FakeThreadSubscriptionRepository(),
+      ),
+      postRepositoryProvider.overrideWithValue(_FakePostRepository()),
+    ],
+  );
+  addTearDown(container.dispose);
+  await container
+      .read(sessionControllerProvider.notifier)
+      .authenticate(_tokensFor(userId));
+  return UncontrolledProviderScope(
+    container: container,
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: const ThreadDetailPage(threadId: 'thread-1'),
     ),
   );
 }
@@ -2202,7 +2405,9 @@ ThreadDetailModel _copyThreadDetail(
   ThreadDetailModel source, {
   required List<ThreadSubthreadModel> subthreads,
   String? title,
+  bool? isPrivate,
   bool? isCurrentUserPlayer,
+  bool? isCurrentUserOwner,
   String? currentUserId,
   int? likeCount,
 }) {
@@ -2212,7 +2417,7 @@ ThreadDetailModel _copyThreadDetail(
     owner: source.owner,
     categorySlug: source.categorySlug,
     status: source.status,
-    isPrivate: source.isPrivate,
+    isPrivate: isPrivate ?? source.isPrivate,
     isPinned: source.isPinned,
     viewCount: source.viewCount,
     likeCount: likeCount ?? source.likeCount,
@@ -2222,7 +2427,7 @@ ThreadDetailModel _copyThreadDetail(
     hasAutomaticUpdates: source.hasAutomaticUpdates,
     canManageThread: source.canManageThread,
     isCurrentUserPlayer: isCurrentUserPlayer ?? source.isCurrentUserPlayer,
-    isCurrentUserOwner: source.isCurrentUserOwner,
+    isCurrentUserOwner: isCurrentUserOwner ?? source.isCurrentUserOwner,
     currentUserId: currentUserId ?? source.currentUserId,
     tipTotal: source.tipTotal,
     memberCount: source.memberCount,
@@ -2264,7 +2469,7 @@ final _managerDetail = ThreadDetailModel(
   defaultSubthreadId: 'subthread-1',
   canManageThread: true,
   hasAutomaticUpdates: true,
-  currentUserId: 'user-1',
+  currentUserId: 'collaborator-1',
   createdAt: DateTime.utc(2026, 8, 1),
   updatedAt: _recentFixtureTime,
 );

@@ -14,6 +14,11 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 export 'package:wenyousite_mobile/features/posts/application/post_states.dart';
 
 typedef PostDiscussionTarget = ({String rootPostId, String? focusedReplyId});
+typedef PostDiscussionControllerProvider =
+    AutoDisposeStateNotifierProvider<
+      PostDiscussionController,
+      PostDiscussionState
+    >;
 
 class PostDiscussionController extends StateNotifier<PostDiscussionState> {
   PostDiscussionController(

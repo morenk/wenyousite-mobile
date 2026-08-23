@@ -22,6 +22,7 @@ class ApiPostRepository implements PostRepository {
       if (dto == null) {
         throw const ApiFailure(userMessage: '帖子加载失败，请重新加载。');
       }
+      _validateDetail(dto, expectedId: postId);
       return _mapDetail(dto);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -47,9 +48,14 @@ class ApiPostRepository implements PostRepository {
       if (envelope == null) {
         throw const ApiFailure(userMessage: '回复加载失败，请稍后重试。');
       }
+      _validateReplyPage(envelope.data, rootPostId: rootPostId);
       return PostReplyPage(
         items: envelope.data.map(_mapReply).toList(growable: false),
-        cursor: envelope.meta.cursor,
+        cursor: _validatePageCursor(
+          envelope.meta.cursor,
+          envelope.meta.hasMore,
+          message: '回复列表已经发生变化，请重新加载。',
+        ),
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
@@ -79,6 +85,13 @@ class ApiPostRepository implements PostRepository {
       if (dto == null) {
         throw const ApiFailure(userMessage: '发帖失败，请重新加载。');
       }
+      _validatePost(dto, message: '发帖失败，请重新加载。');
+      if (dto.subthreadId != input.subthreadId ||
+          dto.parentPostId != input.parentPostId ||
+          dto.replyToPostId != input.replyToPostId ||
+          dto.clientRequestId != input.clientRequestId) {
+        throw const ApiFailure(userMessage: '发帖结果已经发生变化，请重新加载。');
+      }
       return _mapPost(dto);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -104,6 +117,10 @@ class ApiPostRepository implements PostRepository {
       if (dto == null) {
         throw const ApiFailure(userMessage: '帖子更新失败，请重新加载。');
       }
+      _validatePost(dto, message: '帖子更新失败，请重新加载。');
+      if (dto.id != postId) {
+        throw const ApiFailure(userMessage: '帖子已经发生变化，请重新加载。');
+      }
       return _mapPost(dto);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -128,6 +145,11 @@ class ApiPostRepository implements PostRepository {
       if (dto == null) {
         throw const ApiFailure(userMessage: '正文更新失败，请重新加载。');
       }
+      _validatePost(dto, message: '正文更新失败，请重新加载。');
+      if (dto.subthreadId != subthreadId ||
+          dto.kind != PostResponseDtoKindEnum.BODY) {
+        throw const ApiFailure(userMessage: '正文已经发生变化，请重新加载。');
+      }
       return _mapPost(dto);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -144,6 +166,133 @@ class ApiPostRepository implements PostRepository {
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
+  }
+
+  void _validateDetail(
+    PostDetailResponseDto dto, {
+    required String expectedId,
+  }) {
+    const message = '帖子已经发生变化，请重新加载。';
+    _validatePostShape(
+      id: dto.id,
+      authorId: dto.authorId,
+      author: dto.author,
+      isBody: dto.kind == PostDetailResponseDtoKindEnum.BODY,
+      isFloor: dto.kind == PostDetailResponseDtoKindEnum.FLOOR,
+      floorNumber: dto.floorNumber,
+      parentPostId: dto.parentPostId,
+      replyToPostId: dto.replyToPostId,
+      clientRequestId: dto.clientRequestId,
+      diceRolls: dto.diceRolls,
+      message: message,
+    );
+    final parent = dto.parentPost;
+    if (dto.id != expectedId ||
+        dto.thread.id != dto.threadId ||
+        dto.subthread.id != dto.subthreadId ||
+        (dto.parentPostId == null && parent != null) ||
+        (dto.parentPostId != null &&
+            (parent == null ||
+                parent.id != dto.parentPostId ||
+                parent.floorNumber == null))) {
+      throw const ApiFailure(userMessage: message);
+    }
+  }
+
+  void _validatePost(PostResponseDto dto, {required String message}) {
+    _validatePostShape(
+      id: dto.id,
+      authorId: dto.authorId,
+      author: dto.author,
+      isBody: dto.kind == PostResponseDtoKindEnum.BODY,
+      isFloor: dto.kind == PostResponseDtoKindEnum.FLOOR,
+      floorNumber: dto.floorNumber,
+      parentPostId: dto.parentPostId,
+      replyToPostId: dto.replyToPostId,
+      clientRequestId: dto.clientRequestId,
+      diceRolls: dto.diceRolls,
+      message: message,
+    );
+  }
+
+  void _validateReplyPage(
+    Iterable<ReplyResponseDto> replies, {
+    required String rootPostId,
+  }) {
+    const message = '回复列表已经发生变化，请重新加载。';
+    String? threadId;
+    String? subthreadId;
+    for (final reply in replies) {
+      _validatePostShape(
+        id: reply.id,
+        authorId: reply.authorId,
+        author: reply.author,
+        isBody: reply.kind == ReplyResponseDtoKindEnum.BODY,
+        isFloor: reply.kind == ReplyResponseDtoKindEnum.FLOOR,
+        floorNumber: reply.floorNumber,
+        parentPostId: reply.parentPostId,
+        replyToPostId: reply.replyToPostId,
+        clientRequestId: reply.clientRequestId,
+        diceRolls: reply.diceRolls,
+        message: message,
+      );
+      final target = reply.replyToPost;
+      if (reply.parentPostId != rootPostId ||
+          (threadId != null && reply.threadId != threadId) ||
+          (subthreadId != null && reply.subthreadId != subthreadId) ||
+          (reply.replyToPostId == null && target != null) ||
+          (reply.replyToPostId != null &&
+              (target == null ||
+                  target.id != reply.replyToPostId ||
+                  target.authorId != target.author.id))) {
+        throw const ApiFailure(userMessage: message);
+      }
+      threadId ??= reply.threadId;
+      subthreadId ??= reply.subthreadId;
+    }
+  }
+
+  void _validatePostShape({
+    required String id,
+    required String authorId,
+    required PostAuthorResponseDto author,
+    required bool isBody,
+    required bool isFloor,
+    required num? floorNumber,
+    required String? parentPostId,
+    required String? replyToPostId,
+    required String? clientRequestId,
+    required Iterable<DiceRollResponseDto> diceRolls,
+    required String message,
+  }) {
+    final invalidBody =
+        isBody &&
+        (floorNumber != null ||
+            parentPostId != null ||
+            replyToPostId != null ||
+            clientRequestId != null);
+    final invalidFloor =
+        isFloor &&
+        ((parentPostId == null && floorNumber == null) ||
+            (parentPostId != null && floorNumber != null));
+    if (authorId != author.id ||
+        (!isBody && !isFloor) ||
+        invalidBody ||
+        invalidFloor ||
+        diceRolls.any((roll) => roll.postId != id)) {
+      throw ApiFailure(userMessage: message);
+    }
+  }
+
+  String? _validatePageCursor(
+    String? cursor,
+    bool hasMore, {
+    required String message,
+  }) {
+    if (hasMore && (cursor == null || cursor.trim().isEmpty)) {
+      throw ApiFailure(userMessage: message);
+    }
+    return hasMore ? cursor : null;
   }
 
   PostItem _mapPost(PostResponseDto dto) {

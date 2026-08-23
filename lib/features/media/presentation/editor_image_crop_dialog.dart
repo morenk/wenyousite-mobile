@@ -52,6 +52,7 @@ Future<List<MediaUploadInput>?> pickAndCropEditorImages(
       if (!context.mounted) return null;
       final retry = await showDialog<bool>(
         context: context,
+        useRootNavigator: false,
         barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
           title: const Text('选择图片失败'),
@@ -85,6 +86,7 @@ Future<List<MediaUploadInput>?> showEditorImageCropDialog(
   assert(inputs.isNotEmpty);
   return showDialog<List<MediaUploadInput>>(
     context: context,
+    useRootNavigator: false,
     barrierDismissible: false,
     builder: (_) => _EditorImageCropDialog(
       inputs: inputs,

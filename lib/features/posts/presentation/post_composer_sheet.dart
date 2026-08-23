@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
@@ -35,7 +36,7 @@ Future<PostItem?> showPostComposerSheet({
     sheetAnimationStyle: AnimationStyle.noAnimation,
     backgroundColor: Colors.transparent,
     constraints: const BoxConstraints(maxWidth: double.infinity),
-    builder: (context) => _ExpandablePostComposer(
+    builder: (context) => _PostComposerRouteHost(
       target: effectiveTarget,
       onDraftChanged: onDraftChanged,
     ),
@@ -66,11 +67,80 @@ PostComposerTarget _targetWithInitialContent(
   label: target.label,
 );
 
-class _ExpandablePostComposer extends StatefulWidget {
-  const _ExpandablePostComposer({required this.target, this.onDraftChanged});
+class _PostComposerRouteHost extends StatefulWidget {
+  const _PostComposerRouteHost({required this.target, this.onDraftChanged});
 
   final PostComposerTarget target;
   final ValueChanged<String>? onDraftChanged;
+
+  @override
+  State<_PostComposerRouteHost> createState() => _PostComposerRouteHostState();
+}
+
+class _PostComposerRouteHostState extends State<_PostComposerRouteHost> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  final _composerKey = GlobalKey<_PostComposerSheetState>();
+  ModalRoute<Object?>? _outerRoute;
+  NavigatorState? _outerNavigator;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _outerRoute ??= ModalRoute.of(context);
+    _outerNavigator ??= Navigator.of(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final navigator = _navigatorKey.currentState;
+        if (navigator != null && navigator.canPop()) {
+          navigator.pop();
+          return;
+        }
+        _composerKey.currentState?.handleSystemBack();
+      },
+      child: Navigator(
+        key: _navigatorKey,
+        onGenerateRoute: (settings) => PageRouteBuilder<void>(
+          settings: settings,
+          opaque: false,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (context, _, _) => _ExpandablePostComposer(
+            target: widget.target,
+            onDraftChanged: widget.onDraftChanged,
+            composerKey: _composerKey,
+            onClose: _close,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _close(PostItem? result) {
+    final route = _outerRoute;
+    final navigator = _outerNavigator;
+    if (route == null || navigator == null || !route.isActive) return;
+    navigator.removeRoute<Object?>(route, result);
+  }
+}
+
+class _ExpandablePostComposer extends StatefulWidget {
+  const _ExpandablePostComposer({
+    required this.target,
+    required this.composerKey,
+    required this.onClose,
+    this.onDraftChanged,
+  });
+
+  final PostComposerTarget target;
+  final ValueChanged<String>? onDraftChanged;
+  final GlobalKey<_PostComposerSheetState> composerKey;
+  final ValueChanged<PostItem?> onClose;
 
   @override
   State<_ExpandablePostComposer> createState() =>
@@ -121,8 +191,10 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
                 child: Material(
                   color: Theme.of(context).scaffoldBackgroundColor,
                   child: PostComposerSheet(
+                    key: widget.composerKey,
                     target: widget.target,
                     onDraftChanged: widget.onDraftChanged,
+                    onClose: widget.onClose,
                     expanded: _extent >= _maximumExtent - .01,
                     onResize: (delta) {
                       setState(() {
@@ -151,6 +223,7 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
 class PostComposerSheet extends ConsumerStatefulWidget {
   const PostComposerSheet({
     required this.target,
+    required this.onClose,
     this.onDraftChanged,
     this.expanded = false,
     this.onResize,
@@ -159,6 +232,7 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   });
 
   final PostComposerTarget target;
+  final ValueChanged<PostItem?> onClose;
   final ValueChanged<String>? onDraftChanged;
   final bool expanded;
   final ValueChanged<double>? onResize;
@@ -170,6 +244,7 @@ class PostComposerSheet extends ConsumerStatefulWidget {
 
 class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   late final RichEditorSession _editorSession;
+  late final Object _openedSessionScope;
   final WenyouEditorToolbarController _toolbarController =
       WenyouEditorToolbarController();
   bool _closing = false;
@@ -182,10 +257,14 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   @override
   void initState() {
     super.initState();
+    _openedSessionScope = ref.read(sessionScopeProvider);
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       initialSelection: RichEditorSelectionPlacement.end,
       onMarkdownChanged: (markdown) {
+        if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
+          return;
+        }
         ref
             .read(postComposerControllerProvider(widget.target).notifier)
             .updateContent(markdown);
@@ -205,6 +284,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(sessionScopeProvider, (previous, next) {
+      if (next == _openedSessionScope || _closing) return;
+      _closeForSessionChange();
+    });
     final provider = postComposerControllerProvider(widget.target);
     final state = ref.watch(provider);
     final uploadState = ref.watch(
@@ -218,252 +301,248 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     final tokens = context.wenyouTokens;
     final locked = state.isSubmitting || uploadState.isBusy;
     _editorSession.readOnly = locked;
-    return PopScope<Object?>(
-      canPop: _closing && !_toolbarController.trayOpen,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (_toolbarController.closeTray()) return;
-        if (state.isSubmitting) return;
-        unawaited(_requestClose());
-      },
-      child: Column(
-        key: const Key('post-composer-sheet'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          GestureDetector(
-            key: const Key('post-composer-header'),
-            behavior: HitTestBehavior.opaque,
-            onVerticalDragUpdate: widget.onResize == null
-                ? null
-                : (details) => widget.onResize!(details.delta.dy),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: tokens.space12,
-                  child: Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: tokens.border,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+    return Column(
+      key: const Key('post-composer-sheet'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          key: const Key('post-composer-header'),
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragUpdate: widget.onResize == null
+              ? null
+              : (details) => widget.onResize!(details.delta.dy),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: tokens.space12,
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: tokens.border,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: tokens.minimumTouchTarget,
-                  child: Row(
+              ),
+              SizedBox(
+                height: tokens.minimumTouchTarget,
+                child: Row(
+                  children: [
+                    IconButton(
+                      key: const Key('post-composer-close'),
+                      tooltip: '关闭编辑器',
+                      onPressed: locked ? null : _requestClose,
+                      icon: const WenyouIcon(WenyouIconIds.actionClose),
+                    ),
+                    SizedBox(width: tokens.space4),
+                    Expanded(
+                      child: Text(
+                        widget.target.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    IconButton(
+                      key: const Key('post-composer-expand'),
+                      tooltip: widget.expanded ? '恢复半屏' : '展开编辑器',
+                      onPressed: widget.onToggleExpanded,
+                      icon: WenyouIcon(
+                        widget.expanded
+                            ? WenyouIconIds.actionExitFullscreen
+                            : WenyouIconIds.actionFullscreen,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        if (state.failure != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: WenyouStatusBanner(
+              key: const Key('post-composer-failure'),
+              message: state.failure!.userMessage,
+              detail: _requestDetail(state.failure),
+              tone: WenyouStatusTone.error,
+              action: state.conflict == null
+                  ? null
+                  : TextButton.icon(
+                      key: const Key('post-composer-retry-conflict'),
+                      onPressed: locked ? null : _confirmConflictRetry,
+                      icon: const WenyouIcon(WenyouIconIds.actionSync),
+                      label: const Text('用当前正文覆盖最新版'),
+                    ),
+            ),
+          ),
+        if (state.hasAmbiguousCreate)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: const WenyouStatusBanner(
+              message: '上次发布失败。',
+              detail: '再次提交会先确认上次结果，不会重复发布；之后再保存本次修改。',
+            ),
+          ),
+        if (_editorSession.codecFailure != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: WenyouStatusBanner(
+              message: '当前格式组合暂时不能安全保存。',
+              detail: _editorSession.codecFailure,
+              tone: WenyouStatusTone.error,
+            ),
+          ),
+        if (_editorSession.issues.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: WenyouStatusBanner(
+              message: '正文中有 ${_editorSession.issues.length} 处内容暂时无法编辑。',
+              detail: '这些内容会原样保留。',
+            ),
+          ),
+        if (uploadState.failure != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: WenyouStatusBanner(
+              message: uploadState.failure!.userMessage,
+              detail: _uploadRequestDetail(uploadState.failure),
+              tone: WenyouStatusTone.error,
+              action: uploadState.failure!.canRetry
+                  ? TextButton(
+                      key: const Key('post-composer-retry-upload'),
+                      onPressed: _retryImageUpload,
+                      child: const Text('重试上传'),
+                    )
+                  : null,
+            ),
+          ),
+        if (uploadState.isBusy)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: _UploadStatus(
+              progress: uploadState.progress,
+              onCancel: () => ref
+                  .read(
+                    mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+                  )
+                  .cancel(),
+            ),
+          ),
+        Expanded(
+          child: ColoredBox(
+            key: const Key('post-composer-canvas'),
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      IconButton(
-                        key: const Key('post-composer-close'),
-                        tooltip: '关闭编辑器',
-                        onPressed: locked ? null : _requestClose,
-                        icon: const WenyouIcon(WenyouIconIds.actionClose),
-                      ),
-                      SizedBox(width: tokens.space4),
-                      Expanded(
-                        child: Text(
-                          widget.target.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
+                      Semantics(
+                        textField: true,
+                        label: widget.target.label,
+                        child: QuillEditor(
+                          key: const Key('post-composer-body'),
+                          controller: _editorSession.controller,
+                          focusNode: _editorSession.focusNode,
+                          scrollController: _editorSession.scrollController,
+                          config: QuillEditorConfig(
+                            scrollable: true,
+                            expands: true,
+                            autoFocus: true,
+                            padding: EdgeInsets.fromLTRB(
+                              tokens.space16,
+                              tokens.space16,
+                              tokens.space16,
+                              tokens.space16,
+                            ),
+                            placeholder: _placeholder(widget.target.kind),
+                            customStyles: wenyouEditorTextStyles(context),
+                            embedBuilders: wenyouEditorEmbedBuilders(),
+                            customShortcuts: _editorSession.clipboardShortcuts,
+                            customActions: _editorSession.clipboardActions,
+                            contextMenuBuilder: _editorSession.buildContextMenu,
+                          ),
                         ),
                       ),
-                      IconButton(
-                        key: const Key('post-composer-expand'),
-                        tooltip: widget.expanded ? '恢复半屏' : '展开编辑器',
-                        onPressed: widget.onToggleExpanded,
-                        icon: WenyouIcon(
-                          widget.expanded
-                              ? WenyouIconIds.actionExitFullscreen
-                              : WenyouIconIds.actionFullscreen,
-                        ),
+                      MentionSuggestions(
+                        controller: _editorSession.controller,
+                        focusNode: _editorSession.focusNode,
+                        threadId: widget.target.threadId,
+                        enabled: !locked && _editorSession.codecFailure == null,
                       ),
                     ],
                   ),
                 ),
+                WenyouComposerDock(
+                  key: const Key('post-composer-toolbar'),
+                  controller: _editorSession.controller,
+                  surface: WenyouComposerSurface.expandableSheet,
+                  enabled: !locked && _editorSession.codecFailure == null,
+                  editorFocusNode: _editorSession.focusNode,
+                  onInsertImage: _insertImage,
+                  onInsertSticker: ref.watch(stickersEnabledProvider)
+                      ? _insertSticker
+                      : null,
+                  onSaveDraft: _openContentDrafts,
+                  onSubmit: _submit,
+                  isSubmitting: state.isSubmitting,
+                  submitLabel: _submitLabel(widget.target.kind),
+                  characterCount: _editorSession.characterCount,
+                  characterLimit: 10000,
+                  toolbarController: _toolbarController,
+                ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          if (state.failure != null)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: WenyouStatusBanner(
-                key: const Key('post-composer-failure'),
-                message: state.failure!.userMessage,
-                detail: _requestDetail(state.failure),
-                tone: WenyouStatusTone.error,
-                action: state.conflict == null
-                    ? null
-                    : TextButton.icon(
-                        key: const Key('post-composer-retry-conflict'),
-                        onPressed: locked ? null : _confirmConflictRetry,
-                        icon: const WenyouIcon(WenyouIconIds.actionSync),
-                        label: const Text('用当前正文覆盖最新版'),
-                      ),
-              ),
-            ),
-          if (state.hasAmbiguousCreate)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: const WenyouStatusBanner(
-                message: '上次发布失败。',
-                detail: '再次提交会先确认上次结果，不会重复发布；之后再保存本次修改。',
-              ),
-            ),
-          if (_editorSession.codecFailure != null)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: WenyouStatusBanner(
-                message: '当前格式组合暂时不能安全保存。',
-                detail: _editorSession.codecFailure,
-                tone: WenyouStatusTone.error,
-              ),
-            ),
-          if (_editorSession.issues.isNotEmpty)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: WenyouStatusBanner(
-                message: '正文中有 ${_editorSession.issues.length} 处内容暂时无法编辑。',
-                detail: '这些内容会原样保留。',
-              ),
-            ),
-          if (uploadState.failure != null)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: WenyouStatusBanner(
-                message: uploadState.failure!.userMessage,
-                detail: _uploadRequestDetail(uploadState.failure),
-                tone: WenyouStatusTone.error,
-                action: uploadState.failure!.canRetry
-                    ? TextButton(
-                        key: const Key('post-composer-retry-upload'),
-                        onPressed: _retryImageUpload,
-                        child: const Text('重试上传'),
-                      )
-                    : null,
-              ),
-            ),
-          if (uploadState.isBusy)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.space12,
-                tokens.space12,
-                tokens.space12,
-                0,
-              ),
-              child: _UploadStatus(
-                progress: uploadState.progress,
-                onCancel: () => ref
-                    .read(
-                      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-                    )
-                    .cancel(),
-              ),
-            ),
-          Expanded(
-            child: ColoredBox(
-              key: const Key('post-composer-canvas'),
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Semantics(
-                          textField: true,
-                          label: widget.target.label,
-                          child: QuillEditor(
-                            key: const Key('post-composer-body'),
-                            controller: _editorSession.controller,
-                            focusNode: _editorSession.focusNode,
-                            scrollController: _editorSession.scrollController,
-                            config: QuillEditorConfig(
-                              scrollable: true,
-                              expands: true,
-                              autoFocus: true,
-                              padding: EdgeInsets.fromLTRB(
-                                tokens.space16,
-                                tokens.space16,
-                                tokens.space16,
-                                tokens.space16,
-                              ),
-                              placeholder: _placeholder(widget.target.kind),
-                              customStyles: wenyouEditorTextStyles(context),
-                              embedBuilders: wenyouEditorEmbedBuilders(),
-                              customShortcuts:
-                                  _editorSession.clipboardShortcuts,
-                              customActions: _editorSession.clipboardActions,
-                              contextMenuBuilder:
-                                  _editorSession.buildContextMenu,
-                            ),
-                          ),
-                        ),
-                        MentionSuggestions(
-                          controller: _editorSession.controller,
-                          focusNode: _editorSession.focusNode,
-                          threadId: widget.target.threadId,
-                          enabled:
-                              !locked && _editorSession.codecFailure == null,
-                        ),
-                      ],
-                    ),
-                  ),
-                  WenyouComposerDock(
-                    key: const Key('post-composer-toolbar'),
-                    controller: _editorSession.controller,
-                    surface: WenyouComposerSurface.expandableSheet,
-                    enabled: !locked && _editorSession.codecFailure == null,
-                    editorFocusNode: _editorSession.focusNode,
-                    onInsertImage: _insertImage,
-                    onInsertSticker: ref.watch(stickersEnabledProvider)
-                        ? _insertSticker
-                        : null,
-                    onSaveDraft: _openContentDrafts,
-                    onSubmit: _submit,
-                    isSubmitting: state.isSubmitting,
-                    submitLabel: _submitLabel(widget.target.kind),
-                    characterCount: _editorSession.characterCount,
-                    characterLimit: 10000,
-                    toolbarController: _toolbarController,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  void handleSystemBack() {
+    if (_closing) return;
+    if (_toolbarController.closeTray()) return;
+    final state = ref.read(postComposerControllerProvider(widget.target));
+    if (state.isSubmitting) return;
+    unawaited(_requestClose());
   }
 
   void _onEditorSessionChanged() {
@@ -471,20 +550,32 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   Future<void> _submit() async {
+    if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
     if (!_editorSession.flush()) return;
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
         .submit();
-    if (!mounted || result == null) return;
+    if (!mounted) return;
+    if (_closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope ||
+        result == null) {
+      return;
+    }
     widget.onDraftChanged?.call('');
     setState(() => _closing = true);
-    Navigator.pop(context, result);
+    widget.onClose(result);
   }
 
   Future<void> _confirmConflictRetry() async {
+    if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
     if (!_editorSession.flush()) return;
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: false,
       builder: (context) => AlertDialog(
         title: const Text('覆盖云端最新版？'),
         content: const Text('内容已被其他设备修改。继续会用当前编辑器全文覆盖刚读取的最新版。'),
@@ -500,17 +591,31 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (!mounted) return;
+    if (_closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope ||
+        confirmed != true) {
+      return;
+    }
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
         .retryConflict();
-    if (!mounted || result == null) return;
+    if (!mounted) return;
+    if (_closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope ||
+        result == null) {
+      return;
+    }
     setState(() => _closing = true);
-    Navigator.pop(context, result);
+    widget.onClose(result);
   }
 
   Future<void> _requestClose() async {
-    if (_closing || _preparingClose) return;
+    if (_closing ||
+        _preparingClose ||
+        ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
     final composerState = ref.read(
       postComposerControllerProvider(widget.target),
     );
@@ -527,18 +632,28 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     widget.onDraftChanged?.call(current.content);
     if (!mounted) return;
     setState(() => _closing = true);
-    Navigator.pop(context);
+    widget.onClose(null);
   }
 
   Future<void> _openContentDrafts() async {
+    if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
     if (!_editorSession.flush()) return;
     final state = ref.read(postComposerControllerProvider(widget.target));
     await showContentDraftsSheet(
       context: context,
       currentContent: state.content,
-      onRestore: (content) => ref
-          .read(postComposerControllerProvider(widget.target).notifier)
-          .restoreContent(content),
+      onRestore: (content) {
+        if (!mounted ||
+            _closing ||
+            ref.read(sessionScopeProvider) != _openedSessionScope) {
+          return;
+        }
+        ref
+            .read(postComposerControllerProvider(widget.target).notifier)
+            .restoreContent(content);
+      },
     );
   }
 
@@ -563,7 +678,13 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
             uploadTaskId: _uploadTaskId,
             title: '裁剪正文图片',
           );
-    if (!mounted || _preparingClose || _closing || uploaded == null) return;
+    if (!mounted) return;
+    if (_preparingClose ||
+        _closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope ||
+        uploaded == null) {
+      return;
+    }
     _insertBlockImage(uploaded);
   }
 
@@ -572,12 +693,28 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 
   Future<void> _insertSticker() async {
+    if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
     final sticker = await showStickerPicker(context);
-    if (!mounted || sticker == null) return;
+    if (!mounted) return;
+    if (_closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope ||
+        sticker == null) {
+      return;
+    }
     _editorSession.insertSticker(
       assetId: sticker.asset.id,
       url: sticker.asset.url,
     );
+  }
+
+  void _closeForSessionChange() {
+    _closing = true;
+    ref
+        .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
+        .cancel();
+    widget.onClose(null);
   }
 }
 

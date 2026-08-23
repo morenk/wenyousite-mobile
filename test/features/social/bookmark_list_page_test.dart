@@ -22,7 +22,7 @@ void main() {
     expect(find.text('骰子猫'), findsOneWidget);
     expect(find.text('Lv.3'), findsOneWidget);
     expect(find.byKey(const Key('home-thread-card-thread-1')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('home-thread-card-thread-1')));
+    await tester.tap(find.bySemanticsLabel('打开主题：雾港来信，作者 骰子猫'));
     await tester.pumpAndSettle();
     expect(find.text('主题=thread-1'), findsOneWidget);
 

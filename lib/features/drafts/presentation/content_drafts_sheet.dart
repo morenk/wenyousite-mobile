@@ -217,6 +217,7 @@ class _ReadyDrafts extends ConsumerWidget {
     if (conflict == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: false,
       builder: (context) => AlertDialog(
         title: Text('覆盖槽位 ${conflict.latest.slot} 的最新版？'),
         content: const Text('云端内容已被其他设备修改。继续会以当前编辑器正文覆盖刚读取的最新版。'),
@@ -381,6 +382,7 @@ class _DraftSlotCard extends ConsumerWidget {
     if (needsConfirmation) {
       final confirmed = await showDialog<bool>(
         context: context,
+        useRootNavigator: false,
         builder: (context) => AlertDialog(
           title: Text('恢复槽位 ${fresh.slot}？'),
           content: const Text('恢复会替换当前编辑器正文；标题、分类和标签不会改变。是否继续？'),
@@ -409,6 +411,7 @@ class _DraftSlotCard extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: false,
       builder: (context) => AlertDialog(
         title: Text('覆盖槽位 ${item.slot}？'),
         content: const Text('此槽位的云端正文会被当前编辑器正文替换。'),
@@ -438,6 +441,7 @@ class _DraftSlotCard extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: false,
       builder: (context) => AlertDialog(
         title: Text('删除槽位 ${item.slot}？'),
         content: const Text('这条正文草稿删除后无法恢复。当前编辑器内容不会受影响。'),

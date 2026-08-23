@@ -180,6 +180,108 @@ void main() {
       ),
     );
   });
+
+  test('空目标和超长说明在发起请求前失败', () async {
+    final api = _MockReportsApi();
+    final repository = ApiReportRepository(api);
+    final invalidInputs = [
+      const ReportInput(
+        target: ReportTarget.thread('   '),
+        reason: ReportReason.spam,
+      ),
+      ReportInput(
+        target: const ReportTarget.post('post-1'),
+        reason: ReportReason.harassment,
+        details: List.filled(1001, '字').join(),
+      ),
+    ];
+
+    for (final input in invalidInputs) {
+      await expectLater(repository.create(input), throwsA(isA<ApiFailure>()));
+    }
+    verifyNever(
+      () => api.reportsCreate(createReportDto: any(named: 'createReportDto')),
+    );
+  });
+
+  test('40914、429 和连接中断保留结构化失败与结果不明语义', () async {
+    final requestOptions = RequestOptions(path: '/api/v1/reports');
+    final cases =
+        <({DioException error, int? code, String message, bool unknown})>[
+          (
+            error: DioException(
+              requestOptions: requestOptions,
+              type: DioExceptionType.badResponse,
+              response: Response<Map<String, Object?>>(
+                requestOptions: requestOptions,
+                statusCode: 409,
+                data: const {'code': 40914},
+              ),
+            ),
+            code: 40914,
+            message: '已提交过相同的待处理举报',
+            unknown: false,
+          ),
+          (
+            error: DioException(
+              requestOptions: requestOptions,
+              type: DioExceptionType.badResponse,
+              response: Response<Map<String, Object?>>(
+                requestOptions: requestOptions,
+                statusCode: 429,
+                data: const {'code': 42900},
+              ),
+            ),
+            code: 42900,
+            message: '操作太频繁',
+            unknown: true,
+          ),
+          (
+            error: DioException(
+              requestOptions: requestOptions,
+              type: DioExceptionType.connectionError,
+              message: 'connection reset',
+            ),
+            code: null,
+            message: '暂时无法连接温油站',
+            unknown: true,
+          ),
+        ];
+
+    for (final testCase in cases) {
+      final api = _MockReportsApi();
+      when(
+        () => api.reportsCreate(createReportDto: any(named: 'createReportDto')),
+      ).thenThrow(testCase.error);
+
+      await expectLater(
+        ApiReportRepository(api).create(
+          const ReportInput(
+            target: ReportTarget.thread('thread-1'),
+            reason: ReportReason.spam,
+          ),
+        ),
+        throwsA(
+          isA<ApiFailure>()
+              .having(
+                (failure) => failure.businessCode,
+                'businessCode',
+                testCase.code,
+              )
+              .having(
+                (failure) => failure.userMessage,
+                'userMessage',
+                contains(testCase.message),
+              )
+              .having(
+                (failure) => failure.hasUnknownWriteOutcome,
+                'hasUnknownWriteOutcome',
+                testCase.unknown,
+              ),
+        ),
+      );
+    }
+  });
 }
 
 Set<String> _knownNames<T>(

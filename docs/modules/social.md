@@ -31,7 +31,7 @@
 
 ## 6. 状态模型和数据流
 
-`ThreadInteractionTarget` 管理详情点赞与快捷收藏，并通过可选投影读取端口采用最新主题详情；`BookmarkListController` 独立保存服务端收藏夹、当前 `selectedFolderId`、分类错误、当前筛选分页和创建/移动/取消的唯一在途动作。收藏 DTO 在 data 层映射为包含完整主题卡字段与收藏管理 ID 的展示模型，页面再交给共享 `ThreadFeedCard`；非法头像/封面 URL 安全降级，超契约多图只取首张安全图片。分类读取失败不遮断“全部”收藏，列表筛选失败也不丢失已取得的分类。`ThreadSubscriptionTarget` 保存当前主题订阅、玩家候选、独立的 `candidateFailure` 与唯一在途目标。`UserRelationTarget` 管理关系写入并可采用公开用户关系投影，`UserRelationListTarget` 管理公开/本人列表。收藏、互动、订阅、关系与关系列表五类端口位于 `social/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。校准中的动作保存中性结果状态和问题编号；所有状态均为 autoDispose，当前不建立跨页面事件总线。
+`ThreadInteractionTarget` 管理详情点赞与快捷收藏，并通过可选投影读取端口采用最新主题详情；`BookmarkListController` 独立保存服务端收藏夹、当前 `selectedFolderId`、分类错误、当前筛选分页和创建/移动/取消的唯一在途动作。收藏 DTO 在 data 层映射为包含完整主题卡字段与收藏管理 ID 的展示模型，页面再交给共享 `ThreadFeedCard`；非法头像/封面 URL 安全降级，超契约多图只取首张安全图片。分类读取失败不遮断“全部”收藏，列表筛选失败也不丢失已取得的分类。主题订阅控制器以 `threadId` 为 family key，内部观察稳定 `SessionScope` 并只用当前 `accountId` 过滤本人候选；状态保存当前主题订阅、玩家候选、独立的 `candidateFailure` 与唯一在途目标。`UserRelationTarget` 管理关系写入并可采用公开用户关系投影，`UserRelationListTarget` 管理公开/本人列表。收藏、互动、订阅、关系与关系列表五类端口位于 `social/application`，API 适配器由 `main.dart` 组合根绑定，控制器不导入具体 data 仓储。校准中的动作保存中性结果状态和问题编号；所有状态均为 autoDispose，当前不建立跨页面事件总线。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -39,7 +39,7 @@
 
 ## 8. 本地存储、缓存及失效规则
 
-互动、订阅、收藏与关系列表只存在于 autoDispose Provider；离页、退出或切号即释放。主题刷新重新采用详情投影；收藏页下拉刷新并行重读当前筛选首屏与分类计数，分类切换、创建、移动和取消均建立新的请求世代并丢弃旧响应。收藏夹名称、选择和 cursor 不持久化、不离线排队，也不写进公开内容或全局缓存。
+互动、订阅、收藏与关系列表只存在于 autoDispose Provider；离页、退出或切号即释放。玩家订阅面板记录打开时的会话作用域，切号或退出后当帧隐藏并自动关闭，旧控制器迟到结果不得恢复旧账号操作。主题刷新重新采用详情投影；收藏页下拉刷新并行重读当前筛选首屏与分类计数，分类切换、创建、移动和取消均建立新的请求世代并丢弃旧响应。收藏夹名称、选择和 cursor 不持久化、不离线排队，也不写进公开内容或全局缓存。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
@@ -62,6 +62,7 @@ threads 页面消费主题互动和订阅控制器，moments 详情使用同一�
 - [x] 详情点赞、收藏与订阅在底部拇指栏同行且不与子贴导航争宽；320dp、2 倍文字缩放时创作入口收缩为带语义和提示的 48dp 图标按钮，游客与管理者状态安全收缩。
 - [x] 官方更新与玩家发言订阅可逆，管理者隐藏、候选过滤、候选独立失败/重试、竞态恢复及 360/400/600dp 布局通过。
 - [x] 订阅创建超时和 `40904` 经精确列表记录确认后收敛成功；相反投影、读取失败、页面销毁和旧响应保持安全状态。
+- [x] 玩家候选 viewer 只来自当前稳定会话；账号 A 打开面板后切到账号 B 或退出时旧面板当帧隐藏并关闭，B 账号重新加载且不能操作 A 的订阅。
 - [x] 点赞、收藏、关注与拉黑在未知写入结果后采用最新详情/关系投影，确认期间重复点击不产生第二次写入。
 - [x] 本人收藏首屏/分页/空错刷新、稳定主题导航、记录 ID 取消与多宽度布局通过。
 - [x] 收藏页“主题帖 / 动态”复用共享点按页签；收藏与关系列表首屏使用结构 Skeleton，加载、空、错与刷新保持独立状态。
@@ -82,4 +83,4 @@ threads 页面消费主题互动和订阅控制器，moments 详情使用同一�
 
 ## 14. 相关代码与架构文档
 
-端口与控制器：`lib/features/social/application/`；API 适配器：`lib/features/social/data/`；页面：`lib/features/social/presentation/`，消费入口为主题详情和公开用户页。参见[主题](threads.md)、[用户与资料](users.md)。
+端口与控制器：`lib/features/social/application/`；API 适配器：`lib/features/social/data/`；页面：`lib/features/social/presentation/`，消费入口为主题详情和公开用户页。参见[主题](threads.md)、[用户与资料](users.md)与[主题帖测试审计](../architecture/thread-detail-test-audit.md)。

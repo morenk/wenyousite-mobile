@@ -24,6 +24,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       if (dto == null) {
         throw const ApiFailure(userMessage: '主题加载失败，请稍后重试。');
       }
+      _validateThread(dto, expectedId: threadId);
       return _mapThread(dto);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -38,6 +39,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       if (target == null) {
         throw const ApiFailure(userMessage: '目标楼层加载失败，请稍后重试。');
       }
+      _validatePostDetail(target, expectedId: postId);
       if (target.parentPostId == null) {
         return ThreadPostTargetModel(
           requestedPostId: target.id,
@@ -53,9 +55,11 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       if (parent == null) {
         throw const ApiFailure(userMessage: '目标楼层加载失败，请稍后重试。');
       }
+      _validatePostDetail(parent, expectedId: target.parentPostId!);
       if (parent.threadId != target.threadId ||
           parent.subthreadId != target.subthreadId ||
-          parent.parentPostId != null) {
+          parent.parentPostId != null ||
+          parent.floorNumber != target.parentPost?.floorNumber) {
         throw const ApiFailure(userMessage: '目标楼层已经发生变化，请返回搜索后重试。');
       }
       return ThreadPostTargetModel(
@@ -93,14 +97,129 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       if (envelope == null) {
         throw const ApiFailure(userMessage: '楼层加载失败，请稍后重试。');
       }
+      _validateFloors(envelope.data, expectedSubthreadId: subthreadId);
       return CursorPage(
         items: envelope.data.map(_mapFloor).toList(growable: false),
-        cursor: envelope.meta.cursor,
+        cursor: _validatePageCursor(
+          envelope.meta.cursor,
+          envelope.meta.hasMore,
+        ),
         hasMore: envelope.meta.hasMore,
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
+  }
+
+  void _validateThread(
+    ThreadDetailResponseDto dto, {
+    required String expectedId,
+  }) {
+    const message = '主题已经发生变化，请重新加载。';
+    final activeSubthreads = dto.subthreads.where(
+      (subthread) => subthread.deletedAt == null,
+    );
+    if (dto.id != expectedId ||
+        dto.ownerId != dto.owner.id ||
+        dto.subthreads.any((subthread) => subthread.threadId != dto.id) ||
+        (dto.defaultSubthreadId != null &&
+            !activeSubthreads.any(
+              (subthread) => subthread.id == dto.defaultSubthreadId,
+            )) ||
+        dto.topicTags.any(
+          (relation) =>
+              relation.threadId != dto.id || relation.tagId != relation.tag.id,
+        ) ||
+        dto.subthreads.any(
+          (subthread) =>
+              subthread.bodyPost?.diceRolls.any(
+                (roll) => roll.postId != subthread.bodyPost!.id,
+              ) ??
+              false,
+        )) {
+      throw const ApiFailure(userMessage: message);
+    }
+  }
+
+  void _validateFloors(
+    Iterable<FloorResponseDto> floors, {
+    required String expectedSubthreadId,
+  }) {
+    const message = '楼层列表已经发生变化，请重新加载。';
+    String? threadId;
+    for (final floor in floors) {
+      _validateFloor(floor, message: message);
+      if (floor.subthreadId != expectedSubthreadId ||
+          (threadId != null && floor.threadId != threadId)) {
+        throw const ApiFailure(userMessage: message);
+      }
+      threadId ??= floor.threadId;
+      for (final reply in floor.replies) {
+        _validateReply(reply, parent: floor, message: message);
+      }
+    }
+  }
+
+  void _validateFloor(FloorResponseDto dto, {required String message}) {
+    if (dto.kind != FloorResponseDtoKindEnum.FLOOR ||
+        dto.floorNumber == null ||
+        dto.parentPostId != null ||
+        dto.authorId != dto.author.id ||
+        dto.diceRolls.any((roll) => roll.postId != dto.id)) {
+      throw ApiFailure(userMessage: message);
+    }
+  }
+
+  void _validateReply(
+    ReplyResponseDto dto, {
+    required FloorResponseDto parent,
+    required String message,
+  }) {
+    final target = dto.replyToPost;
+    if (dto.kind != ReplyResponseDtoKindEnum.FLOOR ||
+        dto.floorNumber != null ||
+        dto.parentPostId != parent.id ||
+        dto.threadId != parent.threadId ||
+        dto.subthreadId != parent.subthreadId ||
+        dto.authorId != dto.author.id ||
+        dto.diceRolls.any((roll) => roll.postId != dto.id) ||
+        (dto.replyToPostId == null && target != null) ||
+        (dto.replyToPostId != null &&
+            (target == null ||
+                target.id != dto.replyToPostId ||
+                target.authorId != target.author.id))) {
+      throw ApiFailure(userMessage: message);
+    }
+  }
+
+  void _validatePostDetail(
+    PostDetailResponseDto dto, {
+    required String expectedId,
+  }) {
+    const message = '目标楼层已经发生变化，请返回搜索后重试。';
+    final parent = dto.parentPost;
+    if (dto.id != expectedId ||
+        dto.kind != PostDetailResponseDtoKindEnum.FLOOR ||
+        dto.thread.id != dto.threadId ||
+        dto.subthread.id != dto.subthreadId ||
+        dto.authorId != dto.author.id ||
+        dto.diceRolls.any((roll) => roll.postId != dto.id) ||
+        (dto.parentPostId == null &&
+            (dto.floorNumber == null || parent != null)) ||
+        (dto.parentPostId != null &&
+            (dto.floorNumber != null ||
+                parent == null ||
+                parent.id != dto.parentPostId ||
+                parent.floorNumber == null))) {
+      throw const ApiFailure(userMessage: message);
+    }
+  }
+
+  String? _validatePageCursor(String? cursor, bool hasMore) {
+    if (hasMore && (cursor == null || cursor.trim().isEmpty)) {
+      throw const ApiFailure(userMessage: '楼层列表已经发生变化，请重新加载。');
+    }
+    return hasMore ? cursor : null;
   }
 
   ThreadDetailModel _mapThread(ThreadDetailResponseDto dto) {

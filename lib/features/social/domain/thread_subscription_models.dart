@@ -29,20 +29,3 @@ class ThreadSubscriptionCandidate {
   final int level;
   final String? avatarUrl;
 }
-
-class ThreadSubscriptionTarget {
-  const ThreadSubscriptionTarget({required this.threadId, this.viewerUserId});
-
-  final String threadId;
-  final String? viewerUserId;
-
-  @override
-  bool operator ==(Object other) {
-    return other is ThreadSubscriptionTarget &&
-        other.threadId == threadId &&
-        other.viewerUserId == viewerUserId;
-  }
-
-  @override
-  int get hashCode => Object.hash(threadId, viewerUserId);
-}

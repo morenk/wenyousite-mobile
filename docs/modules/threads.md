@@ -92,6 +92,8 @@
 - [x] 提及、引用、行内代码和主题标签按 Foundation v6.2.0 在阅读/编辑态统一；主题流内嵌回复使用 17sp/1.8，并有组件、Codec、布局和 Golden 回归。
 - [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射，但详情题头只展示主题/子贴标题；骰子节点使用 Foundation 已结算/待掷语义色的无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`，已结算结果可打开逐骰明细且 TalkBack 不重复朗读。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
+- [x] 详情、子贴、楼层与内嵌回复在 API 映射前校验请求 ID、主题/子贴归属、kind、父楼层、回复目标、作者、骰子和分页 cursor；空响应或错配数据进入安全失败态。
+- [x] 脚本化 Dio 组合测试跨越 GoRouter、详情页面、controller、生产 API 仓储 Provider 与生成客户端，覆盖详情/楼层读取、错主题拒绝、筛选查询和楼中楼幂等写入。
 - [x] 楼层连续列表以分隔线代替逐条卡片，点击非交互正文/元信息直接回复且不吞链接、图片、内嵌回复或长按；主题流短预览精确回复当前条目，只有超限“展开全部”进入独立讨论，楼层与独立讨论回复保留完整操作菜单。
 - [x] 发表楼层后不重新加载首屏楼层，原楼层窗口和顺序保持稳定；新楼层追加到窗口末尾并通过 `post` 坐标平滑定位。
 - [x] 正文与楼层之间复用“总数 + 单一设置入口”；顺序与角色发言者在面板内一次应用只重载一次，分页和 `40007` 恢复保持组合筛选，切换子贴清除作者但保留顺序，筛选空态可恢复全部楼层且不二次过滤内嵌楼中楼。
@@ -102,6 +104,7 @@
 - [x] 点赞/取消点赞使用服务端计数，收藏/取消收藏使用稳定记录 ID，失败保留旧状态。
 - [x] 非楼主主题详情可进入加油，成功后累计金额采用服务端投影且游客保留完整登录回跳。
 - [x] 游客互动登录回跳保留帖子目标，登录身份变化重取投影，登录态操作和 360/400/600dp 布局通过。
+- [x] 切号或退出会关闭主题详情旧帖子编辑器、清空页面内草稿并丢弃旧会话迟到回调；新账号重开相同楼层目标时输入为空。
 - [x] 两类订阅采用服务端记录 ID，候选/本人/管理者过滤、失败恢复及多宽度玩家面板通过；玩家候选失败不阻断官方更新并可独立重试。
 - [x] 创建主题严格执行“未发布草稿 → 聚合保存/发布”，传递动态分类、可见性、标签、正文和全部版本。
 - [x] 主题草稿允许骰子-only，发布要求非骰子正文；默认子贴 BODY 与每个楼层/回复分别执行当前正文 20 个上限，320dp 键盘态骰子任务无布局溢出。
@@ -110,6 +113,8 @@
 - [x] 主题详情在有效子贴下提供固定底部拇指栏，喜欢/收藏/订阅与 48dp 发表入口同排且正确扣减正文视口；滚动、加载和身份变化均不播放顶栏、正文或入口动画。游客登录文案、当前子贴目标、底部编辑器打开行为及 320dp/两倍字号图标收敛有 Widget 与视觉回归。
 - [x] 长文与分页楼层提前构建并保留 Markdown 解析结果；快速滚动不依赖楼层重新入场，分页新增楼层首帧即处于最终位置且等待 200ms 后不再变化。
 - [x] 管理者从详情进入受保护工作台；协作者字段约束、楼主可见性和删除权限与服务端一致。
+- [x] 管理测试夹具分别表达楼主与协作者身份，不用矛盾的 owner ID/capability 组合证明权限。
+- [x] 主题与子贴管理页覆盖整页加载失败/问题编号/原地重试、无 capability 时隐藏全部写入口、保存失败保留表单，以及删除或排序失败保留服务端已加载事实。
 - [x] 统一工作台用标准线性页签承载主题设置、子贴内容和成员权限；旧管理地址恢复到对应分区，新建/编辑子贴全屏路由均受登录保护。
 - [x] 主题设置聚合保存标题、分区、状态、可见性、标签与默认正文并传递全部版本；冲突保留表单并要求采用或覆盖最新版，切页和离页防丢完整。
 - [x] 删除区分已发布/草稿风险、二次确认、空响应失败与成功回首页，360/400/600dp 布局通过。
@@ -132,4 +137,4 @@
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。

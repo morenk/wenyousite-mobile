@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,6 +56,132 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('取消订阅'), findsOneWidget);
     expect(repository.createdTargets, [null, 'player-1']);
+  });
+
+  testWidgets('切换账号或退出会话时关闭旧账号的玩家订阅面板', (tester) async {
+    final repository = _FakeRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      userId: 'account-a',
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    expect(repository.candidateViewerUserIds, ['account-a']);
+    await tester.tap(find.byKey(const Key('thread-subscription-players')));
+    await tester.pumpAndSettle();
+    expect(find.text('订阅玩家发言'), findsOneWidget);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('account-b'));
+    await tester.pump();
+    expect(find.text('订阅玩家发言'), findsNothing);
+    await tester.pumpAndSettle();
+    expect(repository.candidateViewerUserIds, ['account-a', 'account-b']);
+    expect(repository.createdTargets, isEmpty);
+
+    await tester.tap(find.byKey(const Key('thread-subscription-players')));
+    await tester.pumpAndSettle();
+    expect(find.text('订阅玩家发言'), findsOneWidget);
+
+    await container.read(sessionControllerProvider.notifier).logoutLocally();
+    await tester.pump();
+    expect(find.text('订阅玩家发言'), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-subscription-official')), findsNothing);
+    expect(repository.createdTargets, isEmpty);
+  });
+
+  testWidgets('切号后立即打开新路由只关闭旧订阅面板并保留新路由', (tester) async {
+    final repository = _FakeRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      userId: 'account-a',
+    );
+    final navigatorKey = GlobalKey<NavigatorState>();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container, navigatorKey: navigatorKey));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subscription-players')));
+    await tester.pumpAndSettle();
+    expect(find.text('订阅玩家发言'), findsOneWidget);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('account-b'));
+    unawaited(
+      navigatorKey.currentState!.push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('新账号页面')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('新账号页面'), findsOneWidget);
+    expect(find.text('订阅玩家发言'), findsNothing);
+  });
+
+  testWidgets('账号 A 的订阅状态不会被账号 B 复用', (tester) async {
+    final repository = _FakeRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      userId: 'account-a',
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pumpAndSettle();
+    expect(find.text('已订阅官方更新'), findsOneWidget);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('account-b'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订阅官方更新'), findsOneWidget);
+    expect(find.text('已订阅官方更新'), findsNothing);
+    expect(repository.candidateViewerUserIds, ['account-a', 'account-b']);
+  });
+
+  testWidgets('账号 A 的迟到订阅写入不会污染账号 B', (tester) async {
+    final delayedCreate = Completer<ThreadSubscriptionRecord>();
+    final repository = _FakeRepository(createCompleter: delayedCreate);
+    final container = await _authenticatedContainer(
+      repository,
+      userId: 'account-a',
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subscription-official')));
+    await tester.pump();
+    expect(repository.createCalls, 1);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('account-b'));
+    await tester.pumpAndSettle();
+    delayedCreate.complete(
+      ThreadSubscriptionRecord(
+        id: 'account-a-official',
+        threadId: 'thread-1',
+        type: ThreadSubscriptionType.thread,
+        createdAt: DateTime.utc(2026, 8, 10),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('订阅官方更新'), findsOneWidget);
+    expect(find.text('已订阅官方更新'), findsNothing);
+    expect(find.text('已订阅帖子官方更新。'), findsNothing);
+    expect(repository.candidateViewerUserIds, ['account-a', 'account-b']);
   });
 
   testWidgets('订阅加载失败提供重试并显示请求 ID', (tester) async {
@@ -172,15 +301,19 @@ Widget _guestApp(ThreadSubscriptionRepository repository) {
   );
 }
 
-Widget _app(ProviderContainer container, {bool hasAutomaticUpdates = false}) {
+Widget _app(
+  ProviderContainer container, {
+  bool hasAutomaticUpdates = false,
+  GlobalKey<NavigatorState>? navigatorKey,
+}) {
   return UncontrolledProviderScope(
     container: container,
     child: MaterialApp(
+      navigatorKey: navigatorKey,
       theme: AppTheme.light,
       home: Scaffold(
         body: ThreadSubscriptionControls(
           threadId: 'thread-1',
-          viewerUserId: 'viewer-1',
           hasAutomaticUpdates: hasAutomaticUpdates,
         ),
       ),
@@ -189,8 +322,9 @@ Widget _app(ProviderContainer container, {bool hasAutomaticUpdates = false}) {
 }
 
 Future<ProviderContainer> _authenticatedContainer(
-  ThreadSubscriptionRepository repository,
-) async {
+  ThreadSubscriptionRepository repository, {
+  String userId = 'viewer-1',
+}) async {
   final container = ProviderContainer(
     overrides: [
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
@@ -200,7 +334,7 @@ Future<ProviderContainer> _authenticatedContainer(
   );
   await container
       .read(sessionControllerProvider.notifier)
-      .authenticate(_tokens);
+      .authenticate(_tokensFor(userId));
   return container;
 }
 
@@ -210,15 +344,18 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     this.failCandidates = false,
     this.failWrite = false,
     this.uncertainWrite = false,
+    this.createCompleter,
   });
 
   final bool failLoad;
   final bool failCandidates;
   final bool failWrite;
   final bool uncertainWrite;
+  final Completer<ThreadSubscriptionRecord>? createCompleter;
   int loadCalls = 0;
   int createCalls = 0;
   final List<String?> createdTargets = [];
+  final List<String?> candidateViewerUserIds = [];
 
   @override
   Future<List<ThreadSubscriptionRecord>> fetchSubscriptions(
@@ -239,6 +376,7 @@ class _FakeRepository implements ThreadSubscriptionRepository {
     String threadId, {
     String? viewerUserId,
   }) async {
+    candidateViewerUserIds.add(viewerUserId);
     if (failCandidates) {
       throw const ApiFailure(userMessage: '玩家列表暂时不可用');
     }
@@ -275,6 +413,7 @@ class _FakeRepository implements ThreadSubscriptionRepository {
       );
     }
     createdTargets.add(targetUserId);
+    if (createCompleter != null) return createCompleter!.future;
     return ThreadSubscriptionRecord(
       id: targetUserId == null ? 'official-1' : 'user-1',
       threadId: threadId,
@@ -288,10 +427,13 @@ class _FakeRepository implements ThreadSubscriptionRepository {
   Future<void> remove(String subscriptionId) async {}
 }
 
-const _tokens = SessionTokens(
-  accessToken: 'access-token',
-  refreshToken: 'refresh-token',
-);
+SessionTokens _tokensFor(String userId) {
+  final payload = base64Url.encode(utf8.encode(jsonEncode({'sub': userId})));
+  return SessionTokens(
+    accessToken: 'header.$payload.signature',
+    refreshToken: 'refresh-token-$userId',
+  );
+}
 
 class _MemoryTokenStore implements TokenStore {
   SessionTokens? value;
@@ -311,5 +453,6 @@ class _FakeSessionRemote implements SessionRemote {
   Future<void> logout(SessionTokens tokens) async {}
 
   @override
-  Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+  Future<SessionTokens> refresh(String refreshToken) async =>
+      _tokensFor('viewer-1');
 }

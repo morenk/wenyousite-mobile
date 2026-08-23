@@ -37,6 +37,482 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  testWidgets('楼中楼首屏加载失败展示问题编号并可重试', (tester) async {
+    var attempts = 0;
+    final repository = _FakePostRepository(
+      onFetchPost: (postId) async {
+        attempts += 1;
+        if (attempts == 1) {
+          throw const ApiFailure(
+            userMessage: '楼中楼暂时不可用。',
+            httpStatus: 503,
+            requestId: 'discussion-initial-request',
+          );
+        }
+        return _root;
+      },
+    );
+    final container = await _postContainer(repository);
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+
+    expect(find.text('楼中楼讨论加载失败'), findsOneWidget);
+    expect(find.text('楼中楼暂时不可用。'), findsOneWidget);
+    expect(find.text('问题编号：discussion-initial-request'), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-list')), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilledButton, '重试'));
+    await _pumpUi(tester);
+
+    expect(attempts, 2);
+    expect(find.text('原楼层内容'), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-list')), findsOneWidget);
+  });
+
+  testWidgets('分页失败保留已加载回复并从原 cursor 重试', (tester) async {
+    var pageAttempts = 0;
+    final cursors = <String?>[];
+    final repository = _FakePostRepository(
+      onFetchReplies:
+          ({required rootPostId, cursor, required order, authorId}) async {
+            cursors.add(cursor);
+            if (cursor == null) {
+              return CursorPage(
+                items: [_reply('reply-own', '已加载的回复', _author)],
+                cursor: 'next-page',
+                hasMore: true,
+              );
+            }
+            pageAttempts += 1;
+            if (pageAttempts == 1) {
+              throw const ApiFailure(
+                userMessage: '更多回复加载失败。',
+                httpStatus: 503,
+                requestId: 'discussion-page-request',
+              );
+            }
+            return CursorPage(
+              items: [_reply('reply-other', '重试加载的回复', _otherAuthor)],
+              hasMore: false,
+            );
+          },
+    );
+    final container = await _postContainer(repository);
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+
+    expect(find.text('已加载的回复'), findsOneWidget);
+    expect(find.text('更多回复加载失败。'), findsOneWidget);
+    expect(find.text('问题编号：discussion-page-request'), findsOneWidget);
+    expect(cursors, [null, 'next-page']);
+
+    await tester.tap(find.widgetWithText(TextButton, '重试'));
+    await _pumpUi(tester);
+
+    expect(cursors, [null, 'next-page', 'next-page']);
+    expect(find.text('已加载的回复'), findsOneWidget);
+    expect(find.text('重试加载的回复'), findsOneWidget);
+    expect(find.text('更多回复加载失败。'), findsNothing);
+  });
+
+  testWidgets('回复创建失败保留编辑内容且重试后只追加一次', (tester) async {
+    var attempts = 0;
+    final repository = _FakePostRepository(
+      onCreate: (input) async {
+        attempts += 1;
+        if (attempts == 1) {
+          throw const ApiFailure(
+            userMessage: '回复没有发布成功。',
+            httpStatus: 400,
+            requestId: 'discussion-create-request',
+          );
+        }
+        return _reply('created-after-retry', input.content, _author);
+      },
+    );
+    final container = await _postContainer(repository, userId: 'author-1');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    await _replaceComposerText(tester, '应在失败后保留的回复');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await _pumpUi(tester);
+
+    expect(find.text('回复没有发布成功。'), findsOneWidget);
+    expect(find.text('问题编号：discussion-create-request'), findsOneWidget);
+    expect(repository.createInputs, hasLength(1));
+    expect(
+      repository.replies.where((post) => post.id == 'created-after-retry'),
+      isEmpty,
+    );
+    expect(
+      MarkdownDeltaCodec.encode(
+        tester
+            .state<QuillEditorState>(
+              find.byKey(const Key('post-composer-body')),
+            )
+            .widget
+            .controller
+            .document
+            .toDelta(),
+      ),
+      contains('应在失败后保留的回复'),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await _pumpUi(tester);
+
+    expect(repository.createInputs, hasLength(2));
+    expect(
+      repository.createInputs.map((input) => input.clientRequestId).toSet(),
+      hasLength(1),
+    );
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(find.text('应在失败后保留的回复'), findsOneWidget);
+  });
+
+  testWidgets('删除回复失败保留原内容并展示可诊断错误', (tester) async {
+    final repository = _FakePostRepository(
+      onRemove: (postId) async => throw const ApiFailure(
+        userMessage: '回复没有删除成功。',
+        httpStatus: 503,
+        requestId: 'discussion-delete-request',
+      ),
+    );
+    final container = await _postContainer(repository, userId: 'author-1');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.longPress(find.byKey(const Key('post-reply-reply-own')));
+    await _pumpUi(tester);
+    await tester.tap(
+      find.byKey(const Key('post-card-action-reply-own-delete')),
+    );
+    await _pumpUi(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '删除'));
+    await _pumpUi(tester);
+
+    expect(repository.removedIds, isEmpty);
+    expect(find.text('自己的回复'), findsOneWidget);
+    expect(find.text('回复没有删除成功。'), findsOneWidget);
+    expect(find.text('问题编号：discussion-delete-request'), findsOneWidget);
+  });
+
+  testWidgets('已删除的原楼层和回复都不暴露举报入口', (tester) async {
+    final repository = _FakePostRepository(
+      onFetchPost: (postId) async =>
+          _rootWithContent('已删除的原楼层', isDeleted: true),
+      initialReplies: [
+        _reply('deleted-reply', '已删除的回复', _otherAuthor, isDeleted: true),
+      ],
+    );
+    final container = await _postContainer(repository, userId: 'viewer');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.longPress(find.byKey(const Key('post-card-root')));
+    await _pumpUi(tester);
+
+    expect(find.byKey(const Key('post-card-action-root-report')), findsNothing);
+    await tester.tap(find.byKey(const Key('wenyou-modal-action-close')));
+    await _pumpUi(tester);
+
+    await tester.longPress(find.byKey(const Key('post-reply-deleted-reply')));
+    await _pumpUi(tester);
+
+    expect(
+      find.byKey(const Key('post-card-action-deleted-reply-report')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('游客可举报公开主题的他人回复并在登录后精确返回', (tester) async {
+    final repository = _FakePostRepository();
+    final container = await _postContainer(repository);
+    addTearDown(container.dispose);
+    final router = GoRouter(
+      initialLocation: '/discussion',
+      routes: [
+        GoRoute(
+          path: '/discussion',
+          builder: (context, state) =>
+              const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+        GoRoute(
+          path: '/login',
+          name: 'login',
+          builder: (context, state) => Scaffold(
+            body: Text(
+              state.uri.queryParameters['returnTo'] ?? '',
+              key: const Key('guest-reply-report-login'),
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await _pumpUi(tester);
+    await tester.longPress(find.byKey(const Key('post-reply-reply-other')));
+    await _pumpUi(tester);
+
+    final reportAction = find.byKey(
+      const Key('post-card-action-reply-other-report'),
+    );
+    expect(reportAction, findsOneWidget);
+    await tester.tap(reportAction);
+    await _pumpUi(tester);
+
+    expect(find.byKey(const Key('guest-reply-report-login')), findsOneWidget);
+    expect(
+      find.text('/threads/thread/posts/root/replies?post=reply-other'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('编辑回复失败不覆盖原内容且保留编辑稿可重试', (tester) async {
+    var attempts = 0;
+    final repository = _FakePostRepository(
+      onUpdate: ({required postId, required content, required version}) async {
+        attempts += 1;
+        if (attempts == 1) {
+          throw const ApiFailure(
+            userMessage: '回复没有更新成功。',
+            httpStatus: 503,
+            requestId: 'discussion-update-request',
+          );
+        }
+        return _reply(postId, content, _author, version: version + 1);
+      },
+    );
+    final container = await _postContainer(repository, userId: 'author-1');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.longPress(find.byKey(const Key('post-reply-reply-own')));
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-card-action-reply-own-edit')));
+    await _pumpUi(tester);
+    await _replaceComposerText(tester, '编辑失败后保留的内容');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await _pumpUi(tester);
+
+    expect(find.text('回复没有更新成功。'), findsOneWidget);
+    expect(find.text('问题编号：discussion-update-request'), findsOneWidget);
+    expect(
+      repository.replies.singleWhere((post) => post.id == 'reply-own').content,
+      '自己的回复',
+    );
+    expect(
+      MarkdownDeltaCodec.encode(
+        tester
+            .state<QuillEditorState>(
+              find.byKey(const Key('post-composer-body')),
+            )
+            .widget
+            .controller
+            .document
+            .toDelta(),
+      ),
+      contains('编辑失败后保留的内容'),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await _pumpUi(tester);
+
+    expect(attempts, 2);
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(find.text('编辑失败后保留的内容'), findsOneWidget);
+    expect(find.text('自己的回复'), findsNothing);
+  });
+
+  testWidgets('会话切换丢弃旧账号迟到首屏并立即加载新会话', (tester) async {
+    final staleLoad = Completer<PostItem>();
+    var fetchPostCalls = 0;
+    final repository = _FakePostRepository(
+      onFetchPost: (postId) {
+        fetchPostCalls += 1;
+        if (fetchPostCalls == 1) return staleLoad.future;
+        return Future.value(_rootWithContent('新会话楼层'));
+      },
+    );
+    final container = await _postContainer(repository, userId: 'author-1');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await tester.pump();
+    expect(fetchPostCalls, 1);
+    expect(find.text('新会话楼层'), findsNothing);
+    expect(find.text('旧账号迟到楼层'), findsNothing);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-2'));
+    await _pumpUi(tester);
+
+    expect(fetchPostCalls, greaterThanOrEqualTo(2));
+    expect(find.text('新会话楼层'), findsOneWidget);
+
+    staleLoad.complete(_rootWithContent('旧账号迟到楼层'));
+    await _pumpUi(tester);
+
+    expect(find.text('新会话楼层'), findsOneWidget);
+    expect(find.text('旧账号迟到楼层'), findsNothing);
+  });
+
+  testWidgets('切号和退出登录关闭旧编辑器并清除内存草稿', (tester) async {
+    final repository = _FakePostRepository();
+    final container = await _postContainer(repository, userId: 'author-1');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    await _replaceComposerText(tester, '账号一的未发布草稿');
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-2'));
+    await _pumpUi(tester);
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    expect(
+      tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .controller
+          .document
+          .toPlainText()
+          .trim(),
+      isEmpty,
+    );
+    await _replaceComposerText(tester, '账号二的未发布草稿');
+
+    await container.read(sessionControllerProvider.notifier).logoutLocally();
+    await _pumpUi(tester);
+
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(find.text('登录后发表回复'), findsOneWidget);
+
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-3'));
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    expect(
+      tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .controller
+          .document
+          .toPlainText()
+          .trim(),
+      isEmpty,
+    );
+  });
+
+  testWidgets('图片裁剪弹窗上切号只移除旧编辑器并保留同帧新根路由', (tester) async {
+    final repository = _FakePostRepository();
+    final navigatorKey = GlobalKey<NavigatorState>();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        stickersEnabledProvider.overrideWithValue(false),
+        postRepositoryProvider.overrideWithValue(repository),
+        imageCropProcessorPortProvider.overrideWithValue(
+          const FakePassThroughImageCropProcessor(),
+        ),
+        editorImagePickerPortProvider.overrideWithValue(
+          _FakeEditorImagePicker(),
+        ),
+        mediaUploadGatewayPortProvider.overrideWithValue(
+          RepositoryMediaUploadGateway(_FakeMediaUploadRepository()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          theme: AppTheme.light,
+          home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    await _replaceComposerText(tester, '旧账号不得发布的正文');
+    await tester.tap(find.byKey(const Key('editor-image')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+
+    unawaited(
+      navigatorKey.currentState!.push<void>(
+        PageRouteBuilder<void>(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, _, _) => const Scaffold(
+            body: SizedBox(key: Key('new-root-business-page')),
+          ),
+        ),
+      ),
+    );
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('author-2'));
+    await _pumpUi(tester);
+
+    expect(find.byKey(const Key('new-root-business-page')), findsOneWidget);
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
+    expect(find.byKey(const Key('editor-submit')), findsNothing);
+    expect(repository.createInputs, isEmpty);
+
+    navigatorKey.currentState!.pop();
+    await _pumpUi(tester);
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
+    expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    await _replaceComposerText(tester, '新账号允许发布的正文');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await _pumpUi(tester);
+
+    expect(repository.createInputs, hasLength(1));
+    expect(repository.createInputs.single.content, '新账号允许发布的正文');
+    expect(find.text('旧账号不得发布的正文'), findsNothing);
+  });
+
   testWidgets('360dp 独立楼中楼悬浮发表入口并完成编辑删除与权限收敛', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
@@ -1022,6 +1498,49 @@ void main() {
   });
 }
 
+Future<ProviderContainer> _postContainer(
+  PostRepository repository, {
+  String? userId,
+}) async {
+  final container = ProviderContainer(
+    overrides: [
+      tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+      sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+      stickersEnabledProvider.overrideWithValue(false),
+      postRepositoryProvider.overrideWithValue(repository),
+      postDiscussionAuthorDirectoryProvider.overrideWithValue(
+        const _FakePostDiscussionAuthorDirectory(),
+      ),
+      postThreadContextLookupProvider.overrideWithValue(
+        (_) async =>
+            const PostThreadContext(isPrivate: false, canManageThread: false),
+      ),
+    ],
+  );
+  if (userId != null) {
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor(userId));
+  }
+  return container;
+}
+
+Widget _postRepliesApp(ProviderContainer container) {
+  return UncontrolledProviderScope(
+    container: container,
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: const PostRepliesPage(threadId: 'thread', rootPostId: 'root'),
+    ),
+  );
+}
+
+Future<void> _pumpUi(WidgetTester tester, [int frames = 6]) async {
+  for (var frame = 0; frame < frames; frame += 1) {
+    await tester.pump(const Duration(milliseconds: 80));
+  }
+}
+
 Future<void> _confirmImageCrop(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
@@ -1054,16 +1573,42 @@ Future<void> _replaceComposerText(WidgetTester tester, String text) async {
   await tester.idle();
 }
 
+typedef _FetchRepliesHandler =
+    Future<PostReplyPage> Function({
+      required String rootPostId,
+      String? cursor,
+      required PostReplyOrder order,
+      String? authorId,
+    });
+typedef _UpdateHandler =
+    Future<PostItem> Function({
+      required String postId,
+      required String content,
+      required int version,
+    });
+
 class _FakePostRepository implements PostRepository {
-  _FakePostRepository({this.createCompleter, List<PostItem>? initialReplies})
-    : replies =
-          initialReplies ??
-          [
-            _reply('reply-own', '自己的回复', _author),
-            _reply('reply-other', '他人的回复', _otherAuthor),
-          ];
+  _FakePostRepository({
+    this.createCompleter,
+    this.onFetchPost,
+    this.onFetchReplies,
+    this.onCreate,
+    this.onUpdate,
+    this.onRemove,
+    List<PostItem>? initialReplies,
+  }) : replies =
+           initialReplies ??
+           [
+             _reply('reply-own', '自己的回复', _author),
+             _reply('reply-other', '他人的回复', _otherAuthor),
+           ];
 
   final Completer<PostItem>? createCompleter;
+  final Future<PostItem> Function(String postId)? onFetchPost;
+  final _FetchRepliesHandler? onFetchReplies;
+  final Future<PostItem> Function(PostCreateInput input)? onCreate;
+  final _UpdateHandler? onUpdate;
+  final Future<void> Function(String postId)? onRemove;
   final List<PostItem> replies;
   final List<PostCreateInput> createInputs = [];
   final List<({String id, String content, int version})> updateRequests = [];
@@ -1071,6 +1616,7 @@ class _FakePostRepository implements PostRepository {
 
   @override
   Future<PostItem> fetchPost(String postId) async {
+    if (onFetchPost case final handler?) return handler(postId);
     if (postId == 'root') return _root;
     return replies.singleWhere((post) => post.id == postId);
   }
@@ -1083,6 +1629,14 @@ class _FakePostRepository implements PostRepository {
     PostReplyOrder order = PostReplyOrder.oldest,
     String? authorId,
   }) async {
+    if (onFetchReplies case final handler?) {
+      return handler(
+        rootPostId: rootPostId,
+        cursor: cursor,
+        order: order,
+        authorId: authorId,
+      );
+    }
     final filtered =
         replies
             .where((post) => authorId == null || post.author.id == authorId)
@@ -1098,7 +1652,9 @@ class _FakePostRepository implements PostRepository {
   @override
   Future<PostItem> create(PostCreateInput input) async {
     createInputs.add(input);
-    final created = createCompleter == null
+    final created = onCreate != null
+        ? await onCreate!(input)
+        : createCompleter == null
         ? _reply('created', input.content, _author)
         : await createCompleter!.future;
     replies.add(created);
@@ -1114,12 +1670,9 @@ class _FakePostRepository implements PostRepository {
     updateRequests.add((id: postId, content: content, version: version));
     final index = replies.indexWhere((post) => post.id == postId);
     final previous = replies[index];
-    final updated = _reply(
-      postId,
-      content,
-      previous.author,
-      version: version + 1,
-    );
+    final updated = onUpdate != null
+        ? await onUpdate!(postId: postId, content: content, version: version)
+        : _reply(postId, content, previous.author, version: version + 1);
     replies[index] = updated;
     return updated;
   }
@@ -1135,6 +1688,7 @@ class _FakePostRepository implements PostRepository {
 
   @override
   Future<void> remove(String postId) async {
+    await onRemove?.call(postId);
     removedIds.add(postId);
     replies.removeWhere((post) => post.id == postId);
   }
@@ -1167,19 +1721,21 @@ const _author = PostAuthor(id: 'author-1', username: '自己', level: 3);
 const _otherAuthor = PostAuthor(id: 'author-2', username: '他人', level: 2);
 const _rootAuthor = PostAuthor(id: 'root-author', username: '楼层作者', level: 4);
 
-final _rootCreatedAt = DateTime.now().subtract(const Duration(days: 2));
+final _rootCreatedAt = DateTime.utc(2026, 8, 20, 12);
 
-final _root = PostItem(
+final _root = _rootWithContent('原楼层内容');
+
+PostItem _rootWithContent(String content, {bool isDeleted = false}) => PostItem(
   id: 'root',
   threadId: 'thread',
   subthreadId: 'subthread',
   author: _rootAuthor,
-  content: '原楼层内容',
+  content: content,
   version: 2,
   createdAt: _rootCreatedAt,
   updatedAt: _rootCreatedAt,
   isBody: false,
-  isDeleted: false,
+  isDeleted: isDeleted,
   floorNumber: 8,
   replyCount: 2,
   threadTitle: '远行主题',
@@ -1191,10 +1747,14 @@ PostItem _reply(
   String content,
   PostAuthor author, {
   int version = 1,
+  bool isDeleted = false,
 }) {
-  final createdAt = DateTime.now().subtract(
-    Duration(days: id == 'reply-other' ? 1 : 2),
-  );
+  final createdAt = DateTime.utc(
+    2026,
+    8,
+    22,
+    12,
+  ).subtract(Duration(days: id == 'reply-other' ? 1 : 2));
   return PostItem(
     id: id,
     threadId: 'thread',
@@ -1205,7 +1765,7 @@ PostItem _reply(
     createdAt: createdAt,
     updatedAt: createdAt,
     isBody: false,
-    isDeleted: false,
+    isDeleted: isDeleted,
     parentPostId: 'root',
     replyToPostId: 'root',
     replyToAuthor: _rootAuthor,

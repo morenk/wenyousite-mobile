@@ -19,6 +19,13 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
     state = const ThreadManagementState.loading();
     try {
       final bootstrap = await _repository.load(_threadId);
+      if (!bootstrap.thread.canManage) {
+        throw const ApiFailure(
+          userMessage: '当前账号没有管理这个主题的权限。',
+          httpStatus: 403,
+          businessCode: 40300,
+        );
+      }
       state = ThreadManagementState(
         phase: ThreadManagementPhase.ready,
         bootstrap: bootstrap,

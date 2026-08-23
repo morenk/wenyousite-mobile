@@ -16,7 +16,6 @@ import 'package:wenyousite_mobile/features/posts/presentation/post_composer_shee
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
-import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
@@ -86,6 +85,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final authorsProvider = postDiscussionAuthorsProvider(widget.threadId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
+      _composerDrafts.clear();
       ref
         ..invalidate(provider)
         ..invalidate(actionsProvider);
@@ -419,14 +419,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _handlePlayerExited(ThreadDetailModel detail) async {
-    ref.invalidate(
-      threadSubscriptionControllerProvider(
-        ThreadSubscriptionTarget(
-          threadId: detail.id,
-          viewerUserId: detail.currentUserId,
-        ),
-      ),
-    );
+    ref.invalidate(threadSubscriptionControllerProvider(detail.id));
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refresh();
@@ -811,11 +804,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   Future<void> _compose(PostComposerTarget target) async {
     final draftKey = postComposerDraftKey(target);
+    final openedSessionScope = ref.read(sessionScopeProvider);
     final result = await showPostComposerSheet(
       context: context,
       target: target,
       initialDraft: _composerDrafts[draftKey],
       onDraftChanged: (content) {
+        if (!mounted || ref.read(sessionScopeProvider) != openedSessionScope) {
+          return;
+        }
         if (content == target.initialContent) {
           _composerDrafts.remove(draftKey);
         } else {
@@ -823,7 +820,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         }
       },
     );
-    if (result == null || !mounted) return;
+    if (result == null ||
+        !mounted ||
+        ref.read(sessionScopeProvider) != openedSessionScope) {
+      return;
+    }
     _composerDrafts.remove(draftKey);
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)

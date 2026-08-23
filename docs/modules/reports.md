@@ -53,6 +53,8 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 - [x] 360dp 楼中楼加入举报操作后仍无布局溢出。
 - [x] 楼中楼从权威主题上下文判断公开性与管理 capability，`reports=1` 等查询参数不能扩大权限。
 - [x] 举报提交在途时系统返回不会关闭表单或产生重复请求。
+- [x] 游客举报先登录并保留精确帖子坐标；本人、私密和已删除的主题/楼层/回复入口均隐藏。
+- [x] `40914`、`42900` 与连接中断使用结构化失败，保留原因和说明供用户显式重试；空目标和超长说明在发请求前拒绝。
 - [ ] 公网专用账号完成六类目标、重复举报和限流真机联调。
 
 ## 12. 已知限制和后续功能
@@ -65,4 +67,4 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/reports/application/report_repository_ports.dart`、`lib/features/reports/data/`、`lib/main.dart`。参见[用户](users.md)、[主题](threads.md)、[楼层与回复](posts.md)、[动态](moments.md)、[站内私聊](direct-messages.md)、[认证](auth.md)、[网络与会话](../architecture/networking.md)与[API 生成和覆盖审计](../architecture/api-generation.md)。
+代码入口：`lib/features/reports/application/report_repository_ports.dart`、`lib/features/reports/data/`、`lib/main.dart`。参见[用户](users.md)、[主题](threads.md)、[楼层与回复](posts.md)、[动态](moments.md)、[站内私聊](direct-messages.md)、[认证](auth.md)、[网络与会话](../architecture/networking.md)、[API 生成和覆盖审计](../architecture/api-generation.md)与[主题帖测试审计](../architecture/thread-detail-test-audit.md)。

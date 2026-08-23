@@ -85,6 +85,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final authorsProvider = postDiscussionAuthorsProvider(threadId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
+      _composerDrafts.clear();
       ref
         ..invalidate(provider)
         ..invalidate(actionsProvider)
@@ -333,22 +334,21 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   Future<void> _compose(
     BuildContext context,
     WidgetRef ref,
-    AutoDisposeStateNotifierProvider<
-      PostDiscussionController,
-      PostDiscussionState
-    >
-    provider,
+    PostDiscussionControllerProvider provider,
     PostComposerTarget target,
   ) async {
     if (_openingComposer) return;
     _openingComposer = true;
     final draftKey = postComposerDraftKey(target);
+    final openedSessionScope = ref.read(sessionScopeProvider);
     try {
       final result = await showPostComposerSheet(
         context: context,
         target: target,
         initialDraft: _composerDrafts[draftKey],
         onDraftChanged: (content) {
+          if (!mounted) return;
+          if (ref.read(sessionScopeProvider) != openedSessionScope) return;
           if (content == target.initialContent) {
             _composerDrafts.remove(draftKey);
           } else {
@@ -356,6 +356,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
           }
         },
       );
+      if (!mounted) return;
+      if (ref.read(sessionScopeProvider) != openedSessionScope) return;
       if (result != null) {
         _composerDrafts.remove(draftKey);
         await ref.read(provider.notifier).refresh();
@@ -369,11 +371,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   Future<void> _delete(
     BuildContext context,
     WidgetRef ref,
-    AutoDisposeStateNotifierProvider<
-      PostDiscussionController,
-      PostDiscussionState
-    >
-    provider,
+    PostDiscussionControllerProvider provider,
     AutoDisposeStateNotifierProvider<PostActionController, PostActionState>
     actionsProvider,
     PostItem post, {
@@ -466,7 +464,8 @@ class _DiscussionList extends StatelessWidget {
         canEdit: root.isAuthoredBy(viewerId),
         canDelete: root.isAuthoredBy(viewerId) || canManageThread,
         pending: actions.pendingPostId == root.id,
-        reportReturnTo: canReport && !root.isAuthoredBy(viewerId)
+        reportReturnTo:
+            canReport && !root.isDeleted && !root.isAuthoredBy(viewerId)
             ? _reportLocation(root, root.id)
             : null,
         onReply: authenticated
@@ -554,7 +553,9 @@ class _DiscussionList extends StatelessWidget {
                             reply.isAuthoredBy(viewerId) || canManageThread,
                         pending: actions.pendingPostId == reply.id,
                         reportReturnTo:
-                            canReport && !reply.isAuthoredBy(viewerId)
+                            canReport &&
+                                !reply.isDeleted &&
+                                !reply.isAuthoredBy(viewerId)
                             ? _reportLocation(root, reply.id)
                             : null,
                         onReply: authenticated

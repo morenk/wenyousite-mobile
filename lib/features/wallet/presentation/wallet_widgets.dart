@@ -135,56 +135,59 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
     final tokens = context.wenyouTokens;
     final provider = tipControllerProvider(widget.target);
     final state = ref.watch(provider);
-    return AlertDialog(
-      title: Text('为${widget.recipientName}加油'),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              key: const Key('tip-amount'),
-              controller: _amountController,
-              enabled: !state.isSubmitting,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: '投入升数',
-                suffixText: '升',
+    return PopScope(
+      canPop: !state.isSubmitting,
+      child: AlertDialog(
+        title: Text('为${widget.recipientName}加油'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const Key('tip-amount'),
+                controller: _amountController,
+                enabled: !state.isSubmitting,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: '投入升数',
+                  suffixText: '升',
+                ),
+                onSubmitted: state.isSubmitting ? null : (_) => _submit(),
               ),
-              onSubmitted: state.isSubmitting ? null : (_) => _submit(),
-            ),
-            if (state.failure != null) ...[
-              SizedBox(height: tokens.space12),
-              WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.failure!.userMessage,
-                detail: state.failure!.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
-              ),
+              if (state.failure != null) ...[
+                SizedBox(height: tokens.space12),
+                WenyouStatusBanner(
+                  tone: WenyouStatusTone.error,
+                  message: state.failure!.userMessage,
+                  detail: state.failure!.requestId == null
+                      ? null
+                      : '问题编号：${state.failure!.requestId}',
+                ),
+              ],
             ],
-          ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const Key('tip-submit'),
+            onPressed: state.isSubmitting ? null : _submit,
+            child: state.isSubmitting
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('确认加油'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          key: const Key('tip-submit'),
-          onPressed: state.isSubmitting ? null : _submit,
-          child: state.isSubmitting
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('确认加油'),
-        ),
-      ],
     );
   }
 
