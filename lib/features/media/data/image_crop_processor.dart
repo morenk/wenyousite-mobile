@@ -4,6 +4,7 @@ import 'package:image/image.dart' as image;
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/data/media_image_validation.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 class IsolateImageCropProcessor implements ImageCropProcessor {
@@ -41,7 +42,8 @@ class IsolateImageCropProcessor implements ImageCropProcessor {
 }
 
 CropImageSource _prepareCropSource(MediaUploadInput input) {
-  final oriented = _decodeOrThrow(input);
+  final inspection = inspectMediaInput(input);
+  final oriented = _decodeFirstFrameOrThrow(input);
   const maxPreviewEdge = 1280;
   final longestEdge = oriented.width > oriented.height
       ? oriented.width
@@ -59,6 +61,7 @@ CropImageSource _prepareCropSource(MediaUploadInput input) {
     previewBytes: image.encodePng(preview),
     width: oriented.width,
     height: oriented.height,
+    canCrop: !inspection.isGif,
   );
 }
 
@@ -75,6 +78,7 @@ MediaUploadInput _cropAvatar((CropImageSource, NormalizedCropRect) request) {
 
 MediaUploadInput _cropImage((CropImageSource, NormalizedCropRect) request) {
   final (source, crop) = request;
+  if (!source.canCrop) return source.original;
   final oriented = _decodeOrThrow(source.original);
   var output = _cropSource(oriented, crop);
   const maximumEdge = 2560;
@@ -87,11 +91,8 @@ MediaUploadInput _cropImage((CropImageSource, NormalizedCropRect) request) {
     );
   }
 
-  final animated = output.hasAnimation;
   final preserveAlpha = output.hasAlpha;
-  var bytes = animated
-      ? image.encodeGif(output)
-      : preserveAlpha
+  var bytes = preserveAlpha
       ? image.encodePng(output)
       : image.encodeJpg(output, quality: 92);
   while (bytes.length > maxMediaImageBytes &&
@@ -103,9 +104,7 @@ MediaUploadInput _cropImage((CropImageSource, NormalizedCropRect) request) {
       height: (output.height * .82).round(),
       interpolation: image.Interpolation.cubic,
     );
-    bytes = animated
-        ? image.encodeGif(output)
-        : preserveAlpha
+    bytes = preserveAlpha
         ? image.encodePng(output)
         : image.encodeJpg(output, quality: 88);
   }
@@ -113,17 +112,10 @@ MediaUploadInput _cropImage((CropImageSource, NormalizedCropRect) request) {
     throw const ApiFailure(userMessage: '裁剪后的图片超过 10MB，请缩小取景范围或更换图片。');
   }
   return MediaUploadInput(
-    filename: animated
-        ? 'cropped-image.gif'
-        : preserveAlpha
-        ? 'cropped-image.png'
-        : 'cropped-image.jpg',
-    declaredContentType: animated
-        ? 'image/gif'
-        : preserveAlpha
-        ? 'image/png'
-        : 'image/jpeg',
+    filename: preserveAlpha ? 'cropped-image.png' : 'cropped-image.jpg',
+    declaredContentType: preserveAlpha ? 'image/png' : 'image/jpeg',
     bytes: bytes,
+    purpose: source.original.purpose,
   );
 }
 
@@ -172,6 +164,7 @@ MediaUploadInput _renderCrop(
     filename: filename,
     declaredContentType: 'image/png',
     bytes: bytes,
+    purpose: source.original.purpose,
   );
 }
 
@@ -193,6 +186,22 @@ image.Image _cropSource(image.Image oriented, NormalizedCropRect crop) {
 
 image.Image _decodeOrThrow(MediaUploadInput input) {
   final decoded = image.decodeImage(input.bytes);
+  if (decoded == null) {
+    throw const ApiFailure(userMessage: '图片无法解析，请选择其他图片。');
+  }
+  final oriented = image.bakeOrientation(decoded);
+  if (oriented.width < 2 || oriented.height < 2) {
+    throw const ApiFailure(userMessage: '图片尺寸无效，请选择其他图片。');
+  }
+  return oriented;
+}
+
+image.Image _decodeFirstFrameOrThrow(MediaUploadInput input) {
+  final decoder = image.findDecoderForData(input.bytes);
+  if (decoder == null || decoder.startDecode(input.bytes) == null) {
+    throw const ApiFailure(userMessage: '图片无法解析，请选择其他图片。');
+  }
+  final decoded = decoder.decodeFrame(0);
   if (decoded == null) {
     throw const ApiFailure(userMessage: '图片无法解析，请选择其他图片。');
   }

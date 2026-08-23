@@ -86,6 +86,7 @@ void main() {
 
     expect(picker.calls, 1);
     expect(gateway.calls, 1);
+    expect(gateway.input?.purpose, MediaUploadPurpose.stickerSource);
     expect(repository.importedSources.single, isA<StickerMediaSource>());
     expect(find.text('1/200 个收藏'), findsOneWidget);
     expect(find.text('已添加到表情收藏。'), findsOneWidget);
@@ -326,6 +327,7 @@ class _FakeImagePicker implements EditorImagePicker {
 
 class _FakeMediaUploadGateway implements MediaUploadGateway {
   var calls = 0;
+  MediaUploadInput? input;
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
@@ -333,6 +335,7 @@ class _FakeMediaUploadGateway implements MediaUploadGateway {
     void Function(MediaUploadProgress progress)? onProgress,
   }) {
     calls += 1;
+    this.input = input;
     onProgress?.call(
       MediaUploadProgress(
         stage: MediaUploadStage.uploading,

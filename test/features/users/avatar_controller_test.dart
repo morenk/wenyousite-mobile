@@ -40,6 +40,7 @@ void main() {
     expect(result?.avatarUrl, _newAvatarUrl);
     expect(upload.uploadCalls, 1);
     expect(upload.lastInput?.declaredContentType, 'image/jpeg');
+    expect(upload.lastInput?.purpose, MediaUploadPurpose.avatar);
     expect(avatar.setCalls, 1);
     expect(avatar.lastMediaId, 'media-1');
     expect(controller.state.phase, AvatarPhase.idle);

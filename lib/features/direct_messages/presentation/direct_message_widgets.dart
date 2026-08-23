@@ -271,6 +271,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
             context,
             ref,
             uploadTaskId: _uploadTaskId,
+            purpose: MediaUploadPurpose.directMessage,
             title: '裁剪私聊图片',
           );
     if (!mounted) return;

@@ -196,6 +196,80 @@ void main() {
         .onPressed!();
     await tester.pumpAndSettle();
   });
+
+  testWidgets('多图准备严格逐张执行以限制峰值内存', (tester) async {
+    final processor = _SequentialPrepareCropProcessor();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () => showEditorImageCropDialog(
+              context,
+              inputs: [
+                for (var index = 0; index < 3; index++)
+                  MediaUploadInput(
+                    filename: 'image-$index.png',
+                    bytes: Uint8List.fromList([index + 1]),
+                  ),
+              ],
+              processor: processor,
+            ),
+            child: const Text('打开'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('打开'));
+    await tester.pumpAndSettle();
+
+    expect(processor.maximumInFlight, 1);
+    expect(processor.prepared, 3);
+    tester
+        .widget<IconButton>(find.byKey(const Key('image-crop-close')))
+        .onPressed!();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('GIF 只展示静态预览并原样返回，不提供裁剪控件', (tester) async {
+    List<MediaUploadInput>? result;
+    final input = MediaUploadInput(
+      filename: 'animation.gif',
+      declaredContentType: 'image/gif',
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    final processor = _GifPassThroughCropProcessor();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () async {
+              result = await showEditorImageCropDialog(
+                context,
+                inputs: [input],
+                processor: processor,
+              );
+            },
+            child: const Text('打开'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('打开'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('GIF 动图会保留原图'), findsOneWidget);
+    expect(find.byType(ImageCropEditor), findsNothing);
+    expect(find.byType(ChoiceChip), findsNothing);
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(result, [same(input)]);
+    expect(processor.cropCalls, 0);
+  });
 }
 
 class _RecordingCropProcessor extends FakePassThroughImageCropProcessor {
@@ -239,4 +313,47 @@ class _FailOnceCropProcessor implements ImageCropProcessor {
     required NormalizedCropRect webCrop,
     required NormalizedCropRect mobileCrop,
   }) => throw UnimplementedError();
+}
+
+class _SequentialPrepareCropProcessor
+    extends FakePassThroughImageCropProcessor {
+  var inFlight = 0;
+  var maximumInFlight = 0;
+  var prepared = 0;
+
+  @override
+  Future<CropImageSource> prepare(MediaUploadInput input) async {
+    inFlight += 1;
+    if (inFlight > maximumInFlight) maximumInFlight = inFlight;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    final source = await super.prepare(input);
+    prepared += 1;
+    inFlight -= 1;
+    return source;
+  }
+}
+
+class _GifPassThroughCropProcessor extends FakePassThroughImageCropProcessor {
+  var cropCalls = 0;
+
+  @override
+  Future<CropImageSource> prepare(MediaUploadInput input) async {
+    final source = await super.prepare(input);
+    return CropImageSource(
+      original: source.original,
+      previewBytes: source.previewBytes,
+      width: source.width,
+      height: source.height,
+      canCrop: false,
+    );
+  }
+
+  @override
+  Future<MediaUploadInput> cropImage(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  ) async {
+    cropCalls += 1;
+    return source.original;
+  }
 }

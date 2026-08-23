@@ -91,7 +91,10 @@ class DirectMessageImagePreview extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(tokens.radius12),
             child: WenyouCachedImage(
-              imageUrl: image.url,
+              imageUrl: image.previewUrls.first,
+              fallbackImageUrls: image.previewUrls
+                  .skip(1)
+                  .toList(growable: false),
               width: 64,
               height: 64,
               fit: BoxFit.cover,

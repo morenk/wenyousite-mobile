@@ -26,6 +26,11 @@ class MomentLocalDraft {
         {
           'mediaId': image.mediaId,
           'url': image.url,
+          'thumbnailUrl': image.thumbnailUrl,
+          'feedUrl': image.feedUrl,
+          'mediumUrl': image.mediumUrl,
+          'contentType': image.contentType,
+          'animated': image.animated,
           'width': image.width,
           'height': image.height,
         },
@@ -54,6 +59,11 @@ class MomentLocalDraft {
           UploadedEditorImage(
             mediaId: mediaId,
             url: url,
+            thumbnailUrl: rawImage['thumbnailUrl'] as String?,
+            feedUrl: rawImage['feedUrl'] as String?,
+            mediumUrl: rawImage['mediumUrl'] as String?,
+            contentType: rawImage['contentType'] as String?,
+            animated: rawImage['animated'] as bool? ?? false,
             width: rawImage['width'] as int?,
             height: rawImage['height'] as int?,
           ),

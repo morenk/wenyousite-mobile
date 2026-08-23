@@ -159,6 +159,8 @@ void main() {
 
     expect(feed.cursor, 'cursor-2');
     expect(feed.items.single.coverMedia?.bestFeedUrl, contains('feed.webp'));
+    expect(feed.items.single.coverMedia?.contentType, 'image/webp');
+    expect(feed.items.single.coverMedia?.animated, isFalse);
     expect(feed.items.single.tipTotal, '25');
     expect(bookmarks.items.single.viewerBookmarked, isTrue);
     expect(user.items.single.author.username, '温柔测试员');
@@ -430,6 +432,7 @@ MomentMediaResponseDto _mediaDto({
       ..thumbnailUrl = 'https://cdn.example.com/thumb.webp'
       ..feedUrl = 'https://cdn.example.com/feed.webp'
       ..mediumUrl = 'https://cdn.example.com/medium.webp'
+      ..contentType = 'image/webp'
       ..width = 1200
       ..height = 800
       ..animated = false,

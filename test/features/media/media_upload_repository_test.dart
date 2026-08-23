@@ -77,7 +77,20 @@ void main() {
 
     expect(result.mediaId, 'media-one');
     expect(result.url, 'https://cdn.example.com/scene.png');
+    expect(result.thumbnailUrl, 'https://cdn.example.com/scene-thumb.webp');
+    expect(result.feedUrl, 'https://cdn.example.com/scene-feed.webp');
+    expect(result.mediumUrl, 'https://cdn.example.com/scene-medium.webp');
+    expect(result.animated, isFalse);
     expect(result.width, 1200);
+    final uploadRequest =
+        verify(
+              () => api.mediaGetUploadUrl(
+                createUploadUrlDto: captureAny(named: 'createUploadUrlDto'),
+                cancelToken: null,
+              ),
+            ).captured.single
+            as CreateUploadUrlDto;
+    expect(uploadRequest.purpose, CreateUploadUrlDtoPurposeEnum.RICH_CONTENT);
     expect(putRequest?.method, 'PUT');
     expect(
       putRequest?.uri.toString(),
@@ -205,6 +218,7 @@ void main() {
     final progress = <MediaUploadProgress>[];
 
     final operation = gateway.startImageUpload(input, onProgress: progress.add);
+    await Future<void>.delayed(Duration.zero);
     repository.emit(
       const MediaUploadProgress(
         stage: MediaUploadStage.uploading,
@@ -217,7 +231,7 @@ void main() {
 
     expect(repository.input, same(input));
     expect(repository.cancelToken?.isCancelled, isTrue);
-    expect(progress.single.fraction, .5);
+    expect(progress.last.fraction, .5);
 
     const image = UploadedEditorImage(
       mediaId: 'adapter-image',
@@ -309,12 +323,15 @@ MediaResponseDto _media(MediaResponseDtoStatusEnum status) {
       ..id = 'media-one'
       ..userId = 'user-one'
       ..url = 'https://cdn.example.com/scene.png'
+      ..thumbnailUrl = 'https://cdn.example.com/scene-thumb.webp'
+      ..feedUrl = 'https://cdn.example.com/scene-feed.webp'
+      ..mediumUrl = 'https://cdn.example.com/scene-medium.webp'
       ..key = 'uploads/scene.png'
       ..contentType = 'image/png'
       ..size = 5
       ..width = 1200
       ..height = 800
-      ..purpose = MediaResponseDtoPurposeEnum.LEGACY
+      ..purpose = MediaResponseDtoPurposeEnum.RICH_CONTENT
       ..animated = false
       ..status = status
       ..createdAt = DateTime.utc(2026, 8, 10),

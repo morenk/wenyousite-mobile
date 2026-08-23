@@ -258,7 +258,10 @@ class _ComposeThumbnail extends StatelessWidget {
                       child: InkWell(
                         onTap: () => onCoverSelected(image.mediaId),
                         child: WenyouCachedImage(
-                          imageUrl: image.url,
+                          imageUrl: image.previewUrls.first,
+                          fallbackImageUrls: image.previewUrls
+                              .skip(1)
+                              .toList(growable: false),
                           fit: BoxFit.cover,
                         ),
                       ),

@@ -231,6 +231,11 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
           (image) => UploadedEditorImage(
             mediaId: image.id,
             url: image.url,
+            thumbnailUrl: image.thumbnailUrl,
+            feedUrl: image.feedUrl,
+            mediumUrl: image.mediumUrl,
+            contentType: image.contentType,
+            animated: image.animated,
             width: image.width,
             height: image.height,
           ),
@@ -249,6 +254,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
       context,
       ref,
       maximumSelection: 9 - _images.length,
+      purpose: MediaUploadPurpose.moment,
       title: '裁剪动态图片',
     );
     if (!mounted || inputs == null || inputs.isEmpty) return;

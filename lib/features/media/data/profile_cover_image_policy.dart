@@ -26,5 +26,6 @@ MediaUploadInput validateProfileCoverImageInput(MediaUploadInput input) {
     filename: input.filename,
     declaredContentType: contentType,
     bytes: input.bytes,
+    purpose: MediaUploadPurpose.profileCover,
   );
 }

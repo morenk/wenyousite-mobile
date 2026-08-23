@@ -16,23 +16,23 @@
 
 ## 4. 用户操作流程
 
-通用图片在上传前先经方向校正并生成低分辨率预览；预览画布始终保持原图宽高比，不会为了目标比例拉伸或预先裁切图片。用户可选原比例、1:1、4:3/3:4 或 16:9/9:16，在完整原图上移动对应比例的取景框，并通过双指或滑杆缩小取景范围；确认后才从原始像素裁出该区域并生成新的完整图片文件，最长边限制为 2560px。多图流程为每张图保存独立取景范围、位置和比例，底部横向缩略栏只切换当前编辑目标；确认后按原顺序生成强类型输出列表。阅读端完整展示这个裁剪后结果，不再二次裁切。
-多帧 GIF 或 WebP 在裁剪和缩放后保留帧序列并输出 GIF，不静默降级为首帧。
+通用静态图片在上传前先校验像素上限、经方向校正并生成低分辨率预览；预览画布始终保持原图宽高比，不会为了目标比例拉伸或预先裁切图片。用户可选原比例、1:1、4:3/3:4 或 16:9/9:16，在完整原图上移动对应比例的取景框，并通过双指或滑杆缩小取景范围；确认后才从原始像素裁出该区域。上传准备阶段统一移除元数据、最长边限制为 2560px，并编码为 WebP；普通静态图质量为 85，主页背景为 92。多图准备与生成都严格逐张串行，底部横向缩略栏只切换当前编辑目标，避免同时解码多张原图造成内存峰值。
+GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；限制为 10MB、最长边 2560px、最多 300 帧、最长 60 秒和最多一亿累计像素。动态 WebP 在网络请求前明确拒绝并提示改用 GIF，不静默降级为首帧。
 
-选择文件后先读取大小，拒绝空文件和超过 10MB 的内容；再结合声明类型、扩展名和头字节识别 JPG、PNG、GIF、WebP 或 AVIF。客户端调用 `mediaGetUploadUrl`，用独立且不携带 Bearer Token 的 Dio 对预签名 URL 执行 PUT，然后调用 `mediaConfirmUpload`。确认未完成时先等待 500ms，再最多轮询 `mediaGetMedia` 30 次；只有 `COMPLETED` 且公开 URL 为 HTTP(S) 时返回编辑器。
+选择文件后先读取大小，拒绝空文件和超过 10MB 的内容；再按真实头字节识别 JPG、PNG、GIF 或 WebP。每次申请都向 `mediaGetUploadUrl` 传入精确用途：头像、主页背景、私聊、动态、动态评论、富正文或收藏表情源，不发送 `LEGACY`。客户端用独立且不携带 Bearer Token 的 Dio 对预签名 URL 执行 PUT，然后调用 `mediaConfirmUpload`。确认未完成时先等待 500ms，再最多轮询 `mediaGetMedia` 30 次；只有 `COMPLETED`、响应用途匹配且主图与所有非空派生 URL 都是 HTTP(S) 时返回调用方。
 
-头像与背景原图收窄为 JPG、PNG、WebP，并以头字节拒绝伪装格式。原图只在当前取景会话内保留；头像生成 512 × 512 PNG，背景按两个独立归一化取景框生成 1920 × 640 和 1600 × 800 PNG，再进入共享媒体管线。头像完成后将 `mediaId` 交给 `usersSetAvatar`；双背景均完成后一次调用 `usersSetProfileCover`。设置成功只采用用户响应中明确给出的安全 HTTP(S) URL，不猜测派生路径；移除也只在服务端最终结果确认后更新页面。
+头像与背景原图收窄为 JPG、PNG、WebP，并以头字节拒绝伪装格式。原图只在当前取景会话内保留；头像先生成 512 × 512 中间图，背景按两个独立归一化取景框生成 1920 × 640 和 1600 × 800 中间图，再由共享上传准备统一转为 WebP。头像完成后将 `mediaId` 交给 `usersSetAvatar`；双背景均完成后一次调用 `usersSetProfileCover`。设置成功只采用用户响应中明确给出的安全 HTTP(S) URL，不猜测派生路径；移除也只在服务端最终结果确认后更新页面。
 
 ## 5. API operationId 与生成类型
 
 - 媒体管线：`mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`；契约已提供 `mediaReissueUploadUrl`，当前等待同一媒体重签与重传切片接入。
 - 头像：`usersSetAvatar`、`usersRemoveAvatar`。
 - 主页背景：`usersSetProfileCover`、`usersRemoveProfileCover`。
-- 主要生成类型：`CreateUploadUrlDto`、`ConfirmUploadDto`、`MediaResponseDto`、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
+- 主要生成类型：`CreateUploadUrlDto`（含 purpose）、`ConfirmUploadDto`、`MediaResponseDto`（含 purpose/animated 与派生 URL）、`SetAvatarDto`、`SetProfileCoverDto`、`PrivateUserResponseDto`。
 
 ## 6. 状态模型和数据流
 
-`MediaUploadInput` 只在当前进程持有文件名、声明类型和字节；`CropImageSource` 额外持有经方向校正的低分辨率预览及原图尺寸，`NormalizedCropRect` 只表达 0..1 范围内的取景区域。`MediaUploadProgress` 分为 preparing、uploading、confirming、processing，并可携带已发送/总字节；`UploadedEditorImage` 只暴露媒体 ID、安全公开 URL 和可选尺寸。主题、帖子、动态发布、动态评论、私聊输入器、表情包管理页、头像与背景流程按页面或业务实例创建 autoDispose 上传任务；任务在 `media/application` 统一管理状态、进度、失败信息和当前上传操作。相册选择、裁剪处理和上传由 application 声明端口，在组合根绑定到系统相册、背景输入校验、isolate 图片编码与 Dio adapter。`AvatarController` 和 `ProfileCoverController` 保留已确认的裁剪结果直到上传成功、取消或页面释放；设置端点失败继续保留已完成上传的 `mediaId`，重试不重新取景或重复已完成上传。
+`MediaUploadInput` 只在当前进程持有文件名、声明类型、字节和强类型业务用途；`CropImageSource` 额外持有低分辨率预览、原图尺寸和是否允许裁剪，`NormalizedCropRect` 只表达 0..1 范围内的取景区域。`MediaUploadProgress` 分为 preparing、uploading、confirming、processing，并可携带已发送/总字节；`UploadedEditorImage` 暴露媒体 ID、安全主 URL、可选 thumbnail/feed/medium URL、内容类型、动画标记和尺寸。上传 adapter 在申请地址前通过 native 编码器归一化静态图；同一输入成功归一化后由进程内缓存复用于明确重试，编码失败则清除缓存并允许重新处理，绝不退回上传未归一化原图。主题、帖子、动态发布、动态评论、私聊输入器、表情包管理页、头像与背景流程按页面或业务实例创建 autoDispose 上传任务；任务在 `media/application` 统一管理状态、进度、失败信息和当前上传操作。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -40,17 +40,17 @@
 
 ## 8. 本地存储、缓存及失效规则
 
-预签名 URL、文件字节和处理中状态不持久化。上传完成后只有公开 URL 随完整 Markdown 进入本地快照；头像媒体 ID 只在当前 autoDispose 状态中保留到设置成功或页面释放。头像设置/移除成功立即采用服务端结果并淘汰旧 URL 缓存；本人资料不持久化，应用重启后重新调用 `usersGetMe`。当前用户 DTO 未显式提供派生 URL，客户端安全降级到服务端头像原地址而不猜测路径。
+预签名 URL、文件字节、归一化结果和处理中状态不持久化。上传完成后富正文仍只把服务端主 URL 随完整 Markdown 写入快照，避免破坏媒体引用绑定；动态本机草稿可保存服务端明确返回的派生 URL 和动画标记。滚动内容按用途优先 thumbnail/feed/medium，加载失败时才按响应中已有地址逐级回退，显式全屏查看优先主 URL；客户端不猜测对象键。头像媒体 ID 只在当前 autoDispose 状态中保留到设置成功或页面释放。头像设置/移除成功立即采用服务端结果并淘汰旧 URL 缓存。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
 选图、预览解码或裁剪生成失败时显示明确错误，并提供重新选择或原地重试；头像与主页背景的选图失败在页内展示带问题编号的错误横幅并主动滚入视野。主页背景上传失败后同样主动显示，并根据已保留的裁剪结果和 `mediaId` 显示“重新选择 / 重试上传 / 重试设置”，不会静默失败。
 
-用户取消选择或关闭取景窗口不提示错误；上传期间显示阶段和可用进度并允许取消。空文件、超限、未知类型与无法解码的图片在申请地址前拒绝；对象存储失败不会调用确认；确认缺失、`MEDIA_OBJECT_MISSING`、处理失败和轮询超时都不写入业务内容。当前 `MEDIA_OBJECT_MISSING` 沿用上传失败并保留同一裁剪输入供用户明确重试，不在后台自动重传；后续切片才会为原 `mediaId` 重签 PUT 地址。失败保留当前 Markdown 或已确认的裁剪结果，用户可直接重试；取消会清除重试输入。处理中禁止同时保存/发布，避免提交不存在的图片。头像上传失败复用 1:1 输出，设置失败保留媒体 ID 和请求 ID，并只重试 `usersSetAvatar`；背景按缺失画幅继续上传并在双 `mediaId` 完成后重试原子设置；移除失败保留当前图片。原图页保存/收藏失败时不退出查看任务，在图片上方保留带问题编号的失败横幅与重试入口；成功后才使用短确认。
+用户取消选择或关闭取景窗口不提示错误；上传期间显示阶段和可用进度并允许取消。空文件、静态图超过 6400 万像素、GIF 超限、动态 WebP、未知类型与无法解码的图片都在申请地址前拒绝；静态 WebP 编码失败不会退回原文件。对象存储失败不会调用确认；确认缺失、用途错配、`MEDIA_OBJECT_MISSING`、处理失败和轮询超时都不写入业务内容。当前 `MEDIA_OBJECT_MISSING` 沿用上传失败并保留同一输入供用户明确重试，不在后台自动重传；后续切片才会为原 `mediaId` 重签 PUT 地址。失败保留当前 Markdown 或已确认的裁剪结果，用户可直接重试；取消会清除重试输入。处理中禁止同时保存/发布，避免提交不存在的图片。
 
 ## 10. 跨模块约束
 
-只有 `COMPLETED` 资源能成为 `wenyou_image` 节点、动态/评论/私聊媒体 ID、收藏表情导入源、头像或背景候选；`media/application` 负责上传任务以及头像/背景的取景与裁剪契约，`media/presentation` 提供完整原图画布与固定比例取景框，`media/data` 只负责系统选图和 isolate 解码编码。editor、moments、direct_messages 与 stickers 继续只消费完成媒体；users 只接收头像或双背景候选并负责资料端点和本人资料事实。正文、动态详情和评论图片遵循 Foundation 的 contain、不裁切、状态占位和全屏交互契约；动态信息流封面、背景和头像是允许 cover 裁切的角色，但动态封面必须可进入详情原图。
+只有 `COMPLETED` 且用途匹配的资源能成为 `wenyou_image` 节点、动态/评论/私聊媒体 ID、收藏表情导入源、头像或背景候选；`media/domain` 定义归一化端口与输入输出，`media/application` 负责上传任务以及头像/背景的取景契约，`media/presentation` 提供静态图取景和 GIF 原样确认，`media/data` 负责系统选图、header 校验、isolate 解码、native WebP 编码与 Dio adapter。editor、moments、direct_messages 与 stickers 继续只消费完成媒体；users 只接收头像或双背景候选并负责资料端点和本人资料事实。正文、动态详情和评论图片遵循 Foundation 的 contain、不裁切、状态占位和全屏交互契约；动态信息流封面、背景和头像是允许 cover 裁切的角色，但动态封面必须可进入详情原图。
 
 ## 11. 测试场景与验收条件
 
@@ -66,15 +66,18 @@
 - [x] 主页背景的选图、解码和上传失败均有当前任务反馈；小屏下错误主动滚入视野，并保留可重试输入。
 - [x] Android 图片入口使用系统 Photo Picker；头像和主页背景在选图期间即使资料编辑内容被刷新替换，也会由稳定路由宿主继续打开裁剪，选图失败可见且可重新选择，用户主动取消不误报。
 - [x] 裁剪画布保持原图宽高比，固定比例取景框可移动和缩小；目标比例不会拉伸预览，确认前不会改写原图，取景结果继续映射到原始像素。
+- [x] 静态图按用途以 WebP 85/92 归一化，方向、最长边、元数据和编码失败边界有回归；同一成功准备结果在重试时不重复压缩。
+- [x] GIF 保留原始字节且不提供裁剪，尺寸/帧数/时长/累计像素在网络前校验；动态 WebP 明确拒绝。
+- [x] 七种上传入口传入精确 purpose；完成结果消费动画标记和显式派生 URL，派生图失败会逐级回退且不猜测对象键。
 
 ## 12. 已知限制和后续功能
 
-服务端用户 DTO 未提供 thumbnail/medium 字段，因此移动端只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，不写入本地快照或业务状态，也不提供后台队列；页面释放、主动取消或进程终止后需重新选择图片。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
+服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消或进程终止后需重新选择图片。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `230fad50efd1e3dd600cf29ba887a8e1c0745523`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 
-端口、头像格式策略、归一化取景模型与任务状态位于 `lib/features/media/application/`，系统相册、背景输入校验、isolate 图片处理与 Dio adapter 位于 `lib/features/media/data/`，通用取景窗口位于 `lib/features/media/presentation/`，组合根绑定位于 `lib/app/production_overrides.dart`；正文插入入口分别位于 `lib/features/threads/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`，共同使用 editor 公共会话。头像与背景仓储及写入状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。
+端口、头像格式策略、归一化取景模型与任务状态位于 `lib/features/media/application/`，系统相册、图片限制校验、native WebP 归一化、isolate 图片处理与 Dio adapter 位于 `lib/features/media/data/`，通用取景窗口位于 `lib/features/media/presentation/`，组合根绑定位于 `lib/app/production_overrides.dart`；正文插入入口分别位于 `lib/features/threads/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`，共同使用 editor 公共会话。头像与背景仓储及写入状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。

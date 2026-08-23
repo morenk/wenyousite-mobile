@@ -61,7 +61,7 @@ void main() {
     expect(output.bytes.length, lessThanOrEqualTo(maxMediaImageBytes));
   });
 
-  test('通用裁剪保留多帧图片动画', () async {
+  test('GIF 动图保留原始字节且不应用裁剪', () async {
     final animation = image.Image(width: 40, height: 20)..frameDuration = 80;
     animation.clear(image.ColorRgb8(255, 0, 0));
     animation.addFrame()
@@ -79,12 +79,11 @@ void main() {
       source,
       const NormalizedCropRect(left: .25, top: 0, width: .5, height: 1),
     );
-    final decoded = image.decodeGif(output.bytes)!;
-
-    expect(output.filename, 'cropped-image.gif');
+    expect(source.canCrop, isFalse);
+    expect(output.filename, 'animation.gif');
     expect(output.declaredContentType, 'image/gif');
-    expect(decoded.numFrames, 2);
-    expect((decoded.width, decoded.height), (20, 20));
+    expect(output.bytes, orderedEquals(source.original.bytes));
+    expect((source.width, source.height), (40, 20));
   });
 }
 

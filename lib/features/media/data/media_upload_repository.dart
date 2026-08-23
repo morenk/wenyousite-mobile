@@ -7,7 +7,9 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.dart';
 
 typedef MediaUploadDelay = Future<void> Function(Duration duration);
 
@@ -34,7 +36,6 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     'image/png',
     'image/gif',
     'image/webp',
-    'image/avif',
   };
 
   final MediaApi _api;
@@ -57,7 +58,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     }
     final contentType = _contentTypeFor(input);
     if (contentType == null) {
-      throw const ApiFailure(userMessage: '仅支持 JPG、PNG、GIF、WebP 和 AVIF 图片。');
+      throw const ApiFailure(userMessage: '仅支持 JPG、PNG、GIF 和 WebP 图片。');
     }
     _throwIfCancelled(cancelToken);
 
@@ -70,7 +71,8 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
           (builder) => builder
             ..filename = input.filename
             ..contentType = _contentTypeEnum(contentType)
-            ..size = size,
+            ..size = size
+            ..purpose = _purposeEnum(input.purpose),
         ),
         cancelToken: cancelToken,
       );
@@ -139,7 +141,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
       }
       final confirmed = confirmation.media;
       if (confirmed.status == MediaResponseDtoStatusEnum.COMPLETED) {
-        return _completedImage(confirmed);
+        return _completedImage(confirmed, input.purpose);
       }
       if (confirmed.status == MediaResponseDtoStatusEnum.FAILED) {
         throw const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。');
@@ -163,7 +165,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
           throw const ApiFailure(userMessage: '图片处理失败，请重试。');
         }
         if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
-          return _completedImage(media);
+          return _completedImage(media, input.purpose);
         }
         if (media.status == MediaResponseDtoStatusEnum.FAILED) {
           throw const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。');
@@ -201,24 +203,81 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
       'image/png' => CreateUploadUrlDtoContentTypeEnum.imageSlashPng,
       'image/gif' => CreateUploadUrlDtoContentTypeEnum.imageSlashGif,
       'image/webp' => CreateUploadUrlDtoContentTypeEnum.imageSlashWebp,
-      'image/avif' => CreateUploadUrlDtoContentTypeEnum.imageSlashAvif,
       _ => throw const ApiFailure(userMessage: '图片类型不受支持。'),
     };
   }
 
-  UploadedEditorImage _completedImage(MediaResponseDto media) {
-    final uri = Uri.tryParse(media.url);
+  CreateUploadUrlDtoPurposeEnum _purposeEnum(MediaUploadPurpose purpose) {
+    return switch (purpose) {
+      MediaUploadPurpose.avatar => CreateUploadUrlDtoPurposeEnum.AVATAR,
+      MediaUploadPurpose.profileCover =>
+        CreateUploadUrlDtoPurposeEnum.PROFILE_COVER,
+      MediaUploadPurpose.directMessage =>
+        CreateUploadUrlDtoPurposeEnum.DIRECT_MESSAGE,
+      MediaUploadPurpose.moment => CreateUploadUrlDtoPurposeEnum.MOMENT,
+      MediaUploadPurpose.momentComment =>
+        CreateUploadUrlDtoPurposeEnum.MOMENT_COMMENT,
+      MediaUploadPurpose.richContent =>
+        CreateUploadUrlDtoPurposeEnum.RICH_CONTENT,
+      MediaUploadPurpose.stickerSource =>
+        CreateUploadUrlDtoPurposeEnum.STICKER_SOURCE,
+    };
+  }
+
+  UploadedEditorImage _completedImage(
+    MediaResponseDto media,
+    MediaUploadPurpose expectedPurpose,
+  ) {
+    if (!_matchesPurpose(media.purpose, expectedPurpose)) {
+      throw const ApiFailure(userMessage: '图片用途与当前操作不一致，请重新选择。');
+    }
+    return UploadedEditorImage(
+      mediaId: media.id,
+      url: _safeUrl(media.url),
+      thumbnailUrl: _optionalSafeUrl(media.thumbnailUrl),
+      feedUrl: _optionalSafeUrl(media.feedUrl),
+      mediumUrl: _optionalSafeUrl(media.mediumUrl),
+      contentType: media.contentType,
+      animated: media.animated,
+      width: media.width?.toInt(),
+      height: media.height?.toInt(),
+    );
+  }
+
+  bool _matchesPurpose(
+    MediaResponseDtoPurposeEnum actual,
+    MediaUploadPurpose expected,
+  ) {
+    return switch (expected) {
+      MediaUploadPurpose.avatar => actual == MediaResponseDtoPurposeEnum.AVATAR,
+      MediaUploadPurpose.profileCover =>
+        actual == MediaResponseDtoPurposeEnum.PROFILE_COVER,
+      MediaUploadPurpose.directMessage =>
+        actual == MediaResponseDtoPurposeEnum.DIRECT_MESSAGE,
+      MediaUploadPurpose.moment => actual == MediaResponseDtoPurposeEnum.MOMENT,
+      MediaUploadPurpose.momentComment =>
+        actual == MediaResponseDtoPurposeEnum.MOMENT_COMMENT,
+      MediaUploadPurpose.richContent =>
+        actual == MediaResponseDtoPurposeEnum.RICH_CONTENT,
+      MediaUploadPurpose.stickerSource =>
+        actual == MediaResponseDtoPurposeEnum.STICKER_SOURCE,
+    };
+  }
+
+  String _safeUrl(String value) {
+    final uri = Uri.tryParse(value.trim());
     if (uri == null ||
         !uri.hasScheme ||
         (uri.scheme != 'https' && uri.scheme != 'http')) {
       throw const ApiFailure(userMessage: '图片处理完成，但公开地址不安全。');
     }
-    return UploadedEditorImage(
-      mediaId: media.id,
-      url: media.url,
-      width: media.width?.toInt(),
-      height: media.height?.toInt(),
-    );
+    return uri.toString();
+  }
+
+  String? _optionalSafeUrl(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return null;
+    return _safeUrl(normalized);
   }
 
   Future<void> _wait(Duration duration, CancelToken? cancelToken) async {
@@ -258,9 +317,13 @@ final mediaUploadRepositoryProvider = Provider<MediaUploadRepository>((ref) {
 });
 
 class RepositoryMediaUploadGateway implements MediaUploadGateway {
-  RepositoryMediaUploadGateway(this._repository);
+  RepositoryMediaUploadGateway(
+    this._repository, {
+    this.normalizer = const PassThroughMediaUploadNormalizer(),
+  });
 
   final MediaUploadRepository _repository;
+  final MediaUploadNormalizer normalizer;
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
@@ -269,12 +332,31 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
   }) {
     final cancelToken = CancelToken();
     return _DioMediaUploadOperation(
-      result: _repository.uploadImage(
+      result: _normalizeAndUpload(
         input,
         cancelToken: cancelToken,
         onProgress: onProgress,
       ),
       cancelToken: cancelToken,
+    );
+  }
+
+  Future<UploadedEditorImage> _normalizeAndUpload(
+    MediaUploadInput input, {
+    required CancelToken cancelToken,
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) async {
+    onProgress?.call(
+      const MediaUploadProgress(stage: MediaUploadStage.preparing),
+    );
+    final normalized = await normalizer.normalize(input);
+    if (cancelToken.isCancelled) {
+      throw ApiFailure(userMessage: '图片上传已取消。', cause: cancelToken.cancelError);
+    }
+    return _repository.uploadImage(
+      normalized,
+      cancelToken: cancelToken,
+      onProgress: onProgress,
     );
   }
 }
@@ -299,5 +381,8 @@ class _DioMediaUploadOperation
 }
 
 final mediaUploadGatewayAdapterProvider = Provider<MediaUploadGateway>((ref) {
-  return RepositoryMediaUploadGateway(ref.watch(mediaUploadRepositoryProvider));
+  return RepositoryMediaUploadGateway(
+    ref.watch(mediaUploadRepositoryProvider),
+    normalizer: ref.watch(mediaUploadNormalizerProvider),
+  );
 });

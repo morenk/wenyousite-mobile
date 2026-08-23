@@ -451,6 +451,7 @@ class _MomentGalleryPage extends StatelessWidget {
       child: WenyouCachedImage(
         key: Key('moment-content-image-$index'),
         imageUrl: image.bestContentUrl,
+        fallbackImageUrls: image.contentUrls.skip(1).toList(growable: false),
         width: double.infinity,
         height: double.infinity,
         fit: BoxFit.contain,
@@ -667,6 +668,9 @@ class _ZoomableMomentImageState extends State<_ZoomableMomentImage> {
         child: Center(
           child: WenyouCachedImage(
             imageUrl: widget.image.url,
+            fallbackImageUrls: widget.image.contentUrls
+                .where((url) => url != widget.image.url)
+                .toList(growable: false),
             fit: BoxFit.contain,
             placeholder: (_, _) => const CircularProgressIndicator(),
             errorWidget: (_, _, _) => const WenyouIcon(
@@ -691,6 +695,7 @@ class MomentCoverImage extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return WenyouCachedImage(
       imageUrl: media.bestFeedUrl,
+      fallbackImageUrls: media.feedUrls.skip(1).toList(growable: false),
       fit: BoxFit.cover,
       cacheWidth: 320,
       placeholder: (_, _) => ColoredBox(

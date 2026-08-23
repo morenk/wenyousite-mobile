@@ -27,12 +27,14 @@ class CropImageSource {
     required this.previewBytes,
     required this.width,
     required this.height,
+    this.canCrop = true,
   });
 
   final MediaUploadInput original;
   final Uint8List previewBytes;
   final int width;
   final int height;
+  final bool canCrop;
 }
 
 abstract interface class ImageCropProcessor {

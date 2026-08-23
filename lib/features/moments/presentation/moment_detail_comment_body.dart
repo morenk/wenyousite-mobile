@@ -78,6 +78,9 @@ class MomentCommentBody extends StatelessWidget {
                   ),
                   child: WenyouCachedImage(
                     imageUrl: comment.media!.bestContentUrl,
+                    fallbackImageUrls: comment.media!.contentUrls
+                        .skip(1)
+                        .toList(growable: false),
                     fit: BoxFit.contain,
                     placeholder: (_, _) => const CircularProgressIndicator(),
                     errorWidget: (_, _, _) =>

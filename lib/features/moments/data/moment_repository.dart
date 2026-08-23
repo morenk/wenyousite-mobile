@@ -715,6 +715,8 @@ class ApiMomentRepository implements MomentRepository {
       thumbnailUrl: _optionalHttpUri(dto.thumbnailUrl, '图片缩略图地址'),
       feedUrl: _optionalHttpUri(dto.feedUrl, '图片列表地址'),
       mediumUrl: _optionalHttpUri(dto.mediumUrl, '图片预览地址'),
+      contentType: dto.contentType?.trim(),
+      animated: dto.animated,
       width: width,
       height: height,
     );

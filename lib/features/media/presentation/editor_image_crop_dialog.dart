@@ -13,9 +13,15 @@ Future<UploadedEditorImage?> pickCropAndUploadEditorImage(
   BuildContext context,
   WidgetRef ref, {
   required Object uploadTaskId,
+  MediaUploadPurpose purpose = MediaUploadPurpose.richContent,
   String title = '裁剪图片',
 }) async {
-  final inputs = await pickAndCropEditorImages(context, ref, title: title);
+  final inputs = await pickAndCropEditorImages(
+    context,
+    ref,
+    purpose: purpose,
+    title: title,
+  );
   if (!context.mounted || inputs == null || inputs.isEmpty) return null;
   return ref
       .read(mediaUploadTaskControllerProvider(uploadTaskId).notifier)
@@ -26,6 +32,7 @@ Future<List<MediaUploadInput>?> pickAndCropEditorImages(
   BuildContext context,
   WidgetRef ref, {
   int maximumSelection = 1,
+  MediaUploadPurpose purpose = MediaUploadPurpose.richContent,
   String title = '裁剪图片',
 }) async {
   assert(maximumSelection > 0);
@@ -42,12 +49,15 @@ Future<List<MediaUploadInput>?> pickAndCropEditorImages(
         inputs = input == null ? const [] : [input];
       }
       if (!context.mounted || inputs.isEmpty) return null;
-      return showEditorImageCropDialog(
+      final outputs = await showEditorImageCropDialog(
         context,
         inputs: inputs.take(maximumSelection).toList(growable: false),
         processor: ref.read(imageCropProcessorPortProvider),
         title: title,
       );
+      return outputs
+          ?.map((output) => output.withPurpose(purpose))
+          .toList(growable: false);
     } on Object catch (error) {
       if (!context.mounted) return null;
       final retry = await showDialog<bool>(
@@ -133,9 +143,10 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
       _error = null;
     });
     try {
-      final sources = await Future.wait(
-        widget.inputs.map(widget.processor.prepare),
-      );
+      final sources = <CropImageSource>[];
+      for (final input in widget.inputs) {
+        sources.add(await widget.processor.prepare(input));
+      }
       if (!mounted) return;
       final controllers = [
         for (final source in sources)
@@ -175,11 +186,14 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
     try {
       final outputs = <MediaUploadInput>[];
       for (var index = 0; index < sources.length; index++) {
+        final source = sources[index];
         outputs.add(
-          await widget.processor.cropImage(
-            sources[index],
-            controllers[index].crop,
-          ),
+          source.canCrop
+              ? await widget.processor.cropImage(
+                  source,
+                  controllers[index].crop,
+                )
+              : source.original,
         );
         if (mounted) setState(() => _processedCount = index + 1);
       }
@@ -216,8 +230,11 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
     final controllers = _controllers;
     final ready = sources != null && controllers != null;
     final count = widget.inputs.length;
+    final containsGif = sources?.any((source) => !source.canCrop) ?? false;
     final progress = _processing && count > 1
         ? '正在生成 $_processedCount/$count 张图片…'
+        : containsGif
+        ? 'GIF 动图会保留原图；静态图片仍可逐张裁剪。'
         : '原图保持比例显示；拖动取景框选择区域，双指或使用滑杆调整范围。';
     return ImageCropDialogFrame(
       key: const Key('editor-image-crop-dialog'),
@@ -247,34 +264,55 @@ class _EditorImageCropDialogState extends State<_EditorImageCropDialog> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ImageCropEditor(
-          key: ValueKey(
-            'editor-image-crop-$_selectedIndex-${controller.targetAspectRatio}',
+        if (source.canCrop) ...[
+          ImageCropEditor(
+            key: ValueKey(
+              'editor-image-crop-$_selectedIndex-${controller.targetAspectRatio}',
+            ),
+            source: source,
+            controller: controller,
           ),
-          source: source,
-          controller: controller,
-        ),
-        SizedBox(height: context.wenyouTokens.space8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final ratio in ratios) ...[
-                ChoiceChip(
-                  key: ValueKey(
-                    'image-crop-ratio-$_selectedIndex-${ratio.label}',
+          SizedBox(height: context.wenyouTokens.space8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final ratio in ratios) ...[
+                  ChoiceChip(
+                    key: ValueKey(
+                      'image-crop-ratio-$_selectedIndex-${ratio.label}',
+                    ),
+                    label: Text(ratio.label),
+                    selected:
+                        (controller.targetAspectRatio - ratio.value).abs() <
+                        .001,
+                    onSelected: _processing ? null : (_) => _selectRatio(ratio),
                   ),
-                  label: Text(ratio.label),
-                  selected:
-                      (controller.targetAspectRatio - ratio.value).abs() < .001,
-                  onSelected: _processing ? null : (_) => _selectRatio(ratio),
-                ),
-                if (ratio != ratios.last)
-                  SizedBox(width: context.wenyouTokens.space8),
+                  if (ratio != ratios.last)
+                    SizedBox(width: context.wenyouTokens.space8),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
+        ] else
+          AspectRatio(
+            key: ValueKey('editor-image-gif-preview-$_selectedIndex'),
+            aspectRatio: source.width / source.height,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: context.wenyouTokens.softPanel,
+                borderRadius: BorderRadius.circular(
+                  context.wenyouTokens.radius12,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  context.wenyouTokens.radius12,
+                ),
+                child: Image.memory(source.previewBytes, fit: BoxFit.contain),
+              ),
+            ),
+          ),
         if (sources.length > 1) ...[
           SizedBox(height: context.wenyouTokens.space12),
           Align(

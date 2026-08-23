@@ -26,5 +26,6 @@ MediaUploadInput validateAvatarImageInput(MediaUploadInput input) {
     filename: input.filename,
     declaredContentType: contentType,
     bytes: input.bytes,
+    purpose: MediaUploadPurpose.avatar,
   );
 }

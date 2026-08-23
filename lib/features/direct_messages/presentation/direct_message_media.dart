@@ -73,6 +73,9 @@ class DirectMessageImage extends StatelessWidget {
                 );
                 final image = WenyouCachedImage(
                   imageUrl: media.displayUrl,
+                  fallbackImageUrls: media.displayUrls
+                      .skip(1)
+                      .toList(growable: false),
                   width: geometry.size?.width,
                   height: geometry.size?.height,
                   fit: BoxFit.contain,

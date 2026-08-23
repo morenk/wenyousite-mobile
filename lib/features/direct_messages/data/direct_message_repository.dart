@@ -523,6 +523,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
       width: _optionalPositiveInteger(dto.width, '图片宽度'),
       height: _optionalPositiveInteger(dto.height, '图片高度'),
       isSticker: false,
+      animated: dto.animated,
     );
   }
 

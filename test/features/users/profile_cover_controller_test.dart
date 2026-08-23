@@ -26,6 +26,8 @@ void main() {
     expect(result?.profileCover?.mobile, isNotNull);
     expect(webTask.inputs.single.filename, 'web.png');
     expect(mobileTask.inputs.single.filename, 'mobile.png');
+    expect(webTask.inputs.single.purpose, MediaUploadPurpose.profileCover);
+    expect(mobileTask.inputs.single.purpose, MediaUploadPurpose.profileCover);
     expect(repository.lastWebMediaId, 'web-media');
     expect(repository.lastMobileMediaId, 'mobile-media');
     expect(controller.state.phase, ProfileCoverPhase.idle);
@@ -183,10 +185,15 @@ class _FakeProfileCoverRepository implements ProfileCoverRepository {
 }
 
 final _selection = ProfileCoverImageSelection(
-  web: MediaUploadInput(filename: 'web.png', bytes: Uint8List.fromList([1])),
+  web: MediaUploadInput(
+    filename: 'web.png',
+    bytes: Uint8List.fromList([1]),
+    purpose: MediaUploadPurpose.profileCover,
+  ),
   mobile: MediaUploadInput(
     filename: 'mobile.png',
     bytes: Uint8List.fromList([2]),
+    purpose: MediaUploadPurpose.profileCover,
   ),
 );
 

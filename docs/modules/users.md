@@ -20,6 +20,8 @@
 
 头像编辑区只保留标题与操作，不重复说明头像用途。
 
+头像取景结果以 `AVATAR` 用途上传，静态图在上传前按质量 85 归一化为 WebP；主页背景的桌面端与移动端取景结果均以 `PROFILE_COVER` 用途、质量 92 上传。两个流程都校验服务端完成态用途，失败保留已准备输入供当前操作重试。
+
 公开页按用户 ID 读取资料，移动端优先展示 `profileCover.mobile` 的 2:1 背景，缺失时回退根级 3:1 背景；没有任何背景图时完全移除封面舞台和占位色块，头像、用户名与等级改用紧凑资料行。本人和他人主页共享全宽身份头：存在背景时，72dp 头像有 36dp 位于背景内、36dp 位于背景下，相比原 88dp 缩小约 18%，用户名与等级紧随头像下半部排布；背景裁切在资料卡圆角内。活动汇总独立请求 `usersGetUserActivitySummary`，展示动态、自建主题、参与主题和公开回复；隐私关闭的可空计数显示“未公开”，不会用零值伪装。本人概览与公开页复用同一创作汇总呈现，本人模式与最近回复并行加载，任一区块失败均不阻塞另一块。公开内容使用等宽页签和单列全宽卡片，创建、参与与收藏主题都映射到 threads/core 的共享主题卡，完整呈现默认子贴活跃时间、摘要、安全首图、主题标签、玩家数及其他互动统计；主题状态沿用中文产品语义，不把分类 slug 当作用户可读类型，任何资料或内容面板都不得随文字长度收缩。公开内容按隐私字段惰性请求；本人内容忽略公开展示开关，默认加载创作概览与最近回复，动态、创建主题和参与主题在首次进入对应页签时读取，并保留已加载状态、游标和滚动位置。关注/粉丝统计读取对应关系投影并可继续进入用户资料。登录身份确认后，他人页可关注/取消关注，拉黑需确认，解除拉黑直接执行；关系成功同步按钮、标记和粉丝数；私聊入口只传稳定用户 ID，联系状态由 direct-messages 页面重读。编辑资料与高风险账号动作不与总览混排；本人主页只保留页面级下拉刷新，只有资料头完整展开且当前内容列表位于顶部时才触发。刷新保留当前内容和滚动位置，并重读本人资料、钱包余额与手势开始时的当前页签；概览读取创作汇总和最近回复，动态与帖子不读取未显示页签。用户名、简介和三项公开范围只发送变化字段；头像在保持原比例的完整图片上移动和缩小固定 1:1 取景框，确认后经 media 完成上传，再用 `mediaId` 设置。主页背景从同一张安全图片分别移动和缩小电脑端 3:1、移动端 2:1 取景框，确认后生成 1920 × 640 与 1600 × 800 两份，分别上传成功才一次提交两个 `mediaId`；移除时也同时清空双画幅，头像和背景移除都需二次确认。注销入口转交 settings/auth 完成不可逆确认和会话清理。
 
 ## 5. API operationId 与生成类型
@@ -72,6 +74,7 @@
 - [x] 公开与本人关注/粉丝列表入口、稳定用户导航和窄屏布局通过。
 - [x] “我的”注销入口、确认链路、匿名保留说明与本机会话清理闭环通过。
 - [x] 头像选择、选图失败可见反馈、手动 1:1 取景、格式拒绝、共享上传进度/取消、设置、二次确认移除、显式 URL 降级、缓存失效及重启后服务端恢复正确。
+- [x] 头像和双画幅主页背景分别传入 `AVATAR` / `PROFILE_COVER`，静态 WebP 质量分别固定为 85 / 92，并拒绝用途不匹配的完成态。
 - [x] 私聊 capability 开启且目标非本人时展示稳定新私聊入口，关闭时不暴露入口。
 - [x] 所有公开用户均可从稳定 userId 进入独立用户动态列表，不复制动态列表状态到用户资料控制器。
 - [x] 非本人公开页进入用户加油，本人“我的”进入受保护钱包；成功后累计收到加油采用服务端投影。
@@ -85,8 +88,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `230fad50efd1e3dd600cf29ba887a8e1c0745523`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)。

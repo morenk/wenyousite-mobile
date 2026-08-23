@@ -160,7 +160,20 @@ class DirectMessageMedia {
   final bool isSticker;
   final bool animated;
 
-  String get displayUrl => mediumUrl ?? thumbnailUrl ?? url;
+  List<String> get displayUrls {
+    final result = <String>[];
+    for (final value in [mediumUrl, thumbnailUrl, url]) {
+      final normalized = value?.trim();
+      if (normalized != null &&
+          normalized.isNotEmpty &&
+          !result.contains(normalized)) {
+        result.add(normalized);
+      }
+    }
+    return List.unmodifiable(result);
+  }
+
+  String get displayUrl => displayUrls.first;
 }
 
 class DirectMessagePreview {

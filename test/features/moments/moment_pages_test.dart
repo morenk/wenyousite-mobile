@@ -577,6 +577,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(3));
+    expect(
+      gateway.inputs.map((input) => input.purpose),
+      everyElement(MediaUploadPurpose.moment),
+    );
     for (var index = 1; index <= 3; index++) {
       expect(find.byKey(ValueKey('moment-image-$index')), findsOneWidget);
     }
@@ -617,6 +621,7 @@ void main() {
     await _confirmImageCrop(tester);
 
     expect(find.textContaining('正在上传'), findsOneWidget);
+    expect(gateway.input?.purpose, MediaUploadPurpose.momentComment);
     await tester.binding.handlePopRoute();
     expect(gateway.operation.cancelled, isTrue);
     gateway.operation.complete(
@@ -1507,12 +1512,14 @@ class _ImmediateUploadOperation
 
 class _LateCompletingUploadGateway implements MediaUploadGateway {
   final operation = _LateCompletingUploadOperation();
+  MediaUploadInput? input;
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
     MediaUploadInput input, {
     void Function(MediaUploadProgress progress)? onProgress,
   }) {
+    this.input = input;
     onProgress?.call(
       MediaUploadProgress(
         stage: MediaUploadStage.uploading,

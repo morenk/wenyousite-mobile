@@ -289,6 +289,7 @@ void main() {
 
     expect(gateway.inputs, hasLength(2));
     expect(identical(gateway.inputs.first, gateway.inputs.last), isTrue);
+    expect(gateway.inputs.first.purpose, MediaUploadPurpose.directMessage);
     expect(
       find.byKey(const Key('direct-message-composer-attachment')),
       findsOneWidget,

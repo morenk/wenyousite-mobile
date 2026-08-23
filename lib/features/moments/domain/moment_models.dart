@@ -62,6 +62,8 @@ class MomentMedia {
     this.thumbnailUrl,
     this.feedUrl,
     this.mediumUrl,
+    this.contentType,
+    this.animated = false,
     this.width,
     this.height,
   });
@@ -71,12 +73,20 @@ class MomentMedia {
   final String? thumbnailUrl;
   final String? feedUrl;
   final String? mediumUrl;
+  final String? contentType;
+  final bool animated;
   final int? width;
   final int? height;
 
-  String get bestFeedUrl => feedUrl ?? mediumUrl ?? thumbnailUrl ?? url;
+  List<String> get feedUrls =>
+      _orderedMediaUrls([feedUrl, thumbnailUrl, mediumUrl, url]);
 
-  String get bestContentUrl => mediumUrl ?? url;
+  List<String> get contentUrls =>
+      _orderedMediaUrls([mediumUrl, thumbnailUrl, url]);
+
+  String get bestFeedUrl => feedUrls.first;
+
+  String get bestContentUrl => contentUrls.first;
 
   double? get aspectRatio {
     final safeWidth = width;
@@ -84,6 +94,19 @@ class MomentMedia {
     if (safeWidth == null || safeHeight == null || safeHeight <= 0) return null;
     return safeWidth / safeHeight;
   }
+}
+
+List<String> _orderedMediaUrls(Iterable<String?> values) {
+  final result = <String>[];
+  for (final value in values) {
+    final normalized = value?.trim();
+    if (normalized != null &&
+        normalized.isNotEmpty &&
+        !result.contains(normalized)) {
+      result.add(normalized);
+    }
+  }
+  return List.unmodifiable(result);
 }
 
 class MomentCard {

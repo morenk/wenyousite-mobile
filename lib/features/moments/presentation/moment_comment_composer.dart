@@ -223,6 +223,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
             context,
             ref,
             uploadTaskId: _uploadTaskId,
+            purpose: MediaUploadPurpose.momentComment,
             title: '裁剪评论图片',
           );
     if (!mounted || _closing || image == null) return;
@@ -288,14 +289,20 @@ class _SelectedCommentAsset extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = image?.url ?? sticker!.asset.thumbnailUrl;
+    final urls = image?.previewUrls;
+    final url = urls?.first ?? sticker!.asset.thumbnailUrl;
     return Align(
       alignment: Alignment.centerLeft,
       child: Stack(
         children: [
           SizedBox.square(
             dimension: 112,
-            child: WenyouCachedImage(imageUrl: url, fit: BoxFit.contain),
+            child: WenyouCachedImage(
+              imageUrl: url,
+              fallbackImageUrls:
+                  urls?.skip(1).toList(growable: false) ?? const [],
+              fit: BoxFit.contain,
+            ),
           ),
           Positioned(
             right: 0,
