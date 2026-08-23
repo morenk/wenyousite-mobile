@@ -30,6 +30,7 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -40,8 +41,20 @@ void main() {
     await tester.pumpWidget(_detailRouterApp(repository));
     await tester.pumpAndSettle();
     expect(find.text('星海旅团'), findsOneWidget);
-    expect(find.text('#太空歌剧'), findsNothing);
-    expect(find.byKey(const Key('thread-detail-tag-tag-1')), findsNothing);
+    expect(find.text('#太空歌剧'), findsOneWidget);
+    final tag = find.byKey(const Key('thread-detail-tag-tag-1'));
+    expect(tag, findsOneWidget);
+    expect(
+      find.descendant(of: tag, matching: find.byType(InputChip)),
+      findsNothing,
+    );
+    expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
+    await tester.tap(tag);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('test-tag-destination')), findsOneWidget);
+    expect(find.text('tag-1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('test-tag-back')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-search')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-tip')), findsNothing);
@@ -101,24 +114,24 @@ void main() {
     expect(find.byKey(const Key('thread-floor-controls')), findsOneWidget);
     expect(find.byKey(const Key('thread-floors-count')), findsOneWidget);
     expect(find.text('8 层'), findsOneWidget);
-    expect(find.byKey(const Key('thread-floors-settings')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floors-author')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floors-order')), findsOneWidget);
+    expect(find.byKey(const Key('thread-floors-settings')), findsNothing);
     expect(find.text('楼层'), findsNothing);
     expect(find.text('最早在前'), findsOneWidget);
     expect(find.text('最新在前'), findsNothing);
-    await tester.tap(find.byKey(const Key('thread-floors-settings')));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('thread-floors-settings-sheet')),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('最新在前'));
-    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    final bodyBottom = tester
+        .getBottomLeft(find.byType(ThreadSubthreadBody))
+        .dy;
+    final controlsTop = tester
+        .getTopLeft(find.byKey(const Key('thread-floor-controls')))
+        .dy;
+    expect(controlsTop - bodyBottom, closeTo(12, 0.1));
+    await tester.tap(find.byKey(const Key('thread-floors-order')));
     await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
-    await tester.tap(find.byKey(const Key('thread-floors-settings')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('discussion-settings-reset')));
-    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    expect(find.text('最新在前'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-floors-order')));
     await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.oldest);
     expect(find.text('128 浏览 · 2 玩家 · 12 楼 · 8 升温油'), findsNothing);
@@ -376,26 +389,38 @@ void main() {
     );
   });
 
-  testWidgets('主楼设置一次应用排序和发言者，筛选空态可恢复全部楼层', (tester) async {
+  testWidgets('主楼排序和发言者直接生效，筛选空态可恢复全部楼层', (tester) async {
     final repository = _FakeThreadDetailRepository();
-    await tester.pumpWidget(_detailApp(repository));
+    final authorDirectory = _MutablePostDiscussionAuthorDirectory();
+    await tester.pumpWidget(
+      _detailApp(repository, authorDirectory: authorDirectory),
+    );
     await tester.pumpAndSettle();
 
     expect(repository.requestedSubthreads, ['subthread-1']);
-    await tester.tap(find.byKey(const Key('thread-floors-settings')));
+    await tester.tap(find.byKey(const Key('thread-floors-order')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('最新在前'));
-    await tester.tap(find.text('下一位接力者'));
-    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    await tester.tap(find.byKey(const Key('thread-floors-author')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('下一位接力者').last);
     await tester.pumpAndSettle();
 
-    expect(repository.requestedSubthreads, ['subthread-1', 'subthread-1']);
+    expect(repository.requestedSubthreads, [
+      'subthread-1',
+      'subthread-1',
+      'subthread-1',
+    ]);
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
     expect(repository.requestedAuthors.last, 'user-2');
-    expect(find.text('最新在前 · 下一位接力者'), findsOneWidget);
+    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('下一位接力者'), findsOneWidget);
     expect(find.text('没有符合条件的楼层'), findsOneWidget);
     expect(find.text('查看全部楼层'), findsOneWidget);
 
+    await tester.ensureVisible(
+      find.byKey(const Key('thread-floors-clear-author')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('thread-floors-clear-author')));
     await tester.pumpAndSettle();
 
@@ -403,6 +428,23 @@ void main() {
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
     expect(find.text('第一层内容'), findsOneWidget);
     expect(find.text('没有符合条件的楼层'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(const Key('thread-floors-author')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-floors-author')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('下一位接力者').last);
+    await tester.pumpAndSettle();
+    authorDirectory.floorAuthors = const [];
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ThreadDetailPage)),
+    );
+    container.invalidate(postFloorDiscussionAuthorsProvider('subthread-1'));
+    await tester.pumpAndSettle();
+
+    expect(repository.requestedAuthors.last, isNull);
+    expect(find.text('第一层内容'), findsOneWidget);
+    expect(find.text('暂无可筛选作者'), findsOneWidget);
   });
 
   testWidgets('楼中楼回复深链直接定位独立讨论，返回后不重复打开', (tester) async {
@@ -715,7 +757,7 @@ void main() {
     });
   }
 
-  testWidgets('360dp 题头隐藏标签语境且不随标签数量增高', (tester) async {
+  testWidgets('360dp 五标签在题头单行横滑且不换行', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -735,13 +777,51 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('thread-detail-context-row')), findsNothing);
-    expect(find.text('#太空歌剧'), findsNothing);
-    expect(find.text('#硬科幻'), findsNothing);
+    final tags = find.byKey(const Key('thread-detail-tags'));
+    expect(tags, findsOneWidget);
+    expect(
+      tester.widget<SingleChildScrollView>(tags).scrollDirection,
+      Axis.horizontal,
+    );
+    for (final name in ['太空歌剧', '群像叙事', '星际远航', '长期接力', '硬科幻']) {
+      expect(find.text('#$name'), findsOneWidget);
+    }
+    final tagCenters = List.generate(
+      5,
+      (index) => tester
+          .getCenter(find.byKey(Key('thread-detail-tag-tag-${index + 1}')))
+          .dy,
+    );
+    expect(
+      tagCenters.every((center) => (center - tagCenters.first).abs() < 1),
+      isTrue,
+    );
+    final tagScrollable = tester.state<ScrollableState>(
+      find.descendant(of: tags, matching: find.byType(Scrollable)),
+    );
+    expect(tagScrollable.position.maxScrollExtent, greaterThan(0));
+    await tester.drag(tags, const Offset(-160, 0));
+    await tester.pumpAndSettle();
+    expect(tagScrollable.position.pixels, greaterThan(0));
     expect(
       tester.getSize(find.byKey(const Key('thread-detail-overview'))).height,
       lessThan(140),
     );
     expect(find.text('主线正文'), findsOneWidget);
+  });
+
+  testWidgets('无标签主题不保留标签栏或空白', (tester) async {
+    await tester.pumpWidget(
+      _detailApp(
+        _FakeThreadDetailRepository(detail: _detailWithTags(const [])),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('thread-detail-tags')), findsNothing);
+    expect(find.byType(ThreadDetailOverview), findsOneWidget);
+    expect(find.text('主线正文'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('360dp 长主题与子贴标题各自最多显示两行', (tester) async {
@@ -1026,13 +1106,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final settings = find.byKey(const Key('thread-floors-settings'));
+    final authorFilter = find.byKey(const Key('thread-floors-author'));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 80));
     await tester.pumpAndSettle();
-    await tester.tap(settings);
+    await tester.tap(authorFilter);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('下一位接力者'));
-    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    await tester.tap(find.text('下一位接力者').last);
     await tester.pumpAndSettle();
 
     expect(repository.requestedAuthors, contains('user-2'));
@@ -1136,6 +1215,7 @@ void main() {
       ),
     );
     final postRepository = _CreatingPostRepository();
+    final authorDirectory = _MutablePostDiscussionAuthorDirectory();
     final container = ProviderContainer(
       overrides: [
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
@@ -1146,6 +1226,9 @@ void main() {
           _FakeThreadSubscriptionRepository(),
         ),
         postRepositoryProvider.overrideWithValue(postRepository),
+        postDiscussionAuthorDirectoryProvider.overrideWithValue(
+          authorDirectory,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -1173,6 +1256,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(authorDirectory.floorCalls, 1);
 
     await tester.tap(find.byKey(const Key('thread-floor-compose')));
     await tester.pumpAndSettle();
@@ -1188,6 +1272,7 @@ void main() {
     );
     expect(detailRepository.targetPostIds, ['floor-created']);
     expect(detailRepository.requestedSubthreads, ['subthread-1']);
+    expect(authorDirectory.floorCalls, 2);
     expect(find.text('刚发表的楼层'), findsOneWidget);
     expect(
       tester
@@ -2047,6 +2132,9 @@ void main() {
           threadDetailRepositoryProvider.overrideWithValue(
             _FakeThreadDetailRepository(detail: _managerDetail),
           ),
+          postDiscussionAuthorDirectoryProvider.overrideWithValue(
+            _FakePostDiscussionAuthorDirectory(),
+          ),
           threadSubscriptionRepositoryProvider.overrideWithValue(
             _FakeThreadSubscriptionRepository(),
           ),
@@ -2093,6 +2181,9 @@ void main() {
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         threadDetailRepositoryProvider.overrideWithValue(
           _FakeThreadDetailRepository(detail: _managerDetail),
+        ),
+        postDiscussionAuthorDirectoryProvider.overrideWithValue(
+          _FakePostDiscussionAuthorDirectory(),
         ),
         threadSubscriptionRepositoryProvider.overrideWithValue(
           _FakeThreadSubscriptionRepository(),
@@ -2145,6 +2236,9 @@ void main() {
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         threadDetailRepositoryProvider.overrideWithValue(
           _FakeThreadDetailRepository(detail: emptyBodyDetail),
+        ),
+        postDiscussionAuthorDirectoryProvider.overrideWithValue(
+          _FakePostDiscussionAuthorDirectory(),
         ),
         threadSubscriptionRepositoryProvider.overrideWithValue(
           _FakeThreadSubscriptionRepository(),
@@ -2206,6 +2300,7 @@ Widget _detailApp(
   String? targetPostId,
   String? subthreadIdHint,
   Key? visualKey,
+  PostDiscussionAuthorDirectory? authorDirectory,
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
@@ -2217,7 +2312,7 @@ Widget _detailApp(
       stickersEnabledProvider.overrideWithValue(false),
       threadDetailRepositoryProvider.overrideWithValue(repository),
       postDiscussionAuthorDirectoryProvider.overrideWithValue(
-        _FakePostDiscussionAuthorDirectory(),
+        authorDirectory ?? _FakePostDiscussionAuthorDirectory(),
       ),
     ],
     child: MaterialApp(
@@ -2239,6 +2334,9 @@ Future<Widget> _authenticatedDetailApp(
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       stickersEnabledProvider.overrideWithValue(false),
       threadDetailRepositoryProvider.overrideWithValue(repository),
+      postDiscussionAuthorDirectoryProvider.overrideWithValue(
+        _FakePostDiscussionAuthorDirectory(),
+      ),
       threadSubscriptionRepositoryProvider.overrideWithValue(
         _FakeThreadSubscriptionRepository(),
       ),
@@ -2301,6 +2399,19 @@ Widget _detailRouterApp(
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/tags/:tagId',
+        name: 'tag-threads',
+        builder: (context, state) => Scaffold(
+          appBar: AppBar(leading: const BackButton(key: Key('test-tag-back'))),
+          body: Center(
+            child: Text(
+              state.pathParameters['tagId']!,
+              key: const Key('test-tag-destination'),
+            ),
+          ),
+        ),
       ),
       GoRoute(
         path: '/users/:userId',
@@ -2416,22 +2527,57 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
 class _FakePostDiscussionAuthorDirectory
     implements PostDiscussionAuthorDirectory {
   @override
-  Future<List<PostDiscussionAuthor>> fetchAuthors(String threadId) async {
+  Future<List<PostDiscussionAuthor>> fetchFloorAuthors(
+    String subthreadId,
+  ) async {
     return [
       PostDiscussionAuthor(
         userId: _author.id,
         username: _author.username,
         role: PostDiscussionAuthorRole.owner,
-        joinedAt: DateTime.utc(2026, 8, 1),
       ),
       PostDiscussionAuthor(
         userId: _playerAuthor.id,
         username: _playerAuthor.username,
         role: PostDiscussionAuthorRole.player,
-        joinedAt: DateTime.utc(2026, 8, 2),
       ),
     ];
   }
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchReplyAuthors(
+    String rootPostId,
+  ) async => const [];
+}
+
+class _MutablePostDiscussionAuthorDirectory
+    implements PostDiscussionAuthorDirectory {
+  int floorCalls = 0;
+  List<PostDiscussionAuthor> floorAuthors = [
+    PostDiscussionAuthor(
+      userId: _author.id,
+      username: _author.username,
+      role: PostDiscussionAuthorRole.owner,
+    ),
+    PostDiscussionAuthor(
+      userId: _playerAuthor.id,
+      username: _playerAuthor.username,
+      role: PostDiscussionAuthorRole.player,
+    ),
+  ];
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchFloorAuthors(
+    String subthreadId,
+  ) async {
+    floorCalls += 1;
+    return floorAuthors;
+  }
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchReplyAuthors(
+    String rootPostId,
+  ) async => const [];
 }
 
 class _FakeHomeRepository implements HomeRepository {

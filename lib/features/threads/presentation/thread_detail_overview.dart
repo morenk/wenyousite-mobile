@@ -5,30 +5,80 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_subthread_navigator.dart';
 
 class ThreadDetailOverview extends StatelessWidget {
-  const ThreadDetailOverview({required this.detail, super.key});
+  const ThreadDetailOverview({
+    required this.detail,
+    required this.onTagPressed,
+    super.key,
+  });
 
   final ThreadDetailModel detail;
+  final ValueChanged<ThreadTagModel> onTagPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final tokens = context.wenyouTokens;
+    return Column(
       key: const Key('thread-detail-overview'),
-      padding: EdgeInsets.symmetric(horizontal: context.wenyouTokens.space4),
-      child: Semantics(
-        header: true,
-        child: Text(
-          detail.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.wenyouDetailTitle,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+          child: Semantics(
+            header: true,
+            child: Text(
+              detail.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.wenyouDetailTitle,
+            ),
+          ),
         ),
-      ),
+        if (detail.tags.isNotEmpty) ...[
+          SizedBox(height: tokens.space4),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+            child: Semantics(
+              container: true,
+              label: '主题标签',
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  key: const Key('thread-detail-tags'),
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (
+                          var index = 0;
+                          index < detail.tags.length;
+                          index++
+                        ) ...[
+                          if (index > 0) SizedBox(width: tokens.space8),
+                          WenyouTagLink(
+                            key: Key(
+                              'thread-detail-tag-${detail.tags[index].id}',
+                            ),
+                            name: detail.tags[index].name,
+                            onPressed: () => onTagPressed(detail.tags[index]),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

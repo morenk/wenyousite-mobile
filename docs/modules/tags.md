@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-公开路由 `/tags/:tagId` 先读取标签事实，再用稳定 `tagId` 精确筛选公开主题；主题卡片仍进入 `/threads/:threadId`，卡片内其他标签可继续进入对应标签页。受保护路由 `/threads/:threadId/manage` 承载主题设置；旧 `/threads/:threadId/manage/tags` 仍可恢复完整登录目标，但会打开同一工作台内的标签编辑器。
+公开路由 `/tags/:tagId` 先读取标签事实，再用稳定 `tagId` 精确筛选公开主题；主题卡片仍进入 `/threads/:threadId`，卡片内其他标签可继续进入对应标签页。主题详情在标题下方常驻单行横滑标签栏，点按任一标签直接进入对应 `/tags/:tagId`，不需要打开顶栏更多操作。受保护路由 `/threads/:threadId/manage` 承载主题设置；旧 `/threads/:threadId/manage/tags` 仍可恢复完整登录目标，但会打开同一工作台内的标签编辑器。
 
 ## 4. 用户操作流程
 
@@ -44,7 +44,7 @@
 
 ## 10. 跨模块约束
 
-主题条目复用 threads 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。主题列表、详情和管理工作台的标签统一使用无图标、中性前景、透明表面、Foundation 细边框与 `#` 前缀，不消费服务端局部颜色表达状态；导航标签保留至少 48dp 触控区，非交互标签按内容收缩。
+主题条目复用 threads 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。主题列表、详情和管理工作台的标签统一使用无图标、中性前景、透明表面、Foundation 细边框与 `#` 前缀，不消费服务端局部颜色表达状态；详情标签栏保持单行并随标题滚出，不吸顶、不用 `+N` 隐藏任何标签。导航标签保留至少 48dp 触控区，非交互标签按内容收缩。
 
 ## 11. 测试场景与验收条件
 
@@ -53,7 +53,7 @@
 - [x] 主题设置读取已有标签名称，新增名称随聚合保存且同名标签自动复用；旧标签管理地址直接打开统一编辑器。
 - [x] 五标签上限在网络前阻止第六次添加；移除失败保留原关系和请求 ID。
 - [x] 添加、移除、离页防丢、聚合冲突处理和 360/400/600dp 页面布局通过 Widget 测试。
-- [x] 阅读与管理标签均固定中性前景、透明表面、细边框和 `#` 前缀；服务端颜色不会改变标签对比度，可点击与非交互命中语义分别有 Widget 回归。
+- [x] 阅读与管理标签均固定中性前景、透明表面、细边框和 `#` 前缀；服务端颜色不会改变标签对比度。详情单标签导航、五标签单行横滑、无标签收缩与非交互命中语义分别有 Widget 回归。
 - [x] 卡片分类元信息显示“演绎”等用户 label，回归测试禁止渲染 `DEDUCTION` 等 slug。
 
 ## 12. 已知限制和后续功能
@@ -62,8 +62,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.9.0-dev.20260823.1`；Markdown v3；后端 `24d6fccf818acf78b89af9b24a0f75578998f98e`；Foundation `v6.3.0`（`73ed49e`）。
+契约 `5.9.0-dev.20260823.1`；Markdown v3；后端 `24d6fccf818acf78b89af9b24a0f75578998f98e`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 
-端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v6.3.0](https://github.com/morenk/wenyousite-foundation/tree/v6.3.0)。
+端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v6.4.0](https://github.com/morenk/wenyousite-foundation/tree/v6.4.0)。

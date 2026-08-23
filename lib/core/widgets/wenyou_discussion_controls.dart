@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 @immutable
@@ -39,6 +40,296 @@ class WenyouDiscussionSelection<T extends Object> {
 
   final T order;
   final String? authorId;
+}
+
+/// Direct controls for discussion lists whose order and author filters apply
+/// immediately. The modal [WenyouDiscussionControls] remains available for
+/// surfaces that intentionally keep a draft-and-apply interaction.
+class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
+  const WenyouDiscussionListControls({
+    required this.countLabel,
+    required this.order,
+    required this.orderOptions,
+    required this.authorId,
+    required this.authors,
+    required this.onOrderChanged,
+    required this.onAuthorChanged,
+    this.allAuthorsLabel = '全部玩家与管理者',
+    this.enabled = true,
+    this.authorsLoading = false,
+    this.authorsFailure,
+    this.onRetryAuthors,
+    this.countKey,
+    this.authorKey,
+    this.orderKey,
+    super.key,
+  }) : assert(orderOptions.length > 1);
+
+  final String countLabel;
+  final T order;
+  final List<WenyouDiscussionOrderOption<T>> orderOptions;
+  final String? authorId;
+  final List<WenyouDiscussionAuthorOption> authors;
+  final ValueChanged<T> onOrderChanged;
+  final ValueChanged<String?> onAuthorChanged;
+  final String allAuthorsLabel;
+  final bool enabled;
+  final bool authorsLoading;
+  final ApiFailure? authorsFailure;
+  final VoidCallback? onRetryAuthors;
+  final Key? countKey;
+  final Key? authorKey;
+  final Key? orderKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final count = Text(
+      countLabel,
+      key: countKey,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: tokens.mutedText,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final actions = _DiscussionDirectActions<T>(
+      order: order,
+      orderOptions: orderOptions,
+      authorId: authorId,
+      authors: authors,
+      onOrderChanged: onOrderChanged,
+      onAuthorChanged: onAuthorChanged,
+      allAuthorsLabel: allAuthorsLabel,
+      enabled: enabled,
+      authorsLoading: authorsLoading,
+      authorsFailure: authorsFailure,
+      onRetryAuthors: onRetryAuthors,
+      authorKey: authorKey,
+      orderKey: orderKey,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        final stackControls = constraints.maxWidth < 312 || textScale > 1.4;
+        if (stackControls) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              count,
+              SizedBox(height: tokens.space4),
+              actions,
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: count),
+            SizedBox(width: tokens.space4),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth >= 480 ? 340 : 268,
+              ),
+              child: actions,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DiscussionDirectActions<T extends Object> extends StatelessWidget {
+  const _DiscussionDirectActions({
+    required this.order,
+    required this.orderOptions,
+    required this.authorId,
+    required this.authors,
+    required this.onOrderChanged,
+    required this.onAuthorChanged,
+    required this.allAuthorsLabel,
+    required this.enabled,
+    required this.authorsLoading,
+    required this.authorsFailure,
+    required this.onRetryAuthors,
+    required this.authorKey,
+    required this.orderKey,
+  });
+
+  static const _allAuthorsValue = '__all_discussion_authors__';
+
+  final T order;
+  final List<WenyouDiscussionOrderOption<T>> orderOptions;
+  final String? authorId;
+  final List<WenyouDiscussionAuthorOption> authors;
+  final ValueChanged<T> onOrderChanged;
+  final ValueChanged<String?> onAuthorChanged;
+  final String allAuthorsLabel;
+  final bool enabled;
+  final bool authorsLoading;
+  final ApiFailure? authorsFailure;
+  final VoidCallback? onRetryAuthors;
+  final Key? authorKey;
+  final Key? orderKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Row(
+      children: [
+        Expanded(child: _buildAuthorControl(context)),
+        SizedBox(width: tokens.space4),
+        SizedBox(
+          width: 116,
+          child: _DiscussionOrderToggle<T>(
+            key: orderKey,
+            order: order,
+            options: orderOptions,
+            enabled: enabled,
+            onChanged: onOrderChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuthorControl(BuildContext context) {
+    if (authorsLoading) {
+      return _DiscussionAuthorStatus(key: authorKey, label: '正在加载作者');
+    }
+    if (authorsFailure != null) {
+      return _DiscussionAuthorStatus(
+        key: authorKey,
+        label: '重新加载作者',
+        enabled: enabled && onRetryAuthors != null,
+        onPressed: onRetryAuthors,
+        retry: true,
+      );
+    }
+    if (authors.isEmpty) {
+      return _DiscussionAuthorStatus(key: authorKey, label: '暂无可筛选作者');
+    }
+    final selectedAuthorExists =
+        authorId == null || authors.any((author) => author.id == authorId);
+    final selectedValue = selectedAuthorExists && authorId != null
+        ? authorId!
+        : _allAuthorsValue;
+    return WenyouDropdownFilter<String>(
+      key: authorKey,
+      tooltip: '选择讨论作者',
+      icon: WenyouIconIds.identityMember,
+      enabled: enabled,
+      options: [
+        WenyouFilterOption(value: _allAuthorsValue, label: allAuthorsLabel),
+        for (final author in authors)
+          WenyouFilterOption(
+            value: author.id,
+            label: author.label,
+            supportingLabel: author.supportingLabel,
+          ),
+      ],
+      selected: selectedValue,
+      onSelected: (value) =>
+          onAuthorChanged(value == _allAuthorsValue ? null : value),
+    );
+  }
+}
+
+class _DiscussionAuthorStatus extends StatelessWidget {
+  const _DiscussionAuthorStatus({
+    required this.label,
+    this.enabled = false,
+    this.onPressed,
+    this.retry = false,
+    super.key,
+  });
+
+  final String label;
+  final bool enabled;
+  final VoidCallback? onPressed;
+  final bool retry;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return OutlinedButton(
+      onPressed: enabled ? onPressed : null,
+      style: OutlinedButton.styleFrom(
+        minimumSize: Size(0, tokens.minimumTouchTarget),
+        padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          WenyouIcon(
+            retry ? WenyouIconIds.actionRefresh : WenyouIconIds.identityMember,
+            size: 16,
+          ),
+          SizedBox(width: tokens.space4),
+          Flexible(
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiscussionOrderToggle<T extends Object> extends StatelessWidget {
+  const _DiscussionOrderToggle({
+    required this.order,
+    required this.options,
+    required this.enabled,
+    required this.onChanged,
+    super.key,
+  });
+
+  final T order;
+  final List<WenyouDiscussionOrderOption<T>> options;
+  final bool enabled;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final currentIndex = options.indexWhere((option) => option.value == order);
+    final resolvedIndex = currentIndex < 0 ? 0 : currentIndex;
+    final current = options[resolvedIndex];
+    final next = options[(resolvedIndex + 1) % options.length];
+    final currentLabel = current.summaryLabel ?? current.label;
+    final nextLabel = next.summaryLabel ?? next.label;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: '当前$currentLabel，点击切换为$nextLabel',
+      child: ExcludeSemantics(
+        child: TextButton(
+          onPressed: enabled ? () => onChanged(next.value) : null,
+          style: TextButton.styleFrom(
+            minimumSize: Size(0, tokens.minimumTouchTarget),
+            padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+            foregroundColor: tokens.mutedText,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const WenyouIcon(WenyouIconIds.actionSort, size: 18),
+              SizedBox(width: tokens.space4),
+              Flexible(
+                child: Text(
+                  currentLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class WenyouDiscussionControls<T extends Object> extends StatelessWidget {

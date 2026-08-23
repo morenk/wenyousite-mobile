@@ -519,12 +519,16 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
     final repository = _FakePostRepository();
+    final authorDirectory = _MutablePostDiscussionAuthorDirectory();
     final container = ProviderContainer(
       overrides: [
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         stickersEnabledProvider.overrideWithValue(false),
         postRepositoryProvider.overrideWithValue(repository),
+        postDiscussionAuthorDirectoryProvider.overrideWithValue(
+          authorDirectory,
+        ),
         postThreadContextLookupProvider.overrideWithValue(
           (_) async =>
               const PostThreadContext(isPrivate: false, canManageThread: false),
@@ -547,12 +551,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(authorDirectory.replyCalls, 1);
     expect(find.text('原楼层内容'), findsOneWidget);
     expect(find.text('自己的回复'), findsOneWidget);
     expect(find.text('他人的回复'), findsOneWidget);
-    expect(find.byKey(const Key('post-replies-order')), findsNothing);
-    expect(find.byKey(const Key('post-replies-author')), findsNothing);
-    expect(find.byKey(const Key('post-replies-settings')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-order')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-settings')), findsNothing);
     expect(find.byKey(const Key('post-replies-count')), findsOneWidget);
     expect(find.text('远行主题'), findsOneWidget);
     expect(find.text('主线 · #8楼'), findsOneWidget);
@@ -567,12 +572,16 @@ void main() {
     final countCenter = tester.getCenter(
       find.byKey(const Key('post-replies-count')),
     );
-    final settingsCenter = tester.getCenter(
-      find.byKey(const Key('post-replies-settings')),
+    final orderCenter = tester.getCenter(
+      find.byKey(const Key('post-replies-order')),
     );
-    expect((countCenter.dy - settingsCenter.dy).abs(), lessThan(2));
+    expect((countCenter.dy - orderCenter.dy).abs(), lessThan(2));
     expect(
-      tester.getSize(find.byKey(const Key('post-replies-settings'))).height,
+      tester.getSize(find.byKey(const Key('post-replies-order'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('post-replies-author'))).height,
       greaterThanOrEqualTo(48),
     );
     expect(tester.getTopLeft(find.text('原楼层内容')).dy, lessThan(150));
@@ -671,6 +680,7 @@ void main() {
     expect(repository.createInputs.single.parentPostId, 'root');
     expect(repository.createInputs.single.replyToPostId, 'root');
     expect(find.text('新发表的回复'), findsOneWidget);
+    expect(authorDirectory.replyCalls, 2);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
     await tester.longPress(find.byKey(const Key('post-reply-created')));
@@ -695,6 +705,7 @@ void main() {
 
     expect(repository.updateRequests.single.version, 1);
     expect(find.text('编辑后的新回复'), findsOneWidget);
+    expect(authorDirectory.replyCalls, 2);
 
     await tester.ensureVisible(find.byKey(const Key('post-reply-created')));
     await tester.longPress(find.byKey(const Key('post-reply-created')));
@@ -707,6 +718,7 @@ void main() {
 
     expect(repository.removedIds, ['created']);
     expect(find.text('编辑后的新回复'), findsNothing);
+    expect(authorDirectory.replyCalls, 3);
     expect(tester.takeException(), isNull);
   });
 
@@ -1315,7 +1327,7 @@ void main() {
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 独立讨论压缩重复语境并按需展开设置', (tester) async {
+    testWidgets('$width dp 独立讨论压缩重复语境并展示直接控件', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 800);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -1340,16 +1352,21 @@ void main() {
       expect(find.text('楼中楼讨论'), findsNothing);
       expect(find.text('原楼层内容'), findsOneWidget);
       expect(tester.getTopLeft(find.text('原楼层内容')).dy, lessThan(150));
-      expect(find.byKey(const Key('post-replies-settings')), findsOneWidget);
+      expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
+      expect(find.byKey(const Key('post-replies-order')), findsOneWidget);
       expect(
-        tester.getSize(find.byKey(const Key('post-replies-settings'))).height,
+        tester.getSize(find.byKey(const Key('post-replies-author'))).height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('post-replies-order'))).height,
         greaterThanOrEqualTo(48),
       );
       expect(tester.takeException(), isNull);
     });
   }
 
-  testWidgets('320dp 与 2 倍系统字号仍保留正文和讨论设置', (tester) async {
+  testWidgets('320dp 与 2 倍系统字号仍保留正文和直接讨论控件', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -1376,35 +1393,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('原楼层内容'), findsOneWidget);
-    expect(find.byKey(const Key('post-replies-settings')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-author')), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-order')), findsOneWidget);
     expect(
-      tester.getSize(find.byKey(const Key('post-replies-settings'))).height,
+      tester.getSize(find.byKey(const Key('post-replies-author'))).height,
       greaterThanOrEqualTo(48),
     );
-    await tester.tap(find.byKey(const Key('post-replies-settings')));
-    await tester.pumpAndSettle();
     expect(
-      find.byKey(const Key('post-replies-settings-sheet')),
-      findsOneWidget,
+      tester.getSize(find.byKey(const Key('post-replies-order'))).height,
+      greaterThanOrEqualTo(48),
     );
-    expect(find.text('回复顺序'), findsOneWidget);
-    expect(find.text('只看回复者'), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-settings')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('讨论设置从单一入口切换顺序和回复者', (tester) async {
+  testWidgets('排序和回复者筛选从独立控件直接生效', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
+    final authorDirectory = _MutablePostDiscussionAuthorDirectory();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           stickersEnabledProvider.overrideWithValue(false),
           postRepositoryProvider.overrideWithValue(_FakePostRepository()),
           postDiscussionAuthorDirectoryProvider.overrideWithValue(
-            const _FakePostDiscussionAuthorDirectory(),
+            authorDirectory,
           ),
         ],
         child: MaterialApp(
@@ -1416,26 +1432,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('最早在前'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('post-replies-settings')));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('post-replies-settings-sheet')),
-      findsOneWidget,
-    );
-    expect(find.text('讨论设置'), findsOneWidget);
-    expect(find.text('回复顺序'), findsOneWidget);
-    expect(find.text('只看回复者'), findsOneWidget);
-    await tester.tap(
-      find.widgetWithText(RadioListTile<PostReplyOrder>, '最新回复在前'),
-    );
-    await tester.pump();
-
-    expect(
-      find.byKey(const Key('post-replies-settings-sheet')),
-      findsOneWidget,
-    );
-    expect(find.text('最早在前'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    expect(find.byKey(const Key('post-replies-settings')), findsNothing);
+    await tester.tap(find.byKey(const Key('post-replies-order')));
     await tester.pumpAndSettle();
 
     expect(find.text('最新在前'), findsOneWidget);
@@ -1444,16 +1442,26 @@ void main() {
       lessThan(tester.getTopLeft(find.text('自己的回复')).dy),
     );
 
-    await tester.tap(find.byKey(const Key('post-replies-settings')));
+    await tester.tap(find.byKey(const Key('post-replies-author')));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(RadioListTile<String>, '自己'));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('discussion-settings-apply')));
+    await tester.tap(find.text('自己').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('最新在前 · 自己'), findsOneWidget);
+    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('自己'), findsAtLeastNWidgets(1));
     expect(find.text('自己的回复'), findsOneWidget);
     expect(find.text('他人的回复'), findsNothing);
+
+    authorDirectory.replyAuthors = const [];
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(PostRepliesPage)),
+    );
+    container.invalidate(postReplyDiscussionAuthorsProvider('root'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('自己的回复'), findsOneWidget);
+    expect(find.text('他人的回复'), findsOneWidget);
+    expect(find.text('暂无可筛选作者'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -1703,21 +1711,60 @@ class _FakePostDiscussionAuthorDirectory
   const _FakePostDiscussionAuthorDirectory();
 
   @override
-  Future<List<PostDiscussionAuthor>> fetchAuthors(String threadId) async {
+  Future<List<PostDiscussionAuthor>> fetchFloorAuthors(
+    String subthreadId,
+  ) async => const [];
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchReplyAuthors(
+    String rootPostId,
+  ) async {
     return [
       PostDiscussionAuthor(
         userId: _rootAuthor.id,
         username: _rootAuthor.username,
         role: PostDiscussionAuthorRole.owner,
-        joinedAt: DateTime.utc(2026, 8, 1),
       ),
       PostDiscussionAuthor(
         userId: _author.id,
         username: _author.username,
         role: PostDiscussionAuthorRole.player,
-        joinedAt: DateTime.utc(2026, 8, 2),
       ),
     ];
+  }
+}
+
+class _MutablePostDiscussionAuthorDirectory
+    implements PostDiscussionAuthorDirectory {
+  int floorCalls = 0;
+  int replyCalls = 0;
+  List<PostDiscussionAuthor> replyAuthors = [
+    PostDiscussionAuthor(
+      userId: _rootAuthor.id,
+      username: _rootAuthor.username,
+      role: PostDiscussionAuthorRole.owner,
+    ),
+    PostDiscussionAuthor(
+      userId: _author.id,
+      username: _author.username,
+      role: PostDiscussionAuthorRole.player,
+    ),
+  ];
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchFloorAuthors(
+    String subthreadId,
+  ) async {
+    floorCalls += 1;
+    return const [];
+  }
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchReplyAuthors(
+    String rootPostId,
+  ) async {
+    replyCalls += 1;
+    return replyAuthors;
   }
 }
 

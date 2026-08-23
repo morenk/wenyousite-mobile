@@ -22,6 +22,7 @@ import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.d
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_targets.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_states.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_reply_filters.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -58,6 +59,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   var _targetRevealReleased = false;
   var _openingComposer = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
+  final _authorFilterRestore = PostDiscussionAuthorFilterRestoreCoordinator();
 
   String get threadId => widget.threadId;
   String get rootPostId => widget.rootPostId;
@@ -85,7 +87,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     final target = (rootPostId: rootPostId, focusedReplyId: focusedReplyId);
     final provider = postDiscussionControllerProvider(target);
     final actionsProvider = postActionControllerProvider(threadId);
-    final authorsProvider = postDiscussionAuthorsProvider(threadId);
+    final authorsProvider = postReplyDiscussionAuthorsProvider(rootPostId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
@@ -107,6 +109,17 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     );
     final actions = ref.watch(actionsProvider);
     final discussionAuthors = ref.watch(authorsProvider);
+    _authorFilterRestore.scheduleIfMissing(
+      scopeId: rootPostId,
+      selectedAuthorId: state.authorId,
+      authors: discussionAuthors,
+      readCurrent: () => (
+        selectedAuthorId: ref.read(provider).authorId,
+        authors: ref.read(authorsProvider),
+      ),
+      clearAuthor: () => ref.read(provider.notifier).setAuthor(null),
+      isMounted: () => mounted,
+    );
     final threadContext = ref
         .watch(postThreadContextProvider(threadId))
         .valueOrNull;
@@ -169,9 +182,10 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                               threadContext?.canManageThread ?? false,
                           discussionAuthors: discussionAuthors,
                           onRetryAuthors: () => ref.invalidate(authorsProvider),
-                          onApply: (order, authorId) => ref
+                          onOrderChanged: ref.read(provider.notifier).setOrder,
+                          onAuthorChanged: ref
                               .read(provider.notifier)
-                              .applyFilters(order: order, authorId: authorId),
+                              .setAuthor,
                           onLoadMore: () =>
                               ref.read(provider.notifier).loadMore(),
                           onRetry: () => ref
@@ -359,6 +373,9 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       if (ref.read(sessionScopeProvider) != openedSessionScope) return;
       if (result != null) {
         _composerDrafts.remove(draftKey);
+        if (target.kind == PostComposerKind.createReply) {
+          ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
+        }
         await ref.read(provider.notifier).refresh();
       }
     } finally {
@@ -399,6 +416,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     if (root) {
       context.go(AppRouteLocations.thread(threadId));
     } else {
+      ref.invalidate(postReplyDiscussionAuthorsProvider(rootPostId));
       await ref.read(provider.notifier).refresh();
     }
   }
@@ -417,7 +435,8 @@ class _DiscussionList extends StatelessWidget {
     required this.canManageThread,
     required this.discussionAuthors,
     required this.onRetryAuthors,
-    required this.onApply,
+    required this.onOrderChanged,
+    required this.onAuthorChanged,
     required this.onLoadMore,
     required this.onRetry,
     required this.timeReference,
@@ -436,7 +455,8 @@ class _DiscussionList extends StatelessWidget {
   final bool canManageThread;
   final AsyncValue<List<PostDiscussionAuthor>> discussionAuthors;
   final VoidCallback onRetryAuthors;
-  final void Function(PostReplyOrder order, String? authorId) onApply;
+  final ValueChanged<PostReplyOrder> onOrderChanged;
+  final ValueChanged<String?> onAuthorChanged;
   final VoidCallback onLoadMore;
   final VoidCallback onRetry;
   final DateTime? timeReference;
@@ -488,7 +508,8 @@ class _DiscussionList extends StatelessWidget {
             ? mapApplicationFailure(discussionAuthors.error!, '回复者列表加载失败，请重试。')
             : null,
         onRetryAuthors: onRetryAuthors,
-        onApply: onApply,
+        onOrderChanged: onOrderChanged,
+        onAuthorChanged: onAuthorChanged,
       ),
       SizedBox(height: tokens.space12),
       if (state.transientFailure != null) ...[

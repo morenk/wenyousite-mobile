@@ -5,6 +5,54 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
 
+Future<void> showThreadPlayerExitSheet({
+  required BuildContext context,
+  required String threadId,
+  required Future<void> Function() onExited,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) {
+      final tokens = sheetContext.wenyouTokens;
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            tokens.space16,
+            0,
+            tokens.space16,
+            tokens.space16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('玩家身份', style: Theme.of(sheetContext).textTheme.titleLarge),
+              SizedBox(height: tokens.space4),
+              Text(
+                '退出后会从“我参与的”主题中移除。',
+                style: Theme.of(
+                  sheetContext,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ),
+              ThreadMembershipControls(
+                threadId: threadId,
+                canExitPlayer: true,
+                onExited: () async {
+                  await onExited();
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class ThreadMembershipControls extends ConsumerWidget {
   const ThreadMembershipControls({
     required this.threadId,

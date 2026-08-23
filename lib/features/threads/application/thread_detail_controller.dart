@@ -264,6 +264,10 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     await applyFloorFilters(order: order, authorId: state.floorAuthorId);
   }
 
+  Future<void> setFloorAuthor(String? authorId) async {
+    await applyFloorFilters(order: state.floorOrder, authorId: authorId);
+  }
+
   Future<void> applyFloorFilters({
     required ThreadFloorOrder order,
     required String? authorId,

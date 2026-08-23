@@ -11,11 +11,13 @@ class WenyouFilterOption<T> {
     required this.value,
     required this.label,
     this.keyValue,
+    this.supportingLabel,
   });
 
   final T value;
   final String label;
   final Object? keyValue;
+  final String? supportingLabel;
 }
 
 enum WenyouTabPlacement { page, embedded }
@@ -293,6 +295,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     required this.onSelected,
     required this.tooltip,
     required this.icon,
+    this.enabled = true,
     super.key,
   });
 
@@ -301,6 +304,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
   final ValueChanged<T> onSelected;
   final String tooltip;
   final String icon;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +316,8 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     return PopupMenuButton<T>(
       initialValue: selected,
       tooltip: tooltip,
-      onSelected: onSelected,
+      enabled: enabled,
+      onSelected: enabled ? onSelected : null,
       position: PopupMenuPosition.under,
       offset: Offset(0, tokens.space4),
       elevation: 4,
@@ -338,7 +343,27 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
                       : null,
                 ),
                 SizedBox(width: tokens.space8),
-                Text(option.label),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        option.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (option.supportingLabel case final supportingLabel?)
+                        Text(
+                          supportingLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: tokens.mutedText),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

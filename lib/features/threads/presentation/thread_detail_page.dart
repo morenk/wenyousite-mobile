@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/posts/application/post_discussion_aut
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
@@ -56,6 +57,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   var _revealScheduled = false;
   var _targetRevealReleased = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
+  final _authorFilterRestore = PostDiscussionAuthorFilterRestoreCoordinator();
 
   @override
   void dispose() {
@@ -80,7 +82,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
     final actionsProvider = postActionControllerProvider(widget.threadId);
-    final authorsProvider = postDiscussionAuthorsProvider(widget.threadId);
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
@@ -105,9 +106,23 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final selectedSubthread = state.phase == ThreadDetailPhase.ready
         ? state.selectedSubthread
         : null;
+    final authorsProvider = selectedSubthread == null
+        ? null
+        : postFloorDiscussionAuthorsProvider(selectedSubthread.id);
     final discussionAuthors = selectedSubthread == null
         ? const AsyncValue<List<PostDiscussionAuthor>>.data([])
-        : ref.watch(authorsProvider);
+        : ref.watch(authorsProvider!);
+    _authorFilterRestore.scheduleIfMissing(
+      scopeId: selectedSubthread?.id,
+      selectedAuthorId: state.floorAuthorId,
+      authors: discussionAuthors,
+      readCurrent: () => (
+        selectedAuthorId: ref.read(provider).floorAuthorId,
+        authors: ref.read(authorsProvider!),
+      ),
+      clearAuthor: () => ref.read(provider.notifier).setFloorAuthor(null),
+      isMounted: () => mounted,
+    );
     final target = widget.targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(widget.targetPostId!));
@@ -367,55 +382,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           returnTo: threadDetailLocation(widget.threadId, widget.targetPostId),
         );
       case _ThreadDetailAction.exitPlayer:
-        await _showPlayerExitSheet(detail);
-    }
-  }
-
-  Future<void> _showPlayerExitSheet(ThreadDetailModel detail) {
-    return showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        final tokens = sheetContext.wenyouTokens;
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.space16,
-              0,
-              tokens.space16,
-              tokens.space16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '玩家身份',
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-                SizedBox(height: tokens.space4),
-                Text(
-                  '退出后会从“我参与的”主题中移除。',
-                  style: Theme.of(
-                    sheetContext,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                ),
-                ThreadMembershipControls(
-                  threadId: detail.id,
-                  canExitPlayer: true,
-                  onExited: () async {
-                    await _handlePlayerExited(detail);
-                    if (sheetContext.mounted) Navigator.pop(sheetContext);
-                  },
-                ),
-              ],
-            ),
-          ),
+        await showThreadPlayerExitSheet(
+          context: context,
+          threadId: detail.id,
+          onExited: () => _handlePlayerExited(detail),
         );
-      },
-    );
+    }
   }
 
   Future<void> _handlePlayerExited(ThreadDetailModel detail) async {
@@ -575,7 +547,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       SliverToBoxAdapter(
         child: WenyouContentFrame(
           top: 8,
-          child: ThreadDetailOverview(detail: detail),
+          child: ThreadDetailOverview(
+            detail: detail,
+            onTagPressed: (tag) => context.pushNamed(
+              AppRouteNames.tagThreads,
+              pathParameters: {'tagId': tag.id},
+            ),
+          ),
         ),
       ),
       ThreadDetailSubthreadHeaderSliver(
@@ -613,7 +591,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         SliverToBoxAdapter(
           child: WenyouContentFrame(
             key: _subthreadScroll.bodyKey,
-            top: 12,
+            top: context.wenyouTokens.space12,
+            bottom: context.wenyouTokens.space12,
             child: ThreadSubthreadBody(detail, selected!, onEdit: _compose),
           ),
         ),
@@ -652,10 +631,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             floorCount: selected.postCount,
             authors: discussionAuthors,
             onRetryAuthors: () =>
-                ref.invalidate(postDiscussionAuthorsProvider(widget.threadId)),
-            onApply: (order, authorId) => ref
-                .read(provider.notifier)
-                .applyFloorFilters(order: order, authorId: authorId),
+                ref.invalidate(postFloorDiscussionAuthorsProvider(selected.id)),
+            onOrderChanged: ref.read(provider.notifier).setFloorOrder,
+            onAuthorChanged: ref.read(provider.notifier).setFloorAuthor,
           ),
         ),
         if (state.isLoadingFloors)
@@ -830,6 +808,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       return;
     }
     _composerDrafts.remove(draftKey);
+    if (target.kind == PostComposerKind.createFloor) {
+      ref.invalidate(postFloorDiscussionAuthorsProvider(target.subthreadId));
+    }
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refreshMetadata();
@@ -889,6 +870,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
     showWenyouSnackBar(context, '楼层已删除。');
+    ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refresh();

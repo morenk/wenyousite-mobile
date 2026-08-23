@@ -11,7 +11,8 @@ class PostReplyFilters extends StatelessWidget {
     required this.state,
     required this.replyCount,
     required this.authors,
-    required this.onApply,
+    required this.onOrderChanged,
+    required this.onAuthorChanged,
     this.authorsLoading = false,
     this.authorsFailure,
     this.onRetryAuthors,
@@ -21,20 +22,20 @@ class PostReplyFilters extends StatelessWidget {
   final PostDiscussionState state;
   final int replyCount;
   final List<PostDiscussionAuthor> authors;
-  final void Function(PostReplyOrder order, String? authorId) onApply;
+  final ValueChanged<PostReplyOrder> onOrderChanged;
+  final ValueChanged<String?> onAuthorChanged;
   final bool authorsLoading;
   final ApiFailure? authorsFailure;
   final VoidCallback? onRetryAuthors;
 
   @override
   Widget build(BuildContext context) {
-    return WenyouDiscussionControls<PostReplyOrder>(
+    return WenyouDiscussionListControls<PostReplyOrder>(
       countLabel: '$replyCount 条回复',
       countKey: const Key('post-replies-count'),
-      settingsKey: const Key('post-replies-settings'),
-      sheetKey: const Key('post-replies-settings-sheet'),
+      authorKey: const Key('post-replies-author'),
+      orderKey: const Key('post-replies-order'),
       order: state.order,
-      defaultOrder: PostReplyOrder.oldest,
       orderOptions: [
         for (final value in PostReplyOrder.values)
           WenyouDiscussionOrderOption(
@@ -55,10 +56,8 @@ class PostReplyFilters extends StatelessWidget {
       authorsLoading: authorsLoading,
       authorsFailure: authorsFailure,
       onRetryAuthors: onRetryAuthors,
-      orderSectionLabel: '回复顺序',
-      authorSectionLabel: '只看回复者',
-      allAuthorsLabel: '全部回复者',
-      onApply: (selection) => onApply(selection.order, selection.authorId),
+      onOrderChanged: onOrderChanged,
+      onAuthorChanged: onAuthorChanged,
     );
   }
 }

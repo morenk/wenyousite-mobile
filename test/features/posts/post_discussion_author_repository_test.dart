@@ -6,103 +6,124 @@ import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_rep
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 
 void main() {
-  test('讨论作者目录只保留楼主、协作者和玩家，并按角色与加入时间排序', () async {
-    final api = _MockThreadsApi();
+  test('主楼作者目录按子贴读取并保持服务端顺序', () async {
+    final api = _MockPostsApi();
     when(
-      () => api.threadMembersFindAll(threadId: 'thread-1'),
-    ).thenAnswer((_) async => _membersResponse());
+      () => api.postsFindFloorAuthors(subthreadId: 'subthread-1'),
+    ).thenAnswer((_) async => _floorAuthorsResponse());
 
     final authors = await ApiPostDiscussionAuthorDirectory(
       api,
-    ).fetchAuthors('thread-1');
+    ).fetchFloorAuthors('subthread-1');
 
     expect(authors.map((author) => author.userId), [
       'owner',
       'collaborator',
-      'player-early',
-      'player-late',
+      'player',
     ]);
     expect(authors.map((author) => author.role), [
       PostDiscussionAuthorRole.owner,
       PostDiscussionAuthorRole.collaborator,
       PostDiscussionAuthorRole.player,
-      PostDiscussionAuthorRole.player,
     ]);
     expect(authors.any((author) => author.userId == 'participant'), isFalse);
-    verify(() => api.threadMembersFindAll(threadId: 'thread-1')).called(1);
+    verify(
+      () => api.postsFindFloorAuthors(subthreadId: 'subthread-1'),
+    ).called(1);
+  });
+
+  test('独立回复作者目录按根楼层读取', () async {
+    final api = _MockPostsApi();
+    when(
+      () => api.postsFindReplyAuthors(id: 'root-1'),
+    ).thenAnswer((_) async => _replyAuthorsResponse());
+
+    final authors = await ApiPostDiscussionAuthorDirectory(
+      api,
+    ).fetchReplyAuthors('root-1');
+
+    expect(authors.single.userId, 'reply-author');
+    expect(authors.single.username, '回复者');
+    expect(authors.single.avatarUrl, 'https://cdn.example/avatar.png');
+    expect(authors.single.role, PostDiscussionAuthorRole.player);
+    verify(() => api.postsFindReplyAuthors(id: 'root-1')).called(1);
   });
 }
 
-class _MockThreadsApi extends Mock implements ThreadsApi {}
+class _MockPostsApi extends Mock implements PostsApi {}
 
-Response<ThreadMembersFindAll200Response> _membersResponse() {
+Response<PostsFindFloorAuthors200Response> _floorAuthorsResponse() {
   return Response(
-    requestOptions: RequestOptions(path: '/api/v1/threads/thread-1/members'),
-    data: ThreadMembersFindAll200Response(
+    requestOptions: RequestOptions(
+      path: '/api/v1/subthreads/subthread-1/posts/authors',
+    ),
+    data: PostsFindFloorAuthors200Response(
       (response) => response
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
         ..data.addAll([
-          _member(
-            userId: 'participant',
-            username: '普通参与者',
-            role: ThreadMemberResponseDtoRoleEnum.PARTICIPANT,
-            playerMarked: false,
-            joinedAt: DateTime.utc(2026, 8, 1),
-          ),
-          _member(
-            userId: 'player-late',
-            username: '玩家乙',
-            role: ThreadMemberResponseDtoRoleEnum.PARTICIPANT,
-            playerMarked: true,
-            joinedAt: DateTime.utc(2026, 8, 5),
-          ),
-          _member(
-            userId: 'collaborator',
-            username: '协作者',
-            role: ThreadMemberResponseDtoRoleEnum.COLLABORATOR,
-            playerMarked: false,
-            joinedAt: DateTime.utc(2026, 8, 4),
-          ),
-          _member(
-            userId: 'owner',
+          _author(
+            id: 'owner',
             username: '楼主',
-            role: ThreadMemberResponseDtoRoleEnum.OWNER,
-            playerMarked: false,
-            joinedAt: DateTime.utc(2026, 8, 6),
+            role: DiscussionAuthorResponseDtoRoleEnum.OWNER,
           ),
-          _member(
-            userId: 'player-early',
-            username: '玩家甲',
-            role: ThreadMemberResponseDtoRoleEnum.PARTICIPANT,
+          _author(
+            id: 'collaborator',
+            username: '协作者',
+            role: DiscussionAuthorResponseDtoRoleEnum.COLLABORATOR,
+          ),
+          _author(
+            id: 'player',
+            username: '玩家',
+            role: DiscussionAuthorResponseDtoRoleEnum.PARTICIPANT,
             playerMarked: true,
-            joinedAt: DateTime.utc(2026, 8, 2),
+          ),
+          _author(
+            id: 'participant',
+            username: '普通参与者',
+            role: DiscussionAuthorResponseDtoRoleEnum.PARTICIPANT,
           ),
         ]),
     ),
   );
 }
 
-ThreadMemberResponseDto _member({
-  required String userId,
+Response<PostsFindReplyAuthors200Response> _replyAuthorsResponse() {
+  return Response(
+    requestOptions: RequestOptions(
+      path: '/api/v1/posts/root-1/replies/authors',
+    ),
+    data: PostsFindReplyAuthors200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.add(
+          _author(
+            id: 'reply-author',
+            username: '回复者',
+            avatar: 'https://cdn.example/avatar.png',
+            role: DiscussionAuthorResponseDtoRoleEnum.PARTICIPANT,
+            playerMarked: true,
+          ),
+        ),
+    ),
+  );
+}
+
+DiscussionAuthorResponseDto _author({
+  required String id,
   required String username,
-  required ThreadMemberResponseDtoRoleEnum role,
-  required bool playerMarked,
-  required DateTime joinedAt,
+  required DiscussionAuthorResponseDtoRoleEnum role,
+  String? avatar,
+  bool playerMarked = false,
 }) {
-  return ThreadMemberResponseDto(
-    (member) => member
-      ..id = 'member-$userId'
-      ..threadId = 'thread-1'
-      ..userId = userId
+  return DiscussionAuthorResponseDto(
+    (author) => author
+      ..id = id
+      ..username = username
+      ..avatar = avatar
+      ..level = 1
       ..role = role
-      ..playerMarked = playerMarked
-      ..joinedAt = joinedAt
-      ..user.update(
-        (user) => user
-          ..id = userId
-          ..username = username
-          ..level = 1,
-      ),
+      ..playerMarked = playerMarked,
   );
 }

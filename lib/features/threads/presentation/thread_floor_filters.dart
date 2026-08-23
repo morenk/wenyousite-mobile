@@ -13,7 +13,8 @@ class ThreadFloorFilters extends StatelessWidget {
     required this.state,
     required this.floorCount,
     required this.authors,
-    required this.onApply,
+    required this.onOrderChanged,
+    required this.onAuthorChanged,
     required this.onRetryAuthors,
     super.key,
   });
@@ -21,7 +22,8 @@ class ThreadFloorFilters extends StatelessWidget {
   final ThreadDetailState state;
   final int floorCount;
   final AsyncValue<List<PostDiscussionAuthor>> authors;
-  final void Function(ThreadFloorOrder order, String? authorId) onApply;
+  final ValueChanged<ThreadFloorOrder> onOrderChanged;
+  final ValueChanged<String?> onAuthorChanged;
   final VoidCallback onRetryAuthors;
 
   @override
@@ -35,13 +37,12 @@ class ThreadFloorFilters extends StatelessWidget {
       child: WenyouContentFrame(
         top: tokens.space4,
         bottom: tokens.space4,
-        child: WenyouDiscussionControls<ThreadFloorOrder>(
+        child: WenyouDiscussionListControls<ThreadFloorOrder>(
           countLabel: '$floorCount 层',
           countKey: const Key('thread-floors-count'),
-          settingsKey: const Key('thread-floors-settings'),
-          sheetKey: const Key('thread-floors-settings-sheet'),
+          authorKey: const Key('thread-floors-author'),
+          orderKey: const Key('thread-floors-order'),
           order: state.floorOrder,
-          defaultOrder: ThreadFloorOrder.oldest,
           orderOptions: [
             for (final value in ThreadFloorOrder.values)
               WenyouDiscussionOrderOption(value: value, label: value.label),
@@ -61,10 +62,8 @@ class ThreadFloorFilters extends StatelessWidget {
               ? mapApplicationFailure(authors.error!, '发言者列表加载失败，请重试。')
               : null,
           onRetryAuthors: onRetryAuthors,
-          orderSectionLabel: '楼层顺序',
-          authorSectionLabel: '只看发言者',
-          allAuthorsLabel: '全部发言者',
-          onApply: (selection) => onApply(selection.order, selection.authorId),
+          onOrderChanged: onOrderChanged,
+          onAuthorChanged: onAuthorChanged,
         ),
       ),
     );

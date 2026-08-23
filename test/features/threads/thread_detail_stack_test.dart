@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
+import 'package:wenyousite_mobile/features/posts/data/post_discussion_author_repository.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -104,6 +104,29 @@ void main() {
     });
   });
 
+  test('主楼与独立回复作者目录经生成客户端请求精确范围', () async {
+    final adapter = ScriptedHttpClientAdapter((request) async {
+      return ScriptedHttpResponse.json(_authorsEnvelope());
+    });
+    final dio = _dio(adapter);
+    addTearDown(dio.close);
+    final container = ProviderContainer(
+      overrides: [dioProvider.overrideWithValue(dio)],
+    );
+    addTearDown(container.dispose);
+    final directory = container.read(apiPostDiscussionAuthorDirectoryProvider);
+
+    final floorAuthors = await directory.fetchFloorAuthors('subthread-1');
+    final replyAuthors = await directory.fetchReplyAuthors('floor-1');
+
+    expect(floorAuthors.single.userId, 'author-1');
+    expect(replyAuthors.single.userId, 'author-1');
+    expect(adapter.requests.map((request) => request.path), [
+      '/api/v1/subthreads/subthread-1/posts/authors',
+      '/api/v1/posts/floor-1/replies/authors',
+    ]);
+  });
+
   test('楼中楼写入经生成客户端发送稳定幂等键与精确层级', () async {
     const clientRequestId = '123e4567-e89b-42d3-a456-426614174000';
     final adapter = ScriptedHttpClientAdapter((request) async {
@@ -184,8 +207,14 @@ class _EmptyAuthorDirectory implements PostDiscussionAuthorDirectory {
   const _EmptyAuthorDirectory();
 
   @override
-  Future<List<PostDiscussionAuthor>> fetchAuthors(String threadId) async =>
-      const [];
+  Future<List<PostDiscussionAuthor>> fetchFloorAuthors(
+    String subthreadId,
+  ) async => const [];
+
+  @override
+  Future<List<PostDiscussionAuthor>> fetchReplyAuthors(
+    String rootPostId,
+  ) async => const [];
 }
 
 Map<String, Object?> _threadEnvelope({String threadId = 'thread-1'}) {
@@ -248,6 +277,23 @@ Map<String, Object?> _threadEnvelope({String threadId = 'thread-1'}) {
       'currentMembership': null,
       'capabilities': null,
     },
+  };
+}
+
+Map<String, Object?> _authorsEnvelope() {
+  return {
+    'code': 0,
+    'message': 'ok',
+    'data': [
+      {
+        'id': 'author-1',
+        'username': '范围作者',
+        'avatar': null,
+        'level': 3,
+        'role': 'OWNER',
+        'playerMarked': false,
+      },
+    ],
   };
 }
 
