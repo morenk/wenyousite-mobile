@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
+import 'package:wenyousite_mobile/features/media/data/media_upload_timing.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.dart';
 
@@ -27,6 +28,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     this._uploadDio, {
     MediaUploadDelay? delay,
     int maxPollAttempts = 30,
+    this.timing = const MediaUploadTiming(),
   }) : _delay = delay ?? Future<void>.delayed,
        _maxPollAttempts = maxPollAttempts < 1 ? 1 : maxPollAttempts;
 
@@ -37,11 +39,11 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     'image/gif',
     'image/webp',
   };
-
   final MediaApi _api;
   final Dio _uploadDio;
   final MediaUploadDelay _delay;
   final int _maxPollAttempts;
+  final MediaUploadTiming timing;
 
   @override
   Future<UploadedEditorImage> uploadImage(
@@ -66,15 +68,20 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
       onProgress?.call(
         const MediaUploadProgress(stage: MediaUploadStage.preparing),
       );
-      final uploadEnvelope = await _api.mediaGetUploadUrl(
-        createUploadUrlDto: CreateUploadUrlDto(
-          (builder) => builder
-            ..filename = input.filename
-            ..contentType = _contentTypeEnum(contentType)
-            ..size = size
-            ..purpose = _purposeEnum(input.purpose),
+      final uploadEnvelope = await timing.measure(
+        purpose: input.purpose,
+        stage: MediaUploadTimingStage.requestUploadUrl,
+        inputBytes: size,
+        operation: () => _api.mediaGetUploadUrl(
+          createUploadUrlDto: CreateUploadUrlDto(
+            (builder) => builder
+              ..filename = input.filename
+              ..contentType = _contentTypeEnum(contentType)
+              ..size = size
+              ..purpose = _purposeEnum(input.purpose),
+          ),
+          cancelToken: cancelToken,
         ),
-        cancelToken: cancelToken,
       );
       final upload = uploadEnvelope.data?.data;
       if (upload == null) {
@@ -95,26 +102,31 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
             totalBytes: size,
           ),
         );
-        await _uploadDio.putUri<void>(
-          uploadUri,
-          data: input.bytes,
-          options: Options(
-            contentType: contentType,
-            headers: {'Content-Length': size},
-            responseType: ResponseType.plain,
-            sendTimeout: const Duration(minutes: 2),
-            receiveTimeout: const Duration(seconds: 20),
+        await timing.measure<void>(
+          purpose: input.purpose,
+          stage: MediaUploadTimingStage.objectStoragePut,
+          inputBytes: size,
+          operation: () => _uploadDio.putUri<void>(
+            uploadUri,
+            data: input.bytes,
+            options: Options(
+              contentType: contentType,
+              headers: {'Content-Length': size},
+              responseType: ResponseType.plain,
+              sendTimeout: const Duration(minutes: 2),
+              receiveTimeout: const Duration(seconds: 20),
+            ),
+            cancelToken: cancelToken,
+            onSendProgress: (sent, total) {
+              onProgress?.call(
+                MediaUploadProgress(
+                  stage: MediaUploadStage.uploading,
+                  sentBytes: sent,
+                  totalBytes: total > 0 ? total : size,
+                ),
+              );
+            },
           ),
-          cancelToken: cancelToken,
-          onSendProgress: (sent, total) {
-            onProgress?.call(
-              MediaUploadProgress(
-                stage: MediaUploadStage.uploading,
-                sentBytes: sent,
-                totalBytes: total > 0 ? total : size,
-              ),
-            );
-          },
         );
       } on DioException catch (error) {
         if (CancelToken.isCancel(error)) rethrow;
@@ -129,11 +141,16 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
           totalBytes: size,
         ),
       );
-      final confirmEnvelope = await _api.mediaConfirmUpload(
-        confirmUploadDto: ConfirmUploadDto(
-          (builder) => builder.mediaId = upload.mediaId,
+      final confirmEnvelope = await timing.measure(
+        purpose: input.purpose,
+        stage: MediaUploadTimingStage.confirmUpload,
+        inputBytes: size,
+        operation: () => _api.mediaConfirmUpload(
+          confirmUploadDto: ConfirmUploadDto(
+            (builder) => builder.mediaId = upload.mediaId,
+          ),
+          cancelToken: cancelToken,
         ),
-        cancelToken: cancelToken,
       );
       final confirmation = confirmEnvelope.data?.data;
       if (confirmation == null) {
@@ -154,27 +171,16 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
           totalBytes: size,
         ),
       );
-      await _wait(const Duration(milliseconds: 500), cancelToken);
-      for (var attempt = 0; attempt < _maxPollAttempts; attempt++) {
-        final statusEnvelope = await _api.mediaGetMedia(
-          id: upload.mediaId,
+      return timing.measure(
+        purpose: input.purpose,
+        stage: MediaUploadTimingStage.remoteProcessing,
+        inputBytes: size,
+        operation: () => _waitForCompletedUpload(
+          mediaId: upload.mediaId,
+          purpose: input.purpose,
           cancelToken: cancelToken,
-        );
-        final media = statusEnvelope.data?.data;
-        if (media == null) {
-          throw const ApiFailure(userMessage: '图片处理失败，请重试。');
-        }
-        if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
-          return _completedImage(media, input.purpose);
-        }
-        if (media.status == MediaResponseDtoStatusEnum.FAILED) {
-          throw const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。');
-        }
-        if (attempt + 1 < _maxPollAttempts) {
-          await _wait(const Duration(seconds: 1), cancelToken);
-        }
-      }
-      throw const ApiFailure(userMessage: '图片仍在处理中，请稍后重新尝试插入。');
+        ),
+      );
     } on ApiFailure {
       rethrow;
     } on DioException catch (error) {
@@ -183,6 +189,34 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
       }
       throw ApiFailure.fromDio(error);
     }
+  }
+
+  Future<UploadedEditorImage> _waitForCompletedUpload({
+    required String mediaId,
+    required MediaUploadPurpose purpose,
+    CancelToken? cancelToken,
+  }) async {
+    await _wait(const Duration(milliseconds: 500), cancelToken);
+    for (var attempt = 0; attempt < _maxPollAttempts; attempt++) {
+      final statusEnvelope = await _api.mediaGetMedia(
+        id: mediaId,
+        cancelToken: cancelToken,
+      );
+      final media = statusEnvelope.data?.data;
+      if (media == null) {
+        throw const ApiFailure(userMessage: '图片处理失败，请重试。');
+      }
+      if (media.status == MediaResponseDtoStatusEnum.COMPLETED) {
+        return _completedImage(media, purpose);
+      }
+      if (media.status == MediaResponseDtoStatusEnum.FAILED) {
+        throw const ApiFailure(userMessage: '图片处理失败，请重新选择后上传。');
+      }
+      if (attempt + 1 < _maxPollAttempts) {
+        await _wait(const Duration(seconds: 1), cancelToken);
+      }
+    }
+    throw const ApiFailure(userMessage: '图片仍在处理中，请稍后重新尝试插入。');
   }
 
   String? _contentTypeFor(MediaUploadInput input) {
@@ -313,6 +347,7 @@ final mediaUploadRepositoryProvider = Provider<MediaUploadRepository>((ref) {
   return ApiMediaUploadRepository(
     ref.watch(wenyouApiProvider).getMediaApi(),
     ref.watch(mediaUploadDioProvider),
+    timing: ref.watch(mediaUploadTimingProvider),
   );
 });
 
@@ -320,10 +355,12 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
   RepositoryMediaUploadGateway(
     this._repository, {
     this.normalizer = const PassThroughMediaUploadNormalizer(),
+    this.timing = const MediaUploadTiming(),
   });
 
   final MediaUploadRepository _repository;
   final MediaUploadNormalizer normalizer;
+  final MediaUploadTiming timing;
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
@@ -345,18 +382,28 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
     MediaUploadInput input, {
     required CancelToken cancelToken,
     void Function(MediaUploadProgress progress)? onProgress,
-  }) async {
-    onProgress?.call(
-      const MediaUploadProgress(stage: MediaUploadStage.preparing),
-    );
-    final normalized = await normalizer.normalize(input);
-    if (cancelToken.isCancelled) {
-      throw ApiFailure(userMessage: '图片上传已取消。', cause: cancelToken.cancelError);
-    }
-    return _repository.uploadImage(
-      normalized,
-      cancelToken: cancelToken,
-      onProgress: onProgress,
+  }) {
+    return timing.measure(
+      purpose: input.purpose,
+      stage: MediaUploadTimingStage.pipelineTotal,
+      inputBytes: input.bytes.length,
+      operation: () async {
+        onProgress?.call(
+          const MediaUploadProgress(stage: MediaUploadStage.preparing),
+        );
+        final normalized = await normalizer.normalize(input);
+        if (cancelToken.isCancelled) {
+          throw ApiFailure(
+            userMessage: '图片上传已取消。',
+            cause: cancelToken.cancelError,
+          );
+        }
+        return _repository.uploadImage(
+          normalized,
+          cancelToken: cancelToken,
+          onProgress: onProgress,
+        );
+      },
     );
   }
 }
@@ -384,5 +431,6 @@ final mediaUploadGatewayAdapterProvider = Provider<MediaUploadGateway>((ref) {
   return RepositoryMediaUploadGateway(
     ref.watch(mediaUploadRepositoryProvider),
     normalizer: ref.watch(mediaUploadNormalizerProvider),
+    timing: ref.watch(mediaUploadTimingProvider),
   );
 });

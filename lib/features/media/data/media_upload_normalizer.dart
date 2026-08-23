@@ -3,6 +3,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/data/media_image_validation.dart';
+import 'package:wenyousite_mobile/features/media/data/media_upload_timing.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.dart';
 
@@ -41,6 +42,7 @@ class FlutterStaticWebpEncoder implements StaticWebpEncoder {
 class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
   FlutterMediaUploadNormalizer({
     this.encoder = const FlutterStaticWebpEncoder(),
+    this.timing = const MediaUploadTiming(),
   });
 
   static const maximumEdge = 2560;
@@ -48,13 +50,20 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
   static const profileCoverQuality = 92;
 
   final StaticWebpEncoder encoder;
+  final MediaUploadTiming timing;
   final Expando<Future<MediaUploadInput>> _cache = Expando();
 
   @override
   Future<MediaUploadInput> normalize(MediaUploadInput input) {
     final cached = _cache[input];
     if (cached != null) return cached;
-    final future = _normalize(input);
+    final future = timing.measure(
+      purpose: input.purpose,
+      stage: MediaUploadTimingStage.normalizeTotal,
+      inputBytes: input.bytes.length,
+      outputBytes: (output) => output.bytes.length,
+      operation: () => _normalize(input),
+    );
     _cache[input] = future;
     future.then<void>(
       (_) {},
@@ -67,9 +76,11 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
 
   Future<MediaUploadInput> _normalize(MediaUploadInput input) async {
     try {
-      final inspection = (await compute(
-        inspectMediaInputForIsolate,
-        input,
+      final inspection = (await timing.measure(
+        purpose: input.purpose,
+        stage: MediaUploadTimingStage.inspectInput,
+        inputBytes: input.bytes.length,
+        operation: () => compute(inspectMediaInputForIsolate, input),
       )).unwrap();
       if (inspection.isGif) {
         return MediaUploadInput(
@@ -84,11 +95,17 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
           ? profileCoverQuality
           : standardQuality;
       final (targetWidth, targetHeight) = _targetSize(inspection);
-      final bytes = await encoder.encode(
-        input.bytes,
-        targetWidth: targetWidth,
-        targetHeight: targetHeight,
-        quality: quality,
+      final bytes = await timing.measure(
+        purpose: input.purpose,
+        stage: MediaUploadTimingStage.encodeWebp,
+        inputBytes: input.bytes.length,
+        outputBytes: (output) => output.length,
+        operation: () => encoder.encode(
+          input.bytes,
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+          quality: quality,
+        ),
       );
       if (bytes.isEmpty || bytes.length > maxMediaImageBytes) {
         throw const ApiFailure(userMessage: '图片处理后仍然过大，请缩小后重试。');
@@ -99,9 +116,11 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
         declaredContentType: 'image/webp',
         purpose: input.purpose,
       );
-      final normalized = (await compute(
-        inspectMediaInputForIsolate,
-        output,
+      final normalized = (await timing.measure(
+        purpose: input.purpose,
+        stage: MediaUploadTimingStage.inspectOutput,
+        inputBytes: output.bytes.length,
+        operation: () => compute(inspectMediaInputForIsolate, output),
       )).unwrap();
       if (normalized.contentType != 'image/webp' || normalized.isGif) {
         throw const ApiFailure(userMessage: '图片处理失败，请重新选择后重试。');
@@ -137,5 +156,7 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
 }
 
 final mediaUploadNormalizerProvider = Provider<MediaUploadNormalizer>((ref) {
-  return FlutterMediaUploadNormalizer();
+  return FlutterMediaUploadNormalizer(
+    timing: ref.watch(mediaUploadTimingProvider),
+  );
 });

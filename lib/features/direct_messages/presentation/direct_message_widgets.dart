@@ -18,7 +18,7 @@ import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_m
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
-import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
@@ -267,12 +267,11 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     );
     final image = retry
         ? await controller.retryUpload()
-        : await pickCropAndUploadEditorImage(
+        : await pickAndUploadEditorImage(
             context,
             ref,
             uploadTaskId: _uploadTaskId,
             purpose: MediaUploadPurpose.directMessage,
-            title: '裁剪私聊图片',
           );
     if (!mounted) return;
     if (image != null) {

@@ -19,7 +19,6 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
-import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -30,7 +29,6 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_p
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
 
-import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -516,9 +514,6 @@ void main() {
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
           momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
-          imageCropProcessorPortProvider.overrideWithValue(
-            const FakePassThroughImageCropProcessor(),
-          ),
           editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -531,7 +526,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('moment-compose-add-image')));
-    await _confirmImageCrop(tester);
+    await tester.pump();
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
     await tester.pumpAndSettle();
 
     expect(find.text('图片处理失败'), findsOneWidget);
@@ -574,7 +570,7 @@ void main() {
     );
   });
 
-  testWidgets('动态发布可多选图片并在同一裁剪流程逐张上传', (tester) async {
+  testWidgets('动态发布多选图片后不经裁剪并按原顺序逐张上传', (tester) async {
     final picker = _FakeMultiImagePicker();
     final gateway = _SuccessfulBatchUploadGateway();
     await tester.pumpWidget(
@@ -582,9 +578,6 @@ void main() {
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
           momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
-          imageCropProcessorPortProvider.overrideWithValue(
-            const FakePassThroughImageCropProcessor(),
-          ),
           editorImagePickerPortProvider.overrideWithValue(picker),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -600,20 +593,54 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(picker.lastLimit, 9);
-    expect(find.byKey(const Key('image-crop-thumbnail-tabs')), findsOneWidget);
-    expect(find.text('图片 1/3'), findsOneWidget);
-    await _confirmImageCrop(tester);
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
     expect(gateway.inputs, hasLength(3));
     expect(
       gateway.inputs.map((input) => input.purpose),
       everyElement(MediaUploadPurpose.moment),
     );
+    expect(gateway.inputs.map((input) => input.filename), [
+      'moment-0.png',
+      'moment-1.png',
+      'moment-2.png',
+    ]);
     for (var index = 1; index <= 3; index++) {
       expect(find.byKey(ValueKey('moment-image-$index')), findsOneWidget);
     }
     expect(find.text('3/9'), findsOneWidget);
+  });
+
+  testWidgets('动态编辑新增图片同样不打开裁剪流程', (tester) async {
+    final picker = _FakeMultiImagePicker();
+    final gateway = _SuccessfulBatchUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(
+            _PageRepository(detail: _editableDetail(title: '原动态', version: 3)),
+          ),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          editorImagePickerPortProvider.overrideWithValue(picker),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-compose-add-image')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
+    expect(gateway.inputs, hasLength(3));
+    expect(
+      gateway.inputs.map((input) => input.purpose),
+      everyElement(MediaUploadPurpose.moment),
+    );
   });
 
   testWidgets('动态评论上传中系统返回会取消任务并忽略迟到图片', (tester) async {
@@ -623,9 +650,6 @@ void main() {
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         momentRepositoryProvider.overrideWithValue(_PageRepository()),
-        imageCropProcessorPortProvider.overrideWithValue(
-          const FakePassThroughImageCropProcessor(),
-        ),
         editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
         mediaUploadGatewayPortProvider.overrideWithValue(gateway),
       ],
@@ -647,7 +671,8 @@ void main() {
     await tester.tap(find.byKey(const Key('moment-comment-dock')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-comment-image')));
-    await _confirmImageCrop(tester);
+    await tester.pump();
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
     expect(find.textContaining('正在上传'), findsOneWidget);
     expect(gateway.input?.purpose, MediaUploadPurpose.momentComment);
@@ -896,9 +921,6 @@ void main() {
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
           momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
-          imageCropProcessorPortProvider.overrideWithValue(
-            const FakePassThroughImageCropProcessor(),
-          ),
           editorImagePickerPortProvider.overrideWithValue(
             _FakeMultiImagePicker(),
           ),
@@ -914,8 +936,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('moment-compose-add-image')));
     await tester.pumpAndSettle();
-    await _confirmImageCrop(tester);
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
     expect(find.byKey(const ValueKey('moment-image-1')), findsOneWidget);
     expect(
@@ -1187,17 +1208,6 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
-}
-
-Future<void> _confirmImageCrop(WidgetTester tester) async {
-  await tester.pumpAndSettle();
-  expect(find.byKey(const Key('editor-image-crop-dialog')), findsOneWidget);
-  tester
-      .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
-      .onPressed!();
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
-  await tester.pump();
 }
 
 Widget _feedApp(MomentRepository repository) {

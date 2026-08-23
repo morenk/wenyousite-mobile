@@ -11,7 +11,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
-import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
+import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -250,12 +250,11 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   }
 
   Future<void> _pickAndUpload() async {
-    final inputs = await pickAndCropEditorImages(
+    final inputs = await pickEditorImages(
       context,
       ref,
       maximumSelection: 9 - _images.length,
       purpose: MediaUploadPurpose.moment,
-      title: '裁剪动态图片',
     );
     if (!mounted || inputs == null || inputs.isEmpty) return;
     ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
