@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
+// Mirrors the Web topic-tag profile while the surrounding Material tap target
+// continues to use Foundation's 48dp mobile minimum.
+const _topicTagVisualMinimumHeight = 32.0;
+const _topicTagHorizontalPadding = 10.0;
+
 /// Foundation `elements.metadata.topicTag` for reading surfaces.
 class WenyouTagLink extends StatelessWidget {
   const WenyouTagLink({required this.name, required this.onPressed, super.key});
@@ -25,18 +30,26 @@ class WenyouTagLink extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.transparent,
             border: Border.all(color: tokens.border),
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.space8,
-              vertical: tokens.space4,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: _topicTagVisualMinimumHeight,
             ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textStyle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _topicTagHorizontalPadding,
+              ),
+              child: Align(
+                widthFactor: 1,
+                heightFactor: 1,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyle,
+                ),
+              ),
             ),
           ),
         ),
@@ -53,14 +66,13 @@ class WenyouTagLink extends StatelessWidget {
           foregroundColor: tokens.mutedText,
           backgroundColor: Colors.transparent,
           side: BorderSide(color: tokens.border),
-          minimumSize: Size(
-            tokens.minimumTouchTarget,
-            tokens.minimumTouchTarget,
+          minimumSize: const Size(0, _topicTagVisualMinimumHeight),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _topicTagHorizontalPadding,
           ),
-          padding: EdgeInsets.symmetric(horizontal: tokens.space8),
           tapTargetSize: MaterialTapTargetSize.padded,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radius12),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
           ),
           textStyle: textStyle,
         ),
