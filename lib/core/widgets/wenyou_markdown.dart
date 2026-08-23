@@ -37,6 +37,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.onTapText,
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
+    this.enablePlainTextFastPath = true,
     super.key,
   });
 
@@ -49,6 +50,7 @@ class WenyouMarkdown extends StatefulWidget {
   final VoidCallback? onTapText;
   final double bodyFontSize;
   final double bodyHeight;
+  final bool enablePlainTextFastPath;
 
   @override
   State<WenyouMarkdown> createState() => _WenyouMarkdownState();
@@ -61,6 +63,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   late String _normalizedData;
   List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
+  var _usesPlainTextFastPath = false;
 
   @override
   void initState() {
@@ -89,7 +92,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     if (!mapEquals(oldWidget.diceDetails, widget.diceDetails)) {
       _diceDetails.value = Map.unmodifiable(widget.diceDetails);
     }
-    if (oldWidget.data != widget.data) {
+    if (oldWidget.data != widget.data ||
+        oldWidget.enablePlainTextFastPath != widget.enablePlainTextFastPath) {
       _prepareData();
     }
     if (oldWidget.bodyFontSize != widget.bodyFontSize ||
@@ -108,6 +112,23 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   @override
   Widget build(BuildContext context) {
+    if (_usesPlainTextFastPath) {
+      final paragraphs = _normalizedData.split(_plainTextParagraphBreak);
+      return Column(
+        key: const Key('wenyou-markdown-plain-text'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < paragraphs.length; index++) ...[
+            if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
+            SelectableText(
+              paragraphs[index],
+              style: _styleSheet?.p,
+              onTap: widget.onTapText,
+            ),
+          ],
+        ],
+      );
+    }
     return MarkdownBody(
       data: _normalizedData,
       selectable: true,
@@ -150,6 +171,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     final prepared = _prepareInternalReferences(normalized);
     _normalizedData = prepared.data;
     _internalReferences = prepared.references;
+    _usesPlainTextFastPath =
+        widget.enablePlainTextFastPath &&
+        prepared.references.isEmpty &&
+        _isUnambiguousPlainText(prepared.data);
   }
 
   MarkdownStyleSheet _createStyleSheet(BuildContext context) {
@@ -254,6 +279,19 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       openInternalWenyouLink(context, location);
     }
   }
+}
+
+final _markdownMeaningfulCharacter = RegExp(
+  r'[\\`*_{}\[\]()#>+\-.!|~@<>&:]',
+  unicode: true,
+);
+final _plainTextParagraphBreak = RegExp(r'\n[ \t]*\n+', unicode: true);
+
+bool _isUnambiguousPlainText(String data) {
+  if (_markdownMeaningfulCharacter.hasMatch(data) || data.contains('\t')) {
+    return false;
+  }
+  return !data.startsWith(' ') && !data.contains('\n ');
 }
 
 class _UserMentionInlineSyntax extends md.InlineSyntax {

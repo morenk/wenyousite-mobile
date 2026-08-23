@@ -162,6 +162,7 @@ class ThreadSubthreadBody extends StatelessWidget {
               diceLabels: _diceLabels(body.diceRolls),
               diceSemantics: _diceSemantics(body.diceRolls),
               diceDetails: _diceDetails(body.diceRolls),
+              enablePlainTextFastPath: false,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
             )
           else
@@ -172,6 +173,7 @@ class ThreadSubthreadBody extends StatelessWidget {
               diceLabels: _diceLabels(body.diceRolls),
               diceSemantics: _diceSemantics(body.diceRolls),
               diceDetails: _diceDetails(body.diceRolls),
+              enablePlainTextFastPath: false,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
             ),
         ],
@@ -331,12 +333,14 @@ class ThreadFloorCard extends ConsumerWidget {
     required this.onDelete,
     this.reportReturnTo,
     this.isFocused = false,
+    this.targetFrameKey,
     super.key,
   });
 
   final String threadId;
   final ThreadFloorModel floor;
   final bool isFocused;
+  final GlobalKey? targetFrameKey;
   final bool canEdit;
   final bool canDelete;
   final bool pending;
@@ -376,6 +380,7 @@ class ThreadFloorCard extends ConsumerWidget {
           onTap: pending || floor.isDeleted ? null : onReply,
           onLongPress: handle.open,
           child: WenyouTransientTargetFrame(
+            key: targetFrameKey,
             targetId: isFocused ? floor.id : null,
             announcement: '已定位到目标楼层',
             child: Container(

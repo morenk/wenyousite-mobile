@@ -25,6 +25,7 @@ class ThreadDetailState {
     this.isRefreshing = false,
     this.isLoadingFloors = false,
     this.isLoadingMore = false,
+    this.isPrefetchingFloors = false,
     this.failure,
     this.transientFailure,
     this.retryAction = ThreadDetailRetryAction.refresh,
@@ -41,6 +42,7 @@ class ThreadDetailState {
   final bool isRefreshing;
   final bool isLoadingFloors;
   final bool isLoadingMore;
+  final bool isPrefetchingFloors;
   final ApiFailure? failure;
   final ApiFailure? transientFailure;
   final ThreadDetailRetryAction retryAction;
@@ -60,6 +62,7 @@ class ThreadDetailState {
     bool? isRefreshing,
     bool? isLoadingFloors,
     bool? isLoadingMore,
+    bool? isPrefetchingFloors,
     Object? failure = _unset,
     Object? transientFailure = _unset,
     ThreadDetailRetryAction? retryAction,
@@ -80,6 +83,7 @@ class ThreadDetailState {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingFloors: isLoadingFloors ?? this.isLoadingFloors,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isPrefetchingFloors: isPrefetchingFloors ?? this.isPrefetchingFloors,
       failure: identical(failure, _unset)
           ? this.failure
           : failure as ApiFailure?,
@@ -140,6 +144,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       isRefreshing: true,
       isLoadingFloors: false,
       isLoadingMore: false,
+      isPrefetchingFloors: false,
       transientFailure: null,
     );
     try {
@@ -196,6 +201,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     state = state.copyWith(
       transientFailure: null,
       isLoadingMore: false,
+      isPrefetchingFloors: false,
       retryAction: null,
     );
     try {
@@ -248,6 +254,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       hasMore: false,
       isLoadingFloors: true,
       isLoadingMore: false,
+      isPrefetchingFloors: false,
       transientFailure: null,
     );
     await _loadFirstFloors(epoch, subthreadId);
@@ -281,6 +288,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       hasMore: false,
       isLoadingFloors: true,
       isLoadingMore: false,
+      isPrefetchingFloors: false,
       transientFailure: null,
     );
     await _loadFirstFloors(epoch, selectedId);
@@ -296,63 +304,111 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       hasMore: false,
       isLoadingFloors: true,
       isLoadingMore: false,
+      isPrefetchingFloors: false,
       transientFailure: null,
     );
     await _loadFirstFloors(epoch, selectedId);
   }
 
-  Future<void> loadMore() async {
+  Future<void> loadMore() => prefetchRemainingFloors();
+
+  /// Fetches all remaining text pages sequentially. The page starts this only
+  /// after the first frame, while the sliver remains responsible for lazily
+  /// creating image widgets inside its bounded cache neighborhood.
+  Future<void> prefetchRemainingFloors() async {
     final selectedId = state.selectedSubthreadId;
     if (state.phase != ThreadDetailPhase.ready ||
         selectedId == null ||
         state.isLoadingFloors ||
-        state.isLoadingMore ||
+        state.isPrefetchingFloors ||
         !state.hasMore) {
       return;
     }
     final epoch = _requestEpoch;
-    state = state.copyWith(isLoadingMore: true, transientFailure: null);
-    try {
-      final page = await _repository.fetchFloors(
-        subthreadId: selectedId,
-        cursor: state.cursor,
-        order: state.floorOrder,
-        authorId: state.floorAuthorId,
-      );
-      if (!_isCurrent(epoch) || state.selectedSubthreadId != selectedId) return;
-      final merged = mergeUniqueBy(
-        state.floors,
-        page.items,
-        keyOf: (item) => item.id,
-      );
-      state = state.copyWith(
-        floors: _sortFloors(merged, state.floorOrder),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-      );
-    } on ApiFailure catch (failure) {
-      if (!_isCurrent(epoch)) return;
-      if (_isRestricted(failure)) {
-        _hideRestrictedContent(failure);
+    final order = state.floorOrder;
+    final authorId = state.floorAuthorId;
+    final seenCursors = <String>{};
+    var didRestartInvalidCursor = false;
+    state = state.copyWith(
+      isLoadingMore: true,
+      isPrefetchingFloors: true,
+      transientFailure: null,
+    );
+
+    while (_matchesFloorRequest(epoch, selectedId, order, authorId) &&
+        state.hasMore) {
+      final cursor = state.cursor;
+      if (cursor == null || !seenCursors.add(cursor)) {
+        _finishFloorPrefetchFailure(
+          const ApiFailure(userMessage: '楼层位置异常，请重试。'),
+        );
         return;
       }
-      if (failure.isInvalidCursor) {
-        await retryFloors();
+      try {
+        final page = await _repository.fetchFloors(
+          subthreadId: selectedId,
+          cursor: cursor,
+          order: order,
+          authorId: authorId,
+        );
+        if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) return;
+        final merged = mergeUniqueBy(
+          state.floors,
+          page.items,
+          keyOf: (item) => item.id,
+        );
+        state = state.copyWith(
+          floors: _sortFloors(merged, order),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          transientFailure: null,
+        );
+      } on Object catch (error) {
+        if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) return;
+        final failure = _asFailure(error, '加载更多楼层失败，请稍后重试。');
+        if (_isRestricted(failure)) {
+          _hideRestrictedContent(failure);
+          return;
+        }
+        if (failure.isInvalidCursor && !didRestartInvalidCursor) {
+          didRestartInvalidCursor = true;
+          seenCursors.clear();
+          try {
+            final firstPage = await _repository.fetchFloors(
+              subthreadId: selectedId,
+              order: order,
+              authorId: authorId,
+            );
+            if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) {
+              return;
+            }
+            state = state.copyWith(
+              floors: _sortFloors(firstPage.items, order),
+              cursor: firstPage.cursor,
+              hasMore: firstPage.hasMore,
+              transientFailure: null,
+            );
+            continue;
+          } on Object catch (restartError) {
+            if (!_matchesFloorRequest(epoch, selectedId, order, authorId)) {
+              return;
+            }
+            final restartFailure = _asFailure(restartError, '楼层重新加载失败，请稍后重试。');
+            if (_isRestricted(restartFailure)) {
+              _hideRestrictedContent(restartFailure);
+              return;
+            }
+            _finishFloorPrefetchFailure(restartFailure);
+            return;
+          }
+        }
+        _finishFloorPrefetchFailure(failure);
         return;
       }
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        retryAction: ThreadDetailRetryAction.loadMore,
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: _asFailure(error, '加载更多楼层失败，请稍后重试。'),
-        retryAction: ThreadDetailRetryAction.loadMore,
-      );
+    }
+
+    if (_matchesFloorRequest(epoch, selectedId, order, authorId)) {
+      state = state.copyWith(isLoadingMore: false, isPrefetchingFloors: false);
     }
   }
 
@@ -372,6 +428,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         hasMore: page.hasMore,
         isRefreshing: false,
         isLoadingFloors: false,
+        isPrefetchingFloors: false,
         transientFailure: null,
       );
     } on Object catch (error) {
@@ -394,6 +451,26 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
 
   bool _isCurrent(int epoch) => mounted && epoch == _requestEpoch;
 
+  bool _matchesFloorRequest(
+    int epoch,
+    String subthreadId,
+    ThreadFloorOrder order,
+    String? authorId,
+  ) =>
+      _isCurrent(epoch) &&
+      state.selectedSubthreadId == subthreadId &&
+      state.floorOrder == order &&
+      state.floorAuthorId == authorId;
+
+  void _finishFloorPrefetchFailure(ApiFailure failure) {
+    state = state.copyWith(
+      isLoadingMore: false,
+      isPrefetchingFloors: false,
+      transientFailure: failure,
+      retryAction: ThreadDetailRetryAction.loadMore,
+    );
+  }
+
   bool _isRestricted(ApiFailure failure) =>
       failure.httpStatus == 403 || failure.httpStatus == 404;
 
@@ -409,6 +486,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       isRefreshing: false,
       isLoadingFloors: false,
       isLoadingMore: false,
+      isPrefetchingFloors: false,
       failure: failure,
       transientFailure: null,
     );

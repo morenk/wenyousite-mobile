@@ -70,6 +70,8 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
     if (state.phase != PostDiscussionPhase.ready || state.isRefreshing) return;
     state = state.copyWith(
       isRefreshing: true,
+      isLoadingMore: false,
+      isPrefetchingReplies: false,
       transientFailure: null,
       retryAction: null,
     );
@@ -90,6 +92,8 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
         cursor: page.cursor,
         hasMore: page.hasMore,
         isRefreshing: false,
+        isLoadingMore: false,
+        isPrefetchingReplies: false,
         failure: null,
         transientFailure: null,
         retryAction: null,
@@ -131,50 +135,97 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
     await load();
   }
 
-  Future<void> loadMore() async {
+  Future<void> loadMore() => prefetchRemainingReplies();
+
+  /// Fetches all remaining reply text sequentially after the first frame. The
+  /// sliver still creates image widgets lazily inside its viewport cache.
+  Future<void> prefetchRemainingReplies() async {
     if (state.phase != PostDiscussionPhase.ready ||
-        state.isLoadingMore ||
+        state.isPrefetchingReplies ||
         !state.hasMore) {
       return;
     }
     final epoch = _epoch;
+    final order = state.order;
+    final authorId = state.authorId;
+    final seenCursors = <String>{};
+    var didRestartInvalidCursor = false;
     state = state.copyWith(
       isLoadingMore: true,
+      isPrefetchingReplies: true,
       transientFailure: null,
       retryAction: null,
     );
-    try {
-      final page = await _repository.fetchReplies(
-        rootPostId: target.rootPostId,
-        cursor: state.cursor,
-        order: state.order,
-        authorId: state.authorId,
-      );
-      if (!_isCurrent(epoch)) return;
-      state = state.copyWith(
-        replies: _mergeReplies(state.replies, page.items, state.order),
-        cursor: page.cursor,
-        hasMore: page.hasMore,
-        isLoadingMore: false,
-        transientFailure: null,
-        retryAction: null,
-      );
-    } on Object catch (error) {
-      if (!_isCurrent(epoch)) return;
-      final failure = _asFailure(error, '更多回复加载失败，请稍后重试。');
-      if (_isRestricted(failure)) {
-        _hideRestrictedContent(failure);
+
+    while (_matchesReplyRequest(epoch, order, authorId) && state.hasMore) {
+      final cursor = state.cursor;
+      if (cursor == null || !seenCursors.add(cursor)) {
+        _finishReplyPrefetchFailure(
+          const ApiFailure(userMessage: '回复位置异常，请重试。'),
+        );
         return;
       }
-      if (failure.isInvalidCursor) {
-        await load();
+      try {
+        final page = await _repository.fetchReplies(
+          rootPostId: target.rootPostId,
+          cursor: cursor,
+          order: order,
+          authorId: authorId,
+        );
+        if (!_matchesReplyRequest(epoch, order, authorId)) return;
+        state = state.copyWith(
+          replies: _mergeReplies(state.replies, page.items, order),
+          cursor: page.cursor,
+          hasMore: page.hasMore,
+          transientFailure: null,
+          retryAction: null,
+        );
+      } on Object catch (error) {
+        if (!_matchesReplyRequest(epoch, order, authorId)) return;
+        final failure = _asFailure(error, '更多回复加载失败，请稍后重试。');
+        if (_isRestricted(failure)) {
+          _hideRestrictedContent(failure);
+          return;
+        }
+        if (failure.isInvalidCursor && !didRestartInvalidCursor) {
+          didRestartInvalidCursor = true;
+          seenCursors.clear();
+          try {
+            final firstPage = await _repository.fetchReplies(
+              rootPostId: target.rootPostId,
+              order: order,
+              authorId: authorId,
+            );
+            if (!_matchesReplyRequest(epoch, order, authorId)) return;
+            final root = state.root!;
+            final replies = await _includeFocusedReply(root, firstPage.items);
+            if (!_matchesReplyRequest(epoch, order, authorId)) return;
+            state = state.copyWith(
+              replies: replies,
+              cursor: firstPage.cursor,
+              hasMore: firstPage.hasMore,
+              transientFailure: null,
+              retryAction: null,
+            );
+            continue;
+          } on Object catch (restartError) {
+            if (!_matchesReplyRequest(epoch, order, authorId)) return;
+            final restartFailure = _asFailure(restartError, '回复重新加载失败，请稍后重试。');
+            if (_isRestricted(restartFailure)) {
+              _hideRestrictedContent(restartFailure);
+              return;
+            }
+            _finishReplyPrefetchFailure(restartFailure);
+            return;
+          }
+        }
+        _finishReplyPrefetchFailure(failure);
         return;
       }
-      state = state.copyWith(
-        isLoadingMore: false,
-        transientFailure: failure,
-        retryAction: PostDiscussionRetryAction.loadMore,
-      );
+    }
+
+    if (_matchesReplyRequest(epoch, order, authorId)) {
+      state = state.copyWith(isLoadingMore: false, isPrefetchingReplies: false);
     }
   }
 
@@ -213,6 +264,21 @@ class PostDiscussionController extends StateNotifier<PostDiscussionState> {
   }
 
   bool _isCurrent(int epoch) => mounted && epoch == _epoch;
+
+  bool _matchesReplyRequest(
+    int epoch,
+    PostReplyOrder order,
+    String? authorId,
+  ) => _isCurrent(epoch) && state.order == order && state.authorId == authorId;
+
+  void _finishReplyPrefetchFailure(ApiFailure failure) {
+    state = state.copyWith(
+      isLoadingMore: false,
+      isPrefetchingReplies: false,
+      transientFailure: failure,
+      retryAction: PostDiscussionRetryAction.loadMore,
+    );
+  }
 
   bool _isRestricted(ApiFailure failure) =>
       failure.httpStatus == 403 || failure.httpStatus == 404;

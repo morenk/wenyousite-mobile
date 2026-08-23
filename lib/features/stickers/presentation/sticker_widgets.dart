@@ -313,6 +313,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     this.onTapText,
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
+    this.enablePlainTextFastPath = true,
     super.key,
   });
 
@@ -325,6 +326,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final VoidCallback? onTapText;
   final double bodyFontSize;
   final double bodyHeight;
+  final bool enablePlainTextFastPath;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -341,6 +343,7 @@ class StickerPostMarkdown extends ConsumerWidget {
       onTapText: onTapText,
       bodyFontSize: bodyFontSize,
       bodyHeight: bodyHeight,
+      enablePlainTextFastPath: enablePlainTextFastPath,
       onSaveImage: !enabled || !authenticated
           ? null
           : (uri) async {

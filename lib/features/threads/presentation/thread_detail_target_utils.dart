@@ -7,6 +7,16 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 typedef ThreadTargetFilterRestore =
     Future<void> Function(String authorId, String subthreadId);
 
+String threadDetailLocation(String threadId, [String? targetPostId]) => Uri(
+  pathSegments: ['', 'threads', threadId],
+  queryParameters: targetPostId == null ? null : {'post': targetPostId},
+).toString();
+
+String threadPostLocation(String threadId, String postId) => Uri(
+  pathSegments: ['', 'threads', threadId],
+  queryParameters: {'post': postId},
+).toString();
+
 class ThreadTargetFilterRestoreCoordinator {
   String? _lastSignature;
 

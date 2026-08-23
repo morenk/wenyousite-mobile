@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
@@ -46,8 +47,6 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
 }
 
 class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
-  static const _loadMoreThreshold = 2400.0;
-
   final _scrollController = ScrollController();
   final _targetKey = GlobalKey();
   final _composerDrafts = <String, String>{};
@@ -59,18 +58,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   var _revealAttempts = 0;
   var _revealScheduled = false;
   var _targetRevealReleased = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_loadMoreNearEnd);
-  }
+  final _prefetchScheduler = DiscussionPrefetchScheduler();
 
   @override
   void dispose() {
-    _scrollController
-      ..removeListener(_loadMoreNearEnd)
-      ..dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -87,16 +79,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
   }
 
-  void _loadMoreNearEnd() {
-    if (!_scrollController.hasClients ||
-        _scrollController.position.extentAfter > _loadMoreThreshold) {
-      return;
-    }
-    ref
-        .read(threadDetailControllerProvider(widget.threadId).notifier)
-        .loadMore();
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = threadDetailControllerProvider(widget.threadId);
@@ -109,6 +91,16 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ..invalidate(actionsProvider);
     });
     final state = ref.watch(provider);
+    _prefetchScheduler.schedule(
+      shouldPrefetch:
+          state.phase == ThreadDetailPhase.ready &&
+          !state.isLoadingFloors &&
+          !state.isPrefetchingFloors &&
+          state.transientFailure == null &&
+          state.hasMore,
+      isMounted: () => mounted,
+      prefetch: () => ref.read(provider.notifier).prefetchRemainingFloors(),
+    );
     final session = ref.watch(sessionControllerProvider);
     final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
     final actions = ref.watch(actionsProvider);
@@ -192,6 +184,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               child: CustomScrollView(
                 key: PageStorageKey('thread-detail-${widget.threadId}'),
                 controller: _scrollController,
+                scrollCacheExtent: discussionScrollCacheExtent,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   ..._buildReadySlivers(
@@ -362,7 +355,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             recipientUserId: detail.owner.id,
           ),
           recipientName: detail.owner.username,
-          returnTo: _currentThreadLocation(),
+          returnTo: threadDetailLocation(widget.threadId, widget.targetPostId),
           onSuccess: (_) => ref.read(provider.notifier).refresh(),
         );
       case _ThreadDetailAction.report:
@@ -371,7 +364,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ref: ref,
           target: ReportTarget.thread(detail.id),
           targetLabel: '这个主题',
-          returnTo: _currentThreadLocation(),
+          returnTo: threadDetailLocation(widget.threadId, widget.targetPostId),
         );
       case _ThreadDetailAction.exitPlayer:
         await _showPlayerExitSheet(detail);
@@ -718,63 +711,86 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           )
         else
           SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final floor = displayedFloors[index];
-              final focused =
-                  usableTarget?.focusedReplyId == null &&
-                  usableTarget?.floor.id == floor.id;
-              return WenyouContentFrame(
-                top: index == 0 ? 12 : 0,
-                child: Column(
-                  children: [
-                    if (index > 0) const Divider(height: 24),
-                    ThreadFloorCard(
-                      key: focused ? _targetKey : null,
-                      threadId: widget.threadId,
-                      floor: floor,
-                      isFocused: focused,
-                      canEdit: floor.author.id == viewerId,
-                      canDelete:
-                          floor.author.id == viewerId || detail.canManageThread,
-                      pending: actions.pendingPostId == floor.id,
-                      onReply: authenticated
-                          ? () => _compose(
-                              threadDetailReplyFloorTarget(
-                                detail,
-                                selected,
-                                floor,
-                              ),
-                            )
-                          : _requireLogin,
-                      onReplyToReply: authenticated
-                          ? (reply) => _compose(
-                              threadDetailReplyInlineTarget(
-                                detail,
-                                selected,
-                                floor,
-                                reply,
-                              ),
-                            )
-                          : (_) => _requireLogin(),
-                      onDiscussion: () => _openDiscussion(
-                        floor,
-                        focusedReplyId: usableTarget?.floor.id == floor.id
-                            ? usableTarget?.focusedReplyId
-                            : null,
-                      ),
-                      reportReturnTo:
-                          !detail.isPrivate && floor.author.id != viewerId
-                          ? _postLocation(floor.id)
-                          : null,
-                      onEdit: () => _compose(
-                        threadDetailEditFloorTarget(detail, selected, floor),
-                      ),
-                      onDelete: () => _deleteFloor(floor),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final floor = displayedFloors[index];
+                final focused =
+                    usableTarget?.focusedReplyId == null &&
+                    usableTarget?.floor.id == floor.id;
+                return KeyedSubtree(
+                  key: ValueKey('thread-floor-item-${floor.id}'),
+                  child: WenyouContentFrame(
+                    top: index == 0 ? 12 : 0,
+                    child: Column(
+                      children: [
+                        if (index > 0) const Divider(height: 24),
+                        ThreadFloorCard(
+                          key: ValueKey('thread-floor-${floor.id}'),
+                          threadId: widget.threadId,
+                          floor: floor,
+                          isFocused: focused,
+                          targetFrameKey: focused ? _targetKey : null,
+                          canEdit: floor.author.id == viewerId,
+                          canDelete:
+                              floor.author.id == viewerId ||
+                              detail.canManageThread,
+                          pending: actions.pendingPostId == floor.id,
+                          onReply: authenticated
+                              ? () => _compose(
+                                  threadDetailReplyFloorTarget(
+                                    detail,
+                                    selected,
+                                    floor,
+                                  ),
+                                )
+                              : _requireLogin,
+                          onReplyToReply: authenticated
+                              ? (reply) => _compose(
+                                  threadDetailReplyInlineTarget(
+                                    detail,
+                                    selected,
+                                    floor,
+                                    reply,
+                                  ),
+                                )
+                              : (_) => _requireLogin(),
+                          onDiscussion: () => _openDiscussion(
+                            floor,
+                            focusedReplyId: usableTarget?.floor.id == floor.id
+                                ? usableTarget?.focusedReplyId
+                                : null,
+                          ),
+                          reportReturnTo:
+                              !detail.isPrivate && floor.author.id != viewerId
+                              ? threadPostLocation(widget.threadId, floor.id)
+                              : null,
+                          onEdit: () => _compose(
+                            threadDetailEditFloorTarget(
+                              detail,
+                              selected,
+                              floor,
+                            ),
+                          ),
+                          onDelete: () => _deleteFloor(floor),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }, childCount: displayedFloors.length),
+                  ),
+                );
+              },
+              childCount: displayedFloors.length,
+              findChildIndexCallback: (key) {
+                final value = key is ValueKey<String> ? key.value : null;
+                if (value == null || !value.startsWith('thread-floor-item-')) {
+                  return null;
+                }
+                final floorId = value.substring('thread-floor-item-'.length);
+                final index = displayedFloors.indexWhere(
+                  (floor) => floor.id == floorId,
+                );
+                return index < 0 ? null : index;
+              },
+            ),
           ),
         SliverToBoxAdapter(
           child: WenyouContentFrame(
@@ -817,7 +833,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       case PostComposerKind.createFloor ||
           PostComposerKind.createReply ||
           PostComposerKind.editPost:
-        context.replace(_postLocation(result.id));
+        context.replace(threadPostLocation(widget.threadId, result.id));
       case PostComposerKind.upsertBody:
         break;
     }
@@ -826,7 +842,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   void _requireLogin() {
     context.pushNamed(
       'login',
-      queryParameters: {'returnTo': _currentThreadLocation()},
+      queryParameters: {
+        'returnTo': threadDetailLocation(widget.threadId, widget.targetPostId),
+      },
     );
   }
 
@@ -871,22 +889,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refresh();
-  }
-
-  String _currentThreadLocation() {
-    return Uri(
-      pathSegments: ['', 'threads', widget.threadId],
-      queryParameters: widget.targetPostId == null
-          ? null
-          : {'post': widget.targetPostId!},
-    ).toString();
-  }
-
-  String _postLocation(String postId) {
-    return Uri(
-      pathSegments: ['', 'threads', widget.threadId],
-      queryParameters: {'post': postId},
-    ).toString();
   }
 }
 

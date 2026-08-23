@@ -18,6 +18,7 @@ class PostDiscussionState {
     this.authorId,
     this.isRefreshing = false,
     this.isLoadingMore = false,
+    this.isPrefetchingReplies = false,
     this.failure,
     this.transientFailure,
     this.retryAction,
@@ -32,6 +33,7 @@ class PostDiscussionState {
   final String? authorId;
   final bool isRefreshing;
   final bool isLoadingMore;
+  final bool isPrefetchingReplies;
   final ApiFailure? failure;
   final ApiFailure? transientFailure;
   final PostDiscussionRetryAction? retryAction;
@@ -46,6 +48,7 @@ class PostDiscussionState {
     Object? authorId = _unset,
     bool? isRefreshing,
     bool? isLoadingMore,
+    bool? isPrefetchingReplies,
     Object? failure = _unset,
     Object? transientFailure = _unset,
     Object? retryAction = _unset,
@@ -62,6 +65,7 @@ class PostDiscussionState {
           : authorId as String?,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isPrefetchingReplies: isPrefetchingReplies ?? this.isPrefetchingReplies,
       failure: identical(failure, _unset)
           ? this.failure
           : failure as ApiFailure?,

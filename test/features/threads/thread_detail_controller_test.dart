@@ -26,6 +26,103 @@ void main() {
     expect(repository.floorRequests, ['subthread-2:null']);
   });
 
+  test('首屏完成后串行预取剩余全部楼层并逐页合并', () async {
+    var activeRequests = 0;
+    var maximumActiveRequests = 0;
+    final repository = _FakeThreadDetailRepository(
+      onFloors: (subthreadId, cursor) async {
+        activeRequests += 1;
+        maximumActiveRequests = maximumActiveRequests < activeRequests
+            ? activeRequests
+            : maximumActiveRequests;
+        await Future<void>.delayed(Duration.zero);
+        activeRequests -= 1;
+        return switch (cursor) {
+          null => CursorPage(
+            items: [_floor('floor-1')],
+            cursor: 'page-2',
+            hasMore: true,
+          ),
+          'page-2' => CursorPage(
+            items: [_floor('floor-2')],
+            cursor: 'page-3',
+            hasMore: true,
+          ),
+          _ => CursorPage(items: [_floor('floor-3')], hasMore: false),
+        };
+      },
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    expect(controller.state.floors.map((item) => item.id), ['floor-1']);
+
+    final prefetch = controller.prefetchRemainingFloors();
+    expect(controller.state.isPrefetchingFloors, isTrue);
+    await prefetch;
+
+    expect(controller.state.floors.map((item) => item.id), [
+      'floor-1',
+      'floor-2',
+      'floor-3',
+    ]);
+    expect(controller.state.hasMore, isFalse);
+    expect(controller.state.isPrefetchingFloors, isFalse);
+    expect(maximumActiveRequests, 1);
+    expect(repository.floorRequests, [
+      'subthread-2:null',
+      'subthread-2:page-2',
+      'subthread-2:page-3',
+    ]);
+  });
+
+  test('切换筛选会取消旧楼层预取且不合并迟到页', () async {
+    final stalePage = Completer<CursorPage<ThreadFloorModel>>();
+    final repository = _FakeThreadDetailRepository(
+      onFloors: (subthreadId, cursor) {
+        if (cursor == 'old-next') return stalePage.future;
+        if (cursor == null) {
+          return Future.value(
+            CursorPage(
+              items: [_floor('first')],
+              cursor: 'old-next',
+              hasMore: true,
+            ),
+          );
+        }
+        return Future.value(
+          CursorPage(items: [_floor('filtered')], hasMore: false),
+        );
+      },
+    );
+    final controller = ThreadDetailController(
+      repository,
+      'thread-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadInitial();
+    final prefetch = controller.prefetchRemainingFloors();
+    await Future<void>.delayed(Duration.zero);
+    final filter = controller.applyFloorFilters(
+      order: ThreadFloorOrder.newest,
+      authorId: 'user-owner',
+    );
+    stalePage.complete(CursorPage(items: [_floor('stale')], hasMore: false));
+    await Future.wait([prefetch, filter]);
+
+    expect(controller.state.floorOrder, ThreadFloorOrder.newest);
+    expect(controller.state.floors.map((item) => item.id), ['first']);
+    expect(controller.state.floors.any((item) => item.id == 'stale'), isFalse);
+    expect(controller.state.isPrefetchingFloors, isFalse);
+  });
+
   test('切换子贴重置楼层，分页按 ID 去重', () async {
     final repository = _FakeThreadDetailRepository(
       onFloors: (subthreadId, cursor) async {
@@ -197,7 +294,7 @@ void main() {
     expect(repository.floorAuthors, [null, 'user-owner', 'user-player']);
   });
 
-  test('分页 cursor 失效时自动从当前子贴第一页重载', () async {
+  test('分页 cursor 连续失效时只重载一次首页并提供重试', () async {
     var firstPageCalls = 0;
     final repository = _FakeThreadDetailRepository(
       onFloors: (subthreadId, cursor) async {
@@ -236,8 +333,11 @@ void main() {
       'user-owner',
       'user-owner',
       'user-owner',
+      'user-owner',
     ]);
-    expect(controller.state.transientFailure, isNull);
+    expect(controller.state.transientFailure?.isInvalidCursor, isTrue);
+    expect(controller.state.retryAction, ThreadDetailRetryAction.loadMore);
+    expect(controller.state.isPrefetchingFloors, isFalse);
   });
 
   test('快速切换子贴时丢弃旧请求的迟到结果', () async {
@@ -517,6 +617,7 @@ void _expectRestrictedTerminal(ThreadDetailState state, int status) {
   expect(state.isRefreshing, isFalse);
   expect(state.isLoadingFloors, isFalse);
   expect(state.isLoadingMore, isFalse);
+  expect(state.isPrefetchingFloors, isFalse);
   expect(state.failure?.httpStatus, status);
   expect(state.transientFailure, isNull);
 }

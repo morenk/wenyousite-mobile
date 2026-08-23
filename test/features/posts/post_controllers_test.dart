@@ -52,7 +52,62 @@ void main() {
     expect(controller.state.replies.map((item) => item.id), ['reply-1']);
   });
 
-  test('回复分页 cursor 失效时从当前筛选第一页恢复', () async {
+  test('独立讨论首屏完成后串行预取剩余全部文字回复', () async {
+    var activeRequests = 0;
+    var maximumActiveRequests = 0;
+    final repository = _FakePostRepository(
+      posts: {'root': _post('root')},
+      onReplies: ({cursor, required order, authorId}) async {
+        activeRequests += 1;
+        maximumActiveRequests = maximumActiveRequests < activeRequests
+            ? activeRequests
+            : maximumActiveRequests;
+        await Future<void>.delayed(Duration.zero);
+        activeRequests -= 1;
+        return switch (cursor) {
+          null => CursorPage(
+            items: [_reply('reply-1')],
+            cursor: 'page-2',
+            hasMore: true,
+          ),
+          'page-2' => CursorPage(
+            items: [_reply('reply-2')],
+            cursor: 'page-3',
+            hasMore: true,
+          ),
+          _ => CursorPage(items: [_reply('reply-3')], hasMore: false),
+        };
+      },
+    );
+    final controller = PostDiscussionController(repository, (
+      rootPostId: 'root',
+      focusedReplyId: null,
+    ), autoStart: false);
+    addTearDown(controller.dispose);
+
+    await controller.load();
+    expect(controller.state.replies.map((item) => item.id), ['reply-1']);
+
+    final prefetch = controller.prefetchRemainingReplies();
+    expect(controller.state.isPrefetchingReplies, isTrue);
+    await prefetch;
+
+    expect(controller.state.replies.map((item) => item.id), [
+      'reply-1',
+      'reply-2',
+      'reply-3',
+    ]);
+    expect(controller.state.hasMore, isFalse);
+    expect(controller.state.isPrefetchingReplies, isFalse);
+    expect(maximumActiveRequests, 1);
+    expect(repository.replyRequests.map((request) => request.cursor), [
+      null,
+      'page-2',
+      'page-3',
+    ]);
+  });
+
+  test('回复分页 cursor 连续失效时只重载一次首页并提供重试', () async {
     var firstPage = 0;
     final repository = _FakePostRepository(
       posts: {'root': _post('root')},
@@ -79,7 +134,9 @@ void main() {
 
     expect(firstPage, 2);
     expect(controller.state.replies.single.id, 'fresh-2');
-    expect(controller.state.transientFailure, isNull);
+    expect(controller.state.transientFailure?.isInvalidCursor, isTrue);
+    expect(controller.state.retryAction, PostDiscussionRetryAction.loadMore);
+    expect(controller.state.isPrefetchingReplies, isFalse);
   });
 
   test('楼中楼刷新遇到权限撤销时清除已经显示的私密内容', () async {

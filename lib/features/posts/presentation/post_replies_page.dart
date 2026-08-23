@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
@@ -53,6 +54,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   var _revealScheduled = false;
   var _targetRevealReleased = false;
   var _openingComposer = false;
+  final _prefetchScheduler = DiscussionPrefetchScheduler();
 
   String get threadId => widget.threadId;
   String get rootPostId => widget.rootPostId;
@@ -89,6 +91,16 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         ..invalidate(authorsProvider);
     });
     final state = ref.watch(provider);
+    _prefetchScheduler.schedule(
+      shouldPrefetch:
+          state.phase == PostDiscussionPhase.ready &&
+          !state.isRefreshing &&
+          !state.isPrefetchingReplies &&
+          state.transientFailure == null &&
+          state.hasMore,
+      isMounted: () => mounted,
+      prefetch: () => ref.read(provider.notifier).prefetchRemainingReplies(),
+    );
     final actions = ref.watch(actionsProvider);
     final discussionAuthors = ref.watch(authorsProvider);
     final threadContext = ref
@@ -489,6 +501,7 @@ class _DiscussionList extends StatelessWidget {
     return CustomScrollView(
       key: const Key('post-replies-list'),
       controller: scrollController,
+      scrollCacheExtent: discussionScrollCacheExtent,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverPadding(
@@ -525,6 +538,7 @@ class _DiscussionList extends StatelessWidget {
               itemBuilder: (context, index) {
                 final reply = state.replies[index];
                 return WenyouConstrainedWidth(
+                  key: ValueKey('post-reply-item-${reply.id}'),
                   child: Column(
                     children: [
                       if (index > 0) Divider(height: tokens.space24),
@@ -552,6 +566,17 @@ class _DiscussionList extends StatelessWidget {
                     ],
                   ),
                 );
+              },
+              findChildIndexCallback: (key) {
+                final value = key is ValueKey<String> ? key.value : null;
+                if (value == null || !value.startsWith('post-reply-item-')) {
+                  return null;
+                }
+                final replyId = value.substring('post-reply-item-'.length);
+                final index = state.replies.indexWhere(
+                  (reply) => reply.id == replyId,
+                );
+                return index < 0 ? null : index;
               },
             ),
           ),
