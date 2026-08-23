@@ -174,6 +174,7 @@ import 'package:wenyou_api/src/model/discussion_author_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_default_subthread_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_slot_usage_response_dto.dart';
+import 'package:wenyou_api/src/model/draft_state_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_thread_count_response_dto.dart';
 import 'package:wenyou_api/src/model/draft_thread_response_dto.dart';
 import 'package:wenyou_api/src/model/drafts_create201_response.dart';
@@ -181,6 +182,7 @@ import 'package:wenyou_api/src/model/drafts_find_all200_response.dart';
 import 'package:wenyou_api/src/model/drafts_find_by_id200_response.dart';
 import 'package:wenyou_api/src/model/drafts_remove200_response.dart';
 import 'package:wenyou_api/src/model/drafts_slot_usage200_response.dart';
+import 'package:wenyou_api/src/model/drafts_state200_response.dart';
 import 'package:wenyou_api/src/model/drafts_update200_response.dart';
 import 'package:wenyou_api/src/model/economy_check_in200_response.dart';
 import 'package:wenyou_api/src/model/economy_get_wallet200_response.dart';
@@ -632,6 +634,7 @@ part 'serializers.g.dart';
   DraftDefaultSubthreadResponseDto,
   DraftResponseDto,
   DraftSlotUsageResponseDto,
+  DraftStateResponseDto,
   DraftThreadCountResponseDto,
   DraftThreadResponseDto,
   DraftsCreate201Response,
@@ -639,6 +642,7 @@ part 'serializers.g.dart';
   DraftsFindById200Response,
   DraftsRemove200Response,
   DraftsSlotUsage200Response,
+  DraftsState200Response,
   DraftsUpdate200Response,
   EconomyCheckIn200Response,
   EconomyGetWallet200Response,

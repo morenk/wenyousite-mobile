@@ -198,6 +198,7 @@ Serializers _$serializers =
           ..add(DraftDefaultSubthreadResponseDto.serializer)
           ..add(DraftResponseDto.serializer)
           ..add(DraftSlotUsageResponseDto.serializer)
+          ..add(DraftStateResponseDto.serializer)
           ..add(DraftThreadCountResponseDto.serializer)
           ..add(DraftThreadResponseDto.serializer)
           ..add(DraftThreadResponseDtoStatusEnum.serializer)
@@ -207,6 +208,7 @@ Serializers _$serializers =
           ..add(DraftsFindById200Response.serializer)
           ..add(DraftsRemove200Response.serializer)
           ..add(DraftsSlotUsage200Response.serializer)
+          ..add(DraftsState200Response.serializer)
           ..add(DraftsUpdate200Response.serializer)
           ..add(EconomyCheckIn200Response.serializer)
           ..add(EconomyGetWallet200Response.serializer)
@@ -1181,6 +1183,14 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(num)]),
             () => ListBuilder<num>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(num)]),
+            () => ListBuilder<num>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(DraftResponseDto)]),
+            () => ListBuilder<DraftResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

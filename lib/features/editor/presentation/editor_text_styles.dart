@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 const wenyouEditorBodyFontSize = 17.0;
@@ -73,19 +74,32 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       null,
     ),
     quote: DefaultTextBlockStyle(
-      body.copyWith(fontStyle: FontStyle.normal),
-      HorizontalSpacing(wenyouEditorBodyFontSize, wenyouEditorBodyFontSize),
+      body.copyWith(
+        color: WenyouElementContract.quoteForeground,
+        fontStyle: FontStyle.normal,
+        fontWeight: FontWeight.w400,
+      ),
+      const HorizontalSpacing(
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingInline,
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingInline,
+      ),
       VerticalSpacing(tokens.space8, tokens.space8),
       const VerticalSpacing(
-        wenyouEditorBodyFontSize * 0.75,
-        wenyouEditorBodyFontSize * 0.75,
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingBlock,
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingBlock,
       ),
-      BoxDecoration(
-        color: tokens.softPanel,
-        border: Border(
-          left: BorderSide(color: tokens.brandForeground, width: 3),
+      const BoxDecoration(
+        color: WenyouElementContract.quoteSurface,
+        border: BorderDirectional(
+          start: BorderSide(
+            color: WenyouElementContract.quoteMarker,
+            width: WenyouElementContract.quoteMarkerWidth,
+          ),
         ),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadiusDirectional.only(
+          topEnd: Radius.circular(WenyouElementContract.quoteRadius),
+          bottomEnd: Radius.circular(WenyouElementContract.quoteRadius),
+        ),
       ),
     ),
     code: DefaultTextBlockStyle(

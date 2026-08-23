@@ -88,8 +88,8 @@
 - [x] 共享等级徽标始终按内容宽度收缩；主题主阅读流最多展示前五条楼中楼，真实预览高度超过 320dp 或仍有未预览回复时才显示固定高度渐变与“展开全部”入口，单条简短回复不折叠也不提供独立页入口。
 - [x] 子贴正文直接位于阅读画布且没有嵌套 Card；楼层作者信息在紧凑单行内完成，头像以独立 48dp 入口进入作者主页且不触发回复，整层其余区域暴露“回复第 N 楼”点击动作；楼层不常驻回复数入口，短楼中楼点按后直接回复该条，超长楼层正文可渐变展开/收起。
 - [x] `subthread` 站内坐标直接打开指定子贴；`post` 坐标由服务端帖子归属事实定位，普通楼层留在主题上下文，具体回复直接进入独立讨论且返回后不循环打开；定位完成后用户纵向拖动会释放坐标吸附，后续布局变化不会拉回目标楼层。
-- [x] Markdown 内合法站内坐标复用 Foundation v6.2.0 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
-- [x] 提及、引用、行内代码和主题标签按 Foundation v6.2.0 在阅读/编辑态统一；主题流内嵌回复使用 17sp/1.8，并有组件、Codec、布局和 Golden 回归。
+- [x] Markdown 内合法站内坐标复用 Foundation v6.3.0 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
+- [x] 提及、引用、行内代码和主题标签按 Foundation v6.3.0 在阅读/编辑态统一；主题流内嵌回复使用 17sp/1.8，并有组件、Codec、布局和 Golden 回归。
 - [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射，但详情题头只展示主题/子贴标题；骰子节点使用 Foundation 已结算/待掷语义色的无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`，已结算结果可打开逐骰明细且 TalkBack 不重复朗读。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
 - [x] 详情、子贴、楼层与内嵌回复在 API 映射前校验请求 ID、主题/子贴归属、kind、父楼层、回复目标、作者、骰子和分页 cursor；空响应或错配数据进入安全失败态。
@@ -133,8 +133,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.6.0-dev.20260823.1`；Markdown v3；后端 `82bdfc13e0388c0ca7193b58c1b00f1873cab469`；Foundation `v6.2.0`（`4ad1eb8`）。
+契约 `5.7.0-dev.20260823.1`；Markdown v3；后端 `719c7e62aa744ad13a1257bb9cfb29147d55eabe`；Foundation `v6.3.0`（`73ed49e`）。
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.2.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.2.0/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.3.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.3.0/docs/platforms/mobile.md)。

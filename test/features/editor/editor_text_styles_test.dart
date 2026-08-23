@@ -22,13 +22,20 @@ void main() {
 
     final quote = styles.quote!;
     expect(quote.style.fontStyle, FontStyle.normal);
-    expect(quote.horizontalSpacing, const HorizontalSpacing(17, 17));
-    expect(quote.lineSpacing, const VerticalSpacing(12.75, 12.75));
+    expect(quote.horizontalSpacing, const HorizontalSpacing(12.75, 12.75));
+    expect(quote.lineSpacing, const VerticalSpacing(8.5, 8.5));
     final quoteDecoration = quote.decoration!;
     expect(quoteDecoration.color, WenyouFoundationPalette.muted);
-    expect((quoteDecoration.border! as Border).left.width, 3);
     expect(
-      (quoteDecoration.borderRadius! as BorderRadius).topLeft.x,
+      (quoteDecoration.border! as BorderDirectional).start.width,
+      WenyouElementContract.quoteMarkerWidth,
+    );
+    expect(
+      (quoteDecoration.borderRadius! as BorderRadiusDirectional).topStart.x,
+      0,
+    );
+    expect(
+      (quoteDecoration.borderRadius! as BorderRadiusDirectional).topEnd.x,
       WenyouFoundationMobile.radiusCompact,
     );
 

@@ -8,6 +8,8 @@ part of 'create_draft_dto.dart';
 
 class _$CreateDraftDto extends CreateDraftDto {
   @override
+  final String? clientRequestId;
+  @override
   final String content;
   @override
   final num? slot;
@@ -17,8 +19,12 @@ class _$CreateDraftDto extends CreateDraftDto {
   factory _$CreateDraftDto([void Function(CreateDraftDtoBuilder)? updates]) =>
       (CreateDraftDtoBuilder()..update(updates))._build();
 
-  _$CreateDraftDto._({required this.content, this.slot, this.version})
-    : super._();
+  _$CreateDraftDto._({
+    this.clientRequestId,
+    required this.content,
+    this.slot,
+    this.version,
+  }) : super._();
   @override
   CreateDraftDto rebuild(void Function(CreateDraftDtoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -30,6 +36,7 @@ class _$CreateDraftDto extends CreateDraftDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CreateDraftDto &&
+        clientRequestId == other.clientRequestId &&
         content == other.content &&
         slot == other.slot &&
         version == other.version;
@@ -38,6 +45,7 @@ class _$CreateDraftDto extends CreateDraftDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, clientRequestId.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, slot.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
@@ -48,6 +56,7 @@ class _$CreateDraftDto extends CreateDraftDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CreateDraftDto')
+          ..add('clientRequestId', clientRequestId)
           ..add('content', content)
           ..add('slot', slot)
           ..add('version', version))
@@ -58,6 +67,11 @@ class _$CreateDraftDto extends CreateDraftDto {
 class CreateDraftDtoBuilder
     implements Builder<CreateDraftDto, CreateDraftDtoBuilder> {
   _$CreateDraftDto? _$v;
+
+  String? _clientRequestId;
+  String? get clientRequestId => _$this._clientRequestId;
+  set clientRequestId(String? clientRequestId) =>
+      _$this._clientRequestId = clientRequestId;
 
   String? _content;
   String? get content => _$this._content;
@@ -78,6 +92,7 @@ class CreateDraftDtoBuilder
   CreateDraftDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _clientRequestId = $v.clientRequestId;
       _content = $v.content;
       _slot = $v.slot;
       _version = $v.version;
@@ -103,6 +118,7 @@ class CreateDraftDtoBuilder
     final _$result =
         _$v ??
         _$CreateDraftDto._(
+          clientRequestId: clientRequestId,
           content: BuiltValueNullFieldError.checkNotNull(
             content,
             r'CreateDraftDto',

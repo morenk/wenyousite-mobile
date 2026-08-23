@@ -25,8 +25,8 @@
 ## 5. API operationId 与生成类型
 
 - 主题实体草稿：`threadsFindDrafts`、`threadsFindById`、`threadsCreate`、`threadsSaveAggregate`、`threadsRemove`，使用 `DraftThreadResponseDto`、`ThreadDetailResponseDto`、`CreateThreadDto`、`SaveThreadAggregateDto`。
-- 五槽位正文草稿：`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove`。
-- 相关生成类型：`DraftResponseDto`、`DraftSlotUsageResponseDto`、`CreateDraftDto`、`UpdateDraftDto`、`DeleteDraftResponseDto`。
+- 五槽位正文草稿当前调用：`draftsFindAll`、`draftsSlotUsage`、`draftsFindById`、`draftsCreate`、`draftsUpdate`、`draftsRemove`；契约已生成待迁移的聚合读取 `draftsState`。
+- 相关生成类型：`DraftResponseDto`、`DraftSlotUsageResponseDto`、`CreateDraftDto`、`UpdateDraftDto`、`DeleteDraftResponseDto`；待迁移类型为 `DraftStateResponseDto` 与 `DraftsState200Response`。
 
 ## 6. 状态模型和数据流
 
@@ -75,11 +75,11 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 12. 已知限制和后续功能
 
-五槽位面板当前只从创建主题编辑器进入，尚未复用于楼层和回复编辑器；不提供 Web 端槽位 1 自动保存开关。云端冲突只支持“保留云端”或“用当前全文覆盖最新版”，不做逐段差异、合并和历史版本恢复。完整主题草稿箱按后端固定顺序展示且不分页；切换会明确覆盖当前单份本机工作快照，不保留本机历史版本。用户主动放弃并删除纯本地主题快照的入口仍待实现。
+五槽位面板当前只从创建主题编辑器进入，尚未复用于楼层和回复编辑器；不提供 Web 端槽位 1 自动保存开关。契约 `5.7.0` 已提供同快照 `draftsState`、创建 `clientRequestId` 和带版本删除，当前移动端仍使用向后兼容的列表/槽位并行读取及旧写法；这组持久化、幂等和冲突语义必须在独立高风险切片中一起迁移。云端冲突只支持“保留云端”或“用当前全文覆盖最新版”，不做逐段差异、合并和历史版本恢复。完整主题草稿箱按后端固定顺序展示且不分页；切换会明确覆盖当前单份本机工作快照，不保留本机历史版本。用户主动放弃并删除纯本地主题快照的入口仍待实现。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.6.0-dev.20260823.1`；Markdown v3；后端 `82bdfc13e0388c0ca7193b58c1b00f1873cab469`；Foundation `v6.2.0`（`4ad1eb8`）。
+契约 `5.7.0-dev.20260823.1`；Markdown v3；后端 `719c7e62aa744ad13a1257bb9cfb29147d55eabe`；Foundation `v6.3.0`（`73ed49e`）。
 
 ## 14. 相关代码与架构文档
 

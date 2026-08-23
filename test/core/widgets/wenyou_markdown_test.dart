@@ -532,12 +532,16 @@ $diceNode
     expect(style.blockquote?.fontStyle, FontStyle.normal);
     expect(
       style.blockquotePadding,
-      const EdgeInsets.symmetric(horizontal: 17, vertical: 12.75),
+      const EdgeInsets.symmetric(horizontal: 12.75, vertical: 8.5),
     );
     final quote = style.blockquoteDecoration! as BoxDecoration;
-    expect((quote.border! as Border).left.width, 3);
     expect(
-      (quote.borderRadius! as BorderRadius).topLeft.x,
+      (quote.border! as BorderDirectional).start.width,
+      WenyouElementContract.quoteMarkerWidth,
+    );
+    expect((quote.borderRadius! as BorderRadiusDirectional).topStart.x, 0);
+    expect(
+      (quote.borderRadius! as BorderRadiusDirectional).topEnd.x,
       WenyouFoundationMobile.radiusCompact,
     );
     final rule = style.horizontalRuleDecoration! as BoxDecoration;

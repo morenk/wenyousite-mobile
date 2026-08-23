@@ -204,6 +204,7 @@ lib/src/model/discussion_author_response_dto.dart
 lib/src/model/draft_default_subthread_response_dto.dart
 lib/src/model/draft_response_dto.dart
 lib/src/model/draft_slot_usage_response_dto.dart
+lib/src/model/draft_state_response_dto.dart
 lib/src/model/draft_thread_count_response_dto.dart
 lib/src/model/draft_thread_response_dto.dart
 lib/src/model/drafts_create201_response.dart
@@ -211,6 +212,7 @@ lib/src/model/drafts_find_all200_response.dart
 lib/src/model/drafts_find_by_id200_response.dart
 lib/src/model/drafts_remove200_response.dart
 lib/src/model/drafts_slot_usage200_response.dart
+lib/src/model/drafts_state200_response.dart
 lib/src/model/drafts_update200_response.dart
 lib/src/model/economy_check_in200_response.dart
 lib/src/model/economy_get_wallet200_response.dart

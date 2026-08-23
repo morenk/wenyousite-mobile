@@ -16,6 +16,7 @@ import 'package:wenyou_api/src/model/drafts_find_all200_response.dart';
 import 'package:wenyou_api/src/model/drafts_find_by_id200_response.dart';
 import 'package:wenyou_api/src/model/drafts_remove200_response.dart';
 import 'package:wenyou_api/src/model/drafts_slot_usage200_response.dart';
+import 'package:wenyou_api/src/model/drafts_state200_response.dart';
 import 'package:wenyou_api/src/model/drafts_update200_response.dart';
 import 'package:wenyou_api/src/model/update_draft_dto.dart';
 
@@ -293,6 +294,7 @@ class DraftsApi {
   ///
   /// Parameters:
   /// * [id]
+  /// * [version] - 要删除的当前乐观锁版本；提供后不会删除其他设备更新出的新版本
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -304,6 +306,7 @@ class DraftsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<DraftsRemove200Response>> draftsRemove({
     required String id,
+    num? version,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -330,9 +333,14 @@ class DraftsApi {
       validateStatus: validateStatus,
     );
 
+    final _queryParameters = <String, dynamic>{
+      if (version != null) r'version': encodeQueryParameter(_serializers, version, const FullType(num)),
+    };
+
     final _response = await _dio.request<Object>(
       _path,
       options: _options,
+      queryParameters: _queryParameters,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
@@ -437,6 +445,85 @@ class DraftsApi {
     }
 
     return Response<DraftsSlotUsage200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 原子获取草稿列表与槽位使用情况
+  ///
+  ///
+  /// Parameters:
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [DraftsState200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<DraftsState200Response>> draftsState({
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/drafts/state';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    DraftsState200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(DraftsState200Response),
+      ) as DraftsState200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<DraftsState200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

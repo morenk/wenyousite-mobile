@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "5.6.0-dev.20260823.1",
+  "contractVersion": "5.7.0-dev.20260823.1",
   "exclusions": [
     { "operationId": "adminIndex", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
     { "operationId": "adminSendSystemNotification", "category": "admin_product", "reason": "移动端 V1 不承载管理产品。" },
@@ -62,6 +62,7 @@
     { "operationId": "usersGetUserMomentBookmarks", "category": "planned_moments", "reason": "后端 5.2.0 新增公开动态收藏分页；需与用户主页动态收藏分区、隐私空态和分页定位作为独立切片接入，本切片仅接入详情快捷修改收藏夹。" },
     { "operationId": "postsFindFloorAuthors", "category": "planned_posts", "reason": "后端 5.6.0 新增子贴范围化楼层作者目录；移动端当前继续复用已接入的主题成员角色目录，后续与楼层筛选仓储迁移和权限回归作为独立切片接入。" },
     { "operationId": "postsFindReplyAuthors", "category": "planned_posts", "reason": "后端 5.6.0 新增主楼范围化回复作者目录；移动端当前继续复用已接入的主题成员角色目录，后续与独立讨论筛选仓储迁移和权限回归作为独立切片接入。" },
+    { "operationId": "draftsState", "category": "planned_drafts", "reason": "后端 5.7.0 新增草稿与槽位用量的同快照聚合读取；需与创建幂等键、带版本删除和旧槽位覆盖迁移作为同一持久化高风险切片接入。" },
     { "operationId": "threadsUpdate", "category": "superseded_aggregate", "reason": "已有主题管理统一使用聚合保存，确保主题、默认子贴正文和标签在同一组乐观锁版本下提交；移动端不再单独调用元数据 PATCH。" }
   ]
 }

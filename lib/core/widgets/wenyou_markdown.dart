@@ -249,17 +249,28 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         fontFamily: 'monospace',
         fontWeight: FontWeight.w500,
       ),
-      blockquote: bodyStyle?.copyWith(fontStyle: FontStyle.normal),
+      blockquote: bodyStyle?.copyWith(
+        color: WenyouElementContract.quoteForeground,
+        fontStyle: FontStyle.normal,
+        fontWeight: FontWeight.w400,
+      ),
       blockquotePadding: EdgeInsets.symmetric(
-        horizontal: widget.bodyFontSize,
-        vertical: widget.bodyFontSize * 0.75,
+        horizontal:
+            widget.bodyFontSize * WenyouElementContract.quotePaddingInline,
+        vertical: widget.bodyFontSize * WenyouElementContract.quotePaddingBlock,
       ),
       blockquoteDecoration: BoxDecoration(
-        color: tokens.softPanel,
-        border: Border(
-          left: BorderSide(color: tokens.brandForeground, width: 3),
+        color: WenyouElementContract.quoteSurface,
+        border: const BorderDirectional(
+          start: BorderSide(
+            color: WenyouElementContract.quoteMarker,
+            width: WenyouElementContract.quoteMarkerWidth,
+          ),
         ),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: const BorderRadiusDirectional.only(
+          topEnd: Radius.circular(WenyouElementContract.quoteRadius),
+          bottomEnd: Radius.circular(WenyouElementContract.quoteRadius),
+        ),
       ),
       horizontalRuleDecoration: BoxDecoration(
         border: Border(top: BorderSide(color: tokens.border)),
