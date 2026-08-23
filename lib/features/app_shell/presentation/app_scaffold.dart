@@ -74,11 +74,6 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     final unreadCount = notificationUnread + directUnread;
     final shellIndex = widget.navigationShell.currentIndex;
     final navigationIndex = shellIndex < 2 ? shellIndex : shellIndex + 1;
-    final publishSemanticLabel = switch (shellIndex) {
-      0 => '发布主题帖',
-      1 => '发布动态',
-      _ => '发布内容',
-    };
     return Scaffold(
       body: widget.navigationShell,
       bottomNavigationBar: DecoratedBox(
@@ -110,14 +105,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
             selectedIndex: navigationIndex,
             onDestinationSelected: (index) {
               if (index == 2) {
-                switch (shellIndex) {
-                  case 0:
-                    context.push(AppRouteLocations.composeThread);
-                  case 1:
-                    context.push(AppRouteLocations.composeMoment);
-                  default:
-                    handle.toggle();
-                }
+                handle.toggle();
                 return;
               }
               final targetShellIndex = index > 2 ? index - 1 : index;
@@ -149,13 +137,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                 selectedIcon: WenyouIcon(WenyouIconIds.navigationMoments),
                 label: '动态',
               ),
-              NavigationDestination(
-                icon: _PublishNavigationIcon(
-                  semanticLabel: publishSemanticLabel,
-                ),
-                selectedIcon: _PublishNavigationIcon(
-                  semanticLabel: publishSemanticLabel,
-                ),
+              const NavigationDestination(
+                icon: _PublishNavigationIcon(),
+                selectedIcon: _PublishNavigationIcon(),
                 label: '发布',
               ),
               NavigationDestination(
@@ -222,16 +206,14 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
 }
 
 class _PublishNavigationIcon extends StatelessWidget {
-  const _PublishNavigationIcon({required this.semanticLabel});
-
-  final String semanticLabel;
+  const _PublishNavigationIcon();
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Semantics(
       button: true,
-      label: semanticLabel,
+      label: '发布内容',
       child: Container(
         key: const Key('global-publish'),
         width: 42,

@@ -12,7 +12,7 @@
 
 ## 3. 页面、入口和导航关系
 
-动态是四分支应用壳的 `/moments` 主分支，分为“发现”和“关注”；顶栏只提供全站搜索入口，不重复展示动态收藏入口。在动态分支点击底栏中央发布动作会直接进入受保护的 `/compose/moment`；从消息或我的分支点击时则先在轻量选择器中选择“动态”。详情使用公开 `/moments/:momentId`，编辑使用受保护的 `/moments/:momentId/edit`，动态收藏使用受保护的 `/moments/bookmarks` 并从“我的”收藏入口进入，公开用户主页通过 `/users/:userId/moments` 读取该用户动态。全站搜索的动态 Tab 以稳定 momentId 进入同一详情；通知 moment 目标也只用服务端 `momentId` 进入详情。
+动态是四分支应用壳的 `/moments` 主分支，分为“发现”和“关注”；顶栏只提供全站搜索入口，不重复展示动态收藏入口。在任一主导航分支点击底栏中央发布动作都会先打开轻量选择器，选择“动态”后进入受保护的 `/compose/moment`。详情使用公开 `/moments/:momentId`，编辑使用受保护的 `/moments/:momentId/edit`，动态收藏使用受保护的 `/moments/bookmarks` 并从“我的”收藏入口进入，公开用户主页通过 `/users/:userId/moments` 读取该用户动态。全站搜索的动态 Tab 以稳定 momentId 进入同一详情；通知 moment 目标也只用服务端 `momentId` 进入详情。
 
 ## 4. 用户操作流程
 

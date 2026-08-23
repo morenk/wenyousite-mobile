@@ -56,7 +56,7 @@ void main() {
     expect(find.text('输入关键词开始搜索'), findsNothing);
   });
 
-  testWidgets('发布入口在内容频道直达对应创作页，其他频道保留选择器', (tester) async {
+  testWidgets('中央发布入口在所有主导航分支都先显示类型选择器', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -69,23 +69,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel(RegExp('发布主题帖')), findsOneWidget);
-    await tester.tap(find.text('动态'));
-    await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel(RegExp('发布动态')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('global-publish')));
-    await tester.pumpAndSettle();
-    expect(find.text('欢迎回到温油站'), findsOneWidget);
+    for (final destination in ['首页', '动态', '消息', '我的']) {
+      await tester.tap(find.text(destination));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel(RegExp('发布内容')), findsOneWidget);
 
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('我的'));
-    await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel(RegExp('发布内容')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('global-publish')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('global-publish-thread')), findsOneWidget);
-    expect(find.byKey(const Key('global-publish-moment')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('global-publish')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('global-publish-thread')), findsOneWidget);
+      expect(find.byKey(const Key('global-publish-moment')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('global-publish')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('global-publish-thread')), findsNothing);
+      expect(find.byKey(const Key('global-publish-moment')), findsNothing);
+    }
   });
 
   testWidgets('登录用户底栏展示服务端未读角标并可进入通知列表', (tester) async {
@@ -286,6 +284,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('创建可持续讨论的共同创作主题'), findsNothing);
     expect(find.text('分享短文字或最多九张图片'), findsNothing);
+    await tester.tap(find.byKey(const Key('global-publish-thread')));
+    await tester.pumpAndSettle();
     expect(find.text('欢迎回到温油站'), findsOneWidget);
 
     await tester.enterText(
@@ -369,6 +369,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('global-publish')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('global-publish-thread')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('login-register')));
     await tester.pumpAndSettle();
@@ -574,6 +576,8 @@ void main() {
       await tester.tap(find.byKey(const Key('global-publish')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(const Key('global-publish-thread')));
+      await tester.pumpAndSettle();
       expect(
         tester.getSize(find.byKey(const Key('login-submit'))).height,
         greaterThanOrEqualTo(48),
