@@ -86,25 +86,19 @@ class _WenyouSelectableActionRegionState
 
   bool _pointerHitsText(Offset globalPosition) {
     final root = widget.selectionAreaKey.currentContext?.findRenderObject();
-    if (root == null) return false;
-    var hitsText = false;
-
-    void visit(RenderObject renderObject) {
-      if (hitsText) return;
-      if (renderObject case final RenderParagraph paragraph
-          when paragraph.attached) {
-        final localPosition = paragraph.globalToLocal(globalPosition);
-        if (paragraph.paintBounds.contains(localPosition) &&
-            _paragraphHasGlyphAt(paragraph, localPosition)) {
-          hitsText = true;
-          return;
-        }
+    if (root is! RenderBox || !root.attached) return false;
+    final rootPosition = root.globalToLocal(globalPosition);
+    if (!root.paintBounds.contains(rootPosition)) return false;
+    final result = BoxHitTestResult();
+    root.hitTest(result, position: rootPosition);
+    for (final entry in result.path) {
+      if (entry is! BoxHitTestEntry || entry.target is! RenderParagraph) {
+        continue;
       }
-      renderObject.visitChildren(visit);
+      final paragraph = entry.target as RenderParagraph;
+      if (_paragraphHasGlyphAt(paragraph, entry.localPosition)) return true;
     }
-
-    visit(root);
-    return hitsText;
+    return false;
   }
 
   bool _paragraphHasGlyphAt(RenderParagraph paragraph, Offset localPosition) {
