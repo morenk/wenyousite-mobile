@@ -19,7 +19,7 @@
 动态发布/编辑、动态评论和私聊的静态图片在选择后不生成裁剪预览，直接进入上传准备；上传准备统一校验像素上限、校正方向、移除元数据、把最长边限制为 2560px，并以质量 85 编码为 WebP。主题/帖子正文、收藏表情、头像和主页背景仍按各自入口先生成低分辨率预览；预览画布保持原图宽高比，用户在完整原图上调整允许的取景范围，确认后才从原始像素裁出该区域，主页背景 WebP 质量为 92。多图选择后的准备、编码和上传继续严格逐张串行，避免同时解码多张原图造成内存峰值。
 GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；限制为 10MB、最长边 2560px、最多 300 帧、最长 60 秒和最多一亿累计像素。动态 WebP 在网络请求前明确拒绝并提示改用 GIF，不静默降级为首帧。
 
-选择文件后先读取大小，拒绝空文件和超过 10MB 的内容；再按真实头字节识别 JPG、PNG、GIF 或 WebP。每次申请都向 `mediaGetUploadUrl` 传入精确用途：头像、主页背景、私聊、动态、动态评论、富正文或收藏表情源，不发送 `LEGACY`。客户端用独立且不携带 Bearer Token 的 Dio 对预签名 URL 执行 PUT，然后调用 `mediaConfirmUpload`。确认未完成时先等待 500ms，再最多轮询 `mediaGetMedia` 30 次；只有 `COMPLETED`、响应用途匹配且主图与所有非空派生 URL 都是 HTTP(S) 时返回调用方。
+选择文件后先读取大小，拒绝空文件和超过 10MB 的内容；再按真实头字节识别 JPG、PNG、GIF 或 WebP，声明类型与已识别类型冲突时直接拒绝。每次申请都向 `mediaGetUploadUrl` 传入精确用途：头像、主页背景、私聊、动态、动态评论、富正文或收藏表情源，不发送 `LEGACY`。客户端用独立且不携带 Bearer Token 的 Dio 对预签名 URL 执行 PUT，然后调用 `mediaConfirmUpload`。确认未完成时先等待 500ms，再最多轮询 `mediaGetMedia` 30 次；只有 `COMPLETED`、响应用途匹配且主图与所有非空派生 URL 都是安全地址时返回调用方。公网上传与公开地址必须使用 HTTPS；本机开发只额外允许 `localhost`、`127.0.0.1`、`::1` 和 Android 模拟器 `10.0.2.2` 使用 HTTP。
 
 头像与背景原图收窄为 JPG、PNG、WebP，并以头字节拒绝伪装格式。原图只在当前取景会话内保留；头像先生成 512 × 512 中间图，背景按两个独立归一化取景框生成 1920 × 640 和 1600 × 800 中间图，再由共享上传准备统一转为 WebP。头像完成后将 `mediaId` 交给 `usersSetAvatar`；双背景均完成后一次调用 `usersSetProfileCover`。设置成功只采用用户响应中明确给出的安全 HTTP(S) URL，不猜测派生路径；移除也只在服务端最终结果确认后更新页面。
 
@@ -36,7 +36,7 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 
 ## 7. 鉴权、权限和隐私规则
 
-申请与确认使用主 API 会话；对象存储 PUT 使用独立无鉴权客户端，避免向第三方地址发送 Token。预签名 URL 不写日志、数据库或 UI 错误详情；文件仅在用户明确选择后读取。Android Photo Picker 只授予用户所选文件的读取能力，不申请整库相册权限。公开图和上传地址都要求 HTTP(S)，头像额外排除 GIF/AVIF 与格式伪装；编码层仍防御性移除 Markdown alt 中协议不允许的换行和 `]`，当前编辑器 UI 固定使用“图片”且不接受用户描述输入。用户资料端点失败时保留已完成的媒体 ID，显式重试不重复上传。
+申请与确认使用主 API 会话；对象存储 PUT 使用独立无鉴权客户端，避免向第三方地址发送 Token。预签名 URL 不写日志、数据库或 UI 错误详情；文件仅在用户明确选择后读取。Android Photo Picker 只授予用户所选文件的读取能力，不申请整库相册权限。公网公开图和上传地址都要求 HTTPS，仅固定回环开发主机允许 HTTP；地址必须有有效 authority 且不能携带 userinfo。头像额外排除 GIF/AVIF 与格式伪装；编码层仍防御性移除 Markdown alt 中协议不允许的换行和 `]`，当前编辑器 UI 固定使用“图片”且不接受用户描述输入。用户资料端点失败时保留已完成的媒体 ID，显式重试不重复上传。
 
 ## 8. 本地存储、缓存及失效规则
 
@@ -69,11 +69,13 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 - [x] 裁剪画布保持原图宽高比，固定比例取景框可移动和缩小；目标比例不会拉伸预览，确认前不会改写原图，取景结果继续映射到原始像素。
 - [x] 静态图按用途以 WebP 85/92 归一化，方向、最长边、元数据和编码失败边界有回归；同一成功准备结果在重试时不重复压缩。
 - [x] GIF 保留原始字节且不提供裁剪，尺寸/帧数/时长/累计像素在网络前校验；动态 WebP 明确拒绝。
-- [x] 七种上传入口传入精确 purpose；完成结果消费动画标记和显式派生 URL，派生图失败会逐级回退且不猜测对象键。
+- [x] 七种上传入口分别断言申请 purpose 与完成 purpose；确认或轮询阶段用途错配都会拒绝，完成结果消费动画标记和显式派生 URL，派生图失败会逐级回退且不猜测对象键。
+- [x] 声明 MIME 与真实头字节冲突时不发起网络请求；公网 HTTP 上传或任一派生地址被拒绝，模拟器回环 HTTP 保持可用。
+- [x] Android 集成测试通过真实 MethodChannel 验证 WebP 输出可解码、尺寸收束、EXIF 方向纠正与源元数据移除；常规单元/Widget 门禁不隐式启动设备测试。
 
 ## 12. 已知限制和后续功能
 
-服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消或进程终止后需重新选择图片。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
+服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消或进程终止后需重新选择图片。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以串行准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；本切片不越过固定插件版本升级，后续按上游兼容版本单独处理。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -81,4 +83,4 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 
 ## 14. 相关代码与架构文档
 
-端口、头像格式策略、归一化取景模型与任务状态位于 `lib/features/media/application/`，系统相册、图片限制校验、native WebP 归一化、isolate 图片处理、分阶段计时与 Dio adapter 位于 `lib/features/media/data/`，直接选图入口与通用取景窗口位于 `lib/features/media/presentation/`，组合根绑定位于 `lib/app/production_overrides.dart`；正文插入入口分别位于 `lib/features/threads/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`，共同使用 editor 公共会话。头像与背景仓储及写入状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。
+端口、头像格式策略、归一化取景模型与任务状态位于 `lib/features/media/application/`，系统相册、图片限制校验、native WebP 归一化、isolate 图片处理、分阶段计时与 Dio adapter 位于 `lib/features/media/data/`，直接选图入口与通用取景窗口位于 `lib/features/media/presentation/`，Android 原生编码冒烟位于 `integration_test/media_static_webp_encoder_test.dart`，组合根绑定位于 `lib/app/production_overrides.dart`；正文插入入口分别位于 `lib/features/threads/presentation/thread_compose_page.dart` 和 `lib/features/posts/presentation/post_composer_sheet.dart`，共同使用 editor 公共会话。头像与背景仓储及写入状态位于 `lib/features/users/`。参见[用户与资料](users.md)、[编辑器](editor.md)、[网络与会话](../architecture/networking.md)。

@@ -70,7 +70,7 @@ void main() {
       MediaUploadInput(
         filename: 'scene.png',
         declaredContentType: 'image/png',
-        bytes: Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47, 1]),
+        bytes: _pngBytes(),
       ),
       onProgress: (value) => progress.add(value.stage),
     );
@@ -106,6 +106,211 @@ void main() {
         MediaUploadStage.confirming,
         MediaUploadStage.processing,
       ]),
+    );
+  });
+
+  final purposeCases =
+      <
+        ({
+          MediaUploadPurpose input,
+          CreateUploadUrlDtoPurposeEnum request,
+          MediaResponseDtoPurposeEnum response,
+        })
+      >[
+        (
+          input: MediaUploadPurpose.avatar,
+          request: CreateUploadUrlDtoPurposeEnum.AVATAR,
+          response: MediaResponseDtoPurposeEnum.AVATAR,
+        ),
+        (
+          input: MediaUploadPurpose.profileCover,
+          request: CreateUploadUrlDtoPurposeEnum.PROFILE_COVER,
+          response: MediaResponseDtoPurposeEnum.PROFILE_COVER,
+        ),
+        (
+          input: MediaUploadPurpose.directMessage,
+          request: CreateUploadUrlDtoPurposeEnum.DIRECT_MESSAGE,
+          response: MediaResponseDtoPurposeEnum.DIRECT_MESSAGE,
+        ),
+        (
+          input: MediaUploadPurpose.moment,
+          request: CreateUploadUrlDtoPurposeEnum.MOMENT,
+          response: MediaResponseDtoPurposeEnum.MOMENT,
+        ),
+        (
+          input: MediaUploadPurpose.momentComment,
+          request: CreateUploadUrlDtoPurposeEnum.MOMENT_COMMENT,
+          response: MediaResponseDtoPurposeEnum.MOMENT_COMMENT,
+        ),
+        (
+          input: MediaUploadPurpose.richContent,
+          request: CreateUploadUrlDtoPurposeEnum.RICH_CONTENT,
+          response: MediaResponseDtoPurposeEnum.RICH_CONTENT,
+        ),
+        (
+          input: MediaUploadPurpose.stickerSource,
+          request: CreateUploadUrlDtoPurposeEnum.STICKER_SOURCE,
+          response: MediaResponseDtoPurposeEnum.STICKER_SOURCE,
+        ),
+      ];
+  for (final purposeCase in purposeCases) {
+    test('${purposeCase.input.name} 用途在申请和完成响应中保持一致', () async {
+      final api = _MockMediaApi();
+      final uploadDio = _successfulUploadDio();
+      addTearDown(uploadDio.close);
+      when(
+        () => api.mediaGetUploadUrl(
+          createUploadUrlDto: any(named: 'createUploadUrlDto'),
+          cancelToken: null,
+        ),
+      ).thenAnswer((_) async => _uploadUrlResponse());
+      when(
+        () => api.mediaConfirmUpload(
+          confirmUploadDto: any(named: 'confirmUploadDto'),
+          cancelToken: null,
+        ),
+      ).thenAnswer(
+        (_) async => _confirmResponse(
+          MediaResponseDtoStatusEnum.COMPLETED,
+          purpose: purposeCase.response,
+        ),
+      );
+      final repository = ApiMediaUploadRepository(api, uploadDio);
+
+      final result = await repository.uploadImage(
+        MediaUploadInput(
+          filename: 'purpose.png',
+          declaredContentType: 'image/png',
+          bytes: _pngBytes(),
+          purpose: purposeCase.input,
+        ),
+      );
+
+      expect(result.mediaId, 'media-one');
+      final request =
+          verify(
+                () => api.mediaGetUploadUrl(
+                  createUploadUrlDto: captureAny(named: 'createUploadUrlDto'),
+                  cancelToken: null,
+                ),
+              ).captured.single
+              as CreateUploadUrlDto;
+      expect(request.purpose, purposeCase.request);
+    });
+  }
+
+  test('确认完成时用途错配会拒绝结果', () async {
+    final api = _MockMediaApi();
+    final uploadDio = _successfulUploadDio();
+    addTearDown(uploadDio.close);
+    when(
+      () => api.mediaGetUploadUrl(
+        createUploadUrlDto: any(named: 'createUploadUrlDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer((_) async => _uploadUrlResponse());
+    when(
+      () => api.mediaConfirmUpload(
+        confirmUploadDto: any(named: 'confirmUploadDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer(
+      (_) async => _confirmResponse(MediaResponseDtoStatusEnum.COMPLETED),
+    );
+    final repository = ApiMediaUploadRepository(api, uploadDio);
+
+    await expectLater(
+      repository.uploadImage(
+        MediaUploadInput(
+          filename: 'message.png',
+          declaredContentType: 'image/png',
+          bytes: _pngBytes(),
+          purpose: MediaUploadPurpose.directMessage,
+        ),
+      ),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.userMessage,
+          'message',
+          contains('用途'),
+        ),
+      ),
+    );
+  });
+
+  test('轮询完成时用途错配会拒绝结果', () async {
+    final api = _MockMediaApi();
+    final uploadDio = _successfulUploadDio();
+    addTearDown(uploadDio.close);
+    when(
+      () => api.mediaGetUploadUrl(
+        createUploadUrlDto: any(named: 'createUploadUrlDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer((_) async => _uploadUrlResponse());
+    when(
+      () => api.mediaConfirmUpload(
+        confirmUploadDto: any(named: 'confirmUploadDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer(
+      (_) async => _confirmResponse(
+        MediaResponseDtoStatusEnum.PROCESSING,
+        purpose: MediaResponseDtoPurposeEnum.DIRECT_MESSAGE,
+      ),
+    );
+    when(
+      () => api.mediaGetMedia(id: 'media-one', cancelToken: null),
+    ).thenAnswer(
+      (_) async => _statusResponse(MediaResponseDtoStatusEnum.COMPLETED),
+    );
+    final repository = ApiMediaUploadRepository(
+      api,
+      uploadDio,
+      delay: (_) async {},
+      maxPollAttempts: 1,
+    );
+
+    await expectLater(
+      repository.uploadImage(
+        MediaUploadInput(
+          filename: 'message.png',
+          declaredContentType: 'image/png',
+          bytes: _pngBytes(),
+          purpose: MediaUploadPurpose.directMessage,
+        ),
+      ),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.userMessage,
+          'message',
+          contains('用途'),
+        ),
+      ),
+    );
+  });
+
+  test('声明类型与真实头字节冲突时在网络请求前拒绝', () async {
+    final api = _MockMediaApi();
+    final dio = Dio();
+    addTearDown(dio.close);
+    final repository = ApiMediaUploadRepository(api, dio);
+
+    await expectLater(
+      repository.uploadImage(
+        MediaUploadInput(
+          filename: 'mismatch.png',
+          declaredContentType: 'image/png',
+          bytes: _jpegBytes(),
+        ),
+      ),
+      throwsA(isA<ApiFailure>()),
+    );
+    verifyNever(
+      () => api.mediaGetUploadUrl(
+        createUploadUrlDto: any(named: 'createUploadUrlDto'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
     );
   });
 
@@ -182,7 +387,7 @@ void main() {
         MediaUploadInput(
           filename: 'scene.png',
           declaredContentType: 'image/png',
-          bytes: Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47]),
+          bytes: _pngBytes(),
         ),
       ),
       throwsA(
@@ -205,6 +410,173 @@ void main() {
         cancelToken: any(named: 'cancelToken'),
       ),
     );
+  });
+
+  test('非本机 HTTP 上传地址在对象存储请求前拒绝', () async {
+    final api = _MockMediaApi();
+    final uploadDio = _successfulUploadDio();
+    addTearDown(uploadDio.close);
+    when(
+      () => api.mediaGetUploadUrl(
+        createUploadUrlDto: any(named: 'createUploadUrlDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer(
+      (_) async => _uploadUrlResponse(
+        uploadUrl: 'http://storage.example.com/presigned?secret=value',
+      ),
+    );
+    final repository = ApiMediaUploadRepository(api, uploadDio);
+
+    await expectLater(
+      repository.uploadImage(
+        MediaUploadInput(
+          filename: 'scene.png',
+          declaredContentType: 'image/png',
+          bytes: _pngBytes(),
+        ),
+      ),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.userMessage,
+          'message',
+          contains('上传地址'),
+        ),
+      ),
+    );
+    verifyNever(
+      () => api.mediaConfirmUpload(
+        confirmUploadDto: any(named: 'confirmUploadDto'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    );
+  });
+
+  test('公网结果及任一派生地址使用非本机 HTTP 时拒绝', () async {
+    final unsafeCases =
+        <
+          ({
+            String name,
+            String url,
+            String thumbnail,
+            String feed,
+            String medium,
+          })
+        >[
+          (
+            name: 'original',
+            url: 'http://cdn.example.com/scene.png',
+            thumbnail: 'https://cdn.example.com/scene-thumb.webp',
+            feed: 'https://cdn.example.com/scene-feed.webp',
+            medium: 'https://cdn.example.com/scene-medium.webp',
+          ),
+          (
+            name: 'thumbnail',
+            url: 'https://cdn.example.com/scene.png',
+            thumbnail: 'http://cdn.example.com/scene-thumb.webp',
+            feed: 'https://cdn.example.com/scene-feed.webp',
+            medium: 'https://cdn.example.com/scene-medium.webp',
+          ),
+          (
+            name: 'feed',
+            url: 'https://cdn.example.com/scene.png',
+            thumbnail: 'https://cdn.example.com/scene-thumb.webp',
+            feed: 'http://cdn.example.com/scene-feed.webp',
+            medium: 'https://cdn.example.com/scene-medium.webp',
+          ),
+          (
+            name: 'medium',
+            url: 'https://cdn.example.com/scene.png',
+            thumbnail: 'https://cdn.example.com/scene-thumb.webp',
+            feed: 'https://cdn.example.com/scene-feed.webp',
+            medium: 'http://cdn.example.com/scene-medium.webp',
+          ),
+        ];
+    for (final unsafeCase in unsafeCases) {
+      final api = _MockMediaApi();
+      final uploadDio = _successfulUploadDio();
+      addTearDown(uploadDio.close);
+      when(
+        () => api.mediaGetUploadUrl(
+          createUploadUrlDto: any(named: 'createUploadUrlDto'),
+          cancelToken: null,
+        ),
+      ).thenAnswer((_) async => _uploadUrlResponse());
+      when(
+        () => api.mediaConfirmUpload(
+          confirmUploadDto: any(named: 'confirmUploadDto'),
+          cancelToken: null,
+        ),
+      ).thenAnswer(
+        (_) async => _confirmResponse(
+          MediaResponseDtoStatusEnum.COMPLETED,
+          url: unsafeCase.url,
+          thumbnailUrl: unsafeCase.thumbnail,
+          feedUrl: unsafeCase.feed,
+          mediumUrl: unsafeCase.medium,
+        ),
+      );
+      final repository = ApiMediaUploadRepository(api, uploadDio);
+
+      await expectLater(
+        repository.uploadImage(
+          MediaUploadInput(
+            filename: '${unsafeCase.name}.png',
+            declaredContentType: 'image/png',
+            bytes: _pngBytes(),
+          ),
+        ),
+        throwsA(
+          isA<ApiFailure>().having(
+            (failure) => failure.userMessage,
+            'message',
+            contains('公开地址不安全'),
+          ),
+        ),
+        reason: unsafeCase.name,
+      );
+    }
+  });
+
+  test('模拟器回环 HTTP 上传与公开地址保持可用', () async {
+    final api = _MockMediaApi();
+    final uploadDio = _successfulUploadDio();
+    addTearDown(uploadDio.close);
+    when(
+      () => api.mediaGetUploadUrl(
+        createUploadUrlDto: any(named: 'createUploadUrlDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer(
+      (_) async => _uploadUrlResponse(
+        uploadUrl: 'http://10.0.2.2:3000/upload/media-one',
+      ),
+    );
+    when(
+      () => api.mediaConfirmUpload(
+        confirmUploadDto: any(named: 'confirmUploadDto'),
+        cancelToken: null,
+      ),
+    ).thenAnswer(
+      (_) async => _confirmResponse(
+        MediaResponseDtoStatusEnum.COMPLETED,
+        url: 'http://10.0.2.2:3000/media/scene.png',
+        thumbnailUrl: 'http://10.0.2.2:3000/media/scene-thumb.webp',
+        feedUrl: 'http://10.0.2.2:3000/media/scene-feed.webp',
+        mediumUrl: 'http://10.0.2.2:3000/media/scene-medium.webp',
+      ),
+    );
+    final repository = ApiMediaUploadRepository(api, uploadDio);
+
+    final result = await repository.uploadImage(
+      MediaUploadInput(
+        filename: 'loopback.png',
+        declaredContentType: 'image/png',
+        bytes: _pngBytes(),
+      ),
+    );
+
+    expect(result.url, 'http://10.0.2.2:3000/media/scene.png');
   });
 
   test('application gateway 透传进度并幂等取消 data 操作', () async {
@@ -267,7 +639,9 @@ class _RecordingMediaUploadRepository implements MediaUploadRepository {
   void complete(UploadedEditorImage image) => _completer.complete(image);
 }
 
-Response<MediaGetUploadUrl201Response> _uploadUrlResponse() {
+Response<MediaGetUploadUrl201Response> _uploadUrlResponse({
+  String uploadUrl = 'https://s3.example.com/presigned?secret=value',
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/media/upload-url'),
     data: MediaGetUploadUrl201Response(
@@ -276,7 +650,7 @@ Response<MediaGetUploadUrl201Response> _uploadUrlResponse() {
         ..message = 'ok'
         ..data.update(
           (data) => data
-            ..uploadUrl = 'https://s3.example.com/presigned?secret=value'
+            ..uploadUrl = uploadUrl
             ..mediaId = 'media-one'
             ..objectKey = 'uploads/scene.png'
             ..publicUrl = 'https://cdn.example.com/scene.png',
@@ -286,8 +660,14 @@ Response<MediaGetUploadUrl201Response> _uploadUrlResponse() {
 }
 
 Response<MediaConfirmUpload200Response> _confirmResponse(
-  MediaResponseDtoStatusEnum status,
-) {
+  MediaResponseDtoStatusEnum status, {
+  MediaResponseDtoPurposeEnum purpose =
+      MediaResponseDtoPurposeEnum.RICH_CONTENT,
+  String url = 'https://cdn.example.com/scene.png',
+  String thumbnailUrl = 'https://cdn.example.com/scene-thumb.webp',
+  String feedUrl = 'https://cdn.example.com/scene-feed.webp',
+  String mediumUrl = 'https://cdn.example.com/scene-medium.webp',
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/media/upload-done'),
     data: MediaConfirmUpload200Response(
@@ -297,43 +677,81 @@ Response<MediaConfirmUpload200Response> _confirmResponse(
         ..data.update(
           (data) => data
             ..processing = status != MediaResponseDtoStatusEnum.COMPLETED
-            ..media.replace(_media(status)),
+            ..media.replace(
+              _media(
+                status,
+                purpose: purpose,
+                url: url,
+                thumbnailUrl: thumbnailUrl,
+                feedUrl: feedUrl,
+                mediumUrl: mediumUrl,
+              ),
+            ),
         ),
     ),
   );
 }
 
 Response<MediaGetMedia200Response> _statusResponse(
-  MediaResponseDtoStatusEnum status,
-) {
+  MediaResponseDtoStatusEnum status, {
+  MediaResponseDtoPurposeEnum purpose =
+      MediaResponseDtoPurposeEnum.RICH_CONTENT,
+}) {
   return Response(
     requestOptions: RequestOptions(path: '/api/v1/media/media-one'),
     data: MediaGetMedia200Response(
       (builder) => builder
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
-        ..data.replace(_media(status)),
+        ..data.replace(_media(status, purpose: purpose)),
     ),
   );
 }
 
-MediaResponseDto _media(MediaResponseDtoStatusEnum status) {
+MediaResponseDto _media(
+  MediaResponseDtoStatusEnum status, {
+  MediaResponseDtoPurposeEnum purpose =
+      MediaResponseDtoPurposeEnum.RICH_CONTENT,
+  String url = 'https://cdn.example.com/scene.png',
+  String thumbnailUrl = 'https://cdn.example.com/scene-thumb.webp',
+  String feedUrl = 'https://cdn.example.com/scene-feed.webp',
+  String mediumUrl = 'https://cdn.example.com/scene-medium.webp',
+}) {
   return MediaResponseDto(
     (builder) => builder
       ..id = 'media-one'
       ..userId = 'user-one'
-      ..url = 'https://cdn.example.com/scene.png'
-      ..thumbnailUrl = 'https://cdn.example.com/scene-thumb.webp'
-      ..feedUrl = 'https://cdn.example.com/scene-feed.webp'
-      ..mediumUrl = 'https://cdn.example.com/scene-medium.webp'
+      ..url = url
+      ..thumbnailUrl = thumbnailUrl
+      ..feedUrl = feedUrl
+      ..mediumUrl = mediumUrl
       ..key = 'uploads/scene.png'
       ..contentType = 'image/png'
       ..size = 5
       ..width = 1200
       ..height = 800
-      ..purpose = MediaResponseDtoPurposeEnum.RICH_CONTENT
+      ..purpose = purpose
       ..animated = false
       ..status = status
       ..createdAt = DateTime.utc(2026, 8, 10),
   );
 }
+
+Dio _successfulUploadDio() {
+  final dio = Dio();
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        handler.resolve(
+          Response<void>(requestOptions: options, statusCode: 200),
+        );
+      },
+    ),
+  );
+  return dio;
+}
+
+Uint8List _pngBytes() =>
+    Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+Uint8List _jpegBytes() => Uint8List.fromList(const [0xff, 0xd8, 0xff]);

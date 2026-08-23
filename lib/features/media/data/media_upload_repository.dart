@@ -39,6 +39,12 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
     'image/gif',
     'image/webp',
   };
+  static const _allowedInsecureMediaHosts = {
+    'localhost',
+    '127.0.0.1',
+    '::1',
+    '10.0.2.2',
+  };
   final MediaApi _api;
   final Dio _uploadDio;
   final MediaUploadDelay _delay;
@@ -88,9 +94,7 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
         throw const ApiFailure(userMessage: '图片上传失败，请重试。');
       }
       final uploadUri = Uri.tryParse(upload.uploadUrl);
-      if (uploadUri == null ||
-          !uploadUri.hasScheme ||
-          (uploadUri.scheme != 'https' && uploadUri.scheme != 'http')) {
+      if (uploadUri == null || !_isSafeMediaUri(uploadUri)) {
         throw const ApiFailure(userMessage: '图片上传地址无法安全使用。');
       }
 
@@ -222,13 +226,14 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
   String? _contentTypeFor(MediaUploadInput input) {
     final declared = input.declaredContentType?.toLowerCase().trim();
     final detected = lookupMimeType(
-      input.filename,
+      '',
       headerBytes: input.bytes.take(32).toList(growable: false),
     )?.toLowerCase();
-    final contentType = allowedContentTypes.contains(declared)
-        ? declared
-        : detected;
-    return allowedContentTypes.contains(contentType) ? contentType : null;
+    if (!allowedContentTypes.contains(detected)) return null;
+    if (allowedContentTypes.contains(declared) && declared != detected) {
+      return null;
+    }
+    return detected;
   }
 
   CreateUploadUrlDtoContentTypeEnum _contentTypeEnum(String value) {
@@ -300,12 +305,20 @@ class ApiMediaUploadRepository implements MediaUploadRepository {
 
   String _safeUrl(String value) {
     final uri = Uri.tryParse(value.trim());
-    if (uri == null ||
-        !uri.hasScheme ||
-        (uri.scheme != 'https' && uri.scheme != 'http')) {
+    if (uri == null || !_isSafeMediaUri(uri)) {
       throw const ApiFailure(userMessage: '图片处理完成，但公开地址不安全。');
     }
     return uri.toString();
+  }
+
+  bool _isSafeMediaUri(Uri uri) {
+    if (!uri.hasAuthority || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+      return false;
+    }
+    final scheme = uri.scheme.toLowerCase();
+    if (scheme == 'https') return true;
+    return scheme == 'http' &&
+        _allowedInsecureMediaHosts.contains(uri.host.toLowerCase());
   }
 
   String? _optionalSafeUrl(String? value) {
