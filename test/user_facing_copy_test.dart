@@ -16,7 +16,8 @@ void main() {
       '同一份实时余额',
       '直接显示在这里',
       '集中显示在这里',
-      '我的内容',
+      '动态正文是纯文本，不解析 Markdown',
+      '封面仅影响信息流展示',
       "closed('已关闭')",
     ];
     final violations = <String>[];
@@ -38,6 +39,15 @@ void main() {
           '请将以下文案改为用户可理解的对象、动作或失败结果：\n'
           '${violations.join('\n')}',
     );
+  });
+
+  test('动态发布页不回退到旧的开发提示', () {
+    final source = File(
+      'lib/features/moments/presentation/moment_compose_page.dart',
+    ).readAsStringSync();
+    for (final phrase in ['动态正文是纯文本，不解析 Markdown', '封面仅影响信息流展示', '读取最新版']) {
+      expect(source, isNot(contains(phrase)));
+    }
   });
 
   test('展示层禁止把存储标识与线上值当作用户 label', () {

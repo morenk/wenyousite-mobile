@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -33,6 +34,20 @@ import '../../support/foundation_test_fonts.dart';
 
 void main() {
   setUpAll(loadFoundationTestFonts);
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => Directory.systemTemp.path,
+        );
+  });
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          null,
+        );
+  });
 
   testWidgets('发现信息流展示文本封面，游客切到关注只发起登录引导', (tester) async {
     final repository = _PageRepository();
@@ -409,7 +424,7 @@ void main() {
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
   });
 
-  testWidgets('动态发布正文占据剩余高度且图片管理固定在底部 dock', (tester) async {
+  testWidgets('动态发布在单页展示图片区与正文且只保留底部主操作', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -432,13 +447,18 @@ void main() {
 
     final content = find.byKey(const Key('moment-compose-content'));
     final images = find.byKey(const Key('moment-compose-images'));
+    final addImage = find.byKey(const Key('moment-compose-add-image'));
     final submit = find.byKey(const Key('moment-compose-submit'));
     expect(tester.getSize(content).height, greaterThan(300));
-    expect(tester.getBottomRight(images).dy, lessThanOrEqualTo(760));
     expect(
-      tester.getCenter(images).dy,
-      closeTo(tester.getCenter(submit).dy, 1),
+      tester.getBottomRight(images).dy,
+      lessThan(tester.getTopLeft(content).dy),
     );
+    expect(tester.getSize(addImage).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(addImage).height, greaterThanOrEqualTo(48));
+    expect(tester.getBottomRight(submit).dy, lessThanOrEqualTo(760));
+    expect(find.text('纯文本，不解析 Markdown'), findsNothing);
+    expect(find.text('封面仅影响信息流展示'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -463,8 +483,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('moment-compose-images')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-compose-add-image')));
     await _confirmImageCrop(tester);
     await tester.pumpAndSettle();
@@ -475,6 +493,18 @@ void main() {
       find.byKey(const Key('moment-compose-retry-upload')),
       findsOneWidget,
     );
+    expect(find.text('取消上传'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.descendant(
+              of: find.byKey(const Key('moment-compose-submit')),
+              matching: find.byType(FilledButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
 
     await tester.tap(find.byKey(const Key('moment-compose-retry-upload')));
     await tester.pumpAndSettle();
@@ -482,14 +512,19 @@ void main() {
     expect(gateway.inputs, hasLength(2));
     expect(gateway.inputs[1], same(gateway.inputs[0]));
     expect(find.byKey(const ValueKey('moment-image')), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('moment-compose-images')),
-        matching: find.text('图片 1/9'),
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('1/9'), findsOneWidget);
     expect(find.byKey(const Key('moment-compose-retry-upload')), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.descendant(
+              of: find.byKey(const Key('moment-compose-submit')),
+              matching: find.byType(FilledButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets('动态发布可多选图片并在同一裁剪流程逐张上传', (tester) async {
@@ -514,8 +549,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('moment-compose-images')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('moment-compose-add-image')));
     await tester.pumpAndSettle();
 
@@ -529,13 +562,7 @@ void main() {
     for (var index = 1; index <= 3; index++) {
       expect(find.byKey(ValueKey('moment-image-$index')), findsOneWidget);
     }
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('moment-compose-images')),
-        matching: find.text('图片 3/9'),
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('3/9'), findsOneWidget);
   });
 
   testWidgets('动态评论上传中系统返回会取消任务并忽略迟到图片', (tester) async {
@@ -745,9 +772,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('恢复未完成的动态？'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('moment-draft-restore')));
-    await tester.pumpAndSettle();
+    expect(find.text('已恢复上次的草稿'), findsOneWidget);
+    expect(find.text('重新开始'), findsOneWidget);
     expect(
       tester
           .widget<TextFormField>(find.byKey(const Key('moment-compose-title')))
@@ -755,14 +781,10 @@ void main() {
           .text,
       '未完成的标题',
     );
-    await tester.tap(find.byKey(const Key('moment-compose-images')));
-    await tester.pumpAndSettle();
     expect(
-      tester.getTopLeft(find.byKey(const ValueKey('media-2'))).dy,
-      lessThan(tester.getTopLeft(find.byKey(const ValueKey('media-1'))).dy),
+      tester.getTopLeft(find.byKey(const ValueKey('media-2'))).dx,
+      lessThan(tester.getTopLeft(find.byKey(const ValueKey('media-1'))).dx),
     );
-    await tester.tapAt(const Offset(12, 12));
-    await tester.pumpAndSettle();
     final publish = find.byKey(const Key('moment-compose-submit'));
     expect(publish, findsOneWidget);
     expect(tester.getBottomRight(publish).dy, lessThanOrEqualTo(752));
@@ -780,8 +802,278 @@ void main() {
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('离开动态编辑？'), findsOneWidget);
+    expect(find.text('要保存这次编辑吗？'), findsOneWidget);
+    expect(find.text('保存草稿并退出'), findsOneWidget);
+    expect(find.text('不保存'), findsOneWidget);
     expect(find.byKey(const Key('moment-leave-save')), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('要保存这次编辑吗？'), findsNothing);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('moment-compose-title')))
+          .controller!
+          .text,
+      '自动保存后的标题',
+    );
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-leave-save')));
+    await tester.pumpAndSettle();
+    expect(draftStore.draft?.title, '自动保存后的标题');
+  });
+
+  testWidgets('取消失败的图片批次会保留已经上传完成的图片', (tester) async {
+    final gateway = _FirstSuccessfulThenFailingUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          imageCropProcessorPortProvider.overrideWithValue(
+            const FakePassThroughImageCropProcessor(),
+          ),
+          editorImagePickerPortProvider.overrideWithValue(
+            _FakeMultiImagePicker(),
+          ),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-compose-add-image')));
+    await tester.pumpAndSettle();
+    await _confirmImageCrop(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('moment-image-1')), findsOneWidget);
+    expect(
+      find.byKey(const Key('moment-compose-upload-failure')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('moment-compose-cancel-upload')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('moment-image-1')), findsOneWidget);
+    expect(
+      find.byKey(const Key('moment-compose-upload-failure')),
+      findsNothing,
+    );
+    expect(find.text('1/9'), findsOneWidget);
+  });
+
+  testWidgets('动态图片可点按选封面、长按排序并在移除封面后自动回退', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final draftStore = _MemoryMomentDraftStore()
+      ..draft = MomentLocalDraft(
+        title: '图片动态',
+        content: '',
+        images: const [
+          UploadedEditorImage(
+            mediaId: 'media-2',
+            url: 'https://cdn.example.com/2.webp',
+          ),
+          UploadedEditorImage(
+            mediaId: 'media-1',
+            url: 'https://cdn.example.com/1.webp',
+          ),
+        ],
+        coverMediaId: 'media-2',
+        updatedAt: DateTime.utc(2026, 8, 11, 8),
+      );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(draftStore),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel(RegExp('图片 2，点按设为封面')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('media-1')));
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('media-1')),
+        matching: find.text('封面'),
+      ),
+      findsOneWidget,
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('media-2'))),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.moveBy(const Offset(180, 0));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.moveBy(const Offset(20, 0));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('media-1'))).dx,
+      lessThan(tester.getTopLeft(find.byKey(const ValueKey('media-2'))).dx),
+    );
+
+    await tester.tap(find.byTooltip('移除图片 1'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('media-1')), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('media-2')),
+        matching: find.text('封面'),
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('动态编辑冲突明确提供保留本机内容或使用最新内容', (tester) async {
+    final repository = _ConflictPageRepository();
+    final draftStore = _MemoryMomentDraftStore();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(repository),
+          momentDraftStoreProvider.overrideWithValue(draftStore),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('moment-compose-title')),
+      '保留在本机的标题',
+    );
+    await tester.tap(find.byKey(const Key('moment-compose-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('这条动态刚刚更新了。'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('moment-compose-resolve-conflict')));
+    await tester.pumpAndSettle();
+    expect(find.text('保留我的内容'), findsOneWidget);
+    expect(find.text('使用最新内容'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('moment-conflict-use-latest')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('moment-compose-title')))
+          .controller!
+          .text,
+      '服务端最新标题',
+    );
+    expect(draftStore.draft, isNull);
+  });
+
+  testWidgets('360dp 键盘态动态发布页保持主操作可见且语义明确', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel(RegExp('标题（必填）')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('正文（选填）')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('moment-compose-submit'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets('360dp 纯文字动态发布页保持 Foundation 视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const RepaintBoundary(
+            key: Key('moment-compose-text-visual'),
+            child: MomentComposePage(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byKey(const Key('moment-compose-text-visual')),
+      matchesGoldenFile('goldens/moment_compose_text_360.png'),
+    );
+  });
+
+  testWidgets('360dp 多图动态编辑页保持 Foundation 视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(
+            _PageRepository(detail: _editableDetailWithImages()),
+          ),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const RepaintBoundary(
+            key: Key('moment-compose-images-visual'),
+            child: MomentComposePage(momentId: 'moment-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getBottomRight(find.byKey(const Key('moment-compose-submit'))).dy,
+      lessThanOrEqualTo(760),
+    );
+    await expectLater(
+      find.byKey(const Key('moment-compose-images-visual')),
+      matchesGoldenFile('goldens/moment_compose_images_360.png'),
+    );
   });
 
   for (final width in [360.0, 400.0, 600.0]) {
@@ -994,6 +1286,30 @@ class _PendingPageRepository extends _PageRepository {
   }
 }
 
+class _ConflictPageRepository extends _PageRepository {
+  _ConflictPageRepository()
+    : super(detail: _editableDetail(title: '原来的标题', version: 3));
+
+  var fetchCalls = 0;
+
+  @override
+  Future<MomentDetail> fetchDetail(String momentId) async {
+    fetchCalls += 1;
+    return fetchCalls == 1
+        ? _editableDetail(title: '原来的标题', version: 3)
+        : _editableDetail(title: '服务端最新标题', version: 4);
+  }
+
+  @override
+  Future<MomentDetail> update(
+    String momentId,
+    MomentDraftInput input, {
+    required int version,
+  }) async {
+    throw const ApiFailure(businessCode: 40002, userMessage: '这条动态刚刚更新了。');
+  }
+}
+
 class _MemoryMomentDraftStore implements MomentDraftStore {
   MomentLocalDraft? draft;
 
@@ -1088,6 +1404,33 @@ class _FailingThenSuccessfulUploadGateway implements MediaUploadGateway {
           mediaId: 'moment-image',
           url: 'https://cdn.example.com/moment.png',
         ),
+      ),
+    );
+  }
+}
+
+class _FirstSuccessfulThenFailingUploadGateway implements MediaUploadGateway {
+  var calls = 0;
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    calls += 1;
+    if (calls == 1) {
+      return _ImmediateUploadOperation(
+        Future.value(
+          const UploadedEditorImage(
+            mediaId: 'moment-image-1',
+            url: 'https://cdn.example.com/moment-1.png',
+          ),
+        ),
+      );
+    }
+    return _ImmediateUploadOperation(
+      Future<UploadedEditorImage>.error(
+        const ApiFailure(userMessage: '第二张图片上传失败'),
       ),
     );
   }
@@ -1210,6 +1553,28 @@ MomentDetail _detailWithImages() {
     version: 3,
     canEdit: false,
     canDelete: false,
+  );
+}
+
+MomentDetail _editableDetail({required String title, required int version}) =>
+    MomentDetail(
+      card: _card(title: title),
+      content: '这是可以继续编辑的正文',
+      images: const [],
+      version: version,
+      canEdit: true,
+      canDelete: true,
+    );
+
+MomentDetail _editableDetailWithImages() {
+  final detail = _detailWithImages();
+  return MomentDetail(
+    card: detail.card,
+    content: '带着图片继续分享此刻。',
+    images: detail.images,
+    version: detail.version,
+    canEdit: true,
+    canDelete: true,
   );
 }
 

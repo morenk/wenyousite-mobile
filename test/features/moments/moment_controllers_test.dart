@@ -184,6 +184,32 @@ void main() {
     expect(repository.requestIds, ['request-1', 'request-1']);
     expect(controller.state.phase, MomentComposerPhase.succeeded);
   });
+
+  test('编辑冲突经用户确认后读取最新版本并保留本机内容重试', () async {
+    final repository = _ConflictComposerRepository();
+    final controller = MomentComposerController(
+      repository,
+      momentId: 'moment-1',
+      autoStart: false,
+    );
+    addTearDown(controller.dispose);
+    const input = MomentDraftInput(
+      title: '保留我的标题',
+      content: '保留我的正文',
+      mediaIds: [],
+    );
+
+    await controller.load();
+    expect(await controller.submit(input), isNull);
+    expect(controller.state.failure?.businessCode, 40002);
+
+    final saved = await controller.resubmitAfterConflict(input);
+
+    expect(saved?.card.title, '保留我的标题');
+    expect(repository.updatedVersions, [3, 4]);
+    expect(repository.fetchCalls, 2);
+    expect(controller.state.phase, MomentComposerPhase.succeeded);
+  });
 }
 
 class _FeedRepository extends Fake implements MomentRepository {
@@ -326,6 +352,37 @@ class _ComposerRepository extends Fake implements MomentRepository {
   }
 }
 
+class _ConflictComposerRepository extends Fake implements MomentRepository {
+  final updatedVersions = <int>[];
+  var fetchCalls = 0;
+
+  @override
+  Future<MomentDetail> fetchDetail(String momentId) async {
+    fetchCalls += 1;
+    return _detail(version: fetchCalls == 1 ? 3 : 4);
+  }
+
+  @override
+  Future<MomentDetail> update(
+    String momentId,
+    MomentDraftInput input, {
+    required int version,
+  }) async {
+    updatedVersions.add(version);
+    if (version == 3) {
+      throw const ApiFailure(businessCode: 40002, userMessage: '这条动态刚刚更新了。');
+    }
+    return MomentDetail(
+      card: _card(title: input.title),
+      content: input.content,
+      images: const [],
+      version: 5,
+      canEdit: true,
+      canDelete: true,
+    );
+  }
+}
+
 MomentAuthor _author() =>
     const MomentAuthor(id: 'user-1', username: '温柔测试员', level: 4);
 
@@ -350,11 +407,11 @@ MomentCard _card({String title = '今日微光'}) {
   );
 }
 
-MomentDetail _detail() => MomentDetail(
+MomentDetail _detail({int version = 3}) => MomentDetail(
   card: _card(),
   content: '纯文本正文',
   images: const [],
-  version: 3,
+  version: version,
   canEdit: true,
   canDelete: true,
 );

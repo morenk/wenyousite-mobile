@@ -107,8 +107,50 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
         initialDetail: state.initialDetail,
         failure: _asFailure(
           error,
-          momentId == null ? '动态没有发布成功，请使用原内容重试。' : '动态没有保存成功，请重试。',
+          momentId == null ? '发布失败，请重试。' : '保存失败，请重试。',
         ),
+      );
+      return null;
+    }
+  }
+
+  Future<MomentDetail?> resubmitAfterConflict(MomentDraftInput input) async {
+    final id = momentId;
+    if (id == null || state.isSubmitting) return null;
+    final initial = state.initialDetail;
+    state = MomentComposerState(
+      phase: MomentComposerPhase.submitting,
+      initialDetail: initial,
+    );
+    try {
+      final latest = await _repository.fetchDetail(id);
+      if (!mounted) return null;
+      if (!latest.canEdit) {
+        state = MomentComposerState(
+          phase: MomentComposerPhase.editing,
+          initialDetail: initial,
+          failure: const ApiFailure(userMessage: '当前账号不能编辑这条动态。'),
+        );
+        return null;
+      }
+      final saved = await _repository.update(
+        id,
+        input,
+        version: latest.version,
+      );
+      if (!mounted) return null;
+      state = MomentComposerState(
+        phase: MomentComposerPhase.succeeded,
+        initialDetail: saved,
+        savedDetail: saved,
+      );
+      return saved;
+    } on Object catch (error) {
+      if (!mounted) return null;
+      state = MomentComposerState(
+        phase: MomentComposerPhase.editing,
+        initialDetail: initial,
+        failure: _asFailure(error, '保存失败，请重试。'),
       );
       return null;
     }
@@ -135,7 +177,7 @@ class MomentComposerController extends StateNotifier<MomentComposerState> {
       state = MomentComposerState(
         phase: MomentComposerPhase.editing,
         initialDetail: initial,
-        failure: _asFailure(error, '动态没有删除成功，请重试。'),
+        failure: _asFailure(error, '删除失败，请重试。'),
       );
       return false;
     }
