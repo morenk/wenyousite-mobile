@@ -4,7 +4,7 @@
 
 ## 当前基线
 
-- 客户端：`0.3.0+87`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
+- 客户端：`0.4.0+88`，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`。
 - 后端契约：`5.10.0-dev.20260823.1`，revision `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`（相对 `230fad5` 的后续提交未改动移动端契约文件）。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.4.0`。
