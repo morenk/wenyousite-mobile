@@ -570,7 +570,7 @@ void main() {
     );
   });
 
-  testWidgets('动态发布多选图片后不经裁剪并按原顺序逐张上传', (tester) async {
+  testWidgets('动态发布多选图片后不经裁剪并按原顺序完成', (tester) async {
     final picker = _FakeMultiImagePicker();
     final gateway = _SuccessfulBatchUploadGateway();
     await tester.pumpWidget(
@@ -609,6 +609,55 @@ void main() {
       expect(find.byKey(ValueKey('moment-image-$index')), findsOneWidget);
     }
     expect(find.text('3/9'), findsOneWidget);
+  });
+
+  testWidgets('动态多选立即展示本地缩略图且后台最多同时处理两张', (tester) async {
+    final gateway = _ControlledBatchUploadGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          editorImagePickerPortProvider.overrideWithValue(
+            _FakeMultiImagePicker(),
+          ),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentComposePage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-compose-add-image')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('3/9'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('moment-local-thumbnail-0')),
+      findsOneWidget,
+    );
+    expect(gateway.operations, hasLength(2));
+
+    gateway.complete(0);
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.operations, hasLength(3));
+
+    gateway.complete(1);
+    gateway.complete(2);
+    await tester.pumpAndSettle();
+    expect(gateway.inputs.map((input) => input.filename), [
+      'moment-0.png',
+      'moment-1.png',
+      'moment-2.png',
+    ]);
+    for (var index = 1; index <= 3; index++) {
+      expect(find.byKey(ValueKey('moment-image-$index')), findsOneWidget);
+    }
   });
 
   testWidgets('动态编辑新增图片同样不打开裁剪流程', (tester) async {
@@ -938,7 +987,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
 
-    expect(find.byKey(const ValueKey('moment-image-1')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('moment-local-thumbnail-0')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const Key('moment-compose-upload-failure')),
       findsOneWidget,
@@ -1476,6 +1528,31 @@ class _SuccessfulBatchUploadGateway implements MediaUploadGateway {
           mediaId: 'moment-image-${inputs.length}',
           url: 'https://cdn.example.com/moment-${inputs.length}.png',
         ),
+      ),
+    );
+  }
+}
+
+class _ControlledBatchUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+  final operations = <Completer<UploadedEditorImage>>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    inputs.add(input);
+    final completion = Completer<UploadedEditorImage>();
+    operations.add(completion);
+    return _ImmediateUploadOperation(completion.future);
+  }
+
+  void complete(int index) {
+    operations[index].complete(
+      UploadedEditorImage(
+        mediaId: 'moment-image-${index + 1}',
+        url: 'https://cdn.example.com/moment-${index + 1}.png',
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
@@ -73,7 +72,7 @@ class DirectMessageImagePreview extends StatelessWidget {
     super.key,
   });
 
-  final UploadedEditorImage image;
+  final MediaUploadInput image;
   final VoidCallback? onRemove;
 
   @override
@@ -90,14 +89,13 @@ class DirectMessageImagePreview extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(tokens.radius12),
-            child: WenyouCachedImage(
-              imageUrl: image.previewUrls.first,
-              fallbackImageUrls: image.previewUrls
-                  .skip(1)
-                  .toList(growable: false),
+            child: Image.memory(
+              image.bytes,
               width: 64,
               height: 64,
               fit: BoxFit.cover,
+              cacheWidth: 192,
+              gaplessPlayback: true,
             ),
           ),
           SizedBox(width: tokens.space8),

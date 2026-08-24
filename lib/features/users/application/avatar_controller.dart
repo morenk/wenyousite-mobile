@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -20,6 +22,7 @@ class AvatarState {
     this.failedOperation,
     this.pendingMediaId,
     this.hasPendingInput = false,
+    this.previewBytes,
   });
 
   final AvatarPhase phase;
@@ -28,6 +31,7 @@ class AvatarState {
   final AvatarOperation? failedOperation;
   final String? pendingMediaId;
   final bool hasPendingInput;
+  final Uint8List? previewBytes;
 
   bool get isBusy => switch (phase) {
     AvatarPhase.picking ||
@@ -94,9 +98,10 @@ class AvatarController extends StateNotifier<AvatarState> {
   Future<AvatarUpdateResult?> _uploadPendingInput() async {
     final input = _pendingInput;
     if (input == null) return null;
-    state = const AvatarState(
+    state = AvatarState(
       phase: AvatarPhase.uploading,
       hasPendingInput: true,
+      previewBytes: input.bytes,
     );
     try {
       final image = await _uploadTask.uploadInput(input);
@@ -113,6 +118,7 @@ class AvatarController extends StateNotifier<AvatarState> {
           phase: AvatarPhase.failed,
           failedOperation: AvatarOperation.set,
           hasPendingInput: true,
+          previewBytes: input.bytes,
           failure: ApiFailure(
             userMessage: failure.userMessage,
             businessCode: failure.businessCode,
@@ -121,7 +127,6 @@ class AvatarController extends StateNotifier<AvatarState> {
         );
         return null;
       }
-      _pendingInput = null;
       return _setUploadedMedia(image.mediaId);
     } on Object catch (error) {
       if (!mounted) return null;
@@ -130,6 +135,7 @@ class AvatarController extends StateNotifier<AvatarState> {
         phase: AvatarPhase.failed,
         failedOperation: AvatarOperation.set,
         hasPendingInput: true,
+        previewBytes: input.bytes,
         failure: _asFailure(error, '头像没有上传成功，请稍后重试。'),
       );
       return null;
@@ -178,7 +184,11 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   Future<AvatarUpdateResult?> _setUploadedMedia(String mediaId) async {
-    state = AvatarState(phase: AvatarPhase.setting, pendingMediaId: mediaId);
+    state = AvatarState(
+      phase: AvatarPhase.setting,
+      pendingMediaId: mediaId,
+      previewBytes: _pendingInput?.bytes,
+    );
     try {
       final result = await _avatarRepository.setAvatar(mediaId);
       if (!mounted) return null;
@@ -191,6 +201,7 @@ class AvatarController extends StateNotifier<AvatarState> {
         phase: AvatarPhase.failed,
         failedOperation: AvatarOperation.set,
         pendingMediaId: mediaId,
+        previewBytes: _pendingInput?.bytes,
         failure: _asFailure(error, '头像没有设置成功，请稍后重试。'),
       );
       return null;
@@ -207,6 +218,7 @@ class AvatarController extends StateNotifier<AvatarState> {
       phase: AvatarPhase.uploading,
       progress: uploadState.progress,
       hasPendingInput: _pendingInput != null,
+      previewBytes: _pendingInput?.bytes,
     );
   }
 

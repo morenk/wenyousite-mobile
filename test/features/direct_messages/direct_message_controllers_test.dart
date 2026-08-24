@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
@@ -6,6 +7,8 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
 
@@ -152,6 +155,50 @@ void main() {
       'message-1',
       'server-1',
     ]);
+  });
+
+  test('图片点发送后立即插入本地气泡，上传完成后再提交同一幂等请求', () async {
+    final upload = Completer<UploadedEditorImage>();
+    final gateway = _PendingUploadGateway(upload);
+    final repository = _FakeDirectMessageRepository();
+    final controller = DirectConversationController(
+      'conversation-1',
+      repository,
+      autoStart: false,
+      pollInterval: Duration.zero,
+      requestIdFactory: () => _requestId,
+      mediaUploadGateway: gateway,
+    );
+    addTearDown(controller.dispose);
+    await controller.loadInitial();
+    final input = MediaUploadInput(
+      filename: 'local.png',
+      declaredContentType: 'image/png',
+      bytes: Uint8List.fromList(const [1, 2, 3]),
+    );
+
+    final result = controller.send(content: '本地图片', mediaInput: input);
+
+    final optimistic = controller.state.messages.last;
+    expect(optimistic.id, 'optimistic:$_requestId');
+    expect(optimistic.content, '本地图片');
+    expect(
+      controller.state.pendingMedia[optimistic.id]?.input.bytes,
+      input.bytes,
+    );
+    expect(repository.sentDrafts, isEmpty);
+    expect(gateway.input?.purpose, MediaUploadPurpose.directMessage);
+
+    upload.complete(
+      const UploadedEditorImage(
+        mediaId: 'uploaded-media',
+        url: 'https://cdn.example.com/uploaded.webp',
+      ),
+    );
+    expect(await result, isTrue);
+    expect(repository.sentDrafts.single.clientRequestId, _requestId);
+    expect(repository.sentDrafts.single.mediaId, 'uploaded-media');
+    expect(controller.state.pendingMedia, isEmpty);
   });
 
   test('失败消息就地保留且不阻止新消息，重试复用原幂等键', () async {
@@ -697,6 +744,40 @@ class _FakePublicUserRepository implements PublicUserRepository {
   @override
   Future<List<PublicUserReplyModel>> fetchRecentReplies(String userId) =>
       throw UnimplementedError();
+}
+
+class _PendingUploadGateway implements MediaUploadGateway {
+  _PendingUploadGateway(this.completion);
+
+  final Completer<UploadedEditorImage> completion;
+  MediaUploadInput? input;
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    this.input = input;
+    onProgress?.call(
+      MediaUploadProgress(
+        stage: MediaUploadStage.uploading,
+        sentBytes: 1,
+        totalBytes: input.bytes.length,
+      ),
+    );
+    return _PendingUploadOperation(completion.future);
+  }
+}
+
+class _PendingUploadOperation
+    implements MediaUploadOperation<UploadedEditorImage> {
+  const _PendingUploadOperation(this.result);
+
+  @override
+  final Future<UploadedEditorImage> result;
+
+  @override
+  void cancel() {}
 }
 
 const _requestId = '123e4567-e89b-42d3-a456-426614174000';

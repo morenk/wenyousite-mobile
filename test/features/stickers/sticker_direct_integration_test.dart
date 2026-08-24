@@ -26,9 +26,10 @@ void main() {
             body: Align(
               alignment: Alignment.bottomCenter,
               child: DirectMessageComposer(
-                onSend: ({content, mediaId, stickerAssetId}) async {
+                onSend: ({content, mediaId, mediaInput, stickerAssetId}) async {
                   expect(content, isNull);
                   expect(mediaId, isNull);
+                  expect(mediaInput, isNull);
                   sentStickerId = stickerAssetId;
                   return true;
                 },

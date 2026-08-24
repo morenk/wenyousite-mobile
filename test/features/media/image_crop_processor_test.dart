@@ -9,7 +9,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 void main() {
   const processor = IsolateImageCropProcessor();
 
-  test('头像按用户取景生成严格 512 × 512 PNG', () async {
+  test('头像按用户取景生成严格 512 × 512 高质量图片', () async {
     final source = await processor.prepare(_sourceInput());
 
     final output = await processor.cropAvatar(
@@ -18,8 +18,8 @@ void main() {
     );
 
     expect(_sizeOf(output.bytes), (512, 512));
-    expect(output.filename, 'avatar.png');
-    expect(output.declaredContentType, 'image/png');
+    expect(output.filename, 'avatar.jpg');
+    expect(output.declaredContentType, 'image/jpeg');
   });
 
   test('同一来源按独立取景生成 Web 3:1 与移动端 2:1 双画幅', () async {
@@ -43,8 +43,10 @@ void main() {
 
     expect(_sizeOf(selection.web.bytes), (1920, 640));
     expect(_sizeOf(selection.mobile.bytes), (1600, 800));
-    expect(selection.web.declaredContentType, 'image/png');
-    expect(selection.mobile.declaredContentType, 'image/png');
+    expect(selection.web.declaredContentType, 'image/jpeg');
+    expect(selection.mobile.declaredContentType, 'image/jpeg');
+    expect(selection.web.filename, 'profile-cover-web.jpg');
+    expect(selection.mobile.filename, 'profile-cover-mobile.jpg');
   });
 
   test('通用图片按选定区域输出新的完整图片文件', () async {

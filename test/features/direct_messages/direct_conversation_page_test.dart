@@ -190,15 +190,14 @@ void main() {
   testWidgets('图片上传失败保留正文、选区与焦点并提供同文件重试', (tester) async {
     final repository = _FakeRepository();
     final router = _router();
+    final gateway = _FailingMediaUploadGateway();
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ..._overrides(repository),
+          ..._overrides(repository, mediaUploadGateway: gateway),
           editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
-          mediaUploadGatewayPortProvider.overrideWithValue(
-            _FailingMediaUploadGateway(),
-          ),
+          mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
@@ -221,28 +220,42 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
     await tester.pumpAndSettle();
+    expect(gateway.inputs, isEmpty);
+    expect(
+      find.byKey(const Key('direct-message-composer-attachment')),
+      findsOneWidget,
+    );
+    final selected = tester.widget<EditableText>(
+      find.byType(EditableText).last,
+    );
+    expect(selected.focusNode.hasFocus, isTrue);
+    expect(selected.controller.selection, expectedSelection);
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('带图消息'), findsOneWidget);
+    expect(gateway.inputs, hasLength(1));
     expect(
-      find.byKey(const Key('direct-message-composer-upload-failure')),
+      find.byKey(const Key('direct-message-pending-local-image')),
       findsOneWidget,
     );
     expect(
-      find.byKey(const Key('direct-message-composer-retry-upload')),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget.key is ValueKey<String> &&
+            (widget.key! as ValueKey<String>).value.startsWith(
+              'direct-message-delivery-failed-',
+            ),
+      ),
       findsOneWidget,
     );
     expect(
       find.byKey(const Key('direct-message-composer-attachment')),
       findsNothing,
     );
-    final restored = tester.widget<EditableText>(
-      find.byType(EditableText).last,
-    );
-    expect(restored.focusNode.hasFocus, isTrue);
-    expect(restored.controller.selection, expectedSelection);
+    final cleared = tester.widget<EditableText>(find.byType(EditableText).last);
+    expect(cleared.controller.text, isEmpty);
     expect(repository.sentDrafts, isEmpty);
   });
 
@@ -254,7 +267,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ..._overrides(repository),
+          ..._overrides(repository, mediaUploadGateway: gateway),
           editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -272,36 +285,42 @@ void main() {
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
     await tester.pumpAndSettle();
 
-    expect(gateway.inputs, hasLength(1));
+    expect(gateway.inputs, isEmpty);
     expect(
-      find.byKey(const Key('direct-message-composer-retry-upload')),
+      find.byKey(const Key('direct-message-composer-attachment')),
       findsOneWidget,
     );
     var send = tester.widget<WenyouComposerSubmitButton>(
       find.byKey(const Key('direct-message-composer-submit')),
     );
-    expect(send.enabled, isFalse);
+    expect(send.enabled, isTrue);
 
-    await tester.tap(
-      find.byKey(const Key('direct-message-composer-retry-upload')),
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.inputs, hasLength(1));
+    final failureButton = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'direct-message-delivery-failed-',
+          ),
     );
+    await tester.tap(failureButton);
+    await tester.pumpAndSettle();
+    final retry = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'direct-message-retry-',
+          ),
+    );
+    await tester.tap(retry);
     await tester.pumpAndSettle();
 
     expect(gateway.inputs, hasLength(2));
     expect(identical(gateway.inputs.first, gateway.inputs.last), isTrue);
     expect(gateway.inputs.first.purpose, MediaUploadPurpose.directMessage);
-    expect(
-      find.byKey(const Key('direct-message-composer-attachment')),
-      findsOneWidget,
-    );
-    send = tester.widget<WenyouComposerSubmitButton>(
-      find.byKey(const Key('direct-message-composer-submit')),
-    );
-    expect(send.enabled, isTrue);
-    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
     expect(repository.sentDrafts.single.content, '重试图片');
     expect(repository.sentDrafts.single.mediaId, 'media-retried');
   });
@@ -314,7 +333,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ..._overrides(repository),
+          ..._overrides(repository, mediaUploadGateway: gateway),
           editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -328,30 +347,7 @@ void main() {
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
     await tester.pump();
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
-
-    expect(find.text('正在上传 50%'), findsOneWidget);
-    expect(
-      tester
-          .widget<WenyouComposerSubmitButton>(
-            find.byKey(const Key('direct-message-composer-submit')),
-          )
-          .enabled,
-      isFalse,
-    );
-
-    await tester.tap(
-      find.byKey(const Key('direct-message-composer-cancel-upload')),
-    );
-    await tester.pump();
-    await tester.pump();
-
-    expect(gateway.operation.cancelled, isTrue);
-    expect(find.text('取消后保留'), findsOneWidget);
-    expect(find.text('正在上传 50%'), findsNothing);
-    expect(
-      find.byKey(const Key('direct-message-composer-upload-failure')),
-      findsNothing,
-    );
+    expect(gateway.started, isFalse);
     expect(
       tester
           .widget<WenyouComposerSubmitButton>(
@@ -360,7 +356,26 @@ void main() {
           .enabled,
       isTrue,
     );
+
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pump();
+    expect(gateway.started, isTrue);
+    expect(find.text('取消后保留'), findsOneWidget);
+    expect(
+      find.byKey(const Key('direct-message-pending-local-image')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('消息发送中'), findsOneWidget);
+    expect(
+      find.byKey(const Key('direct-message-composer-upload-failure')),
+      findsNothing,
+    );
+    await tester.enterText(field, '下一条消息');
+    expect(find.text('下一条消息'), findsOneWidget);
     expect(repository.sentDrafts, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(gateway.operation.cancelled, isTrue);
   });
 
   testWidgets('连续消息保持分组且组末才有方向尾角', (tester) async {
@@ -788,7 +803,10 @@ void main() {
   });
 }
 
-List<Override> _overrides(_FakeRepository repository) {
+List<Override> _overrides(
+  _FakeRepository repository, {
+  MediaUploadGateway? mediaUploadGateway,
+}) {
   return [
     directMessagesEnabledProvider.overrideWithValue(true),
     stickersEnabledProvider.overrideWithValue(false),
@@ -797,6 +815,7 @@ List<Override> _overrides(_FakeRepository repository) {
       return DirectConversationController(
         conversationId,
         repository,
+        mediaUploadGateway: mediaUploadGateway,
         pollInterval: Duration.zero,
       );
     }),
@@ -1015,11 +1034,14 @@ class _FakeImagePicker implements EditorImagePicker {
 }
 
 class _FailingMediaUploadGateway implements MediaUploadGateway {
+  final inputs = <MediaUploadInput>[];
+
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
     MediaUploadInput input, {
     void Function(MediaUploadProgress progress)? onProgress,
   }) {
+    inputs.add(input);
     onProgress?.call(
       MediaUploadProgress(
         stage: MediaUploadStage.uploading,
@@ -1060,12 +1082,14 @@ class _RetryingMediaUploadGateway implements MediaUploadGateway {
 
 class _BlockingMediaUploadGateway implements MediaUploadGateway {
   final operation = _BlockingMediaUploadOperation();
+  var started = false;
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
     MediaUploadInput input, {
     void Function(MediaUploadProgress progress)? onProgress,
   }) {
+    started = true;
     onProgress?.call(
       MediaUploadProgress(
         stage: MediaUploadStage.uploading,

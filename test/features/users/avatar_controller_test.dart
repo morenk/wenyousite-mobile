@@ -211,6 +211,7 @@ void main() {
     final input = await controller.pickImage();
     final pending = controller.setImage(input!);
     await Future<void>.delayed(Duration.zero);
+    expect(controller.state.previewBytes, input.bytes);
     controller.cancelUpload();
 
     expect(await pending, isNull);

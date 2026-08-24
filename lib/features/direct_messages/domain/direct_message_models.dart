@@ -314,6 +314,25 @@ class DirectMessage {
     );
   }
 
+  factory DirectMessage.optimisticPendingMedia({
+    required String conversationId,
+    required String recipientId,
+    required String clientRequestId,
+    required DateTime createdAt,
+    String? content,
+  }) {
+    return DirectMessage(
+      id: 'optimistic:$clientRequestId',
+      conversationId: conversationId,
+      senderId: 'local:self',
+      recipientId: recipientId,
+      content: content,
+      createdAt: createdAt,
+      deliveryState: DirectMessageDeliveryState.sending,
+      clientRequestId: clientRequestId,
+    );
+  }
+
   final String id;
   final String conversationId;
   final String senderId;

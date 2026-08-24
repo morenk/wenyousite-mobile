@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_composer_support.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_media.dart';
@@ -45,6 +46,7 @@ class DirectMessageComposer extends ConsumerStatefulWidget {
   final Future<bool> Function({
     String? content,
     String? mediaId,
+    MediaUploadInput? mediaInput,
     String? stickerAssetId,
   })
   onSend;
@@ -66,6 +68,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   final Object _uploadTaskId = Object();
+  MediaUploadInput? _selectedImage;
   UploadedEditorImage? _uploadedImage;
   ApiFailure? _localFailure;
   var _busy = false;
@@ -75,7 +78,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   bool get _disabled => widget.disabled || _busy;
   bool get _hasPayload =>
       normalizeDirectMessageContent(_controller.text).isNotEmpty ||
-      _uploadedImage != null;
+      _selectedImage != null;
   bool get _showCharacterCount =>
       _controller.text.length >= (directMessageMaxLength * 0.9).floor();
 
@@ -120,9 +123,9 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         ),
         SizedBox(height: tokens.space8),
       ],
-      if (_uploadedImage != null) ...[
+      if (_selectedImage != null) ...[
         DirectMessageImagePreview(
-          image: _uploadedImage!,
+          image: _selectedImage!,
           onRemove: _disabled ? null : _removeImage,
         ),
         SizedBox(height: tokens.space8),
@@ -185,7 +188,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       leadingActions: [
         IconButton(
           key: const Key('direct-message-composer-image'),
-          onPressed: _disabled || _uploadedImage != null || uploadState.isBusy
+          onPressed: _disabled || _selectedImage != null || uploadState.isBusy
               ? null
               : _pickImage,
           tooltip: '添加图片',
@@ -252,43 +255,33 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   }
 
   Future<void> _pickImage() async {
-    await _runImageUpload(retry: false);
-  }
-
-  Future<void> _retryImageUpload() async {
-    await _runImageUpload(retry: true);
-  }
-
-  Future<void> _runImageUpload({required bool retry}) async {
     final shouldRestoreFocus = _focusNode.hasFocus;
     final selection = _controller.selection;
-    final controller = ref.read(
-      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+    final inputs = await pickEditorImages(
+      context,
+      ref,
+      purpose: MediaUploadPurpose.directMessage,
     );
-    final image = retry
-        ? await controller.retryUpload()
-        : await pickAndUploadEditorImage(
-            context,
-            ref,
-            uploadTaskId: _uploadTaskId,
-            purpose: MediaUploadPurpose.directMessage,
-          );
     if (!mounted) return;
-    if (image != null) {
+    if (inputs != null && inputs.isNotEmpty) {
       setState(() {
-        _uploadedImage = image;
+        _selectedImage = inputs.single;
+        _uploadedImage = null;
         _localFailure = null;
       });
     }
-    if (shouldRestoreFocus) {
-      _restoreFocus(selection);
-    }
+    if (shouldRestoreFocus) _restoreFocus(selection);
+  }
+
+  Future<void> _retryImageUpload() async {
+    await _submit(retryUpload: true);
   }
 
   void _removeImage() {
     ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
     setState(() {
       _uploadedImage = null;
+      _selectedImage = null;
       _localFailure = null;
     });
   }
@@ -297,14 +290,14 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool retryUpload = false}) async {
     if (_busy || widget.disabled) return;
     final normalized = normalizeDirectMessageContent(_controller.text);
     final selection = _controller.selection;
     final shouldRestoreFocus = _focusNode.hasFocus;
     final validation = validateDirectMessagePayload(
       content: normalized,
-      mediaId: _uploadedImage?.mediaId,
+      mediaId: _selectedImage == null ? null : 'pending-local-media',
       stickerAssetId: null,
     );
     if (validation != null) {
@@ -312,9 +305,10 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       return;
     }
     if (widget.optimistic) {
-      final mediaId = _uploadedImage?.mediaId;
+      final mediaInput = _selectedImage;
       _controller.clear();
       setState(() {
+        _selectedImage = null;
         _uploadedImage = null;
         _localFailure = null;
       });
@@ -325,7 +319,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       unawaited(
         _dispatchOptimistic(
           content: normalized.isEmpty ? null : normalized,
-          mediaId: mediaId,
+          mediaInput: mediaInput,
           selection: selection,
           shouldRestoreFocus: shouldRestoreFocus,
         ),
@@ -338,6 +332,16 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
     });
     try {
       final content = normalized.isEmpty ? null : normalized;
+      if (_selectedImage != null && _uploadedImage == null) {
+        final uploadController = ref.read(
+          mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+        );
+        final image = retryUpload
+            ? await uploadController.retryUpload()
+            : await uploadController.uploadInput(_selectedImage!);
+        if (!mounted || image == null) return;
+        _uploadedImage = image;
+      }
       final succeeded = await widget.onSend(
         content: content,
         mediaId: _uploadedImage?.mediaId,
@@ -345,6 +349,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       if (!mounted) return;
       if (succeeded) {
         _controller.clear();
+        _selectedImage = null;
         _uploadedImage = null;
         ref
             .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
@@ -362,12 +367,12 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
 
   Future<void> _dispatchOptimistic({
     required String? content,
-    required String? mediaId,
+    required MediaUploadInput? mediaInput,
     required TextSelection selection,
     required bool shouldRestoreFocus,
   }) async {
     try {
-      await widget.onSend(content: content, mediaId: mediaId);
+      await widget.onSend(content: content, mediaInput: mediaInput);
     } on Object catch (error) {
       if (!mounted) return;
       setState(() {
@@ -495,6 +500,7 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
     this.isRecalling = false,
     this.isGroupEnd = true,
     this.failure,
+    this.pendingMedia,
     this.onRetry,
     this.onAbandon,
     this.onReport,
@@ -508,6 +514,7 @@ class DirectMessageBubble extends ConsumerStatefulWidget {
   final bool isRecalling;
   final bool isGroupEnd;
   final ApiFailure? failure;
+  final PendingDirectMessageMedia? pendingMedia;
   final VoidCallback onRecall;
   final VoidCallback? onRetry;
   final VoidCallback? onAbandon;
@@ -548,7 +555,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
           );
     final pureMedia =
         widget.message.content == null &&
-        (media != null || widget.message.localDraft != null);
+        (media != null ||
+            widget.pendingMedia != null ||
+            widget.message.localDraft != null);
     final sending =
         widget.message.deliveryState == DirectMessageDeliveryState.sending;
     final failed =
@@ -757,7 +766,15 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                   else
                                     DirectMessageImage(media: media),
                                 ],
+                                if (widget.pendingMedia != null) ...[
+                                  if (widget.message.content != null)
+                                    SizedBox(height: tokens.space8),
+                                  DirectMessagePendingImage(
+                                    input: widget.pendingMedia!.input,
+                                  ),
+                                ],
                                 if (media == null &&
+                                    widget.pendingMedia == null &&
                                     widget.message.content == null &&
                                     widget.message.localDraft != null)
                                   DirectMessageOptimisticMediaPlaceholder(

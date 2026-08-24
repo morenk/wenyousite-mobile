@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -28,6 +30,7 @@ class ProfileCoverState {
     this.pendingWebMediaId,
     this.pendingMobileMediaId,
     this.hasPendingSelection = false,
+    this.previewBytes,
   });
 
   final ProfileCoverPhase phase;
@@ -37,6 +40,7 @@ class ProfileCoverState {
   final String? pendingWebMediaId;
   final String? pendingMobileMediaId;
   final bool hasPendingSelection;
+  final Uint8List? previewBytes;
 
   bool get isBusy => switch (phase) {
     ProfileCoverPhase.picking ||
@@ -146,13 +150,19 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
     ProfileCoverPhase surfacePhase,
     MediaUploadTaskState uploadState,
   ) {
-    if (!mounted || !uploadState.isBusy || state.phase != surfacePhase) return;
+    if (!mounted ||
+        !uploadState.isBusy ||
+        (state.phase != ProfileCoverPhase.uploadingWeb &&
+            state.phase != ProfileCoverPhase.uploadingMobile)) {
+      return;
+    }
     state = ProfileCoverState(
       phase: surfacePhase,
       progress: uploadState.progress,
       pendingWebMediaId: state.pendingWebMediaId,
       pendingMobileMediaId: state.pendingMobileMediaId,
       hasPendingSelection: _selection != null,
+      previewBytes: _selection?.mobile.bytes,
     );
   }
 
@@ -163,48 +173,41 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
     var webId = webMediaId;
     var mobileId = mobileMediaId;
     try {
-      if (webId == null) {
-        final input = _selection?.web;
-        if (input == null) return null;
-        state = ProfileCoverState(
-          phase: ProfileCoverPhase.uploadingWeb,
-          pendingMobileMediaId: mobileId,
-          hasPendingSelection: true,
+      final selection = _selection;
+      if (selection == null && (webId == null || mobileId == null)) return null;
+      state = ProfileCoverState(
+        phase: ProfileCoverPhase.uploadingWeb,
+        pendingWebMediaId: webId,
+        pendingMobileMediaId: mobileId,
+        hasPendingSelection: selection != null,
+        previewBytes: selection?.mobile.bytes,
+      );
+      final uploads = await Future.wait<UploadedEditorImage?>([
+        webId == null
+            ? _webUploadTask.uploadInput(selection!.web)
+            : Future<UploadedEditorImage?>.value(),
+        mobileId == null
+            ? _mobileUploadTask.uploadInput(selection!.mobile)
+            : Future<UploadedEditorImage?>.value(),
+      ]);
+      if (!mounted) return null;
+      webId ??= uploads[0]?.mediaId;
+      mobileId ??= uploads[1]?.mediaId;
+      if (webId == null || mobileId == null) {
+        final failedState = webId == null
+            ? _webUploadTask.state
+            : _mobileUploadTask.state;
+        return _recordUploadFailure(
+          failedState,
+          webMediaId: webId,
+          mobileMediaId: mobileId,
         );
-        final uploaded = await _webUploadTask.uploadInput(input);
-        if (!mounted) return null;
-        if (uploaded == null) {
-          return _recordUploadFailure(
-            _webUploadTask.state,
-            webMediaId: null,
-            mobileMediaId: mobileId,
-          );
-        }
-        webId = uploaded.mediaId;
-      }
-      if (mobileId == null) {
-        final input = _selection?.mobile;
-        if (input == null) return null;
-        state = ProfileCoverState(
-          phase: ProfileCoverPhase.uploadingMobile,
-          pendingWebMediaId: webId,
-          hasPendingSelection: true,
-        );
-        final uploaded = await _mobileUploadTask.uploadInput(input);
-        if (!mounted) return null;
-        if (uploaded == null) {
-          return _recordUploadFailure(
-            _mobileUploadTask.state,
-            webMediaId: webId,
-            mobileMediaId: null,
-          );
-        }
-        mobileId = uploaded.mediaId;
       }
       state = ProfileCoverState(
         phase: ProfileCoverPhase.setting,
         pendingWebMediaId: webId,
         pendingMobileMediaId: mobileId,
+        previewBytes: selection?.mobile.bytes,
       );
       final result = await _repository.setProfileCover(
         webMediaId: webId,
@@ -223,6 +226,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
         pendingWebMediaId: webId,
         pendingMobileMediaId: mobileId,
         hasPendingSelection: _selection != null,
+        previewBytes: _selection?.mobile.bytes,
         failure: _asFailure(error, '背景图没有设置成功，请稍后重试。'),
       );
       return null;
@@ -243,6 +247,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
             pendingWebMediaId: webMediaId,
             pendingMobileMediaId: mobileMediaId,
             hasPendingSelection: _selection != null,
+            previewBytes: _selection?.mobile.bytes,
             failure: ApiFailure(
               userMessage: failure.userMessage,
               businessCode: failure.businessCode,

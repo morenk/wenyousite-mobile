@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +32,7 @@ class MeAvatarEditor extends ConsumerWidget {
     final disabled = profileWriteDisabled || state.isBusy;
     return Column(
       children: [
-        _MeAvatar(profile: profile),
+        _MeAvatar(profile: profile, previewBytes: state.previewBytes),
         SizedBox(height: tokens.space12),
         Wrap(
           alignment: WrapAlignment.center,
@@ -262,12 +263,32 @@ class _AvatarFailureNoticeState extends State<_AvatarFailureNotice> {
 }
 
 class _MeAvatar extends StatelessWidget {
-  const _MeAvatar({required this.profile});
+  const _MeAvatar({required this.profile, this.previewBytes});
 
   final MeProfileModel profile;
+  final Uint8List? previewBytes;
 
   @override
   Widget build(BuildContext context) {
+    final preview = previewBytes;
+    if (preview != null) {
+      return Semantics(
+        image: true,
+        label: '新头像预览',
+        child: ClipOval(
+          child: Image.memory(
+            preview,
+            key: const Key('me-avatar-local-preview'),
+            width: 84,
+            height: 84,
+            fit: BoxFit.cover,
+            cacheWidth: 252,
+            cacheHeight: 252,
+            gaplessPlayback: true,
+          ),
+        ),
+      );
+    }
     return WenyouAvatar(
       username: profile.username,
       avatarUrl: profile.avatarUrl,

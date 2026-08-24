@@ -381,6 +381,36 @@ void main() {
     expect(find.byKey(const Key('me-avatar-remove')), findsOneWidget);
   });
 
+  testWidgets('头像确认取景后在上传等待期间立即显示本地成品', (tester) async {
+    final media = _DeferredMediaGateway();
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(),
+      avatarPicker: _FakeAvatarPicker(_avatarInput),
+      mediaRepository: media,
+      avatarRepository: _FakeAvatarRepository(),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(media.operations, hasLength(1));
+    expect(find.byKey(const Key('me-avatar-local-preview')), findsOneWidget);
+    media.complete(0);
+    await tester.pumpAndSettle();
+    expect(find.text('头像已更新。'), findsOneWidget);
+  });
+
   testWidgets('头像选图失败后主动显示错误并允许重新选择', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 480);
@@ -514,6 +544,44 @@ void main() {
     );
     expect(media.uploadCalls, 2);
     expect(coverRepository.setCalls, 1);
+    expect(find.text('主页背景已更新。'), findsOneWidget);
+  });
+
+  testWidgets('主页背景确认双画幅后立即预览且两份上传同时启动', (tester) async {
+    final media = _DeferredMediaGateway();
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(),
+      profileCoverPicker: _FakeProfileCoverPicker(_avatarInput),
+      profileCoverRepository: _FakeProfileCoverRepository(),
+      mediaRepository: media,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('me-profile-cover-change')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('me-profile-cover-change')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(media.operations, hasLength(2));
+    expect(
+      find.byKey(const Key('me-profile-cover-local-preview')),
+      findsOneWidget,
+    );
+    media.complete(0);
+    media.complete(1);
+    await tester.pumpAndSettle();
     expect(find.text('主页背景已更新。'), findsOneWidget);
   });
 
@@ -944,7 +1012,7 @@ class _FakeImageCropProcessor implements ImageCropProcessor {
   Future<MediaUploadInput> cropAvatar(
     CropImageSource source,
     NormalizedCropRect crop,
-  ) async => _avatarInput;
+  ) async => _croppedPreviewInput;
 
   @override
   Future<MediaUploadInput> cropImage(
@@ -961,7 +1029,10 @@ class _FakeImageCropProcessor implements ImageCropProcessor {
     coverCropCalls += 1;
     lastWebCrop = webCrop;
     lastMobileCrop = mobileCrop;
-    return ProfileCoverImageSelection(web: _avatarInput, mobile: _avatarInput);
+    return ProfileCoverImageSelection(
+      web: _croppedPreviewInput,
+      mobile: _croppedPreviewInput,
+    );
   }
 }
 
@@ -998,6 +1069,29 @@ class _FakeMediaRepository implements MediaUploadGateway {
       const UploadedEditorImage(
         mediaId: 'media-avatar-1',
         url: 'https://cdn.example.com/avatar.webp',
+      ),
+    );
+  }
+}
+
+class _DeferredMediaGateway implements MediaUploadGateway {
+  final operations = <Completer<UploadedEditorImage>>[];
+
+  @override
+  MediaUploadOperation<UploadedEditorImage> startImageUpload(
+    MediaUploadInput input, {
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    final completion = Completer<UploadedEditorImage>();
+    operations.add(completion);
+    return _FutureUploadOperation(completion.future);
+  }
+
+  void complete(int index) {
+    operations[index].complete(
+      UploadedEditorImage(
+        mediaId: 'media-preview-${index + 1}',
+        url: 'https://cdn.example.com/preview-${index + 1}.webp',
       ),
     );
   }
@@ -1321,6 +1415,12 @@ final _avatarInput = MediaUploadInput(
 );
 
 final _previewBytes = image.encodePng(image.Image(width: 160, height: 90));
+
+final _croppedPreviewInput = MediaUploadInput(
+  filename: 'cropped.png',
+  declaredContentType: 'image/png',
+  bytes: Uint8List.fromList(_previewBytes),
+);
 
 final _avatarSetResult = AvatarUpdateResult(
   avatarUrl: 'https://cdn.example.com/avatar.webp',

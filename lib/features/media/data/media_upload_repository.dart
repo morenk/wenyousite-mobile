@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_timing.dart';
+import 'package:wenyousite_mobile/features/media/data/media_upload_work_coordinator.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.dart';
 
@@ -369,11 +370,13 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
     this._repository, {
     this.normalizer = const PassThroughMediaUploadNormalizer(),
     this.timing = const MediaUploadTiming(),
-  });
+    MediaUploadWorkCoordinator? workCoordinator,
+  }) : workCoordinator = workCoordinator ?? MediaUploadWorkCoordinator();
 
   final MediaUploadRepository _repository;
   final MediaUploadNormalizer normalizer;
   final MediaUploadTiming timing;
+  final MediaUploadWorkCoordinator workCoordinator;
 
   @override
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
@@ -404,21 +407,32 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
         onProgress?.call(
           const MediaUploadProgress(stage: MediaUploadStage.preparing),
         );
-        final normalized = await normalizer.normalize(input);
+        final normalized = await workCoordinator.prepare(() {
+          _throwIfUploadCanceled(cancelToken);
+          return normalizer.normalize(input);
+        });
         if (cancelToken.isCancelled) {
           throw ApiFailure(
             userMessage: '图片上传已取消。',
             cause: cancelToken.cancelError,
           );
         }
-        return _repository.uploadImage(
-          normalized,
-          cancelToken: cancelToken,
-          onProgress: onProgress,
-        );
+        return workCoordinator.transfer(() {
+          _throwIfUploadCanceled(cancelToken);
+          return _repository.uploadImage(
+            normalized,
+            cancelToken: cancelToken,
+            onProgress: onProgress,
+          );
+        });
       },
     );
   }
+}
+
+void _throwIfUploadCanceled(CancelToken cancelToken) {
+  if (!cancelToken.isCancelled) return;
+  throw ApiFailure(userMessage: '图片上传已取消。', cause: cancelToken.cancelError);
 }
 
 class _DioMediaUploadOperation
@@ -445,5 +459,6 @@ final mediaUploadGatewayAdapterProvider = Provider<MediaUploadGateway>((ref) {
     ref.watch(mediaUploadRepositoryProvider),
     normalizer: ref.watch(mediaUploadNormalizerProvider),
     timing: ref.watch(mediaUploadTimingProvider),
+    workCoordinator: ref.watch(mediaUploadWorkCoordinatorProvider),
   );
 });

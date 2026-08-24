@@ -1,4 +1,5 @@
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 
 enum DirectConversationListPhase { loading, ready, failed }
@@ -98,6 +99,7 @@ class DirectConversationState {
     this.actionTargetId,
     this.failedDraft,
     this.sendFailures = const {},
+    this.pendingMedia = const {},
     this.conversationCanceled = false,
   });
 
@@ -117,6 +119,7 @@ class DirectConversationState {
   final String? actionTargetId;
   final DirectMessageDraft? failedDraft;
   final Map<String, ApiFailure> sendFailures;
+  final Map<String, PendingDirectMessageMedia> pendingMedia;
   final bool conversationCanceled;
 
   bool get isMutating => action != null;
@@ -135,6 +138,7 @@ class DirectConversationState {
     Object? actionTargetId = _unset,
     Object? failedDraft = _unset,
     Map<String, ApiFailure>? sendFailures,
+    Map<String, PendingDirectMessageMedia>? pendingMedia,
     bool? conversationCanceled,
   }) {
     return DirectConversationState(
@@ -163,6 +167,7 @@ class DirectConversationState {
           ? this.failedDraft
           : failedDraft as DirectMessageDraft?,
       sendFailures: sendFailures ?? this.sendFailures,
+      pendingMedia: pendingMedia ?? this.pendingMedia,
       conversationCanceled: conversationCanceled ?? this.conversationCanceled,
     );
   }

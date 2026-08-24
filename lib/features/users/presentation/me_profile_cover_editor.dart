@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,7 +34,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ProfileCoverPreview(cover: cover),
+        _ProfileCoverPreview(cover: cover, previewBytes: state.previewBytes),
         SizedBox(height: tokens.space12),
         Wrap(
           alignment: WrapAlignment.center,
@@ -207,14 +208,8 @@ class MeProfileCoverEditor extends ConsumerWidget {
   String _progressMessage(ProfileCoverState state) {
     return switch (state.phase) {
       ProfileCoverPhase.picking => '正在打开系统相册…',
-      ProfileCoverPhase.uploadingWeb => _uploadMessage(
-        '正在上传网页端背景',
-        state.progress,
-      ),
-      ProfileCoverPhase.uploadingMobile => _uploadMessage(
-        '正在上传手机端背景',
-        state.progress,
-      ),
+      ProfileCoverPhase.uploadingWeb || ProfileCoverPhase.uploadingMobile =>
+        _uploadMessage('正在上传双画幅背景', state.progress),
       ProfileCoverPhase.setting => '双画幅已上传，正在原子更新主页背景…',
       ProfileCoverPhase.removing => '正在移除网页端与手机端背景…',
       ProfileCoverPhase.idle || ProfileCoverPhase.failed => '',
@@ -286,9 +281,10 @@ class _ProfileCoverFailureNoticeState
 }
 
 class _ProfileCoverPreview extends StatelessWidget {
-  const _ProfileCoverPreview({required this.cover});
+  const _ProfileCoverPreview({required this.cover, this.previewBytes});
 
   final ProfileCoverModel? cover;
+  final Uint8List? previewBytes;
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +304,16 @@ class _ProfileCoverPreview extends StatelessWidget {
       borderRadius: BorderRadius.circular(tokens.radius12),
       child: AspectRatio(
         aspectRatio: 2,
-        child: variant == null
+        child: previewBytes != null
+            ? Image.memory(
+                previewBytes!,
+                key: const Key('me-profile-cover-local-preview'),
+                fit: BoxFit.cover,
+                cacheWidth: 1200,
+                cacheHeight: 600,
+                gaplessPlayback: true,
+              )
+            : variant == null
             ? fallback
             : WenyouCachedImage(
                 imageUrl: variant.url,

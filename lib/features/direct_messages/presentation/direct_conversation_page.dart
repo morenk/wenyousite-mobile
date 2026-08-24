@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_conversation_timeline.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 class DirectConversationPage extends ConsumerStatefulWidget {
   const DirectConversationPage({
@@ -291,6 +292,7 @@ class _ReadyConversation extends StatelessWidget {
   final Future<bool> Function({
     String? content,
     String? mediaId,
+    MediaUploadInput? mediaInput,
     String? stickerAssetId,
   })
   onSend;
@@ -351,9 +353,10 @@ class _ReadyConversation extends StatelessWidget {
             disabled:
                 state.isMutating &&
                 state.action != DirectConversationAction.sending,
-            onSend: ({content, mediaId, stickerAssetId}) => onSend(
+            onSend: ({content, mediaId, mediaInput, stickerAssetId}) => onSend(
               content: content,
               mediaId: mediaId,
+              mediaInput: mediaInput,
               stickerAssetId: stickerAssetId,
             ),
           )

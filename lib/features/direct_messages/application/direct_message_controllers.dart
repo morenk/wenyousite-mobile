@@ -8,8 +8,12 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 import 'direct_message_states.dart';
 
@@ -204,10 +208,14 @@ class DirectConversationController
     Duration pollInterval = const Duration(seconds: 8),
     this._catchUpPollInterval = const Duration(seconds: 2),
     DirectMessageRequestIdFactory? requestIdFactory,
+    MediaUploadGateway? mediaUploadGateway,
     this._onUnreadChanged,
   }) : _requestIdFactory = requestIdFactory ?? const Uuid().v4,
        _pollInterval = pollInterval,
        super(const DirectConversationState.loading()) {
+    _pendingMediaJobs = mediaUploadGateway == null
+        ? null
+        : DirectMessagePendingMediaJobs(mediaUploadGateway);
     if (autoStart) unawaited(loadInitial());
     _schedulePoll(pollInterval);
   }
@@ -218,6 +226,7 @@ class DirectConversationController
   final Duration _pollInterval;
   final Duration _catchUpPollInterval;
   final Future<void> Function()? _onUnreadChanged;
+  late final DirectMessagePendingMediaJobs? _pendingMediaJobs;
   Timer? _pollTimer;
   var _epoch = 0;
   var _polling = false;
@@ -237,7 +246,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       final conversation = results[0] as DirectConversation;
       final page = results[1] as CursorPage<DirectMessage>;
-      _validateParticipants(conversation, page.items);
+      validateDirectMessageParticipants(conversation, page.items);
       state = DirectConversationState(
         phase: DirectConversationPhase.ready,
         conversation: conversation,
@@ -276,7 +285,7 @@ class DirectConversationController
       if (!mounted || epoch != _epoch) return;
       final conversation = results[0] as DirectConversation;
       final page = results[1] as CursorPage<DirectMessage>;
-      _validateParticipants(conversation, page.items);
+      validateDirectMessageParticipants(conversation, page.items);
       final current = state;
       state = current.copyWith(
         conversation: conversation,
@@ -316,7 +325,7 @@ class DirectConversationController
       if (conversation == null) {
         throw const ApiFailure(userMessage: '会话加载失败，请重新打开。');
       }
-      _validateParticipants(conversation, page.items);
+      validateDirectMessageParticipants(conversation, page.items);
       final current = state;
       state = current.copyWith(
         messages: _mergeMessages(current.messages, page.items),
@@ -365,7 +374,7 @@ class DirectConversationController
         if (!mounted || epoch != _epoch || _pollingPaused) return;
         final conversation = state.conversation;
         if (conversation == null) return;
-        _validateParticipants(conversation, page.items);
+        validateDirectMessageParticipants(conversation, page.items);
         if (page.items.isNotEmpty) {
           state = state.copyWith(
             messages: _mergeMessages(state.messages, page.items),
@@ -392,6 +401,7 @@ class DirectConversationController
   Future<bool> send({
     String? content,
     String? mediaId,
+    MediaUploadInput? mediaInput,
     String? stickerAssetId,
   }) async {
     if (state.phase != DirectConversationPhase.ready) {
@@ -399,26 +409,48 @@ class DirectConversationController
     }
     final conversation = state.conversation;
     if (conversation == null || !conversation.canSend) return false;
+    if (mediaId != null && mediaInput != null) return false;
+    final requestId = _requestIdFactory();
     late final DirectMessageDraft draft;
     try {
       draft = DirectMessageDraft.normalized(
-        clientRequestId: _requestIdFactory(),
+        clientRequestId: requestId,
         content: content,
-        mediaId: mediaId,
+        mediaId: mediaInput == null ? mediaId : 'pending-local-media',
         stickerAssetId: stickerAssetId,
       );
     } on Object catch (error) {
       state = state.copyWith(transientFailure: _asFailure(error, '消息内容不符合要求。'));
       return false;
     }
-    final optimistic = DirectMessage.optimistic(
-      conversationId: _conversationId,
-      recipientId: conversation.otherUser.id,
-      draft: draft,
-      createdAt: DateTime.now().toUtc(),
+    final pendingJobs = _pendingMediaJobs;
+    if (mediaInput != null && pendingJobs == null) return false;
+    final optimistic = mediaInput == null
+        ? DirectMessage.optimistic(
+            conversationId: _conversationId,
+            recipientId: conversation.otherUser.id,
+            draft: draft,
+            createdAt: DateTime.now().toUtc(),
+          )
+        : DirectMessage.optimisticPendingMedia(
+            conversationId: _conversationId,
+            recipientId: conversation.otherUser.id,
+            clientRequestId: requestId,
+            content: draft.content,
+            createdAt: DateTime.now().toUtc(),
+          );
+    final pendingMedia = Map<String, PendingDirectMessageMedia>.of(
+      state.pendingMedia,
     );
+    if (mediaInput != null) {
+      pendingMedia[optimistic.id] = pendingJobs!.register(
+        optimistic.id,
+        mediaInput.withPurpose(MediaUploadPurpose.directMessage),
+      );
+    }
     state = state.copyWith(
       messages: _mergeMessages(state.messages, [optimistic]),
+      pendingMedia: Map.unmodifiable(pendingMedia),
       transientFailure: null,
     );
     return _deliverOptimistic(optimistic.id);
@@ -430,7 +462,8 @@ class DirectConversationController
         .firstOrNull;
     if (state.phase != DirectConversationPhase.ready ||
         message?.deliveryState != DirectMessageDeliveryState.failed ||
-        message?.localDraft == null) {
+        (message?.localDraft == null &&
+            !(_pendingMediaJobs?.contains(optimisticMessageId) ?? false))) {
       return false;
     }
     final failures = Map<String, ApiFailure>.of(state.sendFailures)
@@ -457,22 +490,45 @@ class DirectConversationController
         .where((item) => item.id == optimisticMessageId)
         .firstOrNull;
     final conversation = state.conversation;
-    final draft = optimistic?.localDraft;
-    if (optimistic == null || conversation == null || draft == null) {
+    var draft = optimistic?.localDraft;
+    if (optimistic == null || conversation == null) {
       return false;
     }
     try {
+      if (draft == null) {
+        final mediaId = await _pendingMediaJobs!.resolveMediaId(
+          optimisticMessageId,
+          onProgress: (media) {
+            if (!mounted) return;
+            final pending = Map<String, PendingDirectMessageMedia>.of(
+              state.pendingMedia,
+            )..[optimisticMessageId] = media;
+            state = state.copyWith(pendingMedia: Map.unmodifiable(pending));
+          },
+        );
+        draft = DirectMessageDraft.normalized(
+          clientRequestId: optimistic.clientRequestId!,
+          content: optimistic.content,
+          mediaId: mediaId,
+        );
+      }
       final message = await _repository.sendMessage(
         conversationId: _conversationId,
         draft: draft,
       );
       if (!mounted) return false;
-      _validateParticipants(conversation, [message], requireOutgoing: true);
+      validateDirectMessageParticipants(conversation, [
+        message,
+      ], requireOutgoing: true);
       final remaining = state.messages.where(
         (item) => item.id != optimisticMessageId && item.id != message.id,
       );
       final failures = Map<String, ApiFailure>.of(state.sendFailures)
         ..remove(optimisticMessageId);
+      final pending = Map<String, PendingDirectMessageMedia>.of(
+        state.pendingMedia,
+      )..remove(optimisticMessageId);
+      _pendingMediaJobs?.remove(optimisticMessageId);
       state = state.copyWith(
         messages: _mergeMessages(remaining, [message]),
         transientFailure: null,
@@ -480,6 +536,7 @@ class DirectConversationController
             ? null
             : state.failedDraft,
         sendFailures: Map.unmodifiable(failures),
+        pendingMedia: Map.unmodifiable(pending),
       );
       _beginCatchUpPolling();
       return true;
@@ -499,7 +556,7 @@ class DirectConversationController
             )
             .toList(growable: false),
         transientFailure: null,
-        failedDraft: draft,
+        failedDraft: optimistic.localDraft == null ? null : draft,
         sendFailures: Map.unmodifiable(failures),
       );
       return false;
@@ -531,6 +588,10 @@ class DirectConversationController
     if (message?.deliveryState != DirectMessageDeliveryState.failed) return;
     final failures = Map<String, ApiFailure>.of(state.sendFailures)
       ..remove(optimisticMessageId);
+    final pending = Map<String, PendingDirectMessageMedia>.of(
+      state.pendingMedia,
+    )..remove(optimisticMessageId);
+    _pendingMediaJobs?.remove(optimisticMessageId);
     state = state.copyWith(
       messages: state.messages
           .where((item) => item.id != optimisticMessageId)
@@ -540,6 +601,7 @@ class DirectConversationController
           ? null
           : state.failedDraft,
       sendFailures: Map.unmodifiable(failures),
+      pendingMedia: Map.unmodifiable(pending),
       transientFailure: null,
     );
   }
@@ -804,41 +866,30 @@ class DirectConversationController
     return byTime != 0 ? byTime : left.id.compareTo(right.id);
   }
 
-  void _validateParticipants(
-    DirectConversation conversation,
-    Iterable<DirectMessage> messages, {
-    bool requireOutgoing = false,
-  }) {
-    final otherUserId = conversation.otherUser.id;
-    for (final message in messages) {
-      final includesOther =
-          message.senderId == otherUserId || message.recipientId == otherUserId;
-      final isOutgoing = message.recipientId == otherUserId;
-      if (!includesOther || (requireOutgoing && !isOutgoing)) {
-        throw const ApiFailure(userMessage: '会话成员已经发生变化，请重新打开。');
-      }
-    }
-  }
-
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _pendingMediaJobs?.dispose();
     super.dispose();
   }
 }
 
 final directConversationControllerProvider = StateNotifierProvider.autoDispose
-    .family<DirectConversationController, DirectConversationState, String>((
-      ref,
-      conversationId,
-    ) {
-      return DirectConversationController(
-        conversationId,
-        ref.watch(directMessageRepositoryProvider),
-        onUnreadChanged: () =>
-            ref.read(directUnreadControllerProvider.notifier).refresh(),
-      );
-    }, dependencies: [directMessageRepositoryProvider]);
+    .family<DirectConversationController, DirectConversationState, String>(
+      (ref, conversationId) {
+        return DirectConversationController(
+          conversationId,
+          ref.watch(directMessageRepositoryProvider),
+          mediaUploadGateway: ref.watch(mediaUploadGatewayPortProvider),
+          onUnreadChanged: () =>
+              ref.read(directUnreadControllerProvider.notifier).refresh(),
+        );
+      },
+      dependencies: [
+        directMessageRepositoryProvider,
+        mediaUploadGatewayPortProvider,
+      ],
+    );
 
 ApiFailure _asFailure(Object error, String fallback) {
   return mapApplicationFailure(error, fallback);

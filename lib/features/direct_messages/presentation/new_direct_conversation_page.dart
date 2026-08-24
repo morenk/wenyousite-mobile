@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/features/direct_messages/application/direct_me
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_notice.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 class NewDirectConversationPage extends ConsumerStatefulWidget {
   const NewDirectConversationPage({required this.userId, super.key});
@@ -46,7 +47,7 @@ class _NewDirectConversationPageState
           state: state,
           onReturnToUser: () => context.pop(),
           onAbandonFailedDraft: notifier.abandonFailedDraft,
-          onSend: ({content, mediaId, stickerAssetId}) => _send(
+          onSend: ({content, mediaId, mediaInput, stickerAssetId}) => _send(
             context,
             notifier,
             content: content,
@@ -119,6 +120,7 @@ class _TargetReady extends StatelessWidget {
   final Future<bool> Function({
     String? content,
     String? mediaId,
+    MediaUploadInput? mediaInput,
     String? stickerAssetId,
   })
   onSend;

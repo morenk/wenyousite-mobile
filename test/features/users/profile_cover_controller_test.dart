@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +11,7 @@ import 'package:wenyousite_mobile/features/users/application/user_repository_por
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 void main() {
-  test('选择一张图片后依次上传双画幅并原子绑定', () async {
+  test('选择一张图片后并行上传双画幅并原子绑定', () async {
     final webTask = _FakeUploadTask([_uploaded('web-media')]);
     final mobileTask = _FakeUploadTask([_uploaded('mobile-media')]);
     final repository = _FakeProfileCoverRepository();
@@ -31,6 +32,33 @@ void main() {
     expect(repository.lastWebMediaId, 'web-media');
     expect(repository.lastMobileMediaId, 'mobile-media');
     expect(controller.state.phase, ProfileCoverPhase.idle);
+  });
+
+  test('双画幅上传同时启动并在等待期间保留手机端本地预览', () async {
+    final webCompletion = Completer<UploadedEditorImage?>();
+    final mobileCompletion = Completer<UploadedEditorImage?>();
+    final webTask = _DeferredUploadTask(webCompletion);
+    final mobileTask = _DeferredUploadTask(mobileCompletion);
+    final repository = _FakeProfileCoverRepository();
+    final controller = ProfileCoverController(
+      const _FakePicker(null),
+      webTask,
+      mobileTask,
+      repository,
+    );
+
+    final result = controller.setSelection(_selection);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(webTask.inputs, hasLength(1));
+    expect(mobileTask.inputs, hasLength(1));
+    expect(controller.state.previewBytes, _selection.mobile.bytes);
+    expect(repository.setCalls, 0);
+
+    webCompletion.complete(_uploaded('web-media'));
+    mobileCompletion.complete(_uploaded('mobile-media'));
+    expect(await result, isNotNull);
+    expect(repository.setCalls, 1);
   });
 
   test('移动画幅上传失败保留已上传 Web mediaId，重试不重复 Web 上传', () async {
@@ -134,6 +162,29 @@ class _FakeUploadTask implements MediaUploadTask {
 
   @override
   void reset() => _state = const MediaUploadTaskState();
+}
+
+class _DeferredUploadTask implements MediaUploadTask {
+  _DeferredUploadTask(this.completion);
+
+  final Completer<UploadedEditorImage?> completion;
+  final inputs = <MediaUploadInput>[];
+
+  @override
+  MediaUploadTaskState get state =>
+      const MediaUploadTaskState(phase: MediaUploadTaskPhase.uploading);
+
+  @override
+  Future<UploadedEditorImage?> uploadInput(MediaUploadInput input) {
+    inputs.add(input);
+    return completion.future;
+  }
+
+  @override
+  void cancel() {}
+
+  @override
+  void reset() {}
 }
 
 class _FakeProfileCoverRepository implements ProfileCoverRepository {

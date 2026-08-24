@@ -7,8 +7,40 @@ import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 const _directMessageImageMaxDimension = 280.0;
+
+class DirectMessagePendingImage extends StatelessWidget {
+  const DirectMessagePendingImage({required this.input, super.key});
+
+  final MediaUploadInput input;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Semantics(
+      image: true,
+      label: '正在发送的图片',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(tokens.radius12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: _directMessageImageMaxDimension,
+            maxHeight: _directMessageImageMaxDimension,
+          ),
+          child: Image.memory(
+            input.bytes,
+            key: const Key('direct-message-pending-local-image'),
+            fit: BoxFit.contain,
+            cacheWidth: 840,
+            gaplessPlayback: true,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class DirectMessageOptimisticMediaPlaceholder extends StatelessWidget {
   const DirectMessageOptimisticMediaPlaceholder({

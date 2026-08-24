@@ -33,9 +33,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   List<UploadedEditorImage> _images = [];
   String? _coverMediaId;
   int? _hydratedVersion;
-  final Object _uploadTaskId = Object();
-  List<MediaUploadInput> _pendingImageInputs = const [];
-  var _pendingImageIndex = 0;
+  List<_MomentPendingUpload> _pendingImageUploads = const [];
   Timer? _draftTimer;
   MomentLocalDraft? _baselineDraft;
   var _baselineSignature = '';
@@ -65,9 +63,26 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   Widget build(BuildContext context) {
     final provider = momentComposerControllerProvider(widget.momentId);
     final state = ref.watch(provider);
-    final uploadState = ref.watch(
-      mediaUploadTaskControllerProvider(_uploadTaskId),
-    );
+    final pendingImages = _pendingImageUploads
+        .map((upload) {
+          final taskState = ref.watch(
+            mediaUploadTaskControllerProvider(upload.taskId),
+          );
+          return MomentPendingComposeImage(
+            input: upload.input,
+            state: upload.failure == null || taskState.failure != null
+                ? taskState
+                : MediaUploadTaskState(
+                    phase: MediaUploadTaskPhase.failed,
+                    failure: upload.failure,
+                  ),
+            completed: upload.result != null,
+            active: upload.active,
+            failed: upload.failed,
+          );
+        })
+        .toList(growable: false);
+    final uploadState = _aggregateUploadState(pendingImages);
     _hydrate(state.initialDetail);
     final editing = widget.momentId != null;
     if (!editing && !_contentReady) {
@@ -79,9 +94,9 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     final editable =
         state.phase != MomentComposerPhase.loading &&
         state.phase != MomentComposerPhase.failed;
-    final pendingImages = _hasPendingImageWork(uploadState);
+    final hasPendingImages = _hasPendingImageWork(uploadState);
     return PopScope(
-      canPop: _allowPop || (!_hasUnsavedChanges && !pendingImages),
+      canPop: _allowPop || (!_hasUnsavedChanges && !hasPendingImages),
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_confirmLeave(uploadState));
       },
@@ -106,13 +121,13 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
             failure: state.failure,
             onRetry: () => ref.read(provider.notifier).load(),
           ),
-          _ => _buildEditorBody(state, uploadState),
+          _ => _buildEditorBody(state, uploadState, pendingImages),
         },
         bottomNavigationBar: editable
             ? _MomentPublishBar(
                 editing: editing,
                 submitting: state.isSubmitting,
-                onPressed: pendingImages ? null : _submit,
+                onPressed: hasPendingImages ? null : _submit,
               )
             : null,
       ),
@@ -122,6 +137,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   Widget _buildEditorBody(
     MomentComposerState state,
     MediaUploadTaskState uploadState,
+    List<MomentPendingComposeImage> pendingImages,
   ) {
     final tokens = context.wenyouTokens;
     final horizontal = wenyouHorizontalPagePadding(context);
@@ -160,8 +176,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                   images: _images,
                   coverMediaId: _coverMediaId,
                   uploadState: uploadState,
-                  pendingIndex: _pendingImageIndex,
-                  pendingCount: _pendingImageInputs.length,
+                  pendingImages: pendingImages,
                   onAdd:
                       _images.length >= 9 ||
                           state.isSubmitting ||
@@ -173,7 +188,11 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                       : _cancelPendingImageUpload,
                   onRetryUpload:
                       uploadState.failure?.canRetry == true &&
-                          !state.isSubmitting
+                          !state.isSubmitting &&
+                          _pendingImageUploads
+                                  .where((upload) => upload.active)
+                                  .length <
+                              2
                       ? _retryUpload
                       : null,
                   onCoverSelected: _selectCover,
@@ -253,53 +272,103 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     final inputs = await pickEditorImages(
       context,
       ref,
-      maximumSelection: 9 - _images.length,
+      maximumSelection: 9 - _images.length - _pendingImageUploads.length,
       purpose: MediaUploadPurpose.moment,
     );
     if (!mounted || inputs == null || inputs.isEmpty) return;
-    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
     setState(() {
-      _pendingImageInputs = inputs;
-      _pendingImageIndex = 0;
+      _pendingImageUploads = inputs
+          .map(_MomentPendingUpload.new)
+          .toList(growable: false);
     });
-    await _runImageUpload(retry: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _pumpImageUploads();
+    });
   }
 
-  Future<void> _retryUpload() => _runImageUpload(retry: true);
-
-  Future<void> _runImageUpload({required bool retry}) async {
-    final controller = ref.read(
-      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-    );
-    if (_pendingImageInputs.isEmpty) return;
-    var retryCurrent = retry;
-    while (_pendingImageIndex < _pendingImageInputs.length) {
-      final image = retryCurrent
-          ? await controller.retryUpload()
-          : await controller.uploadInput(
-              _pendingImageInputs[_pendingImageIndex],
-            );
-      retryCurrent = false;
-      if (!mounted || image == null) return;
-      setState(() {
-        _images = List.unmodifiable([..._images, image]);
-        _coverMediaId ??= image.mediaId;
-        _pendingImageIndex += 1;
-      });
-      _onDraftChanged();
-    }
-    setState(() {
-      _pendingImageInputs = const [];
-      _pendingImageIndex = 0;
-    });
+  Future<void> _retryUpload() async {
+    if (_pendingImageUploads.where((item) => item.active).length >= 2) return;
+    final upload = _pendingImageUploads
+        .where((item) => item.failed && !item.active)
+        .firstOrNull;
+    if (upload == null) return;
+    await _runImageUpload(upload);
   }
 
   void _cancelPendingImageUpload() {
-    ref.read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier).reset();
+    final completed = _pendingImageUploads
+        .map((upload) => upload.result)
+        .nonNulls
+        .toList(growable: false);
+    for (final upload in _pendingImageUploads) {
+      ref
+          .read(mediaUploadTaskControllerProvider(upload.taskId).notifier)
+          .reset();
+    }
     setState(() {
-      _pendingImageInputs = const [];
-      _pendingImageIndex = 0;
+      _images = List.unmodifiable([..._images, ...completed]);
+      _coverMediaId ??= completed.firstOrNull?.mediaId;
+      _pendingImageUploads = const [];
     });
+    if (completed.isNotEmpty) _onDraftChanged();
+  }
+
+  void _pumpImageUploads() {
+    while (_pendingImageUploads.where((upload) => upload.active).length < 2) {
+      final upload = _pendingImageUploads
+          .where(
+            (item) =>
+                !item.active &&
+                !item.failed &&
+                item.result == null &&
+                !item.started,
+          )
+          .firstOrNull;
+      if (upload == null) return;
+      upload
+        ..active = true
+        ..started = true;
+      unawaited(_runImageUpload(upload));
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _runImageUpload(_MomentPendingUpload upload) async {
+    upload
+      ..active = true
+      ..failed = false
+      ..failure = null;
+    if (mounted) setState(() {});
+    final controller = ref.read(
+      mediaUploadTaskControllerProvider(upload.taskId).notifier,
+    );
+    final image = await controller.uploadInput(upload.input);
+    if (!mounted || !_pendingImageUploads.contains(upload)) return;
+    upload.active = false;
+    if (image == null) {
+      upload.failure = ref
+          .read(mediaUploadTaskControllerProvider(upload.taskId))
+          .failure;
+      upload.failed = upload.failure != null;
+      setState(() {});
+      _pumpImageUploads();
+      return;
+    }
+    upload.result = image;
+    if (_pendingImageUploads.every((item) => item.result != null)) {
+      final completed = _pendingImageUploads
+          .map((item) => item.result!)
+          .toList(growable: false);
+      setState(() {
+        _images = List.unmodifiable([..._images, ...completed]);
+        _coverMediaId ??= completed.first.mediaId;
+        _pendingImageUploads = const [];
+      });
+      _onDraftChanged();
+      return;
+    }
+    setState(() {});
+    _pumpImageUploads();
   }
 
   void _selectCover(String mediaId) {
@@ -448,7 +517,22 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
       _contentReady && _signature() != _baselineSignature;
 
   bool _hasPendingImageWork(MediaUploadTaskState uploadState) =>
-      uploadState.isBusy || _pendingImageInputs.isNotEmpty;
+      uploadState.isBusy || _pendingImageUploads.isNotEmpty;
+
+  MediaUploadTaskState _aggregateUploadState(
+    List<MomentPendingComposeImage> pending,
+  ) {
+    final failure = pending
+        .map((image) => image.state)
+        .where((state) => state.failure != null)
+        .firstOrNull;
+    if (failure != null) return failure;
+    return pending
+            .map((image) => image.state)
+            .where((state) => state.isBusy)
+            .firstOrNull ??
+        const MediaUploadTaskState();
+  }
 
   String _signature() => jsonEncode({
     'title': _titleController.text,
@@ -701,4 +785,16 @@ class _ComposeFailure extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MomentPendingUpload {
+  _MomentPendingUpload(this.input);
+
+  final MediaUploadInput input;
+  final Object taskId = Object();
+  bool started = false;
+  bool active = false;
+  bool failed = false;
+  MediaUploadFailure? failure;
+  UploadedEditorImage? result;
 }

@@ -292,6 +292,7 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
                         state.actionTargetId == message.id,
                     isGroupEnd: groupEnds,
                     failure: state.sendFailures[message.id],
+                    pendingMedia: state.pendingMedia[message.id],
                     onRetry:
                         message.deliveryState ==
                             DirectMessageDeliveryState.failed

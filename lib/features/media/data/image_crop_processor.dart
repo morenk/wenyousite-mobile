@@ -44,7 +44,7 @@ class IsolateImageCropProcessor implements ImageCropProcessor {
 CropImageSource _prepareCropSource(MediaUploadInput input) {
   final inspection = inspectMediaInput(input);
   final oriented = _decodeFirstFrameOrThrow(input);
-  const maxPreviewEdge = 1280;
+  const maxPreviewEdge = 1024;
   final longestEdge = oriented.width > oriented.height
       ? oriented.width
       : oriented.height;
@@ -123,20 +123,23 @@ ProfileCoverImageSelection _cropProfileCover(
   (CropImageSource, NormalizedCropRect, NormalizedCropRect) request,
 ) {
   final (source, webCrop, mobileCrop) = request;
+  final oriented = _decodeOrThrow(source.original);
   return ProfileCoverImageSelection(
-    web: _renderCrop(
+    web: _renderCropFromOriented(
       source,
+      oriented,
       webCrop,
       outputWidth: 1920,
       outputHeight: 640,
-      filename: 'profile-cover-web.png',
+      filenameStem: 'profile-cover-web',
     ),
-    mobile: _renderCrop(
+    mobile: _renderCropFromOriented(
       source,
+      oriented,
       mobileCrop,
       outputWidth: 1600,
       outputHeight: 800,
-      filename: 'profile-cover-mobile.png',
+      filenameStem: 'profile-cover-mobile',
     ),
   );
 }
@@ -149,6 +152,24 @@ MediaUploadInput _renderCrop(
   required String filename,
 }) {
   final oriented = _decodeOrThrow(source.original);
+  return _renderCropFromOriented(
+    source,
+    oriented,
+    crop,
+    outputWidth: outputWidth,
+    outputHeight: outputHeight,
+    filenameStem: filename.replaceFirst(RegExp(r'\.[^.]+$'), ''),
+  );
+}
+
+MediaUploadInput _renderCropFromOriented(
+  CropImageSource source,
+  image.Image oriented,
+  NormalizedCropRect crop, {
+  required int outputWidth,
+  required int outputHeight,
+  required String filenameStem,
+}) {
   final cropped = _cropSource(oriented, crop);
   final resized = image.copyResize(
     cropped,
@@ -156,13 +177,16 @@ MediaUploadInput _renderCrop(
     height: outputHeight,
     interpolation: image.Interpolation.cubic,
   );
-  final bytes = image.encodePng(resized);
+  final preserveAlpha = resized.hasAlpha;
+  final bytes = preserveAlpha
+      ? image.encodePng(resized)
+      : image.encodeJpg(resized, quality: 94);
   if (bytes.length > maxMediaImageBytes) {
     throw const ApiFailure(userMessage: '裁剪后的图片超过 10MB，请更换图片。');
   }
   return MediaUploadInput(
-    filename: filename,
-    declaredContentType: 'image/png',
+    filename: preserveAlpha ? '$filenameStem.png' : '$filenameStem.jpg',
+    declaredContentType: preserveAlpha ? 'image/png' : 'image/jpeg',
     bytes: bytes,
     purpose: source.original.purpose,
   );
