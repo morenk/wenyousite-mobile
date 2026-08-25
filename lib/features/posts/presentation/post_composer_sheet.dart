@@ -542,6 +542,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                   enabled: !locked && _editorSession.codecFailure == null,
                   editorFocusNode: _editorSession.focusNode,
                   onInsertImage: _insertImage,
+                  onInsertHorizontalRule: _editorSession.insertHorizontalRule,
                   onInsertSticker: ref.watch(stickersEnabledProvider)
                       ? _insertSticker
                       : null,

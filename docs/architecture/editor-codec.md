@@ -2,7 +2,7 @@
 
 ## 边界
 
-后端 Markdown v3 是唯一持久化格式，Flutter Quill Delta 只存在于编辑会话内存。打开编辑器时由自研 Codec 将完整 Markdown 快照解析为 Delta；自动快照、云草稿、预览和提交前都把当前 Delta 重新序列化为完整 Markdown，再执行 Markdown v3 规范化与可见性检查。
+后端 Markdown v3 是唯一持久化格式，Flutter Quill Delta 只存在于编辑会话内存。打开编辑器时由自研 Codec 按 `Markdown → MarkdownEditorDocument → Delta` 将完整快照解析为编辑状态；自动快照、云草稿、显式保存和提交前统一按 `Delta → MarkdownEditorDocument → Markdown` 重新序列化，再执行 Markdown v3 规范化、块结构等价与可见性检查。
 
 不把 Delta JSON写入后端或云草稿，不把 `markdown_quill` 作为往返转换事实层。Flutter Quill 官方原生模型是 Delta 并推荐直接保存 Delta；温油站有既存 Markdown 契约，因此这种转换风险必须由本项目的黄金测试吸收。`markdown_quill` 当前不保留图片 alt，且输出转换仍有限，不能满足表情 title marker 和图片元数据无损往返。
 
@@ -17,11 +17,13 @@
 | 带 `wenyousite-sticker:v1:` title 的图片 | `sticker` inline embed，保留 alt、URL 与 asset ID |
 | 普通图片 | `wenyou_image` embed，保留 alt、URL 和可选 title |
 | 独占 `<br />` | 空 Quill Paragraph；不得当作 HTML |
-| 独占 `---` | 块级 `wenyou_horizontal_rule` embed；其他 thematic break 写法继续保留源码 |
+| 与相邻正文各隔一个空行的独占 `---` | 块级 `wenyou_horizontal_rule` embed；历史 `正文\n---` 是 Setext H2，其他 thematic break 写法继续保留源码 |
 
 Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定字段。未知版本在编辑器中显示不可编辑的兼容占位，序列化时保留原始 token，禁止静默丢弃。
 
 ## 当前实现状态
+
+`MarkdownEditorDocument` 类型化描述段落软换行、H2/H3、引用、列表项、分隔线、协议空段和兼容文本，并集中分配块边界。canonical writer 强制分隔线两侧各一个结构空行、段内软换行保持单 LF、用户空段保持独占 `<br />`；写出后重新解析并比较块结构，分隔线混入文字行、叠加标题/列表/引用或缺少终止换行时直接阻止保存。工具栏通过 `RichEditorSession` 的一次 Delta compose 插入分隔线，撤销只回退该事务。历史 `正文\n---` 由上下文解析为 H2 并在用户编辑保存后写成 `## 正文`，不批量迁移未编辑正文。
 
 `MarkdownDeltaCodec` 已接入主题和帖子编辑器。`MarkdownRichLineDecoder` 先把可精确往返的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和 0～3 级列表解析为不依赖 Quill 的中立行模型，Codec 再用未净化的候选编码结果验证其能回到完全相同的 canonical 输入后映射为 Delta 属性；出口净化不能参与这项能力证明。任务列表、表格、围栏代码、历史标题级别等尚未支持的结构在编辑会话中显示为可解释的源码文字；序列化时 `wenyou_literal_line` 会转义 Markdown 标点并提交为 Markdown v3 安全字面文本，因此它们不会作为原始不支持结构继续生效，也不属于源码无损提交。外部粘贴、键盘和 IME 写入的普通字符携带 `wenyou_literal_text`，Codec 先转义全部 ASCII Markdown 标点，再由完整 `encode` 出口统一识别并字面化漏网的不支持结构；只有已有受支持 Markdown 解码结果、工具栏属性和协议 embed 可以生成语义。已保存的安全转义在 decode 时拆成可见字符与最小 literal span，编辑器不显示反斜杠和 whitespace guard，重新 encode 仍得到相同安全表示。用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 提升为稳定 embed 或行属性。未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed；未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作会阻止序列化。
 
@@ -45,15 +47,17 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 12. 粘贴在克隆文档上预检，文档或选区竞态、读取失败及序列化后超过 10000 字符都必须保持真实文档原子不变；保存必须等待在途粘贴完成。
 13. 历史连续空行恢复后，每个额外空行必须对应一个 `wenyou_empty_paragraph`；协议标记周围的 Markdown 分块空行不得成为额外 Quill 段落，重新打开和保存不得改变空段数量。
 14. 新建的普通空 Quill Paragraph 必须在键盘、IME、粘贴、草稿和发布共用的编码出口逐段转为 canonical `<br />`；已有 Markdown 的单个结构分隔保持原样，换行继承的末行属性不得吞掉中间或尾部空段。
+15. 分隔线必须是独占块，canonical Markdown 两侧各保留一个结构空行；`正文\n---` 必须保持 H2 语义并写为 `## 正文`，结构重新解析不等价时不得覆盖任何草稿或发布正文。
 
 ## 测试门禁
 
-- `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v3-fixtures.json` 的 canonical、visible 和幂等用例全部通过，并固定粗体后普通软换行不被提升为段落分隔。
+- `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v4-fixtures.json` 的 canonical、visible、块语义和幂等用例全部通过，并固定粗体后普通软换行不被提升为段落分隔。
 - 为普通 Markdown、用户提及、全体玩家、骰子、表情、普通图片、空段和代码转义维护双向 Codec 黄金用例。
 - 历史空段覆盖首部、中部、尾部、CRLF、显式标记幂等及围栏/缩进代码/原始 HTML 保护；编辑后重开必须保持逐段计数。新建空段另覆盖连续回车、首尾空段、继承末行属性、外部粘贴、已有结构分隔编辑和实际帖子发布载荷。
 - 每种自定义 embed 至少覆盖解析、编辑后序列化、未知版本保留和恶意 URL降级。
 - 剪贴板覆盖同编辑器、跨编辑器、Android marker/会话匹配、多骰子、剪切后重复粘贴、普通文本回退、其他协议节点保持、只读拦截和系统写入失败清理。
 - 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v3 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。
+- 分隔线覆盖文首、文尾、文字中间、当前行上方/下方、单步撤销、重开、真实发布载荷和非法混合 Delta；阅读态与编辑态都断言 `border` 语义色、1px/1dp 且无装饰。
 - Flutter Quill 升级必须独立 `chore`，重新运行全部 Codec 黄金语料并人工冒烟 Android 输入、选择、撤销/重做和粘贴。
 
 参考：[Flutter Quill](https://pub.dev/packages/flutter_quill)、[markdown_quill 限制](https://pub.dev/packages/markdown_quill)、[编辑器模块](../modules/editor.md)。

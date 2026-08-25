@@ -36,6 +36,68 @@ void main() {
     expect(emitted, ['温油']);
   });
 
+  for (final testCase in const [
+    (label: '文首', source: '正文', offset: 0, expected: '---\n\n正文'),
+    (label: '文中', source: '上文下文', offset: 2, expected: '上文\n\n---\n\n下文'),
+    (label: '行上方', source: '上文\n下文', offset: 3, expected: '上文\n\n---\n\n下文'),
+    (label: '行下方', source: '上文\n下文', offset: 2, expected: '上文\n\n---\n\n下文'),
+    (label: '文尾', source: '正文', offset: 2, expected: '正文\n\n---'),
+  ]) {
+    testWidgets('${testCase.label}插入分隔线后保存为独占块', (tester) async {
+      final emitted = <String>[];
+      final session = RichEditorSession(
+        initialMarkdown: testCase.source,
+        onMarkdownChanged: emitted.add,
+      );
+      addTearDown(session.dispose);
+      session.controller.updateSelection(
+        TextSelection.collapsed(offset: testCase.offset),
+        ChangeSource.local,
+      );
+
+      session.insertHorizontalRule();
+      await tester.pump();
+
+      expect(await session.flush(), isTrue);
+      expect(emitted.last, testCase.expected);
+      final reopened = RichEditorSession(
+        initialMarkdown: emitted.last,
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(reopened.dispose);
+      expect(
+        MarkdownDeltaCodec.encode(reopened.controller.document.toDelta()),
+        testCase.expected,
+      );
+    });
+  }
+
+  testWidgets('分隔线插入和撤销各保持单个 Delta 事务', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '上文下文',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    final before = session.controller.document.toDelta().toJson();
+    session.controller.updateSelection(
+      const TextSelection.collapsed(offset: 2),
+      ChangeSource.local,
+    );
+
+    session.insertHorizontalRule();
+    await tester.pump();
+    expect(session.controller.hasUndo, isTrue);
+    expect(emitted.last, '上文\n\n---\n\n下文');
+
+    session.controller.undo();
+    await tester.pump();
+    expect(session.controller.document.toDelta().toJson(), before);
+    expect(session.controller.hasUndo, isFalse);
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, '上文下文');
+  });
+
   testWidgets('保存前即使会话未标脏也从当前 Delta 重新编码', (tester) async {
     const unsupported = '| 名称 | 数值 |\n| --- | ---: |\n| 骰子 | 20 |';
     final emitted = <String>[];
@@ -368,6 +430,7 @@ void main() {
     );
     expect(emitted.last, contains(r'\#\# 标题'));
     expect(emitted.last, contains(r'\*\*粗体\*\*'));
+    expect(emitted.last, contains(r'\-\-\-'));
     expect(MarkdownContent.unsupportedLineIndexes(emitted.last), isEmpty);
   });
 
@@ -382,14 +445,16 @@ void main() {
     session.controller.replaceText(
       0,
       0,
-      '**粗体**\n# 非法标题',
-      const TextSelection.collapsed(offset: 13),
+      '**粗体**\n---\n# 非法标题',
+      const TextSelection.collapsed(offset: 17),
     );
 
     expect(await session.flush(), isTrue);
     expect(
       emitted.last,
       r'\*\*粗体\*\*'
+      '\n'
+      r'\-\-\-'
       '\n'
       r'\# 非法标题',
     );

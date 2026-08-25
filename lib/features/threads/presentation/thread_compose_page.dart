@@ -331,6 +331,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 enabled: enabled,
                 editorFocusNode: _editorSession.focusNode,
                 onInsertImage: _insertImage,
+                onInsertHorizontalRule: _editorSession.insertHorizontalRule,
                 onInsertSticker: ref.watch(stickersEnabledProvider)
                     ? _insertSticker
                     : null,

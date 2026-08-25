@@ -108,6 +108,45 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('编辑态分隔线使用 Foundation border 的 1dp 实线', (tester) async {
+    const source = '上文\n\n---\n\n下文';
+    final controller = QuillController(
+      document: Document.fromDelta(MarkdownDeltaCodec.decode(source).delta),
+      selection: const TextSelection.collapsed(offset: 0),
+      readOnly: true,
+    );
+    final focusNode = FocusNode();
+    final scrollController = ScrollController();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: QuillEditor(
+            controller: controller,
+            focusNode: focusNode,
+            scrollController: scrollController,
+            config: QuillEditorConfig(
+              scrollable: false,
+              embedBuilders: wenyouEditorEmbedBuilders(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final divider = tester.widget<Divider>(find.byType(Divider));
+    expect(divider.height, 1);
+    expect(divider.thickness, 1);
+    expect(divider.color, WenyouFoundationPalette.border);
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('编辑态传送门与前后文字保持同行基线', (tester) async {
     const source = '前文 [入口](/threads/cmsewdo0h000x7qv6aa77ll1v) 后文仍在同一行';
     final controller = QuillController(

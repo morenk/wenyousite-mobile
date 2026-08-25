@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -92,6 +93,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     required this.onSaveDraft,
     required this.enabled,
     this.onInsertSticker,
+    this.onInsertHorizontalRule,
     this.editorFocusNode,
     this.onInteractionChanged,
     this.onSubmit,
@@ -109,6 +111,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final QuillController controller;
   final Future<void> Function() onInsertImage;
   final Future<void> Function()? onInsertSticker;
+  final VoidCallback? onInsertHorizontalRule;
   final Future<void> Function() onSaveDraft;
   final bool enabled;
   final FocusNode? editorFocusNode;
@@ -674,9 +677,16 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _insertHorizontalRule() {
-    _insertBlockEmbed(
-      const Embeddable(MarkdownDeltaCodec.horizontalRuleEmbed, {'version': 1}),
-    );
+    final callback = widget.onInsertHorizontalRule;
+    if (callback != null) {
+      callback();
+    } else {
+      _insertBlockEmbed(
+        const Embeddable(MarkdownDeltaCodec.horizontalRuleEmbed, {
+          'version': 1,
+        }),
+      );
+    }
     widget.editorFocusNode?.requestFocus();
   }
 
@@ -832,28 +842,36 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _insertBlockEmbed(Embeddable embed) {
-    var selection = widget.controller.selection;
+    final selection = widget.controller.selection;
     final plain = widget.controller.document.toPlainText();
-    if (selection.start > 0 && plain[selection.start - 1] != '\n') {
-      widget.controller.replaceText(
-        selection.start,
-        0,
-        '\n',
-        TextSelection.collapsed(offset: selection.start + 1),
-      );
-      selection = TextSelection.collapsed(offset: selection.start + 1);
+    final documentEnd = widget.controller.document.length - 1;
+    final start = selection.start.clamp(0, documentEnd).toInt();
+    final end = selection.end.clamp(start, documentEnd).toInt();
+    final needsLeadingNewline = start > 0 && plain[start - 1] != '\n';
+    final needsTrailingNewline = end >= plain.length || plain[end] != '\n';
+    final change = Delta()..retain(start);
+    if (end > start) change.delete(end - start);
+    if (needsLeadingNewline) change.insert('\n');
+    change.insert(embed.toJson());
+    if (needsTrailingNewline) {
+      change.insert('\n');
+    } else {
+      change.retain(1, const {
+        'header': null,
+        'list': null,
+        'blockquote': null,
+        'indent': null,
+      });
     }
-    widget.controller.replaceText(
-      selection.start,
-      selection.end - selection.start,
-      embed,
-      TextSelection.collapsed(offset: selection.start + 1),
-    );
-    widget.controller.replaceText(
-      selection.start + 1,
-      0,
-      '\n',
-      TextSelection.collapsed(offset: selection.start + 2),
+    widget.controller.compose(change, selection, ChangeSource.local);
+    final cursor =
+        start +
+        (needsLeadingNewline ? 1 : 0) +
+        1 +
+        (needsTrailingNewline || end < plain.length - 1 ? 1 : 0);
+    widget.controller.updateSelection(
+      TextSelection.collapsed(offset: cursor),
+      ChangeSource.local,
     );
   }
 }

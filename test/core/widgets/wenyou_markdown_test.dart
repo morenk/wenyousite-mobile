@@ -551,6 +551,9 @@ $diceNode
       (rule.border! as Border).top.color,
       isNot(WenyouFoundationPalette.input),
     );
+    expect(rule.color, isNull);
+    expect(rule.gradient, isNull);
+    expect(rule.boxShadow, isNull);
     expect(tester.takeException(), isNull);
 
     await expectLater(

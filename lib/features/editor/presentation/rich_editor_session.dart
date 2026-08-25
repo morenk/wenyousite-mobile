@@ -351,6 +351,51 @@ class RichEditorSession extends ChangeNotifier {
     }
   }
 
+  /// Inserts a standalone thematic break as one document transaction.
+  ///
+  /// The surrounding Markdown block separators are added by the canonical
+  /// writer during flush; the Quill embed itself never shares a text line.
+  void insertHorizontalRule() {
+    if (controller.readOnly) return;
+    final selection = controller.selection;
+    final documentEnd = controller.document.length - 1;
+    final start = selection.start.clamp(0, documentEnd).toInt();
+    final end = selection.end.clamp(start, documentEnd).toInt();
+    final plainText = controller.document.toPlainText();
+    final needsLeadingNewline = start > 0 && plainText[start - 1] != '\n';
+    final needsTrailingNewline =
+        end >= plainText.length || plainText[end] != '\n';
+    final change = Delta()..retain(start);
+    if (end > start) change.delete(end - start);
+    if (needsLeadingNewline) change.insert('\n');
+    change.insert({
+      MarkdownDeltaCodec.horizontalRuleEmbed: const {'version': 1},
+    });
+    if (needsTrailingNewline) {
+      change.insert('\n');
+    } else {
+      change.retain(1, const {
+        'header': null,
+        'list': null,
+        'blockquote': null,
+        'indent': null,
+      });
+    }
+
+    controller.compose(change, controller.selection, ChangeSource.local);
+    final cursor =
+        start +
+        (needsLeadingNewline ? 1 : 0) +
+        1 +
+        (needsTrailingNewline || end < plainText.length - 1 ? 1 : 0);
+    controller.updateSelection(
+      TextSelection.collapsed(offset: cursor),
+      ChangeSource.local,
+    );
+    focusNode.requestFocus();
+    _flushCurrentDelta();
+  }
+
   void insertBlockImage({
     required String url,
     String alt = '图片',

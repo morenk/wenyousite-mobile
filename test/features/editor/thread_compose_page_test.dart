@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/data/content_draft_repository.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -123,6 +124,55 @@ void main() {
 
     expect(find.text('请填写主题标题。'), findsOneWidget);
     expect(repository.createCalls, 0);
+  });
+
+  testWidgets('页面插入分隔线后发布载荷保持独占块且没有额外空段', (tester) async {
+    final repository = _FakeRepository();
+    final controller =
+        await _readyController(_MemorySnapshotStore(), repository: repository)
+          ..updateTitle('分隔线主题')
+          ..updateCategory('TRPG')
+          ..updateBody('上文下文');
+    await _pumpPage(tester, controller);
+    final editor = tester.widget<QuillEditor>(
+      find.byKey(const Key('compose-body')),
+    );
+    editor.controller.updateSelection(
+      const TextSelection.collapsed(offset: 2),
+      ChangeSource.local,
+    );
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editor-horizontal-rule')));
+    await tester.pump();
+    expect(await controller.publish(), 'thread-one');
+    await tester.pump();
+
+    const expected = '上文\n\n---\n\n下文';
+    expect(repository.createPayload?.body, expected);
+    expect(repository.savedBody, expected);
+    expect(repository.savedBody, isNot(contains('<br />')));
+    expect(controller.state.publishedThreadId, 'thread-one');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: repository.savedBody!,
+            enablePlainTextFastPath: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<WenyouMarkdown>(find.byType(WenyouMarkdown)).data,
+      expected,
+    );
+    expect(find.text('上文'), findsOneWidget);
+    expect(find.text('下文'), findsOneWidget);
   });
 
   testWidgets('图片上传完成后插入安全 Markdown 图片节点', (tester) async {
@@ -575,6 +625,8 @@ const _requestId = '550e8400-e29b-41d4-a716-446655440000';
 
 class _FakeRepository implements ThreadComposeRepository {
   int createCalls = 0;
+  ThreadCreatePayload? createPayload;
+  String? savedBody;
 
   @override
   Future<List<ThreadRemoteDraftSummary>> fetchDrafts() async => const [];
@@ -614,6 +666,7 @@ class _FakeRepository implements ThreadComposeRepository {
   @override
   Future<ThreadRemoteDraft> createDraft(ThreadCreatePayload payload) async {
     createCalls += 1;
+    createPayload = payload;
     return ThreadRemoteDraft(
       id: 'thread-one',
       version: 1,
@@ -638,6 +691,7 @@ class _FakeRepository implements ThreadComposeRepository {
     required String body,
     required bool publish,
   }) async {
+    savedBody = body;
     return ThreadRemoteDraft(
       id: remoteDraft.id,
       version: remoteDraft.version + 1,

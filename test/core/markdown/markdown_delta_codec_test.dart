@@ -5,12 +5,13 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 
 void main() {
   final editorRoundTripContract =
       jsonDecode(
             File(
-              'contracts/markdown-editor-roundtrip-v3-fixtures.json',
+              'contracts/markdown-editor-roundtrip-v4-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -18,8 +19,8 @@ void main() {
       (editorRoundTripContract['cases'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
-  test('消费后端编辑器往返黄金语料 v3', () {
-    expect(editorRoundTripContract['version'], 3);
+  test('消费后端编辑器往返黄金语料 v4', () {
+    expect(editorRoundTripContract['version'], 4);
     expect(editorRoundTripContract['markdownContractVersion'], 3);
     expect(editorRoundTripCases, isNotEmpty);
   });
@@ -32,6 +33,15 @@ void main() {
     test('$id 编辑器黄金语料往返不改写', () {
       final document = MarkdownDeltaCodec.decode(markdown);
       expect(MarkdownDeltaCodec.encode(document.delta), serialized);
+      final expectedSemantics = (fixture['blockSemantics'] as List<dynamic>?)
+          ?.cast<String>();
+      if (expectedSemantics != null) {
+        expect(
+          document.editorDocument.blockKinds.map(_blockSemantic),
+          expectedSemantics,
+          reason: fixture['id'] as String,
+        );
+      }
       expect(
         MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(serialized).delta),
         serialized,
@@ -519,7 +529,7 @@ void main() {
     expect(MarkdownDeltaCodec.encode(document.delta), saved);
   });
 
-  test('分隔线使用本地原子节点往返且不改变其他主题分隔线写法', () {
+  test('分隔线使用独占块并写入 canonical 结构空行', () {
     final document = MarkdownDeltaCodec.decode('---\n* * *\n___');
 
     expect(
@@ -532,11 +542,53 @@ void main() {
       ),
       isTrue,
     );
-    expect(MarkdownDeltaCodec.encode(document.delta), '---\n* * *\n___');
+    expect(MarkdownDeltaCodec.encode(document.delta), '---\n\n* * *\n___');
     expect(
       MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(' ---\n--- ').delta),
       ' ---\n--- ',
     );
+  });
+
+  test('历史 Setext H2 与分隔线在块模型中保持不同语义', () {
+    final heading = MarkdownDeltaCodec.decode('正文\n---');
+    final rule = MarkdownDeltaCodec.decode('正文\n\n---\n\n正文');
+
+    expect(heading.editorDocument.blockKinds, [
+      MarkdownEditorBlockKind.heading2,
+    ]);
+    expect(MarkdownDeltaCodec.encode(heading.delta), '## 正文');
+    expect(rule.editorDocument.blockKinds, [
+      MarkdownEditorBlockKind.paragraph,
+      MarkdownEditorBlockKind.horizontalRule,
+      MarkdownEditorBlockKind.paragraph,
+    ]);
+    expect(MarkdownDeltaCodec.encode(rule.delta), '正文\n\n---\n\n正文');
+  });
+
+  test('分隔线与文字或其他块属性混在同一 Delta 行时拒绝保存', () {
+    Delta horizontalRule() => Delta()
+      ..insert({
+        MarkdownDeltaCodec.horizontalRuleEmbed: const {'version': 1},
+      });
+    final inline = Delta()
+      ..insert('正文')
+      ..insert({
+        MarkdownDeltaCodec.horizontalRuleEmbed: const {'version': 1},
+      })
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+    final styled = horizontalRule()
+      ..insert('\n', {
+        'header': 2,
+        MarkdownDeltaCodec.sourceBreakAttribute: false,
+      });
+    final unterminated = horizontalRule();
+
+    for (final delta in [inline, styled, unterminated]) {
+      expect(
+        () => MarkdownDeltaCodec.encode(delta),
+        throwsA(isA<MarkdownCodecException>()),
+      );
+    }
   });
 
   test('不安全链接、未知属性和冲突块样式拒绝序列化', () {
@@ -568,3 +620,15 @@ void main() {
     );
   });
 }
+
+String _blockSemantic(MarkdownEditorBlockKind kind) => switch (kind) {
+  MarkdownEditorBlockKind.paragraph => 'paragraph',
+  MarkdownEditorBlockKind.heading2 => 'heading-2',
+  MarkdownEditorBlockKind.heading3 => 'heading-3',
+  MarkdownEditorBlockKind.quote => 'blockquote',
+  MarkdownEditorBlockKind.bulletListItem => 'bullet-list-item',
+  MarkdownEditorBlockKind.orderedListItem => 'ordered-list-item',
+  MarkdownEditorBlockKind.horizontalRule => 'horizontal-rule',
+  MarkdownEditorBlockKind.protocolEmptyParagraph => 'empty-paragraph',
+  MarkdownEditorBlockKind.compatibilityText => 'compatibility-text',
+};

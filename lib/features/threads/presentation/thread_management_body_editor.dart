@@ -250,6 +250,7 @@ class _ThreadManagementBodyEditorState
           enabled: enabled,
           editorFocusNode: _session.focusNode,
           onInsertImage: _insertImage,
+          onInsertHorizontalRule: _session.insertHorizontalRule,
           onInsertSticker: ref.watch(stickersEnabledProvider)
               ? _insertSticker
               : null,
