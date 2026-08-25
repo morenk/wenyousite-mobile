@@ -38,8 +38,11 @@ void main() {
     );
   });
 
-  testWidgets('主题标签在设置页内编辑', (tester) async {
-    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+  testWidgets('主题标签完成编辑后关闭弹窗并更新表单', (tester) async {
+    await _pumpPage(
+      tester,
+      _FakeRepository(initial: _bootstrap(tagNames: const ['原标签'])),
+    );
 
     final entry = find.byKey(const Key('thread-management-edit-tags'));
     await tester.ensureVisible(entry);
@@ -51,6 +54,59 @@ void main() {
       find.byKey(const Key('thread-management-tag-input')),
       findsOneWidget,
     );
+
+    await tester.enterText(
+      find.byKey(const Key('thread-management-tag-input')),
+      '新标签',
+    );
+    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.pump();
+    final originalChip = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(InputChip, '原标签'),
+    );
+    tester.widget<InputChip>(originalChip).onDeleted!();
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('thread-management-tag-done')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('编辑主题标签'), findsNothing);
+    expect(find.text('主题标签 1/5'), findsOneWidget);
+    expect(find.text('新标签'), findsOneWidget);
+    expect(find.text('原标签'), findsNothing);
+  });
+
+  testWidgets('主题标签取消编辑后关闭弹窗并保留原表单', (tester) async {
+    await _pumpPage(
+      tester,
+      _FakeRepository(initial: _bootstrap(tagNames: const ['原标签'])),
+    );
+
+    final entry = find.byKey(const Key('thread-management-edit-tags'));
+    await tester.ensureVisible(entry);
+    await tester.tap(entry);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('thread-management-tag-input')),
+      '暂存标签',
+    );
+    await tester.tap(find.byKey(const Key('thread-management-tag-add')));
+    await tester.pump();
+    final originalChip = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(InputChip, '原标签'),
+    );
+    tester.widget<InputChip>(originalChip).onDeleted!();
+    await tester.pump();
+    await tester.tap(find.widgetWithText(TextButton, '取消'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('编辑主题标签'), findsNothing);
+    expect(find.text('主题标签 1/5'), findsOneWidget);
+    expect(find.text('原标签'), findsOneWidget);
+    expect(find.text('暂存标签'), findsNothing);
   });
 
   testWidgets('整页加载失败显示问题编号并可原地重试', (tester) async {
@@ -478,6 +534,7 @@ ThreadManagementBootstrap _bootstrap({
   bool isOwner = true,
   bool canManage = true,
   ThreadManagementVisibility visibility = ThreadManagementVisibility.public,
+  List<String> tagNames = const [],
 }) {
   return ThreadManagementBootstrap(
     thread: ThreadManagementSnapshot(
@@ -490,6 +547,7 @@ ThreadManagementBootstrap _bootstrap({
       published: true,
       canManage: canManage,
       isOwner: isOwner,
+      tagNames: tagNames,
     ),
     categories: const [
       ThreadManagementCategory(slug: 'RPG', name: '角色扮演', sortOrder: 1),

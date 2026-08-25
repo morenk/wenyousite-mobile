@@ -680,7 +680,10 @@ class _ThreadTagSelectorDialogState extends State<_ThreadTagSelectorDialog> {
         ),
         FilledButton(
           key: const Key('thread-management-tag-done'),
-          onPressed: () => Navigator.pop(context, List.unmodifiable(_tags)),
+          onPressed: () => Navigator.pop<List<String>>(
+            context,
+            List<String>.unmodifiable(_tags),
+          ),
           child: const Text('完成'),
         ),
       ],
