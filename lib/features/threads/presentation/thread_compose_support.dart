@@ -150,6 +150,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
     required this.state,
     required this.documentIssues,
     required this.codecFailure,
+    required this.operationFailure,
     required this.uploadFailure,
     required this.uploadProgress,
     required this.uploading,
@@ -162,6 +163,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
   final ThreadComposeState state;
   final List<MarkdownCodecIssue> documentIssues;
   final String? codecFailure;
+  final String? operationFailure;
   final MediaUploadFailure? uploadFailure;
   final MediaUploadProgress? uploadProgress;
   final bool uploading;
@@ -201,6 +203,11 @@ class ThreadComposeStatusArea extends StatelessWidget {
         WenyouStatusBanner(
           message: '当前格式组合暂时不能安全保存。',
           detail: codecFailure,
+          tone: WenyouStatusTone.error,
+        ),
+      if (operationFailure != null)
+        WenyouStatusBanner(
+          message: operationFailure!,
           tone: WenyouStatusTone.error,
         ),
       if (state.actionFailure != null)

@@ -1,5 +1,7 @@
 // ignore_for_file: experimental_member_use
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
@@ -29,7 +32,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 99));
     expect(emitted, isEmpty);
 
-    expect(session.flush(), isTrue);
+    expect(await session.flush(), isTrue);
     expect(emitted, ['温油']);
   });
 
@@ -43,7 +46,7 @@ void main() {
     addTearDown(session.dispose);
 
     expect(session.isDirty, isFalse);
-    expect(session.flush(), isTrue);
+    expect(await session.flush(), isTrue);
     expect(emitted, [MarkdownContent.literalizeUnsupported(unsupported)]);
   });
 
@@ -60,15 +63,15 @@ void main() {
     );
 
     session.controller.formatSelection(Attribute.h2);
-    expect(session.flush(), isTrue);
+    expect(await session.flush(), isTrue);
     expect(emitted.last, '## 标题');
 
     session.controller.formatSelection(Attribute.h3);
-    expect(session.flush(), isTrue);
+    expect(await session.flush(), isTrue);
     expect(emitted.last, '### 标题');
 
     session.controller.formatSelection(Attribute.bold);
-    expect(session.flush(), isTrue);
+    expect(await session.flush(), isTrue);
     expect(emitted.last, '### **标题**');
   });
 
@@ -170,7 +173,12 @@ void main() {
         '| 骰子 | 20 |\n'
         '<div>正文</div>  ';
     expect(session.controller.document.toPlainText(), '$normalized\n');
-    expect(emitted.last, MarkdownContent.literalizeUnsupported(normalized));
+    final expected = normalized
+        .split('\n')
+        .map(MarkdownContent.literalizeInlineText)
+        .map(MarkdownContent.protectUnsafeWhitespace)
+        .join('\n');
+    expect(emitted.last, expected);
     expect(MarkdownContent.unsupportedLineIndexes(emitted.last), isEmpty);
   });
 
@@ -186,6 +194,194 @@ void main() {
     expect(await session.controller.clipboardPaste(), isTrue);
     expect(session.controller.document.toPlainText(), '原文\n');
     expect(emitted, isEmpty);
+  });
+
+  testWidgets('外部粘贴的受支持 Markdown 也只作为可见普通文本', (tester) async {
+    const clipboard =
+        '## 标题\n**粗体** [链接](https://example.com)\n---\n'
+        '[[dice:v1:550e8400-e29b-41d4-a716-446655440000:1d20]]';
+    final emitted = <String>[];
+    final clipboardGateway = _MemoryEditorClipboardGateway()
+      ..snapshot = const EditorClipboardSnapshot(text: clipboard);
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: emitted.add,
+      clipboardGateway: clipboardGateway,
+      clipboardStore: WenyouEditorClipboardStore(),
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    expect(session.controller.document.toPlainText(), '$clipboard\n');
+    final delta = session.controller.document.toDelta();
+    expect(
+      delta.operations.where((operation) => operation.data is Map),
+      isEmpty,
+    );
+    expect(
+      delta.operations.any(
+        (operation) =>
+            operation.attributes?[Attribute.header.key] != null ||
+            operation.attributes?[Attribute.bold.key] != null,
+      ),
+      isFalse,
+    );
+    expect(emitted.last, contains(r'\#\# 标题'));
+    expect(emitted.last, contains(r'\*\*粗体\*\*'));
+    expect(MarkdownContent.unsupportedLineIndexes(emitted.last), isEmpty);
+  });
+
+  testWidgets('手输或 IME 提交的 Markdown 标记在编码出口保持字面文本', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+
+    session.controller.replaceText(
+      0,
+      0,
+      '**粗体**\n# 非法标题',
+      const TextSelection.collapsed(offset: 13),
+    );
+
+    expect(await session.flush(), isTrue);
+    expect(
+      emitted.last,
+      r'\*\*粗体\*\*'
+      '\n'
+      r'\# 非法标题',
+    );
+    expect(MarkdownContent.unsupportedLineIndexes(emitted.last), isEmpty);
+  });
+
+  testWidgets('逐字输入 Markdown 前缀不会触发 Quill 自动结构或行尾断言', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+
+    const input = '- [ ] 任务';
+    for (var index = 0; index < input.length; index++) {
+      session.controller.replaceText(
+        index,
+        0,
+        input[index],
+        TextSelection.collapsed(offset: index + 1),
+      );
+    }
+
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, r'\- \[ \] 任务');
+    expect(
+      session.controller.document.toDelta().operations.last.attributes?['list'],
+      isNull,
+    );
+  });
+
+  testWidgets('粘贴序列化后超限时整次拒绝且正文不发生部分写入', (tester) async {
+    final emitted = <String>[];
+    final clipboardGateway = _MemoryEditorClipboardGateway()
+      ..snapshot = const EditorClipboardSnapshot(text: '**********');
+    final session = RichEditorSession(
+      initialMarkdown: '原文',
+      maximumSerializedLength: 10,
+      onMarkdownChanged: emitted.add,
+      clipboardGateway: clipboardGateway,
+      clipboardStore: WenyouEditorClipboardStore(),
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    expect(session.controller.document.toPlainText(), '原文\n');
+    expect(emitted, isEmpty);
+    expect(
+      session.operationFailure?.kind,
+      RichEditorOperationFailureKind.contentTooLong,
+    );
+  });
+
+  testWidgets('保存会等待在途粘贴并从完成后的当前 Delta 编码', (tester) async {
+    final emitted = <String>[];
+    final clipboardGateway = _MemoryEditorClipboardGateway()..delayReads();
+    final session = RichEditorSession(
+      initialMarkdown: '前',
+      onMarkdownChanged: emitted.add,
+      clipboardGateway: clipboardGateway,
+      clipboardStore: WenyouEditorClipboardStore(),
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection.collapsed(offset: 1),
+      ChangeSource.local,
+    );
+
+    final paste = session.controller.clipboardPaste();
+    final save = session.flush();
+    clipboardGateway.completeRead(const EditorClipboardSnapshot(text: '**后**'));
+
+    expect(await paste, isTrue);
+    expect(await save, isTrue);
+    expect(emitted.last, r'前\*\*后\*\*');
+  });
+
+  testWidgets('读取剪贴板期间正文变化时拒绝把旧选区粘贴到新文档', (tester) async {
+    final clipboardGateway = _MemoryEditorClipboardGateway()..delayReads();
+    final session = RichEditorSession(
+      initialMarkdown: '原文',
+      onMarkdownChanged: (_) {},
+      clipboardGateway: clipboardGateway,
+      clipboardStore: WenyouEditorClipboardStore(),
+    );
+    addTearDown(session.dispose);
+
+    final paste = session.controller.clipboardPaste();
+    session.controller.replaceText(
+      0,
+      0,
+      '新',
+      const TextSelection.collapsed(offset: 1),
+    );
+    await tester.pump();
+    clipboardGateway.completeRead(const EditorClipboardSnapshot(text: '剪贴板'));
+
+    expect(await paste, isTrue);
+    expect(session.controller.document.toPlainText(), '新原文\n');
+    expect(
+      session.operationFailure?.kind,
+      RichEditorOperationFailureKind.documentChanged,
+    );
+    expect(await session.flush(), isTrue);
+  });
+
+  testWidgets('读取剪贴板期间光标移动时不再使用旧选区', (tester) async {
+    final clipboardGateway = _MemoryEditorClipboardGateway()..delayReads();
+    final session = RichEditorSession(
+      initialMarkdown: '原文',
+      onMarkdownChanged: (_) {},
+      clipboardGateway: clipboardGateway,
+      clipboardStore: WenyouEditorClipboardStore(),
+    );
+    addTearDown(session.dispose);
+
+    final paste = session.controller.clipboardPaste();
+    session.controller.updateSelection(
+      const TextSelection.collapsed(offset: 2),
+      ChangeSource.local,
+    );
+    clipboardGateway.completeRead(const EditorClipboardSnapshot(text: '剪贴板'));
+
+    expect(await paste, isTrue);
+    expect(session.controller.document.toPlainText(), '原文\n');
+    expect(
+      session.operationFailure?.kind,
+      RichEditorOperationFailureKind.documentChanged,
+    );
   });
 
   testWidgets('Quill 原始编辑器粘贴入口立即渲染站内传送门', (tester) async {
@@ -311,22 +507,20 @@ void main() {
 
   testWidgets('跨编辑器复制骰子仍生成新身份', (tester) async {
     const nodeId = '550e8400-e29b-41d4-a716-446655440000';
-    String? clipboardText;
     final store = WenyouEditorClipboardStore();
+    final clipboard = _MemoryEditorClipboardGateway();
     final source = RichEditorSession(
       initialMarkdown: '[[dice:v1:$nodeId:1d20]]',
       onMarkdownChanged: (_) {},
       clipboardStore: store,
-      readClipboardText: () async => clipboardText,
-      writeClipboardText: (text) async => clipboardText = text,
+      clipboardGateway: clipboard,
     );
     final targetOutput = <String>[];
     final target = RichEditorSession(
       initialMarkdown: '',
       onMarkdownChanged: targetOutput.add,
       clipboardStore: store,
-      readClipboardText: () async => clipboardText,
-      writeClipboardText: (text) async => clipboardText = text,
+      clipboardGateway: clipboard,
     );
     addTearDown(source.dispose);
     addTearDown(target.dispose);
@@ -368,7 +562,7 @@ void main() {
       ChangeSource.local,
     );
     expect(await session.controller.clipboardPaste(), isTrue);
-    expect(session.flush(), isTrue);
+    expect(await session.flush(), isTrue);
     expect(
       MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
       markdown,
@@ -394,8 +588,12 @@ void main() {
       ChangeSource.local,
     );
 
-    await expectLater(session.copySelection(), throwsStateError);
-    expect(session.flush(), isTrue);
+    expect(await session.copySelection(), isFalse);
+    expect(
+      session.operationFailure?.kind,
+      RichEditorOperationFailureKind.clipboardWrite,
+    );
+    expect(await session.flush(), isTrue);
     final resolution = store.resolve(markdown);
     expect(resolution.delta, isNull);
     expect(resolution.usePlainText, isFalse);
@@ -410,3 +608,25 @@ void main() {
 List<String> _diceNodeIds(String markdown) => RegExp(
   r'\[\[dice:v1:([0-9a-f-]{36}):',
 ).allMatches(markdown).map((match) => match.group(1)!).toList();
+
+class _MemoryEditorClipboardGateway implements EditorClipboardGateway {
+  EditorClipboardSnapshot snapshot = const EditorClipboardSnapshot(text: null);
+  Completer<EditorClipboardSnapshot>? _pendingRead;
+
+  void delayReads() {
+    _pendingRead = Completer<EditorClipboardSnapshot>();
+  }
+
+  void completeRead(EditorClipboardSnapshot value) {
+    _pendingRead!.complete(value);
+  }
+
+  @override
+  Future<EditorClipboardSnapshot> read() async =>
+      _pendingRead?.future ?? snapshot;
+
+  @override
+  Future<void> write({required String text, required String marker}) async {
+    snapshot = EditorClipboardSnapshot(text: text, marker: marker);
+  }
+}

@@ -289,14 +289,6 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                               ),
                               onPressed: () => _toggle(Attribute.blockQuote),
                             ),
-                          if (promoted.contains(_EditorAction.horizontalRule))
-                            WenyouEditorToolbarButton(
-                              key: const Key('editor-horizontal-rule'),
-                              icon: WenyouIconIds.editorHorizontalRule,
-                              label: '分隔线',
-                              enabled: widget.enabled,
-                              onPressed: _insertHorizontalRule,
-                            ),
                           if (promoted.contains(_EditorAction.sticker))
                             WenyouEditorToolbarButton(
                               key: const Key('editor-sticker'),
@@ -472,12 +464,12 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                   selected: style.attributes.containsKey(Attribute.ol.key),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ol)),
                 ),
-                if (!promoted.contains(_EditorAction.horizontalRule))
-                  WenyouEditorTrayButton(
-                    icon: WenyouIconIds.editorHorizontalRule,
-                    label: '分隔线',
-                    onPressed: () => _runTrayAction(_insertHorizontalRule),
-                  ),
+                WenyouEditorTrayButton(
+                  key: const Key('editor-horizontal-rule'),
+                  icon: WenyouIconIds.editorHorizontalRule,
+                  label: '分隔线',
+                  onPressed: () => _runTrayAction(_insertHorizontalRule),
+                ),
               ],
               if (widget.capabilities.dice)
                 WenyouEditorTrayButton(
@@ -671,7 +663,6 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     if (promotionSlots == 0) return const {};
     final available = <String, _EditorAction>{
       if (widget.capabilities.blockStyles) 'quote': _EditorAction.quote,
-      if (widget.capabilities.blockStyles) 'hr': _EditorAction.horizontalRule,
       if (widget.capabilities.stickers && widget.onInsertSticker != null)
         'sticker': _EditorAction.sticker,
     };
@@ -869,4 +860,4 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
 
 enum _EditorTray { none, heading, more, link, dice }
 
-enum _EditorAction { quote, horizontalRule, sticker }
+enum _EditorAction { quote, sticker }

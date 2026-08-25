@@ -63,6 +63,135 @@ class MarkdownContent {
   );
   static const _wordJoiner = '\u2060';
 
+  /// Escapes untrusted editor text without adding block separators.
+  ///
+  /// Formatting syntax emitted by the Delta codec is added after this step,
+  /// so text entered through an IME or clipboard can never create Markdown
+  /// nodes merely by containing punctuation.
+  static String literalizeInlineText(String value) => value.replaceAllMapped(
+    _literalPunctuation,
+    (match) => '\\${match.group(0)}',
+  );
+
+  /// Returns whether [line] contains the canonical safety encoding produced
+  /// by [literalizeLine]. This is used only while reopening saved drafts so
+  /// escape slashes and whitespace guards are not exposed in the editor.
+  static bool hasCanonicalLiteralEncoding(String line) =>
+      decodeLiteralSpans(line) != null;
+
+  /// Replaces decoded literal characters with a private-use placeholder so a
+  /// rich-line parser can still recognize supported formatting around them.
+  /// The placeholder is never persisted and the method declines the rare
+  /// source line that already contains it.
+  static ({String source, String placeholder, List<String> literals})?
+  maskCanonicalLiteralLine(String line) {
+    const placeholder = '\uE000';
+    if (line.contains(placeholder)) return null;
+    final spans = decodeLiteralSpans(line);
+    if (spans == null) return null;
+    final source = StringBuffer();
+    final literals = <String>[];
+    for (final span in spans) {
+      if (!span.literal) {
+        source.write(span.text);
+        continue;
+      }
+      for (var index = 0; index < span.text.length; index++) {
+        source.write(placeholder);
+        literals.add(span.text[index]);
+      }
+    }
+    return (
+      source: source.toString(),
+      placeholder: placeholder,
+      literals: List.unmodifiable(literals),
+    );
+  }
+
+  /// Decodes saved safety escapes while retaining which visible characters
+  /// must be escaped again. Unmarked text can still be decoded as supported
+  /// rich Markdown by the caller without turning an escaped character back
+  /// into syntax.
+  static List<({String text, bool literal})>? decodeLiteralSpans(String line) {
+    var source = line;
+    var foundEncoding = false;
+    if (source.startsWith(_wordJoiner) &&
+        (source.substring(1).startsWith('    ') ||
+            source.substring(1).startsWith('\t'))) {
+      source = source.substring(1);
+      foundEncoding = true;
+    }
+    if (source.endsWith(_wordJoiner) &&
+        RegExp(r' {2,}\u2060$').hasMatch(source)) {
+      source = source.substring(0, source.length - 1);
+      foundEncoding = true;
+    }
+
+    final spans = <({String text, bool literal})>[];
+    final plain = StringBuffer();
+    void flushPlain() {
+      if (plain.isEmpty) return;
+      spans.add((text: plain.toString(), literal: false));
+      plain.clear();
+    }
+
+    var index = 0;
+    while (index < source.length) {
+      if (source[index] != r'\') {
+        plain.write(source[index]);
+        index += 1;
+        continue;
+      }
+      var end = index;
+      while (end < source.length && source[end] == r'\') {
+        end += 1;
+      }
+      final count = end - index;
+      final escapedBackslashes = count ~/ 2;
+      final escapedPunctuation =
+          count.isOdd &&
+          end < source.length &&
+          _literalPunctuation.hasMatch(source[end]);
+      if (escapedBackslashes > 0 || escapedPunctuation) {
+        flushPlain();
+        spans.add((
+          text:
+              '${r'\' * escapedBackslashes}'
+              '${escapedPunctuation ? source[end] : ''}',
+          literal: true,
+        ));
+        foundEncoding = true;
+        index = escapedPunctuation ? end + 1 : end;
+        continue;
+      }
+      plain.write(r'\');
+      index = end;
+    }
+    flushPlain();
+    return foundEncoding ? List.unmodifiable(spans) : null;
+  }
+
+  /// Reverses only the canonical safety encoding used by this client.
+  /// Legitimate word joiners elsewhere in the line are preserved.
+  static String decodeLiteralLine(String line) {
+    final spans = decodeLiteralSpans(line);
+    return spans == null ? line : spans.map((span) => span.text).join();
+  }
+
+  /// Prevents plain leading indentation and trailing spaces from becoming
+  /// code blocks or hard breaks. The guards are removed again by
+  /// [decodeLiteralLine].
+  static String protectUnsafeWhitespace(String line) {
+    var protected = line;
+    if (protected.startsWith('    ') || protected.startsWith('\t')) {
+      protected = '$_wordJoiner$protected';
+    }
+    if (RegExp(r' {2,}$').hasMatch(protected)) {
+      protected = '$protected$_wordJoiner';
+    }
+    return protected;
+  }
+
   static String normalize(String markdown) {
     final lines = markdown.replaceAll(RegExp(r'\r\n?'), '\n').split('\n');
     _Fence? fence;
@@ -299,16 +428,7 @@ class MarkdownContent {
   }
 
   static String _escapeLiteralLine(String line) {
-    var escaped = line.replaceAllMapped(
-      _literalPunctuation,
-      (match) => '\\${match.group(0)}',
-    );
-    if (line.startsWith('    ') || line.startsWith('\t')) {
-      escaped = '$_wordJoiner$escaped';
-    }
-    if (RegExp(r' {2,}$').hasMatch(line)) {
-      escaped = '$escaped$_wordJoiner';
-    }
+    final escaped = protectUnsafeWhitespace(literalizeInlineText(line));
     return escaped.isEmpty ? _wordJoiner : escaped;
   }
 

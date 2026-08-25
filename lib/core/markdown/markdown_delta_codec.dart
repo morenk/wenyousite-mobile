@@ -1,4 +1,5 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -61,6 +62,7 @@ class MarkdownDeltaCodec {
   static const emptyParagraphAttribute = 'wenyou_empty_paragraph';
   static const sourceBreakAttribute = 'wenyou_source_break';
   static const literalLineAttribute = 'wenyou_literal_line';
+  static const literalTextAttribute = 'wenyou_literal_text';
 
   static const _allPlayersLabel = '@全体玩家';
   static const _stickerPrefix = 'wenyousite-sticker:v1:';
@@ -120,6 +122,33 @@ class MarkdownDeltaCodec {
         delta.insert({
           horizontalRuleEmbed: const {'version': 1},
         });
+      } else if (MarkdownContent.hasCanonicalLiteralEncoding(line)) {
+        final decoded = MarkdownCanonicalLiteralDecoder.decode(
+          line,
+          literalTextAttribute: literalTextAttribute,
+          internalReferenceEmbed: internalReferenceEmbed,
+          sourceBreakAttribute: sourceBreakAttribute,
+          preservesSource: (candidate) {
+            try {
+              return _encode(candidate, sanitizeUnsupported: false) == line;
+            } on MarkdownCodecException {
+              return false;
+            }
+          },
+        );
+        if (decoded == null) {
+          for (final span in MarkdownContent.decodeLiteralSpans(line)!) {
+            delta.insert(
+              span.text,
+              span.literal ? const {literalTextAttribute: true} : null,
+            );
+          }
+        } else {
+          for (final operation in decoded.delta.operations) {
+            delta.insert(operation.data, operation.attributes);
+          }
+          richLineAttributes = decoded.lineAttributes;
+        }
       } else {
         final richLine = _tryDecodeRichLine(line);
         if (richLine == null) {
@@ -164,13 +193,20 @@ class MarkdownDeltaCodec {
   static String _encode(Delta delta, {required bool sanitizeUnsupported}) {
     final output = StringBuffer();
     final line = StringBuffer();
+    var lineHasLiteralText = false;
     for (final operation in delta.operations) {
       if (!operation.isInsert) {
         throw const MarkdownCodecException('文档 Delta 只能包含 insert 操作');
       }
       final data = operation.data;
       if (data is String) {
-        _encodeText(data, operation.attributes, line, output);
+        lineHasLiteralText = _encodeText(
+          data,
+          operation.attributes,
+          line,
+          output,
+          lineHasLiteralText: lineHasLiteralText,
+        );
         continue;
       }
       if (data is! Map) {
@@ -477,12 +513,13 @@ class MarkdownDeltaCodec {
     return richLine;
   }
 
-  static void _encodeText(
+  static bool _encodeText(
     String value,
     Map<String, dynamic>? attributes,
     StringBuffer line,
-    StringBuffer output,
-  ) {
+    StringBuffer output, {
+    required bool lineHasLiteralText,
+  }) {
     var start = 0;
     for (var index = 0; index <= value.length; index++) {
       final isLineBreak = index < value.length && value[index] == '\n';
@@ -491,9 +528,15 @@ class MarkdownDeltaCodec {
         line.write(
           _encodeInlineText(value.substring(start, index), attributes),
         );
+        lineHasLiteralText =
+            lineHasLiteralText || attributes?[literalTextAttribute] == true;
       }
       if (!isLineBreak) break;
-      final encodedLine = _encodeLine(line.toString(), attributes);
+      final encodedLine = _encodeLine(
+        line.toString(),
+        attributes,
+        containsLiteralText: lineHasLiteralText,
+      );
       final isLiteral = attributes?[literalLineAttribute] == true;
       if (isLiteral &&
           output.isNotEmpty &&
@@ -502,11 +545,13 @@ class MarkdownDeltaCodec {
       }
       output.write(encodedLine);
       line.clear();
+      lineHasLiteralText = false;
       if (attributes?[sourceBreakAttribute] != false) {
         output.write(isLiteral ? '\n\n' : '\n');
       }
       start = index + 1;
     }
+    return lineHasLiteralText;
   }
 
   static String _encodeInlineText(
@@ -523,6 +568,7 @@ class MarkdownDeltaCodec {
       emptyParagraphAttribute,
       sourceBreakAttribute,
       literalLineAttribute,
+      literalTextAttribute,
       'header',
       'list',
       'blockquote',
@@ -539,7 +585,9 @@ class MarkdownDeltaCodec {
     }
     if (inlineCode) return _inlineCode(value);
 
-    var encoded = value;
+    var encoded = attributes[literalTextAttribute] == true
+        ? MarkdownContent.literalizeInlineText(value)
+        : value;
     if (link != null) {
       if (link is! String || link.isEmpty) {
         throw const MarkdownCodecException('链接属性不是有效字符串');
@@ -560,8 +608,16 @@ class MarkdownDeltaCodec {
     return encoded;
   }
 
-  static String _encodeLine(String content, Map<String, dynamic>? attributes) {
-    if (attributes == null || attributes.isEmpty) return content;
+  static String _encodeLine(
+    String content,
+    Map<String, dynamic>? attributes, {
+    required bool containsLiteralText,
+  }) {
+    if (attributes == null || attributes.isEmpty) {
+      return containsLiteralText
+          ? MarkdownContent.protectUnsafeWhitespace(content)
+          : content;
+    }
     _rejectUnknownAttributes(attributes, const {
       'bold',
       'italic',
@@ -571,6 +627,7 @@ class MarkdownDeltaCodec {
       emptyParagraphAttribute,
       sourceBreakAttribute,
       literalLineAttribute,
+      literalTextAttribute,
       'header',
       'list',
       'blockquote',
@@ -605,6 +662,13 @@ class MarkdownDeltaCodec {
         (header == null ? 0 : 1) + (list == null ? 0 : 1) + (quote ? 1 : 0);
     if (blockStyleCount > 1) {
       throw const MarkdownCodecException('同一行不能组合标题、列表和引用');
+    }
+    final hasUnsafeWhitespace =
+        content.startsWith('    ') ||
+        content.startsWith('\t') ||
+        RegExp(r' {2,}$').hasMatch(content);
+    if (hasUnsafeWhitespace && blockStyleCount == 0 && containsLiteralText) {
+      return MarkdownContent.protectUnsafeWhitespace(content);
     }
     if (header != null) {
       if (header != 2 && header != 3) {

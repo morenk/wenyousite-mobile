@@ -314,7 +314,8 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!_bodyController.flush()) return;
+    if (!await _bodyController.flush()) return;
+    if (!mounted) return;
     final provider = subthreadManagementControllerProvider(widget.threadId);
     final state = ref.read(provider);
     final bootstrap = state.bootstrap;
@@ -351,7 +352,8 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
 
   Future<void> _requestClose(bool locked) async {
     if (locked || _bodyController.closeToolbarTray()) return;
-    if (!_bodyController.flush()) return;
+    if (!await _bodyController.flush()) return;
+    if (!mounted) return;
     if (!_dirty) {
       await _pop();
       return;

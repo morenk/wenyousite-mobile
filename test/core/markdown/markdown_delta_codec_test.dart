@@ -406,6 +406,42 @@ void main() {
     expect(MarkdownDeltaCodec.encode(document.delta), r'\- \[ \] 待处理');
   });
 
+  test('历史安全转义正文显示原字符且保存时仍保持安全编码', () {
+    const saved =
+        r'\| 名称 \| 数值 \|'
+        '\n'
+        r'\| \-\-\- \| \-\-\-\: \|';
+
+    final document = MarkdownDeltaCodec.decode(saved);
+    final visible = document.delta.operations
+        .where((operation) => operation.data is String)
+        .map((operation) => operation.data! as String)
+        .join();
+
+    expect(visible, contains('| 名称 | 数值 |'));
+    expect(visible, isNot(contains(r'\')));
+    expect(MarkdownDeltaCodec.encode(document.delta), saved);
+  });
+
+  test('历史字面转义不会阻止同行受支持富文本恢复', () {
+    const saved = r'**加粗** 与 \*字面星号\*';
+
+    final document = MarkdownDeltaCodec.decode(saved);
+    final textOperations = document.delta.operations.where(
+      (operation) => operation.data is String && operation.data != '\n',
+    );
+
+    expect(
+      textOperations.any((operation) => operation.attributes?['bold'] == true),
+      isTrue,
+    );
+    expect(
+      textOperations.map((operation) => operation.data! as String).join(),
+      '加粗 与 *字面星号*',
+    );
+    expect(MarkdownDeltaCodec.encode(document.delta), saved);
+  });
+
   test('分隔线使用本地原子节点往返且不改变其他主题分隔线写法', () {
     final document = MarkdownDeltaCodec.decode('---\n* * *\n___');
 

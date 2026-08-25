@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
@@ -16,7 +17,7 @@ class ThreadManagementBodyEditorController extends ChangeNotifier {
   RichEditorSession? _session;
   WenyouEditorToolbarController? _toolbar;
 
-  bool flush() => _session?.flush() ?? true;
+  Future<bool> flush() => _session?.flush() ?? Future<bool>.value(true);
 
   bool closeToolbarTray() => _toolbar?.closeTray() ?? false;
 
@@ -88,6 +89,7 @@ class _ThreadManagementBodyEditorState
     _markdown = widget.initialMarkdown;
     _session = RichEditorSession(
       initialMarkdown: widget.initialMarkdown,
+      clipboardScope: ref.read(sessionScopeProvider),
       initialSelection: RichEditorSelectionPlacement.end,
       onMarkdownChanged: (markdown) {
         _markdown = markdown;
@@ -156,6 +158,14 @@ class _ThreadManagementBodyEditorState
               tone: WenyouStatusTone.error,
               message: '当前格式组合暂时不能安全保存。',
               detail: _session.codecFailure,
+            ),
+          ),
+        if (_session.operationFailure != null)
+          Padding(
+            padding: EdgeInsets.only(bottom: tokens.space8),
+            child: WenyouStatusBanner(
+              tone: WenyouStatusTone.error,
+              message: _session.operationFailure!.message,
             ),
           ),
         if (_session.issues.isNotEmpty)
@@ -260,7 +270,8 @@ class _ThreadManagementBodyEditorState
   }
 
   Future<void> _openDrafts() async {
-    if (!_session.flush()) return;
+    if (!await _session.flush()) return;
+    if (!mounted) return;
     await showContentDraftsSheet(
       context: context,
       draftSessionKey: _contentDraftSessionKey,

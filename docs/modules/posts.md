@@ -56,7 +56,9 @@
 
 楼层与回复作者头像复用共享首字符降级；可见相对时间遵循 Foundation 72 小时窗口，组合楼层语义同时提供完整发布时间。
 
-帖子输入复用 editor 的 Markdown ↔ Delta Codec、协议 embed 和五槽位正文草稿；图片上传任务复用 `media/application` 的共享控制器；服务端生成骰子结果，已结算节点通过结构化映射打开 Foundation 逐骰明细面板。主题详情提供子贴、capability、楼层和公开举报上下文，posts 通过明确只读端口读取主题事实，不直接读取 threads 页面状态；社区举报的原因、详情与重复待处理收敛由 reports 管理。视觉只使用 Foundation v6.4.0 Token、语义图标与共享组件，连续楼层/回复不使用逐条装饰面板；楼层与独立讨论复用核心头像按钮的安全图片降级、48dp 命中区和“查看个人主页”语义。
+帖子创建、编辑、关闭前保留和五槽位正文草稿统一等待 editor 粘贴事务并从当前 Delta 重编码；外部复制内容只作为普通文本，编码失败或 10000 字符超限时保留半屏编辑器及页面内草稿，不提交缓存旧正文。
+
+帖子输入复用 editor 的 Markdown ↔ Delta Codec、协议 embed 和五槽位正文草稿；图片上传任务复用 `media/application` 的共享控制器；服务端生成骰子结果，已结算节点通过结构化映射打开 Foundation 逐骰明细面板。主题详情提供子贴、capability、楼层和公开举报上下文，posts 通过明确只读端口读取主题事实，不直接读取 threads 页面状态；社区举报的原因、详情与重复待处理收敛由 reports 管理。视觉只使用 Foundation v6.5.0 Token、语义图标与共享组件，连续楼层/回复不使用逐条装饰面板；楼层与独立讨论复用核心头像按钮的安全图片降级、48dp 命中区和“查看个人主页”语义。
 
 ## 11. 测试场景与验收条件
 
@@ -95,8 +97,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.5.0`（`8ab87ef`）。
 
 ## 14. 相关代码与架构文档
 
-帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)。
+帖子端口与状态：`lib/features/posts/application/`；API 适配器：`lib/features/posts/data/`；页面：`lib/features/posts/presentation/`；主题内楼层入口：`lib/features/threads/`。参见[主题与子贴](threads.md)、[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[媒体](media.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[语义图标](../architecture/icons.md)、[Foundation v6.5.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.0/docs/platforms/mobile.md)。

@@ -40,6 +40,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        EditorClipboardChannel(this).register(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {

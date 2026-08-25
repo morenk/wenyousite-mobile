@@ -8,6 +8,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
@@ -55,6 +56,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     WidgetsBinding.instance.addObserver(this);
     _editorSession = RichEditorSession(
       initialMarkdown: '',
+      clipboardScope: ref.read(sessionScopeProvider),
       onMarkdownChanged: (markdown) {
         ref.read(threadComposeControllerProvider.notifier).updateBody(markdown);
         ref
@@ -219,6 +221,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 state: state,
                 documentIssues: _editorSession.issues,
                 codecFailure: _editorSession.codecFailure,
+                operationFailure: _editorSession.operationFailure?.message,
                 uploadFailure: uploadState.failure,
                 uploadProgress: uploadState.progress,
                 uploading: uploadState.isBusy,
@@ -515,7 +518,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _saveThreadDraft() async {
-    if (_uploading || !_editorSession.flush()) return;
+    if (_uploading || !await _editorSession.flush()) return;
+    if (!mounted) return;
     final saved = await ref
         .read(threadComposeControllerProvider.notifier)
         .saveDraft();
@@ -535,7 +539,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _openRemoteDrafts() async {
-    if (_uploading || !_editorSession.flush()) return;
+    if (_uploading || !await _editorSession.flush()) return;
+    if (!mounted) return;
     final before = ref.read(threadComposeControllerProvider);
     final selected = await showRemoteThreadDraftsSheet(
       context: context,
@@ -570,7 +575,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _openContentDrafts() async {
-    if (_uploading || !_editorSession.flush()) return;
+    if (_uploading || !await _editorSession.flush()) return;
+    if (!mounted) return;
     await _flushSnapshot();
     if (!mounted) return;
     final currentBody = ref.read(threadComposeControllerProvider).body;
@@ -592,7 +598,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _publish() async {
-    if (_uploading || !_editorSession.flush()) return;
+    if (_uploading || !await _editorSession.flush()) return;
+    if (!mounted) return;
     final threadId = await ref
         .read(threadComposeControllerProvider.notifier)
         .publish();
@@ -603,7 +610,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
   }
 
   Future<void> _flushSnapshot() async {
-    if (!_editorSession.flush()) return;
+    if (!await _editorSession.flush()) return;
+    if (!mounted) return;
     final state = ref.read(threadComposeControllerProvider);
     if (state.phase == ThreadComposePhase.ready) {
       await ref

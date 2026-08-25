@@ -262,6 +262,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _openedSessionScope = ref.read(sessionScopeProvider);
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
+      clipboardScope: _openedSessionScope,
       initialSelection: RichEditorSelectionPlacement.end,
       onMarkdownChanged: (markdown) {
         if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
@@ -423,6 +424,19 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
               tone: WenyouStatusTone.error,
             ),
           ),
+        if (_editorSession.operationFailure != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space12,
+              tokens.space12,
+              tokens.space12,
+              0,
+            ),
+            child: WenyouStatusBanner(
+              message: _editorSession.operationFailure!.message,
+              tone: WenyouStatusTone.error,
+            ),
+          ),
         if (_editorSession.issues.isNotEmpty)
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -564,7 +578,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
-    if (!_editorSession.flush()) return;
+    if (!await _editorSession.flush()) return;
+    if (!mounted ||
+        _closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope) {
+      return;
+    }
     final result = await ref
         .read(postComposerControllerProvider(widget.target).notifier)
         .submit();
@@ -583,7 +602,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
-    if (!_editorSession.flush()) return;
+    if (!await _editorSession.flush()) return;
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: false,
@@ -635,13 +655,17 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     ref
         .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
         .cancel();
-    if (!_editorSession.flush()) {
+    if (!await _editorSession.flush()) {
       _preparingClose = false;
+      return;
+    }
+    if (!mounted ||
+        _closing ||
+        ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
     final current = ref.read(postComposerControllerProvider(widget.target));
     widget.onDraftChanged?.call(current.content);
-    if (!mounted) return;
     setState(() => _closing = true);
     widget.onClose(null);
   }
@@ -650,7 +674,8 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
-    if (!_editorSession.flush()) return;
+    if (!await _editorSession.flush()) return;
+    if (!mounted) return;
     final state = ref.read(postComposerControllerProvider(widget.target));
     await showContentDraftsSheet(
       context: context,

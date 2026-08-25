@@ -90,11 +90,7 @@ void main() {
         320 => const <String>[],
         360 => const ['editor-content-drafts'],
         400 => const ['editor-content-drafts', 'editor-quote'],
-        _ => const [
-          'editor-content-drafts',
-          'editor-quote',
-          'editor-horizontal-rule',
-        ],
+        _ => const ['editor-content-drafts', 'editor-quote'],
       };
       final controlKeys = <String>[
         'editor-heading',
@@ -110,6 +106,7 @@ void main() {
       for (final key in promotedKeys) {
         expect(find.byKey(Key(key)), findsOneWidget);
       }
+      expect(find.byKey(const Key('editor-horizontal-rule')), findsNothing);
       final centers = controlKeys
           .map((key) => tester.getCenter(find.byKey(Key(key))).dx)
           .toList();
@@ -134,6 +131,7 @@ void main() {
       await tester.tap(find.byKey(const Key('editor-more')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
+      expect(find.byKey(const Key('editor-horizontal-rule')), findsOneWidget);
       for (final key in promotedKeys) {
         final label = switch (key) {
           'editor-content-drafts' => '正文草稿',
@@ -147,7 +145,7 @@ void main() {
     });
   }
 
-  testWidgets('无提交按钮时 400dp 提升草稿、引用和分隔线并从更多去重', (tester) async {
+  testWidgets('无提交按钮时分隔线仍固定放在更多面板', (tester) async {
     tester.view.physicalSize = const Size(400, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -177,7 +175,7 @@ void main() {
 
     expect(find.byKey(const Key('editor-content-drafts')), findsOneWidget);
     expect(find.byKey(const Key('editor-quote')), findsOneWidget);
-    expect(find.byKey(const Key('editor-horizontal-rule')), findsOneWidget);
+    expect(find.byKey(const Key('editor-horizontal-rule')), findsNothing);
 
     await tester.tap(find.byKey(const Key('editor-quote')));
     await tester.pump();
@@ -186,19 +184,19 @@ void main() {
       isNotNull,
     );
 
-    await tester.tap(find.byKey(const Key('editor-horizontal-rule')));
-    await tester.pump();
-    expect(
-      MarkdownDeltaCodec.encode(controller.document.toDelta()),
-      contains('---'),
-    );
-
     await tester.tap(find.byKey(const Key('editor-more')));
     await tester.pumpAndSettle();
     expect(find.byTooltip('正文草稿'), findsOneWidget);
     expect(find.byTooltip('引用'), findsOneWidget);
     expect(find.byTooltip('分隔线'), findsOneWidget);
     expect(find.byTooltip('无序列表'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('editor-horizontal-rule')));
+    await tester.pump();
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      contains('---'),
+    );
   });
 
   testWidgets('链接和骰子在编辑器内部输入并保持 Markdown 往返', (tester) async {

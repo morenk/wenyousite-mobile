@@ -74,6 +74,8 @@
 
 ## 10. 跨模块约束
 
+主题创建/发布、主题设置、子贴创建/编辑、楼层与回复保存，以及本地/云端草稿都统一等待 editor 粘贴事务并从当前 Delta 重编码；外部复制内容只作为普通文本，编码失败或 10000 字符超限时保留编辑状态，不提交缓存旧正文。
+
 主题作者、成员和邀请楼主头像复用共享首字符降级；题头与楼层短时间遵循 Foundation 72 小时格式并提供完整时间语义，列表计数按阈值紧凑显示。
 
 主楼与独立讨论复用核心“总数 + 作者下拉框 + 顺序切换”组件和 posts 范围化作者目录；动态评论继续使用独立的讨论设置组件，threads 不复制作者映射逻辑。
@@ -90,8 +92,8 @@
 - [x] 共享等级徽标始终按内容宽度收缩；主题主阅读流最多展示前五条楼中楼，真实预览高度超过 320dp 或仍有未预览回复时才显示固定高度渐变与“展开全部”入口，单条简短回复不折叠也不提供独立页入口。
 - [x] 子贴正文直接位于阅读画布且没有嵌套 Card；楼层作者信息在紧凑单行内完成，头像以独立 48dp 入口进入作者主页且不触发回复，整层其余区域暴露“回复第 N 楼”点击动作；楼层不常驻回复数入口，短楼中楼点按后直接回复该条，超长楼层正文可渐变展开/收起。
 - [x] `subthread` 站内坐标直接打开指定子贴；`post` 坐标由服务端帖子归属事实定位，普通楼层留在主题上下文，具体回复直接进入独立讨论且返回后不循环打开；入口坐标只执行一次初始子贴定位，目标已是当前子贴也会完成消费，前后按钮与目录均可自由切换。帖子定位迟到时用户选择优先，无效子贴坐标不会在后续刷新中突然生效；坐标或登录会话变化可重新定位，显式失败重试会重新武装当前坐标。纵向拖动会释放楼层坐标吸附，后续布局变化不会拉回目标楼层。
-- [x] Markdown 内合法站内坐标复用 Foundation v6.4.0 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
-- [x] 提及、引用、行内代码和主题标签按 Foundation v6.4.0 在阅读/编辑态统一；主题流内嵌回复使用 17sp/1.8，并有组件、Codec、布局和 Golden 回归。
+- [x] Markdown 内合法站内坐标复用 Foundation v6.5.0 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
+- [x] 提及、引用、行内代码和主题标签按 Foundation v6.5.0 在阅读/编辑态统一；主题流内嵌回复使用 17sp/1.8，并有组件、Codec、布局和 Golden 回归。
 - [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射；详情题头直接展示全部主题标签入口，其他辅助元数据不重复。骰子节点使用 Foundation 已结算/待掷语义色的无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`，已结算结果可打开逐骰明细且 TalkBack 不重复朗读。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
 - [x] 详情、子贴、楼层与内嵌回复在 API 映射前校验请求 ID、主题/子贴归属、kind、父楼层、回复目标、作者、骰子和分页 cursor；空响应或错配数据进入安全失败态。
@@ -139,8 +141,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.5.0`（`8ab87ef`）。
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.5.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.0/docs/platforms/mobile.md)。

@@ -106,6 +106,60 @@ void main() {
     expect(cleared.usePlainText, isFalse);
   });
 
+  test('相同纯文本也必须同时匹配 Android 标记和登录会话', () {
+    final source = _protocolDelta(
+      firstDiceId: firstDiceId,
+      secondDiceId: secondDiceId,
+    );
+    final markerMismatchStore = WenyouEditorClipboardStore();
+    final fallback = markerMismatchStore.capture(
+      delta: source,
+      plainTextFallback: '备用文本',
+      operation: WenyouEditorClipboardOperation.copy,
+      marker: 'marker-a',
+      scope: 'session-a',
+    );
+
+    final markerMismatch = markerMismatchStore.resolve(
+      fallback,
+      marker: 'marker-b',
+      scope: 'session-a',
+    );
+    expect(markerMismatch.delta, isNull);
+    expect(markerMismatch.usePlainText, isFalse);
+
+    final scopeMismatchStore = WenyouEditorClipboardStore();
+    scopeMismatchStore.capture(
+      delta: source,
+      plainTextFallback: '备用文本',
+      operation: WenyouEditorClipboardOperation.copy,
+      marker: 'marker-a',
+      scope: 'session-a',
+    );
+    final scopeMismatch = scopeMismatchStore.resolve(
+      fallback,
+      marker: 'marker-a',
+      scope: 'session-b',
+    );
+    expect(scopeMismatch.delta, isNull);
+    expect(scopeMismatch.usePlainText, isFalse);
+
+    final matchingStore = WenyouEditorClipboardStore();
+    matchingStore.capture(
+      delta: source,
+      plainTextFallback: '备用文本',
+      operation: WenyouEditorClipboardOperation.copy,
+      marker: 'marker-a',
+      scope: 'session-a',
+    );
+    expect(
+      matchingStore
+          .resolve(fallback, marker: 'marker-a', scope: 'session-a')
+          .delta,
+      isNotNull,
+    );
+  });
+
   test('非法结构化载荷在粘贴时降级为纯文本', () {
     final store = WenyouEditorClipboardStore();
     final invalid = Delta()

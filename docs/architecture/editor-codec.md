@@ -23,9 +23,9 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 ## 当前实现状态
 
-`MarkdownDeltaCodec` 已接入主题和帖子编辑器。`MarkdownRichLineDecoder` 先把可精确往返的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和 0～3 级列表解析为不依赖 Quill 的中立行模型，Codec 再用未净化的候选编码结果验证其能回到完全相同的 canonical 输入后映射为 Delta 属性；出口净化不能参与这项能力证明。任务列表、表格、围栏代码、历史标题级别等尚未支持的结构在编辑会话中显示为可解释的源码文字；序列化时 `wenyou_literal_line` 会转义 Markdown 标点并提交为 Markdown v3 安全字面文本，因此它们不会作为原始不支持结构继续生效，也不属于源码无损提交。公共 `encode` 在生成完整 Markdown 后再次统一识别并字面化不支持结构，覆盖未携带 `wenyou_literal_line` 的外部粘贴、手输、IME 和残留属性路径；净化对已安全字面化正文保持幂等。用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 提升为稳定 embed 或行属性。未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed；未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作会阻止序列化。
+`MarkdownDeltaCodec` 已接入主题和帖子编辑器。`MarkdownRichLineDecoder` 先把可精确往返的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和 0～3 级列表解析为不依赖 Quill 的中立行模型，Codec 再用未净化的候选编码结果验证其能回到完全相同的 canonical 输入后映射为 Delta 属性；出口净化不能参与这项能力证明。任务列表、表格、围栏代码、历史标题级别等尚未支持的结构在编辑会话中显示为可解释的源码文字；序列化时 `wenyou_literal_line` 会转义 Markdown 标点并提交为 Markdown v3 安全字面文本，因此它们不会作为原始不支持结构继续生效，也不属于源码无损提交。外部粘贴、键盘和 IME 写入的普通字符携带 `wenyou_literal_text`，Codec 先转义全部 ASCII Markdown 标点，再由完整 `encode` 出口统一识别并字面化漏网的不支持结构；只有已有受支持 Markdown 解码结果、工具栏属性和协议 embed 可以生成语义。已保存的安全转义在 decode 时拆成可见字符与最小 literal span，编辑器不显示反斜杠和 whitespace guard，重新 encode 仍得到相同安全表示。用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 提升为稳定 embed 或行属性。未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed；未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作会阻止序列化。
 
-源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。编辑页提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder。编辑器剪贴板保存结构化选区和 Markdown 文本回退，匹配的复制载荷在每次粘贴时重建骰子 UUID，剪切载荷仅首次保留原 UUID；载荷失配、过期或无法通过 Codec 安全编码时只按普通文本插入。所有外部文本粘贴都由 `RichEditorSession` 消费并统一换行，不再把普通文本或无文本结果交回 Quill 默认路径。系统剪贴板写入失败必须同步清除内部载荷，避免后续同文本误命中；只读会话允许复制，但明确拦截剪切和粘贴，不把未处理动作交回 Quill 默认写入路径。显式 `flush` 每次都从当前 Delta 编码，即使会话未标脏也不得复用旧 Markdown；主题发布、主题/子贴/帖子保存、五槽位云草稿和本地快照由此共用同一出口。仅上述明确支持且通过精确回编码验证的普通 Markdown 进入 WYSIWYG；其余结构保持可解释的源码显示，并在保存时安全字面化，不宣称任意 Markdown 都已所见即所得或能原样提交。
+源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。编辑页提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder；分隔线只位于“更多”。编辑器剪贴板保存结构化选区和 Markdown 文本回退，Android `ClipDescription.extras` 同时保存随机 UUID marker；只有 marker、系统纯文本、十分钟时效和 `SessionScope` 全部匹配才恢复 Delta。匹配的复制载荷在每次粘贴时重建骰子 UUID，剪切载荷仅首次保留原 UUID；任一条件失配或载荷无法通过 Codec 安全编码时只按普通文本插入。所有外部文本粘贴都由 `RichEditorSession` 消费并统一换行，不再把普通文本、富剪贴板或无文本结果交回 Quill 默认路径。读取剪贴板前固定文档 generation、Delta 签名和选区；异步返回时任何一项变化都会拒绝旧操作。会话先在克隆 Document 上完成替换、编码和 10000 字符预检，通过后才一次写入真实文档，因此超限不会留下部分正文。系统剪贴板写入失败同步清除内部载荷；只读会话允许复制，但明确拦截剪切和粘贴。显式 `flush` 等待在途粘贴并每次从当前 Delta 编码，即使会话未标脏也不得复用旧 Markdown；主题发布、主题/子贴/帖子保存、五槽位云草稿和本地快照由此共用同一出口。仅上述明确支持且通过精确回编码验证的既有 Markdown 进入 WYSIWYG；外部或新输入文本始终保持字面语义。
 
 ## 往返不变量
 
@@ -39,14 +39,16 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 8. 骰子 copy-paste 必须为每个节点生成新 UUID；cut-paste 首次保留 UUID，重复粘贴转为 copy 语义；mention、sticker 等其他节点不改写身份字段。
 9. 骰子计数与后端保持相同的代码围栏、成对行内反引号和奇偶反斜杠语义；未闭合行内反引号不遮蔽后续合法节点，长畸形输入不得因逐字符复制后缀而退化。
 10. 公共编码出口不得产生 `MarkdownContent.unsupportedLineIndexes` 可识别的不支持结构；安全字面化结果重复 decode/encode 不得继续增加转义或空行。
+11. 外部剪贴板文本不得因与内部回退文本相同而恢复 Delta；必须额外匹配 Android UUID marker 与当前登录会话作用域。
+12. 粘贴在克隆文档上预检，文档或选区竞态、读取失败及序列化后超过 10000 字符都必须保持真实文档原子不变；保存必须等待在途粘贴完成。
 
 ## 测试门禁
 
 - `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v2-fixtures.json` 的 canonical、visible 和幂等用例全部通过。
 - 为普通 Markdown、用户提及、全体玩家、骰子、表情、普通图片、空段和代码转义维护双向 Codec 黄金用例。
 - 每种自定义 embed 至少覆盖解析、编辑后序列化、未知版本保留和恶意 URL降级。
-- 剪贴板覆盖同编辑器、跨编辑器、多骰子、剪切后重复粘贴、普通文本回退、其他协议节点保持、只读拦截和系统写入失败清理。
-- 外部普通文本覆盖 CRLF、表格、HTML、任务列表及全部 Markdown v3 不支持 fixture；格式切换与保存覆盖 H2/H3、加粗、未标脏和同一帧立即 flush。
+- 剪贴板覆盖同编辑器、跨编辑器、Android marker/会话匹配、多骰子、剪切后重复粘贴、普通文本回退、其他协议节点保持、只读拦截和系统写入失败清理。
+- 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v3 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。
 - Flutter Quill 升级必须独立 `chore`，重新运行全部 Codec 黄金语料并人工冒烟 Android 输入、选择、撤销/重做和粘贴。
 
 参考：[Flutter Quill](https://pub.dev/packages/flutter_quill)、[markdown_quill 限制](https://pub.dev/packages/markdown_quill)、[编辑器模块](../modules/editor.md)。

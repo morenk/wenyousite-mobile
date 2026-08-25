@@ -422,7 +422,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
 
   Future<bool> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return false;
-    if (!_bodyEditorController.flush()) return false;
+    if (!await _bodyEditorController.flush()) return false;
+    if (!mounted) return false;
     FocusScope.of(context).unfocus();
     final succeeded = await ref
         .read(threadManagementControllerProvider(widget.threadId).notifier)

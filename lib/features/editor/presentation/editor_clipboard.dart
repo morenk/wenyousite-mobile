@@ -39,6 +39,8 @@ class WenyouEditorClipboardStore {
     required Delta delta,
     required String plainTextFallback,
     required WenyouEditorClipboardOperation operation,
+    String? marker,
+    Object? scope,
   }) {
     final cloned = Delta.fromJson(delta.toJson());
     var fallback = plainTextFallback;
@@ -52,16 +54,24 @@ class WenyouEditorClipboardStore {
       fallback: fallback,
       operation: operation,
       capturedAt: _now(),
+      marker: marker,
+      scope: scope,
     );
     return fallback;
   }
 
-  WenyouEditorClipboardResolution resolve(String clipboardText) {
+  WenyouEditorClipboardResolution resolve(
+    String clipboardText, {
+    String? marker,
+    Object? scope,
+  }) {
     final payload = _payload;
     if (payload == null) {
       return const WenyouEditorClipboardResolution.noMatch();
     }
-    if (clipboardText != payload.fallback) {
+    if (clipboardText != payload.fallback ||
+        marker != payload.marker ||
+        scope != payload.scope) {
       _payload = null;
       return const WenyouEditorClipboardResolution.noMatch();
     }
@@ -120,12 +130,16 @@ class _EditorClipboardPayload {
     required this.fallback,
     required this.operation,
     required this.capturedAt,
+    required this.marker,
+    required this.scope,
   });
 
   final Delta delta;
   final String fallback;
   final WenyouEditorClipboardOperation operation;
   final DateTime capturedAt;
+  final String? marker;
+  final Object? scope;
 
   _EditorClipboardPayload asCopy({required DateTime capturedAt}) =>
       _EditorClipboardPayload(
@@ -133,5 +147,7 @@ class _EditorClipboardPayload {
         fallback: fallback,
         operation: WenyouEditorClipboardOperation.copy,
         capturedAt: capturedAt,
+        marker: marker,
+        scope: scope,
       );
 }
