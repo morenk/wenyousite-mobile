@@ -150,7 +150,7 @@ void main() {
             MentionCandidate(
               id: 'user-carol',
               username: 'Carol',
-              relation: MentionCandidateRelation.unknown,
+              relation: MentionCandidateRelation.following,
             ),
           ],
           canMentionAllPlayers: true,
@@ -272,8 +272,8 @@ void main() {
           ),
           MentionCandidate(
             id: 'user-carol',
-            username: '普通用户',
-            relation: MentionCandidateRelation.unknown,
+            username: '另一位玩家',
+            relation: MentionCandidateRelation.player,
           ),
         ],
         canMentionAllPlayers: true,

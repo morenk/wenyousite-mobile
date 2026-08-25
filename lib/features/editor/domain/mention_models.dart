@@ -1,4 +1,4 @@
-enum MentionCandidateRelation { following, player, unknown }
+enum MentionCandidateRelation { following, player }
 
 class MentionCandidate {
   const MentionCandidate({
@@ -16,7 +16,6 @@ class MentionCandidate {
   String get relationLabel => switch (relation) {
     MentionCandidateRelation.following => '我关注的人',
     MentionCandidateRelation.player => '帖内玩家',
-    MentionCandidateRelation.unknown => '可提及用户',
   };
 }
 

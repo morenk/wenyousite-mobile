@@ -37,47 +37,28 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
         throw const ApiFailure(userMessage: '可提及用户加载失败，请稍后重试。');
       }
       final seen = <String>{};
-      final users = data.users
-          .where(
-            (candidate) =>
-                _stableId.hasMatch(candidate.id) &&
-                _username.hasMatch(candidate.username) &&
-                seen.add(candidate.id),
-          )
-          .map(
-            (candidate) => MentionCandidate(
-              id: candidate.id,
-              username: candidate.username,
-              relation: switch (candidate.relation) {
-                MentionCandidateDtoRelationEnum.FOLLOWING =>
-                  MentionCandidateRelation.following,
-                MentionCandidateDtoRelationEnum.PLAYER =>
-                  MentionCandidateRelation.player,
-                _ => MentionCandidateRelation.unknown,
-              },
-            ),
-          )
-          .toList(growable: true);
-      if (normalizedQuery.isNotEmpty) {
-        final global = (await _api.usersSearch(q: normalizedQuery)).data?.data;
-        if (global == null) {
-          throw const ApiFailure(userMessage: '用户搜索失败，请稍后重试。');
+      final users = <MentionCandidate>[];
+      for (final candidate in data.users) {
+        final relation = switch (candidate.relation) {
+          MentionCandidateDtoRelationEnum.FOLLOWING =>
+            MentionCandidateRelation.following,
+          MentionCandidateDtoRelationEnum.PLAYER =>
+            MentionCandidateRelation.player,
+          _ => null,
+        };
+        if (relation == null ||
+            !_stableId.hasMatch(candidate.id) ||
+            !_username.hasMatch(candidate.username) ||
+            !seen.add(candidate.id)) {
+          continue;
         }
-        for (final candidate in global) {
-          if (users.length >= 20) break;
-          if (!_stableId.hasMatch(candidate.id) ||
-              !_username.hasMatch(candidate.username) ||
-              !seen.add(candidate.id)) {
-            continue;
-          }
-          users.add(
-            MentionCandidate(
-              id: candidate.id,
-              username: candidate.username,
-              relation: MentionCandidateRelation.unknown,
-            ),
-          );
-        }
+        users.add(
+          MentionCandidate(
+            id: candidate.id,
+            username: candidate.username,
+            relation: relation,
+          ),
+        );
       }
       return MentionCandidatesResult(
         users: List.unmodifiable(users.take(20)),

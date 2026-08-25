@@ -8,7 +8,7 @@ import 'package:wenyousite_mobile/features/editor/data/mention_candidate_reposit
 import 'package:wenyousite_mobile/features/editor/domain/mention_models.dart';
 
 void main() {
-  test('候选查询合并主题关系与全站用户并保留关系优先级', () async {
+  test('候选查询只映射服务端授权的关注用户与标记玩家', () async {
     final api = _MockUsersApi();
     when(
       () => api.usersMentionCandidates(threadId: 'thread-1', q: '温'),
@@ -29,13 +29,6 @@ void main() {
         canMentionAllPlayers: true,
       ),
     );
-    when(() => api.usersSearch(q: '温')).thenAnswer(
-      (_) async => _globalResponse([
-        _author(id: 'user-following', username: '温柔朋友'),
-        _author(id: 'user-global', username: '温柔路人'),
-      ]),
-    );
-
     final result = await ApiMentionCandidateRepository(
       api,
     ).findCandidates(threadId: ' thread-1 ', query: '温');
@@ -44,18 +37,33 @@ void main() {
     expect(result.users.map((item) => item.id), [
       'user-following',
       'user-player',
-      'user-global',
     ]);
     expect(result.users.first.relation, MentionCandidateRelation.following);
-    expect(result.users[1].relation, MentionCandidateRelation.player);
-    expect(result.users.last.relation, MentionCandidateRelation.unknown);
+    expect(result.users.last.relation, MentionCandidateRelation.player);
     verify(
       () => api.usersMentionCandidates(threadId: 'thread-1', q: '温'),
     ).called(1);
-    verify(() => api.usersSearch(q: '温')).called(1);
+    verifyNever(() => api.usersSearch(q: any(named: 'q')));
   });
 
-  test('空关键词省略 q，重复或不能安全编码的候选被过滤', () async {
+  test('关系外全站用户不进入候选且不会触发全站用户搜索', () async {
+    final api = _MockUsersApi();
+    when(
+      () => api.usersMentionCandidates(threadId: 'thread-1', q: '玛利亚'),
+    ).thenAnswer((_) async => _response(users: []));
+
+    final result = await ApiMentionCandidateRepository(
+      api,
+    ).findCandidates(threadId: 'thread-1', query: ' 玛利亚 ');
+
+    expect(result.users, isEmpty);
+    verify(
+      () => api.usersMentionCandidates(threadId: 'thread-1', q: '玛利亚'),
+    ).called(1);
+    verifyNever(() => api.usersSearch(q: any(named: 'q')));
+  });
+
+  test('空关键词省略 q，重复、未知关系或不能安全编码的候选被过滤', () async {
     final api = _MockUsersApi();
     when(() => api.usersMentionCandidates(threadId: 'thread-1')).thenAnswer(
       (_) async => _response(
@@ -74,6 +82,11 @@ void main() {
             id: 'bad/id',
             username: '危险用户',
             relation: MentionCandidateDtoRelationEnum.PLAYER,
+          ),
+          _candidate(
+            id: 'user-unknown',
+            username: '未知关系',
+            relation: MentionCandidateDtoRelationEnum.unknownDefaultOpenApi,
           ),
         ],
       ),
@@ -158,30 +171,6 @@ Response<UsersMentionCandidates200Response> _response({
             ..users = ListBuilder(users)
             ..canMentionAllPlayers = canMentionAllPlayers,
         ),
-    ),
-  );
-}
-
-PostAuthorResponseDto _author({required String id, required String username}) {
-  return PostAuthorResponseDto(
-    (builder) => builder
-      ..id = id
-      ..username = username
-      ..avatar = null
-      ..level = 1,
-  );
-}
-
-Response<UsersSearch200Response> _globalResponse(
-  List<PostAuthorResponseDto> users,
-) {
-  return Response(
-    requestOptions: RequestOptions(path: '/api/v1/users/search'),
-    data: UsersSearch200Response(
-      (response) => response
-        ..code = ApiSuccessEnvelopeCodeEnum.number0
-        ..message = 'ok'
-        ..data = ListBuilder(users),
     ),
   );
 }

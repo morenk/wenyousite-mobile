@@ -27,6 +27,6 @@ dart run tool/audit_api_coverage.dart --require-complete
 
 业务仓储引用 operationId 和生成类型；模块文档不复制请求/响应 Schema。
 
-`tool/audit_api_coverage.dart` 以固定 OpenAPI 的 operationId 为集合，扫描 `lib/**/*.dart` 中实际生成客户端调用，同时报告原始契约覆盖和移动端适用范围覆盖。`tool/api_coverage_exclusions.json` 必须逐 operationId 记录非移动端能力及理由；当前允许管理产品、部署健康检查、尚未启用的 FCM 设备注册、已废弃端点，以及后端明确标为 deferred 且已有向后兼容降级的独立产品切片。契约删除排除项、移动端开始调用被排除端点，或清单存在重复/未知 ID 时审计直接失败，避免清单变成静默逃生口。
+`tool/audit_api_coverage.dart` 以固定 OpenAPI 的 operationId 为集合，扫描 `lib/**/*.dart` 中实际生成客户端调用，同时报告原始契约覆盖和移动端适用范围覆盖。`tool/api_coverage_exclusions.json` 必须逐 operationId 记录非移动端能力及理由；当前允许管理产品、部署健康检查、尚未启用的 FCM 设备注册、已废弃端点、后端明确标为 deferred 且已有向后兼容降级的独立产品切片，以及已由权限范围更准确或一致性更强的端点取代的旧调用。被取代的端点必须同时记录实际替代端点和继续调用会破坏的业务不变量。契约删除排除项、移动端开始调用被排除端点，或清单存在重复/未知 ID 时审计直接失败，避免清单变成静默逃生口。
 
 该工具用于持续规划垂直切片，不以字符串计数替代仓储、状态和页面测试；`--require-complete` 要求所有未排除的移动端 operationId 已有真实客户端调用。新增契约端点默认属于移动端范围，必须完成实现，或经产品范围审查后显式加入排除清单。operationId 覆盖不等于枚举语义覆盖：业务层完整映射生成枚举时，必须用双向集合一致性测试排除生成器的 unknown sentinel，并在契约新增值而领域映射未更新时直接失败；社区举报的目标与原因映射按此规则验收。
