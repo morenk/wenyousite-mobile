@@ -96,6 +96,19 @@ void main() {
 
       expect(MarkdownDeltaCodec.encode(document.delta), expected);
     });
+
+    if (!supported) {
+      test('$id 未经 decode 的普通 Delta 也在编码出口安全降级', () {
+        final delta = Delta()
+          ..insert(canonical)
+          ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+
+        final encoded = MarkdownDeltaCodec.encode(delta);
+
+        expect(encoded, expected);
+        expect(MarkdownContent.unsupportedLineIndexes(encoded), isEmpty);
+      });
+    }
   }
 
   test('独占 br 映射为空段元数据且内联 br 按 v3 字面降级', () {

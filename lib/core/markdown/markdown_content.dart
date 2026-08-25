@@ -112,7 +112,9 @@ class MarkdownContent {
       }
       if (output.isNotEmpty && output.last.isNotEmpty) output.add('');
       output.add(_escapeLiteralLine(lines[index]));
-      if (index < lines.length - 1) output.add('');
+      if (index < lines.length - 1 && lines[index + 1].isNotEmpty) {
+        output.add('');
+      }
     }
     return output.join('\n');
   }
@@ -171,7 +173,9 @@ class MarkdownContent {
         affected.add(index);
         continue;
       }
-      affected.add(index);
+      // Empty source lines need no escaping once the fence markers are
+      // literal. Leaving them empty also keeps repeated sanitation stable.
+      if (lines[index].isNotEmpty) affected.add(index);
       final closing = RegExp(
         '^ {0,3}${RegExp.escape(marker)}{$markerLength,}[\\t ]*\$',
       );
@@ -228,6 +232,7 @@ class MarkdownContent {
   static bool _hasRawHtml(String line) {
     if (_emptyParagraph.hasMatch(line)) return false;
     for (final match in _htmlToken.allMatches(line)) {
+      if (_isEscaped(line, match.start)) continue;
       final token = match.group(0)!;
       if (RegExp(
         r'^<https?://[^\s<>]+>$',

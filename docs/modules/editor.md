@@ -40,7 +40,7 @@
 
 ## 6. 状态模型和数据流
 
-`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。二者归属 `threads`。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。主题管理和子贴全屏页由 threads 状态持有表单与版本，只把 Markdown 编辑生命周期交给共享 `ThreadManagementBodyEditor`。`ContentDraftsController` 以每个编辑器会话为 key，持有槽位快照、自动保存状态、当前槽位 1 版本及防抖任务；页面在面板关闭后继续观察该状态。主题创作、云端草稿和帖子编辑器以 `SessionScope(accountId, generation)` 隔离：Access Token 刷新保持控制器与当前内容，登录、退出、会话失效或切号才重建。业务控制器只接收 Markdown，不持有 Quill Delta；Quill 生命周期、文档 revision 同步、格式错误、选区和图片/表情/骰子插入由公共 `RichEditorSession` 管理。主题端口位于 `threads/application`，提及与本地快照端口位于 `editor/application`，适配器由 `main.dart` 组合根绑定。图片上传进度、失败与取消由 media 的独立上传任务控制器管理。恢复五槽位正文或切换完整主题时递增文档 revision。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；页面只读取光标前最多 26 个字符检测提及，仓储合并关系候选和最多 20 个全站结果。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
+`ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。二者归属 `threads`。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。主题管理和子贴全屏页由 threads 状态持有表单与版本，只把 Markdown 编辑生命周期交给共享 `ThreadManagementBodyEditor`。`ContentDraftsController` 以每个编辑器会话为 key，持有槽位快照、自动保存状态、当前槽位 1 版本及防抖任务；页面在面板关闭后继续观察该状态。主题创作、云端草稿和帖子编辑器以 `SessionScope(accountId, generation)` 隔离：Access Token 刷新保持控制器与当前内容，登录、退出、会话失效或切号才重建。业务控制器只接收 Markdown，不持有 Quill Delta；Quill 生命周期、文档 revision 同步、格式错误、选区和图片/表情/骰子插入由公共 `RichEditorSession` 管理。所有系统外部文本粘贴都由该会话接管并按普通文本插入，不再回退到 Quill 默认粘贴；每次显式保存、发布、云草稿或本地快照前都忽略缓存脏标记，从当前 Delta 重新编码。`MarkdownDeltaCodec.encode` 在统一出口再次字面化 Markdown v3 不支持结构，因此手输、IME、格式切换或残留属性也不能绕过提交边界。主题端口位于 `threads/application`，提及与本地快照端口位于 `editor/application`，适配器由 `main.dart` 组合根绑定。图片上传进度、失败与取消由 media 的独立上传任务控制器管理。恢复五槽位正文或切换完整主题时递增文档 revision。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；页面只读取光标前最多 26 个字符检测提及，仓储合并关系候选和最多 20 个全站结果。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
 
 云端主题草稿摘要的分类元信息通过 threads/core 共享目录解析，只渲染“演绎”等用户 label。目录加载不阻塞草稿列表，刷新草稿时同时刷新目录；未知 slug 显示“历史分类”而不显示原值。
 
@@ -90,6 +90,7 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 - [x] 完整消费站内引用 fixture 的 8 个 `editorPasteCases`，合法主域名/`www`/相对主题与邀请坐标规范化为传送门，转义名称无损往返，非法邀请、混合文本和站外链接保持普通粘贴。
 - [x] `QuillRawEditorState.pasteText` 真实入口可即时渲染并序列化站内传送门；编辑态与阅读态传送门都有 360dp 同行视觉基线。
 - [x] 任务列表、表格、围栏代码、H1/H4+、显式硬换行、原始 HTML、未知协议和超过三层列表按 Markdown v3 契约显示为可读字面文本，不声称结构化 WYSIWYG 支持。
+- [x] 普通外部粘贴不再回退 Quill 默认路径；表格、HTML、任务列表等全部契约拒绝类型会在编码出口安全字面化，H2/H3、加粗和立即保存从当前 Delta 生成正文，主题创作、子贴、楼层/回复和云草稿共用同一回归边界。
 
 ## 12. 已知限制和后续功能
 

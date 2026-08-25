@@ -158,7 +158,10 @@ class MarkdownDeltaCodec {
     );
   }
 
-  static String encode(Delta delta) {
+  static String encode(Delta delta) =>
+      _encode(delta, sanitizeUnsupported: true);
+
+  static String _encode(Delta delta, {required bool sanitizeUnsupported}) {
     final output = StringBuffer();
     final line = StringBuffer();
     for (final operation in delta.operations) {
@@ -179,7 +182,13 @@ class MarkdownDeltaCodec {
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
     if (line.isNotEmpty) output.write(line);
-    return MarkdownContent.normalize(output.toString());
+    // Plain text can enter the document through IMEs or platform editing
+    // paths without the literal-line metadata assigned during decode. Keep
+    // the serialization boundary authoritative so unsupported Markdown can
+    // never escape merely because an earlier editor hook was bypassed.
+    return sanitizeUnsupported
+        ? MarkdownContent.literalizeUnsupported(output.toString())
+        : MarkdownContent.normalize(output.toString());
   }
 
   static List<Map<String, Object?>> extractExtensionNodes(Delta delta) {
@@ -459,7 +468,9 @@ class MarkdownDeltaCodec {
       sourceBreakAttribute: false,
     });
     try {
-      if (encode(candidate) != source) return null;
+      if (_encode(candidate, sanitizeUnsupported: false) != source) {
+        return null;
+      }
     } on MarkdownCodecException {
       return null;
     }

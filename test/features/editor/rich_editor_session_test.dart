@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
@@ -30,6 +31,45 @@ void main() {
 
     expect(session.flush(), isTrue);
     expect(emitted, ['温油']);
+  });
+
+  testWidgets('保存前即使会话未标脏也从当前 Delta 重新编码', (tester) async {
+    const unsupported = '| 名称 | 数值 |\n| --- | ---: |\n| 骰子 | 20 |';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: unsupported,
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+
+    expect(session.isDirty, isFalse);
+    expect(session.flush(), isTrue);
+    expect(emitted, [MarkdownContent.literalizeUnsupported(unsupported)]);
+  });
+
+  testWidgets('H2 H3 与加粗切换后立即保存当前 Delta', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '标题',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 2),
+      ChangeSource.local,
+    );
+
+    session.controller.formatSelection(Attribute.h2);
+    expect(session.flush(), isTrue);
+    expect(emitted.last, '## 标题');
+
+    session.controller.formatSelection(Attribute.h3);
+    expect(session.flush(), isTrue);
+    expect(emitted.last, '### 标题');
+
+    session.controller.formatSelection(Attribute.bold);
+    expect(session.flush(), isTrue);
+    expect(emitted.last, '### **标题**');
   });
 
   testWidgets('外部 revision 替换文档时不回写并按要求移动光标', (tester) async {
@@ -105,6 +145,47 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('普通外部粘贴由会话接管并把不支持结构安全降级', (tester) async {
+    const clipboard =
+        '| 名称 | 数值 |\r\n'
+        '| --- | ---: |\r\n'
+        '| 骰子 | 20 |\r\n'
+        '<div>正文</div>  ';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: emitted.add,
+      clipboardStore: WenyouEditorClipboardStore(),
+      readClipboardText: () async => clipboard,
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    const normalized =
+        '| 名称 | 数值 |\n'
+        '| --- | ---: |\n'
+        '| 骰子 | 20 |\n'
+        '<div>正文</div>  ';
+    expect(session.controller.document.toPlainText(), '$normalized\n');
+    expect(emitted.last, MarkdownContent.literalizeUnsupported(normalized));
+    expect(MarkdownContent.unsupportedLineIndexes(emitted.last), isEmpty);
+  });
+
+  testWidgets('普通外部粘贴没有文本时也不回落到 Quill 默认路径', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '原文',
+      onMarkdownChanged: emitted.add,
+      readClipboardText: () async => null,
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+    expect(session.controller.document.toPlainText(), '原文\n');
+    expect(emitted, isEmpty);
   });
 
   testWidgets('Quill 原始编辑器粘贴入口立即渲染站内传送门', (tester) async {

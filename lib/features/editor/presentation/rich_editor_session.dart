@@ -215,7 +215,6 @@ class RichEditorSession extends ChangeNotifier {
   bool flush() {
     _codecTimer?.cancel();
     _codecTimer = null;
-    if (!_dirty && _codecFailure == null) return true;
     try {
       final markdown = MarkdownDeltaCodec.encode(controller.document.toDelta());
       _codecFailure = null;
@@ -270,7 +269,9 @@ class RichEditorSession extends ChangeNotifier {
     // Quill does not fall back to the platform clipboard and attempt a write.
     if (controller.readOnly) return true;
     final clipboardText = await _readClipboardText();
-    if (clipboardText == null) return false;
+    // Never delegate an external paste back to Quill: its platform path can
+    // insert text without the Markdown safety boundary used by this session.
+    if (clipboardText == null) return true;
     final resolution = _clipboardStore.resolve(clipboardText);
     if (resolution.delta case final delta?) {
       _replaceSelectionWithDelta(delta);
@@ -293,13 +294,19 @@ class RichEditorSession extends ChangeNotifier {
       clipboardText: clipboardText,
       selectedText: selectedText,
     );
-    if (paste == null) return false;
-    _replaceSelectionWithInlineEmbed(
-      Embeddable(MarkdownDeltaCodec.internalReferenceEmbed, {
-        'version': 1,
-        'label': paste.label,
-        'location': paste.reference.location.toString(),
-      }),
+    if (paste != null) {
+      _replaceSelectionWithInlineEmbed(
+        Embeddable(MarkdownDeltaCodec.internalReferenceEmbed, {
+          'version': 1,
+          'label': paste.label,
+          'location': paste.reference.location.toString(),
+        }),
+      );
+      flush();
+      return true;
+    }
+    _replaceSelectionWithDelta(
+      Delta()..insert(clipboardText.replaceAll(RegExp(r'\r\n?'), '\n')),
     );
     flush();
     return true;
