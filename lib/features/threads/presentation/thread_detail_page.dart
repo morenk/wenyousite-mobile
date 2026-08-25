@@ -205,7 +205,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           onRetry: () => ref.read(provider.notifier).loadInitial(),
         ),
         ThreadDetailPhase.ready => NotificationListener<ScrollNotification>(
-          onNotification: _handleUserScroll,
+          onNotification: _onScroll,
           child: NotificationListener<ScrollMetricsNotification>(
             onNotification: _handleTargetLayoutChange,
             child: RefreshIndicator(
@@ -275,7 +275,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     threadId: widget.threadId,
     pageInstanceToken: _pageInstanceToken,
   ));
-
   String get _location => AppRouteLocations.thread(
     widget.threadId,
     postId: widget.entryTarget.postId,
@@ -496,16 +495,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
-  bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
-    return _targetReveal.handleLayoutChange(
-      isMounted: () => mounted,
-      requestRebuild: () => setState(() {}),
-    );
-  }
+  bool _handleTargetLayoutChange(ScrollMetricsNotification notification) =>
+      _targetReveal.handleLayoutChange(
+        isMounted: () => mounted,
+        requestRebuild: () => setState(() {}),
+      );
 
-  bool _handleUserScroll(ScrollNotification notification) =>
-      _targetReveal.handleUserScroll(notification);
-
+  bool _onScroll(ScrollNotification e) => _targetReveal.handleUserScroll(e);
   void _openReplyTargetWhenReady(
     ThreadDetailState state,
     ThreadPostTargetModel? target,
