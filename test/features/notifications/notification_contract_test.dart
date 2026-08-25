@@ -70,6 +70,28 @@ void main() {
       isNull,
     );
   });
+
+  test('动态评论通知保留评论坐标，普通动态通知不添加查询参数', () {
+    expect(
+      notificationTargetLocation(
+        const NotificationTarget(
+          kind: NotificationTargetKind.moment,
+          momentId: 'moment-1',
+          momentCommentId: 'comment-7',
+        ),
+      ),
+      '/moments/moment-1?comment=comment-7',
+    );
+    expect(
+      notificationTargetLocation(
+        const NotificationTarget(
+          kind: NotificationTargetKind.moment,
+          momentId: 'moment-1',
+        ),
+      ),
+      '/moments/moment-1',
+    );
+  });
 }
 
 NotificationListItem _item({

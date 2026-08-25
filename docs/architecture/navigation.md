@@ -10,7 +10,7 @@ Android 页面转场也只有一个实现边界：真实入栈与返回统一使
 
 “表情包”使用受保护命名路由 `/me/stickers`，且只有 `meta.capabilities.stickers` 明确开启时才从“我的”、编辑器和私信输入器暴露入口。收藏 ID、资产 ID、导入 ID 与收藏夹版本都由服务端提供；路由只负责登录回跳，页面重新读取当前账号私有收藏，不把列表、图片 URL 或导入状态写入路径。
 
-动态主分支使用 `/moments`，发现流公开，关注流在分支内为游客显示登录回跳。公开详情 `/moments/:momentId`、公开用户动态 `/users/:userId/moments` 只携带服务端稳定 ID；受保护的 `/compose/moment`、`/moments/:momentId/edit` 与 `/moments/bookmarks` 保留完整登录回跳。从信息流、通知、搜索或用户内容入栈进入动态详情时返回真实来源；直接以无来源栈路径进入详情时，系统返回和顶栏返回都回 `/moments`，不能结束 Android 应用进程。底栏中央发布动作在四个主分支中稳定打开“发布主题帖 / 发布动态”面板，当前首页或动态分支只改变推荐项。发布/编辑成功后失效信息流和详情，删除成功回动态分支；筛选、评论作者和 cursor 只存在页面状态。
+动态主分支使用 `/moments`，发现流公开，关注流在分支内为游客显示登录回跳。公开详情 `/moments/:momentId`、公开用户动态 `/users/:userId/moments` 只携带服务端稳定 ID；动态评论通知可使用 `/moments/:momentId?comment=:commentId` 携带服务端稳定评论坐标。详情按该坐标调用 `momentsCommentContext`，把返回的主评论与目标回复注入普通评论投影后直接滚动，不扫描评论或楼中楼分页猜测位置；只给目标评论显示 1dp Foundation 淡粉边框，1.2 秒后按 slow motion 淡出。404 保留动态与普通评论并提示目标不可见，临时失败只重试定位请求。受保护的 `/compose/moment`、`/moments/:momentId/edit` 与 `/moments/bookmarks` 保留完整登录回跳。从信息流、通知、搜索或用户内容入栈进入动态详情时返回真实来源；直接以无来源栈路径进入详情时，系统返回和顶栏返回都回 `/moments`，不能结束 Android 应用进程。底栏中央发布动作在四个主分支中稳定打开“发布主题帖 / 发布动态”面板，当前首页或动态分支只改变推荐项。发布/编辑成功后失效信息流和详情，删除成功回动态分支；筛选、评论作者和 cursor 只存在页面状态。
 
 公开主题详情使用命名路由 `/threads/:threadId`。首页和搜索主题卡片通过主题 ID 入栈进入该路由；系统返回时回到原分支，并保留分支状态。直接以无来源栈路径进入详情时，系统返回和顶栏返回都回 `/home`，不能结束 Android 应用进程。详情工具栏进入公开 `/threads/:threadId/search`，服务端以 OptionalAuth 复核当前主题访问权限，结果仍用稳定 post ID 回详情定位。详情页优先选择响应中的 `defaultSubthreadId`，子贴切换只更新正文与楼层数据源，不把子贴 ID 拼入临时页面路径。服务端 capability 允许时，详情进入受保护命名路由 `/threads/:threadId/manage`，标签、子贴目录和成员身份工作台分别使用 `/threads/:threadId/manage/tags`、`/threads/:threadId/manage/subthreads` 与 `/threads/:threadId/manage/members`；四条管理路由都保留完整登录回跳。保存、标签、目录或成员变更成功后返回详情并重读权威投影，删除成功进入 `/home`，未保存表单返回前要求明确放弃。
 
@@ -24,7 +24,7 @@ Android 页面转场也只有一个实现边界：真实入栈与返回统一使
 
 楼中楼使用公开命名路由 `/threads/:threadId/posts/:postId/replies`，其中 `postId` 必须是普通主楼层；可选 `?post=:replyId` 补取并强调首屏外回复。独立页重新校验楼层与主题关系，排序、作者筛选和 cursor 只作为页面状态，不写入临时路径。游客可阅读，发表入口在登录后恢复到同一路由。
 
-通知导航只读取服务端 `target.kind` 与对应稳定 ID：post 进入上述精确位置，thread 进入主题详情，user 进入公开用户页，moment 进入 `/moments/:momentId`，none/unknown 不导航；服务端关联对象已删除时同样不导航。
+通知导航只读取服务端 `target.kind` 与对应稳定 ID：post 进入上述精确位置，thread 进入主题详情，user 进入公开用户页，moment 进入 `/moments/:momentId`，带 `momentCommentId` 时追加 `?comment=:commentId`，none/unknown 不导航；服务端关联对象已删除时同样不导航。
 
 站内私聊的新建页和会话详情使用受保护命名路由 `/messages/new/:userId` 与 `/messages/:conversationId`，游客访问时完整保留原目标进入登录。根路径 `/messages` 只是旧消息中心兼容入口，必须重定向到 `/notifications?section=directMessages`，不能作为第二个私聊列表事实源。通知页只导航到统一消息中心，用户主页只把稳定 userId 交给新私聊页；新私聊页通过 `directConversationsFindByUser` 决定替换到已有 ACCEPTED/PENDING 会话、允许重建或显示受限状态。会话 ID、消息 ID、cursor 和增量 after 都是不透明服务端标识，页面不从用户名、正文预览或关系标记推导目标。
 

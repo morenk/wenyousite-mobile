@@ -298,6 +298,15 @@ class MomentRootComment extends MomentComment {
   }
 }
 
+class MomentCommentContext {
+  const MomentCommentContext({required this.root, required this.target});
+
+  final MomentRootComment root;
+  final MomentComment target;
+
+  bool get targetsRoot => root.id == target.id;
+}
+
 class MomentActionResult {
   const MomentActionResult({
     required this.momentId,

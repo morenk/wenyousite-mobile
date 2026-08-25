@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
@@ -742,3 +743,16 @@ final momentDetailControllerProvider = StateNotifierProvider.autoDispose
         momentId,
       );
     }, dependencies: [momentRepositoryProvider]);
+
+typedef MomentCommentContextScope = ({String momentId, String commentId});
+
+final momentCommentContextProvider = FutureProvider.autoDispose
+    .family<MomentCommentContext, MomentCommentContextScope>((ref, scope) {
+      ref.watch(sessionScopeProvider);
+      return ref
+          .watch(momentRepositoryProvider)
+          .fetchCommentContext(
+            momentId: scope.momentId,
+            commentId: scope.commentId,
+          );
+    }, dependencies: [momentRepositoryProvider, sessionScopeProvider]);

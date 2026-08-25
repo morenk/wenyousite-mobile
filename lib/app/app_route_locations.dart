@@ -60,7 +60,8 @@ abstract final class AppRouteLocations {
 
   static String user(String userId) => _fromSegments(['users', userId]);
 
-  static String moment(String momentId) => _fromSegments(['moments', momentId]);
+  static String moment(String momentId, {String? commentId}) =>
+      _fromSegments(['moments', momentId], {'comment': ?commentId});
 
   static String meBookmarkFolder(String folderId, {String? name}) =>
       _fromSegments(['me', 'bookmarks', 'folders', folderId], {'name': ?name});

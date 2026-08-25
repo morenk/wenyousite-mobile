@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_comment_context_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
@@ -319,6 +320,30 @@ class ApiMomentRepository implements MomentRepository {
         cursor: _pageCursor(envelope.meta.cursor, envelope.meta.hasMore),
         hasMore: envelope.meta.hasMore,
       );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
+    }
+  }
+
+  @override
+  Future<MomentCommentContext> fetchCommentContext({
+    required String momentId,
+    required String commentId,
+  }) async {
+    final id = _requiredText(momentId, '动态 ID');
+    final targetId = _requiredText(commentId, '评论 ID');
+    try {
+      final dto = (await _api.momentsCommentContext(
+        id: id,
+        commentId: targetId,
+      )).data?.data;
+      if (dto == null) {
+        throw const ApiFailure(userMessage: '目标评论定位失败，请稍后重试。');
+      }
+      return MomentCommentContextMapper(
+        mapComment: _comment,
+        nonNegativeInteger: _nonNegativeInteger,
+      ).map(dto, momentId: id, commentId: targetId);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error, featureMessages: momentFailureMessages);
     }

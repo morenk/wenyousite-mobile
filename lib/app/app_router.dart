@@ -150,8 +150,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.momentDetail,
         name: AppRouteNames.momentDetail,
-        builder: (context, state) =>
-            MomentDetailPage(momentId: state.pathParameters['momentId']!),
+        builder: (context, state) => MomentDetailPage(
+          momentId: state.pathParameters['momentId']!,
+          targetCommentId: state.uri.queryParameters['comment'],
+        ),
       ),
       GoRoute(
         path: AppRoutePaths.userMoments,

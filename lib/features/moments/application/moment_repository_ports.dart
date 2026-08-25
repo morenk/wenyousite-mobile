@@ -62,6 +62,11 @@ abstract interface class MomentRepository {
     int limit = 20,
   });
 
+  Future<MomentCommentContext> fetchCommentContext({
+    required String momentId,
+    required String commentId,
+  });
+
   Future<List<MomentAuthor>> fetchCommentAuthors(String momentId);
 
   Future<MomentComment> createComment(
@@ -151,6 +156,12 @@ class _UnboundMomentRepository implements MomentRepository {
     String? authorId,
     String? cursor,
     int limit = 20,
+  }) => Future.error(_error());
+
+  @override
+  Future<MomentCommentContext> fetchCommentContext({
+    required String momentId,
+    required String commentId,
   }) => Future.error(_error());
 
   @override

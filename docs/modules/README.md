@@ -7,7 +7,7 @@
 | app-shell | in_progress | 主壳与在线更新已交付；正式签名升级安装仍需真机验收 | [应用壳](app-shell.md) |
 | auth | in_progress | 认证与账号恢复已交付；公网账号回归仍待补齐 | [认证](auth.md) |
 | home | in_progress | 发现流与分类筛选已交付；持续做真实性能验收 | [首页](home.md) |
-| moments | in_progress | 动态主闭环已交付；评论通知精确定位待接入 | [动态](moments.md) |
+| moments | in_progress | 动态主闭环与评论通知精确定位已交付；公网真机联调待补齐 | [动态](moments.md) |
 | tags | in_progress | 公开标签与标签工作台已交付；公网联调待补齐 | [标签](tags.md) |
 | search | in_progress | 四类搜索已交付；主题结果 cursor 分页待接入 | [搜索](search.md) |
 | threads | in_progress | 阅读、创作、管理和邀请已交付；公网验收待补齐 | [主题](threads.md) |
@@ -15,7 +15,7 @@
 | editor | in_progress | Markdown v3 编辑主链已交付；预览与撤销仍待完成 | [编辑器](editor.md) |
 | drafts | in_progress | 本地快照与云草稿已交付；进程恢复边界持续收敛 | [草稿](drafts.md) |
 | media | in_progress | 图片上传与原图查看已交付；批量选择尚未支持 | [媒体](media.md) |
-| notifications | in_progress | 分类与精确帖子定位已交付；动态评论定位待接入 | [通知](notifications.md) |
+| notifications | in_progress | 分类、帖子及动态评论精确定位已交付；协作者通知待接入 | [通知](notifications.md) |
 | direct-messages | in_progress | 私聊主闭环已交付；公网弱网与长会话验收待补齐 | [站内私聊](direct-messages.md) |
 | stickers | in_progress | 收藏表情主闭环已交付；公网处理态验收待补齐 | [表情包](stickers.md) |
 | users | in_progress | 用户资料主闭环已交付；背景图与活动汇总待接入 | [用户](users.md) |

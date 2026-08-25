@@ -6,7 +6,10 @@ String? notificationTargetLocation(NotificationTarget target) {
   return switch (target.kind) {
     NotificationTargetKind.post => _postLocation(target),
     NotificationTargetKind.thread => AppRouteLocations.thread(target.threadId!),
-    NotificationTargetKind.moment => AppRouteLocations.moment(target.momentId!),
+    NotificationTargetKind.moment => AppRouteLocations.moment(
+      target.momentId!,
+      commentId: target.momentCommentId,
+    ),
     NotificationTargetKind.user => AppRouteLocations.user(target.userId!),
     NotificationTargetKind.none || NotificationTargetKind.unknown => null,
   };

@@ -389,6 +389,88 @@ void main() {
       throwsA(isA<DomainValidationException>()),
     );
   });
+
+  test('评论上下文把主评论目标映射为可直接定位的根节点', () async {
+    final api = _MockMomentsApi();
+    final root = _contextCommentDto(id: 'comment-root');
+    _stubCommentContext(
+      api,
+      commentId: 'comment-root',
+      root: root,
+      target: root,
+    );
+
+    final context = await ApiMomentRepository(
+      api,
+    ).fetchCommentContext(momentId: 'moment-1', commentId: 'comment-root');
+
+    expect(context.targetsRoot, isTrue);
+    expect(context.root.id, 'comment-root');
+    expect(context.root.replyCount, 2);
+    expect(context.root.replies, isEmpty);
+  });
+
+  test('评论上下文把楼中楼目标注入对应主评论', () async {
+    final api = _MockMomentsApi();
+    _stubCommentContext(
+      api,
+      commentId: 'comment-reply',
+      root: _contextCommentDto(id: 'comment-root'),
+      target: _replyDto(),
+      replyCount: 7,
+    );
+
+    final context = await ApiMomentRepository(
+      api,
+    ).fetchCommentContext(momentId: 'moment-1', commentId: 'comment-reply');
+
+    expect(context.targetsRoot, isFalse);
+    expect(context.root.replyCount, 7);
+    expect(context.root.replies.single.id, 'comment-reply');
+    expect(context.target.parentCommentId, 'comment-root');
+  });
+
+  test('评论上下文保留已删除主评论墓碑及其可见目标回复', () async {
+    final api = _MockMomentsApi();
+    _stubCommentContext(
+      api,
+      commentId: 'comment-reply',
+      root: _contextCommentDto(id: 'comment-root', deleted: true),
+      target: _replyDto(),
+      replyCount: 1,
+    );
+
+    final context = await ApiMomentRepository(
+      api,
+    ).fetchCommentContext(momentId: 'moment-1', commentId: 'comment-reply');
+
+    expect(context.root.deleted, isTrue);
+    expect(context.root.content, isNull);
+    expect(context.root.replies.single.id, 'comment-reply');
+  });
+
+  test('评论上下文拒绝不属于返回主评论的目标回复', () async {
+    final api = _MockMomentsApi();
+    _stubCommentContext(
+      api,
+      commentId: 'comment-reply',
+      root: _contextCommentDto(id: 'another-root'),
+      target: _replyDto(),
+    );
+
+    await expectLater(
+      ApiMomentRepository(
+        api,
+      ).fetchCommentContext(momentId: 'moment-1', commentId: 'comment-reply'),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.userMessage,
+          'message',
+          contains('层级'),
+        ),
+      ),
+    );
+  });
 }
 
 class _MockMomentsApi extends Mock implements MomentsApi {}
@@ -550,6 +632,49 @@ MomentRootCommentResponseDto _rootCommentDto() {
       ..createdAt = DateTime.utc(2026, 8, 10, 12)
       ..replyCount = 1
       ..replies.add(_replyDto()),
+  );
+}
+
+MomentCommentResponseDto _contextCommentDto({
+  required String id,
+  bool deleted = false,
+}) {
+  return MomentCommentResponseDto((builder) {
+    builder
+      ..id = id
+      ..momentId = 'moment-1'
+      ..author.replace(_authorDto())
+      ..deleted = deleted
+      ..canDelete = !deleted
+      ..createdAt = DateTime.utc(2026, 8, 10, 12);
+    if (!deleted) builder.content = '主评论';
+  });
+}
+
+void _stubCommentContext(
+  _MockMomentsApi api, {
+  required String commentId,
+  required MomentCommentResponseDto root,
+  required MomentCommentResponseDto target,
+  int replyCount = 2,
+}) {
+  when(
+    () => api.momentsCommentContext(id: 'moment-1', commentId: commentId),
+  ).thenAnswer(
+    (_) async => _response(
+      '/api/v1/moments/moment-1/comments/$commentId/context',
+      MomentsCommentContext200Response(
+        (builder) => builder
+          ..code = ApiSuccessEnvelopeCodeEnum.number0
+          ..message = 'ok'
+          ..data.update(
+            (data) => data
+              ..root.replace(root)
+              ..target.replace(target)
+              ..replyCount = replyCount,
+          ),
+      ),
+    ),
   );
 }
 

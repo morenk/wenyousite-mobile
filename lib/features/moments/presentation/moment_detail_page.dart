@@ -9,17 +9,19 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_navigation.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -28,9 +30,14 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class MomentDetailPage extends ConsumerStatefulWidget {
-  const MomentDetailPage({required this.momentId, super.key});
+  const MomentDetailPage({
+    required this.momentId,
+    this.targetCommentId,
+    super.key,
+  });
 
   final String momentId;
+  final String? targetCommentId;
 
   @override
   ConsumerState<MomentDetailPage> createState() => _MomentDetailPageState();
@@ -39,15 +46,55 @@ class MomentDetailPage extends ConsumerStatefulWidget {
 class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
   static const _contentCacheExtent = 4000.0;
 
+  final _scrollController = ScrollController();
+  final _targetKey = GlobalKey();
+  final _targetReveal = DiscussionTargetRevealCoordinator();
   var _commentComposerOpen = false;
   MomentCommentDraft? _commentDraft;
   MomentComment? _commentDraftReplyTo;
+
+  MomentCommentContextScope? get _targetScope {
+    final commentId = widget.targetCommentId?.trim();
+    if (commentId == null || commentId.isEmpty) return null;
+    return (momentId: widget.momentId, commentId: commentId);
+  }
+
+  String get _location => AppRouteLocations.moment(
+    widget.momentId,
+    commentId: _targetScope?.commentId,
+  );
+
+  @override
+  void didUpdateWidget(covariant MomentDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.momentId != widget.momentId ||
+        oldWidget.targetCommentId != widget.targetCommentId) {
+      _targetReveal.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = momentDetailControllerProvider(widget.momentId);
     final state = ref.watch(provider);
+    final targetScope = _targetScope;
+    final targetValue = targetScope == null
+        ? null
+        : ref.watch(momentCommentContextProvider(targetScope));
+    final projection = projectMomentCommentNavigation(
+      comments: state.comments,
+      replyPages: state.replyPages,
+      order: state.commentOrder,
+      context: targetValue?.valueOrNull,
+    );
     final session = ref.watch(sessionControllerProvider);
+    final sessionScope = ref.watch(sessionScopeProvider);
     final viewerId = ref.read(sessionControllerProvider.notifier).currentUserId;
     ref.listen(provider.select((value) => value.transientFailure), (
       previous,
@@ -61,6 +108,11 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
         );
       }
     });
+    _revealTargetWhenReady(
+      state,
+      projection,
+      '${sessionScope.accountId ?? 'guest'}:${sessionScope.generation}',
+    );
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
       appBar: WenyouReadingAppBar(
@@ -79,124 +131,152 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
             child: WenyouDetailSkeleton(label: '正在加载动态详情'),
           ),
         ),
-        MomentLoadPhase.failed => _MomentDetailFailure(
+        MomentLoadPhase.failed => MomentDetailFailure(
           failure: state.failure,
           onRetry: () => ref.read(provider.notifier).load(),
         ),
-        MomentLoadPhase.ready => RefreshIndicator(
-          onRefresh: () => ref.read(provider.notifier).load(),
-          child: CustomScrollView(
-            key: const PageStorageKey('moment-detail-scroll'),
-            scrollCacheExtent: const ScrollCacheExtent.pixels(
-              _contentCacheExtent,
+        MomentLoadPhase.ready => NotificationListener<ScrollNotification>(
+          onNotification: _targetReveal.handleUserScroll,
+          child: NotificationListener<ScrollMetricsNotification>(
+            onNotification: (notification) => _targetReveal.handleLayoutChange(
+              isMounted: () => mounted,
+              requestRebuild: () => setState(() {}),
             ),
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: WenyouContentFrame(
-                  top: context.wenyouTokens.space16,
-                  child: _MomentDetailPanel(
-                    detail: state.detail!,
-                    pendingAction: state.pendingMomentAction,
-                    onLike: () => _authenticated(
-                      () => ref.read(provider.notifier).toggleLike(),
-                    ),
-                    onBookmark: () => _authenticated(() {
-                      unawaited(
-                        _toggleBookmark(
-                          ref.read(provider.notifier),
-                          wasBookmarked: state.detail!.card.viewerBookmarked,
+            child: RefreshIndicator(
+              onRefresh: () => _refresh(provider),
+              child: CustomScrollView(
+                key: const PageStorageKey('moment-detail-scroll'),
+                controller: _scrollController,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(
+                  _contentCacheExtent,
+                ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: WenyouContentFrame(
+                      top: context.wenyouTokens.space16,
+                      child: _MomentDetailPanel(
+                        detail: state.detail!,
+                        pendingAction: state.pendingMomentAction,
+                        onLike: () => _authenticated(
+                          () => ref.read(provider.notifier).toggleLike(),
                         ),
-                      );
-                    }),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: WenyouContentFrame(
-                  top: context.wenyouTokens.space12,
-                  child: _CommentFilters(
-                    state: state,
-                    onApply: (order, authorId) => ref
-                        .read(provider.notifier)
-                        .applyCommentFilters(order: order, authorId: authorId),
-                    onRetryAuthors: () =>
-                        ref.read(provider.notifier).retryCommentAuthors(),
-                  ),
-                ),
-              ),
-              if (state.comments.isEmpty)
-                SliverToBoxAdapter(
-                  child: WenyouContentFrame(
-                    top: context.wenyouTokens.space12,
-                    child: const WenyouEmptyState(
-                      icon: WenyouIconIds.metricComments,
-                      title: '还没有评论',
-                    ),
-                  ),
-                )
-              else
-                SliverList.builder(
-                  itemCount: state.comments.length,
-                  itemBuilder: (context, index) {
-                    final comment = state.comments[index];
-                    return WenyouContentFrame(
-                      top: index == 0 ? context.wenyouTokens.space12 : 0,
-                      child: Column(
-                        children: [
-                          if (index > 0)
-                            Divider(height: context.wenyouTokens.space24),
-                          _MomentRootCommentPanel(
-                            root: comment,
-                            replyPage: state.replyPages[comment.id],
-                            busyCommentIds: state.busyCommentIds,
-                            viewerId: viewerId,
-                            returnTo: '/moments/${widget.momentId}',
-                            onReply: (target) => _authenticated(
-                              () => _openCommentComposer(target),
+                        onBookmark: () => _authenticated(() {
+                          unawaited(
+                            _toggleBookmark(
+                              ref.read(provider.notifier),
+                              wasBookmarked:
+                                  state.detail!.card.viewerBookmarked,
                             ),
-                            onDelete: (target) =>
-                                _deleteComment(context, provider, target),
-                            onReport: (target) =>
-                                _reportComment(context, target),
-                            onLoadReplies: () => ref
-                                .read(provider.notifier)
-                                .loadReplies(comment.id),
-                          ),
-                        ],
+                          );
+                        }),
                       ),
-                    );
-                  },
-                ),
-              if (state.hasMoreComments || state.isLoadingMoreComments)
-                SliverToBoxAdapter(
-                  child: WenyouContentFrame(
-                    top: context.wenyouTokens.space12,
-                    child: Center(
-                      child: state.isLoadingMoreComments
-                          ? const CircularProgressIndicator()
-                          : OutlinedButton.icon(
-                              key: const Key('moment-comments-load-more'),
-                              onPressed: () => ref
-                                  .read(provider.notifier)
-                                  .loadMoreComments(),
-                              icon: const WenyouIcon(
-                                WenyouIconIds.navigationExpand,
-                              ),
-                              label: const Text('加载更多评论'),
-                            ),
                     ),
                   ),
-                ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height:
-                      context.wenyouTokens.minimumTouchTarget +
-                      context.wenyouTokens.space32 +
-                      context.wenyouTokens.space16,
-                ),
+                  SliverToBoxAdapter(
+                    child: WenyouContentFrame(
+                      top: context.wenyouTokens.space12,
+                      child: _CommentFilters(
+                        state: state,
+                        onApply: (order, authorId) => ref
+                            .read(provider.notifier)
+                            .applyCommentFilters(
+                              order: order,
+                              authorId: authorId,
+                            ),
+                        onRetryAuthors: () =>
+                            ref.read(provider.notifier).retryCommentAuthors(),
+                      ),
+                    ),
+                  ),
+                  if (targetValue != null && targetValue.asData == null)
+                    SliverToBoxAdapter(
+                      child: WenyouContentFrame(
+                        top: context.wenyouTokens.space12,
+                        child: MomentCommentTargetStatus(
+                          value: targetValue,
+                          onRetry: () => ref.invalidate(
+                            momentCommentContextProvider(targetScope!),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (projection.comments.isEmpty)
+                    SliverToBoxAdapter(
+                      child: WenyouContentFrame(
+                        top: context.wenyouTokens.space12,
+                        child: const WenyouEmptyState(
+                          icon: WenyouIconIds.metricComments,
+                          title: '还没有评论',
+                        ),
+                      ),
+                    )
+                  else
+                    SliverList.builder(
+                      itemCount: projection.comments.length,
+                      itemBuilder: (context, index) {
+                        final comment = projection.comments[index];
+                        return WenyouContentFrame(
+                          top: index == 0 ? context.wenyouTokens.space12 : 0,
+                          child: Column(
+                            children: [
+                              if (index > 0)
+                                Divider(height: context.wenyouTokens.space24),
+                              _MomentRootCommentPanel(
+                                root: comment,
+                                replyPage: projection.replyPages[comment.id],
+                                busyCommentIds: state.busyCommentIds,
+                                viewerId: viewerId,
+                                returnTo: _location,
+                                targetCommentId: projection.targetId,
+                                targetKey: _targetKey,
+                                onReply: (target) => _authenticated(
+                                  () => _openCommentComposer(target),
+                                ),
+                                onDelete: (target) =>
+                                    _deleteComment(context, provider, target),
+                                onReport: (target) =>
+                                    _reportComment(context, target),
+                                onLoadReplies: () => ref
+                                    .read(provider.notifier)
+                                    .loadReplies(comment.id),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  if (state.hasMoreComments || state.isLoadingMoreComments)
+                    SliverToBoxAdapter(
+                      child: WenyouContentFrame(
+                        top: context.wenyouTokens.space12,
+                        child: Center(
+                          child: state.isLoadingMoreComments
+                              ? const CircularProgressIndicator()
+                              : OutlinedButton.icon(
+                                  key: const Key('moment-comments-load-more'),
+                                  onPressed: () => ref
+                                      .read(provider.notifier)
+                                      .loadMoreComments(),
+                                  icon: const WenyouIcon(
+                                    WenyouIconIds.navigationExpand,
+                                  ),
+                                  label: const Text('加载更多评论'),
+                                ),
+                        ),
+                      ),
+                    ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height:
+                          context.wenyouTokens.minimumTouchTarget +
+                          context.wenyouTokens.space32 +
+                          context.wenyouTokens.space16,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       },
@@ -222,6 +302,45 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     );
   }
 
+  void _revealTargetWhenReady(
+    MomentDetailState state,
+    MomentCommentNavigationProjection projection,
+    String sessionSignature,
+  ) {
+    final targetId = projection.targetId;
+    if (targetId == null) return;
+    _targetReveal.schedule(
+      targetId: targetId,
+      scopeSignature: '${widget.momentId}:$targetId:$sessionSignature',
+      contentSignature:
+          '${state.commentOrder.name}:${state.commentAuthorId ?? ''}:'
+          '${projection.contentSignature}',
+      targetIndex: projection.targetRootIndex,
+      itemCount: projection.comments.length,
+      ready:
+          state.phase == MomentLoadPhase.ready &&
+          projection.targetRootIndex >= 0,
+      targetKey: _targetKey,
+      scrollController: _scrollController,
+      isMounted: () => mounted,
+      requestRebuild: () => setState(() {}),
+    );
+  }
+
+  Future<void> _refresh(
+    AutoDisposeStateNotifierProvider<MomentDetailController, MomentDetailState>
+    provider,
+  ) async {
+    _targetReveal.reset();
+    _invalidateTargetContext();
+    await ref.read(provider.notifier).load();
+  }
+
+  void _invalidateTargetContext() {
+    final scope = _targetScope;
+    if (scope != null) ref.invalidate(momentCommentContextProvider(scope));
+  }
+
   void _leaveDetail() {
     final navigator = Navigator.maybeOf(context);
     if (navigator?.canPop() ?? false) {
@@ -245,7 +364,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
             recipientUserId: detail.card.author.id,
           ),
           recipientName: detail.card.author.username,
-          returnTo: '/moments/${detail.card.id}',
+          returnTo: _location,
           iconOnly: true,
           onSuccess: (_) => ref.read(provider.notifier).load(),
         ),
@@ -254,7 +373,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
           key: const Key('moment-detail-report'),
           target: ReportTarget.moment(detail.card.id),
           targetLabel: '这条动态',
-          returnTo: '/moments/${detail.card.id}',
+          returnTo: _location,
           iconOnly: true,
         ),
       if (state.detail?.canEdit ?? false)
@@ -312,11 +431,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
   }
 
   void _openLogin() {
-    context.push(
-      AppRouteLocations.login(
-        returnTo: AppRouteLocations.moment(widget.momentId),
-      ),
-    );
+    context.push(AppRouteLocations.login(returnTo: _location));
   }
 
   Future<void> _openCommentComposer([MomentComment? replyTo]) async {
@@ -365,6 +480,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                         if (created != null) {
                           _commentDraft = null;
                           _commentDraftReplyTo = null;
+                          _invalidateTargetContext();
                         }
                         return created != null;
                       },
@@ -409,7 +525,10 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      await ref.read(provider.notifier).removeComment(comment.id);
+      final removed = await ref
+          .read(provider.notifier)
+          .removeComment(comment.id);
+      if (removed) _invalidateTargetContext();
     }
   }
 
@@ -419,7 +538,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       ref: ref,
       target: ReportTarget.momentComment(comment.id),
       targetLabel: '这条评论',
-      returnTo: '/moments/${widget.momentId}',
+      returnTo: _location,
     );
   }
 }
@@ -632,6 +751,8 @@ class _MomentRootCommentPanel extends StatelessWidget {
     required this.busyCommentIds,
     required this.viewerId,
     required this.returnTo,
+    required this.targetCommentId,
+    required this.targetKey,
     required this.onReply,
     required this.onDelete,
     required this.onReport,
@@ -643,6 +764,8 @@ class _MomentRootCommentPanel extends StatelessWidget {
   final Set<String> busyCommentIds;
   final String? viewerId;
   final String returnTo;
+  final String? targetCommentId;
+  final GlobalKey targetKey;
   final ValueChanged<MomentComment> onReply;
   final ValueChanged<MomentComment> onDelete;
   final Future<void> Function(MomentComment) onReport;
@@ -655,13 +778,16 @@ class _MomentRootCommentPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        MomentCommentBody(
-          comment: root,
-          busy: busyCommentIds.contains(root.id),
-          onReply: () => onReply(root),
-          onDelete: root.canDelete ? () => onDelete(root) : null,
-          onReport: () => onReport(root),
-          reportReturnTo: root.author.id == viewerId ? null : returnTo,
+        _targetFrame(
+          root,
+          MomentCommentBody(
+            comment: root,
+            busy: busyCommentIds.contains(root.id),
+            onReply: () => onReply(root),
+            onDelete: root.canDelete ? () => onDelete(root) : null,
+            onReport: () => onReport(root),
+            reportReturnTo: root.author.id == viewerId ? null : returnTo,
+          ),
         ),
         if (replies.isNotEmpty) ...[
           SizedBox(height: tokens.space12),
@@ -675,18 +801,21 @@ class _MomentRootCommentPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (var index = 0; index < replies.length; index++) ...[
-                    MomentCommentBody(
-                      comment: replies[index],
-                      compact: true,
-                      busy: busyCommentIds.contains(replies[index].id),
-                      onReply: () => onReply(replies[index]),
-                      onDelete: replies[index].canDelete
-                          ? () => onDelete(replies[index])
-                          : null,
-                      onReport: () => onReport(replies[index]),
-                      reportReturnTo: replies[index].author.id == viewerId
-                          ? null
-                          : returnTo,
+                    _targetFrame(
+                      replies[index],
+                      MomentCommentBody(
+                        comment: replies[index],
+                        compact: true,
+                        busy: busyCommentIds.contains(replies[index].id),
+                        onReply: () => onReply(replies[index]),
+                        onDelete: replies[index].canDelete
+                            ? () => onDelete(replies[index])
+                            : null,
+                        onReport: () => onReport(replies[index]),
+                        reportReturnTo: replies[index].author.id == viewerId
+                            ? null
+                            : returnTo,
+                      ),
                     ),
                     if (index + 1 < replies.length)
                       Divider(height: tokens.space20),
@@ -727,42 +856,14 @@ class _MomentRootCommentPanel extends StatelessWidget {
       ],
     );
   }
-}
 
-class _MomentDetailFailure extends StatelessWidget {
-  const _MomentDetailFailure({required this.failure, required this.onRetry});
-
-  final ApiFailure? failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final notFound =
-        failure?.httpStatus == 404 || failure?.businessCode == 40415;
-    return WenyouContentFrame(
-      top: 16,
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: notFound
-              ? WenyouIconIds.navigationMoments
-              : WenyouIconIds.statusOffline,
-          title: notFound ? '动态不存在' : '动态详情加载失败',
-          message: notFound
-              ? '这条动态可能已被删除或不可见。'
-              : (failure?.userMessage ?? '请稍后重试。'),
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
-          action: notFound
-              ? null
-              : OutlinedButton.icon(
-                  key: const Key('moment-detail-retry'),
-                  onPressed: onRetry,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
-                ),
-        ),
-      ),
+  Widget _targetFrame(MomentComment comment, Widget child) {
+    if (comment.id != targetCommentId) return child;
+    return WenyouTransientTargetFrame(
+      key: targetKey,
+      targetId: comment.id,
+      announcement: '已定位到目标评论',
+      child: child,
     );
   }
 }
