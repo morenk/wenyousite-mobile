@@ -7,12 +7,12 @@ Future<void> main(List<String> arguments) async {
   final baseUrl = _readBaseUrl(arguments);
   final metadata = _readContractMetadata();
   final expectedRevision = metadata['backendRevision'];
-  final expectedContract = metadata['contractVersion'];
+  final expectedBundle = metadata['contractVersion'];
   final expectedMarkdown = int.tryParse(
     metadata['markdownContractVersion'] ?? '',
   );
   if (expectedRevision == null ||
-      expectedContract == null ||
+      expectedBundle == null ||
       expectedMarkdown == null) {
     stderr.writeln(
       'contracts/backend-contract.properties 缺少 backendRevision、'
@@ -23,6 +23,13 @@ Future<void> main(List<String> arguments) async {
   }
 
   final openApi = _readJsonFile('contracts/openapi.json');
+  final openApiInfo = _mapAt(openApi, const ['info']);
+  final expectedContract = openApiInfo['version'];
+  if (expectedContract is! String || expectedContract.isEmpty) {
+    stderr.writeln('contracts/openapi.json 缺少 info.version。');
+    exitCode = 2;
+    return;
+  }
   final schema = _mapAt(openApi, const [
     'components',
     'schemas',
@@ -48,9 +55,10 @@ Future<void> main(List<String> arguments) async {
         actualMarkdown != expectedMarkdown) {
       throw FormatException(
         '生产 API 与本地契约来源不一致：'
-        'expected contract=$expectedContract build=$expectedRevision '
+        'expected api=$expectedContract bundle=$expectedBundle '
+        'build=$expectedRevision '
         'markdown=$expectedMarkdown; '
-        'actual contract=$actualContract build=$actualRevision '
+        'actual api=$actualContract build=$actualRevision '
         'markdown=$actualMarkdown',
       );
     }
@@ -84,7 +92,7 @@ Future<void> main(List<String> arguments) async {
     }
 
     stdout.writeln(
-      'Production API verified: contract=$actualContract '
+      'Production API verified: api=$actualContract bundle=$expectedBundle '
       'build=$actualRevision markdown=$actualMarkdown; '
       'GET /threads schema compatible.',
     );

@@ -48,7 +48,7 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 ## 测试门禁
 
-- `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v2-fixtures.json` 的 canonical、visible 和幂等用例全部通过。
+- `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v3-fixtures.json` 的 canonical、visible 和幂等用例全部通过，并固定粗体后普通软换行不被提升为段落分隔。
 - 为普通 Markdown、用户提及、全体玩家、骰子、表情、普通图片、空段和代码转义维护双向 Codec 黄金用例。
 - 历史空段覆盖首部、中部、尾部、CRLF、显式标记幂等及围栏/缩进代码/原始 HTML 保护；编辑后重开必须保持逐段计数。新建空段另覆盖连续回车、首尾空段、继承末行属性、外部粘贴、已有结构分隔编辑和实际帖子发布载荷。
 - 每种自定义 embed 至少覆盖解析、编辑后序列化、未知版本保留和恶意 URL降级。

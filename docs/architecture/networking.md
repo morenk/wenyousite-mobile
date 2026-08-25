@@ -6,7 +6,7 @@
 
 `AppEnvironment` 从 `--dart-define=API_BASE_URL=...` 读取地址。Debug 默认值为 `https://wenyou.site/api/v1`；Android 模拟器连接本地后端时使用 `http://10.0.2.2:3000/api/v1`。生成客户端的 endpoint 已包含 `/api/v1`，因此底层 Dio 只使用配置地址的 origin，避免版本路径重复拼接。业务代码只依赖注入后的 Dio 和仓储，不读取全局常量。
 
-契约同步与生产部署是两个独立事实。`npm run api:check` 会从仓库快照重新生成 Dart 客户端并要求生成目录零差异；准备声明“生产 API 已同步”前，还必须运行 `npm run api:verify:production`，由它比较本地 `backendRevision`、`contractVersion` 与公网 `/meta`，并冒烟校验 `/threads` 的必需字段和单封面数组。生产 `/meta` 中推荐的 Android build 属于移动端发布面，不会因后端部署或 Debug APK 构建自动更新；只有完成签名、上传和晋级后才能声明移动端生产版本已发布。
+契约同步与生产部署是两个独立事实。`npm run api:check` 会从仓库快照重新生成 Dart 客户端并要求生成目录零差异；准备声明“生产 API 已同步”前，还必须运行 `npm run api:verify:production`，由它比较本地 OpenAPI `info.version`、`backendRevision`、Markdown 版本与公网 `/meta`，并冒烟校验 `/threads` 的必需字段和单封面数组。`backend-contract.properties` 的 `contractVersion` 记录包含 fixture 与指南的整体契约包版本；当只升级编辑器黄金语料而不改变 HTTP API 时，它可以高于 OpenAPI 版本，不能拿来代替 API 版本比较。生产 `/meta` 中推荐的 Android build 属于移动端发布面，不会因后端部署或 Debug APK 构建自动更新；只有完成签名、上传和晋级后才能声明移动端生产版本已发布。
 
 ## 请求链
 

@@ -24,6 +24,16 @@ test('仓库自动化入口统一使用 PowerShell 7', async () => {
   );
   assert.match(syncScript, /thread-category-v\[0-9\]\+-fixtures/);
   assert.doesNotMatch(syncScript, /thread-category-v1-fixtures/);
+  const productionVerification = await readFile(
+    path.resolve(directory, '../verify_production_api.dart'),
+    'utf8',
+  );
+  assert.match(productionVerification, /openApiInfo\['version'\]/);
+  assert.match(productionVerification, /bundle=\$expectedBundle/);
+  assert.doesNotMatch(
+    productionVerification,
+    /expectedContract = metadata\['contractVersion'\]/,
+  );
 });
 
 test('Windows 发布工具包含可重复安装的完整入口', async () => {

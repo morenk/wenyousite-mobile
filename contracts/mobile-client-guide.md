@@ -105,11 +105,13 @@ OpenAPI 为兼容 Web 把该头标为 optional；省略或传未知值会创建 
 
 合同 `5.11.0-dev.20260825.1` 起，Windows 移动端必须在独立契约同步提交中固定 OpenAPI、重新生成 SDK，并消费通知目标必填 `state`：仅 `ACTIVE` 允许导航，`CONTENT_DELETED` / `USER_DEACTIVATED` 显示不可点击历史态，`NO_TARGET` 按普通系统通知展示。主题、楼层/回复、动态及评论详情从通知或站内链接打开时必须重新验证；403/404 要清除保留详情和回复编辑器，不得继续显示缓存内容或提交回复。普通 PRIVATE 主题链接对非成员显示统一不存在页；只有有效 `/join/{token}` 先显示最小邀请预览，用户明确加入后才进入详情。管理员隐藏动态主评论时清除其回复子树；作者墓碑仍保留。该 Flutter 代码、测试、生成物与 APK 门禁只能在 Windows 工作区完成，VPS 不修改移动端副本。
 
+合同 `5.11.1-dev.20260825.1` 起，动态主评论的 `order` 不再传入内嵌楼中楼；折叠预览固定返回最早三条，独立楼中楼仍默认 `OLDEST`。当前 Windows 移动端展开列表已经显式传 `OLDEST`，同步固定 OpenAPI、重新生成 SDK 并更新 moments 模块文档后无需修改业务排序逻辑；VPS 不修改或验证 Flutter 实现。
+
 ## 媒体、Markdown、动态与温油
 
 - 上传遵循“预签名 PUT → `upload-done` → 查询状态”；仅在 `COMPLETED` 后使用衍生图，列表优先 `thumbnailUrl`，详情优先 `mediumUrl`，为空或失败时回退 `url`。不得猜测对象键。
 - 个人主页背景包含根级 Web 3:1 资产和可空 `mobile` 2:1 资产；移动端优先选择 `mobile`，历史数据为空时回退根级资产，整体为 null 时不预留背景舞台。双画幅设置与移除仍是 planned，客户端实现前也必须消费 `mobile-v1-golden-fixtures.json` 的 `profileCovers` 旅程。
-- 主题帖、楼层和回复使用 Markdown v3 工具栏能力白名单。客户端必须消费 [`markdown-v3-fixtures.json`](../contracts/markdown-v3-fixtures.json)、[`markdown-v3-nodes-fixtures.json`](../contracts/markdown-v3-nodes-fixtures.json) 与 [`markdown-editor-roundtrip-v2-fixtures.json`](../contracts/markdown-editor-roundtrip-v2-fixtures.json)，覆盖规范化、允许/拒绝、字面文本降级、扩展节点和 round-trip；第三方解析器支持的表格等语法不得自行扩大产品能力。
+- 主题帖、楼层和回复使用 Markdown v3 工具栏能力白名单。客户端必须消费 [`markdown-v3-fixtures.json`](../contracts/markdown-v3-fixtures.json)、[`markdown-v3-nodes-fixtures.json`](../contracts/markdown-v3-nodes-fixtures.json) 与 [`markdown-editor-roundtrip-v3-fixtures.json`](../contracts/markdown-editor-roundtrip-v3-fixtures.json)，覆盖规范化、允许/拒绝、字面文本降级、扩展节点、普通软换行和 round-trip；第三方解析器支持的表格等语法不得自行扩大产品能力。
 - 动态标题保持纯文本；动态正文、评论和私聊正文仍是字符串，不进入通用 Markdown 渲染链路，但应消费 [`internal-reference-v1-fixtures.json`](../contracts/internal-reference-v1-fixtures.json)，只识别 `[名称](合法站内坐标)` 与裸站内坐标。输入接受 `wenyou.site`、`www.wenyou.site` 和相对坐标并规范化为相对地址；`post + subthread` 以 `post` 为准，转义名称与裸地址边界以 fixture 为准。其他 Markdown/外链保持字面文本。传送门同页导航、目标不可见时交给既有详情错误态，不预取目标元数据。
 - 编辑器必须消费站内传送门 fixture 的 `editorPasteCases`：剪贴板纯文本整体是一个合法坐标时，以当前选区文字或默认名称“传送门”插入规范化相对链接并立即显示为传送门；混合文本、站外地址、非法邀请 token 及带查询参数的邀请沿用普通粘贴。邀请 token 是访问凭据；除用户明确保存的正文或草稿外，不得把它写入日志、诊断、分析事件或独立缓存，也不得用于预取私密帖元数据。
 - 私聊会话列表消费 `directMessagePreviewCases`：普通传送门显示名称，邀请或残留 `/join/{token}` 统一显示“邀请传送门”。完整消息与复制使用原始字符串；私聊邀请不弹公开分享确认，公开主题、楼层、回复、动态和评论则在内容首次提交或邀请内容变化后确认。

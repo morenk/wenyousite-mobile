@@ -400,7 +400,7 @@ class PostsApi {
   /// * [id]
   /// * [cursor] - 分页游标（上一页最后一条记录 ID）
   /// * [limit] - 每页条数（默认 20，最大 50）
-  /// * [order] - 回复顺序；帖子回复默认 OLDEST，动态主评论默认 NEWEST
+  /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request

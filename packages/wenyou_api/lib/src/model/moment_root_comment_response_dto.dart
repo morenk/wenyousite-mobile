@@ -29,7 +29,7 @@ part 'moment_root_comment_response_dto.g.dart';
 /// * [canDelete]
 /// * [createdAt]
 /// * [replyCount]
-/// * [replies] - 按当前筛选与顺序返回的前三条可见楼中楼预览
+/// * [replies] - 按当前作者筛选返回的最早三条可见楼中楼预览，固定时间正序
 @BuiltValue()
 abstract class MomentRootCommentResponseDto implements Built<MomentRootCommentResponseDto, MomentRootCommentResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
@@ -72,7 +72,7 @@ abstract class MomentRootCommentResponseDto implements Built<MomentRootCommentRe
   @BuiltValueField(wireName: r'replyCount')
   num get replyCount;
 
-  /// 按当前筛选与顺序返回的前三条可见楼中楼预览
+  /// 按当前作者筛选返回的最早三条可见楼中楼预览，固定时间正序
   @BuiltValueField(wireName: r'replies')
   BuiltList<MomentCommentResponseDto> get replies;
 

@@ -401,14 +401,14 @@ class MomentsApi {
     );
   }
 
-  /// 主评论列表，支持顺序与作者筛选并内嵌三条楼中楼
+  /// 主评论列表，支持顺序与作者筛选并内嵌最早三条楼中楼
   ///
   ///
   /// Parameters:
   /// * [id]
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
-  /// * [order] - 回复顺序；帖子回复默认 OLDEST，动态主评论默认 NEWEST
+  /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -1231,7 +1231,7 @@ class MomentsApi {
   /// * [commentId]
   /// * [cursor] - 服务端返回的不透明分页游标；首次请求不传，后续必须原样回传
   /// * [limit] - 每页条数（默认 20，最大 50）
-  /// * [order] - 回复顺序；帖子回复默认 OLDEST，动态主评论默认 NEWEST
+  /// * [order] - 列表顺序；帖子回复与动态独立楼中楼默认 OLDEST，动态主评论默认 NEWEST；动态主评论内嵌回复固定 OLDEST
   /// * [authorId] - 只返回指定作者的回复
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
