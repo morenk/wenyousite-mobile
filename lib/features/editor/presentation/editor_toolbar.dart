@@ -10,7 +10,6 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
-import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
@@ -459,19 +458,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorBulletList,
                   label: '无序列表',
-                  selected: WenyouEditorFormatPolicy.isActive(
-                    style,
-                    Attribute.ul,
-                  ),
+                  selected: style.attributes.containsKey(Attribute.ul.key),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ul)),
                 ),
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorOrderedList,
                   label: '有序列表',
-                  selected: WenyouEditorFormatPolicy.isActive(
-                    style,
-                    Attribute.ol,
-                  ),
+                  selected: style.attributes.containsKey(Attribute.ol.key),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ol)),
                 ),
                 WenyouEditorTrayButton(
@@ -590,12 +583,23 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _applyHeading(int selected) {
-    WenyouEditorFormatPolicy.applyHeading(widget.controller, selected);
+    widget.controller.formatSelection(
+      selected == 2
+          ? Attribute.h2
+          : selected == 3
+          ? Attribute.h3
+          : Attribute.clone(Attribute.header, null),
+    );
     _setTray(_EditorTray.none);
   }
 
   void _toggle(Attribute attribute) {
-    WenyouEditorFormatPolicy.toggle(widget.controller, attribute);
+    final active = widget.controller.getSelectionStyle().attributes.containsKey(
+      attribute.key,
+    );
+    widget.controller.formatSelection(
+      active ? Attribute.clone(attribute, null) : attribute,
+    );
     widget.editorFocusNode?.requestFocus();
   }
 
@@ -748,19 +752,16 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         label,
         TextSelection.collapsed(offset: selection.start + label.length),
       );
-      WenyouEditorFormatPolicy.applyLink(
-        widget.controller,
-        selection: TextSelection(
-          baseOffset: selection.start,
-          extentOffset: selection.start + label.length,
-        ),
-        url: url,
+      widget.controller.formatText(
+        selection.start,
+        label.length,
+        LinkAttribute(url),
       );
     } else {
-      WenyouEditorFormatPolicy.applyLink(
-        widget.controller,
-        selection: selection,
-        url: url,
+      widget.controller.formatText(
+        selection.start,
+        selection.end - selection.start,
+        LinkAttribute(url),
       );
     }
     _setTray(_EditorTray.none);

@@ -227,11 +227,6 @@ class _ThreadManagementBodyEditorState
                     padding: EdgeInsets.all(tokens.space16),
                     placeholder: widget.placeholder,
                     customStyles: wenyouEditorTextStyles(context),
-                    // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
-                    // ignore: experimental_member_use
-                    customLeadingBlockBuilder: wenyouEditorLeadingBlockBuilder(
-                      context,
-                    ),
                     embedBuilders: wenyouEditorEmbedBuilders(),
                     customShortcuts: _session.clipboardShortcuts,
                     customActions: _session.clipboardActions,

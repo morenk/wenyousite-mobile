@@ -15,10 +15,10 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_content_link_style.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
 
 export 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart'
@@ -267,35 +267,89 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   Future<String> _saveImage(Uri uri) => widget.onSaveImage!(uri);
 
   MarkdownStyleSheet _createStyleSheet(BuildContext context) {
+    final tokens = context.wenyouTokens;
     final theme = Theme.of(context);
     final baseStyle = MarkdownStyleSheet.fromTheme(theme);
-    final spec = WenyouRichTextStyleSpec.resolve(
-      context,
-      bodyFontSize: widget.bodyFontSize,
-      bodyHeight: widget.bodyHeight,
+    final bodyStyle = theme.textTheme.bodyLarge?.copyWith(
+      fontSize: widget.bodyFontSize,
+      height: widget.bodyHeight,
+      fontWeight: FontWeight.w400,
+      letterSpacing: widget.bodyFontSize * 0.008,
+    );
+    final h1 = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 1.65,
+      height: 1.4,
+      fontWeight: FontWeight.w700,
+      letterSpacing: widget.bodyFontSize * 0.015,
+    );
+    final h2 = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 1.35,
+      height: 1.45,
+      fontWeight: FontWeight.w700,
+      letterSpacing: widget.bodyFontSize * 0.015,
+    );
+    final h3 = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 1.12,
+      height: 1.55,
+      fontWeight: FontWeight.w700,
+      letterSpacing: widget.bodyFontSize * 0.015,
+    );
+    final compactBody = bodyStyle?.copyWith(
+      fontSize: widget.bodyFontSize * 0.88,
+      height: 1.7,
     );
     return baseStyle.copyWith(
-      p: spec.body,
-      a: spec.link,
-      h1: spec.h1,
-      h1Padding: spec.h1Padding,
-      h2: spec.h2,
-      h2Padding: spec.h2Padding,
-      h3: spec.h3,
-      h3Padding: spec.h3Padding,
-      h4: spec.h3,
-      h4Padding: spec.h3Padding,
-      h5: spec.body.copyWith(fontWeight: FontWeight.w700),
-      h6: spec.body.copyWith(fontWeight: FontWeight.w700),
-      strong: spec.strong,
-      em: spec.emphasis,
-      blockSpacing: spec.blockSpacing,
-      listBullet: spec.listMarker,
-      code: spec.codeBlock,
-      blockquote: spec.quote,
-      blockquotePadding: spec.quotePadding,
-      blockquoteDecoration: spec.quoteDecoration,
-      horizontalRuleDecoration: spec.horizontalRuleDecoration,
+      p: bodyStyle,
+      a: wenyouContentLinkStyle(context, base: bodyStyle),
+      h1: h1,
+      h1Padding: EdgeInsets.only(top: tokens.space16, bottom: tokens.space8),
+      h2: h2,
+      h2Padding: EdgeInsets.only(top: tokens.space16, bottom: tokens.space4),
+      h3: h3,
+      h3Padding: EdgeInsets.only(top: tokens.space12, bottom: tokens.space4),
+      h4: h3,
+      h4Padding: EdgeInsets.only(top: tokens.space12, bottom: tokens.space4),
+      h5: bodyStyle?.copyWith(fontWeight: FontWeight.w700),
+      h6: bodyStyle?.copyWith(fontWeight: FontWeight.w700),
+      strong: TextStyle(
+        fontWeight: FontWeight.w700,
+        letterSpacing: widget.bodyFontSize * 0.018,
+      ),
+      em: const TextStyle(fontStyle: FontStyle.italic),
+      blockSpacing: tokens.space12,
+      listBullet: bodyStyle?.copyWith(color: tokens.brandForeground),
+      code: compactBody?.copyWith(
+        color: tokens.text,
+        backgroundColor: tokens.softPanel,
+        fontFamily: 'monospace',
+        fontWeight: FontWeight.w500,
+      ),
+      blockquote: bodyStyle?.copyWith(
+        color: tokens.text,
+        fontStyle: FontStyle.normal,
+        fontWeight: FontWeight.w400,
+      ),
+      blockquotePadding: EdgeInsets.symmetric(
+        horizontal:
+            widget.bodyFontSize * WenyouElementContract.quotePaddingInline,
+        vertical: widget.bodyFontSize * WenyouElementContract.quotePaddingBlock,
+      ),
+      blockquoteDecoration: BoxDecoration(
+        color: tokens.softPanel,
+        border: BorderDirectional(
+          start: BorderSide(
+            color: tokens.brandForeground,
+            width: WenyouElementContract.quoteMarkerWidth,
+          ),
+        ),
+        borderRadius: const BorderRadiusDirectional.only(
+          topEnd: Radius.circular(WenyouElementContract.quoteRadius),
+          bottomEnd: Radius.circular(WenyouElementContract.quoteRadius),
+        ),
+      ),
+      horizontalRuleDecoration: BoxDecoration(
+        border: Border(top: BorderSide(color: tokens.border)),
+      ),
     );
   }
 

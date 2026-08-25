@@ -1,48 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart';
 
-const wenyouEditorBodyFontSize = WenyouRichTextStyleSpec.defaultBodyFontSize;
-const wenyouEditorBodyHeight = WenyouRichTextStyleSpec.defaultBodyHeight;
+const wenyouEditorBodyFontSize = 17.0;
+const wenyouEditorBodyHeight = 1.8;
 
 DefaultStyles wenyouEditorTextStyles(BuildContext context) {
   final tokens = context.wenyouTokens;
-  final spec = WenyouRichTextStyleSpec.resolve(context);
+  final theme = Theme.of(context);
+  final body = (theme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+    color: tokens.text,
+    fontSize: wenyouEditorBodyFontSize,
+    height: wenyouEditorBodyHeight,
+    fontWeight: FontWeight.w400,
+    letterSpacing: wenyouEditorBodyFontSize * 0.008,
+    decoration: TextDecoration.none,
+  );
+  final h2 = body.copyWith(
+    fontSize: wenyouEditorBodyFontSize * 1.35,
+    height: 1.45,
+    fontWeight: FontWeight.w700,
+    letterSpacing: wenyouEditorBodyFontSize * 0.015,
+  );
+  final h3 = body.copyWith(
+    fontSize: wenyouEditorBodyFontSize * 1.12,
+    height: 1.55,
+    fontWeight: FontWeight.w700,
+    letterSpacing: wenyouEditorBodyFontSize * 0.015,
+  );
+  final compact = body.copyWith(
+    fontSize: wenyouEditorBodyFontSize * 0.88,
+    height: 1.7,
+  );
   const noHorizontalSpacing = HorizontalSpacing.zero;
   const noVerticalSpacing = VerticalSpacing.zero;
 
   return DefaultStyles(
     paragraph: DefaultTextBlockStyle(
-      spec.body,
+      body,
       noHorizontalSpacing,
       noVerticalSpacing,
       noVerticalSpacing,
       null,
     ),
     h2: DefaultTextBlockStyle(
-      spec.h2,
+      h2,
       noHorizontalSpacing,
-      VerticalSpacing(spec.h2Padding.top, spec.h2Padding.bottom),
+      VerticalSpacing(context.wenyouTokens.space16, tokens.space4),
       noVerticalSpacing,
       null,
     ),
     h3: DefaultTextBlockStyle(
-      spec.h3,
+      h3,
       noHorizontalSpacing,
-      VerticalSpacing(spec.h3Padding.top, spec.h3Padding.bottom),
+      VerticalSpacing(tokens.space12, tokens.space4),
       noVerticalSpacing,
       null,
     ),
     placeHolder: DefaultTextBlockStyle(
-      spec.body.copyWith(color: tokens.mutedText),
+      body.copyWith(color: tokens.mutedText),
       noHorizontalSpacing,
       noVerticalSpacing,
       noVerticalSpacing,
       null,
     ),
     lists: DefaultListBlockStyle(
-      spec.body,
+      body,
       noHorizontalSpacing,
       noVerticalSpacing,
       VerticalSpacing(0, tokens.space4),
@@ -50,14 +74,36 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       null,
     ),
     quote: DefaultTextBlockStyle(
-      spec.quote,
-      HorizontalSpacing(spec.quotePadding.left, spec.quotePadding.right),
-      VerticalSpacing(spec.blockSpacing, spec.blockSpacing),
-      VerticalSpacing(spec.quotePadding.top, spec.quotePadding.bottom),
-      spec.quoteDecoration,
+      body.copyWith(
+        color: tokens.text,
+        fontStyle: FontStyle.normal,
+        fontWeight: FontWeight.w400,
+      ),
+      const HorizontalSpacing(
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingInline,
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingInline,
+      ),
+      VerticalSpacing(tokens.space8, tokens.space8),
+      const VerticalSpacing(
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingBlock,
+        wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingBlock,
+      ),
+      BoxDecoration(
+        color: tokens.softPanel,
+        border: BorderDirectional(
+          start: BorderSide(
+            color: tokens.brandForeground,
+            width: WenyouElementContract.quoteMarkerWidth,
+          ),
+        ),
+        borderRadius: BorderRadiusDirectional.only(
+          topEnd: Radius.circular(WenyouElementContract.quoteRadius),
+          bottomEnd: Radius.circular(WenyouElementContract.quoteRadius),
+        ),
+      ),
     ),
     code: DefaultTextBlockStyle(
-      spec.codeBlock,
+      compact.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w500),
       noHorizontalSpacing,
       VerticalSpacing(tokens.space8, tokens.space8),
       noVerticalSpacing,
@@ -68,41 +114,18 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       ),
     ),
     inlineCode: InlineCodeStyle(
-      style: spec.inlineCode,
+      style: compact.copyWith(fontFamily: 'monospace'),
       backgroundColor: tokens.softPanel,
-      radius: Radius.circular((spec.inlineCode.fontSize ?? 14) * 0.35),
-      header2: spec.inlineCode.copyWith(fontSize: spec.h2.fontSize),
-      header3: spec.inlineCode.copyWith(fontSize: spec.h3.fontSize),
+      radius: Radius.circular((compact.fontSize ?? 14) * 0.35),
+      header2: compact.copyWith(fontSize: h2.fontSize),
+      header3: compact.copyWith(fontSize: h3.fontSize),
     ),
-    link: spec.link,
-    bold: spec.strong,
+    link: body.copyWith(
+      color: tokens.brandForeground,
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+      decorationColor: tokens.brandForeground,
+    ),
+    bold: const TextStyle(fontWeight: FontWeight.w700),
   );
-}
-
-LeadingBlockNodeBuilder wenyouEditorLeadingBlockBuilder(BuildContext context) {
-  final markerStyle = WenyouRichTextStyleSpec.resolve(context).listMarker;
-  return (node, config) {
-    final style = (config.style ?? markerStyle).copyWith(
-      color: markerStyle.color,
-    );
-    if (config.attribute == Attribute.ul) {
-      return QuillBulletPoint(
-        style: style,
-        width: config.width!,
-        padding: config.padding!,
-      );
-    }
-    if (config.attribute == Attribute.ol) {
-      return QuillNumberPoint(
-        index: config.getIndexNumberByIndent!,
-        indentLevelCounts: config.indentLevelCounts,
-        count: config.count,
-        style: style,
-        attrs: config.attrs,
-        width: config.width!,
-        padding: config.padding!,
-      );
-    }
-    return null;
-  };
 }

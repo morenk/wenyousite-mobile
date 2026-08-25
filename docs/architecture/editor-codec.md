@@ -2,7 +2,7 @@
 
 ## 边界
 
-后端 Markdown v3 是唯一持久化格式，Flutter Quill Delta 只存在于编辑会话内存。打开编辑器时由自研 Codec 按 `Markdown → MarkdownEditorDocument → Delta` 将完整快照解析为编辑状态；自动快照、云草稿、显式保存和提交前统一按 `Delta → MarkdownEditorDocument → Markdown` 重新序列化，再执行 Markdown v3 规范化、块结构等价与可见性检查。独立正文预览不是该链路的一部分，Quill 编辑态本身按阅读态等价规格呈现。
+后端 Markdown v3 是唯一持久化格式，Flutter Quill Delta 只存在于编辑会话内存。打开编辑器时由自研 Codec 按 `Markdown → MarkdownEditorDocument → Delta` 将完整快照解析为编辑状态；自动快照、云草稿、显式保存和提交前统一按 `Delta → MarkdownEditorDocument → Markdown` 重新序列化，再执行 Markdown v3 规范化、块结构等价与可见性检查。
 
 不把 Delta JSON写入后端或云草稿，不把 `markdown_quill` 作为往返转换事实层。Flutter Quill 官方原生模型是 Delta 并推荐直接保存 Delta；温油站有既存 Markdown 契约，因此这种转换风险必须由本项目的黄金测试吸收。`markdown_quill` 当前不保留图片 alt，且输出转换仍有限，不能满足表情 title marker 和图片元数据无损往返。
 
@@ -58,7 +58,6 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 - 剪贴板覆盖同编辑器、跨编辑器、Android marker/会话匹配、多骰子、剪切后重复粘贴、普通文本回退、其他协议节点保持、只读拦截和系统写入失败清理。
 - 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v3 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。
 - 分隔线覆盖文首、文尾、文字中间、当前行上方/下方、单步撤销、重开、真实发布载荷和非法混合 Delta；阅读态与编辑态都断言 `border` 语义色、1px/1dp 且无装饰。
-- 工具栏格式策略覆盖全部可创建命令、15 种兼容行内组合、行内代码互斥和块格式转换；同一份 Markdown 在编辑态与发布态共享样式规格，并维护亮暗色、宽屏及 2× 字号配对 Golden。
 - Flutter Quill 升级必须独立 `chore`，重新运行全部 Codec 黄金语料并人工冒烟 Android 输入、选择、撤销/重做和粘贴。
 
 参考：[Flutter Quill](https://pub.dev/packages/flutter_quill)、[markdown_quill 限制](https://pub.dev/packages/markdown_quill)、[编辑器模块](../modules/editor.md)。
