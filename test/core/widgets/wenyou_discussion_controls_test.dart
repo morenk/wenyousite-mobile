@@ -157,6 +157,61 @@ void main() {
     expect(find.text('讨论设置'), findsNothing);
   });
 
+  testWidgets('直接讨论控件可只保留与主题帖一致的顺序按钮', (tester) async {
+    var order = _Order.newest;
+    var changes = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) =>
+                WenyouDiscussionListControls<_Order>.orderOnly(
+                  countLabel: '12 条评论',
+                  order: order,
+                  orderOptions: const [
+                    WenyouDiscussionOrderOption(
+                      value: _Order.oldest,
+                      label: '最早在前',
+                    ),
+                    WenyouDiscussionOrderOption(
+                      value: _Order.newest,
+                      label: '最新在前',
+                    ),
+                  ],
+                  orderKey: const Key('order-only'),
+                  onOrderChanged: (value) => setState(() {
+                    changes += 1;
+                    order = value;
+                  }),
+                ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('12 条评论'), findsOneWidget);
+    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('暂无可筛选作者'), findsNothing);
+    expect(find.text('讨论设置'), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('order-only'))).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      tester.getSemantics(find.byKey(const Key('order-only'))).label,
+      contains('当前最新在前，点击切换为最早在前'),
+    );
+
+    await tester.tap(find.byKey(const Key('order-only')));
+    await tester.pump();
+
+    expect(changes, 1);
+    expect(order, _Order.oldest);
+    expect(find.text('最早在前'), findsOneWidget);
+  });
+
   testWidgets('直接讨论控件在作者失败和窄屏大字号下保持可操作', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 640);

@@ -65,13 +65,32 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
     super.key,
   }) : assert(orderOptions.length > 1);
 
+  const WenyouDiscussionListControls.orderOnly({
+    required this.countLabel,
+    required this.order,
+    required this.orderOptions,
+    required this.onOrderChanged,
+    this.enabled = true,
+    this.countKey,
+    this.orderKey,
+    super.key,
+  }) : authorId = null,
+       authors = const [],
+       onAuthorChanged = null,
+       allAuthorsLabel = '全部玩家与管理者',
+       authorsLoading = false,
+       authorsFailure = null,
+       onRetryAuthors = null,
+       authorKey = null,
+       assert(orderOptions.length > 1);
+
   final String countLabel;
   final T order;
   final List<WenyouDiscussionOrderOption<T>> orderOptions;
   final String? authorId;
   final List<WenyouDiscussionAuthorOption> authors;
   final ValueChanged<T> onOrderChanged;
-  final ValueChanged<String?> onAuthorChanged;
+  final ValueChanged<String?>? onAuthorChanged;
   final String allAuthorsLabel;
   final bool enabled;
   final bool authorsLoading;
@@ -94,21 +113,30 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
     );
-    final actions = _DiscussionDirectActions<T>(
-      order: order,
-      orderOptions: orderOptions,
-      authorId: authorId,
-      authors: authors,
-      onOrderChanged: onOrderChanged,
-      onAuthorChanged: onAuthorChanged,
-      allAuthorsLabel: allAuthorsLabel,
-      enabled: enabled,
-      authorsLoading: authorsLoading,
-      authorsFailure: authorsFailure,
-      onRetryAuthors: onRetryAuthors,
-      authorKey: authorKey,
-      orderKey: orderKey,
-    );
+    final hasAuthorControl = onAuthorChanged != null;
+    final actions = hasAuthorControl
+        ? _DiscussionDirectActions<T>(
+            order: order,
+            orderOptions: orderOptions,
+            authorId: authorId,
+            authors: authors,
+            onOrderChanged: onOrderChanged,
+            onAuthorChanged: onAuthorChanged!,
+            allAuthorsLabel: allAuthorsLabel,
+            enabled: enabled,
+            authorsLoading: authorsLoading,
+            authorsFailure: authorsFailure,
+            onRetryAuthors: onRetryAuthors,
+            authorKey: authorKey,
+            orderKey: orderKey,
+          )
+        : _DiscussionOrderToggle<T>(
+            key: orderKey,
+            order: order,
+            options: orderOptions,
+            enabled: enabled,
+            onChanged: onOrderChanged,
+          );
     return LayoutBuilder(
       builder: (context, constraints) {
         final textScale = MediaQuery.textScalerOf(context).scale(1);
@@ -119,7 +147,13 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
             children: [
               count,
               SizedBox(height: tokens.space4),
-              actions,
+              if (hasAuthorControl)
+                actions
+              else
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(width: 116, child: actions),
+                ),
             ],
           );
         }
@@ -127,12 +161,15 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
           children: [
             Expanded(child: count),
             SizedBox(width: tokens.space4),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: constraints.maxWidth >= 480 ? 340 : 268,
-              ),
-              child: actions,
-            ),
+            if (hasAuthorControl)
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: constraints.maxWidth >= 480 ? 340 : 268,
+                ),
+                child: actions,
+              )
+            else
+              SizedBox(width: 116, child: actions),
           ],
         );
       },

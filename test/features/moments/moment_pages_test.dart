@@ -240,7 +240,7 @@ void main() {
     );
   });
 
-  testWidgets('动态详情展示纯文本、评论筛选与游客悬浮评论入口', (tester) async {
+  testWidgets('动态详情直接切换评论顺序且不请求作者候选', (tester) async {
     final repository = _PageRepository();
     await tester.pumpWidget(
       ProviderScope(
@@ -266,10 +266,27 @@ void main() {
     );
     expect(find.text('回复'), findsNothing);
     expect(find.text('最新在前'), findsOneWidget);
-    expect(find.byType(DropdownButton<String?>), findsNothing);
+    expect(find.byKey(const Key('moment-comments-order')), findsOneWidget);
+    expect(find.byKey(const Key('moment-comment-settings')), findsNothing);
+    expect(find.text('只看作者'), findsNothing);
+    expect(repository.commentOrders, [MomentCommentOrder.newest]);
+    expect(repository.commentAuthorCalls, 0);
+    expect(
+      tester.getSize(find.byKey(const Key('moment-comments-order'))).height,
+      greaterThanOrEqualTo(48),
+    );
     expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
     expect(find.text('登录后发表评论'), findsOneWidget);
     expect(find.byKey(const Key('moment-detail-login')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('moment-comments-order')));
+    await tester.pumpAndSettle();
+    expect(find.text('最早在前'), findsOneWidget);
+    expect(repository.commentOrders, [
+      MomentCommentOrder.newest,
+      MomentCommentOrder.oldest,
+    ]);
+    expect(repository.commentAuthorCalls, 0);
 
     await tester.longPress(find.text('主评论'));
     await tester.pumpAndSettle();
@@ -1412,7 +1429,9 @@ class _PageRepository extends Fake implements MomentRepository {
   final createdInputs = <MomentDraftInput>[];
   final commentInputs = <MomentCommentInput>[];
   final bookmarkMoves = <(String, String)>[];
+  final commentOrders = <MomentCommentOrder>[];
   final MomentDetail _detailValue;
+  var commentAuthorCalls = 0;
 
   @override
   Future<CursorPage<MomentCard>> fetchFeed({
@@ -1466,11 +1485,13 @@ class _PageRepository extends Fake implements MomentRepository {
     String? cursor,
     int limit = 20,
   }) async {
+    commentOrders.add(order);
     return CursorPage(items: [_rootComment()], cursor: null, hasMore: false);
   }
 
   @override
   Future<List<MomentAuthor>> fetchCommentAuthors(String momentId) async {
+    commentAuthorCalls += 1;
     return [_author()];
   }
 

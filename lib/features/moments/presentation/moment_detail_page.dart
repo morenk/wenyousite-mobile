@@ -176,16 +176,11 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                   SliverToBoxAdapter(
                     child: WenyouContentFrame(
                       top: context.wenyouTokens.space12,
-                      child: _CommentFilters(
+                      child: _CommentOrderControls(
                         state: state,
-                        onApply: (order, authorId) => ref
+                        onOrderChanged: (order) => ref
                             .read(provider.notifier)
-                            .applyCommentFilters(
-                              order: order,
-                              authorId: authorId,
-                            ),
-                        onRetryAuthors: () =>
-                            ref.read(provider.notifier).retryCommentAuthors(),
+                            .selectCommentOrder(order),
                       ),
                     ),
                   ),
@@ -313,8 +308,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       targetId: targetId,
       scopeSignature: '${widget.momentId}:$targetId:$sessionSignature',
       contentSignature:
-          '${state.commentOrder.name}:${state.commentAuthorId ?? ''}:'
-          '${projection.contentSignature}',
+          '${state.commentOrder.name}:${projection.contentSignature}',
       targetIndex: projection.targetRootIndex,
       itemCount: projection.comments.length,
       ready:
@@ -703,27 +697,23 @@ class _DetailAction extends StatelessWidget {
   }
 }
 
-class _CommentFilters extends StatelessWidget {
-  const _CommentFilters({
+class _CommentOrderControls extends StatelessWidget {
+  const _CommentOrderControls({
     required this.state,
-    required this.onApply,
-    required this.onRetryAuthors,
+    required this.onOrderChanged,
   });
 
   final MomentDetailState state;
-  final void Function(MomentCommentOrder order, String? authorId) onApply;
-  final VoidCallback onRetryAuthors;
+  final ValueChanged<MomentCommentOrder> onOrderChanged;
 
   @override
   Widget build(BuildContext context) {
-    return WenyouDiscussionControls<MomentCommentOrder>(
+    return WenyouDiscussionListControls<MomentCommentOrder>.orderOnly(
       countLabel:
           '${state.detail?.card.commentCount ?? state.comments.length} 条评论',
       countKey: const Key('moment-comments-count'),
-      settingsKey: const Key('moment-comment-settings'),
-      sheetKey: const Key('moment-comment-settings-sheet'),
+      orderKey: const Key('moment-comments-order'),
       order: state.commentOrder,
-      defaultOrder: MomentCommentOrder.newest,
       orderOptions: [
         for (final order in MomentCommentOrder.values)
           WenyouDiscussionOrderOption(
@@ -731,15 +721,8 @@ class _CommentFilters extends StatelessWidget {
             label: order == MomentCommentOrder.newest ? '最新在前' : '最早在前',
           ),
       ],
-      authorId: state.commentAuthorId,
-      authorsLoading: state.isLoadingCommentAuthors,
-      authorsFailure: state.commentAuthorsFailure,
-      onRetryAuthors: onRetryAuthors,
-      authors: [
-        for (final author in state.commentAuthors)
-          WenyouDiscussionAuthorOption(id: author.id, label: author.username),
-      ],
-      onApply: (selection) => onApply(selection.order, selection.authorId),
+      enabled: !state.isRefreshing && !state.isLoadingMoreComments,
+      onOrderChanged: onOrderChanged,
     );
   }
 }

@@ -290,11 +290,7 @@ class MomentDetailState {
     this.phase = MomentLoadPhase.loading,
     this.detail,
     this.comments = const [],
-    this.commentAuthors = const [],
-    this.isLoadingCommentAuthors = false,
-    this.commentAuthorsFailure,
     this.commentOrder = MomentCommentOrder.newest,
-    this.commentAuthorId,
     this.commentCursor,
     this.hasMoreComments = false,
     this.isRefreshing = false,
@@ -310,11 +306,7 @@ class MomentDetailState {
   final MomentLoadPhase phase;
   final MomentDetail? detail;
   final List<MomentRootComment> comments;
-  final List<MomentAuthor> commentAuthors;
-  final bool isLoadingCommentAuthors;
-  final ApiFailure? commentAuthorsFailure;
   final MomentCommentOrder commentOrder;
-  final String? commentAuthorId;
   final String? commentCursor;
   final bool hasMoreComments;
   final bool isRefreshing;
@@ -330,11 +322,7 @@ class MomentDetailState {
     MomentLoadPhase? phase,
     Object? detail = _unset,
     List<MomentRootComment>? comments,
-    List<MomentAuthor>? commentAuthors,
-    bool? isLoadingCommentAuthors,
-    Object? commentAuthorsFailure = _unset,
     MomentCommentOrder? commentOrder,
-    Object? commentAuthorId = _unset,
     Object? commentCursor = _unset,
     bool? hasMoreComments,
     bool? isRefreshing,
@@ -350,16 +338,7 @@ class MomentDetailState {
       phase: phase ?? this.phase,
       detail: identical(detail, _unset) ? this.detail : detail as MomentDetail?,
       comments: comments ?? this.comments,
-      commentAuthors: commentAuthors ?? this.commentAuthors,
-      isLoadingCommentAuthors:
-          isLoadingCommentAuthors ?? this.isLoadingCommentAuthors,
-      commentAuthorsFailure: identical(commentAuthorsFailure, _unset)
-          ? this.commentAuthorsFailure
-          : commentAuthorsFailure as ApiFailure?,
       commentOrder: commentOrder ?? this.commentOrder,
-      commentAuthorId: identical(commentAuthorId, _unset)
-          ? this.commentAuthorId
-          : commentAuthorId as String?,
       commentCursor: identical(commentCursor, _unset)
           ? this.commentCursor
           : commentCursor as String?,
@@ -401,7 +380,6 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   final MomentRequestIdFactory _requestIdFactory;
   final Map<String, String> _commentRequestIds = {};
   var _epoch = 0;
-  var _commentAuthorsEpoch = 0;
 
   Future<void> load() async {
     final epoch = ++_epoch;
@@ -412,14 +390,12 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       failure: null,
       transientFailure: null,
     );
-    unawaited(_loadCommentAuthors());
     try {
       final values = await Future.wait<Object>([
         _repository.fetchDetail(momentId),
         _repository.fetchComments(
           momentId: momentId,
           order: state.commentOrder,
-          authorId: state.commentAuthorId,
         ),
       ]);
       if (!mounted || epoch != _epoch) return;
@@ -449,26 +425,9 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
   }
 
   Future<void> selectCommentOrder(MomentCommentOrder order) async {
-    await applyCommentFilters(order: order, authorId: state.commentAuthorId);
-  }
-
-  Future<void> selectCommentAuthor(String? authorId) async {
-    await applyCommentFilters(order: state.commentOrder, authorId: authorId);
-  }
-
-  Future<void> applyCommentFilters({
-    required MomentCommentOrder order,
-    required String? authorId,
-  }) async {
-    final normalized = authorId?.trim();
-    final next = normalized == null || normalized.isEmpty ? null : normalized;
-    if (state.commentOrder == order && state.commentAuthorId == next) return;
-    state = state.copyWith(commentOrder: order, commentAuthorId: next);
+    if (state.commentOrder == order) return;
+    state = state.copyWith(commentOrder: order);
     await _reloadComments();
-  }
-
-  Future<void> retryCommentAuthors() {
-    return _loadCommentAuthors();
   }
 
   Future<void> loadMoreComments() async {
@@ -479,7 +438,6 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       final page = await _repository.fetchComments(
         momentId: momentId,
         order: state.commentOrder,
-        authorId: state.commentAuthorId,
         cursor: state.commentCursor,
       );
       if (!mounted || epoch != _epoch) return;
@@ -529,7 +487,6 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
         momentId: momentId,
         rootCommentId: rootCommentId,
         order: MomentCommentOrder.oldest,
-        authorId: state.commentAuthorId,
         cursor: loadMore ? before.cursor : null,
       );
       if (!mounted || epoch != _epoch) return;
@@ -679,7 +636,6 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       final page = await _repository.fetchComments(
         momentId: momentId,
         order: state.commentOrder,
-        authorId: state.commentAuthorId,
       );
       if (!mounted || epoch != _epoch) return;
       state = state.copyWith(
@@ -694,29 +650,6 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       state = state.copyWith(
         isLoadingMoreComments: false,
         transientFailure: _asFailure(error, '评论列表加载失败，请重试。'),
-      );
-    }
-  }
-
-  Future<void> _loadCommentAuthors() async {
-    final epoch = ++_commentAuthorsEpoch;
-    state = state.copyWith(
-      isLoadingCommentAuthors: true,
-      commentAuthorsFailure: null,
-    );
-    try {
-      final authors = await _repository.fetchCommentAuthors(momentId);
-      if (!mounted || epoch != _commentAuthorsEpoch) return;
-      state = state.copyWith(
-        commentAuthors: authors,
-        isLoadingCommentAuthors: false,
-        commentAuthorsFailure: null,
-      );
-    } on Object catch (error) {
-      if (!mounted || epoch != _commentAuthorsEpoch) return;
-      state = state.copyWith(
-        isLoadingCommentAuthors: false,
-        commentAuthorsFailure: _asFailure(error, '评论作者加载失败，请重试。'),
       );
     }
   }
