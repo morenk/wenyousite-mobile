@@ -1,49 +1,15 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_validator.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
-enum MarkdownCodecIssueKind {
-  unknownProtocol,
-  invalidDice,
-  duplicateDice,
-  invalidSticker,
-  unsafeImage,
-}
-
-class MarkdownCodecIssue {
-  const MarkdownCodecIssue({
-    required this.kind,
-    required this.rawToken,
-    required this.message,
-  });
-
-  final MarkdownCodecIssueKind kind;
-  final String rawToken;
-  final String message;
-}
-
-class MarkdownDeltaDocument {
-  const MarkdownDeltaDocument({required this.delta, required this.issues});
-
-  final Delta delta;
-  final List<MarkdownCodecIssue> issues;
-
-  bool get isSourceCompatible => issues.isNotEmpty;
-}
-
-class MarkdownCodecException implements Exception {
-  const MarkdownCodecException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => 'MarkdownCodecException: $message';
-}
+export 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 
 /// Markdown v3 扩展节点与 Quill Delta 之间的无损协议层。
 ///
@@ -75,7 +41,6 @@ class MarkdownDeltaCodec {
     r'^ {0,3}<br\s*/?>[\t ]*$',
     caseSensitive: false,
   );
-  static final _horizontalRule = RegExp(r'^---$');
   static final _mention = RegExp(
     r'^\[(@[^\]\r\n]{1,32})\]\(/users/([a-zA-Z0-9_-]+)\)',
   );
@@ -90,8 +55,8 @@ class MarkdownDeltaCodec {
   static final _mentionWord = RegExp(r'[a-zA-Z0-9_\u4e00-\u9fff]');
 
   static MarkdownDeltaDocument decode(String markdown) {
-    final recovered = MarkdownEmptyParagraphs.prepareForLineEditor(markdown);
-    final source = MarkdownContent.normalize(recovered);
+    final editorDocument = MarkdownEditorDocument.parse(markdown);
+    final source = editorDocument.toMarkdown();
     final delta = Delta();
     final issues = <MarkdownCodecIssue>[];
     final diceNodeIds = <String>{};
@@ -121,7 +86,7 @@ class MarkdownDeltaCodec {
       } else if (_emptyParagraph.hasMatch(line)) {
         // 独占 <br /> 是协议空段，不进入可编辑文本。
         isProtocolEmptyParagraph = true;
-      } else if (_horizontalRule.hasMatch(line)) {
+      } else if (line == '---') {
         delta.insert({
           horizontalRuleEmbed: const {'version': 1},
         });
@@ -188,6 +153,7 @@ class MarkdownDeltaCodec {
 
     return MarkdownDeltaDocument(
       delta: delta,
+      editorDocument: editorDocument,
       issues: List.unmodifiable(issues),
     );
   }
@@ -197,6 +163,10 @@ class MarkdownDeltaCodec {
 
   static String _encode(Delta delta, {required bool sanitizeUnsupported}) {
     delta = MarkdownDeltaLineMetadata.prepareForEncoding(delta);
+    MarkdownDeltaBlockValidator.validate(
+      delta,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
     final output = StringBuffer();
     final line = StringBuffer();
     var lineHasLiteralText = false;
@@ -224,9 +194,16 @@ class MarkdownDeltaCodec {
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
     if (line.isNotEmpty) output.write(line);
-    return sanitizeUnsupported
+    final encoded = sanitizeUnsupported
         ? MarkdownContent.literalizeUnsupported(output.toString())
         : MarkdownContent.normalize(output.toString());
+    final document = MarkdownEditorDocument.parsePrepared(encoded);
+    final serialized = document.toMarkdown();
+    final reparsed = MarkdownEditorDocument.parsePrepared(serialized);
+    if (!document.structurallyEquivalentTo(reparsed)) {
+      throw const MarkdownCodecException('正文块结构无法安全保存，请撤销最近的格式操作');
+    }
+    return serialized;
   }
 
   static List<Map<String, Object?>> extractExtensionNodes(Delta delta) {
@@ -797,7 +774,7 @@ class MarkdownDeltaCodec {
       case compatibilityEmbed:
         output.write(_requiredString(payload, 'raw', type));
       case horizontalRuleEmbed:
-        output.write('---');
+        output.write(MarkdownEditorDocument.horizontalRuleMarker);
       default:
         throw MarkdownCodecException('未知 Quill embed：$type');
     }

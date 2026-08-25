@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -9,6 +10,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
@@ -92,6 +94,7 @@ class WenyouEditorToolbar extends StatefulWidget {
     required this.onSaveDraft,
     required this.enabled,
     this.onInsertSticker,
+    this.onInsertHorizontalRule,
     this.editorFocusNode,
     this.onInteractionChanged,
     this.onSubmit,
@@ -109,6 +112,7 @@ class WenyouEditorToolbar extends StatefulWidget {
   final QuillController controller;
   final Future<void> Function() onInsertImage;
   final Future<void> Function()? onInsertSticker;
+  final VoidCallback? onInsertHorizontalRule;
   final Future<void> Function() onSaveDraft;
   final bool enabled;
   final FocusNode? editorFocusNode;
@@ -455,13 +459,19 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorBulletList,
                   label: '无序列表',
-                  selected: style.attributes.containsKey(Attribute.ul.key),
+                  selected: WenyouEditorFormatPolicy.isActive(
+                    style,
+                    Attribute.ul,
+                  ),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ul)),
                 ),
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorOrderedList,
                   label: '有序列表',
-                  selected: style.attributes.containsKey(Attribute.ol.key),
+                  selected: WenyouEditorFormatPolicy.isActive(
+                    style,
+                    Attribute.ol,
+                  ),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ol)),
                 ),
                 WenyouEditorTrayButton(
@@ -580,23 +590,12 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _applyHeading(int selected) {
-    widget.controller.formatSelection(
-      selected == 2
-          ? Attribute.h2
-          : selected == 3
-          ? Attribute.h3
-          : Attribute.clone(Attribute.header, null),
-    );
+    WenyouEditorFormatPolicy.applyHeading(widget.controller, selected);
     _setTray(_EditorTray.none);
   }
 
   void _toggle(Attribute attribute) {
-    final active = widget.controller.getSelectionStyle().attributes.containsKey(
-      attribute.key,
-    );
-    widget.controller.formatSelection(
-      active ? Attribute.clone(attribute, null) : attribute,
-    );
+    WenyouEditorFormatPolicy.toggle(widget.controller, attribute);
     widget.editorFocusNode?.requestFocus();
   }
 
@@ -674,9 +673,16 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _insertHorizontalRule() {
-    _insertBlockEmbed(
-      const Embeddable(MarkdownDeltaCodec.horizontalRuleEmbed, {'version': 1}),
-    );
+    final callback = widget.onInsertHorizontalRule;
+    if (callback != null) {
+      callback();
+    } else {
+      _insertBlockEmbed(
+        const Embeddable(MarkdownDeltaCodec.horizontalRuleEmbed, {
+          'version': 1,
+        }),
+      );
+    }
     widget.editorFocusNode?.requestFocus();
   }
 
@@ -742,16 +748,19 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         label,
         TextSelection.collapsed(offset: selection.start + label.length),
       );
-      widget.controller.formatText(
-        selection.start,
-        label.length,
-        LinkAttribute(url),
+      WenyouEditorFormatPolicy.applyLink(
+        widget.controller,
+        selection: TextSelection(
+          baseOffset: selection.start,
+          extentOffset: selection.start + label.length,
+        ),
+        url: url,
       );
     } else {
-      widget.controller.formatText(
-        selection.start,
-        selection.end - selection.start,
-        LinkAttribute(url),
+      WenyouEditorFormatPolicy.applyLink(
+        widget.controller,
+        selection: selection,
+        url: url,
       );
     }
     _setTray(_EditorTray.none);
@@ -832,28 +841,36 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _insertBlockEmbed(Embeddable embed) {
-    var selection = widget.controller.selection;
+    final selection = widget.controller.selection;
     final plain = widget.controller.document.toPlainText();
-    if (selection.start > 0 && plain[selection.start - 1] != '\n') {
-      widget.controller.replaceText(
-        selection.start,
-        0,
-        '\n',
-        TextSelection.collapsed(offset: selection.start + 1),
-      );
-      selection = TextSelection.collapsed(offset: selection.start + 1);
+    final documentEnd = widget.controller.document.length - 1;
+    final start = selection.start.clamp(0, documentEnd).toInt();
+    final end = selection.end.clamp(start, documentEnd).toInt();
+    final needsLeadingNewline = start > 0 && plain[start - 1] != '\n';
+    final needsTrailingNewline = end >= plain.length || plain[end] != '\n';
+    final change = Delta()..retain(start);
+    if (end > start) change.delete(end - start);
+    if (needsLeadingNewline) change.insert('\n');
+    change.insert(embed.toJson());
+    if (needsTrailingNewline) {
+      change.insert('\n');
+    } else {
+      change.retain(1, const {
+        'header': null,
+        'list': null,
+        'blockquote': null,
+        'indent': null,
+      });
     }
-    widget.controller.replaceText(
-      selection.start,
-      selection.end - selection.start,
-      embed,
-      TextSelection.collapsed(offset: selection.start + 1),
-    );
-    widget.controller.replaceText(
-      selection.start + 1,
-      0,
-      '\n',
-      TextSelection.collapsed(offset: selection.start + 2),
+    widget.controller.compose(change, selection, ChangeSource.local);
+    final cursor =
+        start +
+        (needsLeadingNewline ? 1 : 0) +
+        1 +
+        (needsTrailingNewline || end < plain.length - 1 ? 1 : 0);
+    widget.controller.updateSelection(
+      TextSelection.collapsed(offset: cursor),
+      ChangeSource.local,
     );
   }
 }

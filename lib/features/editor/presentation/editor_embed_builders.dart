@@ -269,7 +269,11 @@ class _HorizontalRuleEmbedBuilder extends EmbedBuilder {
       label: '分隔线',
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: context.wenyouTokens.space8),
-        child: const Divider(),
+        child: Divider(
+          height: 1,
+          thickness: 1,
+          color: context.wenyouTokens.border,
+        ),
       ),
     );
   }

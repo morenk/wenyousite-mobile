@@ -519,6 +519,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                             ),
                             placeholder: _placeholder(widget.target.kind),
                             customStyles: wenyouEditorTextStyles(context),
+                            // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
+                            // ignore: experimental_member_use
+                            customLeadingBlockBuilder:
+                                wenyouEditorLeadingBlockBuilder(context),
                             embedBuilders: wenyouEditorEmbedBuilders(),
                             customShortcuts: _editorSession.clipboardShortcuts,
                             customActions: _editorSession.clipboardActions,
@@ -542,6 +546,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                   enabled: !locked && _editorSession.codecFailure == null,
                   editorFocusNode: _editorSession.focusNode,
                   onInsertImage: _insertImage,
+                  onInsertHorizontalRule: _editorSession.insertHorizontalRule,
                   onInsertSticker: ref.watch(stickersEnabledProvider)
                       ? _insertSticker
                       : null,
