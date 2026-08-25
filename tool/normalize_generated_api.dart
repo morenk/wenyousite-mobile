@@ -2,7 +2,7 @@ import 'dart:io';
 
 const _generatedPackage = 'packages/wenyou_api';
 
-void main() {
+Future<void> main() async {
   final pubspec = File('$_generatedPackage/pubspec.yaml');
   final ignoreFile = File('$_generatedPackage/.gitignore');
   final analysisOptions = File('$_generatedPackage/analysis_options.yaml');
@@ -25,7 +25,7 @@ void main() {
     sdkConstraint,
     "sdk: '>=3.8.0 <4.0.0'",
   );
-  pubspec.writeAsStringSync(pubspecText);
+  await _writeGeneratedText(pubspec, pubspecText);
 
   var ignoreText = ignoreFile.readAsStringSync();
   ignoreText = ignoreText.replaceFirst(
@@ -36,7 +36,7 @@ void main() {
     ),
     '\n# 此生成包随应用发布，提交锁文件以固定代码生成工具链。\n',
   );
-  ignoreFile.writeAsStringSync(ignoreText);
+  await _writeGeneratedText(ignoreFile, ignoreText);
 
   var analysisText = analysisOptions.readAsStringSync();
   if (!analysisText.contains('    unused_import: ignore')) {
@@ -45,7 +45,7 @@ void main() {
       '    deprecated_member_use_from_same_package: ignore\n'
           '    unused_import: ignore\n',
     );
-    analysisOptions.writeAsStringSync(analysisText);
+    await _writeGeneratedText(analysisOptions, analysisText);
   }
 
   // 从 json_serializable 切换到 built_value 后，生成器不会主动删除旧辅助文件。
@@ -80,13 +80,13 @@ void main() {
       anchor,
       "${anchor}import 'package:wenyou_api/src/model/api_success_envelope.dart';\n",
     );
-    entity.writeAsStringSync(source);
+    await _writeGeneratedText(entity, source);
   }
 
-  _normalizeGeneratedText();
+  await _normalizeGeneratedText();
 }
 
-void _normalizeGeneratedText() {
+Future<void> _normalizeGeneratedText() async {
   final generatedDirectory = Directory(_generatedPackage);
   const textExtensions = {'.dart', '.md', '.yaml', '.yml'};
 
@@ -109,7 +109,29 @@ void _normalizeGeneratedText() {
         .replaceAll(RegExp(r'[ \t]+$', multiLine: true), '')
         .replaceFirst(RegExp(r'\s*$'), '\n');
     if (source != normalized) {
-      entity.writeAsStringSync(normalized);
+      await _writeGeneratedText(entity, normalized);
+    }
+  }
+}
+
+Future<void> _writeGeneratedText(File file, String contents) async {
+  const windowsUserMappedSectionError = 1224;
+  // Windows can retain the mapped section for several seconds after the Java
+  // generator exits. Keep the bound finite so a persistent lock still fails.
+  const maximumAttempts = 100;
+  for (var attempt = 1; attempt <= maximumAttempts; attempt++) {
+    try {
+      file.writeAsStringSync(contents);
+      return;
+    } on FileSystemException catch (error) {
+      final canRetry =
+          Platform.isWindows &&
+          error.osError?.errorCode == windowsUserMappedSectionError &&
+          attempt < maximumAttempts;
+      if (!canRetry) rethrow;
+      // The Java generator or an on-access scanner can briefly retain a
+      // mapped section after generation. Retry only that Windows condition.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     }
   }
 }
