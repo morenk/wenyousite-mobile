@@ -13,6 +13,7 @@ part 'notification_target_response_dto.g.dart';
 ///
 /// Properties:
 /// * [kind]
+/// * [state] - 目标当前状态；只有 ACTIVE 可以导航
 /// * [threadId]
 /// * [postId]
 /// * [momentId]
@@ -23,6 +24,11 @@ abstract class NotificationTargetResponseDto implements Built<NotificationTarget
   @BuiltValueField(wireName: r'kind')
   NotificationTargetResponseDtoKindEnum get kind;
   // enum kindEnum {  post,  thread,  moment,  user,  none,  };
+
+  /// 目标当前状态；只有 ACTIVE 可以导航
+  @BuiltValueField(wireName: r'state')
+  NotificationTargetResponseDtoStateEnum get state;
+  // enum stateEnum {  ACTIVE,  CONTENT_DELETED,  USER_DEACTIVATED,  NO_TARGET,  };
 
   @BuiltValueField(wireName: r'threadId')
   String? get threadId;
@@ -66,6 +72,11 @@ class _$NotificationTargetResponseDtoSerializer implements PrimitiveSerializer<N
     yield serializers.serialize(
       object.kind,
       specifiedType: const FullType(NotificationTargetResponseDtoKindEnum),
+    );
+    yield r'state';
+    yield serializers.serialize(
+      object.state,
+      specifiedType: const FullType(NotificationTargetResponseDtoStateEnum),
     );
     yield r'threadId';
     yield object.threadId == null ? null : serializers.serialize(
@@ -121,6 +132,13 @@ class _$NotificationTargetResponseDtoSerializer implements PrimitiveSerializer<N
             specifiedType: const FullType(NotificationTargetResponseDtoKindEnum),
           ) as NotificationTargetResponseDtoKindEnum;
           result.kind = valueDes;
+          break;
+        case r'state':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(NotificationTargetResponseDtoStateEnum),
+          ) as NotificationTargetResponseDtoStateEnum;
+          result.state = valueDes;
           break;
         case r'threadId':
           final valueDes = serializers.deserialize(
@@ -212,4 +230,30 @@ class NotificationTargetResponseDtoKindEnum extends EnumClass {
 
   static BuiltSet<NotificationTargetResponseDtoKindEnum> get values => _$notificationTargetResponseDtoKindEnumValues;
   static NotificationTargetResponseDtoKindEnum valueOf(String name) => _$notificationTargetResponseDtoKindEnumValueOf(name);
+}
+
+class NotificationTargetResponseDtoStateEnum extends EnumClass {
+
+  /// 目标当前状态；只有 ACTIVE 可以导航
+  @BuiltValueEnumConst(wireName: r'ACTIVE')
+  static const NotificationTargetResponseDtoStateEnum ACTIVE = _$notificationTargetResponseDtoStateEnum_ACTIVE;
+  /// 目标当前状态；只有 ACTIVE 可以导航
+  @BuiltValueEnumConst(wireName: r'CONTENT_DELETED')
+  static const NotificationTargetResponseDtoStateEnum CONTENT_DELETED = _$notificationTargetResponseDtoStateEnum_CONTENT_DELETED;
+  /// 目标当前状态；只有 ACTIVE 可以导航
+  @BuiltValueEnumConst(wireName: r'USER_DEACTIVATED')
+  static const NotificationTargetResponseDtoStateEnum USER_DEACTIVATED = _$notificationTargetResponseDtoStateEnum_USER_DEACTIVATED;
+  /// 目标当前状态；只有 ACTIVE 可以导航
+  @BuiltValueEnumConst(wireName: r'NO_TARGET')
+  static const NotificationTargetResponseDtoStateEnum NO_TARGET = _$notificationTargetResponseDtoStateEnum_NO_TARGET;
+  /// 目标当前状态；只有 ACTIVE 可以导航
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const NotificationTargetResponseDtoStateEnum unknownDefaultOpenApi = _$notificationTargetResponseDtoStateEnum_unknownDefaultOpenApi;
+
+  static Serializer<NotificationTargetResponseDtoStateEnum> get serializer => _$notificationTargetResponseDtoStateEnumSerializer;
+
+  const NotificationTargetResponseDtoStateEnum._(String name): super(name);
+
+  static BuiltSet<NotificationTargetResponseDtoStateEnum> get values => _$notificationTargetResponseDtoStateEnumValues;
+  static NotificationTargetResponseDtoStateEnum valueOf(String name) => _$notificationTargetResponseDtoStateEnumValueOf(name);
 }

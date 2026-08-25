@@ -17660,7 +17660,7 @@
   "info": {
     "title": "温油站 API",
     "description": "温油站共同创作社区后端接口文档 | [前端接入指南](../docs/frontend-guide.md)",
-    "version": "5.10.0-dev.20260823.1",
+    "version": "5.11.0-dev.20260825.1",
     "contact": {}
   },
   "tags": [
@@ -19576,6 +19576,16 @@
               "none"
             ]
           },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CONTENT_DELETED",
+              "USER_DEACTIVATED",
+              "NO_TARGET"
+            ],
+            "description": "目标当前状态；只有 ACTIVE 可以导航"
+          },
           "threadId": {
             "type": "string",
             "nullable": true
@@ -19599,6 +19609,7 @@
         },
         "required": [
           "kind",
+          "state",
           "threadId",
           "postId",
           "momentId",

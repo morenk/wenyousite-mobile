@@ -63,7 +63,7 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.10.0-dev.20260823.1`；Markdown v3；后端 `6446a3ffd3f8c88613ea6f54128a44ac96d372d5`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.11.0-dev.20260825.1`；Markdown v3；后端 `37937cddc08d9e2bbd6991e3ad1307471048f555`；Foundation `v6.4.0`（`0297a99`）。
 
 ## 14. 相关代码与架构文档
 

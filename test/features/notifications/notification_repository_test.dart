@@ -150,6 +150,7 @@ Response<NotificationsFindAll200Response> _listResponse({
               ..target.update(
                 (target) => target
                   ..kind = NotificationTargetResponseDtoKindEnum.post
+                  ..state = NotificationTargetResponseDtoStateEnum.ACTIVE
                   ..threadId = 'thread-1'
                   ..postId = 'post-7',
               )

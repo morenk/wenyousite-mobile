@@ -338,6 +338,7 @@ Serializers _$serializers =
           ..add(NotificationResponseDtoTypeEnum.serializer)
           ..add(NotificationTargetResponseDto.serializer)
           ..add(NotificationTargetResponseDtoKindEnum.serializer)
+          ..add(NotificationTargetResponseDtoStateEnum.serializer)
           ..add(NotificationThreadResponseDto.serializer)
           ..add(NotificationsFindAll200Response.serializer)
           ..add(NotificationsMarkAllAsRead200Response.serializer)

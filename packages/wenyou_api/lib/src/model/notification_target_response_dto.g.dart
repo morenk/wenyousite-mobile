@@ -58,9 +58,58 @@ _$notificationTargetResponseDtoKindEnumValues =
       ],
     );
 
+const NotificationTargetResponseDtoStateEnum
+_$notificationTargetResponseDtoStateEnum_ACTIVE =
+    const NotificationTargetResponseDtoStateEnum._('ACTIVE');
+const NotificationTargetResponseDtoStateEnum
+_$notificationTargetResponseDtoStateEnum_CONTENT_DELETED =
+    const NotificationTargetResponseDtoStateEnum._('CONTENT_DELETED');
+const NotificationTargetResponseDtoStateEnum
+_$notificationTargetResponseDtoStateEnum_USER_DEACTIVATED =
+    const NotificationTargetResponseDtoStateEnum._('USER_DEACTIVATED');
+const NotificationTargetResponseDtoStateEnum
+_$notificationTargetResponseDtoStateEnum_NO_TARGET =
+    const NotificationTargetResponseDtoStateEnum._('NO_TARGET');
+const NotificationTargetResponseDtoStateEnum
+_$notificationTargetResponseDtoStateEnum_unknownDefaultOpenApi =
+    const NotificationTargetResponseDtoStateEnum._('unknownDefaultOpenApi');
+
+NotificationTargetResponseDtoStateEnum
+_$notificationTargetResponseDtoStateEnumValueOf(String name) {
+  switch (name) {
+    case 'ACTIVE':
+      return _$notificationTargetResponseDtoStateEnum_ACTIVE;
+    case 'CONTENT_DELETED':
+      return _$notificationTargetResponseDtoStateEnum_CONTENT_DELETED;
+    case 'USER_DEACTIVATED':
+      return _$notificationTargetResponseDtoStateEnum_USER_DEACTIVATED;
+    case 'NO_TARGET':
+      return _$notificationTargetResponseDtoStateEnum_NO_TARGET;
+    case 'unknownDefaultOpenApi':
+      return _$notificationTargetResponseDtoStateEnum_unknownDefaultOpenApi;
+    default:
+      return _$notificationTargetResponseDtoStateEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<NotificationTargetResponseDtoStateEnum>
+_$notificationTargetResponseDtoStateEnumValues =
+    BuiltSet<NotificationTargetResponseDtoStateEnum>(
+      const <NotificationTargetResponseDtoStateEnum>[
+        _$notificationTargetResponseDtoStateEnum_ACTIVE,
+        _$notificationTargetResponseDtoStateEnum_CONTENT_DELETED,
+        _$notificationTargetResponseDtoStateEnum_USER_DEACTIVATED,
+        _$notificationTargetResponseDtoStateEnum_NO_TARGET,
+        _$notificationTargetResponseDtoStateEnum_unknownDefaultOpenApi,
+      ],
+    );
+
 Serializer<NotificationTargetResponseDtoKindEnum>
 _$notificationTargetResponseDtoKindEnumSerializer =
     _$NotificationTargetResponseDtoKindEnumSerializer();
+Serializer<NotificationTargetResponseDtoStateEnum>
+_$notificationTargetResponseDtoStateEnumSerializer =
+    _$NotificationTargetResponseDtoStateEnumSerializer();
 
 class _$NotificationTargetResponseDtoKindEnumSerializer
     implements PrimitiveSerializer<NotificationTargetResponseDtoKindEnum> {
@@ -105,9 +154,52 @@ class _$NotificationTargetResponseDtoKindEnumSerializer
   );
 }
 
+class _$NotificationTargetResponseDtoStateEnumSerializer
+    implements PrimitiveSerializer<NotificationTargetResponseDtoStateEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'ACTIVE': 'ACTIVE',
+    'CONTENT_DELETED': 'CONTENT_DELETED',
+    'USER_DEACTIVATED': 'USER_DEACTIVATED',
+    'NO_TARGET': 'NO_TARGET',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'ACTIVE': 'ACTIVE',
+    'CONTENT_DELETED': 'CONTENT_DELETED',
+    'USER_DEACTIVATED': 'USER_DEACTIVATED',
+    'NO_TARGET': 'NO_TARGET',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    NotificationTargetResponseDtoStateEnum,
+  ];
+  @override
+  final String wireName = 'NotificationTargetResponseDtoStateEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    NotificationTargetResponseDtoStateEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  NotificationTargetResponseDtoStateEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => NotificationTargetResponseDtoStateEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
   @override
   final NotificationTargetResponseDtoKindEnum kind;
+  @override
+  final NotificationTargetResponseDtoStateEnum state;
   @override
   final String? threadId;
   @override
@@ -125,6 +217,7 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
 
   _$NotificationTargetResponseDto._({
     required this.kind,
+    required this.state,
     this.threadId,
     this.postId,
     this.momentId,
@@ -145,6 +238,7 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
     if (identical(other, this)) return true;
     return other is NotificationTargetResponseDto &&
         kind == other.kind &&
+        state == other.state &&
         threadId == other.threadId &&
         postId == other.postId &&
         momentId == other.momentId &&
@@ -156,6 +250,7 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, kind.hashCode);
+    _$hash = $jc(_$hash, state.hashCode);
     _$hash = $jc(_$hash, threadId.hashCode);
     _$hash = $jc(_$hash, postId.hashCode);
     _$hash = $jc(_$hash, momentId.hashCode);
@@ -169,6 +264,7 @@ class _$NotificationTargetResponseDto extends NotificationTargetResponseDto {
   String toString() {
     return (newBuiltValueToStringHelper(r'NotificationTargetResponseDto')
           ..add('kind', kind)
+          ..add('state', state)
           ..add('threadId', threadId)
           ..add('postId', postId)
           ..add('momentId', momentId)
@@ -189,6 +285,11 @@ class NotificationTargetResponseDtoBuilder
   NotificationTargetResponseDtoKindEnum? _kind;
   NotificationTargetResponseDtoKindEnum? get kind => _$this._kind;
   set kind(NotificationTargetResponseDtoKindEnum? kind) => _$this._kind = kind;
+
+  NotificationTargetResponseDtoStateEnum? _state;
+  NotificationTargetResponseDtoStateEnum? get state => _$this._state;
+  set state(NotificationTargetResponseDtoStateEnum? state) =>
+      _$this._state = state;
 
   String? _threadId;
   String? get threadId => _$this._threadId;
@@ -219,6 +320,7 @@ class NotificationTargetResponseDtoBuilder
     final $v = _$v;
     if ($v != null) {
       _kind = $v.kind;
+      _state = $v.state;
       _threadId = $v.threadId;
       _postId = $v.postId;
       _momentId = $v.momentId;
@@ -250,6 +352,11 @@ class NotificationTargetResponseDtoBuilder
             kind,
             r'NotificationTargetResponseDto',
             'kind',
+          ),
+          state: BuiltValueNullFieldError.checkNotNull(
+            state,
+            r'NotificationTargetResponseDto',
+            'state',
           ),
           threadId: threadId,
           postId: postId,
