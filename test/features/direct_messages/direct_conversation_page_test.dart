@@ -623,7 +623,7 @@ void main() {
       addTearDown(router.dispose);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: _overrides(repository),
+          overrides: _overrides(repository, stickersEnabled: true),
           child: MaterialApp.router(
             theme: AppTheme.light,
             routerConfig: router,
@@ -663,7 +663,10 @@ void main() {
 
     expect(firstInsetFrameBottom, lessThan(unobstructedBottom));
     expect(tester.getBottomRight(send).dy, lessThanOrEqualTo(460));
-    expect(tester.getCenter(field).dy, closeTo(tester.getCenter(send).dy, 8));
+    expect(
+      tester.getBottomLeft(field).dy,
+      lessThanOrEqualTo(tester.getTopLeft(send).dy),
+    );
     expect(dock, findsOneWidget);
     expect(
       find.descendant(of: dock, matching: find.byType(AnimatedPadding)),
@@ -700,7 +703,7 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: _overrides(repository),
+          overrides: _overrides(repository, stickersEnabled: true),
           child: MaterialApp.router(
             theme: AppTheme.light,
             routerConfig: router,
@@ -745,7 +748,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: _overrides(repository),
+        overrides: _overrides(repository, stickersEnabled: true),
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
     );
@@ -806,10 +809,11 @@ void main() {
 List<Override> _overrides(
   _FakeRepository repository, {
   MediaUploadGateway? mediaUploadGateway,
+  bool stickersEnabled = false,
 }) {
   return [
     directMessagesEnabledProvider.overrideWithValue(true),
-    stickersEnabledProvider.overrideWithValue(false),
+    stickersEnabledProvider.overrideWithValue(stickersEnabled),
     directMessageRepositoryProvider.overrideWithValue(repository),
     directConversationControllerProvider.overrideWith((ref, conversationId) {
       return DirectConversationController(

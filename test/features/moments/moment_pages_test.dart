@@ -482,6 +482,7 @@ void main() {
     expect(find.byKey(const Key('moment-comment-dock')), findsNothing);
     expect(find.byKey(const Key('moment-comment-editor-dock')), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
+    expect(find.byKey(const Key('moment-comment-close')), findsNothing);
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('0/500'), findsOneWidget);
     final editorDock = find.byKey(const Key('moment-comment-editor-dock'));
@@ -493,7 +494,17 @@ void main() {
           matching: find.byType(Material),
         )
         .first;
-    expect(tester.getSize(opaqueSurface).height, lessThan(100));
+    expect(tester.getSize(opaqueSurface).height, lessThan(180));
+    expect(
+      tester.getSize(find.byKey(const Key('moment-comment-input'))).width,
+      closeTo(tester.getSize(editorDock).width, 0.01),
+    );
+    expect(
+      tester.getBottomLeft(find.byKey(const Key('moment-comment-input'))).dy,
+      lessThanOrEqualTo(
+        tester.getTopLeft(find.byKey(const Key('moment-comment-image'))).dy,
+      ),
+    );
     final firstInsetFrameBottom = tester
         .getBottomRight(find.byKey(const Key('moment-comment-send')))
         .dy;
@@ -540,9 +551,49 @@ void main() {
     await tester.tap(rootCommentText);
     await tester.pumpAndSettle();
     expect(find.text('暂时不发送的草稿'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('moment-comment-close')));
+    await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
+  });
+
+  testWidgets('360dp 键盘态动态评论输入 dock 保持整行输入视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+    final repository = _PageRepository();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        momentRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('user-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-comment-dock')));
+    await tester.pumpAndSettle();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+    await tester.pump();
+
+    await expectLater(
+      find.byKey(const Key('moment-comment-editor-dock')),
+      matchesGoldenFile('goldens/moment_comment_composer_keyboard_360.png'),
+    );
   });
 
   testWidgets('动态发布在单页展示图片区与正文且只保留底部主操作', (tester) async {

@@ -102,7 +102,7 @@ void main() {
       final router = _router();
       addTearDown(router.dispose);
 
-      await tester.pumpWidget(_app(repository, router));
+      await tester.pumpWidget(_app(repository, router, stickersEnabled: true));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -114,11 +114,12 @@ Widget _app(
   _FakeDirectMessageRepository repository,
   GoRouter router, {
   PublicUserRepository? publicUserRepository,
+  bool stickersEnabled = false,
 }) {
   return ProviderScope(
     overrides: [
       directMessagesEnabledProvider.overrideWithValue(true),
-      stickersEnabledProvider.overrideWithValue(false),
+      stickersEnabledProvider.overrideWithValue(stickersEnabled),
       directMessageRepositoryProvider.overrideWithValue(repository),
       publicUserRepositoryProvider.overrideWithValue(
         publicUserRepository ?? _FakePublicUserRepository(),

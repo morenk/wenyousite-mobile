@@ -77,70 +77,66 @@ class WenyouInlineComposerDock extends StatelessWidget {
                       borderRadius: BorderRadius.circular(tokens.radius20),
                       border: Border.all(color: tokens.border),
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ...leadingActions,
-                        Expanded(
-                          child: Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              TextField(
-                                key: fieldKey,
-                                controller: controller,
-                                focusNode: focusNode,
-                                enabled: enabled,
-                                autofocus: autofocus,
-                                minLines: minLines,
-                                maxLines: maxLines,
-                                maxLength: maxLength,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                textInputAction: TextInputAction.newline,
-                                decoration: InputDecoration(
-                                  hintText: placeholder,
-                                  counterText: '',
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  filled: false,
-                                  contentPadding: EdgeInsets.fromLTRB(
-                                    tokens.space4,
-                                    tokens.space12,
-                                    characterCountText == null
-                                        ? 0
-                                        : tokens.minimumTouchTarget,
-                                    tokens.space12,
-                                  ),
-                                ),
-                                onTapOutside: (_) => FocusManager
-                                    .instance
-                                    .primaryFocus
-                                    ?.unfocus(),
-                                onChanged: onChanged,
-                              ),
-                              if (characterCountText != null)
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    right: tokens.space4,
-                                    bottom: tokens.space4,
-                                  ),
-                                  child: Text(
-                                    characterCountText!,
-                                    key: characterCountKey,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(color: tokens.mutedText),
-                                  ),
-                                ),
-                            ],
+                        TextField(
+                          key: fieldKey,
+                          controller: controller,
+                          focusNode: focusNode,
+                          enabled: enabled,
+                          autofocus: autofocus,
+                          minLines: minLines,
+                          maxLines: maxLines,
+                          maxLength: maxLength,
+                          textCapitalization: TextCapitalization.sentences,
+                          textInputAction: TextInputAction.newline,
+                          decoration: InputDecoration(
+                            hintText: placeholder,
+                            counterText: '',
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: tokens.space12,
+                              vertical: tokens.space12,
+                            ),
                           ),
+                          onTapOutside: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          onChanged: onChanged,
                         ),
-                        ...trailingActions,
-                        Padding(
-                          padding: EdgeInsets.all(tokens.space4),
-                          child: submitAction,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            ...leadingActions,
+                            ...trailingActions,
+                            Expanded(
+                              child: characterCountText == null
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: tokens.space8,
+                                      ),
+                                      child: Text(
+                                        characterCountText!,
+                                        key: characterCountKey,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.end,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(color: tokens.mutedText),
+                                      ),
+                                    ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.all(tokens.space4),
+                              child: submitAction,
+                            ),
+                          ],
                         ),
                       ],
                     ),

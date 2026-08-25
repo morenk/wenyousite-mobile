@@ -162,12 +162,6 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
         ],
         leadingActions: [
           IconButton(
-            key: const Key('moment-comment-close'),
-            onPressed: uploading || widget.isSending ? null : _requestClose,
-            tooltip: '关闭评论编辑器',
-            icon: const WenyouIcon(WenyouIconIds.actionClose),
-          ),
-          IconButton(
             key: const Key('moment-comment-image'),
             onPressed: uploading || widget.isSending ? null : _pickImage,
             tooltip: '添加一张图片',
