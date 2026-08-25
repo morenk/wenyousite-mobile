@@ -1,6 +1,6 @@
-# Foundation v6.4.0 移动端实现审计
+# Foundation v6.5.0 移动端实现审计
 
-本审计以 Foundation `v6.4.0`（`0297a99b63fc8ad066bb15fed3d8c63731696d39`）为事实源，复核 Flutter profile、`experiences.elements`、`controls`、`feedback`、`formatting`、`images` 与 v6 变更。最近审查日期为 2026-08-24；它记录当前实现覆盖和明确债务，不在移动端仓库复制或改写上游规范。
+本审计以 Foundation `v6.5.0`（`8ab87ef5420ed6320ded8f6c9670366497d455a7`）为事实源，复核 Flutter profile、`experiences.elements`、`controls`、`feedback`、`formatting`、`images` 与 v6 变更。最近审查日期为 2026-08-25；它记录当前实现覆盖和明确债务，不在移动端仓库复制或改写上游规范。v6.5.0 的亮色 Token 与既有视觉兼容；新增主题偏好、黑夜色板和外观图标暂不改变 V1 仅亮色的产品范围。
 
 ## 已闭环基线
 
@@ -25,7 +25,7 @@
 
 ## 本轮审计结论
 
-本轮在既有 v6.4.0 元素合同上收敛了页面结构族：标准页签、查询筛选、表单单选、长目录、讨论设置、阅读顶栏、响应式内容框和结构 Skeleton 各有明确入口；feature 页面由架构门禁禁止直接使用 Material `TabBar`、`TabBarView` 与 `DefaultTabController`。Material 的 SegmentedButton/Chip/ListTile/Badge 仍由全局主题统一兜底，ChoiceChip 只用于裁剪、骰子和创作元数据等专用选择，不再承担页面页签或长收藏夹目录。后续新增页面仍需直接消费生成合同和共享组件，不得重新引入页面级近似 Token、可横滑内容页签、通用 Spinner 首屏或仅靠 Snackbar 承载可重试失败。
+本轮在既有 v6.5.0 元素合同上收敛了页面结构族：标准页签、查询筛选、表单单选、长目录、讨论设置、阅读顶栏、响应式内容框和结构 Skeleton 各有明确入口；feature 页面由架构门禁禁止直接使用 Material `TabBar`、`TabBarView` 与 `DefaultTabController`。Material 的 SegmentedButton/Chip/ListTile/Badge 仍由全局主题统一兜底，ChoiceChip 只用于裁剪、骰子和创作元数据等专用选择，不再承担页面页签或长收藏夹目录。后续新增页面仍需直接消费生成合同和共享组件，不得重新引入页面级近似 Token、可横滑内容页签、通用 Spinner 首屏或仅靠 Snackbar 承载可重试失败。
 
 ## 待闭环差异
 
@@ -33,4 +33,4 @@
 
 ## 上游生成物风险
 
-Foundation v6.4.0 Flutter 包已导出骰子主文案、明细、插入器、行高、内边距及引用的颜色、侧线、圆角和排版常量，当前实现直接消费这些生成常量。提及、行内代码和主题标签仍有部分数字只存在于机器合同，本仓库共享元素组件暂按同一 Tag 精确消费；上游补齐导出后应迁移为直接引用，避免重复数字继续存在。
+Foundation v6.5.0 Flutter 包已导出骰子主文案、明细、插入器、行高、内边距及引用的颜色、侧线、圆角和排版常量，当前实现直接消费这些生成常量。提及、行内代码和主题标签仍有部分数字只存在于机器合同，本仓库共享元素组件暂按同一 Tag 精确消费；上游补齐导出后应迁移为直接引用，避免重复数字继续存在。
