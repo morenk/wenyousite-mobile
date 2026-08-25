@@ -17,6 +17,14 @@ val releaseSigningConfigured =
         listOf("keyAlias", "keyPassword", "storeFile", "storePassword").all {
             !keystoreProperties.getProperty(it).isNullOrBlank()
         }
+val wenyouEnableImpeller = providers.gradleProperty("wenyouEnableImpeller")
+    .orElse("true")
+    .get()
+    .also { value ->
+        require(value == "true" || value == "false") {
+            "wenyouEnableImpeller must be true or false."
+        }
+    }
 
 android {
     namespace = "site.wenyou.app"
@@ -37,6 +45,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["appLabel"] = "温油站"
+        manifestPlaceholders["enableImpeller"] = wenyouEnableImpeller
     }
 
     signingConfigs {

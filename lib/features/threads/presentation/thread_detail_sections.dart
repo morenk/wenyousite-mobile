@@ -113,14 +113,15 @@ class ThreadSubthreadBody extends StatelessWidget {
     this.subthread, {
     required this.onEdit,
     this.pending = false,
+    this.diagnosticMarkdownKey,
     super.key,
   });
 
   final ThreadDetailModel detail;
   final ThreadSubthreadModel subthread;
   final bool pending;
+  final GlobalKey? diagnosticMarkdownKey;
   final ValueChanged<PostComposerTarget> onEdit;
-
   bool get canManage => detail.canManageThread;
 
   @override
@@ -163,6 +164,7 @@ class ThreadSubthreadBody extends StatelessWidget {
               diceSemantics: _diceSemantics(body.diceRolls),
               diceDetails: _diceDetails(body.diceRolls),
               enablePlainTextFastPath: false,
+              diagnosticRenderKey: diagnosticMarkdownKey,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onLongPressNonText: openActions,
             )
@@ -175,6 +177,7 @@ class ThreadSubthreadBody extends StatelessWidget {
               diceSemantics: _diceSemantics(body.diceRolls),
               diceDetails: _diceDetails(body.diceRolls),
               enablePlainTextFastPath: false,
+              diagnosticRenderKey: diagnosticMarkdownKey,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onLongPressNonText: openActions,
             ),
@@ -715,13 +718,16 @@ class _AuthorLine extends StatelessWidget {
               SizedBox(width: tokens.space4),
               WenyouLevelBadge(level: author.level),
               SizedBox(width: tokens.space8),
-              WenyouTimeText(
-                value: time,
-                semanticsPrefix: '发布时间：',
-                maxLines: 1,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              Flexible(
+                child: WenyouTimeText(
+                  value: time,
+                  semanticsPrefix: '发布时间：',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ),
               ),
             ],
           ),

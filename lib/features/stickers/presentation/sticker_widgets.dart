@@ -315,6 +315,7 @@ class StickerPostMarkdown extends ConsumerWidget {
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
+    this.diagnosticRenderKey,
     super.key,
   });
 
@@ -329,6 +330,7 @@ class StickerPostMarkdown extends ConsumerWidget {
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
+  final GlobalKey? diagnosticRenderKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -347,6 +349,7 @@ class StickerPostMarkdown extends ConsumerWidget {
       bodyFontSize: bodyFontSize,
       bodyHeight: bodyHeight,
       enablePlainTextFastPath: enablePlainTextFastPath,
+      diagnosticRenderKey: diagnosticRenderKey,
       onSaveImage: !enabled || !authenticated
           ? null
           : (uri) async {

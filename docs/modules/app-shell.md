@@ -30,6 +30,8 @@
 
 全局 `WenyouInstantKeyboardInsets` 观察应用生命周期：Android 非 resumed 状态把有效底部高度固定为零，恢复后继续等待新的前台原生回调，后台迟到结果不会覆盖；iOS 等其他平台继续使用引擎 `MediaQuery`。`MainActivity` 从根视图实际应用的 `WindowInsetsCompat` 读取 IME 可见性和高度，只有 Activity 已恢复且窗口聚焦时才发布正值；IME 动画仍只发布最终目标，不转发逐帧进度，恢复和聚焦则先发布零值并请求重新分发 Insets。
 
+现场诊断由编译期 `WENYOU_ENABLE_FIELD_DIAGNOSTICS` 控制且默认关闭；普通用户 Debug 与 Release 包不安装异常捕获、不显示右上角入口，也不调度帖子渲染事件或真实几何探针。需要异地排障时，从同一提交使用 `--dart-define=WENYOU_ENABLE_FIELD_DIAGNOSTICS=true` 生成专用 Debug 包，不维护会与主线漂移的诊断分支。启用后入口独立于具体业务页面和 Navigator；打开可复制原始物理窗口指标、逻辑 `MediaQuery`、帖子渲染事件、真实渲染树几何、Flutter/平台异常类型与最多 120 行堆栈。几何事件只使用固定节点名并记录尺寸、约束、屏幕坐标、可见比例、变换矩阵及滚动范围；非有限约束以字符串导出，保证 JSON 可复制。异常消息正文不会写入缓冲区；导出文本明确排除正文、内容 ID、账号、Token、私聊和请求 URL。缓冲区仅在当前诊断 Debug 进程内保留最近 40 条。Android Manifest 默认明确启用 Impeller，仅诊断构建可通过受校验的 Gradle 参数覆写为 Skia/OpenGLES，导出的 `renderer` 与 `rendererVariant` 可区分 A/B 包。
+
 ## 7. 鉴权、权限和隐私规则
 
 壳层不假定游客有写权限。升级与错误页不得展示 Token、响应正文或完整下载 URL。更新地址及重定向终点只接受 HTTPS。下载前 HEAD 与下载响应都必须具有 Android APK 类型、合理且一致的长度、`.apk` 附件名、`site.wenyou.app` 应用 ID、目标 `versionCode`、非空 `versionName` 和 64 位 SHA-256；文件字节再按声明哈希校验。Android 原生通道只接受应用 cache 的 `wenyou_updates/` 内 `.apk`，并在授权或打开安装器前通过系统 PackageManager 再校验包名、目标构建高于当前构建且签名与已安装应用相容；通过不可导出的 `FileProvider` 临时授予系统安装器只读权限，安装未知应用权限由系统设置页确认。

@@ -43,6 +43,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.bodyFontSize = 17,
     this.bodyHeight = 1.8,
     this.enablePlainTextFastPath = true,
+    this.diagnosticRenderKey,
     super.key,
   });
 
@@ -57,6 +58,7 @@ class WenyouMarkdown extends StatefulWidget {
   final double bodyFontSize;
   final double bodyHeight;
   final bool enablePlainTextFastPath;
+  final GlobalKey? diagnosticRenderKey;
 
   @override
   State<WenyouMarkdown> createState() => _WenyouMarkdownState();
@@ -114,7 +116,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     if ((oldWidget.onTapText == null) != (widget.onTapText == null) ||
         (oldWidget.onSaveImage == null) != (widget.onSaveImage == null) ||
         (oldWidget.onLongPressNonText == null) !=
-            (widget.onLongPressNonText == null)) {
+            (widget.onLongPressNonText == null) ||
+        oldWidget.diagnosticRenderKey != widget.diagnosticRenderKey) {
       _renderedBody = null;
     }
   }
@@ -201,15 +204,18 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         ),
       );
     }
-    return WenyouSelectableActionRegion(
-      selectionAreaKey: _selectionAreaKey,
-      onLongPressBlank: widget.onLongPressNonText == null
-          ? null
-          : _handleBlankLongPress,
-      child: SelectionArea(
-        key: _selectionAreaKey,
-        onSelectionChanged: _handleSelectionChanged,
-        child: body,
+    return KeyedSubtree(
+      key: widget.diagnosticRenderKey,
+      child: WenyouSelectableActionRegion(
+        selectionAreaKey: _selectionAreaKey,
+        onLongPressBlank: widget.onLongPressNonText == null
+            ? null
+            : _handleBlankLongPress,
+        child: SelectionArea(
+          key: _selectionAreaKey,
+          onSelectionChanged: _handleSelectionChanged,
+          child: body,
+        ),
       ),
     );
   }

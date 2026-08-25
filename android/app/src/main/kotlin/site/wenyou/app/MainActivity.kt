@@ -23,6 +23,8 @@ class MainActivity : FlutterActivity() {
     private companion object {
         const val UPDATE_CHANNEL = "site.wenyou.app/app_update"
         const val KEYBOARD_INSETS_CHANNEL = "site.wenyou.app/keyboard_insets"
+        const val RUNTIME_DIAGNOSTICS_CHANNEL = "site.wenyou.app/runtime_diagnostics"
+        const val ENABLE_IMPELLER_METADATA = "io.flutter.embedding.android.EnableImpeller"
         const val APK_MIME_TYPE = "application/vnd.android.package-archive"
         const val UPDATE_LOG_TAG = "WenyouUpdate"
     }
@@ -76,6 +78,15 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            RUNTIME_DIAGNOSTICS_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getRuntimeInfo" -> result.success(runtimeDiagnostics())
+                else -> result.notImplemented()
+            }
+        }
         keyboardInsetsChannel =
             MethodChannel(
                 flutterEngine.dartExecutor.binaryMessenger,
@@ -177,6 +188,30 @@ class MainActivity : FlutterActivity() {
             "keyboardInsetTargetChanged",
             mapOf("bottomPhysicalPixels" to bottomPhysicalPixels.toDouble()),
         )
+    }
+
+    private fun runtimeDiagnostics(): Map<String, Any> {
+        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+        return mapOf(
+            "appVersion" to (packageInfo.versionName ?: "unknown"),
+            "buildNumber" to versionCodeOf(packageInfo).toString(),
+            "operatingSystem" to "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+            "deviceModel" to "${Build.MANUFACTURER} ${Build.MODEL}".trim(),
+            "renderer" to if (isImpellerRequested()) {
+                "impeller-requested"
+            } else {
+                "skia-opengles-requested"
+            },
+        )
+    }
+
+    private fun isImpellerRequested(): Boolean {
+        @Suppress("DEPRECATION")
+        val applicationInfo = packageManager.getApplicationInfo(
+            packageName,
+            PackageManager.GET_META_DATA,
+        )
+        return applicationInfo.metaData?.getBoolean(ENABLE_IMPELLER_METADATA, true) ?: true
     }
 
     private fun installApk(

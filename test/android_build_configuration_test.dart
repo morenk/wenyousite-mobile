@@ -18,4 +18,16 @@ void main() {
       contains(r'android:authorities="${applicationId}.fileprovider"'),
     );
   });
+
+  test('Android 诊断构建可显式 A/B 切换 Impeller 且默认保持启用', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+
+    expect(manifest, contains('io.flutter.embedding.android.EnableImpeller'));
+    expect(manifest, contains(r'android:value="${enableImpeller}"'));
+    expect(gradle, contains('gradleProperty("wenyouEnableImpeller")'));
+    expect(gradle, contains('.orElse("true")'));
+  });
 }

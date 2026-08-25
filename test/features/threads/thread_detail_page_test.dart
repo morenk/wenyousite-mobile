@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -38,9 +39,18 @@ void main() {
   setUpAll(loadFoundationTestFonts);
 
   testWidgets('公开主题详情连续展示正文，短楼中楼不提供独立讨论入口', (tester) async {
+    DebugDiagnosticBuffer.instance.clear();
     final repository = _FakeThreadDetailRepository();
-    await tester.pumpWidget(_detailRouterApp(repository));
+    await tester.pumpWidget(
+      _detailRouterApp(repository, enableRenderDiagnostics: true),
+    );
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 3));
+    final geometryDiagnostics = DebugDiagnosticBuffer.instance.exportText();
+    expect(geometryDiagnostics, contains('thread_render_geometry'));
+    expect(geometryDiagnostics, contains('after_2500ms'));
+    expect(geometryDiagnostics, contains('"markdown"'));
+    expect(geometryDiagnostics, contains('visibleFraction'));
     expect(find.text('星海旅团'), findsOneWidget);
     expect(find.text('#太空歌剧'), findsOneWidget);
     final tag = find.byKey(const Key('thread-detail-tag-tag-1'));
@@ -288,6 +298,18 @@ void main() {
       find.byKey(const Key('test-post-replies-destination')),
       findsNothing,
     );
+  });
+
+  testWidgets('用户构建关闭帖子现场诊断后不采集渲染事件或几何', (tester) async {
+    DebugDiagnosticBuffer.instance.clear();
+    await tester.pumpWidget(
+      _detailApp(_FakeThreadDetailRepository(), enableRenderDiagnostics: false),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 3));
+
+    expect(find.text('星海旅团'), findsOneWidget);
+    expect(DebugDiagnosticBuffer.instance.exportText(), contains('暂无诊断记录。'));
   });
 
   testWidgets('举报入口对楼主、私密主题、本人楼层和已删除楼层安全隐藏', (tester) async {
@@ -1559,18 +1581,77 @@ void main() {
     expect(find.text('问题编号：missing-request-id'), findsOneWidget);
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
-    testWidgets('$width dp 主题详情与楼层无布局溢出', (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = Size(width, 1100);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
+  for (final fixture in _threadDetailViewportFixtures) {
+    testWidgets('${fixture.name} 主题详情保持正文视口和贴底操作栏', (tester) async {
+      _configureThreadDetailViewport(tester, fixture);
 
-      await tester.pumpWidget(_detailApp(_FakeThreadDetailRepository()));
+      await tester.pumpWidget(
+        _detailApp(_FakeThreadDetailRepository(), textScale: fixture.textScale),
+      );
       await tester.pumpAndSettle();
 
+      final screenSize = fixture.logicalSize;
+      final bottomBar = find.byKey(const Key('thread-detail-bottom-bar'));
+      final bottomBarRect = tester.getRect(bottomBar);
+      final scrollRect = tester.getRect(find.byType(CustomScrollView));
       expect(tester.takeException(), isNull);
       expect(find.text('星海旅团'), findsOneWidget);
+      expect(bottomBarRect.height, greaterThanOrEqualTo(48));
+      expect(bottomBarRect.height, lessThan(160));
+      expect(bottomBarRect.height, lessThan(screenSize.height * 0.35));
+      expect(bottomBarRect.bottom, closeTo(screenSize.height, 0.2));
+      expect(scrollRect.width, greaterThan(0));
+      expect(scrollRect.height, greaterThan(screenSize.height * 0.3));
+      expect(scrollRect.bottom, closeTo(bottomBarRect.top, 0.2));
+      for (final actionKey in const [
+        Key('thread-interaction-like'),
+        Key('thread-floor-compose'),
+      ]) {
+        expect(
+          bottomBarRect.contains(tester.getCenter(find.byKey(actionKey))),
+          isTrue,
+        );
+      }
+    });
+  }
+
+  for (final fixture in _threadDetailViewportFixtures.where(
+    (fixture) => _authenticatedViewportFixtureNames.contains(fixture.name),
+  )) {
+    testWidgets('${fixture.name} 登录态完整底栏保持全部操作可见', (tester) async {
+      _configureThreadDetailViewport(tester, fixture);
+      await tester.pumpWidget(
+        await _authenticatedDetailApp(
+          _FakeThreadDetailRepository(),
+          userId: 'viewer-1',
+          textScale: fixture.textScale,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final screenSize = fixture.logicalSize;
+      final bottomBarRect = tester.getRect(
+        find.byKey(const Key('thread-detail-bottom-bar')),
+      );
+      final scrollRect = tester.getRect(find.byType(CustomScrollView));
+      expect(tester.takeException(), isNull);
+      expect(bottomBarRect.height, lessThan(160));
+      expect(bottomBarRect.height, lessThan(screenSize.height * 0.35));
+      expect(bottomBarRect.bottom, closeTo(screenSize.height, 0.2));
+      expect(scrollRect.height, greaterThan(screenSize.height * 0.3));
+      expect(scrollRect.bottom, closeTo(bottomBarRect.top, 0.2));
+      for (final actionKey in const [
+        Key('thread-interaction-like'),
+        Key('thread-interaction-bookmark'),
+        Key('thread-subscription-menu'),
+        Key('thread-floor-compose'),
+      ]) {
+        expect(find.byKey(actionKey), findsOneWidget);
+        expect(
+          bottomBarRect.contains(tester.getCenter(find.byKey(actionKey))),
+          isTrue,
+        );
+      }
     });
   }
 
@@ -1640,7 +1721,14 @@ void main() {
       isTrue,
     );
     expect(bottomCenters.first, greaterThan(navigatorCenters.first));
-    expect(find.byKey(const Key('thread-detail-bottom-bar')), findsOneWidget);
+    final bottomBar = find.byKey(const Key('thread-detail-bottom-bar'));
+    expect(bottomBar, findsOneWidget);
+    expect(tester.getSize(bottomBar).height, lessThan(120));
+    expect(tester.getBottomLeft(bottomBar).dy, closeTo(900, 0.1));
+    expect(
+      tester.getSize(find.byType(CustomScrollView)).height,
+      greaterThan(600),
+    );
   });
 
   testWidgets('320dp 与两倍字号下底栏把发表收为可读图标且保持可操作', (tester) async {
@@ -2492,15 +2580,163 @@ Future<void> _selectMainSubthread(
   }
 }
 
+const _threadDetailViewportFixtures = <_ThreadDetailViewportFixture>[
+  _ThreadDetailViewportFixture(
+    name: '小屏三键 320x568@2x',
+    physicalSize: Size(640, 1136),
+    devicePixelRatio: 2,
+    padding: FakeViewPadding(top: 48, bottom: 96),
+  ),
+  _ThreadDetailViewportFixture(
+    name: '小屏手势 320x800@3x 双倍字体',
+    physicalSize: Size(960, 2400),
+    devicePixelRatio: 3,
+    padding: FakeViewPadding(top: 90, bottom: 72),
+    systemGestures: FakeViewPadding(left: 54, top: 90, right: 54, bottom: 120),
+    textScale: 2,
+  ),
+  _ThreadDetailViewportFixture(
+    name: '折叠屏窄幅 347x945@2.4x',
+    physicalSize: Size(832, 2268),
+    devicePixelRatio: 2.4,
+    padding: FakeViewPadding(top: 84, bottom: 60),
+    systemGestures: FakeViewPadding(left: 48, top: 84, right: 48, bottom: 120),
+    textScale: 1.3,
+  ),
+  _ThreadDetailViewportFixture(
+    name: '短窗口 360x480@2x',
+    physicalSize: Size(720, 960),
+    devicePixelRatio: 2,
+    padding: FakeViewPadding(top: 48, bottom: 48),
+    systemGestures: FakeViewPadding(left: 32, top: 48, right: 32, bottom: 64),
+    textScale: 1.3,
+  ),
+  _ThreadDetailViewportFixture(
+    name: '标准三键 360x640@3x',
+    physicalSize: Size(1080, 1920),
+    devicePixelRatio: 3,
+    padding: FakeViewPadding(top: 72, bottom: 144),
+  ),
+  _ThreadDetailViewportFixture(
+    name: '标准手势 360x800@3x',
+    physicalSize: Size(1080, 2400),
+    devicePixelRatio: 3,
+    padding: FakeViewPadding(top: 90, bottom: 72),
+    systemGestures: FakeViewPadding(left: 48, top: 90, right: 48, bottom: 120),
+    textScale: 1.3,
+  ),
+  _ThreadDetailViewportFixture(
+    name: '高密度 360x800@4x',
+    physicalSize: Size(1440, 3200),
+    devicePixelRatio: 4,
+    padding: FakeViewPadding(top: 128, bottom: 96),
+    systemGestures: FakeViewPadding(left: 64, top: 128, right: 64, bottom: 160),
+  ),
+  _ThreadDetailViewportFixture(
+    name: '荣耀 Magic8 359x789@3.5x',
+    physicalSize: Size(1256, 2760),
+    devicePixelRatio: 3.5,
+    padding: FakeViewPadding(top: 119, bottom: 78),
+    systemGestures: FakeViewPadding(left: 53, top: 119, right: 53, bottom: 140),
+  ),
+  _ThreadDetailViewportFixture(
+    name: '主流长屏 393x851@2.75x',
+    physicalSize: Size(1080, 2340),
+    devicePixelRatio: 2.75,
+    padding: FakeViewPadding(top: 93, bottom: 66),
+    systemGestures: FakeViewPadding(left: 48, top: 93, right: 48, bottom: 110),
+  ),
+  _ThreadDetailViewportFixture(
+    name: '主流大屏 411x914@2.625x',
+    physicalSize: Size(1080, 2400),
+    devicePixelRatio: 2.625,
+    padding: FakeViewPadding(top: 84, bottom: 63),
+    systemGestures: FakeViewPadding(left: 44, top: 84, right: 44, bottom: 105),
+    textScale: 1.3,
+  ),
+  _ThreadDetailViewportFixture(
+    name: '大号手机 480x960@2.5x 双倍字体',
+    physicalSize: Size(1200, 2400),
+    devicePixelRatio: 2.5,
+    padding: FakeViewPadding(top: 75, bottom: 60),
+    systemGestures: FakeViewPadding(left: 45, top: 75, right: 45, bottom: 100),
+    textScale: 2,
+  ),
+  _ThreadDetailViewportFixture(
+    name: '小平板 600x960@2x',
+    physicalSize: Size(1200, 1920),
+    devicePixelRatio: 2,
+    padding: FakeViewPadding(top: 48, bottom: 48),
+    systemGestures: FakeViewPadding(left: 32, top: 48, right: 32, bottom: 80),
+  ),
+  _ThreadDetailViewportFixture(
+    name: '平板 800x1280@2x 放大字体',
+    physicalSize: Size(1600, 2560),
+    devicePixelRatio: 2,
+    padding: FakeViewPadding(top: 48, bottom: 48),
+    systemGestures: FakeViewPadding(left: 32, top: 48, right: 32, bottom: 80),
+    textScale: 1.3,
+  ),
+];
+
+const _authenticatedViewportFixtureNames = <String>{
+  '小屏手势 320x800@3x 双倍字体',
+  '荣耀 Magic8 359x789@3.5x',
+  '主流长屏 393x851@2.75x',
+  '大号手机 480x960@2.5x 双倍字体',
+  '平板 800x1280@2x 放大字体',
+};
+
+class _ThreadDetailViewportFixture {
+  const _ThreadDetailViewportFixture({
+    required this.name,
+    required this.physicalSize,
+    required this.devicePixelRatio,
+    this.padding = FakeViewPadding.zero,
+    this.systemGestures = FakeViewPadding.zero,
+    this.textScale = 1,
+  });
+
+  final String name;
+  final Size physicalSize;
+  final double devicePixelRatio;
+  final FakeViewPadding padding;
+  final FakeViewPadding systemGestures;
+  final double textScale;
+
+  Size get logicalSize => physicalSize / devicePixelRatio;
+}
+
+void _configureThreadDetailViewport(
+  WidgetTester tester,
+  _ThreadDetailViewportFixture fixture,
+) {
+  tester.view.devicePixelRatio = fixture.devicePixelRatio;
+  tester.view.physicalSize = fixture.physicalSize;
+  tester.view.padding = fixture.padding;
+  tester.view.viewPadding = fixture.padding;
+  tester.view.viewInsets = FakeViewPadding.zero;
+  tester.view.systemGestureInsets = fixture.systemGestures;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetPadding);
+  addTearDown(tester.view.resetViewPadding);
+  addTearDown(tester.view.resetViewInsets);
+  addTearDown(tester.view.resetSystemGestureInsets);
+}
+
 Widget _detailApp(
   ThreadDetailRepository repository, {
   String? targetPostId,
   String? subthreadIdHint,
   Key? visualKey,
   PostDiscussionAuthorDirectory? authorDirectory,
+  double? textScale,
+  bool enableRenderDiagnostics = false,
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
+    enableRenderDiagnostics: enableRenderDiagnostics,
     entryTarget: ThreadDetailEntryTarget.fromQuery(
       postId: targetPostId,
       subthreadId: subthreadIdHint,
@@ -2516,6 +2752,14 @@ Widget _detailApp(
     ],
     child: MaterialApp(
       theme: AppTheme.light,
+      builder: textScale == null
+          ? null
+          : (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
       home: visualKey == null
           ? page
           : RepaintBoundary(key: visualKey, child: page),
@@ -2526,6 +2770,7 @@ Widget _detailApp(
 Future<Widget> _authenticatedDetailApp(
   ThreadDetailRepository repository, {
   required String userId,
+  double? textScale,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -2550,6 +2795,14 @@ Future<Widget> _authenticatedDetailApp(
     container: container,
     child: MaterialApp(
       theme: AppTheme.light,
+      builder: textScale == null
+          ? null
+          : (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
       home: const ThreadDetailPage(threadId: 'thread-1'),
     ),
   );
@@ -2558,6 +2811,7 @@ Future<Widget> _authenticatedDetailApp(
 Widget _detailRouterApp(
   ThreadDetailRepository repository, {
   String initialLocation = '/threads/thread-1',
+  bool enableRenderDiagnostics = false,
 }) {
   final router = GoRouter(
     initialLocation: initialLocation,
@@ -2566,6 +2820,7 @@ Widget _detailRouterApp(
         path: '/threads/:threadId',
         builder: (context, state) => ThreadDetailPage(
           threadId: state.pathParameters['threadId']!,
+          enableRenderDiagnostics: enableRenderDiagnostics,
           entryTarget: ThreadDetailEntryTarget.fromQuery(
             postId: state.uri.queryParameters['post'],
           ),

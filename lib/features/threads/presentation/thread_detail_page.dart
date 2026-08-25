@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
@@ -12,6 +13,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.d
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_render_diagnostics.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
@@ -22,6 +24,7 @@ import 'package:wenyousite_mobile/features/threads/application/thread_detail_con
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_render_diagnostics.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_floor_filters.dart';
@@ -33,11 +36,13 @@ class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
     required this.threadId,
     this.entryTarget = const ThreadDetailEntryTarget.none(),
+    this.enableRenderDiagnostics = wenyouFieldDiagnosticsEnabled,
     super.key,
   });
 
   final String threadId;
   final ThreadDetailEntryTarget entryTarget;
+  final bool enableRenderDiagnostics;
 
   @override
   ConsumerState<ThreadDetailPage> createState() => _ThreadDetailPageState();
@@ -57,9 +62,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
         authorIdOf: (author) => author.userId,
       );
+  final _renderDiagnostics = ThreadDetailRenderDiagnosticCoordinator();
+  final _renderGeometry = ThreadDetailRenderGeometryProbe();
 
   @override
   void dispose() {
+    _renderGeometry.dispose();
     _subthreadScroll.dispose();
     super.dispose();
   }
@@ -93,6 +101,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         ..invalidate(actionsProvider);
     });
     final state = ref.watch(provider);
+    if (widget.enableRenderDiagnostics) {
+      _renderDiagnostics.schedule(
+        context: context,
+        state: state,
+        diagnostics: ref.read(postRenderDiagnosticsProvider),
+        scrollViewportKey: _renderGeometry.scrollViewportKey,
+        isMounted: () => mounted,
+      );
+      _renderGeometry.schedule(
+        context: context,
+        state: state,
+        scrollController: _subthreadScroll.controller,
+        isMounted: () => mounted,
+      );
+    }
     _prefetchScheduler.schedule(
       shouldPrefetch:
           state.phase == ThreadDetailPhase.ready &&
@@ -166,7 +189,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     _openReplyTargetWhenReady(state, effectiveTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
+      key: _renderGeometry.scaffoldKey,
       appBar: WenyouReadingAppBar(
+        key: _renderGeometry.appBarKey,
         leading: BackButton(
           key: const Key('thread-detail-back'),
           onPressed: _leaveDetail,
@@ -185,46 +210,58 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             onNotification: _handleTargetLayoutChange,
             child: RefreshIndicator(
               onRefresh: () => ref.read(provider.notifier).refresh(),
-              child: CustomScrollView(
-                key: PageStorageKey(
-                  'thread-detail-${widget.threadId}-'
-                  '${identityHashCode(_pageInstanceToken)}',
-                ),
-                controller: _subthreadScroll.controller,
-                scrollCacheExtent: discussionScrollCacheExtent,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  ..._buildReadySlivers(
-                    context,
-                    state,
-                    provider,
-                    _entryTargetCoordinator.allowsTargetEffects ? target : null,
-                    actions: actions,
-                    discussionAuthors: discussionAuthors,
-                    authenticated: session.isAuthenticated,
-                    viewerId: viewerId,
+              child: KeyedSubtree(
+                key: _renderGeometry.scrollViewportKey,
+                child: CustomScrollView(
+                  key: PageStorageKey(
+                    'thread-detail-${widget.threadId}-'
+                    '${identityHashCode(_pageInstanceToken)}',
                   ),
-                ],
+                  controller: _subthreadScroll.controller,
+                  scrollCacheExtent: discussionScrollCacheExtent,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    ..._buildReadySlivers(
+                      context,
+                      state,
+                      provider,
+                      _entryTargetCoordinator.allowsTargetEffects
+                          ? target
+                          : null,
+                      actions: actions,
+                      discussionAuthors: discussionAuthors,
+                      authenticated: session.isAuthenticated,
+                      viewerId: viewerId,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       },
       bottomNavigationBar: state.phase == ThreadDetailPhase.ready
-          ? ThreadDetailBottomBar(
-              detail: state.detail!,
-              authenticated: session.isAuthenticated,
-              canCompose: selectedSubthread != null,
-              onRequireAuthentication: _requireLogin,
-              onCompose: selectedSubthread == null
-                  ? () {}
-                  : () => _compose(
-                      threadDetailFloorTarget(state.detail!, selectedSubthread),
-                    ),
+          ? KeyedSubtree(
+              key: _renderGeometry.bottomBarKey,
+              child: ThreadDetailBottomBar(
+                detail: state.detail!,
+                authenticated: session.isAuthenticated,
+                canCompose: selectedSubthread != null,
+                onRequireAuthentication: _requireLogin,
+                onCompose: selectedSubthread == null
+                    ? () {}
+                    : () => _compose(
+                        threadDetailFloorTarget(
+                          state.detail!,
+                          selectedSubthread,
+                        ),
+                      ),
+              ),
             )
           : null,
     );
     return PopScope<Object?>(
+      key: _renderGeometry.routeKey,
       canPop: canPop,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && mounted) context.go(AppRouteLocations.home);
@@ -520,11 +557,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       SliverToBoxAdapter(
         child: WenyouContentFrame(
           top: 8,
-          child: ThreadDetailOverview(
-            detail: detail,
-            onTagPressed: (tag) => context.pushNamed(
-              AppRouteNames.tagThreads,
-              pathParameters: {'tagId': tag.id},
+          child: KeyedSubtree(
+            key: _renderGeometry.overviewKey,
+            child: ThreadDetailOverview(
+              detail: detail,
+              onTagPressed: (tag) => context.pushNamed(
+                AppRouteNames.tagThreads,
+                pathParameters: {'tagId': tag.id},
+              ),
             ),
           ),
         ),
@@ -567,7 +607,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             key: _subthreadScroll.bodyKey,
             top: context.wenyouTokens.space12,
             bottom: context.wenyouTokens.space12,
-            child: ThreadSubthreadBody(detail, selected!, onEdit: _compose),
+            child: KeyedSubtree(
+              key: _renderGeometry.bodyKey,
+              child: ThreadSubthreadBody(
+                detail,
+                selected!,
+                onEdit: _compose,
+                diagnosticMarkdownKey: _renderGeometry.markdownKey,
+              ),
+            ),
           ),
         ),
         if (actions.failure != null)

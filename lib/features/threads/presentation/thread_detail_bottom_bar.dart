@@ -81,24 +81,31 @@ class ThreadDetailBottomBar extends StatelessWidget {
                           compact: true,
                         ),
                         if (canCompose) ...[
-                          SizedBox(width: tokens.space8),
+                          SizedBox(
+                            width: iconOnlyCompose
+                                ? tokens.space4
+                                : tokens.space8,
+                          ),
                           Expanded(
                             child: iconOnlyCompose
-                                ? Align(
-                                    alignment: Alignment.centerRight,
-                                    child: IconButton(
-                                      key: const Key('thread-floor-compose'),
-                                      tooltip: composeLabel,
-                                      onPressed: composeAction,
-                                      style: IconButton.styleFrom(
-                                        minimumSize: Size.square(
-                                          tokens.minimumTouchTarget,
+                                ? SizedBox(
+                                    height: tokens.minimumTouchTarget,
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: IconButton(
+                                        key: const Key('thread-floor-compose'),
+                                        tooltip: composeLabel,
+                                        onPressed: composeAction,
+                                        style: IconButton.styleFrom(
+                                          minimumSize: Size.square(
+                                            tokens.minimumTouchTarget,
+                                          ),
+                                          foregroundColor: tokens.text,
+                                          backgroundColor:
+                                              tokens.accentedBackground,
                                         ),
-                                        foregroundColor: tokens.text,
-                                        backgroundColor:
-                                            tokens.accentedBackground,
+                                        icon: WenyouIcon(composeIcon, size: 20),
                                       ),
-                                      icon: WenyouIcon(composeIcon, size: 20),
                                     ),
                                   )
                                 : WenyouComposerAction(
