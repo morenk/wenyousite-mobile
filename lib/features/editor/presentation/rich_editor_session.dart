@@ -9,6 +9,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
@@ -491,8 +492,21 @@ class RichEditorSession extends ChangeNotifier {
           MarkdownDeltaCodec.literalTextAttribute: true,
         }));
 
-    final candidate = Document.fromDelta(controller.document.toDelta());
+    final candidateBefore = controller.document.toDelta();
+    final candidate = Document.fromDelta(candidateBefore);
     candidate.replace(start, end - start, Delta.from(delta));
+    final candidateMetadataPatch =
+        MarkdownDeltaLineMetadata.sourceSeparatorPatch(
+          before: candidateBefore,
+          after: candidate.toDelta(),
+          index: start,
+          replacedLength: end - start,
+          insertedLength: MarkdownDeltaLineMetadata.documentLength(delta),
+          insertedDelta: delta,
+        );
+    if (candidateMetadataPatch.isNotEmpty) {
+      candidate.compose(candidateMetadataPatch, ChangeSource.local);
+    }
     final encoded = MarkdownDeltaCodec.encode(candidate.toDelta());
     if (encoded.length > maximumSerializedLength) {
       _serializedLength = encoded.length;
@@ -514,7 +528,9 @@ class RichEditorSession extends ChangeNotifier {
       start,
       end - start,
       delta,
-      TextSelection.collapsed(offset: start + delta.length),
+      TextSelection.collapsed(
+        offset: start + MarkdownDeltaLineMetadata.documentLength(delta),
+      ),
     );
     _operationFailure = null;
     // Document changes are delivered by Quill's asynchronous stream. Drain
@@ -715,6 +731,7 @@ class _LiteralTextQuillController extends QuillController {
     bool ignoreFocus = false,
     bool shouldNotifyListeners = true,
   }) {
+    final before = document.toDelta();
     super.replaceText(
       index,
       len,
@@ -723,6 +740,23 @@ class _LiteralTextQuillController extends QuillController {
       ignoreFocus: ignoreFocus,
       shouldNotifyListeners: shouldNotifyListeners,
     );
+    final insertedLength = switch (data) {
+      String value => value.length,
+      Delta value => MarkdownDeltaLineMetadata.documentLength(value),
+      Embeddable() => 1,
+      _ => 0,
+    };
+    final sourceSeparatorPatch = MarkdownDeltaLineMetadata.sourceSeparatorPatch(
+      before: before,
+      after: document.toDelta(),
+      index: index,
+      replacedLength: len,
+      insertedLength: insertedLength,
+      insertedDelta: data is Delta ? data : null,
+    );
+    if (sourceSeparatorPatch.isNotEmpty) {
+      document.compose(sourceSeparatorPatch, ChangeSource.local);
+    }
     if (data is! String || data.isEmpty) return;
 
     final formatting = Delta();

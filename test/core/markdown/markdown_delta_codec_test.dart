@@ -150,6 +150,48 @@ void main() {
     );
   });
 
+  test('键盘新建空段即使继承末行属性也编码为规范标记', () {
+    final delta = Delta()
+      ..insert('第一段')
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('第二段')
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+
+    expect(MarkdownDeltaCodec.encode(delta), '第一段\n<br />\n第二段');
+  });
+
+  test('键盘新建的首尾与连续空段逐段保留', () {
+    final leading = Delta()
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('正文')
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+    final trailing = Delta()
+      ..insert('正文')
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+    final repeated = Delta()
+      ..insert('第一段')
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false})
+      ..insert('第二段')
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+
+    expect(MarkdownDeltaCodec.encode(leading), '<br />\n正文');
+    expect(MarkdownDeltaCodec.encode(trailing), '正文\n<br />');
+    expect(MarkdownDeltaCodec.encode(repeated), '第一段\n<br />\n<br />\n第二段');
+  });
+
+  test('普通段落分隔解码后仍按原始 Markdown 往返', () {
+    const source = '第一段\n\n第二段';
+
+    expect(
+      MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(source).delta),
+      source,
+    );
+  });
+
   test('编辑器忽略协议标记的 Markdown 分块空行且重开保持幂等', () {
     const source = '第一段\n\n<br />\n\n<br>\n\n第二段';
     final encoded = MarkdownDeltaCodec.encode(

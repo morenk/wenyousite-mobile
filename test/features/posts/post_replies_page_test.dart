@@ -178,6 +178,23 @@ void main() {
     expect(find.text('应在失败后保留的回复'), findsOneWidget);
   });
 
+  testWidgets('连续回车新建的空段进入实际回复发布载荷', (tester) async {
+    final repository = _FakePostRepository();
+    final container = await _postContainer(repository, userId: 'author-1');
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await _pumpUi(tester);
+    await _replaceComposerText(tester, '第一段\n\n第二段');
+    await tester.tap(find.byKey(const Key('editor-submit')));
+    await _pumpUi(tester);
+
+    expect(repository.createInputs, hasLength(1));
+    expect(repository.createInputs.single.content, '第一段\n<br />\n第二段');
+  });
+
   testWidgets('删除回复失败保留原内容并展示可诊断错误', (tester) async {
     final repository = _FakePostRepository(
       onRemove: (postId) async => throw const ApiFailure(
@@ -1578,15 +1595,10 @@ Future<void> _replaceComposerText(WidgetTester tester, String text) async {
   state.widget.focusNode.requestFocus();
   await tester.pump();
   expect(state.widget.focusNode.hasFocus, isTrue);
-  final rawEditor = tester.state<QuillRawEditorState>(
-    find.descendant(of: editor, matching: find.byType(QuillRawEditor)),
-  );
   tester.testTextInput.updateEditingValue(
     TextEditingValue(
       text: '$text\n',
-      selection: TextSelection.collapsed(
-        offset: rawEditor.textEditingValue.text.length,
-      ),
+      selection: TextSelection.collapsed(offset: text.length),
     ),
   );
   await tester.idle();

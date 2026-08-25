@@ -1,6 +1,7 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -60,9 +61,9 @@ class MarkdownDeltaCodec {
   static const compatibilityEmbed = 'wenyou_compatibility';
   static const horizontalRuleEmbed = 'wenyou_horizontal_rule';
 
-  static const emptyParagraphAttribute = 'wenyou_empty_paragraph';
-  static const sourceBreakAttribute = 'wenyou_source_break';
-  static const literalLineAttribute = 'wenyou_literal_line';
+  static const emptyParagraphAttribute = MarkdownDeltaLineMetadata.emptyKey;
+  static const sourceBreakAttribute = MarkdownDeltaLineMetadata.sourceBreakKey;
+  static const literalLineAttribute = MarkdownDeltaLineMetadata.literalLineKey;
   static const literalTextAttribute = 'wenyou_literal_text';
 
   static const _allPlayersLabel = '@全体玩家';
@@ -178,6 +179,8 @@ class MarkdownDeltaCodec {
       final attributes = <String, dynamic>{
         ...?richLineAttributes,
         if (isProtocolEmptyParagraph) emptyParagraphAttribute: true,
+        if (line.isEmpty && lines.length > 1)
+          MarkdownDeltaLineMetadata.sourceSeparatorAttribute: true,
         if (isLastLine) sourceBreakAttribute: false,
       };
       delta.insert('\n', attributes.isEmpty ? null : attributes);
@@ -193,6 +196,7 @@ class MarkdownDeltaCodec {
       _encode(delta, sanitizeUnsupported: true);
 
   static String _encode(Delta delta, {required bool sanitizeUnsupported}) {
+    delta = MarkdownDeltaLineMetadata.prepareForEncoding(delta);
     final output = StringBuffer();
     final line = StringBuffer();
     var lineHasLiteralText = false;
@@ -220,10 +224,6 @@ class MarkdownDeltaCodec {
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
     if (line.isNotEmpty) output.write(line);
-    // Plain text can enter the document through IMEs or platform editing
-    // paths without the literal-line metadata assigned during decode. Keep
-    // the serialization boundary authoritative so unsupported Markdown can
-    // never escape merely because an earlier editor hook was bypassed.
     return sanitizeUnsupported
         ? MarkdownContent.literalizeUnsupported(output.toString())
         : MarkdownContent.normalize(output.toString());

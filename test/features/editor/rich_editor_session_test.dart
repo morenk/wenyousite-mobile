@@ -95,6 +95,100 @@ void main() {
     );
   });
 
+  testWidgets('连续回车新建空段后保存为可见空段标记', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+
+    void insertAtEnd(String text) {
+      final offset = session.controller.document.length - 1;
+      session.controller.replaceText(
+        offset,
+        0,
+        text,
+        TextSelection.collapsed(offset: offset + text.length),
+      );
+    }
+
+    insertAtEnd('第一段');
+    insertAtEnd('\n');
+    insertAtEnd('\n');
+    insertAtEnd('第二段');
+
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, '第一段\n<br />\n第二段');
+  });
+
+  testWidgets('行尾回车和外部粘贴的空段同样保留', (tester) async {
+    final typed = <String>[];
+    final typedSession = RichEditorSession(
+      initialMarkdown: '正文',
+      initialSelection: RichEditorSelectionPlacement.end,
+      onMarkdownChanged: typed.add,
+    );
+    addTearDown(typedSession.dispose);
+    final end = typedSession.controller.document.length - 1;
+    typedSession.controller.replaceText(
+      end,
+      0,
+      '\n',
+      TextSelection.collapsed(offset: end + 1),
+    );
+
+    expect(await typedSession.flush(), isTrue);
+    expect(typed.last, '正文\n<br />');
+
+    final pasted = <String>[];
+    final pastedSession = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: pasted.add,
+      readClipboardText: () async => '第一段\n\n第二段',
+    );
+    addTearDown(pastedSession.dispose);
+
+    expect(await pastedSession.controller.clipboardPaste(), isTrue);
+    expect(pasted.last, '第一段\n<br />\n第二段');
+  });
+
+  testWidgets('编辑普通 Markdown 段落时不把结构分隔升级为空段', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '第一段\n\n第二段',
+      initialSelection: RichEditorSelectionPlacement.end,
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    final end = session.controller.document.length - 1;
+    session.controller.replaceText(
+      end,
+      0,
+      '（已改）',
+      TextSelection.collapsed(offset: end + 4),
+    );
+
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, '第一段\n\n第二段（已改）');
+
+    final editedSeparator = <String>[];
+    final separatorSession = RichEditorSession(
+      initialMarkdown: 'A\n\nB',
+      onMarkdownChanged: editedSeparator.add,
+    );
+    addTearDown(separatorSession.dispose);
+    separatorSession.controller.replaceText(
+      2,
+      0,
+      'X',
+      const TextSelection.collapsed(offset: 3),
+    );
+
+    expect(await separatorSession.flush(), isTrue);
+    expect(editedSeparator.last, 'A\nX\nB');
+  });
+
   testWidgets('H2 H3 与加粗切换后立即保存当前 Delta', (tester) async {
     final emitted = <String>[];
     final session = RichEditorSession(
