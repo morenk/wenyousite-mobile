@@ -51,12 +51,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
   final _scrollController = ScrollController();
   final _composerDrafts = <String, String>{};
-  String? _lastRevealSignature;
-  String? _revealScopeSignature;
-  String? _revealAttemptReplyId;
-  var _revealAttempts = 0;
-  var _revealScheduled = false;
-  var _targetRevealReleased = false;
+  final _targetReveal = DiscussionTargetRevealCoordinator();
   var _openingComposer = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
   final _authorFilterRestore =
@@ -72,10 +67,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   void didUpdateWidget(covariant PostRepliesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.focusedReplyId != widget.focusedReplyId) {
-      _lastRevealSignature = null;
-      _revealScopeSignature = null;
-      _revealAttemptReplyId = null;
-      _revealAttempts = 0;
+      _targetReveal.reset();
     }
   }
 
@@ -242,86 +234,35 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     }
     final scopeSignature =
         '$replyId:${state.order.name}:${state.authorId ?? ''}';
-    if (_revealScopeSignature != scopeSignature) {
-      _revealScopeSignature = scopeSignature;
-      _lastRevealSignature = null;
-      _revealAttemptReplyId = null;
-      _revealAttempts = 0;
-      _revealScheduled = false;
-      _targetRevealReleased = false;
-    }
-    if (!state.replies.any((reply) => reply.id == replyId) ||
-        _targetRevealReleased ||
-        _revealScheduled) {
-      return;
-    }
     final targetIndex = state.replies.indexWhere(
       (reply) => reply.id == replyId,
     );
     final signature =
         '$replyId:${state.order.name}:${state.authorId}:'
         '$targetIndex:${state.replies.length}';
-    if (_lastRevealSignature == signature) return;
-    if (_revealAttemptReplyId != replyId) {
-      _revealAttemptReplyId = replyId;
-      _revealAttempts = 0;
-    }
-    _revealScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _revealScheduled = false;
-      final targetContext = _targetKey.currentContext;
-      if (!mounted ||
-          _targetRevealReleased ||
-          _revealScopeSignature != scopeSignature) {
-        return;
-      }
-      if (targetContext != null) {
-        Scrollable.ensureVisible(
-          targetContext,
-          duration: Duration.zero,
-          alignment: 0.12,
-        );
-        _lastRevealSignature = signature;
-        _revealAttemptReplyId = null;
-        _revealAttempts = 0;
-        return;
-      }
-      if (!_scrollController.hasClients || _revealAttempts >= 6) return;
-      if (targetIndex < 0) return;
-      _revealAttempts += 1;
-      final position = _scrollController.position;
-      final fraction = (targetIndex + 1) / (state.replies.length + 1);
-      final estimated = position.maxScrollExtent * fraction;
-      _scrollController.jumpTo(
-        estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
-      );
-      if (mounted) setState(() {});
-    });
+    _targetReveal.schedule(
+      targetId: replyId,
+      scopeSignature: scopeSignature,
+      contentSignature: signature,
+      targetIndex: targetIndex,
+      itemCount: state.replies.length,
+      ready: targetIndex >= 0,
+      targetKey: _targetKey,
+      scrollController: _scrollController,
+      isMounted: () => mounted,
+      requestRebuild: () => setState(() {}),
+    );
   }
 
   bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
-    if (focusedReplyId == null ||
-        _lastRevealSignature == null ||
-        _targetRevealReleased) {
-      return false;
-    }
-    _lastRevealSignature = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() {});
-    });
-    return false;
+    return _targetReveal.handleLayoutChange(
+      isMounted: () => mounted,
+      requestRebuild: () => setState(() {}),
+    );
   }
 
-  bool _handleUserScroll(ScrollNotification notification) {
-    final startsUserScroll =
-        notification.depth == 0 &&
-        notification.metrics.axis == Axis.vertical &&
-        notification is ScrollStartNotification &&
-        notification.dragDetails != null &&
-        _revealScopeSignature != null;
-    if (startsUserScroll) _targetRevealReleased = true;
-    return false;
-  }
+  bool _handleUserScroll(ScrollNotification notification) =>
+      _targetReveal.handleUserScroll(notification);
 
   void _goBack(BuildContext context) =>
       Navigator.of(context).canPop() ? context.pop() : _goToRoot(context);
