@@ -27,6 +27,8 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。编辑页提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder；分隔线只位于“更多”。编辑器剪贴板保存结构化选区和 Markdown 文本回退，Android `ClipDescription.extras` 同时保存随机 UUID marker；只有 marker、系统纯文本、十分钟时效和 `SessionScope` 全部匹配才恢复 Delta。匹配的复制载荷在每次粘贴时重建骰子 UUID，剪切载荷仅首次保留原 UUID；任一条件失配或载荷无法通过 Codec 安全编码时只按普通文本插入。所有外部文本粘贴都由 `RichEditorSession` 消费并统一换行，不再把普通文本、富剪贴板或无文本结果交回 Quill 默认路径。读取剪贴板前固定文档 generation、Delta 签名和选区；异步返回时任何一项变化都会拒绝旧操作。会话先在克隆 Document 上完成替换、编码和 10000 字符预检，通过后才一次写入真实文档，因此超限不会留下部分正文。系统剪贴板写入失败同步清除内部载荷；只读会话允许复制，但明确拦截剪切和粘贴。显式 `flush` 等待在途粘贴并每次从当前 Delta 编码，即使会话未标脏也不得复用旧 Markdown；主题发布、主题/子贴/帖子保存、五槽位云草稿和本地快照由此共用同一出口。仅上述明确支持且通过精确回编码验证的既有 Markdown 进入 WYSIWYG；外部或新输入文本始终保持字面语义。
 
+`MarkdownEmptyParagraphs` 在阅读和编辑历史正文前统一恢复旧客户端写入的连续原始空行：段落之间的第一个空行仍是普通 CommonMark 边界，其余空行逐个转为独占 `<br />`；首部逐行恢复，尾部只忽略一个格式化换行。围栏代码、缩进代码和原始 HTML 块属于字面保护区，不参与推断。进入行式 Quill Codec 时再移除协议标记周围仅供 Markdown 分块的空白分隔，防止一个标记被额外解码成普通空行；下次编辑保存会写入相邻 canonical `<br />`，重复打开不再增减段数。该兼容只发生在读取路径，不批量改写后端正文。
+
 ## 往返不变量
 
 1. 对白名单内结构，`decode(markdown) → encode(delta)` 经 Markdown v3 规范化后必须与 canonical 输入一致；对白名单外但可读取的结构，输出必须等于契约规定的安全字面化结果。
@@ -41,11 +43,13 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 10. 公共编码出口不得产生 `MarkdownContent.unsupportedLineIndexes` 可识别的不支持结构；安全字面化结果重复 decode/encode 不得继续增加转义或空行。
 11. 外部剪贴板文本不得因与内部回退文本相同而恢复 Delta；必须额外匹配 Android UUID marker 与当前登录会话作用域。
 12. 粘贴在克隆文档上预检，文档或选区竞态、读取失败及序列化后超过 10000 字符都必须保持真实文档原子不变；保存必须等待在途粘贴完成。
+13. 历史连续空行恢复后，每个额外空行必须对应一个 `wenyou_empty_paragraph`；协议标记周围的 Markdown 分块空行不得成为额外 Quill 段落，重新打开和保存不得改变空段数量。
 
 ## 测试门禁
 
 - `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json` 与 `contracts/markdown-editor-roundtrip-v2-fixtures.json` 的 canonical、visible 和幂等用例全部通过。
 - 为普通 Markdown、用户提及、全体玩家、骰子、表情、普通图片、空段和代码转义维护双向 Codec 黄金用例。
+- 历史空段覆盖首部、中部、尾部、CRLF、显式标记幂等及围栏/缩进代码/原始 HTML 保护；编辑后重开必须保持逐段计数。
 - 每种自定义 embed 至少覆盖解析、编辑后序列化、未知版本保留和恶意 URL降级。
 - 剪贴板覆盖同编辑器、跨编辑器、Android marker/会话匹配、多骰子、剪切后重复粘贴、普通文本回退、其他协议节点保持、只读拦截和系统写入失败清理。
 - 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v3 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。

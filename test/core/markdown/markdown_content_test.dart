@@ -123,4 +123,11 @@ void main() {
     expect(MarkdownContent.toPlainTextPreview('一二三四五', maxLength: 4), '一二三…');
     expect(MarkdownContent.toPlainTextPreview('正文', maxLength: 0), isEmpty);
   });
+
+  test('紧凑预览继续折叠历史空行与协议空段', () {
+    expect(
+      MarkdownContent.toPlainTextPreview('第一段\n\n\n\n第二段\n<br />\n<br />\n第三段'),
+      '第一段 第二段 第三段',
+    );
+  });
 }

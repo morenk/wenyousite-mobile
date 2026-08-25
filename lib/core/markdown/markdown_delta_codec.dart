@@ -2,6 +2,7 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
@@ -88,7 +89,8 @@ class MarkdownDeltaCodec {
   static final _mentionWord = RegExp(r'[a-zA-Z0-9_\u4e00-\u9fff]');
 
   static MarkdownDeltaDocument decode(String markdown) {
-    final source = MarkdownContent.normalize(markdown);
+    final recovered = MarkdownEmptyParagraphs.prepareForLineEditor(markdown);
+    final source = MarkdownContent.normalize(recovered);
     final delta = Delta();
     final issues = <MarkdownCodecIssue>[];
     final diceNodeIds = <String>{};

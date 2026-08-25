@@ -50,6 +50,51 @@ void main() {
     expect(emitted, [MarkdownContent.literalizeUnsupported(unsupported)]);
   });
 
+  testWidgets('历史空段重开编辑后写入规范标记且段数不变', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '第一段\n\n\n\n第二段',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+
+    final initialEmptyParagraphCount = session.controller.document
+        .toDelta()
+        .operations
+        .where(
+          (operation) =>
+              operation.attributes?[MarkdownDeltaCodec
+                  .emptyParagraphAttribute] ==
+              true,
+        )
+        .fold<int>(
+          0,
+          (count, operation) =>
+              count + '\n'.allMatches(operation.data as String).length,
+        );
+    expect(initialEmptyParagraphCount, 2);
+
+    final end = session.controller.document.length - 1;
+    session.controller.replaceText(
+      end,
+      0,
+      '（已改）',
+      TextSelection.collapsed(offset: end + 4),
+    );
+    expect(await session.flush(), isTrue);
+    expect(emitted.single, '第一段\n<br />\n<br />\n第二段（已改）');
+
+    final reopened = RichEditorSession(
+      initialMarkdown: emitted.single,
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(reopened.dispose);
+    expect(
+      MarkdownDeltaCodec.encode(reopened.controller.document.toDelta()),
+      emitted.single,
+    );
+  });
+
   testWidgets('H2 H3 与加粗切换后立即保存当前 Delta', (tester) async {
     final emitted = <String>[];
     final session = RichEditorSession(

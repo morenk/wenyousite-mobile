@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
@@ -156,6 +157,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
           selectable: false,
           softLineBreak: true,
           styleSheet: _styleSheet,
+          blockSyntaxes: [_EmptyParagraphBlockSyntax()],
           inlineSyntaxes: [
             _InternalReferenceInlineSyntax(),
             _UserMentionInlineSyntax(),
@@ -163,6 +165,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
             _DiceInlineSyntax(),
           ],
           builders: {
+            _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
+              lineHeight: widget.bodyFontSize * widget.bodyHeight,
+            ),
             'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
               _internalReferences,
               (reference) => _openInternalReference(context, reference),
@@ -210,7 +215,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   }
 
   void _prepareData() {
-    final normalized = MarkdownContent.literalizeUnsupported(widget.data);
+    final normalized = MarkdownContent.literalizeUnsupported(
+      MarkdownEmptyParagraphs.recoverLegacy(widget.data),
+    );
     final prepared = _prepareInternalReferences(normalized);
     _normalizedData = prepared.data;
     _internalReferences = prepared.references;
@@ -365,6 +372,47 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     } else {
       openInternalWenyouLink(context, location);
     }
+  }
+}
+
+const _emptyParagraphTag = 'wenyou-empty-paragraph';
+
+class _EmptyParagraphBlockSyntax extends md.BlockSyntax {
+  static final _pattern = RegExp(
+    r'^ {0,3}<br\s*/?>[\t ]*$',
+    caseSensitive: false,
+  );
+
+  var _index = 0;
+
+  @override
+  RegExp get pattern => _pattern;
+
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final element = md.Element.empty(_emptyParagraphTag);
+    element.attributes['index'] = '${_index++}';
+    parser.advance();
+    return element;
+  }
+}
+
+class _EmptyParagraphMarkdownBuilder extends MarkdownElementBuilder {
+  _EmptyParagraphMarkdownBuilder({required this.lineHeight});
+
+  final double lineHeight;
+
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    return SizedBox(
+      key: ValueKey(
+        'wenyou-markdown-empty-paragraph-${element.attributes['index']}',
+      ),
+      height: lineHeight,
+    );
   }
 }
 

@@ -128,6 +128,41 @@ void main() {
     );
   });
 
+  test('历史连续空行逐段恢复并在下次编码写入规范标记', () {
+    final document = MarkdownDeltaCodec.decode('第一段\n\n\n\n第二段');
+    final emptyParagraphCount = document.delta.operations
+        .where(
+          (operation) =>
+              operation.attributes?[MarkdownDeltaCodec
+                  .emptyParagraphAttribute] ==
+              true,
+        )
+        .fold<int>(
+          0,
+          (count, operation) =>
+              count + '\n'.allMatches(operation.data as String).length,
+        );
+
+    expect(emptyParagraphCount, 2);
+    expect(
+      MarkdownDeltaCodec.encode(document.delta),
+      '第一段\n<br />\n<br />\n第二段',
+    );
+  });
+
+  test('编辑器忽略协议标记的 Markdown 分块空行且重开保持幂等', () {
+    const source = '第一段\n\n<br />\n\n<br>\n\n第二段';
+    final encoded = MarkdownDeltaCodec.encode(
+      MarkdownDeltaCodec.decode(source).delta,
+    );
+
+    expect(encoded, '第一段\n<br />\n<br />\n第二段');
+    expect(
+      MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(encoded).delta),
+      encoded,
+    );
+  });
+
   test('站内链接按原子传送门往返且保留同行富文本', () {
     const source =
         '**入口**：[楼层动态](/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd)';
