@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('原生品牌资源与 Foundation v6.5.0 生成清单一致', () async {
+  test('原生品牌资源与 Foundation v6.5.1 生成清单一致', () async {
     final packageConfigFile = File('.dart_tool/package_config.json');
     final packageConfig = jsonDecode(await packageConfigFile.readAsString());
     final package = (packageConfig['packages'] as List<Object?>)
@@ -24,7 +24,7 @@ void main() {
         packageRoot.resolve('brand_assets/manifest.json'),
       ).readAsString(),
     );
-    expect(manifest['version'], '6.5.0');
+    expect(manifest['version'], '6.5.1');
     final hashes = (manifest['assets'] as Map<String, Object?>)
         .cast<String, String>();
 
