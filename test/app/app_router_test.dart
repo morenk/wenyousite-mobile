@@ -3,6 +3,17 @@ import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 
 void main() {
+  test('游客可直接进入外观设置', () {
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: '/appearance',
+        uri: Uri.parse('/appearance'),
+      ),
+      isNull,
+    );
+  });
+
   test('失效会话仍可进入找回与重置密码公开路由', () {
     const session = SessionState.invalidated(
       SessionInvalidationReason.refreshFailed,

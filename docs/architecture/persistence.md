@@ -1,6 +1,6 @@
 # 本地持久化
 
-敏感会话只进入 `flutter_secure_storage`。SharedPreferences 只保存非敏感偏好，以及动态编辑器中已完成媒体的公开 URL/尺寸、标题、正文、封面 ID、图片顺序和更新时间；不保存源图片、预签名 URL、Token 或提交幂等键。Drift 保存主题编辑器快照和未确认的幂等创建操作：
+敏感会话只进入 `flutter_secure_storage`。SharedPreferences 只保存非敏感偏好，以及动态编辑器中已完成媒体的公开 URL/尺寸、标题、正文、封面 ID、图片顺序和更新时间；不保存源图片、预签名 URL、Token 或提交幂等键。外观使用 `appearance.preference.v1` 保存显式的 `light` 或 `dark` 覆盖，跟随系统时移除该键，缺失或未知值都安全回退为跟随系统。Drift 保存主题编辑器快照和未确认的幂等创建操作：
 
 - `LocalEditorSnapshot`：编辑上下文、完整 Markdown 正文、元数据、稳定幂等键和更新时间；Quill Delta 不作为权威快照；
 - `PendingCreateOperation`：操作类型、规范化载荷、稳定请求 ID、确认状态和更新时间。

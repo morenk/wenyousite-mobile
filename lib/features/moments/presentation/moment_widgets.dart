@@ -565,11 +565,12 @@ class _MomentGalleryViewerState extends State<_MomentGalleryViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: tokens.imageViewerBackground,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: tokens.imageViewerBackground,
+        foregroundColor: tokens.onImageViewerBackground,
         title: Text('${_index + 1} / ${widget.images.length}'),
         leading: IconButton(
           key: const Key('moment-gallery-close'),
@@ -659,6 +660,7 @@ class _ZoomableMomentImageState extends State<_ZoomableMomentImage> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     return GestureDetector(
       onDoubleTap: _toggleZoom,
       child: InteractiveViewer(
@@ -672,10 +674,12 @@ class _ZoomableMomentImageState extends State<_ZoomableMomentImage> {
                 .where((url) => url != widget.image.url)
                 .toList(growable: false),
             fit: BoxFit.contain,
-            placeholder: (_, _) => const CircularProgressIndicator(),
-            errorWidget: (_, _, _) => const WenyouIcon(
+            placeholder: (_, _) => CircularProgressIndicator(
+              color: tokens.onImageViewerBackground,
+            ),
+            errorWidget: (_, _, _) => WenyouIcon(
               WenyouIconIds.statusImageUnavailable,
-              color: Colors.white70,
+              color: tokens.onImageViewerBackground.withValues(alpha: 0.7),
               size: 48,
             ),
           ),

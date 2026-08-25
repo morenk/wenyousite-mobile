@@ -325,7 +325,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         fontWeight: FontWeight.w500,
       ),
       blockquote: bodyStyle?.copyWith(
-        color: WenyouElementContract.quoteForeground,
+        color: tokens.text,
         fontStyle: FontStyle.normal,
         fontWeight: FontWeight.w400,
       ),
@@ -335,10 +335,10 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         vertical: widget.bodyFontSize * WenyouElementContract.quotePaddingBlock,
       ),
       blockquoteDecoration: BoxDecoration(
-        color: WenyouElementContract.quoteSurface,
-        border: const BorderDirectional(
+        color: tokens.softPanel,
+        border: BorderDirectional(
           start: BorderSide(
-            color: WenyouElementContract.quoteMarker,
+            color: tokens.brandForeground,
             width: WenyouElementContract.quoteMarkerWidth,
           ),
         ),

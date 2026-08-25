@@ -4,21 +4,21 @@
 
 ## 1. 模块目标与非目标
 
-提供启动版本/兼容检查、服务端 capability、Android 站内更新、iOS TestFlight 更新、四分支主导航、游客模式、全局网络/错误状态、统一发布入口和消息中心。当前不实现 FCM、暗色主题或 App Links。
+提供启动版本/兼容检查、全局亮色/黑夜主题、服务端 capability、Android 站内更新、iOS TestFlight 更新、四分支主导航、游客模式、全局网络/错误状态、统一发布入口和消息中心。当前不实现 FCM 或 App Links。
 
 中央发布入口在所有主导航分支都显示“发布主题帖 / 发布动态”两个目标操作，不根据当前频道直接跳转，也不重复解释内容类型。
 
 ## 2. 用户角色与使用场景
 
-游客可直接进入首页和搜索；已登录用户额外使用通知、创作和个人功能。所有用户在启动时都要确认当前构建仍受支持且服务端契约可兼容；推荐更新可以暂时跳过，强制更新不可绕过。
+游客可直接进入首页、搜索和外观设置；已登录用户额外使用通知、创作和个人功能。所有用户在启动时先恢复本机外观偏好，再确认当前构建仍受支持且服务端契约可兼容；推荐更新可以暂时跳过，强制更新不可绕过。
 
 ## 3. 页面、入口和导航关系
 
-启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入。系统启动层只承担 Flutter 第一帧之前不可避免的过渡，Android 与 iOS 均只显示纯白底色，不显示标识或文案；Flutter 是唯一可见的品牌加载页，也使用纯白底色，把 96dp 标识、22sp“温油站”、16sp“最温油的文字共创社区”和检查状态作为一个整体居中，并从实际可见首帧起至少稳定显示 700ms。Android 冷启动的零尺寸预热帧只保留空白，拿到有效 viewport 后才构建品牌内容。四个分支与壳容器间瞬时切换并保留状态；Android 真实业务页入栈和返回由应用主题统一提供 180ms 水平位移，不缩放或淡化当前页。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 从 `/meta.mobileCompatibility` 的 HTTPS 地址在页内下载 RainS3 APK，验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实；该角标使用 Foundation `destructive / onDestructive`，高 16dp、10sp 粗体等宽数字，超过 99 显示 `99+`，零值隐藏。消息中心的“通知 / 私聊”使用共享等宽内容页签，只响应明确点按并通过规范 URL 保存栏目，不把横滑手势同时解释为切页。
+启动门禁包裹 `/home`、`/moments`、`/notifications`、`/me` 四个保状态分支，底栏固定为“首页 / 动态 / 发布 / 消息 / 我的”；中央粉色“发布”是动作而非分支，`/search` 由首页和动态顶栏进入，公开 `/appearance` 由游客“我的”和登录后的账号设置进入。系统启动层只承担 Flutter 第一帧之前不可避免的过渡，Android 与 iOS 均保持纯白底色，不显示标识或文案；从 Flutter 首帧开始使用已恢复或跟随系统解析后的主题，品牌加载页、系统状态栏和导航栏同步采用当前语义色。Android 冷启动的零尺寸预热帧只保留空白，拿到有效 viewport 后才构建品牌内容。四个分支与壳容器间瞬时切换并保留状态；Android 真实业务页入栈和返回由应用主题统一提供 180ms 水平位移，不缩放或淡化当前页。门禁先处理强制更新，再检查契约与 capability，最后处理推荐更新；Android 从 `/meta.mobileCompatibility` 的 HTTPS 地址在页内下载 RainS3 APK，验证后唤起系统安装器，iOS 外跳 TestFlight。任一主导航分支点击发布都会在按钮上方打开“发布主题帖 / 发布动态”两项锚点气泡，选择后进入受保护的 `/compose/thread` 或 `/compose/moment`；外部点击只关闭气泡，不触发底栏后方页面。入口统一朗读“发布内容”；游客登录或注册成功后恢复创建目标。登录用户的消息图标展示“通知未读 + 私聊未读/请求”的合计角标，进入分支与回前台时分别校准两类服务端事实；该角标使用 Foundation `destructive / onDestructive`，高 16dp、10sp 粗体等宽数字，超过 99 显示 `99+`，零值隐藏。消息中心的“通知 / 私聊”使用共享等宽内容页签，只响应明确点按并通过规范 URL 保存栏目，不把横滑手势同时解释为切页。
 
 ## 4. 用户操作流程
 
-冷启动调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v3、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
+冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v3、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
 
 ## 5. API operationId 与生成类型
 
@@ -26,7 +26,7 @@
 
 ## 6. 状态模型和数据流
 
-启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
+外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根映射为 Flutter `ThemeMode.system/light/dark`，主题变化不进入业务控制器。启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
 全局 `WenyouInstantKeyboardInsets` 观察应用生命周期：Android 非 resumed 状态把有效底部高度固定为零，恢复后继续等待新的前台原生回调，后台迟到结果不会覆盖；iOS 等其他平台继续使用引擎 `MediaQuery`。`MainActivity` 从根视图实际应用的 `WindowInsetsCompat` 读取 IME 可见性和高度，只有 Activity 已恢复且窗口聚焦时才发布正值；IME 动画仍只发布最终目标，不转发逐帧进度，恢复和聚焦则先发布零值并请求重新分发 Insets。
 
@@ -38,7 +38,7 @@
 
 ## 8. 本地存储、缓存及失效规则
 
-契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐更新仅把“已忽略的目标构建号”写入 SharedPreferences，新目标构建会再次提示。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
+外观显式选择以 SharedPreferences 保存，跟随系统不保存覆盖值；偏好与账号无关且跨冷启动保留。契约结果只在本次进程缓存；每次冷启动和回前台重新检查。推荐更新仅把“已忽略的目标构建号”写入 SharedPreferences，新目标构建会再次提示。APK 以“目标构建 + 哈希前缀”暂存于应用 cache，先写 `.part`、通过长度与 SHA-256 后原子改名；新目标会清理旧 APK/partial，冷进程重新验证缓存，本次已验证文件只在内存记录并可供未知来源授权返回后直接继续。cache 可由系统清理；Token 仍由认证模块安全存储管理。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
@@ -46,11 +46,13 @@
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)。app 组合层只连接 capability 与跨 feature 缓存失效等接口，不持有业务页面状态。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 
 - [x] 兼容元信息进入四分支应用壳，游客无需登录。
+- [x] 启动前恢复外观偏好，系统/亮色/黑夜可即时切换；游客公开可达，读写失败回退与重试完整。
+- [x] 亮暗 ThemeData、系统栏、语义 Token 对比度及黑夜外观页具有自动化回归；原生静态启动层保持白色。
 - [x] 主版本未知时只显示升级页；网络失败可重试且有请求 ID。
 - [x] 低于最低构建时显示不可跳过的强制更新；低于推荐构建时可忽略并记住目标构建。
 - [x] Android 更新覆盖 RainS3 HEAD/GET 元数据、长度、SHA-256、损坏缓存重下、原子落盘、未知来源权限复用与原生包名/版本/签名校验；异步原生异常映射为可操作错误；iOS 使用外部 TestFlight URL。
@@ -68,12 +70,12 @@
 
 ## 12. 已知限制和后续功能
 
-当前已完成构建策略门禁、推荐更新忽略、Android RainS3 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳和本地一键发布入口。Debug 构建使用独立 `site.wenyou.app.debug` 包名，避免调试签名占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析和系统覆盖行为仍需用正式签名在 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。V1 不做 App Links、暗色主题与 FCM。
+当前已完成构建策略门禁、全局亮色/黑夜外观、推荐更新忽略、Android RainS3 在线下载、双层完整性/身份校验与系统安装器、iOS TestFlight 外跳和本地一键发布入口。Debug 构建使用独立 `site.wenyou.app.debug` 包名，避免调试签名占用正式更新链；完整门禁与发布入口均会核对线上契约、后端 revision 和 Markdown 版本。自动测试以伪 APK 固定下载与缓存状态机，Android 原生包解析和系统覆盖行为仍需用正式签名在 Android 8+ 真机完成最终验收；iOS 构建与上传必须在配置签名的 macOS 上执行。原生启动层在 Flutter 首帧前仍是静态白色；V1 不做 App Links 与 FCM。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.11.2-dev.20260825.1`；Markdown v3；后端 `aaafa4751913b0f567ce7e2a03b8e8c0bb3f2c9e`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.11.2-dev.20260825.1`；Markdown v3；后端 `aaafa4751913b0f567ce7e2a03b8e8c0bb3f2c9e`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/app_shell/application/app_shell_ports.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/features/app_shell/data/`、`lib/main.dart`、`android/app/src/main/res/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/startup_brand_test.dart`、`test/tool/foundation_brand_assets_test.dart`、`tool/release-mobile-from-local.sh`。参见[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/app/app_theme.dart`、`lib/app/wenyou_theme_tokens.dart`、`lib/app/wenyou_app.dart`、`lib/features/app_shell/application/app_shell_ports.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/features/app_shell/data/`、`lib/main.dart`、`android/app/src/main/res/`、`ios/Runner/Assets.xcassets/`、`test/app/app_theme_test.dart`、`test/features/settings/appearance_settings_page_test.dart`、`test/features/app_shell/startup_brand_test.dart`、`test/tool/foundation_brand_assets_test.dart`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

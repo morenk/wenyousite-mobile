@@ -38,12 +38,13 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
   @override
   Widget build(BuildContext context) {
     final alt = widget.alt.trim();
+    final tokens = context.wenyouTokens;
     return Scaffold(
       key: const Key('content-image-viewer'),
-      backgroundColor: Colors.black,
+      backgroundColor: tokens.imageViewerBackground,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: tokens.imageViewerBackground,
+        foregroundColor: tokens.onImageViewerBackground,
         title: Text(alt.isEmpty ? '正文插图' : alt),
         actions: [
           if (widget.onSaveImage != null)
@@ -68,14 +69,14 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
               ],
             ),
           if (_saving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Center(
                 child: SizedBox.square(
                   dimension: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: tokens.onImageViewerBackground,
                   ),
                 ),
               ),
@@ -122,9 +123,9 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
           ),
           if (_saveFailure case final failure?)
             Positioned(
-              right: context.wenyouTokens.space16,
-              bottom: context.wenyouTokens.space16,
-              left: context.wenyouTokens.space16,
+              right: tokens.space16,
+              bottom: tokens.space16,
+              left: tokens.space16,
               child: SafeArea(
                 top: false,
                 child: WenyouFailureBanner(

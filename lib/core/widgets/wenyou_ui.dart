@@ -415,7 +415,7 @@ class WenyouStatusBanner extends StatelessWidget {
       ),
       WenyouStatusTone.accent => (
         tokens.accentedBackground,
-        tokens.text,
+        tokens.onAccentedBackground,
         WenyouIconIds.statusInfo,
       ),
       WenyouStatusTone.error => (

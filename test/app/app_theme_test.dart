@@ -37,14 +37,19 @@ void main() {
     expect(tokens.brandSurface, WenyouFoundationPalette.primary);
     expect(tokens.brandForeground, WenyouFoundationPalette.brandStrong);
     expect(tokens.onBrandSurface, WenyouFoundationPalette.onPrimary);
+    expect(tokens.actionSurface, WenyouFoundationPalette.actionPrimary);
+    expect(tokens.onActionSurface, WenyouFoundationPalette.onActionPrimary);
     expect(tokens.background, WenyouFoundationPalette.background);
     expect(tokens.panel, WenyouFoundationPalette.surface);
     expect(tokens.softPanel, WenyouFoundationPalette.muted);
     expect(tokens.border, WenyouFoundationPalette.border);
+    expect(tokens.input, WenyouFoundationPalette.input);
     expect(tokens.text, WenyouFoundationPalette.foreground);
     expect(tokens.mutedText, WenyouFoundationPalette.mutedForeground);
     expect(tokens.accentedBackground, WenyouFoundationPalette.accent);
     expect(tokens.onAccentedBackground, WenyouFoundationPalette.onAccent);
+    expect(tokens.secondary, WenyouFoundationPalette.secondary);
+    expect(tokens.onSecondary, WenyouFoundationPalette.onSecondary);
     expect(tokens.focus, WenyouFoundationPalette.brandStrong);
     expect([
       tokens.space4,
@@ -91,32 +96,56 @@ void main() {
   });
 
   test('所有可用作文字或图标前景的语义色满足普通文字 AA 对比度', () {
-    const tokens = WenyouThemeTokens.light;
+    for (final tokens in [WenyouThemeTokens.light, WenyouThemeTokens.dark]) {
+      expect(
+        _contrastRatio(tokens.brandSurface, tokens.onBrandSurface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(tokens.actionSurface, tokens.onActionSurface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(tokens.panel, tokens.brandForeground),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(tokens.accentedBackground, tokens.onAccentedBackground),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(tokens.panel, tokens.text),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(tokens.panel, tokens.mutedText),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(tokens.panel, tokens.focus),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
 
-    expect(
-      _contrastRatio(tokens.brandSurface, tokens.onBrandSurface),
-      greaterThanOrEqualTo(4.5),
-    );
-    expect(
-      _contrastRatio(tokens.panel, tokens.brandForeground),
-      greaterThanOrEqualTo(4.5),
-    );
-    expect(
-      _contrastRatio(tokens.accentedBackground, tokens.onAccentedBackground),
-      greaterThanOrEqualTo(4.5),
-    );
-    expect(
-      _contrastRatio(tokens.panel, tokens.text),
-      greaterThanOrEqualTo(4.5),
-    );
-    expect(
-      _contrastRatio(tokens.panel, tokens.mutedText),
-      greaterThanOrEqualTo(4.5),
-    );
-    expect(
-      _contrastRatio(tokens.panel, tokens.focus),
-      greaterThanOrEqualTo(4.5),
-    );
+  test('黑夜主题完整映射 Foundation 深色语义 Token', () {
+    const tokens = WenyouThemeTokens.dark;
+
+    expect(tokens.background, WenyouFoundationDarkPalette.background);
+    expect(tokens.panel, WenyouFoundationDarkPalette.surface);
+    expect(tokens.softPanel, WenyouFoundationDarkPalette.muted);
+    expect(tokens.border, WenyouFoundationDarkPalette.border);
+    expect(tokens.input, WenyouFoundationDarkPalette.input);
+    expect(tokens.text, WenyouFoundationDarkPalette.foreground);
+    expect(tokens.mutedText, WenyouFoundationDarkPalette.mutedForeground);
+    expect(tokens.brandSurface, WenyouFoundationDarkPalette.primary);
+    expect(tokens.onBrandSurface, WenyouFoundationDarkPalette.onPrimary);
+    expect(tokens.actionSurface, WenyouFoundationDarkPalette.actionPrimary);
+    expect(tokens.onActionSurface, WenyouFoundationDarkPalette.onActionPrimary);
+    expect(tokens.destructive, WenyouFoundationDarkPalette.destructive);
+    expect(tokens.successSoft, WenyouFoundationDarkPalette.successSoft);
+    expect(tokens.warningSoft, WenyouFoundationDarkPalette.warningSoft);
+    expect(tokens.infoSoft, WenyouFoundationDarkPalette.infoSoft);
   });
 
   test('主题注册 Foundation 色板、字体角色与最小触控高度', () {
@@ -130,8 +159,11 @@ void main() {
         .resolve({});
 
     expect(tokens, isNotNull);
-    expect(theme.colorScheme.primary, WenyouThemeTokens.light.brandForeground);
-    expect(theme.colorScheme.onPrimary, WenyouThemeTokens.light.panel);
+    expect(theme.colorScheme.primary, WenyouThemeTokens.light.actionSurface);
+    expect(
+      theme.colorScheme.onPrimary,
+      WenyouThemeTokens.light.onActionSurface,
+    );
     expect(
       theme.colorScheme.primaryContainer,
       WenyouThemeTokens.light.brandSurface,
@@ -209,6 +241,21 @@ void main() {
     final androidTransition =
         theme.pageTransitionsTheme.builders[TargetPlatform.android];
     expect(androidTransition, isA<WenyouPageTransitionsBuilder>());
+  });
+
+  test('亮色与黑夜 ThemeData 分别注册正确亮度和语义操作色', () {
+    for (final (theme, tokens, brightness) in [
+      (AppTheme.light, WenyouThemeTokens.light, Brightness.light),
+      (AppTheme.dark, WenyouThemeTokens.dark, Brightness.dark),
+    ]) {
+      expect(theme.brightness, brightness);
+      expect(theme.extension<WenyouThemeTokens>(), same(tokens));
+      expect(theme.colorScheme.primary, tokens.actionSurface);
+      expect(theme.colorScheme.onPrimary, tokens.onActionSurface);
+      expect(theme.colorScheme.primaryContainer, tokens.brandSurface);
+      expect(theme.colorScheme.onPrimaryContainer, tokens.onBrandSurface);
+      expect(theme.scaffoldBackgroundColor, tokens.background);
+    }
   });
 }
 

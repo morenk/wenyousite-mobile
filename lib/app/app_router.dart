@@ -26,6 +26,7 @@ import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
 import 'package:wenyousite_mobile/features/search/presentation/thread_post_search_page.dart';
+import 'package:wenyousite_mobile/features/settings/presentation/appearance_settings_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_email_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/change_password_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
@@ -125,6 +126,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRouteLocations.search,
         name: AppRouteNames.search,
         builder: (context, state) => const SearchPage(),
+      ),
+      GoRoute(
+        path: AppRouteLocations.appearance,
+        name: AppRouteNames.appearance,
+        builder: (context, state) => const AppearanceSettingsPage(),
       ),
       GoRoute(
         path: AppRouteLocations.moderationAppeals,

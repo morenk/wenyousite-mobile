@@ -64,9 +64,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final effectiveStyle = widget.style.copyWith(
-      color: widget.settled
-          ? WenyouFoundationPalette.onAccent
-          : WenyouFoundationPalette.warning,
+      color: widget.settled ? tokens.onAccentedBackground : tokens.warning,
       fontFamily: WenyouFoundationTypography.utility,
       fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -79,9 +77,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
     final radius = fontSize * 0.3;
     final content = DecoratedBox(
       decoration: BoxDecoration(
-        color: widget.settled
-            ? WenyouFoundationPalette.accent
-            : WenyouFoundationPalette.warningSoft,
+        color: widget.settled ? tokens.accentedBackground : tokens.warningSoft,
         borderRadius: BorderRadius.circular(radius),
       ),
       child: Padding(
@@ -131,7 +127,7 @@ class _WenyouDiceNodeState extends State<WenyouDiceNode> {
             if (!states.contains(WidgetState.pressed)) {
               return Colors.transparent;
             }
-            return WenyouFoundationPalette.onAccent.withValues(
+            return tokens.onAccentedBackground.withValues(
               alpha: WenyouElementContract.dicePressedStateOpacity,
             );
           }),
@@ -255,7 +251,7 @@ class _DiceResultTray extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final fontSize = Theme.of(context).textTheme.bodyLarge?.fontSize ?? 16;
     final style = Theme.of(context).textTheme.bodyLarge?.copyWith(
-      color: WenyouElementContract.diceDetailCellForeground,
+      color: tokens.text,
       fontFamily: WenyouFoundationTypography.utility,
       fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -284,7 +280,7 @@ class _DiceResultTray extends StatelessWidget {
                     fontSize * WenyouElementContract.diceDetailCellPaddingBlock,
               ),
               decoration: BoxDecoration(
-                color: WenyouElementContract.diceDetailCellSurface,
+                color: tokens.softPanel,
                 borderRadius: BorderRadius.circular(
                   fontSize * WenyouElementContract.diceDetailCellRadius,
                 ),

@@ -45,6 +45,8 @@ void main() {
 
     expect(find.text('当前以游客身份浏览'), findsOneWidget);
     expect(find.text('登录'), findsOneWidget);
+    expect(find.byKey(const Key('open-appearance-settings')), findsOneWidget);
+    expect(find.text('跟随系统'), findsOneWidget);
     expect(repository.fetchCalls, 0);
   });
 

@@ -7,17 +7,33 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     required this.brandSurface,
     required this.brandForeground,
     required this.onBrandSurface,
+    required this.actionSurface,
+    required this.onActionSurface,
     required this.background,
     required this.panel,
     required this.softPanel,
     required this.border,
+    required this.input,
     required this.text,
     required this.mutedText,
     required this.accentedBackground,
     required this.onAccentedBackground,
+    required this.secondary,
+    required this.onSecondary,
     required this.focus,
     required this.like,
     required this.bookmark,
+    required this.destructive,
+    required this.onDestructive,
+    required this.destructiveSoft,
+    required this.success,
+    required this.successSoft,
+    required this.warning,
+    required this.warningSoft,
+    required this.info,
+    required this.infoSoft,
+    required this.imageViewerBackground,
+    required this.onImageViewerBackground,
     required this.space4,
     required this.space8,
     required this.space12,
@@ -42,17 +58,85 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     brandSurface: WenyouFoundationPalette.primary,
     brandForeground: WenyouFoundationPalette.brandStrong,
     onBrandSurface: WenyouFoundationPalette.onPrimary,
+    actionSurface: WenyouFoundationPalette.actionPrimary,
+    onActionSurface: WenyouFoundationPalette.onActionPrimary,
     background: WenyouFoundationPalette.background,
     panel: WenyouFoundationPalette.surface,
     softPanel: WenyouFoundationPalette.muted,
     border: WenyouFoundationPalette.border,
+    input: WenyouFoundationPalette.input,
     text: WenyouFoundationPalette.foreground,
     mutedText: WenyouFoundationPalette.mutedForeground,
     accentedBackground: WenyouFoundationPalette.accent,
     onAccentedBackground: WenyouFoundationPalette.onAccent,
+    secondary: WenyouFoundationPalette.secondary,
+    onSecondary: WenyouFoundationPalette.onSecondary,
     focus: WenyouFoundationPalette.brandStrong,
     like: WenyouFoundationPalette.like,
     bookmark: WenyouFoundationPalette.bookmark,
+    destructive: WenyouFoundationPalette.destructive,
+    onDestructive: WenyouFoundationPalette.onDestructive,
+    destructiveSoft: WenyouFoundationPalette.destructiveSoft,
+    success: WenyouFoundationPalette.success,
+    successSoft: WenyouFoundationPalette.successSoft,
+    warning: WenyouFoundationPalette.warning,
+    warningSoft: WenyouFoundationPalette.warningSoft,
+    info: WenyouFoundationPalette.info,
+    infoSoft: WenyouFoundationPalette.infoSoft,
+    imageViewerBackground: WenyouFoundationPalette.foreground,
+    onImageViewerBackground: WenyouFoundationPalette.surface,
+    space4: WenyouFoundationMobile.space4,
+    space8: WenyouFoundationMobile.space8,
+    space12: WenyouFoundationMobile.space12,
+    space16: WenyouFoundationMobile.space16,
+    space20: WenyouFoundationMobile.space20,
+    space24: WenyouFoundationMobile.space24,
+    space32: WenyouFoundationMobile.space32,
+    radius12: WenyouFoundationMobile.radiusCompact,
+    radius16: WenyouFoundationMobile.radiusControl,
+    radius20: WenyouFoundationMobile.radiusPanel,
+    radiusPill: WenyouFoundationMobile.radiusPill,
+    minimumTouchTarget: WenyouFoundationMobile.minimumTouchTarget,
+    compactHorizontalPadding: WenyouFoundationMobile.compactHorizontalPadding,
+    regularHorizontalPadding: WenyouFoundationMobile.regularHorizontalPadding,
+    regularHorizontalPaddingFrom:
+        WenyouFoundationMobile.regularHorizontalPaddingFrom,
+    pageContentMaxWidth: WenyouFoundationMobile.pageContentMaxWidth,
+    wideContainerMaxWidth: WenyouFoundationMobile.wideContainerMaxWidth,
+    feedbackDuration: WenyouFoundationMotion.fast,
+  );
+
+  static const dark = WenyouThemeTokens(
+    brandSurface: WenyouFoundationDarkPalette.primary,
+    brandForeground: WenyouFoundationDarkPalette.brandStrong,
+    onBrandSurface: WenyouFoundationDarkPalette.onPrimary,
+    actionSurface: WenyouFoundationDarkPalette.actionPrimary,
+    onActionSurface: WenyouFoundationDarkPalette.onActionPrimary,
+    background: WenyouFoundationDarkPalette.background,
+    panel: WenyouFoundationDarkPalette.surface,
+    softPanel: WenyouFoundationDarkPalette.muted,
+    border: WenyouFoundationDarkPalette.border,
+    input: WenyouFoundationDarkPalette.input,
+    text: WenyouFoundationDarkPalette.foreground,
+    mutedText: WenyouFoundationDarkPalette.mutedForeground,
+    accentedBackground: WenyouFoundationDarkPalette.accent,
+    onAccentedBackground: WenyouFoundationDarkPalette.onAccent,
+    secondary: WenyouFoundationDarkPalette.secondary,
+    onSecondary: WenyouFoundationDarkPalette.onSecondary,
+    focus: WenyouFoundationDarkPalette.brandStrong,
+    like: WenyouFoundationDarkPalette.like,
+    bookmark: WenyouFoundationDarkPalette.bookmark,
+    destructive: WenyouFoundationDarkPalette.destructive,
+    onDestructive: WenyouFoundationDarkPalette.onDestructive,
+    destructiveSoft: WenyouFoundationDarkPalette.destructiveSoft,
+    success: WenyouFoundationDarkPalette.success,
+    successSoft: WenyouFoundationDarkPalette.successSoft,
+    warning: WenyouFoundationDarkPalette.warning,
+    warningSoft: WenyouFoundationDarkPalette.warningSoft,
+    info: WenyouFoundationDarkPalette.info,
+    infoSoft: WenyouFoundationDarkPalette.infoSoft,
+    imageViewerBackground: WenyouFoundationDarkPalette.background,
+    onImageViewerBackground: WenyouFoundationDarkPalette.foreground,
     space4: WenyouFoundationMobile.space4,
     space8: WenyouFoundationMobile.space8,
     space12: WenyouFoundationMobile.space12,
@@ -77,17 +161,33 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
   final Color brandSurface;
   final Color brandForeground;
   final Color onBrandSurface;
+  final Color actionSurface;
+  final Color onActionSurface;
   final Color background;
   final Color panel;
   final Color softPanel;
   final Color border;
+  final Color input;
   final Color text;
   final Color mutedText;
   final Color accentedBackground;
   final Color onAccentedBackground;
+  final Color secondary;
+  final Color onSecondary;
   final Color focus;
   final Color like;
   final Color bookmark;
+  final Color destructive;
+  final Color onDestructive;
+  final Color destructiveSoft;
+  final Color success;
+  final Color successSoft;
+  final Color warning;
+  final Color warningSoft;
+  final Color info;
+  final Color infoSoft;
+  final Color imageViewerBackground;
+  final Color onImageViewerBackground;
 
   final double space4;
   final double space8;
@@ -114,17 +214,33 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
     Color? brandSurface,
     Color? brandForeground,
     Color? onBrandSurface,
+    Color? actionSurface,
+    Color? onActionSurface,
     Color? background,
     Color? panel,
     Color? softPanel,
     Color? border,
+    Color? input,
     Color? text,
     Color? mutedText,
     Color? accentedBackground,
     Color? onAccentedBackground,
+    Color? secondary,
+    Color? onSecondary,
     Color? focus,
     Color? like,
     Color? bookmark,
+    Color? destructive,
+    Color? onDestructive,
+    Color? destructiveSoft,
+    Color? success,
+    Color? successSoft,
+    Color? warning,
+    Color? warningSoft,
+    Color? info,
+    Color? infoSoft,
+    Color? imageViewerBackground,
+    Color? onImageViewerBackground,
     double? space4,
     double? space8,
     double? space12,
@@ -148,17 +264,35 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       brandSurface: brandSurface ?? this.brandSurface,
       brandForeground: brandForeground ?? this.brandForeground,
       onBrandSurface: onBrandSurface ?? this.onBrandSurface,
+      actionSurface: actionSurface ?? this.actionSurface,
+      onActionSurface: onActionSurface ?? this.onActionSurface,
       background: background ?? this.background,
       panel: panel ?? this.panel,
       softPanel: softPanel ?? this.softPanel,
       border: border ?? this.border,
+      input: input ?? this.input,
       text: text ?? this.text,
       mutedText: mutedText ?? this.mutedText,
       accentedBackground: accentedBackground ?? this.accentedBackground,
       onAccentedBackground: onAccentedBackground ?? this.onAccentedBackground,
+      secondary: secondary ?? this.secondary,
+      onSecondary: onSecondary ?? this.onSecondary,
       focus: focus ?? this.focus,
       like: like ?? this.like,
       bookmark: bookmark ?? this.bookmark,
+      destructive: destructive ?? this.destructive,
+      onDestructive: onDestructive ?? this.onDestructive,
+      destructiveSoft: destructiveSoft ?? this.destructiveSoft,
+      success: success ?? this.success,
+      successSoft: successSoft ?? this.successSoft,
+      warning: warning ?? this.warning,
+      warningSoft: warningSoft ?? this.warningSoft,
+      info: info ?? this.info,
+      infoSoft: infoSoft ?? this.infoSoft,
+      imageViewerBackground:
+          imageViewerBackground ?? this.imageViewerBackground,
+      onImageViewerBackground:
+          onImageViewerBackground ?? this.onImageViewerBackground,
       space4: space4 ?? this.space4,
       space8: space8 ?? this.space8,
       space12: space12 ?? this.space12,
@@ -191,10 +325,13 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
       brandSurface: Color.lerp(brandSurface, other.brandSurface, t)!,
       brandForeground: Color.lerp(brandForeground, other.brandForeground, t)!,
       onBrandSurface: Color.lerp(onBrandSurface, other.onBrandSurface, t)!,
+      actionSurface: Color.lerp(actionSurface, other.actionSurface, t)!,
+      onActionSurface: Color.lerp(onActionSurface, other.onActionSurface, t)!,
       background: Color.lerp(background, other.background, t)!,
       panel: Color.lerp(panel, other.panel, t)!,
       softPanel: Color.lerp(softPanel, other.softPanel, t)!,
       border: Color.lerp(border, other.border, t)!,
+      input: Color.lerp(input, other.input, t)!,
       text: Color.lerp(text, other.text, t)!,
       mutedText: Color.lerp(mutedText, other.mutedText, t)!,
       accentedBackground: Color.lerp(
@@ -207,9 +344,30 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
         other.onAccentedBackground,
         t,
       )!,
+      secondary: Color.lerp(secondary, other.secondary, t)!,
+      onSecondary: Color.lerp(onSecondary, other.onSecondary, t)!,
       focus: Color.lerp(focus, other.focus, t)!,
       like: Color.lerp(like, other.like, t)!,
       bookmark: Color.lerp(bookmark, other.bookmark, t)!,
+      destructive: Color.lerp(destructive, other.destructive, t)!,
+      onDestructive: Color.lerp(onDestructive, other.onDestructive, t)!,
+      destructiveSoft: Color.lerp(destructiveSoft, other.destructiveSoft, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      successSoft: Color.lerp(successSoft, other.successSoft, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      warningSoft: Color.lerp(warningSoft, other.warningSoft, t)!,
+      info: Color.lerp(info, other.info, t)!,
+      infoSoft: Color.lerp(infoSoft, other.infoSoft, t)!,
+      imageViewerBackground: Color.lerp(
+        imageViewerBackground,
+        other.imageViewerBackground,
+        t,
+      )!,
+      onImageViewerBackground: Color.lerp(
+        onImageViewerBackground,
+        other.onImageViewerBackground,
+        t,
+      )!,
       space4: _lerpDouble(space4, other.space4, t),
       space8: _lerpDouble(space8, other.space8, t),
       space12: _lerpDouble(space12, other.space12, t),
@@ -258,7 +416,10 @@ class WenyouThemeTokens extends ThemeExtension<WenyouThemeTokens> {
 
 extension WenyouThemeContext on BuildContext {
   WenyouThemeTokens get wenyouTokens =>
-      Theme.of(this).extension<WenyouThemeTokens>() ?? WenyouThemeTokens.light;
+      Theme.of(this).extension<WenyouThemeTokens>() ??
+      (Theme.of(this).brightness == Brightness.dark
+          ? WenyouThemeTokens.dark
+          : WenyouThemeTokens.light);
 }
 
 double _lerpDouble(double begin, double end, double t) {

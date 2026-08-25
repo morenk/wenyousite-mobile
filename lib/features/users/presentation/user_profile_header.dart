@@ -139,7 +139,7 @@ class UserProfileHeader extends StatelessWidget {
                       label: '等级进度 ${(levelProgress! * 100).round()}%',
                       child: LinearProgressIndicator(
                         value: levelProgress,
-                        color: WenyouLevelContract.resolve(level)?.foreground,
+                        color: wenyouLevelTier(context, level)?.foreground,
                       ),
                     ),
                   ],

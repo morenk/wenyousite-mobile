@@ -5,43 +5,63 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 
 abstract final class AppTheme {
-  static const primary = WenyouFoundationPalette.primary;
-  static const background = WenyouFoundationPalette.background;
+  static ThemeData get light =>
+      _build(brightness: Brightness.light, tokens: WenyouThemeTokens.light);
 
-  static ThemeData get light {
-    const tokens = WenyouThemeTokens.light;
+  static ThemeData get dark =>
+      _build(brightness: Brightness.dark, tokens: WenyouThemeTokens.dark);
+
+  static ThemeData _build({
+    required Brightness brightness,
+    required WenyouThemeTokens tokens,
+  }) {
     final colorScheme =
         ColorScheme.fromSeed(
-          seedColor: tokens.brandForeground,
-          brightness: Brightness.light,
+          seedColor: tokens.actionSurface,
+          brightness: brightness,
           surface: tokens.panel,
         ).copyWith(
-          primary: tokens.brandForeground,
-          onPrimary: tokens.panel,
+          primary: tokens.actionSurface,
+          onPrimary: tokens.onActionSurface,
           primaryContainer: tokens.brandSurface,
           onPrimaryContainer: tokens.onBrandSurface,
-          secondary: WenyouFoundationPalette.secondary,
-          onSecondary: WenyouFoundationPalette.onSecondary,
-          secondaryContainer: WenyouFoundationPalette.infoSoft,
-          onSecondaryContainer: WenyouFoundationPalette.info,
+          secondary: tokens.secondary,
+          onSecondary: tokens.onSecondary,
+          secondaryContainer: tokens.infoSoft,
+          onSecondaryContainer: tokens.info,
+          tertiary: tokens.brandForeground,
+          onTertiary: tokens.panel,
+          tertiaryContainer: tokens.accentedBackground,
+          onTertiaryContainer: tokens.onAccentedBackground,
           surface: tokens.panel,
           onSurface: tokens.text,
-          surfaceContainerLowest: tokens.panel,
+          surfaceDim: tokens.background,
+          surfaceBright: tokens.panel,
+          surfaceContainerLowest: tokens.background,
+          surfaceContainerLow: tokens.panel,
           surfaceContainer: tokens.softPanel,
+          surfaceContainerHigh: tokens.softPanel,
+          surfaceContainerHighest: tokens.accentedBackground,
           onSurfaceVariant: tokens.mutedText,
-          outline: tokens.border,
+          outline: tokens.input,
           outlineVariant: tokens.border,
-          error: WenyouFoundationPalette.destructive,
-          onError: WenyouFoundationPalette.onDestructive,
-          errorContainer: WenyouFoundationPalette.destructiveSoft,
-          onErrorContainer: WenyouFoundationPalette.destructive,
+          inverseSurface: tokens.text,
+          onInverseSurface: tokens.panel,
+          inversePrimary: tokens.brandSurface,
+          error: tokens.destructive,
+          onError: tokens.onDestructive,
+          errorContainer: tokens.destructiveSoft,
+          onErrorContainer: tokens.destructive,
         );
-    final baseTextTheme = ThemeData.light().textTheme.apply(
-      fontFamily: WenyouFoundationTypography.body,
-      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-      bodyColor: tokens.text,
-      displayColor: tokens.text,
-    );
+    final baseTextTheme =
+        (brightness == Brightness.dark ? ThemeData.dark() : ThemeData.light())
+            .textTheme
+            .apply(
+              fontFamily: WenyouFoundationTypography.body,
+              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+              bodyColor: tokens.text,
+              displayColor: tokens.text,
+            );
     final textTheme = baseTextTheme.copyWith(
       headlineSmall: baseTextTheme.headlineSmall?.copyWith(
         fontSize: _typeSize('pageTitle'),
@@ -93,7 +113,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: textTheme,
-      extensions: const [tokens],
+      extensions: [tokens],
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {TargetPlatform.android: WenyouPageTransitionsBuilder()},
       ),
@@ -126,8 +146,8 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: tokens.brandSurface,
-        foregroundColor: tokens.onBrandSurface,
+        backgroundColor: tokens.actionSurface,
+        foregroundColor: tokens.onActionSurface,
         elevation: 2,
         focusElevation: 2,
         hoverElevation: 3,
@@ -145,12 +165,12 @@ abstract final class AppTheme {
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
                 ? tokens.border
-                : tokens.brandSurface,
+                : tokens.actionSurface,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
                 ? tokens.mutedText
-                : tokens.onBrandSurface,
+                : tokens.onActionSurface,
           ),
           textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
           animationDuration: tokens.feedbackDuration,

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -56,21 +57,27 @@ class _GuestMePage extends StatelessWidget {
       body: WenyouPageBody(
         maxWidth: 600,
         bottomPadding: 112,
-        child: WenyouPanel(
-          child: WenyouEmptyState(
-            icon: WenyouIconIds.identityMember,
-            title: '当前以游客身份浏览',
-            action: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => context.push(
-                  AppRouteLocations.login(returnTo: AppRouteLocations.me),
+        child: Column(
+          children: [
+            WenyouPanel(
+              child: WenyouEmptyState(
+                icon: WenyouIconIds.identityMember,
+                title: '当前以游客身份浏览',
+                action: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => context.push(
+                      AppRouteLocations.login(returnTo: AppRouteLocations.me),
+                    ),
+                    icon: const WenyouIcon(WenyouIconIds.actionLogin),
+                    label: const Text('登录'),
+                  ),
                 ),
-                icon: const WenyouIcon(WenyouIconIds.actionLogin),
-                label: const Text('登录'),
               ),
             ),
-          ),
+            SizedBox(height: context.wenyouTokens.space12),
+            const _AppearanceSettingsPanel(),
+          ],
         ),
       ),
     );
@@ -183,6 +190,7 @@ class MeEditPage extends ConsumerWidget {
       body: switch (state.phase) {
         MeProfilePhase.loading => const _MePageList(
           children: [
+            _AppearanceSettingsPanel(),
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.identityMember,
@@ -194,6 +202,7 @@ class MeEditPage extends ConsumerWidget {
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
+            const _AppearanceSettingsPanel(),
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
@@ -273,12 +282,37 @@ class MeSettingsPage extends ConsumerWidget {
           onRefresh: state.isSubmitting ? () async {} : notifier.load,
           child: _MePageList(
             children: [
+              const _AppearanceSettingsPanel(),
               _AccountSecurityPanel(disabled: state.isSubmitting),
               const _LogoutPanel(),
             ],
           ),
         ),
       },
+    );
+  }
+}
+
+class _AppearanceSettingsPanel extends ConsumerWidget {
+  const _AppearanceSettingsPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preference = ref.watch(
+      appearancePreferenceControllerProvider.select(
+        (state) => state.preference,
+      ),
+    );
+    return WenyouPanel(
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        key: const Key('open-appearance-settings'),
+        leading: WenyouIcon(preference.icon),
+        title: const Text('外观'),
+        subtitle: Text(preference.label),
+        trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+        onTap: () => context.pushNamed(AppRouteNames.appearance),
+      ),
     );
   }
 }

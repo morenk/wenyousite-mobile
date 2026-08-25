@@ -131,6 +131,35 @@ void main() {
     }
   });
 
+  testWidgets('游客可从我的进入外观页并切换黑夜', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(_CompatibleMetaRepository()),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('open-appearance-settings')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('appearance-option-system')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('appearance-option-dark')));
+    await tester.pumpAndSettle();
+    expect(
+      Theme.of(
+        tester.element(find.byKey(const Key('appearance-option-dark'))),
+      ).brightness,
+      Brightness.dark,
+    );
+  });
+
   testWidgets('登录用户底栏展示服务端未读角标并可进入通知列表', (tester) async {
     final notifications = _EmptyNotificationRepository(unreadCount: 7);
     await tester.pumpWidget(

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 
+WenyouLevelTier? wenyouLevelTier(BuildContext context, int level) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? WenyouDarkLevelContract.resolve(level)
+      : WenyouLevelContract.resolve(level);
+}
+
 class WenyouLevelBadge extends StatelessWidget {
   const WenyouLevelBadge({required this.level, super.key});
 
@@ -8,7 +14,7 @@ class WenyouLevelBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tier = WenyouLevelContract.resolve(level);
+    final tier = wenyouLevelTier(context, level);
     if (tier == null) return const SizedBox.shrink();
     return Semantics(
       label: '用户等级 $level',

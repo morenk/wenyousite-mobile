@@ -158,8 +158,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 style: FilledButton.styleFrom(
                   minimumSize: Size(0, tokens.minimumTouchTarget),
                   padding: EdgeInsets.symmetric(horizontal: tokens.space12),
-                  backgroundColor: tokens.brandSurface,
-                  foregroundColor: tokens.onBrandSurface,
+                  backgroundColor: tokens.actionSurface,
+                  foregroundColor: tokens.onActionSurface,
                   disabledBackgroundColor: tokens.border,
                   disabledForegroundColor: tokens.mutedText,
                 ),
@@ -173,7 +173,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     ? SizedBox.square(
                         dimension: 18,
                         child: CircularProgressIndicator(
-                          color: tokens.onBrandSurface,
+                          color: tokens.onActionSurface,
                           strokeWidth: 2,
                         ),
                       )

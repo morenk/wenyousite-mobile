@@ -75,7 +75,7 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
     ),
     quote: DefaultTextBlockStyle(
       body.copyWith(
-        color: WenyouElementContract.quoteForeground,
+        color: tokens.text,
         fontStyle: FontStyle.normal,
         fontWeight: FontWeight.w400,
       ),
@@ -88,11 +88,11 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
         wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingBlock,
         wenyouEditorBodyFontSize * WenyouElementContract.quotePaddingBlock,
       ),
-      const BoxDecoration(
-        color: WenyouElementContract.quoteSurface,
+      BoxDecoration(
+        color: tokens.softPanel,
         border: BorderDirectional(
           start: BorderSide(
-            color: WenyouElementContract.quoteMarker,
+            color: tokens.brandForeground,
             width: WenyouElementContract.quoteMarkerWidth,
           ),
         ),
