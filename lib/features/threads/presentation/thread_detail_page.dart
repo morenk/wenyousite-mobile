@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
@@ -674,7 +675,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                     top: index == 0 ? 12 : 0,
                     child: Column(
                       children: [
-                        if (index > 0) const Divider(height: 24),
+                        if (index > 0)
+                          WenyouContentItemDivider(
+                            key: ValueKey('thread-floor-divider-${floor.id}'),
+                          ),
                         ThreadFloorCard(
                           key: ValueKey('thread-floor-${floor.id}'),
                           threadId: widget.threadId,

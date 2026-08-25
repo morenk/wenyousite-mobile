@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
@@ -234,7 +235,9 @@ class _DirectConversationCard extends StatelessWidget {
     );
     return Semantics(
       button: true,
-      label: '打开与 ${conversation.otherUser.username} 的私聊',
+      label:
+          '打开与 ${conversation.otherUser.username} 的私聊'
+          '${unread ? '，${conversation.unreadCount} 条未读' : ''}',
       child: Material(
         key: ValueKey('direct-conversation-${conversation.id}'),
         color: tokens.background,
@@ -289,15 +292,11 @@ class _DirectConversationCard extends StatelessWidget {
                           ),
                           if (conversation.unreadCount > 0) ...[
                             SizedBox(width: tokens.space8),
-                            Badge(
+                            WenyouUnreadCountBadge(
                               key: ValueKey(
                                 'direct-conversation-unread-${conversation.id}',
                               ),
-                              label: Text(
-                                conversation.unreadCount > 99
-                                    ? '99+'
-                                    : '${conversation.unreadCount}',
-                              ),
+                              count: conversation.unreadCount,
                             ),
                           ],
                         ],

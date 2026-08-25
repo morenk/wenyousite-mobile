@@ -60,7 +60,7 @@
 
 会话与消息时间统一使用 Foundation 72 小时格式，并向辅助技术提供 `yyyy-MM-dd HH:mm` 完整时间；具名会话头像失败回退首字符，停用账号始终显示不可用身份图标。
 
-capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，举报表单与提交由 reports 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、reports data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.4.0 的 Token、图片契约、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过角标表达，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
+capability 由 app 组合层从启动契约注入，前台生命周期由应用壳承接；入口由 notifications/users 提供，目标资料由 users 读取，图片上传只依赖 media application 端口和任务控制器，收藏选择与快速收藏由 stickers 提供，举报表单与提交由 reports 提供，auth 只提供统一登录会话。私聊 presentation 不导入 media data、reports data、Dio 或 app-shell 的具体 provider。视觉只复用 Foundation v6.5.1 的 Token、图片契约、语义图标、状态横幅、按钮和最小触控目标；会话是带分隔线的连续列表，未读通过 `destructive / onDestructive` 计数角标表达，高 16dp、10sp 粗体等宽数字，超过 99 显示 `99+`，不用逐条面板制造卡片层级。私聊图片不得复用 Markdown 正文解析器；表情发送复用本模块 `stickerAssetId` 的独占消息约束。
 
 ## 11. 测试场景与验收条件
 
@@ -71,6 +71,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 - [x] 私聊上传固定传入 `DIRECT_MESSAGE`，消息预览按 medium、thumbnail、主图顺序消费并在真实加载失败时回退，显式原图预览优先主图。
 - [x] 私聊竖图、横图、尺寸缺失和收藏表情分别固定真实比例、单轴缓存与 128dp 表情上限；纯图片消息外层透明且无气泡内边距，800×1169 竖图在 280dp 高度上限内保持约 0.684 的宽高比，点按进入共享全屏原图页。同发送者、换发送者与跨时间组间距分别由 Widget 测试固定为 8dp、16dp、16dp，并更新视觉基线。
 - [x] 撤回隐私、目标/参与者不匹配、重复消息、异常未读数和不安全媒体采用 fail-closed。
+- [x] 会话未读计数使用 Foundation destructive/onDestructive 角标，固定 16dp、10sp、`99+` 上限，并与底栏合计角标复用同一组件。
 - [x] 中心、会话、新私聊的主路径、错误恢复与 320dp、360dp、400dp、600dp 布局通过 Widget 测试；会话/请求/归档使用共享点按页签并在在途时禁止重复切换。内联输入 dock 的正文独占首行，表情能力开启时仍在 280–320dp 软键盘 inset 及 1.3/2.0 倍字体下保持可见且不提前换行，并在 IME 最终 inset 可用时一帧到位，不跟随系统键盘动画逐帧升降；点击消息区会失焦收起键盘但保留当前输入，360dp 键盘态与 600dp 最新消息底部对齐的分组气泡由 golden 固定。长会话首次进入直接显示最后一条，连续气泡、消息旁长按操作、保留键盘的收藏表情锚点面板、离底新消息浮标和历史锚点保持可操作。
 - [x] 私聊路由登录守卫、用户主页入口和 capability 关闭状态通过测试。
 - [x] 互关用户不再误显示消息请求提示；陌生人文案、服务端结果优先级与避让输入 dock 的浮动反馈均有 Widget 回归。

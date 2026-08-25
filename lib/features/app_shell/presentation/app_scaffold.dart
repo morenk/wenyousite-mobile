@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 
@@ -239,10 +240,9 @@ class _NotificationNavigationIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Badge(
+    return WenyouUnreadCountBadge(
       key: const Key('notification-navigation-badge'),
-      isLabelVisible: count > 0,
-      label: Text(count > 99 ? '99+' : '$count'),
+      count: count,
       child: WenyouIcon(WenyouIconIds.navigationMessages),
     );
   }

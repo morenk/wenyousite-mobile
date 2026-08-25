@@ -33,6 +33,18 @@ void main() {
     expect(find.text('小油'), findsOneWidget);
     expect(find.text('你好'), findsOneWidget);
     expect(findFoundationIcon(WenyouIconIds.navigationNext), findsNothing);
+    final unreadBadge = tester.widget<Badge>(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey('direct-conversation-unread-conversation-1'),
+        ),
+        matching: find.byType(Badge),
+      ),
+    );
+    expect(unreadBadge.backgroundColor, WenyouFoundationPalette.destructive);
+    expect(unreadBadge.textColor, WenyouFoundationPalette.onDestructive);
+    expect(unreadBadge.largeSize, WenyouElementContract.unreadCountHeight);
+    expect(find.text('2'), findsOneWidget);
 
     await tester.tap(find.text('请求 1'));
     await tester.pumpAndSettle();

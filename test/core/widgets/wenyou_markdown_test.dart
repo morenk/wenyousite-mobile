@@ -546,6 +546,11 @@ $diceNode
     );
     final rule = style.horizontalRuleDecoration! as BoxDecoration;
     expect((rule.border! as Border).top.width, 1);
+    expect((rule.border! as Border).top.color, WenyouFoundationPalette.border);
+    expect(
+      (rule.border! as Border).top.color,
+      isNot(WenyouFoundationPalette.input),
+    );
     expect(tester.takeException(), isNull);
 
     await expectLater(

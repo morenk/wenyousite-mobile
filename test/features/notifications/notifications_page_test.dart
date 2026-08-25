@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -57,6 +58,19 @@ void main() {
     expect(find.text('骰子猫 回复了你', findRichText: true), findsOneWidget);
     expect(find.text('雾港见'), findsOneWidget);
     expect(find.byKey(const Key('notification-unread-summary')), findsNothing);
+    final unreadDecoration =
+        tester
+                .widget<DecoratedBox>(
+                  find.descendant(
+                    of: find.byKey(
+                      const ValueKey('notification-unread-notification-1'),
+                    ),
+                    matching: find.byType(DecoratedBox),
+                  ),
+                )
+                .decoration
+            as BoxDecoration;
+    expect(unreadDecoration.color, WenyouFoundationPalette.destructive);
 
     await tester.tap(find.byKey(const ValueKey('notification-notification-1')));
     await tester.pumpAndSettle();

@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
@@ -510,7 +511,10 @@ class _DiscussionList extends StatelessWidget {
                   child: WenyouConstrainedWidth(
                     child: Column(
                       children: [
-                        if (index > 0) Divider(height: tokens.space24),
+                        if (index > 0)
+                          WenyouContentItemDivider(
+                            key: ValueKey('post-reply-divider-${reply.id}'),
+                          ),
                         _PostCard(
                           key: Key('post-reply-${reply.id}'),
                           post: reply,

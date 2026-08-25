@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_controllers.dart';
 import 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
@@ -311,14 +312,8 @@ class _NotificationCard extends StatelessWidget {
                 if (!item.isRead)
                   Padding(
                     padding: EdgeInsets.only(top: tokens.space8),
-                    child: Container(
+                    child: WenyouUnreadDot(
                       key: ValueKey('notification-unread-${item.id}'),
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: tokens.brandForeground,
-                        shape: BoxShape.circle,
-                      ),
                     ),
                   ),
                 IconButton(
