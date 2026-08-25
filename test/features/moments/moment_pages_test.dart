@@ -71,17 +71,93 @@ void main() {
     await tester.pumpWidget(_feedApp(repository));
     await tester.pumpAndSettle();
 
-    final scrollable = tester.state<ScrollableState>(
-      find.descendant(
-        of: find.byType(CustomScrollView),
-        matching: find.byType(Scrollable),
-      ),
+    final scrollableFinder = find.descendant(
+      of: find.byType(CustomScrollView),
+      matching: find.byType(Scrollable),
     );
+    final scrollable = tester.state<ScrollableState>(scrollableFinder);
     scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
     await tester.pumpAndSettle();
 
     expect(repository.cursors, [null, 'next']);
+    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    await tester.pumpAndSettle();
+
     expect(find.byKey(const Key('moment-card-moment-next')), findsOneWidget);
+    expect(find.byKey(const Key('moment-feed-footer')), findsOneWidget);
+    expect(find.text('已经看到这里了'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    scrollable.position.jumpTo(0);
+    await tester.pump();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(scrollable.position.pixels, greaterThan(0));
+  });
+
+  testWidgets('360dp 动态瀑布流反复滚动回收后仍保持双列和完整滚动范围', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(_feedApp(_WaterfallRegressionRepository()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final scrollableFinder = find.descendant(
+      of: find.byType(CustomScrollView),
+      matching: find.byType(Scrollable),
+    );
+    final scrollable = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollable.position.maxScrollExtent,
+      greaterThan(scrollable.position.viewportDimension),
+    );
+
+    for (var cycle = 0; cycle < 3; cycle++) {
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('moment-feed-footer')),
+        500,
+        scrollable: scrollableFinder,
+        maxScrolls: 50,
+      );
+      scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+      await tester.pump();
+
+      final lastCard = find.byKey(
+        const Key('moment-card-waterfall-regression-23'),
+      );
+      final footer = find.byKey(const Key('moment-feed-footer'));
+      expect(lastCard, findsOneWidget);
+      expect(footer, findsOneWidget);
+      expect(
+        tester.getSize(footer).width,
+        closeTo(tester.getSize(lastCard).width * 2 + 12, 0.1),
+      );
+      expect(tester.takeException(), isNull);
+
+      scrollable.position.jumpTo(0);
+      await tester.pump();
+
+      final first = find.byKey(const Key('moment-card-waterfall-regression-0'));
+      final second = find.byKey(
+        const Key('moment-card-waterfall-regression-1'),
+      );
+      expect(
+        tester.getTopLeft(first).dx,
+        lessThan(tester.getTopLeft(second).dx),
+      );
+      expect(
+        tester.getTopLeft(first).dy,
+        closeTo(tester.getTopLeft(second).dy, 0.1),
+      );
+
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
+      await tester.pump();
+      expect(scrollable.position.pixels, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('360dp 动态信息流使用双列瀑布布局并保留 48dp 点赞目标', (tester) async {
@@ -1438,6 +1514,48 @@ class _PagingPageRepository extends _PageRepository {
       hasMore: true,
     );
   }
+}
+
+class _WaterfallRegressionRepository extends _PageRepository {
+  @override
+  Future<CursorPage<MomentCard>> fetchFeed({
+    required MomentFeedMode mode,
+    String? cursor,
+    int limit = 20,
+  }) async {
+    feedModes.add(mode);
+    return CursorPage(
+      items: [
+        for (var index = 0; index < 24; index++)
+          _card(
+            id: 'waterfall-regression-$index',
+            title: index.isEven
+                ? '动态 $index'
+                : '这是第 $index 条用于验证双列滚动稳定性的较长动态标题',
+            coverMedia: switch (index % 3) {
+              0 => _waterfallMedia(index, width: 900, height: 1600),
+              1 => _waterfallMedia(index, width: 1600, height: 900),
+              _ => null,
+            },
+            imageCount: index % 3 == 2 ? 0 : 1,
+          ),
+      ],
+      hasMore: false,
+    );
+  }
+}
+
+MomentMedia _waterfallMedia(
+  int index, {
+  required int width,
+  required int height,
+}) {
+  return MomentMedia(
+    id: 'waterfall-image-$index',
+    url: 'https://cdn.example.com/waterfall-feed.webp',
+    width: width,
+    height: height,
+  );
 }
 
 class _ConflictPageRepository extends _PageRepository {

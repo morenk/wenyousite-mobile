@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -191,13 +191,14 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
             _feedHorizontalPadding(context),
             context.wenyouTokens.space24,
           ),
-          sliver: SliverMasonryGrid.count(
+          sliver: SliverWaterfallFlow.count(
             crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
             mainAxisSpacing: context.wenyouTokens.space12,
             crossAxisSpacing: context.wenyouTokens.space12,
-            childCount: 4,
-            itemBuilder: (context, index) =>
+            children: [
+              for (var index = 0; index < 4; index++)
                 _MomentWaterfallSkeletonCard(index: index),
+            ],
           ),
         ),
       ];
@@ -247,6 +248,11 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
         ),
       ];
     }
+    final itemIndexByKey = <Key, int>{
+      for (var index = 0; index < state.items.length; index++)
+        Key('moment-card-${state.items[index].id}'): index,
+      const Key('moment-feed-footer'): state.items.length,
+    };
     return [
       SliverPadding(
         padding: EdgeInsets.fromLTRB(
@@ -255,14 +261,23 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
           _feedHorizontalPadding(context),
           0,
         ),
-        sliver: SliverMasonryGrid(
-          gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+        sliver: SliverWaterfallFlow(
+          gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
             crossAxisCount: _usesTwoColumnWaterfall ? 2 : 1,
+            mainAxisSpacing: context.wenyouTokens.space12,
+            crossAxisSpacing: context.wenyouTokens.space12,
+            lastChildLayoutTypeBuilder: (index) => index == state.items.length
+                ? LastChildLayoutType.fullCrossAxisExtent
+                : LastChildLayoutType.none,
           ),
-          mainAxisSpacing: context.wenyouTokens.space12,
-          crossAxisSpacing: context.wenyouTokens.space12,
           delegate: SliverChildBuilderDelegate(
             (context, index) {
+              if (index == state.items.length) {
+                return KeyedSubtree(
+                  key: const Key('moment-feed-footer'),
+                  child: _buildFeedFooter(context, state, provider),
+                );
+              }
               final moment = state.items[index];
               return MomentWaterfallCard(
                 key: Key('moment-card-${moment.id}'),
@@ -282,33 +297,40 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
                 ),
               );
             },
-            childCount: state.items.length,
+            childCount: state.items.length + 1,
             addAutomaticKeepAlives: false,
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: WenyouContentFrame(
-          top: 12,
-          bottom: 112,
-          child: Center(
-            child: state.isLoadingMore
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(),
-                  )
-                : state.hasMore
-                ? OutlinedButton.icon(
-                    key: const Key('moment-load-more'),
-                    onPressed: () => ref.read(provider.notifier).loadMore(),
-                    icon: const WenyouIcon(WenyouIconIds.navigationExpand),
-                    label: const Text('加载更多'),
-                  )
-                : Text('已经看到这里了', style: Theme.of(context).textTheme.bodySmall),
+            findChildIndexCallback: (key) => itemIndexByKey[key],
           ),
         ),
       ),
     ];
+  }
+
+  Widget _buildFeedFooter(
+    BuildContext context,
+    MomentFeedState state,
+    AutoDisposeStateNotifierProvider<MomentFeedController, MomentFeedState>
+    provider,
+  ) {
+    return WenyouContentFrame(
+      top: 12,
+      bottom: 112,
+      child: Center(
+        child: state.isLoadingMore
+            ? const Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(),
+              )
+            : state.hasMore
+            ? OutlinedButton.icon(
+                key: const Key('moment-load-more'),
+                onPressed: () => ref.read(provider.notifier).loadMore(),
+                icon: const WenyouIcon(WenyouIconIds.navigationExpand),
+                label: const Text('加载更多'),
+              )
+            : Text('已经看到这里了', style: Theme.of(context).textTheme.bodySmall),
+      ),
+    );
   }
 
   double _feedHorizontalPadding(BuildContext context) {
