@@ -1094,6 +1094,21 @@ void main() {
     expect(find.text('主线正文'), findsNothing);
   });
 
+  testWidgets('站内传送门完成首次子贴定位后允许用户切换子贴', (tester) async {
+    final repository = _FakeThreadDetailRepository();
+    await tester.pumpWidget(
+      _detailApp(repository, subthreadIdHint: 'subthread-2'),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('主线正文'), findsOneWidget);
+    expect(find.text('支线正文'), findsNothing);
+    expect(repository.requestedSubthreads.last, 'subthread-1');
+  });
+
   testWidgets('搜索结果中的帖子会切换所属子贴并展示目标上下文', (tester) async {
     final repository = _FakeThreadDetailRepository(
       postTarget: ThreadPostTargetModel(
@@ -1124,6 +1139,28 @@ void main() {
             .dy,
       ),
     );
+  });
+
+  testWidgets('通知或最近回复完成帖子定位后允许用户切换子贴', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-2',
+        floor: _targetFloor,
+      ),
+    );
+    await tester.pumpWidget(
+      _detailApp(repository, targetPostId: 'floor-target'),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('主线正文'), findsOneWidget);
+    expect(find.text('支线正文'), findsNothing);
+    expect(repository.requestedSubthreads.last, 'subthread-1');
   });
 
   testWidgets('目标主楼被发言者筛选排除时恢复全部楼层后再定位', (tester) async {

@@ -56,6 +56,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   var _revealAttempts = 0;
   var _revealScheduled = false;
   var _targetRevealReleased = false;
+  final _appliedEntrySubthreadTargets = <String>{};
   final _prefetchScheduler = DiscussionPrefetchScheduler();
   final _authorFilterRestore =
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
@@ -71,7 +72,15 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   @override
   void didUpdateWidget(covariant ThreadDetailPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.targetPostId != widget.targetPostId) {
+    final entryTargetChanged =
+        oldWidget.threadId != widget.threadId ||
+        oldWidget.targetPostId != widget.targetPostId ||
+        oldWidget.subthreadIdHint != widget.subthreadIdHint;
+    if (entryTargetChanged) {
+      _appliedEntrySubthreadTargets.clear();
+    }
+    if (oldWidget.threadId != widget.threadId ||
+        oldWidget.targetPostId != widget.targetPostId) {
       _lastRevealSignature = null;
       _revealScopeSignature = null;
       _lastOpenedReplyTargetId = null;
@@ -88,6 +97,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
+      _appliedEntrySubthreadTargets.clear();
       ref
         ..invalidate(provider)
         ..invalidate(actionsProvider);
@@ -133,25 +143,27 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final hintedSubthreadId = resolvedTarget == null
         ? widget.subthreadIdHint
         : null;
-    if (state.phase == ThreadDetailPhase.ready &&
-        hintedSubthreadId != null &&
-        state.detail?.subthreadById(hintedSubthreadId) != null &&
-        state.selectedSubthreadId != hintedSubthreadId) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ref.read(provider.notifier).selectSubthread(hintedSubthreadId);
-      });
-    }
-    if (state.phase == ThreadDetailPhase.ready &&
-        resolvedTarget != null &&
-        resolvedTarget.threadId == widget.threadId &&
-        state.detail?.subthreadById(resolvedTarget.subthreadId) != null &&
-        state.selectedSubthreadId != resolvedTarget.subthreadId) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ref.read(provider.notifier).selectSubthread(resolvedTarget.subthreadId);
-      });
-    }
+    _applyEntrySubthreadTarget(
+      state: state,
+      provider: provider,
+      signature: hintedSubthreadId == null
+          ? null
+          : 'subthread:${widget.threadId}:$hintedSubthreadId',
+      subthreadId: hintedSubthreadId,
+    );
+    _applyEntrySubthreadTarget(
+      state: state,
+      provider: provider,
+      signature:
+          resolvedTarget == null || resolvedTarget.threadId != widget.threadId
+          ? null
+          : 'post:${widget.threadId}:${resolvedTarget.requestedPostId}:'
+                '${resolvedTarget.subthreadId}',
+      subthreadId:
+          resolvedTarget == null || resolvedTarget.threadId != widget.threadId
+          ? null
+          : resolvedTarget.subthreadId,
+    );
     final targetExcludedByFilter = _targetFilterRestore.scheduleIfNeeded(
       state: state,
       target: resolvedTarget,
@@ -398,6 +410,32 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     await ref
         .read(threadDetailControllerProvider(widget.threadId).notifier)
         .refresh();
+  }
+
+  void _applyEntrySubthreadTarget({
+    required ThreadDetailState state,
+    required AutoDisposeStateNotifierProvider<
+      ThreadDetailController,
+      ThreadDetailState
+    >
+    provider,
+    required String? signature,
+    required String? subthreadId,
+  }) {
+    if (state.phase != ThreadDetailPhase.ready ||
+        signature == null ||
+        subthreadId == null ||
+        state.detail?.subthreadById(subthreadId) == null ||
+        !_appliedEntrySubthreadTargets.add(signature) ||
+        state.selectedSubthreadId == subthreadId) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_appliedEntrySubthreadTargets.contains(signature)) {
+        return;
+      }
+      ref.read(provider.notifier).selectSubthread(subthreadId);
+    });
   }
 
   void _revealTargetWhenReady(
