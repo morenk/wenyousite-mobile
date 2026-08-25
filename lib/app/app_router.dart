@@ -39,6 +39,7 @@ import 'package:wenyousite_mobile/features/tags/presentation/tag_threads_page.da
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_editor_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_compose_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
@@ -291,8 +292,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra;
           final child = ThreadDetailPage(
             threadId: state.pathParameters['threadId']!,
-            targetPostId: state.uri.queryParameters['post'],
-            subthreadIdHint: state.uri.queryParameters['subthread'],
+            entryTarget: ThreadDetailEntryTarget.fromQuery(
+              postId: state.uri.queryParameters['post'],
+              subthreadId: state.uri.queryParameters['subthread'],
+            ),
           );
           if (extra == WenyouRouteTransitionIntent.instantFallback) {
             return wenyouInstantPage<void>(key: state.pageKey, child: child);

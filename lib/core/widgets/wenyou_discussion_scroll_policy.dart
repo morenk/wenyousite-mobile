@@ -46,3 +46,114 @@ class DiscussionPrefetchScheduler {
     });
   }
 }
+
+/// Reveals a discussion target that may not have been materialized by its
+/// lazy sliver yet. The target owns automatic movement until the first user
+/// drag, and can be reset when route or filter context changes.
+class DiscussionTargetRevealCoordinator {
+  static const maxEstimatedAttempts = 6;
+
+  String? _lastContentSignature;
+  String? _scopeSignature;
+  String? _attemptTargetId;
+  var _attempts = 0;
+  var _scheduled = false;
+  var _releasedByUser = false;
+
+  void reset() {
+    _lastContentSignature = null;
+    _scopeSignature = null;
+    _attemptTargetId = null;
+    _attempts = 0;
+    _scheduled = false;
+    _releasedByUser = false;
+  }
+
+  void schedule({
+    required String targetId,
+    required String scopeSignature,
+    required String contentSignature,
+    required int targetIndex,
+    required int itemCount,
+    required bool ready,
+    required GlobalKey targetKey,
+    required ScrollController scrollController,
+    required bool Function() isMounted,
+    required VoidCallback requestRebuild,
+  }) {
+    if (_scopeSignature != scopeSignature) {
+      reset();
+      _scopeSignature = scopeSignature;
+    }
+    if (!ready ||
+        targetIndex < 0 ||
+        _releasedByUser ||
+        _scheduled ||
+        _lastContentSignature == contentSignature) {
+      return;
+    }
+    if (_attemptTargetId != targetId) {
+      _attemptTargetId = targetId;
+      _attempts = 0;
+    }
+    _scheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scheduled = false;
+      if (!isMounted() ||
+          _releasedByUser ||
+          _scopeSignature != scopeSignature) {
+        return;
+      }
+      final targetContext = targetKey.currentContext;
+      if (targetContext != null) {
+        Scrollable.ensureVisible(
+          targetContext,
+          duration: Duration.zero,
+          alignment: 0.12,
+        );
+        _lastContentSignature = contentSignature;
+        _attemptTargetId = null;
+        _attempts = 0;
+        return;
+      }
+      if (!scrollController.hasClients || _attempts >= maxEstimatedAttempts) {
+        return;
+      }
+      _attempts += 1;
+      final position = scrollController.position;
+      final fraction = (targetIndex + 1) / (itemCount + 1);
+      final estimated = position.maxScrollExtent * fraction;
+      scrollController.jumpTo(
+        estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+      if (isMounted()) requestRebuild();
+    });
+  }
+
+  bool handleLayoutChange({
+    required bool Function() isMounted,
+    required VoidCallback requestRebuild,
+  }) {
+    if (_scopeSignature == null ||
+        _lastContentSignature == null ||
+        _releasedByUser) {
+      return false;
+    }
+    _lastContentSignature = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isMounted()) requestRebuild();
+    });
+    return false;
+  }
+
+  bool handleUserScroll(ScrollNotification notification) {
+    final startsUserScroll =
+        notification.depth == 0 &&
+        notification.metrics.axis == Axis.vertical &&
+        notification is ScrollStartNotification &&
+        notification.dragDetails != null &&
+        _scopeSignature != null;
+    if (startsUserScroll) _releasedByUser = true;
+    return false;
+  }
+}

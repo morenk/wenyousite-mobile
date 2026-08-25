@@ -18,8 +18,15 @@ abstract final class AppRouteLocations {
   static String register({String? returnTo}) =>
       _withQuery(AppRoutePaths.register, {'returnTo': ?returnTo});
 
-  static String thread(String threadId, {String? postId}) =>
-      _fromSegments(['threads', threadId], {'post': ?postId});
+  static String thread(String threadId, {String? postId, String? subthreadId}) {
+    if (postId != null && subthreadId != null) {
+      throw ArgumentError('帖子坐标和子贴坐标不能同时存在。');
+    }
+    return _fromSegments(
+      ['threads', threadId],
+      {'post': ?postId, 'subthread': ?subthreadId},
+    );
+  }
 
   static String messageCenter({String? section}) =>
       _withQuery(notifications, {'section': ?section});

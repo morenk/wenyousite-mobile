@@ -31,32 +31,26 @@ import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.da
 class ThreadDetailPage extends ConsumerStatefulWidget {
   const ThreadDetailPage({
     required this.threadId,
-    this.targetPostId,
-    this.subthreadIdHint,
+    this.entryTarget = const ThreadDetailEntryTarget.none(),
     super.key,
   });
 
   final String threadId;
-  final String? targetPostId;
-  final String? subthreadIdHint;
+  final ThreadDetailEntryTarget entryTarget;
 
   @override
   ConsumerState<ThreadDetailPage> createState() => _ThreadDetailPageState();
 }
 
 class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
+  final _pageInstanceToken = Object();
   final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
   final _composerDrafts = <String, String>{};
-  String? _lastRevealSignature;
-  String? _revealScopeSignature;
+  final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
+  final _targetReveal = DiscussionTargetRevealCoordinator();
   String? _lastOpenedReplyTargetId;
   final _targetFilterRestore = ThreadTargetFilterRestoreCoordinator();
-  String? _revealAttemptTargetId;
-  var _revealAttempts = 0;
-  var _revealScheduled = false;
-  var _targetRevealReleased = false;
-  final _appliedEntrySubthreadTargets = <String>{};
   final _prefetchScheduler = DiscussionPrefetchScheduler();
   final _authorFilterRestore =
       DiscussionAuthorFilterRestoreCoordinator<PostDiscussionAuthor>(
@@ -72,32 +66,27 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   @override
   void didUpdateWidget(covariant ThreadDetailPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final entryTargetChanged =
-        oldWidget.threadId != widget.threadId ||
-        oldWidget.targetPostId != widget.targetPostId ||
-        oldWidget.subthreadIdHint != widget.subthreadIdHint;
-    if (entryTargetChanged) {
-      _appliedEntrySubthreadTargets.clear();
-    }
     if (oldWidget.threadId != widget.threadId ||
-        oldWidget.targetPostId != widget.targetPostId) {
-      _lastRevealSignature = null;
-      _revealScopeSignature = null;
+        oldWidget.entryTarget != widget.entryTarget) {
+      _targetReveal.reset();
       _lastOpenedReplyTargetId = null;
       _targetFilterRestore.reset();
-      _revealAttemptTargetId = null;
-      _revealAttempts = 0;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = threadDetailControllerProvider(widget.threadId);
+    final provider = _detailProvider;
     final actionsProvider = postActionControllerProvider(widget.threadId);
+    final sessionScope = ref.watch(sessionScopeProvider);
+    _entryTargetCoordinator.synchronize(
+      threadId: widget.threadId,
+      target: widget.entryTarget,
+      sessionScope: sessionScope,
+    );
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
-      _appliedEntrySubthreadTargets.clear();
       ref
         ..invalidate(provider)
         ..invalidate(actionsProvider);
@@ -136,37 +125,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       clearAuthor: () => ref.read(provider.notifier).setFloorAuthor(null),
       isMounted: () => mounted,
     );
-    final target = widget.targetPostId == null
+    final targetPostId = widget.entryTarget.postId;
+    final target = targetPostId == null
         ? null
-        : ref.watch(threadPostTargetProvider(widget.targetPostId!));
+        : ref.watch(threadPostTargetProvider(targetPostId));
     final resolvedTarget = target?.valueOrNull;
-    final hintedSubthreadId = resolvedTarget == null
-        ? widget.subthreadIdHint
+    _applyEntryTarget(
+      _entryTargetCoordinator.resolve(state: state, postTarget: resolvedTarget),
+      provider,
+    );
+    final effectiveTarget = _entryTargetCoordinator.allowsTargetEffects
+        ? resolvedTarget
         : null;
-    _applyEntrySubthreadTarget(
-      state: state,
-      provider: provider,
-      signature: hintedSubthreadId == null
-          ? null
-          : 'subthread:${widget.threadId}:$hintedSubthreadId',
-      subthreadId: hintedSubthreadId,
-    );
-    _applyEntrySubthreadTarget(
-      state: state,
-      provider: provider,
-      signature:
-          resolvedTarget == null || resolvedTarget.threadId != widget.threadId
-          ? null
-          : 'post:${widget.threadId}:${resolvedTarget.requestedPostId}:'
-                '${resolvedTarget.subthreadId}',
-      subthreadId:
-          resolvedTarget == null || resolvedTarget.threadId != widget.threadId
-          ? null
-          : resolvedTarget.subthreadId,
-    );
     final targetExcludedByFilter = _targetFilterRestore.scheduleIfNeeded(
       state: state,
-      target: resolvedTarget,
+      target: effectiveTarget,
       threadId: widget.threadId,
       onRestore: (authorId, subthreadId) async {
         if (!mounted) return;
@@ -187,9 +160,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       },
     );
     if (!targetExcludedByFilter) {
-      _revealTargetWhenReady(state, resolvedTarget);
+      _revealTargetWhenReady(state, effectiveTarget);
     }
-    _openReplyTargetWhenReady(state, resolvedTarget);
+    _openReplyTargetWhenReady(state, effectiveTarget);
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     final scaffold = Scaffold(
       appBar: WenyouReadingAppBar(
@@ -212,7 +185,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             child: RefreshIndicator(
               onRefresh: () => ref.read(provider.notifier).refresh(),
               child: CustomScrollView(
-                key: PageStorageKey('thread-detail-${widget.threadId}'),
+                key: PageStorageKey(
+                  'thread-detail-${widget.threadId}-'
+                  '${identityHashCode(_pageInstanceToken)}',
+                ),
                 controller: _subthreadScroll.controller,
                 scrollCacheExtent: discussionScrollCacheExtent,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -221,7 +197,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                     context,
                     state,
                     provider,
-                    target,
+                    _entryTargetCoordinator.allowsTargetEffects ? target : null,
                     actions: actions,
                     discussionAuthors: discussionAuthors,
                     authenticated: session.isAuthenticated,
@@ -255,6 +231,18 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       child: scaffold,
     );
   }
+
+  AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
+  get _detailProvider => threadDetailControllerProvider((
+    threadId: widget.threadId,
+    pageInstanceToken: _pageInstanceToken,
+  ));
+
+  String get _location => AppRouteLocations.thread(
+    widget.threadId,
+    postId: widget.entryTarget.postId,
+    subthreadId: widget.entryTarget.subthreadId,
+  );
 
   List<Widget> _threadAppBarActions(
     ThreadDetailState state,
@@ -356,9 +344,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       '/threads/${widget.threadId}/manage',
     );
     if (changed == true && mounted) {
-      await ref
-          .read(threadDetailControllerProvider(widget.threadId).notifier)
-          .refresh();
+      await ref.read(_detailProvider.notifier).refresh();
     }
   }
 
@@ -385,7 +371,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             recipientUserId: detail.owner.id,
           ),
           recipientName: detail.owner.username,
-          returnTo: threadDetailLocation(widget.threadId, widget.targetPostId),
+          returnTo: _location,
           onSuccess: (_) => ref.read(provider.notifier).refresh(),
         );
       case _ThreadDetailAction.report:
@@ -394,7 +380,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           ref: ref,
           target: ReportTarget.thread(detail.id),
           targetLabel: '这个主题',
-          returnTo: threadDetailLocation(widget.threadId, widget.targetPostId),
+          returnTo: _location,
         );
       case _ThreadDetailAction.exitPlayer:
         await showThreadPlayerExitSheet(
@@ -407,35 +393,31 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
 
   Future<void> _handlePlayerExited(ThreadDetailModel detail) async {
     ref.invalidate(threadSubscriptionControllerProvider(detail.id));
-    await ref
-        .read(threadDetailControllerProvider(widget.threadId).notifier)
-        .refresh();
+    await ref.read(_detailProvider.notifier).refresh();
   }
 
-  void _applyEntrySubthreadTarget({
-    required ThreadDetailState state,
-    required AutoDisposeStateNotifierProvider<
-      ThreadDetailController,
-      ThreadDetailState
-    >
+  void _applyEntryTarget(
+    ThreadDetailEntrySelection? selection,
+    AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
     provider,
-    required String? signature,
-    required String? subthreadId,
-  }) {
-    if (state.phase != ThreadDetailPhase.ready ||
-        signature == null ||
-        subthreadId == null ||
-        state.detail?.subthreadById(subthreadId) == null ||
-        !_appliedEntrySubthreadTargets.add(signature) ||
-        state.selectedSubthreadId == subthreadId) {
-      return;
-    }
+  ) {
+    if (selection == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_appliedEntrySubthreadTargets.contains(signature)) {
+      if (!mounted ||
+          !_entryTargetCoordinator.isCurrent(selection.generation)) {
         return;
       }
-      ref.read(provider.notifier).selectSubthread(subthreadId);
+      ref.read(provider.notifier).selectSubthread(selection.subthreadId);
     });
+  }
+
+  Future<void> _selectSubthreadFromUser(
+    String subthreadId,
+    AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
+    provider,
+  ) {
+    _entryTargetCoordinator.cancelForUserSelection();
+    return ref.read(provider.notifier).selectSubthread(subthreadId);
   }
 
   void _revealTargetWhenReady(
@@ -451,17 +433,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final scopeSignature =
         '${target.requestedPostId}:${state.floorOrder.name}:'
         '${state.floorAuthorId ?? ''}:${state.selectedSubthreadId}';
-    if (_revealScopeSignature != scopeSignature) {
-      _revealScopeSignature = scopeSignature;
-      _lastRevealSignature = null;
-      _revealAttemptTargetId = null;
-      _revealAttempts = 0;
-      _revealScheduled = false;
-      _targetRevealReleased = false;
-    }
-    if (state.isLoadingFloors || _targetRevealReleased || _revealScheduled) {
-      return;
-    }
     final displayedFloors = threadFloorsWithTarget(
       state.floors,
       target,
@@ -473,69 +444,29 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final signature =
         '${target.requestedPostId}:${state.floorOrder.name}:'
         '${state.selectedSubthreadId}:$targetIndex:${displayedFloors.length}';
-    if (_lastRevealSignature == signature) return;
-    if (_revealAttemptTargetId != target.requestedPostId) {
-      _revealAttemptTargetId = target.requestedPostId;
-      _revealAttempts = 0;
-    }
-    _revealScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _revealScheduled = false;
-      final targetContext = _targetKey.currentContext;
-      if (!mounted ||
-          _targetRevealReleased ||
-          _revealScopeSignature != scopeSignature) {
-        return;
-      }
-      if (targetContext != null) {
-        Scrollable.ensureVisible(
-          targetContext,
-          duration: Duration.zero,
-          alignment: 0.12,
-        );
-        _lastRevealSignature = signature;
-        _revealAttemptTargetId = null;
-        _revealAttempts = 0;
-        return;
-      }
-      if (!_subthreadScroll.controller.hasClients || _revealAttempts >= 6) {
-        return;
-      }
-      if (targetIndex < 0) return;
-      _revealAttempts += 1;
-      final position = _subthreadScroll.controller.position;
-      final fraction = (targetIndex + 1) / (displayedFloors.length + 1);
-      final estimated = position.maxScrollExtent * fraction;
-      _subthreadScroll.controller.jumpTo(
-        estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
-      );
-      if (mounted) setState(() {});
-    });
+    _targetReveal.schedule(
+      targetId: target.requestedPostId,
+      scopeSignature: scopeSignature,
+      contentSignature: signature,
+      targetIndex: targetIndex,
+      itemCount: displayedFloors.length,
+      ready: !state.isLoadingFloors,
+      targetKey: _targetKey,
+      scrollController: _subthreadScroll.controller,
+      isMounted: () => mounted,
+      requestRebuild: () => setState(() {}),
+    );
   }
 
   bool _handleTargetLayoutChange(ScrollMetricsNotification notification) {
-    if (widget.targetPostId == null ||
-        _lastRevealSignature == null ||
-        _targetRevealReleased) {
-      return false;
-    }
-    _lastRevealSignature = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() {});
-    });
-    return false;
+    return _targetReveal.handleLayoutChange(
+      isMounted: () => mounted,
+      requestRebuild: () => setState(() {}),
+    );
   }
 
-  bool _handleUserScroll(ScrollNotification notification) {
-    final startsUserScroll =
-        notification.depth == 0 &&
-        notification.metrics.axis == Axis.vertical &&
-        notification is ScrollStartNotification &&
-        notification.dragDetails != null &&
-        _revealScopeSignature != null;
-    if (startsUserScroll) _targetRevealReleased = true;
-    return false;
-  }
+  bool _handleUserScroll(ScrollNotification notification) =>
+      _targetReveal.handleUserScroll(notification);
 
   void _openReplyTargetWhenReady(
     ThreadDetailState state,
@@ -601,7 +532,8 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         subthreads: detail.subthreads,
         selectedSubthreadId: state.selectedSubthreadId,
         scrollCoordinator: _subthreadScroll,
-        onSelected: ref.read(provider.notifier).selectSubthread,
+        onSelected: (subthreadId) =>
+            _selectSubthreadFromUser(subthreadId, provider),
       ),
       if (state.transientFailure != null &&
           state.retryAction == ThreadDetailRetryAction.refresh)
@@ -660,9 +592,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                 availableSubthreadIds: {
                   for (final subthread in detail.subthreads) subthread.id,
                 },
-                onRetry: () => ref.invalidate(
-                  threadPostTargetProvider(widget.targetPostId!),
-                ),
+                onRetry: () {
+                  _entryTargetCoordinator.rearmForRetry();
+                  ref.invalidate(
+                    threadPostTargetProvider(widget.entryTarget.postId!),
+                  );
+                },
               ),
             ),
           ),
@@ -778,7 +713,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                           ),
                           reportReturnTo:
                               !detail.isPrivate && floor.author.id != viewerId
-                              ? threadPostLocation(widget.threadId, floor.id)
+                              ? AppRouteLocations.thread(
+                                  widget.threadId,
+                                  postId: floor.id,
+                                )
                               : null,
                           onEdit: () => _compose(
                             threadDetailEditFloorTarget(
@@ -852,27 +790,22 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (target.kind == PostComposerKind.createFloor) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(target.subthreadId));
     }
-    await ref
-        .read(threadDetailControllerProvider(widget.threadId).notifier)
-        .refreshMetadata();
+    await ref.read(_detailProvider.notifier).refreshMetadata();
     if (!mounted) return;
     switch (target.kind) {
       case PostComposerKind.createFloor ||
           PostComposerKind.createReply ||
           PostComposerKind.editPost:
-        context.replace(threadPostLocation(widget.threadId, result.id));
+        context.replace(
+          AppRouteLocations.thread(widget.threadId, postId: result.id),
+        );
       case PostComposerKind.upsertBody:
         break;
     }
   }
 
   void _requireLogin() {
-    context.pushNamed(
-      'login',
-      queryParameters: {
-        'returnTo': threadDetailLocation(widget.threadId, widget.targetPostId),
-      },
-    );
+    context.pushNamed('login', queryParameters: {'returnTo': _location});
   }
 
   void _openDiscussion(ThreadFloorModel floor, {String? focusedReplyId}) {
@@ -884,7 +817,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _deleteFloor(ThreadFloorModel floor) async {
-    final state = ref.read(threadDetailControllerProvider(widget.threadId));
+    final state = ref.read(_detailProvider);
     final detail = state.detail;
     final subthread = state.selectedSubthread;
     if (detail == null || subthread == null) return;
@@ -912,9 +845,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (!removed || !mounted) return;
     showWenyouSnackBar(context, '楼层已删除。');
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
-    await ref
-        .read(threadDetailControllerProvider(widget.threadId).notifier)
-        .refresh();
+    await ref.read(_detailProvider.notifier).refresh();
   }
 }
 

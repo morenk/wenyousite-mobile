@@ -7,15 +7,147 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 typedef ThreadTargetFilterRestore =
     Future<void> Function(String authorId, String subthreadId);
 
-String threadDetailLocation(String threadId, [String? targetPostId]) => Uri(
-  pathSegments: ['', 'threads', threadId],
-  queryParameters: targetPostId == null ? null : {'post': targetPostId},
-).toString();
+enum ThreadDetailEntryTargetKind { none, post, subthread }
 
-String threadPostLocation(String threadId, String postId) => Uri(
-  pathSegments: ['', 'threads', threadId],
-  queryParameters: {'post': postId},
-).toString();
+@immutable
+class ThreadDetailEntryTarget {
+  const ThreadDetailEntryTarget.none()
+    : kind = ThreadDetailEntryTargetKind.none,
+      id = null;
+
+  const ThreadDetailEntryTarget.post(String postId)
+    : kind = ThreadDetailEntryTargetKind.post,
+      id = postId;
+
+  const ThreadDetailEntryTarget.subthread(String subthreadId)
+    : kind = ThreadDetailEntryTargetKind.subthread,
+      id = subthreadId;
+
+  factory ThreadDetailEntryTarget.fromQuery({
+    String? postId,
+    String? subthreadId,
+  }) {
+    if (postId != null) return ThreadDetailEntryTarget.post(postId);
+    if (subthreadId != null) {
+      return ThreadDetailEntryTarget.subthread(subthreadId);
+    }
+    return const ThreadDetailEntryTarget.none();
+  }
+
+  final ThreadDetailEntryTargetKind kind;
+  final String? id;
+
+  String? get postId => kind == ThreadDetailEntryTargetKind.post ? id : null;
+
+  String? get subthreadId =>
+      kind == ThreadDetailEntryTargetKind.subthread ? id : null;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ThreadDetailEntryTarget && other.kind == kind && other.id == id;
+
+  @override
+  int get hashCode => Object.hash(kind, id);
+}
+
+@immutable
+class ThreadDetailEntrySelection {
+  const ThreadDetailEntrySelection({
+    required this.subthreadId,
+    required this.generation,
+  });
+
+  final String subthreadId;
+  final int generation;
+}
+
+/// Owns the one-shot relationship between a route coordinate and page state.
+/// User selection cancels an unresolved coordinate until the route, session,
+/// or an explicit retry arms it again.
+class ThreadDetailEntryTargetCoordinator {
+  String? _threadId;
+  ThreadDetailEntryTarget? _target;
+  Object? _sessionScope;
+  var _generation = 0;
+  var _consumed = false;
+  var _cancelledByUser = false;
+
+  void synchronize({
+    required String threadId,
+    required ThreadDetailEntryTarget target,
+    required Object sessionScope,
+  }) {
+    if (_threadId == threadId &&
+        _target == target &&
+        _sessionScope == sessionScope) {
+      return;
+    }
+    _threadId = threadId;
+    _target = target;
+    _sessionScope = sessionScope;
+    _rearm();
+  }
+
+  void cancelForUserSelection() {
+    _cancelledByUser = true;
+    _generation += 1;
+  }
+
+  void rearmForRetry() => _rearm();
+
+  bool isCurrent(int generation) =>
+      generation == _generation && !_cancelledByUser;
+
+  bool get allowsTargetEffects => !_cancelledByUser;
+
+  ThreadDetailEntrySelection? resolve({
+    required ThreadDetailState state,
+    required ThreadPostTargetModel? postTarget,
+  }) {
+    final target = _target;
+    if (target == null ||
+        _consumed ||
+        _cancelledByUser ||
+        state.phase != ThreadDetailPhase.ready) {
+      return null;
+    }
+    switch (target.kind) {
+      case ThreadDetailEntryTargetKind.none:
+        _consumed = true;
+        return null;
+      case ThreadDetailEntryTargetKind.subthread:
+        final subthreadId = target.subthreadId!;
+        _consumed = true;
+        if (state.detail?.subthreadById(subthreadId) == null ||
+            state.selectedSubthreadId == subthreadId) {
+          return null;
+        }
+        return ThreadDetailEntrySelection(
+          subthreadId: subthreadId,
+          generation: _generation,
+        );
+      case ThreadDetailEntryTargetKind.post:
+        if (postTarget == null ||
+            postTarget.threadId != _threadId ||
+            state.detail?.subthreadById(postTarget.subthreadId) == null) {
+          return null;
+        }
+        _consumed = true;
+        if (state.selectedSubthreadId == postTarget.subthreadId) return null;
+        return ThreadDetailEntrySelection(
+          subthreadId: postTarget.subthreadId,
+          generation: _generation,
+        );
+    }
+  }
+
+  void _rearm() {
+    _consumed = false;
+    _cancelledByUser = false;
+    _generation += 1;
+  }
+}
 
 class ThreadTargetFilterRestoreCoordinator {
   String? _lastSignature;

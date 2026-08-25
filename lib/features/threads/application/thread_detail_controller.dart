@@ -518,11 +518,20 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
   }
 }
 
+typedef ThreadDetailControllerScope = ({
+  String threadId,
+  Object pageInstanceToken,
+});
+
 final threadDetailControllerProvider = StateNotifierProvider.autoDispose
-    .family<ThreadDetailController, ThreadDetailState, String>((ref, threadId) {
+    .family<
+      ThreadDetailController,
+      ThreadDetailState,
+      ThreadDetailControllerScope
+    >((ref, scope) {
       return ThreadDetailController(
         ref.watch(threadDetailRepositoryProvider),
-        threadId,
+        scope.threadId,
       );
     }, dependencies: [threadDetailRepositoryProvider]);
 

@@ -50,6 +50,18 @@ void main() {
       '/auth/login?returnTo=%2Fthreads%2Fthread-1%3Fpost%3Dpost-1',
     );
     expect(
+      AppRouteLocations.thread('thread-1', subthreadId: 'subthread&1'),
+      '/threads/thread-1?subthread=subthread%261',
+    );
+    expect(
+      () => AppRouteLocations.thread(
+        'thread-1',
+        postId: 'post-1',
+        subthreadId: 'subthread-1',
+      ),
+      throwsArgumentError,
+    );
+    expect(
       AppRouteLocations.messageCenter(section: 'directMessages'),
       '/notifications?section=directMessages',
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -25,12 +26,12 @@ import 'package:wenyousite_mobile/features/social/data/thread_interaction_reposi
 import 'package:wenyousite_mobile/features/social/data/thread_subscription_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_subscription_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
-import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import '../../support/foundation_test_fonts.dart';
 
 void main() {
@@ -1094,19 +1095,134 @@ void main() {
     expect(find.text('主线正文'), findsNothing);
   });
 
-  testWidgets('站内传送门完成首次子贴定位后允许用户切换子贴', (tester) async {
-    final repository = _FakeThreadDetailRepository();
-    await tester.pumpWidget(
-      _detailApp(repository, subthreadIdHint: 'subthread-2'),
+  for (final targetKind in ['subthread', 'post']) {
+    for (final surface in _SubthreadSelectionSurface.values) {
+      testWidgets('$targetKind 入口定位后可通过 ${surface.label} 切换子贴', (tester) async {
+        final repository = _FakeThreadDetailRepository(
+          postTarget: targetKind == 'post'
+              ? ThreadPostTargetModel(
+                  requestedPostId: 'floor-target',
+                  threadId: 'thread-1',
+                  subthreadId: 'subthread-2',
+                  floor: _targetFloor,
+                )
+              : null,
+        );
+        await tester.pumpWidget(
+          _detailApp(
+            repository,
+            targetPostId: targetKind == 'post' ? 'floor-target' : null,
+            subthreadIdHint: targetKind == 'subthread' ? 'subthread-2' : null,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('支线正文'), findsOneWidget);
+
+        await _selectMainSubthread(tester, surface);
+        await tester.pumpAndSettle();
+
+        expect(find.text('主线正文'), findsOneWidget);
+        expect(find.text('支线正文'), findsNothing);
+        expect(repository.requestedSubthreads.last, 'subthread-1');
+      });
+    }
+  }
+
+  testWidgets('入口目标已是当前子贴时仍完成一次性消费', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-1',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: _mainFloor,
+      ),
     );
+    await tester.pumpWidget(_detailApp(repository, targetPostId: 'floor-1'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('thread-subthread-next')));
     await tester.pumpAndSettle();
 
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
+  });
+
+  testWidgets('帖子入口尚在定位时用户切换子贴，迟到结果不再覆盖用户选择', (tester) async {
+    final completer = Completer<ThreadPostTargetModel>();
+    final repository = _FakeThreadDetailRepository(
+      postTargetFuture: completer.future,
+    );
+    await tester.pumpWidget(
+      _detailApp(repository, targetPostId: 'floor-target'),
+    );
+    await tester.pump();
+    await tester.pump();
     expect(find.text('主线正文'), findsOneWidget);
-    expect(find.text('支线正文'), findsNothing);
-    expect(repository.requestedSubthreads.last, 'subthread-1');
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('支线正文'), findsOneWidget);
+
+    completer.complete(
+      ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        floor: _targetFloor,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(repository.requestedSubthreads.last, 'subthread-2');
+    expect(find.text('目标楼层内容'), findsNothing);
+  });
+
+  testWidgets('同一主题压入两个详情页时各自保留独立子贴状态', (tester) async {
+    final repository = _FakeThreadDetailRepository();
+    final router = GoRouter(
+      initialLocation: '/threads/thread-1',
+      routes: [
+        GoRoute(
+          path: '/threads/:threadId',
+          builder: (context, state) => ThreadDetailPage(
+            threadId: state.pathParameters['threadId']!,
+            entryTarget: ThreadDetailEntryTarget.fromQuery(
+              postId: state.uri.queryParameters['post'],
+              subthreadId: state.uri.queryParameters['subthread'],
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stickersEnabledProvider.overrideWithValue(false),
+          threadDetailRepositoryProvider.overrideWithValue(repository),
+          postDiscussionAuthorDirectoryProvider.overrideWithValue(
+            _FakePostDiscussionAuthorDirectory(),
+          ),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-subthread-next')));
+    await tester.pumpAndSettle();
+    expect(find.text('支线正文'), findsOneWidget);
+
+    unawaited(router.push<void>('/threads/thread-1'));
+    await tester.pumpAndSettle();
+    expect(find.text('主线正文'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('支线正文'), findsOneWidget);
+    expect(repository.threadCalls, 2);
   });
 
   testWidgets('搜索结果中的帖子会切换所属子贴并展示目标上下文', (tester) async {
@@ -1139,28 +1255,6 @@ void main() {
             .dy,
       ),
     );
-  });
-
-  testWidgets('通知或最近回复完成帖子定位后允许用户切换子贴', (tester) async {
-    final repository = _FakeThreadDetailRepository(
-      postTarget: ThreadPostTargetModel(
-        requestedPostId: 'floor-target',
-        threadId: 'thread-1',
-        subthreadId: 'subthread-2',
-        floor: _targetFloor,
-      ),
-    );
-    await tester.pumpWidget(
-      _detailApp(repository, targetPostId: 'floor-target'),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('thread-subthread-next')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('主线正文'), findsOneWidget);
-    expect(find.text('支线正文'), findsNothing);
-    expect(repository.requestedSubthreads.last, 'subthread-1');
   });
 
   testWidgets('目标主楼被发言者筛选排除时恢复全部楼层后再定位', (tester) async {
@@ -1314,7 +1408,9 @@ void main() {
           name: 'thread-detail',
           builder: (context, state) => ThreadDetailPage(
             threadId: state.pathParameters['threadId']!,
-            targetPostId: state.uri.queryParameters['post'],
+            entryTarget: ThreadDetailEntryTarget.fromQuery(
+              postId: state.uri.queryParameters['post'],
+            ),
           ),
         ),
       ],
@@ -1430,12 +1526,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-
-    final loadMore = container
-        .read(threadDetailControllerProvider('thread-1').notifier)
-        .loadMore();
-    await tester.pump();
-    await loadMore;
 
     final addedFloor = find.byKey(const Key('thread-floor-card-floor-page'));
     await tester.scrollUntilVisible(
@@ -1756,7 +1846,9 @@ void main() {
           name: 'thread-detail',
           builder: (_, state) => ThreadDetailPage(
             threadId: state.pathParameters['threadId']!,
-            targetPostId: state.uri.queryParameters['post'],
+            entryTarget: ThreadDetailEntryTarget.fromQuery(
+              postId: state.uri.queryParameters['post'],
+            ),
           ),
         ),
         GoRoute(
@@ -1848,7 +1940,7 @@ void main() {
           theme: AppTheme.light,
           home: const ThreadDetailPage(
             threadId: 'thread-1',
-            targetPostId: 'floor-1',
+            entryTarget: ThreadDetailEntryTarget.post('floor-1'),
           ),
         ),
       ),
@@ -2019,7 +2111,9 @@ void main() {
           path: '/threads/:threadId',
           builder: (context, state) => ThreadDetailPage(
             threadId: state.pathParameters['threadId']!,
-            targetPostId: state.uri.queryParameters['post'],
+            entryTarget: ThreadDetailEntryTarget.fromQuery(
+              postId: state.uri.queryParameters['post'],
+            ),
           ),
         ),
       ],
@@ -2369,6 +2463,35 @@ Future<void> _replacePostComposerText(WidgetTester tester, String text) async {
   await tester.idle();
 }
 
+enum _SubthreadSelectionSurface {
+  previous('上一个按钮'),
+  next('下一个按钮'),
+  directory('目录');
+
+  const _SubthreadSelectionSurface(this.label);
+
+  final String label;
+}
+
+Future<void> _selectMainSubthread(
+  WidgetTester tester,
+  _SubthreadSelectionSurface surface,
+) async {
+  switch (surface) {
+    case _SubthreadSelectionSurface.previous:
+      await tester.tap(find.byKey(const Key('thread-subthread-previous')));
+      return;
+    case _SubthreadSelectionSurface.next:
+      await tester.tap(find.byKey(const Key('thread-subthread-next')));
+      return;
+    case _SubthreadSelectionSurface.directory:
+      await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('thread-subthread-subthread-1')));
+      return;
+  }
+}
+
 Widget _detailApp(
   ThreadDetailRepository repository, {
   String? targetPostId,
@@ -2378,8 +2501,10 @@ Widget _detailApp(
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
-    targetPostId: targetPostId,
-    subthreadIdHint: subthreadIdHint,
+    entryTarget: ThreadDetailEntryTarget.fromQuery(
+      postId: targetPostId,
+      subthreadId: subthreadIdHint,
+    ),
   );
   return ProviderScope(
     overrides: [
@@ -2441,7 +2566,9 @@ Widget _detailRouterApp(
         path: '/threads/:threadId',
         builder: (context, state) => ThreadDetailPage(
           threadId: state.pathParameters['threadId']!,
-          targetPostId: state.uri.queryParameters['post'],
+          entryTarget: ThreadDetailEntryTarget.fromQuery(
+            postId: state.uri.queryParameters['post'],
+          ),
         ),
       ),
       GoRoute(
@@ -2519,6 +2646,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     this.floorFailure,
     this.loadMoreFailure,
     this.postTarget,
+    this.postTargetFuture,
     ThreadDetailModel? detail,
     ThreadFloorModel? mainFloor,
     List<ThreadFloorModel>? mainFloors,
@@ -2530,6 +2658,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final ApiFailure? floorFailure;
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
+  final Future<ThreadPostTargetModel>? postTargetFuture;
   final ThreadDetailModel detail;
   final List<ThreadFloorModel> mainFloors;
   final List<ThreadFloorModel>? nextFloors;
@@ -2549,6 +2678,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   @override
   Future<ThreadPostTargetModel> fetchPostTarget(String postId) async {
     targetPostIds.add(postId);
+    if (postTargetFuture case final future?) return future;
     return postTarget!;
   }
 

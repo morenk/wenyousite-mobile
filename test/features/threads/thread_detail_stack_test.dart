@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/stickers/application/sticker_collecti
 import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 
 import '../../support/foundation_test_fonts.dart';
 import '../../support/scripted_http_client_adapter.dart';
@@ -71,6 +72,51 @@ void main() {
     expect(find.text('主题详情加载失败'), findsOneWidget);
     expect(find.byKey(const Key('thread-detail-retry')), findsOneWidget);
     expect(adapter.requests, hasLength(1));
+  });
+
+  testWidgets('帖子深链经路由、生成客户端和 Dio 切换所属子贴并定位', (tester) async {
+    final adapter = ScriptedHttpClientAdapter((request) async {
+      return switch (request.path) {
+        '/api/v1/threads/thread-1' => ScriptedHttpResponse.json(
+          _threadEnvelope(includeSideSubthread: true),
+        ),
+        '/api/v1/posts/floor-target' => ScriptedHttpResponse.json(
+          _postTargetEnvelope(),
+        ),
+        '/api/v1/subthreads/subthread-1/posts' => ScriptedHttpResponse.json(
+          _floorsEnvelope(),
+        ),
+        '/api/v1/subthreads/subthread-2/posts' => ScriptedHttpResponse.json(
+          _floorsEnvelope(
+            subthreadId: 'subthread-2',
+            floorId: 'floor-target',
+            content: '网络深链目标楼层',
+          ),
+        ),
+        _ => ScriptedHttpResponse.json({
+          'code': 40400,
+          'message': 'unexpected ${request.path}',
+        }, statusCode: 404),
+      };
+    });
+    final dio = _dio(adapter);
+    addTearDown(dio.close);
+
+    await tester.pumpWidget(
+      _stackApp(dio, initialLocation: '/threads/thread-1?post=floor-target'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('支线网络正文'), findsOneWidget);
+    expect(find.text('网络深链目标楼层'), findsOneWidget);
+    expect(
+      adapter.requests.map((request) => request.path),
+      containsAll([
+        '/api/v1/threads/thread-1',
+        '/api/v1/posts/floor-target',
+        '/api/v1/subthreads/subthread-2/posts',
+      ]),
+    );
   });
 
   test('楼层筛选经生成客户端保留不透明游标和查询参数', () async {
@@ -177,14 +223,19 @@ Dio _dio(HttpClientAdapter adapter) {
   )..httpClientAdapter = adapter;
 }
 
-Widget _stackApp(Dio dio) {
+Widget _stackApp(Dio dio, {String initialLocation = '/threads/thread-1'}) {
   final router = GoRouter(
-    initialLocation: '/threads/thread-1',
+    initialLocation: initialLocation,
     routes: [
       GoRoute(
         path: '/threads/:threadId',
-        builder: (context, state) =>
-            ThreadDetailPage(threadId: state.pathParameters['threadId']!),
+        builder: (context, state) => ThreadDetailPage(
+          threadId: state.pathParameters['threadId']!,
+          entryTarget: ThreadDetailEntryTarget.fromQuery(
+            postId: state.uri.queryParameters['post'],
+            subthreadId: state.uri.queryParameters['subthread'],
+          ),
+        ),
       ),
     ],
   );
@@ -217,7 +268,10 @@ class _EmptyAuthorDirectory implements PostDiscussionAuthorDirectory {
   ) async => const [];
 }
 
-Map<String, Object?> _threadEnvelope({String threadId = 'thread-1'}) {
+Map<String, Object?> _threadEnvelope({
+  String threadId = 'thread-1',
+  bool includeSideSubthread = false,
+}) {
   const createdAt = '2026-08-20T08:00:00.000Z';
   return {
     'code': 0,
@@ -267,6 +321,26 @@ Map<String, Object?> _threadEnvelope({String threadId = 'thread-1'}) {
           },
           '_count': {'posts': 1},
         },
+        if (includeSideSubthread)
+          {
+            'id': 'subthread-2',
+            'threadId': threadId,
+            'title': '支线',
+            'sortOrder': 2,
+            'postingPolicy': 'PARTICIPANTS',
+            'postingCapability': {'canPost': true, 'denialReason': null},
+            'version': 1,
+            'lastPostAt': createdAt,
+            'deletedAt': null,
+            'createdAt': createdAt,
+            'bodyPost': {
+              'id': 'body-2',
+              'content': '支线网络正文',
+              'version': 1,
+              'diceRolls': <Object?>[],
+            },
+            '_count': {'posts': 1},
+          },
       ],
       'topicTags': <Object?>[],
       '_count': {'members': 1, 'posts': 1, 'players': 0},
@@ -297,7 +371,11 @@ Map<String, Object?> _authorsEnvelope() {
   };
 }
 
-Map<String, Object?> _floorsEnvelope() {
+Map<String, Object?> _floorsEnvelope({
+  String subthreadId = 'subthread-1',
+  String floorId = 'floor-1',
+  String content = '真实楼层内容',
+}) {
   const createdAt = '2026-08-20T08:05:00.000Z';
   return {
     'code': 0,
@@ -305,16 +383,16 @@ Map<String, Object?> _floorsEnvelope() {
     'meta': {'cursor': null, 'hasMore': false},
     'data': [
       {
-        'id': 'floor-1',
+        'id': floorId,
         'threadId': 'thread-1',
-        'subthreadId': 'subthread-1',
+        'subthreadId': subthreadId,
         'authorId': 'author-2',
         'kind': 'FLOOR',
         'floorNumber': 1,
         'parentPostId': null,
         'replyToPostId': null,
         'clientRequestId': '123e4567-e89b-42d3-a456-426614174002',
-        'content': '真实楼层内容',
+        'content': content,
         'diceRolls': <Object?>[],
         'version': 1,
         'createdAt': createdAt,
@@ -330,6 +408,39 @@ Map<String, Object?> _floorsEnvelope() {
         'replies': <Object?>[],
       },
     ],
+  };
+}
+
+Map<String, Object?> _postTargetEnvelope() {
+  const createdAt = '2026-08-20T08:05:00.000Z';
+  return {
+    'code': 0,
+    'message': 'ok',
+    'data': {
+      'id': 'floor-target',
+      'threadId': 'thread-1',
+      'subthreadId': 'subthread-2',
+      'authorId': 'author-2',
+      'kind': 'FLOOR',
+      'floorNumber': 1,
+      'parentPostId': null,
+      'replyToPostId': null,
+      'content': '网络深链目标楼层',
+      'diceRolls': <Object?>[],
+      'version': 1,
+      'createdAt': createdAt,
+      'updatedAt': createdAt,
+      'deletedAt': null,
+      'author': {
+        'id': 'author-2',
+        'username': '网络栈玩家',
+        'avatar': null,
+        'level': 2,
+      },
+      'thread': {'id': 'thread-1', 'title': '真实网络栈主题'},
+      'subthread': {'id': 'subthread-2', 'title': '支线'},
+      '_count': {'replies': 0},
+    },
   };
 }
 
