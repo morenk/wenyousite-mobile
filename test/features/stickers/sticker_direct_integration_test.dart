@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -43,19 +44,22 @@ void main() {
 
     const fieldKey = Key('direct-message-composer-field');
     await tester.tap(find.byKey(fieldKey));
-    await tester.enterText(find.byKey(fieldKey), '保留的文字');
-    final editable = tester.widget<EditableText>(
-      find.descendant(
-        of: find.byKey(fieldKey),
-        matching: find.byType(EditableText),
+    final editor = tester.state<QuillEditorState>(find.byKey(fieldKey));
+    editor.widget.focusNode.requestFocus();
+    await tester.pump();
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '保留的文字\n',
+        selection: TextSelection.collapsed(offset: 5),
       ),
     );
-    expect(editable.focusNode.hasFocus, isTrue);
+    await tester.idle();
+    expect(editor.widget.focusNode.hasFocus, isTrue);
 
     await tester.tap(find.byKey(const Key('direct-message-composer-sticker')));
     await tester.pumpAndSettle();
-    expect(editable.focusNode.hasFocus, isTrue);
-    expect(find.text('保留的文字'), findsOneWidget);
+    expect(editor.widget.focusNode.hasFocus, isTrue);
+    expect(editor.widget.controller.document.toPlainText().trim(), '保留的文字');
     expect(
       tester.getRect(find.byKey(const Key('sticker-favorite-grid'))).bottom,
       lessThan(
@@ -68,8 +72,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(sentStickerId, 'asset-1');
-    expect(editable.focusNode.hasFocus, isTrue);
-    expect(find.text('保留的文字'), findsOneWidget);
+    expect(editor.widget.focusNode.hasFocus, isTrue);
+    expect(editor.widget.controller.document.toPlainText().trim(), '保留的文字');
     expect(tester.takeException(), isNull);
   });
 

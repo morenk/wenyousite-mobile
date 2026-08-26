@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-26T02:12:50+08:00",
+  "sourceRevision": "cbb19599cd1fd353b878a7adf77b3095e20ef7a0",
+  "profilePackage": "site.wenyou.app.profile",
+  "device": {
+    "manufacturer": "Xiaomi",
+    "model": "2509FPN0BC",
+    "androidVersion": "16",
+    "androidApi": 36,
+    "primaryAbi": "arm64-v8a",
+    "refreshRateHz": 60.0,
+    "flutterVersion": "3.44.8",
+    "dartVersion": "3.12.2",
+    "renderer": "Impeller (default enabled)"
+  },
+  "runCount": 3,
+  "blockingTarget": {
+    "refreshRateHz": 60.0,
+    "p90BuildAndRasterMs": 8.0,
+    "p99BuildAndRasterMs": 16.7,
+    "overBudgetRate": 0.01
+  },
+  "passed": true,
+  "scenarios": {
+    "appearance_swap": {
+      "frameCount": 83,
+      "p90BuildMs": 2.914,
+      "p90RasterMs": 2.773,
+      "p99BuildMs": 4.714,
+      "p99RasterMs": 4.381,
+      "overBudgetRate": 0.0
+    },
+    "standard_navigation": {
+      "frameCount": 63,
+      "p90BuildMs": 6.61,
+      "p90RasterMs": 3.496,
+      "p99BuildMs": 8.135,
+      "p99RasterMs": 3.882,
+      "overBudgetRate": 0.0
+    },
+    "moment_feed_scroll": {
+      "frameCount": 343,
+      "p90BuildMs": 3.672,
+      "p90RasterMs": 4.016,
+      "p99BuildMs": 7.225,
+      "p99RasterMs": 5.155,
+      "overBudgetRate": 0.003
+    },
+    "markdown_timeline_scroll": {
+      "frameCount": 357,
+      "p90BuildMs": 4.055,
+      "p90RasterMs": 3.114,
+      "p99BuildMs": 7.78,
+      "p99RasterMs": 3.511,
+      "overBudgetRate": 0.0
+    }
+  }
+}

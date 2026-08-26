@@ -231,6 +231,15 @@ void main() {
     expect(MarkdownDeltaCodec.encode(document.delta), source);
   });
 
+  test('历史 URL 自标签解码后仍保留原始 Markdown', () {
+    const source =
+        '[https://wenyou.site/join/AbCdEfGh_123-XYZ]'
+        '(/join/AbCdEfGh_123-XYZ)';
+    final document = MarkdownDeltaCodec.decode(source);
+
+    expect(MarkdownDeltaCodec.encode(document.delta), source);
+  });
+
   test('行内代码里的站内链接保持代码文本', () {
     const source = '`[不是传送门](/threads/cmsewdo0h000x7qv6aa77ll1v)`';
     final document = MarkdownDeltaCodec.decode(source);

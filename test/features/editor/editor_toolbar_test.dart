@@ -73,6 +73,7 @@ void main() {
                 editorFocusNode: focusNode,
                 enabled: true,
                 onInsertImage: () async {},
+                onInsertSticker: (_) async {},
                 onSaveDraft: () async {},
                 onSubmit: () {},
               ),
@@ -92,7 +93,7 @@ void main() {
         320 => const <String>[],
         360 => const ['editor-content-drafts'],
         400 => const ['editor-content-drafts', 'editor-quote'],
-        _ => const ['editor-content-drafts', 'editor-quote'],
+        _ => const ['editor-content-drafts', 'editor-quote', 'editor-sticker'],
       };
       final controlKeys = <String>[
         'editor-heading',
@@ -134,10 +135,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
       expect(find.byKey(const Key('editor-horizontal-rule')), findsOneWidget);
+      final moreTray = find.byKey(const Key('editor-more-tray'));
+      expect(
+        find.descendant(of: moreTray, matching: find.byTooltip('表情包')),
+        promotedKeys.contains('editor-sticker') ? findsNothing : findsOneWidget,
+      );
       for (final key in promotedKeys) {
         final label = switch (key) {
           'editor-content-drafts' => '正文草稿',
           'editor-quote' => '引用',
+          'editor-sticker' => '表情包',
           'editor-horizontal-rule' => '分隔线',
           _ => throw StateError('未知提升命令 $key'),
         };
@@ -249,6 +256,118 @@ void main() {
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       contains('---'),
     );
+  });
+
+  testWidgets('工具栏真实点击可创建、切换并取消全部正文格式', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = QuillController(
+      document: Document()..insert(0, '正文'),
+      selection: const TextSelection(baseOffset: 0, extentOffset: 2),
+    );
+    final focusNode = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              editorFocusNode: focusNode,
+              enabled: true,
+              onInsertImage: () async {},
+              onSaveDraft: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Map<String, dynamic> inlineAttributes() =>
+        controller.document.toDelta().operations.first.attributes ?? const {};
+    Map<String, dynamic> blockAttributes() =>
+        controller.document.toDelta().operations.last.attributes ?? const {};
+    Future<void> tapMore(String tooltip) async {
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(tooltip));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapQuote() async {
+      final promoted = find.byKey(const Key('editor-quote'));
+      if (promoted.evaluate().isNotEmpty) {
+        await tester.tap(promoted);
+        await tester.pump();
+      } else {
+        await tapMore('引用');
+      }
+    }
+
+    await tester.tap(find.byKey(const Key('editor-bold')));
+    await tester.pump();
+    expect(inlineAttributes()['bold'], true);
+    await tester.tap(find.byKey(const Key('editor-bold')));
+    await tester.pump();
+    expect(inlineAttributes(), isNot(contains('bold')));
+
+    await tester.tap(find.byKey(const Key('editor-italic')));
+    await tester.pump();
+    expect(inlineAttributes()['italic'], true);
+    await tester.tap(find.byKey(const Key('editor-italic')));
+    await tester.pump();
+    expect(inlineAttributes(), isNot(contains('italic')));
+
+    await tester.tap(find.byKey(const Key('editor-heading')));
+    await tester.pump();
+    await tester.tap(find.text('H2'));
+    await tester.pumpAndSettle();
+    expect(blockAttributes()['header'], 2);
+    await tester.tap(find.byKey(const Key('editor-heading')));
+    await tester.pump();
+    await tester.tap(find.text('H3'));
+    await tester.pumpAndSettle();
+    expect(blockAttributes()['header'], 3);
+    await tester.tap(find.byKey(const Key('editor-heading')));
+    await tester.pump();
+    await tester.tap(find.text('正文'));
+    await tester.pumpAndSettle();
+    expect(blockAttributes(), isNot(contains('header')));
+
+    await tapQuote();
+    expect(blockAttributes()['blockquote'], true);
+    await tapQuote();
+    expect(blockAttributes(), isNot(contains('blockquote')));
+
+    await tapMore('无序列表');
+    expect(blockAttributes()['list'], 'bullet');
+    await tapMore('有序列表');
+    expect(blockAttributes()['list'], 'ordered');
+    await tapMore('有序列表');
+    expect(blockAttributes(), isNot(contains('list')));
+
+    await tapMore('行内代码');
+    expect(inlineAttributes()['code'], true);
+    await tester.tap(find.byKey(const Key('editor-bold')));
+    await tester.pump();
+    expect(inlineAttributes(), isNot(contains('code')));
+    expect(inlineAttributes()['bold'], true);
+    await tester.tap(find.byKey(const Key('editor-bold')));
+    await tester.pump();
+
+    await tapMore('删除线');
+    expect(inlineAttributes()['strike'], true);
+    await tapMore('删除线');
+    expect(inlineAttributes(), isNot(contains('strike')));
+
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('链接和骰子在编辑器内部输入并保持 Markdown 往返', (tester) async {

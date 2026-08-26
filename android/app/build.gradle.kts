@@ -34,6 +34,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -65,6 +66,11 @@ android {
             versionNameSuffix = "-debug"
             manifestPlaceholders["appLabel"] = "温油站 Debug"
         }
+        getByName("profile") {
+            applicationIdSuffix = ".profile"
+            versionNameSuffix = "-profile"
+            manifestPlaceholders["appLabel"] = "温油站 Profile"
+        }
         getByName("release") {
             signingConfig = signingConfigs.findByName("release")
         }
@@ -83,6 +89,7 @@ flutter {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     // 1.19.0 requires AGP 9.1; keep this aligned with the project's AGP 9.0.1.
     implementation("androidx.core:core:1.18.0")
 }

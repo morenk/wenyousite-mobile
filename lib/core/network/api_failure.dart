@@ -83,7 +83,7 @@ class ApiFailure implements Exception {
       case 40007:
         return '列表位置已失效，正在重新加载。';
       case 40002:
-        return '内容已在其他位置修改，请读取最新版后再决定是否覆盖。';
+        return '内容已有更新，请读取最新版后选择要保留的内容。';
       case 40003:
         return '骰子格式无效，请返回正文重新插入。';
       case 40004:

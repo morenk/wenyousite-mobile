@@ -38,17 +38,12 @@ class _InternalReferenceEmbedBuilder extends EmbedBuilder {
 
   @override
   String toPlainText(Embed node) {
-    final data = node.value.data;
-    return data is Map
-        ? data['label']?.toString() ?? internalReferenceDefaultLabel
-        : internalReferenceDefaultLabel;
+    return _internalReferenceDisplayLabel(node.value.data);
   }
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
-    final label =
-        _payload(embedContext)?['label']?.toString() ??
-        internalReferenceDefaultLabel;
+    final label = _internalReferenceDisplayLabel(embedContext.node.value.data);
     return Semantics(
       key: const Key('editor-internal-reference'),
       label: '站内传送门：$label',
@@ -59,6 +54,15 @@ class _InternalReferenceEmbedBuilder extends EmbedBuilder {
       ),
     );
   }
+}
+
+String _internalReferenceDisplayLabel(Object? data) {
+  if (data is! Map) return internalReferenceDefaultLabel;
+  final label = data['label']?.toString() ?? internalReferenceDefaultLabel;
+  final location = data['location']?.toString();
+  final reference = location == null ? null : parseInternalReference(location);
+  if (reference == null) return label;
+  return resolveInternalReferenceLabel(label: label, reference: reference);
 }
 
 Map<String, dynamic>? _payload(EmbedContext context) {

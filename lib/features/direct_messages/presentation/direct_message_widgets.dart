@@ -10,7 +10,9 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_pending_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
@@ -65,8 +67,7 @@ class DirectMessageComposer extends ConsumerStatefulWidget {
 }
 
 class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
-  late final TextEditingController _controller;
-  late final FocusNode _focusNode;
+  late final WenyouAtomicTextController _controller;
   final Object _uploadTaskId = Object();
   MediaUploadInput? _selectedImage;
   UploadedEditorImage? _uploadedImage;
@@ -77,25 +78,30 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
 
   bool get _disabled => widget.disabled || _busy;
   bool get _hasPayload =>
-      normalizeDirectMessageContent(_controller.text).isNotEmpty ||
+      normalizeDirectMessageContent(_controller.markdown).isNotEmpty ||
       _selectedImage != null;
-  bool get _showCharacterCount =>
-      _controller.text.length >= (directMessageMaxLength * 0.9).floor();
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
-      text: widget.failedDraft?.content ?? '',
+    _controller = WenyouAtomicTextController(
+      initialMarkdown: widget.failedDraft?.content ?? '',
+      maximumMarkdownLength: directMessageMaxLength,
     );
-    _focusNode = FocusNode();
+    _controller.addListener(_handleEditorChanged);
   }
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    _controller.removeListener(_handleEditorChanged);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _handleEditorChanged() {
+    if (!mounted) return;
+    if (_localFailure != null) _localFailure = null;
+    setState(() {});
   }
 
   @override
@@ -173,17 +179,14 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       ],
     ];
     return WenyouInlineComposerDock(
-      controller: _controller,
-      focusNode: _focusNode,
-      fieldKey: const Key('direct-message-composer-field'),
+      editor: WenyouAtomicTextEditor(
+        controller: _controller,
+        editorKey: const Key('direct-message-composer-field'),
+        placeholder: widget.placeholder,
+        semanticLabel: widget.placeholder,
+        enabled: !widget.disabled,
+      ),
       dockKey: const Key('direct-message-composer-dock'),
-      placeholder: widget.placeholder,
-      maxLength: directMessageMaxLength,
-      enabled: !widget.disabled,
-      onChanged: (_) {
-        if (_localFailure != null) _localFailure = null;
-        setState(() {});
-      },
       supporting: supporting,
       leadingActions: [
         IconButton(
@@ -207,7 +210,8 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
               onPressed: _disabled
                   ? null
                   : () {
-                      _restoreFocusAfterSticker = _focusNode.hasFocus;
+                      _restoreFocusAfterSticker =
+                          _controller.focusNode.hasFocus;
                       _selectionBeforeSticker = _controller.selection;
                       handle.toggle();
                     },
@@ -237,10 +241,6 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         label: _submitLabel(uploadState),
         onPressed: () => _submit(),
       ),
-      characterCountText: _showCharacterCount
-          ? '${directMessageMaxLength - _controller.text.length}'
-          : null,
-      characterCountKey: const Key('direct-message-composer-character-count'),
     );
   }
 
@@ -255,7 +255,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   }
 
   Future<void> _pickImage() async {
-    final shouldRestoreFocus = _focusNode.hasFocus;
+    final shouldRestoreFocus = _controller.focusNode.hasFocus;
     final selection = _controller.selection;
     final inputs = await pickEditorImages(
       context,
@@ -292,9 +292,17 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
 
   Future<void> _submit({bool retryUpload = false}) async {
     if (_busy || widget.disabled) return;
-    final normalized = normalizeDirectMessageContent(_controller.text);
+    if (!_controller.flush()) {
+      setState(
+        () => _localFailure = ApiFailure(
+          userMessage: _controller.failure ?? '消息内容暂时无法发送，请重新编辑后再试。',
+        ),
+      );
+      return;
+    }
+    final normalized = normalizeDirectMessageContent(_controller.markdown);
     final selection = _controller.selection;
-    final shouldRestoreFocus = _focusNode.hasFocus;
+    final shouldRestoreFocus = _controller.focusNode.hasFocus;
     final validation = validateDirectMessagePayload(
       content: normalized,
       mediaId: _selectedImage == null ? null : 'pending-local-media',
@@ -315,7 +323,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       ref
           .read(mediaUploadTaskControllerProvider(_uploadTaskId).notifier)
           .reset();
-      _focusNode.requestFocus();
+      _controller.focusNode.requestFocus();
       unawaited(
         _dispatchOptimistic(
           content: normalized.isEmpty ? null : normalized,
@@ -381,7 +389,7 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
       });
       if (shouldRestoreFocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _restoreFocus(_restoredSelection(selection, content));
+          if (mounted) _restoreFocus(selection);
         });
       }
     }
@@ -390,31 +398,21 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   void _restoreOptimisticText(String? content, TextSelection selection) {
     final failedText = content ?? '';
     if (failedText.isEmpty) return;
-    final currentText = _controller.text;
+    final currentText = _controller.markdown;
     if (currentText.isEmpty) {
-      _controller.text = failedText;
-      _controller.selection = _restoredSelection(selection, content);
+      _controller.applyMarkdown(
+        failedText,
+        selection: WenyouAtomicTextSelectionPlacement.end,
+      );
+      _controller.updateSelection(selection);
       return;
     }
     if (currentText != failedText) {
-      _controller.text = '$failedText\n$currentText';
-      _controller.selection = TextSelection.collapsed(
-        offset: _controller.text.length,
+      _controller.applyMarkdown(
+        '$failedText\n$currentText',
+        selection: WenyouAtomicTextSelectionPlacement.end,
       );
     }
-  }
-
-  TextSelection _restoredSelection(
-    TextSelection selection,
-    String? restoredContent,
-  ) {
-    final length = restoredContent?.length ?? 0;
-    return TextSelection(
-      baseOffset: selection.baseOffset.clamp(0, length),
-      extentOffset: selection.extentOffset.clamp(0, length),
-      affinity: selection.affinity,
-      isDirectional: selection.isDirectional,
-    );
   }
 
   Future<void> _sendSticker(UserSticker sticker) async {
@@ -475,9 +473,9 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
   }
 
   void _restoreFocus(TextSelection selection) {
-    final offset = selection.end.clamp(0, _controller.text.length);
-    _controller.selection = TextSelection.collapsed(offset: offset);
-    _focusNode.requestFocus();
+    final offset = selection.end.clamp(0, _controller.documentLength);
+    _controller.updateSelection(TextSelection.collapsed(offset: offset));
+    _controller.focusNode.requestFocus();
   }
 
   void _abandonFailedDraft() {
@@ -739,14 +737,15 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (widget.message.content != null)
-                                  Text(
-                                    widget.message.content!,
+                                  WenyouInternalReferenceText(
+                                    content: widget.message.content!,
                                     style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(
                                           color: widget.mine
                                               ? tokens.onBrandSurface
                                               : tokens.text,
                                         ),
+                                    onLongPressNonText: openActions,
                                   ),
                                 if (media != null) ...[
                                   if (widget.message.content != null)

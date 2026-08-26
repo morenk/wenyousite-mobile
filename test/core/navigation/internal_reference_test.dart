@@ -79,4 +79,38 @@ void main() {
       expect(paste.serialized, testCase['serialized']);
     }
   });
+
+  test('历史 URL 自标签只在显示时归一为传送门', () {
+    final reference = parseInternalReference('/join/AbCdEfGh_123-XYZ')!;
+
+    expect(
+      resolveInternalReferenceLabel(
+        label: 'https://wenyou.site/join/AbCdEfGh_123-XYZ',
+        reference: reference,
+      ),
+      internalReferenceDefaultLabel,
+    );
+    expect(
+      resolveInternalReferenceLabel(label: '私密团入口', reference: reference),
+      '私密团入口',
+    );
+    expect(
+      formatInternalReferencePreview(
+        '查看 [https://www.wenyou.site/join/AbCdEfGh_123-XYZ]'
+        '(/join/AbCdEfGh_123-XYZ)',
+      ),
+      '查看 传送门',
+    );
+  });
+
+  test('选区恰好是同一站内坐标时不会继续充当传送门名称', () {
+    final paste = resolveInternalReferencePaste(
+      clipboardText: 'https://wenyou.site/join/AbCdEfGh_123-XYZ',
+      selectedText: '/join/AbCdEfGh_123-XYZ',
+    );
+
+    expect(paste, isNotNull);
+    expect(paste!.label, internalReferenceDefaultLabel);
+    expect(paste.serialized, '[传送门](/join/AbCdEfGh_123-XYZ)');
+  });
 }

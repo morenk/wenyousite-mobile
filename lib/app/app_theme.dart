@@ -5,11 +5,15 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 
 abstract final class AppTheme {
-  static ThemeData get light =>
-      _build(brightness: Brightness.light, tokens: WenyouThemeTokens.light);
+  static final ThemeData light = _build(
+    brightness: Brightness.light,
+    tokens: WenyouThemeTokens.light,
+  );
 
-  static ThemeData get dark =>
-      _build(brightness: Brightness.dark, tokens: WenyouThemeTokens.dark);
+  static final ThemeData dark = _build(
+    brightness: Brightness.dark,
+    tokens: WenyouThemeTokens.dark,
+  );
 
   static ThemeData _build({
     required Brightness brightness,

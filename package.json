@@ -11,6 +11,7 @@
     "contract:sync": "pwsh -NoProfile -File tool/sync_backend_contract.ps1",
     "docs:check": "dart run tool/check_docs.dart",
     "architecture:check": "dart run tool/check_architecture.dart",
+    "perf:android": "pwsh -NoProfile -File tool/windows/Measure-WenyouAndroidPerformance.ps1",
     "test:release-tool": "node --test tool/upload_android_release.test.mjs tool/windows/windows_release_scripts.test.mjs",
     "check": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1",
     "check:apk": "pwsh -NoProfile -File tool/Check-WenyouMobile.ps1 -BuildDebugApk"

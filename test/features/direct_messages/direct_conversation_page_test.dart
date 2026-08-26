@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_controllers.dart';
 import 'package:wenyousite_mobile/features/direct_messages/data/direct_message_repository.dart';
@@ -44,19 +46,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('你好'), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const Key('direct-message-composer-field')),
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
       '发送内容',
     );
     await tester.pump();
-    final composerField = tester.widget<TextField>(
+    final composerField = tester.widget<QuillEditor>(
       find.byKey(const Key('direct-message-composer-field')),
     );
-    expect(composerField.focusNode?.hasFocus, isTrue);
+    expect(composerField.focusNode.hasFocus, isTrue);
     await tester.tap(find.text('你好'));
     await tester.pump();
-    expect(composerField.focusNode?.hasFocus, isFalse);
-    expect(composerField.controller?.text, '发送内容');
+    expect(composerField.focusNode.hasFocus, isFalse);
+    expect(_atomicEditorPlainText(tester, composerField.key!), '发送内容');
 
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pump();
@@ -92,6 +95,130 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.archiveValues, [true]);
     expect(find.byTooltip('更多会话操作'), findsOneWidget);
+  });
+
+  testWidgets('完整私信渲染邀请传送门并保留导航、长按与原文复制', (tester) async {
+    const raw =
+        '入口 [https://wenyou.site/join/AbCdEfGh_123-XYZ]'
+        '(/join/AbCdEfGh_123-XYZ)';
+    String? copiedText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText =
+            (call.arguments as Map<Object?, Object?>)['text'] as String?;
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    final repository = _FakeRepository(
+      messages: [
+        _textMessage(
+          id: 'portal-invite',
+          senderId: 'user-2',
+          content: raw,
+          createdAt: DateTime(2024, 1, 1, 9),
+        ),
+        _textMessage(
+          id: 'portal-named',
+          senderId: 'user-1',
+          content: '查看 [私密团入口](/join/AbCdEfGh_123-XYZ)',
+          createdAt: DateTime(2024, 1, 1, 9, 1),
+        ),
+        _textMessage(
+          id: 'portal-invalid',
+          senderId: 'user-2',
+          content: 'https://wenyou.site/join/too-short',
+          createdAt: DateTime(2024, 1, 1, 9, 2),
+        ),
+      ],
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final portals = find.byType(WenyouInternalReferenceChip);
+    final invitePortal = find.descendant(
+      of: find.byKey(const ValueKey('direct-message-actions-portal-invite')),
+      matching: find.byType(WenyouInternalReferenceChip),
+    );
+    expect(portals, findsNWidgets(2));
+    expect(invitePortal, findsOneWidget);
+    expect(find.text('传送门'), findsOneWidget);
+    expect(find.text('私密团入口'), findsOneWidget);
+    expect(find.text('https://wenyou.site/join/too-short'), findsOneWidget);
+    expect(
+      find.text('https://wenyou.site/join/AbCdEfGh_123-XYZ'),
+      findsNothing,
+    );
+
+    await tester.longPress(invitePortal);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('direct-message-copy-portal-invite')),
+    );
+    await tester.pumpAndSettle();
+    expect(copiedText, raw);
+
+    await tester.tap(invitePortal);
+    await tester.pumpAndSettle();
+    expect(find.text('邀请=AbCdEfGh_123-XYZ'), findsOneWidget);
+  });
+
+  testWidgets('私聊邀请链接发送前成为可混排原子且发送规范正文', (tester) async {
+    const url = 'https://wenyou.site/join/AbCdEfGh_123-XYZ';
+    final repository = _FakeRepository();
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
+      url,
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const Key('atomic-editor-internal-reference')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('站内传送门：传送门'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      repository.sentDrafts.single.content,
+      '[传送门](/join/AbCdEfGh_123-XYZ)',
+    );
+    expect(
+      find.byKey(const Key('atomic-editor-internal-reference')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('direct-message-actions-sent-1')),
+        matching: find.byType(WenyouInternalReferenceChip),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('收到且未撤回的私信可举报，并提交消息目标', (tester) async {
@@ -151,8 +278,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('direct-message-composer-field')),
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
       '稍后重试',
     );
     await tester.pump();
@@ -209,11 +337,15 @@ void main() {
       find.byKey(const Key('direct-message-composer-submit')),
     );
     expect(emptySend.enabled, isFalse);
-    await tester.enterText(field, '带图消息');
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
+      '带图消息',
+    );
     await tester.tapAt(tester.getTopLeft(field) + const Offset(24, 20));
     await tester.pump();
-    final editable = tester.widget<EditableText>(
-      find.byType(EditableText).last,
+    final editable = tester.widget<QuillEditor>(
+      find.byKey(const Key('direct-message-composer-field')),
     );
     final expectedSelection = editable.controller.selection;
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
@@ -225,11 +357,18 @@ void main() {
       find.byKey(const Key('direct-message-composer-attachment')),
       findsOneWidget,
     );
-    final selected = tester.widget<EditableText>(
-      find.byType(EditableText).last,
+    final selected = tester.widget<QuillEditor>(
+      find.byKey(const Key('direct-message-composer-field')),
     );
     expect(selected.focusNode.hasFocus, isTrue);
-    expect(selected.controller.selection, expectedSelection);
+    expect(
+      selected.controller.selection.baseOffset,
+      expectedSelection.baseOffset,
+    );
+    expect(
+      selected.controller.selection.extentOffset,
+      expectedSelection.extentOffset,
+    );
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -254,8 +393,13 @@ void main() {
       find.byKey(const Key('direct-message-composer-attachment')),
       findsNothing,
     );
-    final cleared = tester.widget<EditableText>(find.byType(EditableText).last);
-    expect(cleared.controller.text, isEmpty);
+    expect(
+      _atomicEditorPlainText(
+        tester,
+        const Key('direct-message-composer-field'),
+      ),
+      isEmpty,
+    );
     expect(repository.sentDrafts, isEmpty);
   });
 
@@ -276,8 +420,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('direct-message-composer-field')),
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
       '重试图片',
     );
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
@@ -342,8 +487,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final field = find.byKey(const Key('direct-message-composer-field'));
-    await tester.enterText(field, '取消后保留');
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
+      '取消后保留',
+    );
     await tester.tap(find.byKey(const Key('direct-message-composer-image')));
     await tester.pump();
     expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
@@ -370,8 +518,18 @@ void main() {
       find.byKey(const Key('direct-message-composer-upload-failure')),
       findsNothing,
     );
-    await tester.enterText(field, '下一条消息');
-    expect(find.text('下一条消息'), findsOneWidget);
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
+      '下一条消息',
+    );
+    expect(
+      _atomicEditorPlainText(
+        tester,
+        const Key('direct-message-composer-field'),
+      ),
+      '下一条消息',
+    );
     expect(repository.sentDrafts, isEmpty);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -679,12 +837,15 @@ void main() {
       find.byKey(const Key('direct-message-composer-character-count')),
       findsNothing,
     );
-    await tester.enterText(field, '长' * 900);
+    _replaceAtomicEditor(
+      tester,
+      const Key('direct-message-composer-field'),
+      '长' * 900,
+    );
     await tester.pump();
-    expect(find.text('100'), findsOneWidget);
     expect(
       find.byKey(const Key('direct-message-composer-character-count')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });
@@ -786,6 +947,12 @@ void main() {
           content: '收到，我会提前上线。',
           createdAt: base.add(const Duration(minutes: 1)),
         ),
+        _textMessage(
+          id: 'golden-portal',
+          senderId: 'user-2',
+          content: '入口：[私密团入口](/join/AbCdEfGh_123-XYZ)',
+          createdAt: base.add(const Duration(minutes: 2)),
+        ),
       ],
     );
     final router = _router();
@@ -853,6 +1020,11 @@ GoRouter _router() {
         name: 'user-profile',
         builder: (_, state) =>
             Scaffold(body: Text('用户=${state.pathParameters['userId']}')),
+      ),
+      GoRoute(
+        path: '/join/:token',
+        builder: (_, state) =>
+            Scaffold(body: Text('邀请=${state.pathParameters['token']}')),
       ),
     ],
   );
@@ -1191,6 +1363,23 @@ DirectMessage _incomingTextMessage() {
     content: '你好',
     createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
   );
+}
+
+void _replaceAtomicEditor(WidgetTester tester, Key key, String value) {
+  final editor = tester.widget<QuillEditor>(find.byKey(key));
+  final length = editor.controller.document.length - 1;
+  editor.controller.replaceText(
+    0,
+    length,
+    value,
+    TextSelection.collapsed(offset: value.length),
+  );
+  editor.focusNode.requestFocus();
+}
+
+String _atomicEditorPlainText(WidgetTester tester, Key key) {
+  final editor = tester.widget<QuillEditor>(find.byKey(key));
+  return editor.controller.document.toPlainText().trimRight();
 }
 
 DirectMessage _textMessage({

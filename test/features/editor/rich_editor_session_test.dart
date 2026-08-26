@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
@@ -720,6 +721,132 @@ void main() {
       '前文 [传送门](/threads/cmsewdo0h000x7qv6aa77ll1v?post=cmsewdqcr001a7qv6cy0y38bd)后文',
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Android 输入通道直接提交邀请链接时跳过 Quill 自动链接', (tester) async {
+    const url = 'https://wenyou.site/join/AbCdEfGh_123-XYZ';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('zh', 'CN'),
+        localizationsDelegates:
+            FlutterQuillLocalizations.localizationsDelegates,
+        home: Scaffold(
+          body: QuillEditor(
+            controller: session.controller,
+            focusNode: session.focusNode,
+            scrollController: session.scrollController,
+            config: QuillEditorConfig(
+              scrollable: false,
+              embedBuilders: wenyouEditorEmbedBuilders(),
+            ),
+          ),
+        ),
+      ),
+    );
+    session.focusNode.requestFocus();
+    await tester.pump();
+
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '$url\n',
+        selection: TextSelection.collapsed(offset: url.length),
+      ),
+    );
+    await tester.idle();
+    await tester.pump();
+
+    expect(find.byKey(const Key('editor-internal-reference')), findsOneWidget);
+    expect(find.text(internalReferenceDefaultLabel), findsOneWidget);
+    expect(find.text(url), findsNothing);
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, '[传送门](/join/AbCdEfGh_123-XYZ)');
+    expect(
+      session.controller.selection,
+      const TextSelection.collapsed(offset: 1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Android 输入通道的外链和非法邀请不生成站内传送门', (tester) async {
+    for (final value in const [
+      'https://example.com/join/AbCdEfGh_123-XYZ',
+      'https://wenyou.site/join/too-short',
+      '入口 https://wenyou.site/join/AbCdEfGh_123-XYZ',
+    ]) {
+      final session = RichEditorSession(
+        initialMarkdown: '',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+
+      session.controller.replaceText(
+        0,
+        0,
+        value,
+        TextSelection.collapsed(offset: value.length),
+      );
+
+      expect(
+        session.controller.document.toDelta().operations.any(
+          (operation) =>
+              operation.data is Map &&
+              (operation.data as Map).containsKey(
+                MarkdownDeltaCodec.internalReferenceEmbed,
+              ),
+        ),
+        isFalse,
+        reason: value,
+      );
+      expect(await session.flush(), isTrue, reason: value);
+    }
+  });
+
+  testWidgets('历史 URL 自标签在编辑态显示为传送门且保存不改原文', (tester) async {
+    const source =
+        '[https://wenyou.site/join/AbCdEfGh_123-XYZ]'
+        '(/join/AbCdEfGh_123-XYZ)';
+    final session = RichEditorSession(
+      initialMarkdown: source,
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('zh', 'CN'),
+        localizationsDelegates:
+            FlutterQuillLocalizations.localizationsDelegates,
+        home: Scaffold(
+          body: QuillEditor(
+            controller: session.controller,
+            focusNode: session.focusNode,
+            scrollController: session.scrollController,
+            config: QuillEditorConfig(
+              scrollable: false,
+              embedBuilders: wenyouEditorEmbedBuilders(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(internalReferenceDefaultLabel), findsOneWidget);
+    expect(
+      find.text('https://wenyou.site/join/AbCdEfGh_123-XYZ'),
+      findsNothing,
+    );
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      source,
+    );
   });
 
   testWidgets('复制骰子后粘贴会生成新身份并保留其他协议节点', (tester) async {

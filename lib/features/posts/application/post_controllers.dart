@@ -418,8 +418,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       if (!mounted) return null;
       final failure = _asFailure(error, '内容没有发布成功，请稍后重试。');
       if (created != null && _isConflict(failure)) {
-        await _loadConflict(created.id, state.content, failure);
-        return null;
+        return _resolveConflict(created.id, state.content, failure);
       }
       final ambiguous = _isAmbiguous(failure);
       if (failure.businessCode == 40912) {
@@ -456,7 +455,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       if (!mounted) return null;
       final failure = _asFailure(error, '帖子没有更新成功，请稍后重试。');
       if (_isConflict(failure)) {
-        await _loadConflict(postId, state.content, failure);
+        return _resolveConflict(postId, state.content, failure);
       } else {
         state = state.copyWith(isSubmitting: false, failure: failure);
       }
@@ -479,7 +478,7 @@ class PostComposerController extends StateNotifier<PostComposerState> {
       if (!mounted) return null;
       final failure = _asFailure(error, '子贴正文没有更新成功，请稍后重试。');
       if (_isConflict(failure) && target.postId != null) {
-        await _loadConflict(target.postId!, state.content, failure);
+        return _resolveConflict(target.postId!, state.content, failure);
       } else {
         state = state.copyWith(isSubmitting: false, failure: failure);
       }
@@ -487,14 +486,25 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     }
   }
 
-  Future<void> _loadConflict(
+  Future<PostItem?> _resolveConflict(
     String postId,
     String pendingContent,
     ApiFailure original,
   ) async {
     try {
       final latest = await _repository.fetchPost(postId);
-      if (!mounted) return;
+      if (!mounted) return null;
+      if (MarkdownContent.normalize(latest.content) ==
+          MarkdownContent.normalize(pendingContent)) {
+        state = state.copyWith(
+          isSubmitting: false,
+          failure: null,
+          result: latest,
+          pendingCreate: null,
+          conflict: null,
+        );
+        return latest;
+      }
       state = state.copyWith(
         isSubmitting: false,
         failure: original,
@@ -504,12 +514,14 @@ class PostComposerController extends StateNotifier<PostComposerState> {
           pendingContent: pendingContent,
         ),
       );
+      return null;
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted) return null;
       state = state.copyWith(
         isSubmitting: false,
         failure: _asFailure(error, '读取最新版失败；当前编辑内容仍已保留。'),
       );
+      return null;
     }
   }
 
@@ -535,7 +547,8 @@ class PostComposerController extends StateNotifier<PostComposerState> {
   }
 
   bool _isConflict(ApiFailure failure) =>
-      failure.businessCode == 40002 || failure.httpStatus == 409;
+      failure.businessCode == 40002 ||
+      (failure.businessCode == null && failure.httpStatus == 409);
 
   ApiFailure _asFailure(Object error, String fallback) {
     return mapApplicationFailure(error, fallback);

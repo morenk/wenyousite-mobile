@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -52,7 +53,7 @@ class MomentCommentDraft {
 }
 
 class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
-  late final TextEditingController _textController;
+  late final WenyouAtomicTextController _textController;
   UploadedEditorImage? _image;
   UserSticker? _sticker;
   final Object _uploadTaskId = Object();
@@ -61,15 +62,26 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: widget.initialDraft.content);
+    _textController = WenyouAtomicTextController(
+      initialMarkdown: widget.initialDraft.content,
+      maximumMarkdownLength: 500,
+    );
+    _textController.addListener(_handleEditorChanged);
     _image = widget.initialDraft.image;
     _sticker = widget.initialDraft.sticker;
   }
 
   @override
   void dispose() {
+    _textController.removeListener(_handleEditorChanged);
     _textController.dispose();
     super.dispose();
+  }
+
+  void _handleEditorChanged() {
+    if (!mounted) return;
+    setState(() {});
+    _notifyDraftChanged();
   }
 
   @override
@@ -85,16 +97,14 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
         if (!didPop) unawaited(_requestClose());
       },
       child: WenyouInlineComposerDock(
-        controller: _textController,
-        fieldKey: const Key('moment-comment-input'),
+        editor: WenyouAtomicTextEditor(
+          controller: _textController,
+          editorKey: const Key('moment-comment-input'),
+          placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
+          semanticLabel: widget.replyTo == null ? '发表评论' : '写下回复',
+          autofocus: true,
+        ),
         dockKey: const Key('moment-comment-editor-dock'),
-        placeholder: widget.replyTo == null ? '发表评论…' : '写下回复…',
-        maxLength: 500,
-        autofocus: true,
-        onChanged: (_) {
-          setState(() {});
-          _notifyDraftChanged();
-        },
         supporting: [
           if (widget.replyTo != null) ...[
             Align(
@@ -103,6 +113,14 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
                 label: Text('回复 @${widget.replyTo!.author.username}'),
                 onDeleted: widget.onCancelReply,
               ),
+            ),
+            SizedBox(height: tokens.space8),
+          ],
+          if (_textController.failure case final failure?) ...[
+            WenyouStatusBanner(
+              key: const Key('moment-comment-content-failure'),
+              message: failure,
+              tone: WenyouStatusTone.error,
             ),
             SizedBox(height: tokens.space8),
           ],
@@ -183,7 +201,6 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
           label: '发送',
           onPressed: () => _send(),
         ),
-        characterCountText: '${_textController.text.length}/500',
       ),
     );
   }
@@ -239,9 +256,10 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   }
 
   Future<void> _send() async {
+    if (!_textController.flush()) return;
     final sent = await widget.onSend(
       MomentCommentInput(
-        content: _textController.text,
+        content: _textController.markdown,
         mediaId: _image?.mediaId,
         stickerAssetId: _sticker?.asset.id,
         replyToCommentId: widget.replyTo?.id,
@@ -261,7 +279,7 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
   void _notifyDraftChanged() {
     widget.onDraftChanged?.call(
       MomentCommentDraft(
-        content: _textController.text,
+        content: _textController.markdown,
         image: _image,
         sticker: _sticker,
       ),

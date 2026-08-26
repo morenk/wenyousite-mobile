@@ -3295,7 +3295,22 @@ class _FakePostRepository implements PostRepository {
   Future<void> remove(String postId) async => removedIds.add(postId);
 
   @override
-  Future<PostItem> fetchPost(String postId) => throw UnsupportedError('unused');
+  Future<PostItem> fetchPost(String postId) async {
+    if (postId != 'body-1') throw UnsupportedError('unused');
+    final timestamp = DateTime.utc(2026, 8, 10, 9);
+    return PostItem(
+      id: postId,
+      threadId: 'thread-1',
+      subthreadId: 'subthread-1',
+      author: const PostAuthor(id: 'collaborator-1', username: '协作者', level: 4),
+      content: '主线正文',
+      version: 5,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      isBody: true,
+      isDeleted: false,
+    );
+  }
 
   @override
   Future<PostReplyPage> fetchReplies({

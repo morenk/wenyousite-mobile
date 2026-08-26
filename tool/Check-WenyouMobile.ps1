@@ -49,7 +49,9 @@ Invoke-WenyouCheckStep 'Check Dart formatting' $dartCommand @(
   '--set-exit-if-changed',
   'lib',
   'test',
-  'tool'
+  'tool',
+  'integration_test',
+  'test_driver'
 )
 Invoke-WenyouCheckStep 'Analyze mobile application' $flutterCommand @(
   'analyze',

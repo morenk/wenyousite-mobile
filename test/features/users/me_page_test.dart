@@ -877,6 +877,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.text('后台在线提醒（实验性）'), findsNothing);
+      expect(
+        find.byKey(const Key('background-online-reminders-switch')),
+        findsNothing,
+      );
       await tester.ensureVisible(find.byKey(const Key('logout-submit')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

@@ -123,6 +123,7 @@ void main() {
     when(
       () => api.postsUpdate(
         id: 'created',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         updatePostDto: any(named: 'updatePostDto'),
       ),
     ).thenAnswer((invocation) async {
@@ -141,6 +142,7 @@ void main() {
     when(
       () => api.postsUpsertBody(
         subthreadId: 'subthread',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         upsertBodyDto: any(named: 'upsertBodyDto'),
       ),
     ).thenAnswer((invocation) async {
@@ -400,6 +402,7 @@ void main() {
     when(
       () => updateApi.postsUpdate(
         id: 'floor',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         updatePostDto: any(named: 'updatePostDto'),
       ),
     ).thenAnswer((_) async => _postUpdateResponse(_postDto(id: 'other-floor')));
@@ -414,6 +417,7 @@ void main() {
     when(
       () => bodyApi.postsUpsertBody(
         subthreadId: 'subthread',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         upsertBodyDto: any(named: 'upsertBodyDto'),
       ),
     ).thenAnswer(
@@ -444,12 +448,14 @@ void main() {
     when(
       () => api.postsUpdate(
         id: 'floor',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         updatePostDto: any(named: 'updatePostDto'),
       ),
     ).thenAnswer((_) async => _nullableResponse('/posts/floor', null));
     when(
       () => api.postsUpsertBody(
         subthreadId: 'subthread',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         upsertBodyDto: any(named: 'upsertBodyDto'),
       ),
     ).thenAnswer((_) async => _nullableResponse('/body', null));

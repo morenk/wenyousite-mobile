@@ -23,7 +23,7 @@ void main() {
     expect(find.text('随设备外观自动切换'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(store.writes, [AppearancePreference.dark]);
     expect(
@@ -38,6 +38,7 @@ void main() {
           .wenyouTokens,
       WenyouThemeTokens.dark,
     );
+    expect(_rootAnimatedTheme, findsNothing);
   });
 
   testWidgets('保存失败回滚原选择并允许重试目标选择', (tester) async {
@@ -115,6 +116,11 @@ void main() {
   });
 }
 
+final _rootAnimatedTheme = find.byWidgetPredicate(
+  (widget) => widget is AnimatedTheme && widget.child is ScaffoldMessenger,
+  description: 'MaterialApp root AnimatedTheme',
+);
+
 Widget _testApp({
   required _FakeAppearanceStore store,
   required AppearancePreference preference,
@@ -145,6 +151,7 @@ class _AppearanceTestApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: preference.themeMode,
+      themeAnimationStyle: AnimationStyle.noAnimation,
       home: const RepaintBoundary(
         key: Key('appearance-page-golden'),
         child: AppearanceSettingsPage(),

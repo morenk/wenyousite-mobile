@@ -151,12 +151,20 @@ void main() {
     expect(find.byKey(const Key('appearance-option-system')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(
       Theme.of(
         tester.element(find.byKey(const Key('appearance-option-dark'))),
       ).brightness,
       Brightness.dark,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AnimatedTheme && widget.child is ScaffoldMessenger,
+        description: 'MaterialApp root AnimatedTheme',
+      ),
+      findsNothing,
     );
   });
 

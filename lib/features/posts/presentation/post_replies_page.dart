@@ -51,7 +51,7 @@ class PostRepliesPage extends ConsumerStatefulWidget {
 class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
   final _scrollController = ScrollController();
-  final _composerDrafts = <String, String>{};
+  final _composerDrafts = <String, PostComposerDraft>{};
   final _targetReveal = DiscussionTargetRevealCoordinator();
   var _openingComposer = false;
   final _prefetchScheduler = DiscussionPrefetchScheduler();
@@ -304,14 +304,10 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
         context: context,
         target: target,
         initialDraft: _composerDrafts[draftKey],
-        onDraftChanged: (content) {
+        onDraftChanged: (draft) {
           if (!mounted) return;
           if (ref.read(sessionScopeProvider) != openedSessionScope) return;
-          if (content == target.initialContent) {
-            _composerDrafts.remove(draftKey);
-          } else {
-            _composerDrafts[draftKey] = content;
-          }
+          setPostComposerDraft(_composerDrafts, draftKey, draft);
         },
       );
       if (!mounted) return;

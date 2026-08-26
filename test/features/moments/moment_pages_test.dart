@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -500,8 +501,8 @@ void main() {
     expect(find.byKey(const Key('moment-comment-editor-dock')), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-close')), findsNothing);
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('0/500'), findsOneWidget);
+    expect(find.byType(QuillEditor), findsOneWidget);
+    expect(find.text('0/500'), findsNothing);
     final editorDock = find.byKey(const Key('moment-comment-editor-dock'));
     tester.view.viewInsets = const FakeViewPadding(bottom: 280);
     await tester.pump();
@@ -537,15 +538,22 @@ void main() {
     );
     tester.view.viewInsets = FakeViewPadding.zero;
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('moment-comment-input')),
-      '从悬浮入口发表',
+    const inviteUrl = 'https://wenyou.site/join/AbCdEfGh_123-XYZ';
+    _replaceAtomicEditor(tester, const Key('moment-comment-input'), inviteUrl);
+    await tester.pump();
+    expect(
+      find.byKey(const Key('atomic-editor-internal-reference')),
+      findsOneWidget,
     );
+    expect(find.bySemanticsLabel('站内传送门：传送门'), findsOneWidget);
     await tester.tap(find.byKey(const Key('moment-comment-send')));
     await tester.pumpAndSettle();
 
     expect(repository.commentInputs, hasLength(1));
-    expect(repository.commentInputs.single.content, '从悬浮入口发表');
+    expect(
+      repository.commentInputs.single.content,
+      '[传送门](/join/AbCdEfGh_123-XYZ)',
+    );
     expect(repository.commentInputs.single.replyToCommentId, isNull);
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
 
@@ -555,10 +563,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('回复 @温柔测试员'), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const Key('moment-comment-input')),
-      '暂时不发送的草稿',
-    );
+    _replaceAtomicEditor(tester, const Key('moment-comment-input'), '暂时不发送的草稿');
     await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
@@ -567,7 +572,10 @@ void main() {
     await tester.ensureVisible(rootCommentText);
     await tester.tap(rootCommentText);
     await tester.pumpAndSettle();
-    expect(find.text('暂时不发送的草稿'), findsOneWidget);
+    expect(
+      _atomicEditorPlainText(tester, const Key('moment-comment-input')),
+      '暂时不发送的草稿',
+    );
     await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('moment-comment-input')), findsNothing);
@@ -991,8 +999,9 @@ void main() {
       find.byKey(const Key('moment-compose-title')),
       '新的动态',
     );
-    await tester.enterText(
-      find.byKey(const Key('moment-compose-content')),
+    _replaceAtomicEditor(
+      tester,
+      const Key('moment-compose-content'),
       '纯文字也可以发布',
     );
     await tester.ensureVisible(find.byKey(const Key('moment-compose-submit')));
@@ -1002,6 +1011,60 @@ void main() {
     expect(repository.createdInputs.single.mediaIds, isEmpty);
     expect(repository.createdInputs.single.title, '新的动态');
     expect(draftStore.draft, isNull);
+    expect(find.text('动态=moment-1'), findsOneWidget);
+  });
+
+  testWidgets('动态邀请链接发布前成为可混排原子且保存规范正文', (tester) async {
+    const url = 'https://wenyou.site/join/AbCdEfGh_123-XYZ';
+    final repository = _PageRepository();
+    final router = GoRouter(
+      initialLocation: '/compose/moment',
+      routes: [
+        GoRoute(
+          path: '/compose/moment',
+          builder: (_, _) => const MomentComposePage(),
+        ),
+        GoRoute(
+          path: '/moments/:momentId',
+          name: 'moment-detail',
+          builder: (_, state) =>
+              Scaffold(body: Text('动态=${state.pathParameters['momentId']}')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          momentRepositoryProvider.overrideWithValue(repository),
+          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('moment-compose-title')),
+      '私密入口',
+    );
+    _replaceAtomicEditor(tester, const Key('moment-compose-content'), url);
+    await tester.pump();
+
+    expect(
+      find.byKey(const Key('atomic-editor-internal-reference')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('站内传送门：传送门'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('moment-compose-submit')));
+    await tester.tap(find.byKey(const Key('moment-compose-submit')));
+    await tester.pumpAndSettle();
+
+    expect(
+      repository.createdInputs.single.content,
+      '[传送门](/join/AbCdEfGh_123-XYZ)',
+    );
     expect(find.text('动态=moment-1'), findsOneWidget);
   });
 
@@ -1420,6 +1483,23 @@ Widget _feedApp(MomentRepository repository) {
       ),
     ),
   );
+}
+
+void _replaceAtomicEditor(WidgetTester tester, Key key, String value) {
+  final editor = tester.widget<QuillEditor>(find.byKey(key));
+  final length = editor.controller.document.length - 1;
+  editor.controller.replaceText(
+    0,
+    length,
+    value,
+    TextSelection.collapsed(offset: value.length),
+  );
+  editor.focusNode.requestFocus();
+}
+
+String _atomicEditorPlainText(WidgetTester tester, Key key) {
+  final editor = tester.widget<QuillEditor>(find.byKey(key));
+  return editor.controller.document.toPlainText().trimRight();
 }
 
 class _PageRepository extends Fake implements MomentRepository {

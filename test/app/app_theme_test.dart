@@ -257,6 +257,11 @@ void main() {
       expect(theme.scaffoldBackgroundColor, tokens.background);
     }
   });
+
+  test('亮色与黑夜 ThemeData 使用稳定实例避免应用根重复构造', () {
+    expect(AppTheme.light, same(AppTheme.light));
+    expect(AppTheme.dark, same(AppTheme.dark));
+  });
 }
 
 double _contrastRatio(Color first, Color second) {

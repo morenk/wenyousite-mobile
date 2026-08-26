@@ -12,23 +12,23 @@
 
 ## 3. 页面、入口和导航关系
 
-“我的” `/me` 对游客与登录用户都提供公开 `/appearance` 外观页入口；登录后还展示本人总览并进入独立资料编辑与账号设置，账号设置顶部同样提供当前外观入口，并可继续进入自己的公开主页、本人关注/粉丝、`/me/blocks` 黑名单页、`/me/security/sessions` 登录终端页、`/me/security/password` 修改密码页、`/me/security/email` 更换邮箱页及 `/me/security/delete-account` 注销页。契约 4.14 不再提供登录后邮箱验证入口。关于页后续接入；任何开发信息都不得显示凭据。
+“我的” `/me` 对游客与登录用户都提供公开 `/appearance` 外观页入口；登录后还展示本人总览并进入独立资料编辑与账号设置。账号设置还可继续进入自己的公开主页、本人关注/粉丝、`/me/blocks` 黑名单页、`/me/security/sessions` 登录终端页、`/me/security/password` 修改密码页、`/me/security/email` 更换邮箱页及 `/me/security/delete-account` 注销页。契约 4.14 不再提供登录后邮箱验证入口。关于页后续接入；任何开发信息都不得显示凭据。
 
 普通登录用户还可从账号设置进入公开 `/appeals` 治理决定页；设置只提供入口，不读取或持有 moderation 的专用申诉凭据。
 
 ## 4. 用户操作流程
 
-外观页提供“跟随系统 / 亮色 / 黑夜”三项单选；点选后立即应用并串行写入本地，写入失败回滚原选择并允许重试。跟随系统会随设备亮度变化，显式模式保持不变。资料和公开范围先读取服务端事实，只提交变化字段并采用服务端响应；头像选择复用媒体上传，设置/移除只采用用户端点最终结果，移除前二次确认。黑名单读取服务端列表，取消拉黑结果不明时可由关系投影确认，明确失败保留条目与问题编号。终端页按当前优先、其余最近活动时间倒序展示平台与三个时间；当前终端只读，其他终端二次确认后按稳定 ID 撤销，结果不明时读取最新终端列表，目标 ID 已不存在才视为退出完成。修改密码校验当前密码和两次新密码后一次提交；更换邮箱先用当前密码向规范化的新邮箱发送验证码，再校验 6 位验证码。发码不自动重放；结果不明时继续进入验证步骤，显示“邮件可能已发出”、60 秒冷却和问题编号，由用户明确重试。两个操作成功都会撤销账号全部 refresh 会话，移动端立即清除本机 Token 并进入登录页。当前账号退出仍需二次确认，服务端失败时可重试或再次确认仅清本机。
+外观页提供“跟随系统 / 亮色 / 黑夜”三项单选；点选后在下一 Flutter 帧直接采用目标主题，不对整棵应用做 `ThemeData` 插值动画，再串行写入本地，写入失败回滚原选择并允许重试。跟随系统会随设备亮度变化，显式模式保持不变。资料和公开范围先读取服务端事实，只提交变化字段并采用服务端响应；头像选择复用媒体上传，设置/移除只采用用户端点最终结果，移除前二次确认。黑名单读取服务端列表，取消拉黑结果不明时可由关系投影确认，明确失败保留条目与问题编号。终端页按当前优先、其余最近活动时间倒序展示平台与三个时间；当前终端只读，其他终端二次确认后按稳定 ID 撤销，结果不明时读取最新终端列表，目标 ID 已不存在才视为退出完成。修改密码校验当前密码和两次新密码后一次提交；更换邮箱先用当前密码向规范化的新邮箱发送验证码，再校验 6 位验证码。发码不自动重放；结果不明时继续进入验证步骤，显示“邮件可能已发出”、60 秒冷却和问题编号，由用户明确重试。两个操作成功都会撤销账号全部 refresh 会话，移动端立即清除本机 Token 并进入登录页。当前账号退出仍需二次确认，服务端失败时可重试或再次确认仅清本机。
 
 账号注销先展示身份不可恢复、所有终端失效、已发布内容匿名保留及本地未发布草稿不可恢复等事实；输入固定短语后仍需最后确认，才调用 `usersDeleteMe`。成功后清除本机双 Token 并进入首页游客态；若仅本地清理失败，页面只允许重试本机清理，不重复远端注销。关于页尚未接入。
 
 ## 5. API operationId 与生成类型
 
-- 外观偏好不调用 API。已接入：`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersSetProfileCover`、`usersRemoveProfileCover`、`usersDeleteMe`、`usersFollowBlocks`、`usersFollowUnblock`、`authLogout`、`authListSessions`、`authRevokeSession`、`authChangePassword`、`authRequestChangeEmailCode`、`authVerifyChangeEmail`。
+- 外观偏好本身不调用 API。已接入：`usersGetMe`、`usersUpdateMe`、`usersSetAvatar`、`usersRemoveAvatar`、`usersSetProfileCover`、`usersRemoveProfileCover`、`usersDeleteMe`、`usersFollowBlocks`、`usersFollowUnblock`、`authLogout`、`authListSessions`、`authRevokeSession`、`authChangePassword`、`authRequestChangeEmailCode`、`authVerifyChangeEmail`。
 
 ## 6. 状态模型和数据流
 
-全局外观状态与存储端口位于 `core/application`，由 `main.dart` 在 `runApp` 前读取 SharedPreferences 并把同一存储实例与初始状态注入 Riverpod；`WenyouApp` 只观察规范化偏好并映射为 `ThemeMode`。本人资料和头像端点由 users 的 autoDispose 控制器读取/编排；用户名、头像与资料隐私是独立编辑动作，页面统一阻止并发写入。头像上传进度和取消来自 media/application 的共享上传任务，users 状态只映射展示阶段并保留仅用于设置重试的媒体 ID。表单保存初值、编辑值和局部错误，成功后使用服务端响应重置。黑名单由 social 的 autoDispose 列表控制器管理；终端列表、凭据安全和注销仓储由 `settings/application` 端口表达，`main.dart` 组合根绑定生成客户端 data 适配器，三个 settings 控制器不直接导入 data。当前账号退出继续由 auth 的独立控制器管理。终端撤销和账号安全写入分别串行执行；换邮箱状态明确区分请求验证码与确认验证码两步，并只在内存保留目标邮箱、冷却和错误。注销状态用远端已确认标记隔开不可逆 API 与可重复的本地 Token 清理。
+全局外观状态与存储端口位于 `core/application`，由 `main.dart` 在 `runApp` 前读取 SharedPreferences 并把同一存储实例与初始状态注入 Riverpod；`WenyouApp` 只选择观察规范化偏好并映射为 `ThemeMode`，保存中和失败字段不会重建应用根。亮色与黑夜 `ThemeData` 各构造一次并稳定复用，根 `MaterialApp` 明确关闭主题插值。本人资料和头像端点由 users 的 autoDispose 控制器读取/编排；用户名、头像与资料隐私是独立编辑动作，页面统一阻止并发写入。头像上传进度和取消来自 media/application 的共享上传任务，users 状态只映射展示阶段并保留仅用于设置重试的媒体 ID。表单保存初值、编辑值和局部错误，成功后使用服务端响应重置。黑名单由 social 的 autoDispose 列表控制器管理；终端列表、凭据安全和注销仓储由 `settings/application` 端口表达，`main.dart` 组合根绑定生成客户端 data 适配器，三个 settings 控制器不直接导入 data。当前账号退出继续由 auth 的独立控制器管理。终端撤销和账号安全写入分别串行执行；换邮箱状态明确区分请求验证码与确认验证码两步，并只在内存保留目标邮箱、冷却和错误。注销状态用远端已确认标记隔开不可逆 API 与可重复的本地 Token 清理。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -51,7 +51,8 @@
 - [x] 游客看到登录入口且不请求私有资料，登录用户看到本人资料与隐私表单。
 - [x] 游客和登录用户都可进入公开外观页；跟随系统、亮色和黑夜标签及图标来自 Foundation。
 - [x] 启动首帧恢复保存偏好；缺失、未知或读取失败安全跟随系统，显式选择跨冷启动保留。
-- [x] 选择立即应用且防重复写入；失败回滚并可重试，跟随系统会响应设备外观变化。
+- [x] 选择在下一帧直接应用且不插值整棵主题；防重复写入，失败回滚并可重试，跟随系统会响应设备外观变化。
+- [x] 外观切换在 60 Hz Android 真机 Profile 三轮中位数达到 build/raster p90 不超过 8 ms、p99 不超过 16.7 ms且超预算率不超过 1%。
 - [x] 黑夜主题覆盖共享页面、Markdown/编辑器、等级、图片查看器及系统状态/导航栏，并有 Token 对比度、Widget 与 Golden 回归。
 - [x] 简介与三项公开范围只提交变化字段，失败可恢复且服务端结果回写。
 - [x] 头像选择、上传、设置和确认移除可恢复，失败保留原头像与请求 ID。
@@ -67,7 +68,7 @@
 
 ## 12. 已知限制和后续功能
 
-头像已提供 1:1 手动取景，主页背景已提供 3:1 与 2:1 双画幅取景；当前仍不支持清空已有简介，也没有关于或开发信息页面。登录终端只展示平台级信息，不提供设备命名；黑名单尚不与其他页面建立主动失效广播。改密和换邮箱成功后的全端退出依赖后端会话撤销事实，移动端只负责立即清除本机登录。注销端到端真机测试只允许使用一次性账号。不做动态实验开关和多账号管理。Android/iOS 原生静态启动层保持既有白色，正确外观从 Flutter 首帧开始；当前阶段不改动原生启动资源。
+头像已提供 1:1 手动取景，主页背景已提供 3:1 与 2:1 双画幅取景；当前仍不支持清空已有简介，也没有关于或开发信息页面。登录终端只展示平台级信息，不提供设备命名；黑名单尚不与其他页面建立主动失效广播。改密和换邮箱成功后的全端退出依赖后端会话撤销事实，移动端只负责立即清除本机登录。注销端到端真机测试只允许使用一次性账号。不做远程动态实验开关和多账号管理。Android/iOS 原生静态启动层保持既有白色，正确外观从 Flutter 首帧开始；当前阶段不改动原生启动资源。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -75,4 +76,4 @@
 
 ## 14. 相关代码与架构文档
 
-入口：`lib/features/users/presentation/me_page.dart`、`lib/features/settings/presentation/appearance_settings_page.dart`；外观状态：`lib/core/application/appearance_preference.dart`；本地存储：`lib/core/storage/shared_preferences_appearance_store.dart`；settings 端口：`lib/features/settings/application/settings_repository_ports.dart`；data 适配器：`lib/features/settings/data/`；组合根：`lib/main.dart`。参见[认证](auth.md)、[用户与资料](users.md)、[应用壳](app-shell.md)、[本地持久化](../architecture/persistence.md)、[网络与会话](../architecture/networking.md)。
+入口：`lib/features/users/presentation/me_page.dart`、`lib/features/settings/presentation/appearance_settings_page.dart`；外观状态：`lib/core/application/appearance_preference.dart`；本地存储：`lib/core/storage/shared_preferences_appearance_store.dart`；settings 端口：`lib/features/settings/application/settings_repository_ports.dart`；data 适配器：`lib/features/settings/data/`；组合根：`lib/main.dart`。参见[认证](auth.md)、[用户与资料](users.md)、[应用壳](app-shell.md)、[站内通知](notifications.md)、[本地持久化](../architecture/persistence.md)、[网络与会话](../architecture/networking.md)和[移动端性能基线](../architecture/performance.md)。

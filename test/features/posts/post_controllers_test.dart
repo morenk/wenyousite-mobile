@@ -298,6 +298,50 @@ void main() {
     expect(repository.updateRequests.last.content, '我的编辑');
   });
 
+  test('编辑结果丢失后回读到相同正文时直接收敛为成功', () async {
+    final repository = _FakePostRepository(
+      posts: {'floor': _post('floor', content: '我的编辑', version: 2)},
+      onUpdate: ({required postId, required content, required version}) async {
+        throw const ApiFailure(
+          userMessage: '正文已有更新。',
+          httpStatus: 409,
+          businessCode: 40002,
+        );
+      },
+    );
+    final controller = PostComposerController(repository, _editTarget);
+    addTearDown(controller.dispose);
+    controller.updateContent('我的编辑');
+
+    final result = await controller.submit();
+
+    expect(result?.content, '我的编辑');
+    expect(result?.version, 2);
+    expect(controller.state.result, same(result));
+    expect(controller.state.failure, isNull);
+    expect(controller.state.conflict, isNull);
+    expect(repository.updateRequests, hasLength(1));
+  });
+
+  test('携带其他业务码的 409 不误判为正文版本冲突', () async {
+    final repository = _FakePostRepository(
+      onUpdate: ({required postId, required content, required version}) async {
+        throw const ApiFailure(
+          userMessage: '这次操作与待确认请求冲突。',
+          httpStatus: 409,
+          businessCode: 40912,
+        );
+      },
+    );
+    final controller = PostComposerController(repository, _editTarget);
+    addTearDown(controller.dispose);
+    controller.updateContent('我的编辑');
+
+    expect(await controller.submit(), isNull);
+    expect(controller.state.failure?.businessCode, 40912);
+    expect(controller.state.conflict, isNull);
+  });
+
   test('正文写入透传版本，删除动作拒绝正文但允许普通楼层', () async {
     final repository = _FakePostRepository();
     final composer = PostComposerController(repository, _bodyTarget);

@@ -8,6 +8,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -29,7 +30,7 @@ class MomentComposePage extends ConsumerStatefulWidget {
 class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  late final WenyouAtomicTextController _contentController;
   List<UploadedEditorImage> _images = [];
   String? _coverMediaId;
   int? _hydratedVersion;
@@ -45,6 +46,10 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   @override
   void initState() {
     super.initState();
+    _contentController = WenyouAtomicTextController(
+      initialMarkdown: '',
+      maximumMarkdownLength: 1000,
+    );
     _titleController.addListener(_onDraftChanged);
     _contentController.addListener(_onDraftChanged);
   }
@@ -208,6 +213,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                   decoration: const InputDecoration(
                     labelText: '标题（必填）',
                     hintText: '给这一刻起个标题',
+                    counterText: '',
                   ),
                   validator: (value) {
                     final length = value?.trim().length ?? 0;
@@ -216,21 +222,30 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                 ),
                 SizedBox(height: tokens.space8),
                 Expanded(
-                  child: TextFormField(
-                    key: const Key('moment-compose-content'),
-                    controller: _contentController,
-                    expands: true,
-                    minLines: null,
-                    maxLines: null,
-                    maxLength: 1000,
-                    textAlignVertical: TextAlignVertical.top,
-                    decoration: const InputDecoration(
-                      labelText: '正文（选填）',
-                      hintText: '分享此刻的想法…',
-                      alignLabelWithHint: true,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: tokens.border),
+                      borderRadius: BorderRadius.circular(tokens.radius12),
+                    ),
+                    child: WenyouAtomicTextEditor(
+                      controller: _contentController,
+                      editorKey: const Key('moment-compose-content'),
+                      placeholder: '分享此刻的想法…',
+                      semanticLabel: '正文（选填）',
+                      expands: true,
                     ),
                   ),
                 ),
+                if (_contentController.failure case final failure?) ...[
+                  SizedBox(height: tokens.space8),
+                  Text(
+                    failure,
+                    key: const Key('moment-compose-content-failure'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -244,7 +259,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     _hydratedVersion = detail.version;
     _applyingContent = true;
     _titleController.text = detail.card.title;
-    _contentController.text = detail.content;
+    _contentController.applyMarkdown(detail.content);
     _images = detail.images
         .map(
           (image) => UploadedEditorImage(
@@ -409,6 +424,10 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_contentController.flush()) {
+      _showFeedback(_contentController.failure ?? '正文暂时无法保存，请重新编辑后再试。');
+      return;
+    }
     final saved = await ref
         .read(momentComposerControllerProvider(widget.momentId).notifier)
         .submit(_draftInput());
@@ -418,7 +437,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   MomentDraftInput _draftInput() => MomentDraftInput(
     title: _titleController.text,
-    content: _contentController.text,
+    content: _contentController.markdown,
     mediaIds: _images.map((image) => image.mediaId).toList(),
     coverMediaId: _coverMediaId,
   );
@@ -536,14 +555,14 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   String _signature() => jsonEncode({
     'title': _titleController.text,
-    'content': _contentController.text,
+    'content': _contentController.markdown,
     'coverMediaId': _coverMediaId,
     'mediaIds': [for (final image in _images) image.mediaId],
   });
 
   MomentLocalDraft _currentDraft() => MomentLocalDraft(
     title: _titleController.text,
-    content: _contentController.text,
+    content: _contentController.markdown,
     images: List.unmodifiable(_images),
     coverMediaId: _coverMediaId,
     updatedAt: DateTime.now(),
@@ -586,7 +605,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   void _applyDraft(MomentLocalDraft draft) {
     _applyingContent = true;
     _titleController.text = draft.title;
-    _contentController.text = draft.content;
+    _contentController.applyMarkdown(draft.content);
     final images = draft.images.take(9).toList(growable: false);
     final cover = images.any((image) => image.mediaId == draft.coverMediaId)
         ? draft.coverMediaId

@@ -52,7 +52,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _pageInstanceToken = Object();
   final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
-  final _composerDrafts = <String, String>{};
+  final _composerDrafts = <String, PostComposerDraft>{};
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
   final _targetReveal = DiscussionTargetRevealCoordinator();
   String? _lastOpenedReplyTargetId;
@@ -818,15 +818,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       context: context,
       target: target,
       initialDraft: _composerDrafts[draftKey],
-      onDraftChanged: (content) {
+      onDraftChanged: (draft) {
         if (!mounted || ref.read(sessionScopeProvider) != openedSessionScope) {
           return;
         }
-        if (content == target.initialContent) {
-          _composerDrafts.remove(draftKey);
-        } else {
-          _composerDrafts[draftKey] = content;
-        }
+        setPostComposerDraft(_composerDrafts, draftKey, draft);
       },
     );
     if (result == null ||
@@ -838,6 +834,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     if (target.kind == PostComposerKind.createFloor) {
       ref.invalidate(postFloorDiscussionAuthorsProvider(target.subthreadId));
     }
+    ref.invalidate(threadPostTargetProvider(result.id));
     await ref.read(_detailProvider.notifier).refreshMetadata();
     if (!mounted) return;
     switch (target.kind) {

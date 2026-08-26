@@ -112,6 +112,7 @@ class ApiPostRepository implements PostRepository {
       );
       final dto = (await _api.postsUpdate(
         id: postId,
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         updatePostDto: payload,
       )).data?.data;
       if (dto == null) {
@@ -140,6 +141,7 @@ class ApiPostRepository implements PostRepository {
       });
       final dto = (await _api.postsUpsertBody(
         subthreadId: subthreadId,
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
         upsertBodyDto: payload,
       )).data?.data;
       if (dto == null) {

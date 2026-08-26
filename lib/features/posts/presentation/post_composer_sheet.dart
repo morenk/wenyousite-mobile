@@ -14,20 +14,22 @@ import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
+
+export 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart'
+    show PostComposerDraft, setPostComposerDraft;
 
 Future<PostItem?> showPostComposerSheet({
   required BuildContext context,
   required PostComposerTarget target,
-  String? initialDraft,
-  ValueChanged<String>? onDraftChanged,
+  PostComposerDraft? initialDraft,
+  ValueChanged<PostComposerDraft?>? onDraftChanged,
 }) {
-  final effectiveTarget = initialDraft == null
-      ? target
-      : _targetWithInitialContent(target, initialDraft);
   return showModalBottomSheet<PostItem>(
     context: context,
     isScrollControlled: true,
@@ -37,9 +39,15 @@ Future<PostItem?> showPostComposerSheet({
     sheetAnimationStyle: AnimationStyle.noAnimation,
     backgroundColor: Colors.transparent,
     constraints: const BoxConstraints(maxWidth: double.infinity),
-    builder: (context) => _PostComposerRouteHost(
-      target: effectiveTarget,
+    builder: (context) => PostComposerOpening(
+      target: target,
+      initialDraft: initialDraft,
       onDraftChanged: onDraftChanged,
+      builder: (context, composer) => _PostComposerRouteHost(
+        target: composer.target,
+        baseline: composer.baseline,
+        onDraftChanged: onDraftChanged,
+      ),
     ),
   );
 }
@@ -53,26 +61,16 @@ String postComposerDraftKey(PostComposerTarget target) => [
   target.replyToPostId ?? '',
 ].join(':');
 
-PostComposerTarget _targetWithInitialContent(
-  PostComposerTarget target,
-  String content,
-) => (
-  kind: target.kind,
-  threadId: target.threadId,
-  subthreadId: target.subthreadId,
-  postId: target.postId,
-  parentPostId: target.parentPostId,
-  replyToPostId: target.replyToPostId,
-  version: target.version,
-  initialContent: content,
-  label: target.label,
-);
-
 class _PostComposerRouteHost extends StatefulWidget {
-  const _PostComposerRouteHost({required this.target, this.onDraftChanged});
+  const _PostComposerRouteHost({
+    required this.target,
+    required this.baseline,
+    this.onDraftChanged,
+  });
 
   final PostComposerTarget target;
-  final ValueChanged<String>? onDraftChanged;
+  final PostComposerBaseline baseline;
+  final ValueChanged<PostComposerDraft?>? onDraftChanged;
 
   @override
   State<_PostComposerRouteHost> createState() => _PostComposerRouteHostState();
@@ -113,6 +111,7 @@ class _PostComposerRouteHostState extends State<_PostComposerRouteHost> {
           reverseTransitionDuration: Duration.zero,
           pageBuilder: (context, _, _) => _ExpandablePostComposer(
             target: widget.target,
+            baseline: widget.baseline,
             onDraftChanged: widget.onDraftChanged,
             composerKey: _composerKey,
             onClose: _close,
@@ -133,13 +132,15 @@ class _PostComposerRouteHostState extends State<_PostComposerRouteHost> {
 class _ExpandablePostComposer extends StatefulWidget {
   const _ExpandablePostComposer({
     required this.target,
+    required this.baseline,
     required this.composerKey,
     required this.onClose,
     this.onDraftChanged,
   });
 
   final PostComposerTarget target;
-  final ValueChanged<String>? onDraftChanged;
+  final PostComposerBaseline baseline;
+  final ValueChanged<PostComposerDraft?>? onDraftChanged;
   final GlobalKey<_PostComposerSheetState> composerKey;
   final ValueChanged<PostItem?> onClose;
 
@@ -194,6 +195,7 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
                   child: PostComposerSheet(
                     key: widget.composerKey,
                     target: widget.target,
+                    baseline: widget.baseline,
                     onDraftChanged: widget.onDraftChanged,
                     onClose: widget.onClose,
                     expanded: _extent >= _maximumExtent - .01,
@@ -224,6 +226,7 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
 class PostComposerSheet extends ConsumerStatefulWidget {
   const PostComposerSheet({
     required this.target,
+    required this.baseline,
     required this.onClose,
     this.onDraftChanged,
     this.expanded = false,
@@ -233,8 +236,9 @@ class PostComposerSheet extends ConsumerStatefulWidget {
   });
 
   final PostComposerTarget target;
+  final PostComposerBaseline baseline;
   final ValueChanged<PostItem?> onClose;
-  final ValueChanged<String>? onDraftChanged;
+  final ValueChanged<PostComposerDraft?>? onDraftChanged;
   final bool expanded;
   final ValueChanged<double>? onResize;
   final VoidCallback? onToggleExpanded;
@@ -276,7 +280,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
               contentDraftsControllerProvider(_contentDraftSessionKey).notifier,
             )
             .updateAutoSaveContent(markdown);
-        widget.onDraftChanged?.call(markdown);
+        _notifyDraft(markdown);
       },
     )..addListener(_onEditorSessionChanged);
   }
@@ -519,6 +523,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                             ),
                             placeholder: _placeholder(widget.target.kind),
                             customStyles: wenyouEditorTextStyles(context),
+                            // Flutter Quill 尚未稳定开放自定义块前导渲染入口。
+                            // ignore: experimental_member_use
+                            customLeadingBlockBuilder:
+                                wenyouEditorLeadingBlockBuilder(context),
                             embedBuilders: wenyouEditorEmbedBuilders(),
                             customShortcuts: _editorSession.clipboardShortcuts,
                             customActions: _editorSession.clipboardActions,
@@ -594,7 +602,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         result == null) {
       return;
     }
-    widget.onDraftChanged?.call('');
+    widget.onDraftChanged?.call(null);
     setState(() => _closing = true);
     widget.onClose(result);
   }
@@ -609,12 +617,12 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       context: context,
       useRootNavigator: false,
       builder: (context) => AlertDialog(
-        title: const Text('覆盖云端最新版？'),
-        content: const Text('内容已被其他设备修改。继续会用当前编辑器全文覆盖刚读取的最新版。'),
+        title: const Text('覆盖最新版正文？'),
+        content: const Text('正文已有更新。继续会用当前编辑器全文替换刚读取的最新版。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('保留云端'),
+            child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -638,6 +646,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         result == null) {
       return;
     }
+    widget.onDraftChanged?.call(null);
     setState(() => _closing = true);
     widget.onClose(result);
   }
@@ -666,9 +675,13 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       return;
     }
     final current = ref.read(postComposerControllerProvider(widget.target));
-    widget.onDraftChanged?.call(current.content);
+    _notifyDraft(current.content);
     setState(() => _closing = true);
     widget.onClose(null);
+  }
+
+  void _notifyDraft(String content) {
+    widget.onDraftChanged?.call(widget.baseline.draftFor(content));
   }
 
   Future<void> _openContentDrafts() async {

@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
@@ -424,9 +425,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       child: SingleChildScrollView(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final toolbarAvailableWidth =
+                constraints.maxWidth -
+                WenyouEditorContract.toolbarHorizontalPadding * 2;
+            final draftInline = _draftFitsInToolbarRow(toolbarAvailableWidth);
             final promoted = _promotedActionsForWidth(
-              constraints.maxWidth - tokens.space4 * 2,
-              reserveDraft: false,
+              toolbarAvailableWidth,
+              reserveDraft: draftInline,
             );
             final items = <Widget>[
               if (widget.capabilities.links)
@@ -459,13 +464,19 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorBulletList,
                   label: '无序列表',
-                  selected: style.attributes.containsKey(Attribute.ul.key),
+                  selected: WenyouEditorFormatPolicy.isActive(
+                    style,
+                    Attribute.ul,
+                  ),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ul)),
                 ),
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorOrderedList,
                   label: '有序列表',
-                  selected: style.attributes.containsKey(Attribute.ol.key),
+                  selected: WenyouEditorFormatPolicy.isActive(
+                    style,
+                    Attribute.ol,
+                  ),
                   onPressed: () => _runTrayAction(() => _toggle(Attribute.ol)),
                 ),
                 WenyouEditorTrayButton(
@@ -585,23 +596,12 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   void _applyHeading(int selected) {
-    widget.controller.formatSelection(
-      selected == 2
-          ? Attribute.h2
-          : selected == 3
-          ? Attribute.h3
-          : Attribute.clone(Attribute.header, null),
-    );
+    WenyouEditorFormatPolicy.applyHeading(widget.controller, selected);
     _setTray(_EditorTray.none);
   }
 
   void _toggle(Attribute attribute) {
-    final active = widget.controller.getSelectionStyle().attributes.containsKey(
-      attribute.key,
-    );
-    widget.controller.formatSelection(
-      active ? Attribute.clone(attribute, null) : attribute,
-    );
+    WenyouEditorFormatPolicy.toggle(widget.controller, attribute);
     widget.editorFocusNode?.requestFocus();
   }
 
@@ -761,16 +761,19 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         label,
         TextSelection.collapsed(offset: selection.start + label.length),
       );
-      widget.controller.formatText(
-        selection.start,
-        label.length,
-        LinkAttribute(url),
+      WenyouEditorFormatPolicy.applyLink(
+        widget.controller,
+        selection: TextSelection(
+          baseOffset: selection.start,
+          extentOffset: selection.start + label.length,
+        ),
+        url: url,
       );
     } else {
-      widget.controller.formatText(
-        selection.start,
-        selection.end - selection.start,
-        LinkAttribute(url),
+      WenyouEditorFormatPolicy.applyLink(
+        widget.controller,
+        selection: selection,
+        url: url,
       );
     }
     _setTray(_EditorTray.none);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -43,10 +44,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('这会先作为消息请求'), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const Key('direct-message-composer-field')),
-      '你好，想和你聊聊',
-    );
+    await _replaceComposerText(tester, '你好，想和你聊聊');
     await tester.pump();
     await tester.tap(find.byKey(const Key('direct-message-composer-submit')));
     await tester.pumpAndSettle();
@@ -108,6 +106,20 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+}
+
+Future<void> _replaceComposerText(WidgetTester tester, String text) async {
+  final editor = find.byKey(const Key('direct-message-composer-field'));
+  final state = tester.state<QuillEditorState>(editor);
+  state.widget.focusNode.requestFocus();
+  await tester.pump();
+  tester.testTextInput.updateEditingValue(
+    TextEditingValue(
+      text: '$text\n',
+      selection: TextSelection.collapsed(offset: text.length),
+    ),
+  );
+  await tester.idle();
 }
 
 Widget _app(

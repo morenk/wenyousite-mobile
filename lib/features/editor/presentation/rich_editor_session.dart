@@ -786,7 +786,17 @@ class _LiteralTextQuillController extends QuillController {
     bool shouldNotifyListeners = true,
   }) {
     final before = document.toDelta();
-    if (_containsEmbed(data)) {
+    final internalReference = data is String
+        ? RichEditorSession._internalReferenceDelta(
+            data,
+            len == 0 ? '' : document.getPlainText(index, len),
+          )
+        : null;
+    final effectiveData = internalReference ?? data;
+    final effectiveSelection = internalReference == null
+        ? textSelection
+        : TextSelection.collapsed(offset: index + 1);
+    if (_containsEmbed(effectiveData)) {
       // Quill applies pending inline toolbar styles to every replacement,
       // including embeds. Protocol nodes must remain attribute-free so the
       // Markdown codec can persist them without weakening its fail-closed
@@ -796,12 +806,12 @@ class _LiteralTextQuillController extends QuillController {
     super.replaceText(
       index,
       len,
-      data,
-      textSelection,
+      effectiveData,
+      effectiveSelection,
       ignoreFocus: ignoreFocus,
       shouldNotifyListeners: shouldNotifyListeners,
     );
-    final insertedLength = switch (data) {
+    final insertedLength = switch (effectiveData) {
       String value => value.length,
       Delta value => MarkdownDeltaLineMetadata.documentLength(value),
       Embeddable() => 1,
@@ -813,19 +823,19 @@ class _LiteralTextQuillController extends QuillController {
       index: index,
       replacedLength: len,
       insertedLength: insertedLength,
-      insertedDelta: data is Delta ? data : null,
+      insertedDelta: effectiveData is Delta ? effectiveData : null,
     );
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
-    if (data is! String || data.isEmpty) return;
+    if (effectiveData is! String || effectiveData.isEmpty) return;
 
     final formatting = Delta();
     var formattingOffset = 0;
     var sourceOffset = 0;
-    while (sourceOffset < data.length) {
-      final newline = data.indexOf('\n', sourceOffset);
-      final end = newline < 0 ? data.length : newline;
+    while (sourceOffset < effectiveData.length) {
+      final newline = effectiveData.indexOf('\n', sourceOffset);
+      final end = newline < 0 ? effectiveData.length : newline;
       if (end > sourceOffset) {
         final start = index + sourceOffset;
         if (start > formattingOffset) {

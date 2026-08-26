@@ -57,6 +57,103 @@ void main() {
     expect(find.text('已复制'), findsOneWidget);
   });
 
+  testWidgets('从中央操作窗复制只写入一次并显示成功提示', (tester) async {
+    var attempts = 0;
+    String? copiedText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method != 'Clipboard.setData') return null;
+      attempts += 1;
+      copiedText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Builder(
+            builder: (pageContext) => PostCardActionMenu(
+              canCopyText: true,
+              canEdit: false,
+              canDelete: false,
+              canReport: false,
+              pending: false,
+              semanticLabel: '楼层操作',
+              actionKeyPrefix: 'copy-flow',
+              onSelected: (action) {
+                if (action == PostCardAction.copyText) {
+                  unawaited(copyPostCardValue(pageContext, '楼层正文', '内容已复制'));
+                }
+              },
+              anchorBuilder: (context, handle) => FilledButton(
+                key: const Key('copy-flow-trigger'),
+                onPressed: handle.open,
+                child: const Text('打开操作'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('copy-flow-trigger')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('copy-flow-copy')));
+    await tester.pumpAndSettle();
+
+    expect(attempts, 1);
+    expect(copiedText, '楼层正文');
+    expect(find.byKey(const Key('wenyou-modal-action-menu')), findsNothing);
+    expect(find.text('复制失败'), findsNothing);
+    expect(find.text('内容已复制'), findsOneWidget);
+  });
+
+  testWidgets('成功提示异常不会误报复制失败或重复写入', (tester) async {
+    var attempts = 0;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method != 'Clipboard.setData') return null;
+      attempts += 1;
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: ScaffoldMessenger(
+            child: Builder(
+              builder: (context) => FilledButton(
+                key: const Key('copy-without-feedback-target'),
+                onPressed: () =>
+                    unawaited(copyPostCardValue(context, '正文', '已复制')),
+                child: const Text('复制'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('copy-without-feedback-target')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.takeException(), isA<AssertionError>());
+    expect(attempts, 1);
+    expect(find.text('复制失败'), findsNothing);
+    expect(find.byKey(const Key('copy-failure-retry')), findsNothing);
+  });
+
   testWidgets('帖子操作只保留长按所需动作且不再重复提供回复', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

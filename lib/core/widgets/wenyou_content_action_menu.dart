@@ -110,13 +110,12 @@ Future<void> copyPostCardValue(
   String value,
   String successMessage,
 ) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
   while (context.mounted) {
     try {
       await Clipboard.setData(ClipboardData(text: value));
-      if (!context.mounted) return;
-      showWenyouSnackBar(context, successMessage);
-      return;
     } on Object {
+      await WidgetsBinding.instance.endOfFrame;
       if (!context.mounted) return;
       final retry = await showDialog<bool>(
         context: context,
@@ -139,6 +138,25 @@ Future<void> copyPostCardValue(
         ),
       );
       if (retry != true) return;
+      continue;
     }
+
+    await WidgetsBinding.instance.endOfFrame;
+    if (!context.mounted || messenger?.mounted != true) return;
+    try {
+      messenger!.showWenyouSnackBar(successMessage);
+    } on Object catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'wenyou content actions',
+          context: ErrorDescription(
+            'while showing feedback after copying content',
+          ),
+        ),
+      );
+    }
+    return;
   }
 }

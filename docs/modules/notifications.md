@@ -4,7 +4,7 @@
 
 ## 1. 模块目标与非目标
 
-实现消息中心中的通知列表、筛选、已读、删除、目标导航和独立未读角标。V1 不接入 FCM。
+实现消息中心中的通知列表、筛选、已读、删除、目标导航、独立未读角标和 Android 可关闭的后台系统顶栏提醒。V1 不接入 FCM；系统提醒来自仍存活 Flutter 进程中的 HTTP 尽力拉取，不是离线推送。
 
 ## 2. 用户角色与使用场景
 
@@ -16,7 +16,7 @@
 
 ## 4. 用户操作流程
 
-进入消息分支、回到前台及每 30 秒刷新通知与私聊未读事实；前台轮询由应用壳单一定时器统一调度，退到后台或退出登录立即停止。通知筛选直接采用 Foundation 的“全部 / 互动 / 订阅 / 系统”分组，并与消息中心栏目、动态和首页分类复用纯文字、底部分隔线与短选中线的共享页签，不再使用独立 ChoiceChip 条。未读通知条目在尾部显示 8dp Foundation `destructive` 圆点，与普通品牌强调色明确区分；打开通知后乐观标记已读且不阻塞导航，支持确认后单条删除和按服务端全局事实执行全部已读。回复通知根据收件人与真实回复对象显示“回复了你”或“回复了用户名”，订阅者不会被误写为回复对象；缺少新字段的历史通知使用中性“回复了”。动态评论通知只传稳定 momentId/commentId；详情调用 `momentsCommentContext` 注入主评论和目标，不扫描评论分页，并把目标滚动到视口内。下拉刷新会并行校准列表与通知未读数，加载更多失败保留已加载内容。私聊角标由 direct-messages 独立读取，不并入通知筛选或“全部已读”；底栏角标只在展示层求和。
+进入消息分支、回到前台及每 30 秒刷新通知与私聊未读事实；前台轮询由应用壳单一定时器统一调度。Android 后台尽力提醒登录后固定开启；离开前台先记录最新一页通知 ID 与内容指纹，随后在进程仍获系统调度时前 10 分钟每 30 秒、之后每 2 分钟尽力拉取；同一聚合通知的 `totalCount` 或摘要变化可再次提醒，历史基线不会补发。一次最多显示三条，更多时只显示消息中心汇总。通知筛选直接采用 Foundation 的“全部 / 互动 / 订阅 / 系统”分组，并与消息中心栏目、动态和首页分类复用纯文字、底部分隔线与短选中线的共享页签，不再使用独立 ChoiceChip 条。未读通知条目在尾部显示 8dp Foundation `destructive` 圆点，与普通品牌强调色明确区分；打开通知后乐观标记已读且不阻塞导航，支持确认后单条删除和按服务端全局事实执行全部已读。回复通知根据收件人与真实回复对象显示“回复了你”或“回复了用户名”，订阅者不会被误写为回复对象；缺少新字段的历史通知使用中性“回复了”。动态评论通知只传稳定 momentId/commentId；详情调用 `momentsCommentContext` 注入主评论和目标，不扫描评论分页，并把目标滚动到视口内。下拉刷新会并行校准列表与通知未读数，加载更多失败保留已加载内容。私聊角标由 direct-messages 独立读取，不并入通知筛选或“全部已读”；底栏角标只在展示层求和。
 
 ## 5. API operationId 与生成类型
 
@@ -25,15 +25,15 @@
 
 ## 6. 状态模型和数据流
 
-通知未读数是服务端事实；列表与角标共享 `notifications/application` 仓储端口但独立请求，`main.dart` 组合根绑定 API data 适配器。列表控制器按 Foundation 分组隔离游标并复用 `RequestEpoch` 丢弃筛选切换、刷新或首页重载前的迟到响应；加载更多按通知 ID 去重并保持已有顺序，写操作串行化。单条已读和全部已读先乐观更新列表与角标，失败恢复列表并重新请求未读数；删除成功后再移除条目，删除未读项同步递减角标。消息中心组合位于 `app_shell/presentation`，notifications 不反向导入 direct_messages；通知 domain 只保存服务端事实，结构化中文与旧正文清洗由 presentation formatter 负责。未知枚举保留通用条目，不使整个列表反序列化失败。
+通知未读数是服务端事实；列表与角标共享 `notifications/application` 仓储端口但独立请求，`main.dart` 组合根绑定 API data 适配器。列表控制器按 Foundation 分组隔离游标并复用 `RequestEpoch` 丢弃筛选切换、刷新或首页重载前的迟到响应；加载更多按通知 ID 去重并保持已有顺序，写操作串行化。单条已读和全部已读先乐观更新列表与角标，失败恢复列表并重新请求未读数；删除成功后再移除条目，删除未读项同步递减角标。消息中心与后台轮询组合位于 `app_shell`；通知结构化文案、旧正文清洗和目标坐标是 `notifications/application` 的纯函数，可同时供页面与系统卡片复用，domain 仍只保存服务端事实。后台 epoch 在恢复前台时作废并清空基线，迟到响应不得显示系统通知。未知枚举保留通用条目，不使整个列表反序列化失败。
 
 ## 7. 鉴权、权限和隐私规则
 
-只允许当前账号读取；切号立即清缓存。未知 target 不猜测导航，不在通知预览显示额外私密正文。
+只允许当前账号读取；切号立即清缓存并停止上一会话的后台尽力检查。系统卡片正文只使用页面同源的安全摘要、合并空白并截断至 160 个 Unicode 字符；不附带完整 Markdown 图片地址。未知 target 不猜测导航，点击回退消息中心；系统卡片不自动标记已读，进入目标后仍以现有页面/API 行为为准。
 
 ## 8. 本地存储、缓存及失效规则
 
-首版只做 Riverpod 进程内状态；通知页离开组件树后列表可释放，退出登录后认证状态变化会停止应用壳未读轮询并清零角标，再次登录重新创建私有状态。进入分支、回前台、前台 30 秒轮询和写操作负责校准。
+通知列表、后台基线和内容指纹只做 Riverpod/Dart 进程内状态；通知页离开组件树后列表可释放，退出登录后认证状态变化会停止应用壳轮询、清除后台偏好并清零角标，再次登录重新创建私有状态。进入分支、回前台、前台 30 秒轮询、已开启时的后台自适应轮询和写操作负责校准。
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
@@ -45,7 +45,7 @@
 
 有明确操作者的通知头像缺图时显示用户名首个可读字符，无操作者的系统通知保留事件图标；通知短时间向辅助技术提供完整时间。
 
-导航遵循[导航](../architecture/navigation.md)，目标 API 才是权威；不依赖推送到达保证。私聊入口、角标和正文归 [direct-messages](direct-messages.md)，通知模块不读取私聊正文。仓库持续固定 mobile push v1 Schema/样例，当前切片不启用 FCM 运行时。
+导航遵循[导航](../architecture/navigation.md)，目标 API 才是权威；不依赖提醒到达保证。私聊入口、角标和正文归 [direct-messages](direct-messages.md)，通知模块不读取私聊正文。仓库持续固定 mobile push v1 Schema/样例，本地系统卡片使用独立严格 v1 JSON 且当前切片不启用 FCM 运行时、设备注册或 push capability。
 
 ## 11. 测试场景与验收条件
 
@@ -55,6 +55,7 @@
 - [x] 主楼层、楼中楼回复、thread/user/moment 已知目标精确导航，删除目标和未知枚举安全展示。
 - [x] 回复目标本人显示“回复了你”，主题订阅者显示“回复了用户名”，历史载荷中性降级；三种文案不改变楼中楼精确导航。
 - [x] 退出会销毁私有轮询与列表状态，再次登录重新读取，不复用上一会话数据。
+- [x] Android 后台首次基线不补发历史通知；新 ID 与同 ID 聚合内容变化会提醒，超过三条汇总，安全摘要和严格点击载荷有单元回归。
 - [x] 私聊 capability 关闭时不创建页签；开启后“通知 / 私聊”同级展示、独立计数，底栏显示两者合计。
 - [x] 主题帖子目标只短暂显示 1dp Foundation 淡粉边框，不铺底色、不展示“已定位到”成功说明；1.2 秒后按 slow motion 淡出，减少动态效果时直接复原。
 - [x] 动态评论目标完整消费 `momentCommentNavigation`，区分主评论、楼中楼、墓碑主评论、404 与临时失败，并复用同一短时边框语义。
@@ -64,7 +65,7 @@
 
 契约 5.12.2 的楼中楼管理者/订阅通知使用既有 `new_post` 类型和开放式 `new_reply` action；当前 formatter 不把未知 action 猜成结构化动作，而是安全显示服务端完整正文，导航仍由既有帖子目标处理。直接被回复者继续使用 `reply` 并显示真实回复对象；主题楼主收到 5.12.3 主楼层直接互动时，既有“回复了你”和互动分类自然生效。若要把 `new_reply` 改为客户端结构化文案，应另开通知行为切片。
 
-V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保留同步的推送协议产物供后续里程碑实现，不据此提前注册设备。契约 5.9 的协作者任免通知字段已进入生成客户端，但当前 formatter 与导航尚未识别这两类 action，需与协作主题列表和权限撤销刷新一起接入。契约 5.11 的通知目标 `state` 已进入生成客户端；服务端会把非 `ACTIVE` 目标降为不可导航的 `kind=none` 并强制已读，移动端尚未按 `CONTENT_DELETED`、`USER_DEACTIVATED` 和 `NO_TARGET` 分别展示历史态文案，该行为需在独立通知切片接入。
+V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标实时保证；Android 系统通知权限只服务于登录后固定开启的进程内尽力提醒，不提供应用内开关，不注册前台服务。Doze、厂商省电、断网或进程终止可能延迟/停止提醒，重新进入应用时仍由服务端列表校准；不申请电池优化豁免，也不据 mobile push 协议提前注册设备。契约 5.9 的协作者任免通知字段已进入生成客户端，但当前 formatter 与导航尚未识别这两类 action，需与协作主题列表和权限撤销刷新一起接入。契约 5.11 的通知目标 `state` 已进入生成客户端；服务端会把非 `ACTIVE` 目标降为不可导航的 `kind=none` 并强制已读，移动端尚未按 `CONTENT_DELETED`、`USER_DEACTIVATED` 和 `NO_TARGET` 分别展示历史态文案，该行为需在独立通知切片接入。
 
 ## 13. 最近审查的契约版本和后端提交
 
@@ -72,4 +73,4 @@ V1 仅 API 拉取，不做 FCM、系统通知权限或后台角标同步；保�
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/notifications/application/notification_repository_ports.dart`、`lib/features/notifications/data/`、`lib/main.dart`；底栏角标与前台刷新入口位于 `lib/features/app_shell/presentation/app_scaffold.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[动态](moments.md)、[站内私聊](direct-messages.md)。
+代码入口：`lib/features/notifications/application/notification_repository_ports.dart`、`lib/features/notifications/application/notification_copy.dart`、`lib/features/notifications/application/notification_navigation.dart`、`lib/features/notifications/data/`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[动态](moments.md)、[站内私聊](direct-messages.md)。

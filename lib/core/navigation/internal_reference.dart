@@ -176,13 +176,38 @@ InternalReferencePaste? resolveInternalReferencePaste({
   final reference = parseInternalReference(clipboardText.trim());
   if (reference == null) return null;
   final selectedLabel = selectedText.trim();
-  final label = selectedLabel.isEmpty
+  final candidateLabel = selectedLabel.isEmpty
       ? internalReferenceDefaultLabel
       : selectedLabel;
+  final label = resolveInternalReferenceLabel(
+    label: candidateLabel,
+    reference: reference,
+  );
   if (label.contains('\n') || label.contains('\r')) {
     return null;
   }
   return InternalReferencePaste(label: label, reference: reference);
+}
+
+/// Returns the effective label for displaying or creating an internal
+/// reference. Existing persisted source remains untouched by this resolver.
+///
+/// Older editor input paths could save a copied internal URL as both the
+/// Markdown label and target. Treat that self-label as the default portal
+/// label while preserving every genuine custom name.
+String resolveInternalReferenceLabel({
+  required String label,
+  required InternalReference reference,
+}) {
+  final candidate = label.trim();
+  if (candidate.isEmpty) return internalReferenceDefaultLabel;
+  final labelReference = parseInternalReference(candidate);
+  if (labelReference != null &&
+      labelReference.kind == reference.kind &&
+      labelReference.location.toString() == reference.location.toString()) {
+    return internalReferenceDefaultLabel;
+  }
+  return label;
 }
 
 List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {
@@ -217,11 +242,15 @@ List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {
     if (reference == null) {
       segments.add(InternalReferencePlainText(candidate));
     } else {
+      final candidateLabel = label?.isNotEmpty == true
+          ? label!
+          : internalReferenceDefaultLabel;
       segments.add(
         InternalReferencePortal(
-          label: label?.isNotEmpty == true
-              ? label!
-              : internalReferenceDefaultLabel,
+          label: resolveInternalReferenceLabel(
+            label: candidateLabel,
+            reference: reference,
+          ),
           reference: reference,
         ),
       );
