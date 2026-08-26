@@ -134,6 +134,7 @@ import 'package:wenyou_api/src/model/create_draft_dto.dart';
 import 'package:wenyou_api/src/model/create_managed_tag_dto.dart';
 import 'package:wenyou_api/src/model/create_moderation_appeal_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_bookmark_dto.dart';
+import 'package:wenyou_api/src/model/create_moment_bookmark_folder_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_comment_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_dto.dart';
 import 'package:wenyou_api/src/model/create_notification_campaign_dto.dart';
@@ -234,6 +235,7 @@ import 'package:wenyou_api/src/model/moderation_cases_list200_response.dart';
 import 'package:wenyou_api/src/model/moderation_cases_resolve201_response.dart';
 import 'package:wenyou_api/src/model/moderation_decision_public_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_action_response_dto.dart';
+import 'package:wenyou_api/src/model/moment_bookmark_folder_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_bookmark_placement_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_card_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_comment_context_response_dto.dart';
@@ -246,11 +248,13 @@ import 'package:wenyou_api/src/model/moment_root_comment_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_search_response_dto.dart';
 import 'package:wenyou_api/src/model/moment_sticker_response_dto.dart';
 import 'package:wenyou_api/src/model/moments_bookmark201_response.dart';
+import 'package:wenyou_api/src/model/moments_bookmark_folders200_response.dart';
 import 'package:wenyou_api/src/model/moments_bookmarks200_response.dart';
 import 'package:wenyou_api/src/model/moments_comment_authors200_response.dart';
 import 'package:wenyou_api/src/model/moments_comment_context200_response.dart';
 import 'package:wenyou_api/src/model/moments_comments_list200_response.dart';
 import 'package:wenyou_api/src/model/moments_create201_response.dart';
+import 'package:wenyou_api/src/model/moments_create_bookmark_folder201_response.dart';
 import 'package:wenyou_api/src/model/moments_create_comment201_response.dart';
 import 'package:wenyou_api/src/model/moments_detail200_response.dart';
 import 'package:wenyou_api/src/model/moments_like201_response.dart';
@@ -598,6 +602,7 @@ part 'serializers.g.dart';
   CreateManagedTagDto,
   CreateModerationAppealDto,
   CreateMomentBookmarkDto,
+  CreateMomentBookmarkFolderDto,
   CreateMomentCommentDto,
   CreateMomentDto,
   CreateNotificationCampaignDto,
@@ -698,6 +703,7 @@ part 'serializers.g.dart';
   ModerationCasesResolve201Response,
   ModerationDecisionPublicResponseDto,
   MomentActionResponseDto,
+  MomentBookmarkFolderResponseDto,
   MomentBookmarkPlacementResponseDto,
   MomentCardResponseDto,
   MomentCommentContextResponseDto,
@@ -710,11 +716,13 @@ part 'serializers.g.dart';
   MomentSearchResponseDto,
   MomentStickerResponseDto,
   MomentsBookmark201Response,
+  MomentsBookmarkFolders200Response,
   MomentsBookmarks200Response,
   MomentsCommentAuthors200Response,
   MomentsCommentContext200Response,
   MomentsCommentsList200Response,
   MomentsCreate201Response,
+  MomentsCreateBookmarkFolder201Response,
   MomentsCreateComment201Response,
   MomentsDetail200Response,
   MomentsLike201Response,

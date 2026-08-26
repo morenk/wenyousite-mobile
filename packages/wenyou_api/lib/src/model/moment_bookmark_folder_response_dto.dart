@@ -6,19 +6,18 @@
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'bookmark_folder_response_dto.g.dart';
+part 'moment_bookmark_folder_response_dto.g.dart';
 
-/// BookmarkFolderResponseDto
+/// MomentBookmarkFolderResponseDto
 ///
 /// Properties:
 /// * [id]
 /// * [name]
 /// * [isDefault]
-/// * [bookmarkCount]
-/// * [momentBookmarkCount] - 旧客户端兼容字段：同名动态收藏夹中的收藏数量
+/// * [momentBookmarkCount]
 /// * [createdAt]
 @BuiltValue()
-abstract class BookmarkFolderResponseDto implements Built<BookmarkFolderResponseDto, BookmarkFolderResponseDtoBuilder> {
+abstract class MomentBookmarkFolderResponseDto implements Built<MomentBookmarkFolderResponseDto, MomentBookmarkFolderResponseDtoBuilder> {
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -28,38 +27,33 @@ abstract class BookmarkFolderResponseDto implements Built<BookmarkFolderResponse
   @BuiltValueField(wireName: r'isDefault')
   bool get isDefault;
 
-  @BuiltValueField(wireName: r'bookmarkCount')
-  num get bookmarkCount;
-
-  /// 旧客户端兼容字段：同名动态收藏夹中的收藏数量
-  @Deprecated('momentBookmarkCount has been deprecated')
   @BuiltValueField(wireName: r'momentBookmarkCount')
   num get momentBookmarkCount;
 
   @BuiltValueField(wireName: r'createdAt')
   DateTime get createdAt;
 
-  BookmarkFolderResponseDto._();
+  MomentBookmarkFolderResponseDto._();
 
-  factory BookmarkFolderResponseDto([void updates(BookmarkFolderResponseDtoBuilder b)]) = _$BookmarkFolderResponseDto;
+  factory MomentBookmarkFolderResponseDto([void updates(MomentBookmarkFolderResponseDtoBuilder b)]) = _$MomentBookmarkFolderResponseDto;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(BookmarkFolderResponseDtoBuilder b) => b;
+  static void _defaults(MomentBookmarkFolderResponseDtoBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<BookmarkFolderResponseDto> get serializer => _$BookmarkFolderResponseDtoSerializer();
+  static Serializer<MomentBookmarkFolderResponseDto> get serializer => _$MomentBookmarkFolderResponseDtoSerializer();
 }
 
-class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<BookmarkFolderResponseDto> {
+class _$MomentBookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<MomentBookmarkFolderResponseDto> {
   @override
-  final Iterable<Type> types = const [BookmarkFolderResponseDto, _$BookmarkFolderResponseDto];
+  final Iterable<Type> types = const [MomentBookmarkFolderResponseDto, _$MomentBookmarkFolderResponseDto];
 
   @override
-  final String wireName = r'BookmarkFolderResponseDto';
+  final String wireName = r'MomentBookmarkFolderResponseDto';
 
   Iterable<Object?> _serializeProperties(
     Serializers serializers,
-    BookmarkFolderResponseDto object, {
+    MomentBookmarkFolderResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
     yield r'id';
@@ -77,11 +71,6 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
       object.isDefault,
       specifiedType: const FullType(bool),
     );
-    yield r'bookmarkCount';
-    yield serializers.serialize(
-      object.bookmarkCount,
-      specifiedType: const FullType(num),
-    );
     yield r'momentBookmarkCount';
     yield serializers.serialize(
       object.momentBookmarkCount,
@@ -97,7 +86,7 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
   @override
   Object serialize(
     Serializers serializers,
-    BookmarkFolderResponseDto object, {
+    MomentBookmarkFolderResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
@@ -108,7 +97,7 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
     required List<Object?> serializedList,
-    required BookmarkFolderResponseDtoBuilder result,
+    required MomentBookmarkFolderResponseDtoBuilder result,
     required List<Object?> unhandled,
   }) {
     for (var i = 0; i < serializedList.length; i += 2) {
@@ -136,13 +125,6 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
           ) as bool;
           result.isDefault = valueDes;
           break;
-        case r'bookmarkCount':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(num),
-          ) as num;
-          result.bookmarkCount = valueDes;
-          break;
         case r'momentBookmarkCount':
           final valueDes = serializers.deserialize(
             value,
@@ -166,12 +148,12 @@ class _$BookmarkFolderResponseDtoSerializer implements PrimitiveSerializer<Bookm
   }
 
   @override
-  BookmarkFolderResponseDto deserialize(
+  MomentBookmarkFolderResponseDto deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = BookmarkFolderResponseDtoBuilder();
+    final result = MomentBookmarkFolderResponseDtoBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(

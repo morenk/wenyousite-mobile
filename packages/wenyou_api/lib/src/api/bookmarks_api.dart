@@ -129,7 +129,7 @@ class BookmarksApi {
     );
   }
 
-  /// 新建收藏夹分类
+  /// 新建主题帖收藏夹分类
   ///
   ///
   /// Parameters:
@@ -322,7 +322,7 @@ class BookmarksApi {
     );
   }
 
-  /// 获取我的收藏夹分类
+  /// 获取我的主题帖收藏夹分类
   ///
   ///
   /// Parameters:

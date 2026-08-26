@@ -11,14 +11,17 @@ import 'package:dio/dio.dart';
 import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
 import 'package:wenyou_api/src/model/create_moment_bookmark_dto.dart';
+import 'package:wenyou_api/src/model/create_moment_bookmark_folder_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_comment_dto.dart';
 import 'package:wenyou_api/src/model/create_moment_dto.dart';
 import 'package:wenyou_api/src/model/moments_bookmark201_response.dart';
+import 'package:wenyou_api/src/model/moments_bookmark_folders200_response.dart';
 import 'package:wenyou_api/src/model/moments_bookmarks200_response.dart';
 import 'package:wenyou_api/src/model/moments_comment_authors200_response.dart';
 import 'package:wenyou_api/src/model/moments_comment_context200_response.dart';
 import 'package:wenyou_api/src/model/moments_comments_list200_response.dart';
 import 'package:wenyou_api/src/model/moments_create201_response.dart';
+import 'package:wenyou_api/src/model/moments_create_bookmark_folder201_response.dart';
 import 'package:wenyou_api/src/model/moments_create_comment201_response.dart';
 import 'package:wenyou_api/src/model/moments_detail200_response.dart';
 import 'package:wenyou_api/src/model/moments_like201_response.dart';
@@ -134,6 +137,85 @@ class MomentsApi {
     }
 
     return Response<MomentsBookmark201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 获取我的动态收藏夹分类
+  ///
+  ///
+  /// Parameters:
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [MomentsBookmarkFolders200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<MomentsBookmarkFolders200Response>> momentsBookmarkFolders({
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/moments/bookmark-folders';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    MomentsBookmarkFolders200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(MomentsBookmarkFolders200Response),
+      ) as MomentsBookmarkFolders200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<MomentsBookmarkFolders200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -588,6 +670,107 @@ class MomentsApi {
     }
 
     return Response<MomentsCreate201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 新建动态收藏夹分类
+  ///
+  ///
+  /// Parameters:
+  /// * [createMomentBookmarkFolderDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [MomentsCreateBookmarkFolder201Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<MomentsCreateBookmarkFolder201Response>> momentsCreateBookmarkFolder({
+    required CreateMomentBookmarkFolderDto createMomentBookmarkFolderDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/moments/bookmark-folders';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(CreateMomentBookmarkFolderDto);
+      _bodyData = _serializers.serialize(createMomentBookmarkFolderDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    MomentsCreateBookmarkFolder201Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(MomentsCreateBookmarkFolder201Response),
+      ) as MomentsCreateBookmarkFolder201Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<MomentsCreateBookmarkFolder201Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

@@ -144,6 +144,7 @@ Serializers _$serializers =
           ..add(CreateManagedTagDto.serializer)
           ..add(CreateModerationAppealDto.serializer)
           ..add(CreateMomentBookmarkDto.serializer)
+          ..add(CreateMomentBookmarkFolderDto.serializer)
           ..add(CreateMomentCommentDto.serializer)
           ..add(CreateMomentDto.serializer)
           ..add(CreateNotificationCampaignDto.serializer)
@@ -280,6 +281,7 @@ Serializers _$serializers =
           ..add(ModerationDecisionPublicResponseDtoPolicyCodeEnum.serializer)
           ..add(ModerationDecisionPublicResponseDtoTargetTypeEnum.serializer)
           ..add(MomentActionResponseDto.serializer)
+          ..add(MomentBookmarkFolderResponseDto.serializer)
           ..add(MomentBookmarkPlacementResponseDto.serializer)
           ..add(MomentCardResponseDto.serializer)
           ..add(MomentCardResponseDtoCoverTypeEnum.serializer)
@@ -298,11 +300,13 @@ Serializers _$serializers =
           ..add(MomentSearchResponseDtoTextCoverThemeEnum.serializer)
           ..add(MomentStickerResponseDto.serializer)
           ..add(MomentsBookmark201Response.serializer)
+          ..add(MomentsBookmarkFolders200Response.serializer)
           ..add(MomentsBookmarks200Response.serializer)
           ..add(MomentsCommentAuthors200Response.serializer)
           ..add(MomentsCommentContext200Response.serializer)
           ..add(MomentsCommentsList200Response.serializer)
           ..add(MomentsCreate201Response.serializer)
+          ..add(MomentsCreateBookmarkFolder201Response.serializer)
           ..add(MomentsCreateComment201Response.serializer)
           ..add(MomentsDetail200Response.serializer)
           ..add(MomentsLike201Response.serializer)
@@ -809,6 +813,12 @@ Serializers _$serializers =
               const FullType(ModerationDecisionPublicResponseDto),
             ]),
             () => ListBuilder<ModerationDecisionPublicResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(MomentBookmarkFolderResponseDto),
+            ]),
+            () => ListBuilder<MomentBookmarkFolderResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

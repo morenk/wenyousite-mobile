@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：`0.5.0+89` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
-- 后端契约：`5.12.3-dev.20260826.1`，revision `002b8b096415a560958150d369140c3e79429fc7`；Markdown v3、编辑器往返黄金契约 v4。
+- 后端契约：`5.13.0-dev.20260826.1`，revision `011eaf46954e204d492f3e17d887026fb4cf32d9`；Markdown v3、编辑器往返黄金契约 v4。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.5.1`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
