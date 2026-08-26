@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_member_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
@@ -48,7 +49,7 @@ void main() {
     expect(find.text('Lv.2 · 协作者 · 玩家'), findsOneWidget);
   });
 
-  testWidgets('成员使用紧凑列表行和直接图标操作', (tester) async {
+  testWidgets('成员使用紧凑列表行和实心角色操作', (tester) async {
     await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
 
     final owner = find.byKey(const ValueKey('thread-member-profile-owner-1'));
@@ -62,8 +63,16 @@ void main() {
 
     expect(find.text('Lv.4 · 楼主 · 非玩家'), findsOneWidget);
     expect(find.text('Lv.2 · 参与人 · 非玩家'), findsOneWidget);
-    expect(tester.widget(playerAction), isA<IconButton>());
-    expect(tester.widget(collaboratorAction), isA<IconButton>());
+    final playerButton = tester.widget<IconButton>(playerAction);
+    final collaboratorButton = tester.widget<IconButton>(collaboratorAction);
+    expect(
+      playerButton.style?.backgroundColor?.resolve(const {}),
+      WenyouThemeTokens.light.actionSurface,
+    );
+    expect(
+      collaboratorButton.style?.backgroundColor?.resolve(const {}),
+      WenyouThemeTokens.light.info,
+    );
     expect(
       tester.getTopLeft(player).dy - tester.getTopLeft(owner).dy,
       lessThan(70),

@@ -722,8 +722,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                         if (index > 0)
                           WenyouContentItemDivider(
                             key: ValueKey('thread-floor-divider-${floor.id}'),
-                            variant:
-                                WenyouContentItemDividerVariant.sectionBand,
+                            variant: WenyouContentItemDividerVariant.line,
                           ),
                         ThreadFloorCard(
                           key: ValueKey('thread-floor-${floor.id}'),

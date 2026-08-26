@@ -201,9 +201,15 @@ class _MemberRow extends ConsumerWidget {
             ),
           ),
           if (_actionable) ...[
-            IconButton(
+            IconButton.filled(
               key: ValueKey('thread-member-player-${member.userId}'),
               tooltip: member.playerMarked ? '收回玩家标记' : '标记为玩家',
+              style: IconButton.styleFrom(
+                backgroundColor: tokens.actionSurface,
+                foregroundColor: tokens.onActionSurface,
+                disabledBackgroundColor: tokens.border,
+                disabledForegroundColor: tokens.mutedText,
+              ),
               onPressed: state.isUpdating
                   ? null
                   : () async {
@@ -217,39 +223,39 @@ class _MemberRow extends ConsumerWidget {
                       );
                     },
               icon: playerPending
-                  ? const SizedBox.square(
+                  ? SizedBox.square(
                       dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: tokens.onActionSurface,
+                      ),
                     )
-                  : WenyouIcon(
-                      WenyouIconIds.contentRoleplay,
-                      color: member.playerMarked
-                          ? tokens.brandForeground
-                          : null,
-                    ),
+                  : const WenyouIcon(WenyouIconIds.contentRoleplay),
             ),
             if (actorIsOwner)
-              IconButton(
+              IconButton.filled(
                 key: ValueKey('thread-member-collaborator-${member.userId}'),
                 tooltip: member.role == ThreadMemberManagementRole.collaborator
                     ? '移除协作者'
                     : '设为协作者',
+                style: IconButton.styleFrom(
+                  backgroundColor: tokens.info,
+                  foregroundColor: tokens.panel,
+                  disabledBackgroundColor: tokens.border,
+                  disabledForegroundColor: tokens.mutedText,
+                ),
                 onPressed: state.isUpdating
                     ? null
                     : () => _confirmRoleChange(context, notifier),
                 icon: rolePending
-                    ? const SizedBox.square(
+                    ? SizedBox.square(
                         dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: tokens.panel,
+                        ),
                       )
-                    : WenyouIcon(
-                        WenyouIconIds.statusShield,
-                        color:
-                            member.role ==
-                                ThreadMemberManagementRole.collaborator
-                            ? tokens.brandForeground
-                            : null,
-                      ),
+                    : const WenyouIcon(WenyouIconIds.statusShield),
               ),
           ],
         ],
