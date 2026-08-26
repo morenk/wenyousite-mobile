@@ -118,6 +118,9 @@ void main() {
       items: [
         _item(
           'nested-reply',
+          recipientUserId: 'subscriber-user',
+          replyTargetUserId: 'target-user',
+          replyTargetName: '阿忠',
           target: const NotificationTarget(
             kind: NotificationTargetKind.post,
             threadId: 'thread-1',
@@ -133,6 +136,7 @@ void main() {
     addTearDown(container.dispose);
     await _pumpAuthenticated(tester, container, router);
 
+    expect(find.text('骰子猫 回复了阿忠', findRichText: true), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('notification-nested-reply')));
     await tester.pumpAndSettle();
     expect(find.text('回复页=thread-1/floor-2/reply-9'), findsOneWidget);
@@ -346,6 +350,9 @@ class _FakeRepository implements NotificationRepository {
 NotificationListItem _item(
   String id, {
   bool isRead = false,
+  String recipientUserId = 'viewer-user',
+  String replyTargetUserId = 'viewer-user',
+  String replyTargetName = '当前用户',
   NotificationTarget target = const NotificationTarget(
     kind: NotificationTargetKind.post,
     threadId: 'thread-1',
@@ -354,11 +361,14 @@ NotificationListItem _item(
 }) {
   return NotificationListItem(
     id: id,
+    recipientUserId: recipientUserId,
     kind: NotificationKind.reply,
     content: '旧文案',
-    payload: const NotificationPayload(
+    payload: NotificationPayload(
       action: 'reply',
       actorName: '骰子猫',
+      replyTargetUserId: replyTargetUserId,
+      replyTargetName: replyTargetName,
       preview: '雾港见',
     ),
     target: target,

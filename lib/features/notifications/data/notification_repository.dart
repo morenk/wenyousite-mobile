@@ -96,6 +96,7 @@ class ApiNotificationRepository implements NotificationRepository {
     final target = dto.target;
     return NotificationListItem(
       id: dto.id,
+      recipientUserId: dto.userId,
       kind: switch (dto.type) {
         NotificationResponseDtoTypeEnum.reply => NotificationKind.reply,
         NotificationResponseDtoTypeEnum.mention => NotificationKind.mention,
@@ -117,6 +118,8 @@ class ApiNotificationRepository implements NotificationRepository {
           : NotificationPayload(
               action: payload.action,
               actorName: payload.actorName,
+              replyTargetUserId: payload.replyTargetUserId,
+              replyTargetName: payload.replyTargetName,
               preview: payload.preview,
               subthreadTitle: payload.subthreadTitle,
               threadTitle: payload.threadTitle,

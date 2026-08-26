@@ -27,7 +27,7 @@ NotificationCopy formatNotificationCopy(NotificationListItem item) {
   final actorName = (payload?.actorName ?? item.actor?.username)?.trim();
   final subthreadTitle = payload?.subthreadTitle?.trim() ?? '';
   final actionText = switch (payload?.action) {
-    'reply' => '回复了你',
+    'reply' => _replyActionText(item, payload),
     'mention' => subthreadTitle.isEmpty ? '提到了你' : '在「$subthreadTitle」提到了你',
     'new_post' => subthreadTitle.isEmpty ? '发布了新楼层' : '创建了新子贴「$subthreadTitle」',
     'thread_created' => '创建了新主题',
@@ -46,6 +46,18 @@ NotificationCopy formatNotificationCopy(NotificationListItem item) {
     preview: preview.isEmpty ? null : preview,
     fallbackText: fallback.isEmpty ? '（图片内容）' : fallback,
   );
+}
+
+String _replyActionText(
+  NotificationListItem item,
+  NotificationPayload? payload,
+) {
+  final targetUserId = payload?.replyTargetUserId?.trim() ?? '';
+  if (targetUserId.isNotEmpty && targetUserId == item.recipientUserId.trim()) {
+    return '回复了你';
+  }
+  final targetName = payload?.replyTargetName?.trim() ?? '';
+  return targetName.isEmpty ? '回复了' : '回复了$targetName';
 }
 
 String sanitizeNotificationText(String raw, [String? payloadPreview]) {

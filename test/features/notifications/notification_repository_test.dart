@@ -31,7 +31,10 @@ void main() {
     expect(page.hasMore, isTrue);
     final item = page.items.single;
     expect(item.kind, NotificationKind.reply);
-    expect(formatNotificationCopy(item).plainText, '骰子猫 回复了你：雾港见');
+    expect(item.recipientUserId, 'user-1');
+    expect(item.payload?.replyTargetUserId, 'target-user');
+    expect(item.payload?.replyTargetName, '阿忠');
+    expect(formatNotificationCopy(item).plainText, '骰子猫 回复了阿忠：雾港见');
     expect(item.actor?.username, '骰子猫');
     expect(item.target.kind, NotificationTargetKind.post);
     expect(item.target.threadId, 'thread-1');
@@ -145,6 +148,8 @@ Response<NotificationsFindAll200Response> _listResponse({
                       NotificationPayloadResponseDtoSchemaVersionEnum.n1
                   ..action = 'reply'
                   ..actorName = '骰子猫'
+                  ..replyTargetUserId = 'target-user'
+                  ..replyTargetName = '阿忠'
                   ..preview = '雾港见',
               )
               ..target.update(

@@ -23,16 +23,42 @@ void main() {
     expect(NotificationFilters.byId('unknown'), NotificationFilters.all);
   });
 
-  test('结构化通知与旧正文分别由 presentation formatter 安全生成', () {
-    final structured = _item(
+  test('回复通知按真实回复对象区分本人、旁观者与旧载荷', () {
+    final directRecipient = _item(
+      recipientUserId: 'target-user',
       payload: const NotificationPayload(
         actorName: '骰子猫',
         action: 'reply',
+        replyTargetUserId: 'target-user',
+        replyTargetName: '阿忠',
         preview: '![图片](https://example.test/image.png)雾港见',
       ),
     );
-    expect(formatNotificationCopy(structured).plainText, '骰子猫 回复了你：雾港见');
+    expect(formatNotificationCopy(directRecipient).plainText, '骰子猫 回复了你：雾港见');
 
+    final subscriber = _item(
+      recipientUserId: 'subscriber-user',
+      payload: const NotificationPayload(
+        actorName: '骰子猫',
+        action: 'reply',
+        replyTargetUserId: 'target-user',
+        replyTargetName: '阿忠',
+        preview: '雾港见',
+      ),
+    );
+    expect(formatNotificationCopy(subscriber).plainText, '骰子猫 回复了阿忠：雾港见');
+
+    final legacy = _item(
+      payload: const NotificationPayload(
+        actorName: '骰子猫',
+        action: 'reply',
+        preview: '雾港见',
+      ),
+    );
+    expect(formatNotificationCopy(legacy).plainText, '骰子猫 回复了：雾港见');
+  });
+
+  test('旧正文由 presentation formatter 安全生成', () {
     final fallback = _item(content: r'旧文案\!');
     expect(formatNotificationCopy(fallback).plainText, '旧文案!');
   });
@@ -96,10 +122,12 @@ void main() {
 
 NotificationListItem _item({
   String content = '',
+  String recipientUserId = 'viewer-user',
   NotificationPayload? payload,
 }) {
   return NotificationListItem(
     id: 'notification-1',
+    recipientUserId: recipientUserId,
     kind: NotificationKind.reply,
     content: content,
     payload: payload,

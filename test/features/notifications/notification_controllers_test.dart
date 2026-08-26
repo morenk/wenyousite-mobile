@@ -386,6 +386,7 @@ class _FakeRepository implements NotificationRepository {
 NotificationListItem _item(String id, {bool isRead = false}) {
   return NotificationListItem(
     id: id,
+    recipientUserId: 'user-1',
     kind: NotificationKind.reply,
     content: '骰子猫回复了你',
     target: const NotificationTarget(kind: NotificationTargetKind.none),

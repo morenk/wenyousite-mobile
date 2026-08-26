@@ -33,6 +33,8 @@ class NotificationPayload {
   const NotificationPayload({
     this.action,
     this.actorName,
+    this.replyTargetUserId,
+    this.replyTargetName,
     this.preview,
     this.subthreadTitle,
     this.threadTitle,
@@ -42,6 +44,8 @@ class NotificationPayload {
 
   final String? action;
   final String? actorName;
+  final String? replyTargetUserId;
+  final String? replyTargetName;
   final String? preview;
   final String? subthreadTitle;
   final String? threadTitle;
@@ -84,6 +88,7 @@ class NotificationTarget {
 class NotificationListItem {
   const NotificationListItem({
     required this.id,
+    required this.recipientUserId,
     required this.kind,
     required this.content,
     required this.target,
@@ -94,6 +99,7 @@ class NotificationListItem {
   });
 
   final String id;
+  final String recipientUserId;
   final NotificationKind kind;
   final String content;
   final NotificationPayload? payload;
@@ -105,6 +111,7 @@ class NotificationListItem {
   NotificationListItem copyWith({bool? isRead}) {
     return NotificationListItem(
       id: id,
+      recipientUserId: recipientUserId,
       kind: kind,
       content: content,
       payload: payload,
