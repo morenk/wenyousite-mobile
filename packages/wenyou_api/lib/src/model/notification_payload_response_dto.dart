@@ -17,6 +17,8 @@ part 'notification_payload_response_dto.g.dart';
 /// * [action]
 /// * [actorId]
 /// * [actorName]
+/// * [replyTargetUserId]
+/// * [replyTargetName]
 /// * [preview]
 /// * [subthreadTitle]
 /// * [threadTitle]
@@ -46,6 +48,12 @@ abstract class NotificationPayloadResponseDto implements Built<NotificationPaylo
 
   @BuiltValueField(wireName: r'actorName')
   String? get actorName;
+
+  @BuiltValueField(wireName: r'replyTargetUserId')
+  String? get replyTargetUserId;
+
+  @BuiltValueField(wireName: r'replyTargetName')
+  String? get replyTargetName;
 
   @BuiltValueField(wireName: r'preview')
   String? get preview;
@@ -140,6 +148,20 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
       yield r'actorName';
       yield serializers.serialize(
         object.actorName,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.replyTargetUserId != null) {
+      yield r'replyTargetUserId';
+      yield serializers.serialize(
+        object.replyTargetUserId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.replyTargetName != null) {
+      yield r'replyTargetName';
+      yield serializers.serialize(
+        object.replyTargetName,
         specifiedType: const FullType.nullable(String),
       );
     }
@@ -301,6 +323,22 @@ class _$NotificationPayloadResponseDtoSerializer implements PrimitiveSerializer<
           ) as String?;
           if (valueDes == null) continue;
           result.actorName = valueDes;
+          break;
+        case r'replyTargetUserId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.replyTargetUserId = valueDes;
+          break;
+        case r'replyTargetName':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.replyTargetName = valueDes;
           break;
         case r'preview':
           final valueDes = serializers.deserialize(

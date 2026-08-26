@@ -234,6 +234,10 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
   @override
   final String? actorName;
   @override
+  final String? replyTargetUserId;
+  @override
+  final String? replyTargetName;
+  @override
   final String? preview;
   @override
   final String? subthreadTitle;
@@ -273,6 +277,8 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
     this.action,
     this.actorId,
     this.actorName,
+    this.replyTargetUserId,
+    this.replyTargetName,
     this.preview,
     this.subthreadTitle,
     this.threadTitle,
@@ -306,6 +312,8 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
         action == other.action &&
         actorId == other.actorId &&
         actorName == other.actorName &&
+        replyTargetUserId == other.replyTargetUserId &&
+        replyTargetName == other.replyTargetName &&
         preview == other.preview &&
         subthreadTitle == other.subthreadTitle &&
         threadTitle == other.threadTitle &&
@@ -330,6 +338,8 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
     _$hash = $jc(_$hash, action.hashCode);
     _$hash = $jc(_$hash, actorId.hashCode);
     _$hash = $jc(_$hash, actorName.hashCode);
+    _$hash = $jc(_$hash, replyTargetUserId.hashCode);
+    _$hash = $jc(_$hash, replyTargetName.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, subthreadTitle.hashCode);
     _$hash = $jc(_$hash, threadTitle.hashCode);
@@ -356,6 +366,8 @@ class _$NotificationPayloadResponseDto extends NotificationPayloadResponseDto {
           ..add('action', action)
           ..add('actorId', actorId)
           ..add('actorName', actorName)
+          ..add('replyTargetUserId', replyTargetUserId)
+          ..add('replyTargetName', replyTargetName)
           ..add('preview', preview)
           ..add('subthreadTitle', subthreadTitle)
           ..add('threadTitle', threadTitle)
@@ -401,6 +413,16 @@ class NotificationPayloadResponseDtoBuilder
   String? _actorName;
   String? get actorName => _$this._actorName;
   set actorName(String? actorName) => _$this._actorName = actorName;
+
+  String? _replyTargetUserId;
+  String? get replyTargetUserId => _$this._replyTargetUserId;
+  set replyTargetUserId(String? replyTargetUserId) =>
+      _$this._replyTargetUserId = replyTargetUserId;
+
+  String? _replyTargetName;
+  String? get replyTargetName => _$this._replyTargetName;
+  set replyTargetName(String? replyTargetName) =>
+      _$this._replyTargetName = replyTargetName;
 
   String? _preview;
   String? get preview => _$this._preview;
@@ -481,6 +503,8 @@ class NotificationPayloadResponseDtoBuilder
       _action = $v.action;
       _actorId = $v.actorId;
       _actorName = $v.actorName;
+      _replyTargetUserId = $v.replyTargetUserId;
+      _replyTargetName = $v.replyTargetName;
       _preview = $v.preview;
       _subthreadTitle = $v.subthreadTitle;
       _threadTitle = $v.threadTitle;
@@ -528,6 +552,8 @@ class NotificationPayloadResponseDtoBuilder
             action: action,
             actorId: actorId,
             actorName: actorName,
+            replyTargetUserId: replyTargetUserId,
+            replyTargetName: replyTargetName,
             preview: preview,
             subthreadTitle: subthreadTitle,
             threadTitle: threadTitle,
