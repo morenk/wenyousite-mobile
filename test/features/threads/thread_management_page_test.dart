@@ -14,7 +14,11 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_mode
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_page.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('主题管理页通过统一页签进入子贴内容', (tester) async {
     await _pumpPage(
       tester,
@@ -31,7 +35,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('子贴内容'), findsWidgets);
+    expect(find.text('子贴内容'), findsOneWidget);
     expect(
       find.byKey(const Key('subthread-management-create')),
       findsOneWidget,
@@ -129,7 +133,10 @@ void main() {
 
     expect(repository.loadCalls, 2);
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
-    expect(find.byKey(const Key('thread-management-save')), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-management-autosave-status')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('无管理权限时不渲染保存、邀请或删除入口', (tester) async {
@@ -145,11 +152,11 @@ void main() {
     expect(repository.removeCalls, 0);
   });
 
-  testWidgets('楼主修改标题并保存后返回主题详情调用方', (tester) async {
+  testWidgets('楼主修改标题后自动保存且不显示重复标题或保存按钮', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
 
-    expect(find.text('主题设置'), findsWidgets);
+    expect(find.text('主题设置'), findsOneWidget);
     expect(find.textContaining('会在一次保存中同时更新'), findsNothing);
     expect(find.byKey(const Key('thread-management-delete')), findsOneWidget);
     await tester.enterText(
@@ -165,18 +172,14 @@ void main() {
           .text,
       '新的主题标题',
     );
-    expect(
-      tester
-          .widget<IconButton>(find.byKey(const Key('thread-management-save')))
-          .onPressed,
-      isNotNull,
-    );
-    await tester.ensureVisible(find.byKey(const Key('thread-management-save')));
-    await tester.tap(find.byKey(const Key('thread-management-save')));
+    expect(find.byKey(const Key('thread-management-save')), findsNothing);
+    await tester.pump();
+    expect(find.text('待保存'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1200));
     await tester.pumpAndSettle();
 
     expect(repository.lastDraft?.title, '新的主题标题');
-    expect(find.text('主题设置已保存。'), findsOneWidget);
+    expect(find.text('已保存'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
   });
 
@@ -194,8 +197,7 @@ void main() {
       '待重试的主题标题',
     );
 
-    await tester.ensureVisible(find.byKey(const Key('thread-management-save')));
-    await tester.tap(find.byKey(const Key('thread-management-save')));
+    await tester.pump(const Duration(milliseconds: 1200));
     await tester.pumpAndSettle();
 
     expect(repository.lastDraft?.title, '待重试的主题标题');
@@ -212,11 +214,10 @@ void main() {
     await tester.ensureVisible(failure);
     expect(find.text('问题编号：thread-management-save-request-id'), findsOneWidget);
     expect(
-      tester
-          .widget<IconButton>(find.byKey(const Key('thread-management-save')))
-          .onPressed,
-      isNotNull,
+      find.byKey(const Key('thread-management-autosave-retry')),
+      findsOneWidget,
     );
+    expect(find.text('未保存'), findsOneWidget);
   });
 
   testWidgets('协作者可编辑常规信息但不能修改可见性或删除主题', (tester) async {
@@ -240,7 +241,7 @@ void main() {
       find.byKey(const Key('thread-management-title')),
       '协作者修改的标题',
     );
-    await tester.tap(find.byKey(const Key('thread-management-save')));
+    await tester.pump(const Duration(milliseconds: 1200));
     await tester.pumpAndSettle();
 
     expect(repository.lastDraft?.title, '协作者修改的标题');
@@ -324,8 +325,7 @@ void main() {
       find.byKey(const Key('thread-management-title')),
       '本机待保存标题',
     );
-    await tester.ensureVisible(find.byKey(const Key('thread-management-save')));
-    await tester.tap(find.byKey(const Key('thread-management-save')));
+    await tester.pump(const Duration(milliseconds: 1200));
     await tester.pumpAndSettle();
 
     expect(
@@ -359,8 +359,14 @@ void main() {
     );
   });
 
-  testWidgets('有未保存修改时返回需要明确确认放弃', (tester) async {
-    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+  testWidgets('自动保存失败时返回需要明确确认放弃', (tester) async {
+    await _pumpPage(
+      tester,
+      _FakeRepository(
+        initial: _bootstrap(),
+        updateFailure: const ApiFailure(userMessage: '主题保存失败'),
+      ),
+    );
     await tester.enterText(
       find.byKey(const Key('thread-management-title')),
       '还没保存的标题',
@@ -368,7 +374,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('还有未保存的修改'), findsOneWidget);
+    expect(find.text('修改还没有保存'), findsOneWidget);
     await tester.tap(find.text('继续编辑'));
     await tester.pumpAndSettle();
     expect(find.text('还没保存的标题'), findsOneWidget);
@@ -391,10 +397,26 @@ void main() {
       await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
 
       expect(tester.takeException(), isNull);
-      expect(find.text('主题设置'), findsWidgets);
-      expect(find.byKey(const Key('thread-management-save')), findsOneWidget);
+      expect(find.text('主题设置'), findsOneWidget);
+      expect(
+        find.byKey(const Key('thread-management-autosave-status')),
+        findsOneWidget,
+      );
     });
   }
+
+  testWidgets('360dp 主题设置自动保存视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+
+    await expectLater(
+      find.byType(Scaffold).last,
+      matchesGoldenFile('goldens/thread_management_settings_360.png'),
+    );
+  });
 }
 
 Future<void> _pumpPage(
@@ -524,6 +546,12 @@ class _FakeRepository implements ThreadManagementRepository {
       published: current.published,
       canManage: true,
       isOwner: current.isOwner,
+      defaultSubthreadId: current.defaultSubthreadId,
+      defaultSubthreadVersion: current.defaultSubthreadVersion,
+      bodyPostId: current.bodyPostId,
+      bodyVersion: current.bodyVersion,
+      body: draft.body,
+      tagNames: draft.normalizedTagNames,
     );
   }
 }

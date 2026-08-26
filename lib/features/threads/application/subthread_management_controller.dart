@@ -347,9 +347,11 @@ class SubthreadManagementController
     List<SubthreadManagementItem> items, {
     required String pendingItemId,
   }) async {
-    final bootstrap = state.bootstrap;
-    if (bootstrap == null || state.isBusy) return false;
+    final confirmedBootstrap = state.bootstrap;
+    if (confirmedBootstrap == null || state.isBusy) return false;
+    final optimisticItems = List<SubthreadManagementItem>.unmodifiable(items);
     state = state.copyWith(
+      bootstrap: confirmedBootstrap.copyWith(items: optimisticItems),
       failure: null,
       pendingAction: SubthreadManagementAction.reordering,
       pendingItemId: pendingItemId,
@@ -372,10 +374,15 @@ class SubthreadManagementController
     if (outcome.isDiscarded || !mounted) return false;
     switch (outcome.status) {
       case WriteOutcomeStatus.completed:
+        final latestBootstrap = outcome.projection ?? confirmedBootstrap;
+        final latestItems = outcome.projection?.items ?? outcome.writeValue!;
+        final latestById = {for (final item in latestItems) item.id: item};
         state = state.copyWith(
-          bootstrap:
-              outcome.projection ??
-              bootstrap.copyWith(items: outcome.writeValue!),
+          bootstrap: latestBootstrap.copyWith(
+            items: List<SubthreadManagementItem>.unmodifiable(
+              optimisticItems.map((item) => latestById[item.id] ?? item),
+            ),
+          ),
           pendingAction: null,
           pendingItemId: null,
           actionOutcome: null,
@@ -383,10 +390,17 @@ class SubthreadManagementController
         );
         return true;
       case WriteOutcomeStatus.failed:
-        _failMutation(outcome.failure!);
+        state = state.copyWith(
+          bootstrap: confirmedBootstrap,
+          failure: outcome.failure!,
+          pendingAction: null,
+          pendingItemId: null,
+          actionOutcome: null,
+          actionRequestId: null,
+        );
         return false;
       case WriteOutcomeStatus.indeterminate:
-        _indeterminateMutation(outcome, bootstrap);
+        _indeterminateMutation(outcome, confirmedBootstrap);
         return false;
       case WriteOutcomeStatus.confirming:
         return false;

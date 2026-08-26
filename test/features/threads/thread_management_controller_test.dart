@@ -26,9 +26,15 @@ void main() {
     expect(controller.state.conflict?.latest.thread.version, 4);
     expect(controller.state.bootstrap?.thread.version, 3);
 
-    expect(await controller.overwriteConflict(), isTrue);
+    const editedAfterConflict = ThreadManagementDraft(
+      title: '冲突后继续编辑的标题',
+      categorySlug: 'RPG',
+      status: ThreadManagementStatus.closed,
+      visibility: ThreadManagementVisibility.public,
+    );
+    expect(await controller.overwriteConflict(editedAfterConflict), isTrue);
     expect(repository.updateVersions, [3, 4]);
-    expect(controller.state.bootstrap?.thread.title, '本机标题');
+    expect(controller.state.bootstrap?.thread.title, '冲突后继续编辑的标题');
     expect(controller.state.failure, isNull);
   });
 

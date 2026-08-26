@@ -140,6 +140,7 @@ void main() {
     );
 
     expect(find.text('最早在前'), findsOneWidget);
+    expect(find.text('所有人'), findsOneWidget);
     await tester.tap(find.byKey(const Key('direct-order')));
     await tester.pumpAndSettle();
     expect(order, _Order.newest);

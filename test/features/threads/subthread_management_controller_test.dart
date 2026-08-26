@@ -376,6 +376,53 @@ void main() {
     expect(controller.state.bootstrap!.items.map((item) => item.id), before);
   });
 
+  test('排序请求完成前立即展示目标顺序且成功后不跳回旧位置', () async {
+    final third = _secondary.copyWith(title: '闲聊区', sortOrder: 2);
+    final thirdWithId = SubthreadManagementItem(
+      id: 'sub-third',
+      threadId: third.threadId,
+      title: third.title,
+      sortOrder: third.sortOrder,
+      postingPolicy: third.postingPolicy,
+      version: third.version,
+      postCount: third.postCount,
+      isDefault: false,
+    );
+    final reorder = Completer<List<SubthreadManagementItem>>();
+    final repository = _FakeRepository(
+      bootstrap: _bootstrap(items: [_defaultItem, _secondary, thirdWithId]),
+      reorderCompleter: reorder,
+    );
+    final controller = SubthreadManagementController('thread-1', repository);
+    addTearDown(controller.dispose);
+    await _settle();
+
+    final moving = controller.move('sub-third', -1);
+    await _settle();
+    expect(controller.state.bootstrap!.items.map((item) => item.id), [
+      'sub-default',
+      'sub-third',
+      'sub-second',
+    ]);
+    expect(
+      controller.state.pendingAction,
+      SubthreadManagementAction.reordering,
+    );
+
+    reorder.complete([
+      _defaultItem,
+      thirdWithId.copyWith(sortOrder: 1, version: 5),
+      _secondary.copyWith(sortOrder: 2, version: 4),
+    ]);
+    expect(await moving, isTrue);
+    expect(controller.state.bootstrap!.items.map((item) => item.id), [
+      'sub-default',
+      'sub-third',
+      'sub-second',
+    ]);
+    expect(controller.state.bootstrap!.items[1].version, 5);
+  });
+
   test('连续刷新只采用最后一次结果', () async {
     final first = Completer<SubthreadManagementBootstrap>();
     final second = Completer<SubthreadManagementBootstrap>();
@@ -408,6 +455,7 @@ class _FakeRepository implements SubthreadManagementRepository {
     this.createFailureOnce,
     this.updateFailure,
     this.removeFailureOnce,
+    this.reorderCompleter,
   });
 
   SubthreadManagementBootstrap bootstrap;
@@ -416,6 +464,7 @@ class _FakeRepository implements SubthreadManagementRepository {
   ApiFailure? updateFailure;
   ApiFailure? removeFailureOnce;
   ApiFailure? reorderFailure;
+  final Completer<List<SubthreadManagementItem>>? reorderCompleter;
   int loadCalls = 0;
   int findCalls = 0;
   int removeCalls = 0;
@@ -495,6 +544,7 @@ class _FakeRepository implements SubthreadManagementRepository {
   }) async {
     reorderIds.add(items.map((item) => item.id).toList());
     if (reorderFailure != null) throw reorderFailure!;
+    if (reorderCompleter != null) return reorderCompleter!.future;
     return [
       for (var index = 0; index < items.length; index++)
         items[index].copyWith(sortOrder: index),

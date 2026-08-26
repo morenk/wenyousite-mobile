@@ -246,6 +246,7 @@ class WenyouOverflowAction extends StatelessWidget {
     this.icon,
     this.expanded,
     this.focusNode,
+    this.appearance = WenyouOverflowActionAppearance.outlined,
     super.key,
   });
 
@@ -255,11 +256,12 @@ class WenyouOverflowAction extends StatelessWidget {
   final String? icon;
   final bool? expanded;
   final FocusNode? focusNode;
+  final WenyouOverflowActionAppearance appearance;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final style = OutlinedButton.styleFrom(
+    final outlinedStyle = OutlinedButton.styleFrom(
       minimumSize: Size(0, tokens.minimumTouchTarget),
       foregroundColor: tokens.mutedText,
       backgroundColor: backgroundColor,
@@ -267,23 +269,45 @@ class WenyouOverflowAction extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: tokens.space16),
       shape: const StadiumBorder(),
     );
-    final button = icon == null
-        ? OutlinedButton(
-            focusNode: focusNode,
-            onPressed: onPressed,
-            style: style,
-            child: Text(label),
-          )
-        : OutlinedButton.icon(
-            focusNode: focusNode,
-            onPressed: onPressed,
-            style: style,
-            icon: WenyouIcon(icon!, size: 16),
-            label: Text(label),
-          );
+    final textStyle = TextButton.styleFrom(
+      minimumSize: Size(0, tokens.minimumTouchTarget),
+      foregroundColor: tokens.mutedText,
+      padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+    );
+    final button = switch ((appearance, icon)) {
+      (WenyouOverflowActionAppearance.outlined, null) => OutlinedButton(
+        focusNode: focusNode,
+        onPressed: onPressed,
+        style: outlinedStyle,
+        child: Text(label),
+      ),
+      (WenyouOverflowActionAppearance.outlined, final icon?) =>
+        OutlinedButton.icon(
+          focusNode: focusNode,
+          onPressed: onPressed,
+          style: outlinedStyle,
+          icon: WenyouIcon(icon, size: 16),
+          label: Text(label),
+        ),
+      (WenyouOverflowActionAppearance.quiet, null) => TextButton(
+        focusNode: focusNode,
+        onPressed: onPressed,
+        style: textStyle,
+        child: Text(label),
+      ),
+      (WenyouOverflowActionAppearance.quiet, final icon?) => TextButton.icon(
+        focusNode: focusNode,
+        onPressed: onPressed,
+        style: textStyle,
+        icon: WenyouIcon(icon, size: 16),
+        label: Text(label),
+      ),
+    };
     return Semantics(expanded: expanded, child: button);
   }
 }
+
+enum WenyouOverflowActionAppearance { outlined, quiet }
 
 class _WenyouBottomFade extends StatelessWidget {
   const _WenyouBottomFade({required this.color});

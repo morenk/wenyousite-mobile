@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +14,11 @@ import 'package:wenyousite_mobile/features/threads/domain/subthread_management_m
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_editor_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('目录只展示非默认子贴及正文状态', (tester) async {
     await _pumpWorkspace(tester, _FakeRepository());
 
@@ -218,6 +224,33 @@ void main() {
     );
   });
 
+  testWidgets('排序写入期间列表保持目标位置且尾部操作不闪动', (tester) async {
+    final reorder = Completer<List<SubthreadManagementItem>>();
+    final repository = _FakeRepository(
+      initial: _initialBootstrap(includeThird: true),
+      reorderCompleter: reorder,
+    );
+    final container = await _pumpWorkspace(tester, repository);
+
+    final moving = container
+        .read(subthreadManagementControllerProvider('thread-1').notifier)
+        .move('sub-third', -1);
+    await tester.pump();
+
+    final third = find.byKey(const ValueKey('subthread-edit-sub-third'));
+    final second = find.byKey(const ValueKey('subthread-edit-sub-second'));
+    expect(tester.getTopLeft(third).dy, lessThan(tester.getTopLeft(second).dy));
+    expect(
+      find.byKey(const ValueKey('subthread-delete-sub-third')),
+      findsOneWidget,
+    );
+
+    reorder.complete(repository.currentItems);
+    expect(await moving, isTrue);
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(third).dy, lessThan(tester.getTopLeft(second).dy));
+  });
+
   for (final width in [360.0, 400.0, 600.0]) {
     testWidgets('$width dp 子贴目录无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -230,6 +263,22 @@ void main() {
       expect(find.text('剧情区'), findsOneWidget);
     });
   }
+
+  testWidgets('360dp 子贴目录紧凑视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpWorkspace(
+      tester,
+      _FakeRepository(initial: _initialBootstrap(includeThird: true)),
+    );
+
+    await expectLater(
+      find.byType(Scaffold).last,
+      matchesGoldenFile('goldens/subthread_management_list_360.png'),
+    );
+  });
 }
 
 Future<ProviderContainer> _pumpWorkspace(
@@ -298,6 +347,7 @@ class _FakeRepository implements SubthreadManagementRepository {
     this.updateFailure,
     this.removeFailure,
     this.reorderFailure,
+    this.reorderCompleter,
   }) : _bootstrap = initial ?? _initialBootstrap();
 
   SubthreadManagementBootstrap _bootstrap;
@@ -306,9 +356,12 @@ class _FakeRepository implements SubthreadManagementRepository {
   final ApiFailure? updateFailure;
   final ApiFailure? removeFailure;
   final ApiFailure? reorderFailure;
+  final Completer<List<SubthreadManagementItem>>? reorderCompleter;
   SubthreadManagementDraft? createdDraft;
   SubthreadManagementDraft? updatedDraft;
   int loadCalls = 0;
+
+  List<SubthreadManagementItem> get currentItems => _bootstrap.items;
 
   @override
   Future<SubthreadManagementBootstrap> load(String threadId) async {
@@ -393,6 +446,7 @@ class _FakeRepository implements SubthreadManagementRepository {
   }) async {
     if (reorderFailure != null) throw reorderFailure!;
     _bootstrap = _bootstrap.copyWith(items: List.unmodifiable(items));
+    if (reorderCompleter != null) return reorderCompleter!.future;
     return _bootstrap.items;
   }
 }

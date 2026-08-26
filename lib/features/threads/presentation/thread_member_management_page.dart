@@ -17,24 +17,8 @@ class ThreadMemberManagementPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final provider = threadMemberManagementControllerProvider(threadId);
-    final state = ref.watch(provider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('成员管理'),
-        actions: [
-          IconButton(
-            key: const Key('thread-members-refresh'),
-            tooltip: '刷新成员',
-            onPressed:
-                state.phase == ThreadMemberManagementPhase.loading ||
-                    state.isUpdating
-                ? null
-                : () => ref.read(provider.notifier).load(),
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('成员管理')),
       body: ThreadMemberManagementContent(threadId: threadId),
     );
   }
@@ -130,14 +114,14 @@ class _MembersReadyState extends ConsumerWidget {
             )
           else
             for (var index = 0; index < bootstrap.members.length; index++) ...[
-              _MemberCard(
+              _MemberRow(
                 threadId: threadId,
                 member: bootstrap.members[index],
                 actorIsOwner: bootstrap.actorIsOwner,
                 state: state,
               ),
               if (index < bootstrap.members.length - 1)
-                SizedBox(height: tokens.space12),
+                Divider(height: 1, color: tokens.border),
             ],
         ],
       ),
@@ -145,8 +129,8 @@ class _MembersReadyState extends ConsumerWidget {
   }
 }
 
-class _MemberCard extends ConsumerWidget {
-  const _MemberCard({
+class _MemberRow extends ConsumerWidget {
+  const _MemberRow({
     required this.threadId,
     required this.member,
     required this.actorIsOwner,
@@ -169,139 +153,104 @@ class _MemberCard extends ConsumerWidget {
     final notifier = ref.read(
       threadMemberManagementControllerProvider(threadId).notifier,
     );
-    return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final playerPending =
+        pending && state.pendingAction == ThreadMemberManagementAction.player;
+    final rolePending =
+        pending && state.pendingAction == ThreadMemberManagementAction.role;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: tokens.space4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          InkWell(
-            key: ValueKey('thread-member-profile-${member.userId}'),
-            borderRadius: BorderRadius.circular(tokens.radius12),
-            onTap: () => context.push(AppRouteLocations.user(member.userId)),
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: tokens.space4),
-              child: Row(
-                children: [
-                  _MemberAvatar(member: member),
-                  SizedBox(width: tokens.space12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          member.username,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        SizedBox(height: tokens.space4),
-                        Text(
-                          'Lv.${member.level}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: tokens.mutedText),
-                        ),
-                      ],
+          Expanded(
+            child: InkWell(
+              key: ValueKey('thread-member-profile-${member.userId}'),
+              onTap: () => context.push(AppRouteLocations.user(member.userId)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 56),
+                child: Row(
+                  children: [
+                    _MemberAvatar(member: member),
+                    SizedBox(width: tokens.space12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            member.username,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          SizedBox(height: tokens.space4),
+                          Text(
+                            'Lv.${member.level} · ${member.role.label} · '
+                            '${member.playerMarked ? '玩家' : '非玩家'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: tokens.mutedText),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const WenyouIcon(WenyouIconIds.navigationNext),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          SizedBox(height: tokens.space12),
-          Wrap(
-            spacing: tokens.space8,
-            runSpacing: tokens.space8,
-            children: [
-              _MemberBadge(
-                label: member.role.label,
-                icon: switch (member.role) {
-                  ThreadMemberManagementRole.owner =>
-                    WenyouIconIds.statusPremium,
-                  ThreadMemberManagementRole.collaborator =>
-                    WenyouIconIds.statusShield,
-                  ThreadMemberManagementRole.participant =>
-                    WenyouIconIds.identityMember,
-                  ThreadMemberManagementRole.unknown =>
-                    WenyouIconIds.statusHelp,
-                },
-                accent:
-                    member.role == ThreadMemberManagementRole.owner ||
-                    member.role == ThreadMemberManagementRole.collaborator,
-              ),
-              if (member.playerMarked)
-                const _MemberBadge(
-                  label: '玩家',
-                  icon: WenyouIconIds.contentRoleplay,
-                  accent: true,
-                ),
-            ],
           ),
           if (_actionable) ...[
-            SizedBox(height: tokens.space12),
-            Wrap(
-              spacing: tokens.space8,
-              runSpacing: tokens.space8,
-              children: [
-                OutlinedButton.icon(
-                  key: ValueKey('thread-member-player-${member.userId}'),
-                  onPressed: state.isUpdating
-                      ? null
-                      : () async {
-                          final succeeded = await notifier.togglePlayer(member);
-                          if (!context.mounted || !succeeded) return;
-                          showWenyouSnackBar(
-                            context,
-                            member.playerMarked
-                                ? '已收回 ${member.username} 的玩家标记。'
-                                : '已将 ${member.username} 标记为玩家。',
-                          );
-                        },
-                  icon:
-                      pending &&
-                          state.pendingAction ==
-                              ThreadMemberManagementAction.player
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : WenyouIcon(
-                          member.playerMarked
-                              ? WenyouIconIds.actionUnfollow
-                              : WenyouIconIds.actionFollow,
-                        ),
-                  label: Text(member.playerMarked ? '收回玩家' : '标记玩家'),
-                ),
-                if (actorIsOwner)
-                  OutlinedButton.icon(
-                    key: ValueKey(
-                      'thread-member-collaborator-${member.userId}',
+            IconButton(
+              key: ValueKey('thread-member-player-${member.userId}'),
+              tooltip: member.playerMarked ? '收回玩家标记' : '标记为玩家',
+              onPressed: state.isUpdating
+                  ? null
+                  : () async {
+                      final succeeded = await notifier.togglePlayer(member);
+                      if (!context.mounted || !succeeded) return;
+                      showWenyouSnackBar(
+                        context,
+                        member.playerMarked
+                            ? '已收回 ${member.username} 的玩家标记。'
+                            : '已将 ${member.username} 标记为玩家。',
+                      );
+                    },
+              icon: playerPending
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : WenyouIcon(
+                      WenyouIconIds.contentRoleplay,
+                      color: member.playerMarked
+                          ? tokens.brandForeground
+                          : null,
                     ),
-                    onPressed: state.isUpdating
-                        ? null
-                        : () => _confirmRoleChange(context, notifier),
-                    icon:
-                        pending &&
-                            state.pendingAction ==
-                                ThreadMemberManagementAction.role
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : WenyouIcon(
-                            member.role ==
-                                    ThreadMemberManagementRole.collaborator
-                                ? WenyouIconIds.statusShield
-                                : WenyouIconIds.statusShield,
-                          ),
-                    label: Text(
-                      member.role == ThreadMemberManagementRole.collaborator
-                          ? '移除协作者'
-                          : '设为协作者',
-                    ),
-                  ),
-              ],
             ),
+            if (actorIsOwner)
+              IconButton(
+                key: ValueKey('thread-member-collaborator-${member.userId}'),
+                tooltip: member.role == ThreadMemberManagementRole.collaborator
+                    ? '移除协作者'
+                    : '设为协作者',
+                onPressed: state.isUpdating
+                    ? null
+                    : () => _confirmRoleChange(context, notifier),
+                icon: rolePending
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : WenyouIcon(
+                        WenyouIconIds.statusShield,
+                        color:
+                            member.role ==
+                                ThreadMemberManagementRole.collaborator
+                            ? tokens.brandForeground
+                            : null,
+                      ),
+              ),
           ],
         ],
       ),
@@ -355,45 +304,7 @@ class _MemberAvatar extends StatelessWidget {
     return WenyouAvatar(
       username: member.username,
       avatarUrl: member.avatarUrl,
-      size: 44,
-    );
-  }
-}
-
-class _MemberBadge extends StatelessWidget {
-  const _MemberBadge({
-    required this.label,
-    required this.icon,
-    this.accent = false,
-  });
-
-  final String label;
-  final String icon;
-  final bool accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: accent ? tokens.accentedBackground : tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
-        border: Border.all(color: tokens.border),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.space8,
-          vertical: tokens.space4,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            WenyouIcon(icon, size: 16),
-            SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.labelMedium),
-          ],
-        ),
-      ),
+      size: 40,
     );
   }
 }

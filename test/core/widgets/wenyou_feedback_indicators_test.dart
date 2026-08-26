@@ -29,6 +29,31 @@ void main() {
     expect(divider.color, isNot(WenyouFoundationPalette.border));
   });
 
+  testWidgets('顶层楼层使用无圆角的 8dp 柔和分区带', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouContentItemDivider(
+            key: Key('floor-divider'),
+            variant: WenyouContentItemDividerVariant.sectionBand,
+          ),
+        ),
+      ),
+    );
+
+    final divider = find.byKey(const Key('floor-divider'));
+    expect(tester.getSize(divider).height, WenyouThemeTokens.light.space8);
+    final coloredBox = tester.widget<ColoredBox>(
+      find.descendant(of: divider, matching: find.byType(ColoredBox)),
+    );
+    expect(coloredBox.color, WenyouThemeTokens.light.softPanel);
+    expect(
+      find.descendant(of: divider, matching: find.byType(DecoratedBox)),
+      findsNothing,
+    );
+  });
+
   testWidgets('未读点与计数遵循 danger 色和 99+ 上限', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

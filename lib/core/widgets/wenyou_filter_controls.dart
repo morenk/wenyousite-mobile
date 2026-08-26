@@ -20,6 +20,8 @@ class WenyouFilterOption<T> {
   final String? supportingLabel;
 }
 
+enum WenyouDropdownFilterAppearance { outlined, quiet }
+
 enum WenyouTabPlacement { page, embedded }
 
 /// Canonical selection for sibling content and page-leading feed categories.
@@ -296,6 +298,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     required this.tooltip,
     required this.icon,
     this.enabled = true,
+    this.appearance = WenyouDropdownFilterAppearance.outlined,
     super.key,
   });
 
@@ -305,6 +308,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
   final String tooltip;
   final String icon;
   final bool enabled;
+  final WenyouDropdownFilterAppearance appearance;
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +316,9 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     final selectedLabel = options
         .firstWhere((option) => option.value == selected)
         .label;
-    final showLeadingIcon = MediaQuery.sizeOf(context).width >= 480;
+    final showLeadingIcon =
+        appearance == WenyouDropdownFilterAppearance.outlined &&
+        MediaQuery.sizeOf(context).width >= 480;
     return PopupMenuButton<T>(
       initialValue: selected,
       tooltip: tooltip,
@@ -368,54 +374,77 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
             ),
           ),
       ],
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          border: Border.all(color: tokens.border),
-          borderRadius: BorderRadius.circular(tokens.radius12),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: tokens.space8),
-            child: Row(
-              children: [
-                if (showLeadingIcon) ...[
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: tokens.softPanel,
-                      borderRadius: BorderRadius.circular(tokens.space4),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(tokens.space4),
-                      child: WenyouIcon(
-                        icon,
-                        size: 16,
-                        color: tokens.mutedText,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: tokens.space8),
-                ],
-                Expanded(
-                  child: Text(
-                    selectedLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
+      child: _DropdownFilterAnchor(
+        appearance: appearance,
+        selectedLabel: selectedLabel,
+        icon: icon,
+        showLeadingIcon: showLeadingIcon,
+      ),
+    );
+  }
+}
+
+class _DropdownFilterAnchor extends StatelessWidget {
+  const _DropdownFilterAnchor({
+    required this.appearance,
+    required this.selectedLabel,
+    required this.icon,
+    required this.showLeadingIcon,
+  });
+
+  final WenyouDropdownFilterAppearance appearance;
+  final String selectedLabel;
+  final String icon;
+  final bool showLeadingIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final content = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+        child: Row(
+          children: [
+            if (showLeadingIcon) ...[
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tokens.softPanel,
+                  borderRadius: BorderRadius.circular(tokens.space4),
                 ),
-                SizedBox(width: tokens.space4),
-                WenyouIcon(
-                  WenyouIconIds.navigationExpand,
-                  size: 18,
-                  color: tokens.mutedText,
+                child: Padding(
+                  padding: EdgeInsets.all(tokens.space4),
+                  child: WenyouIcon(icon, size: 16, color: tokens.mutedText),
                 ),
-              ],
+              ),
+              SizedBox(width: tokens.space8),
+            ],
+            Expanded(
+              child: Text(
+                selectedLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
             ),
-          ),
+            SizedBox(width: tokens.space4),
+            WenyouIcon(
+              WenyouIconIds.navigationExpand,
+              size: 18,
+              color: tokens.mutedText,
+            ),
+          ],
         ),
       ),
+    );
+    if (appearance == WenyouDropdownFilterAppearance.quiet) return content;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        border: Border.all(color: tokens.border),
+        borderRadius: BorderRadius.circular(tokens.radius12),
+      ),
+      child: content,
     );
   }
 }

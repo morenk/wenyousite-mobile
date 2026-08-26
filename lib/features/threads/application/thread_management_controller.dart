@@ -40,7 +40,9 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
 
   Future<bool> save(ThreadManagementDraft draft) async {
     final bootstrap = state.bootstrap;
-    if (bootstrap == null || state.isBusy) return false;
+    if (bootstrap == null || state.isBusy || state.conflict != null) {
+      return false;
+    }
     final validation = draft.validate(bootstrap.thread);
     if (validation != null) {
       state = state.copyWith(failure: ApiFailure(userMessage: validation));
@@ -89,14 +91,19 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
     }
   }
 
-  Future<bool> overwriteConflict() async {
+  Future<bool> overwriteConflict(ThreadManagementDraft draft) async {
     final conflict = state.conflict;
     if (conflict == null || state.isBusy) return false;
+    final validation = draft.validate(conflict.latest.thread);
+    if (validation != null) {
+      state = state.copyWith(failure: ApiFailure(userMessage: validation));
+      return false;
+    }
     state = state.copyWith(isSaving: true, failure: null, conflict: null);
     try {
       final updated = await _repository.update(
         current: conflict.latest.thread,
-        draft: conflict.pending,
+        draft: draft,
       );
       state = state.copyWith(
         bootstrap: conflict.latest.copyWith(thread: updated),
@@ -105,7 +112,7 @@ class ThreadManagementController extends StateNotifier<ThreadManagementState> {
       return true;
     } on ApiFailure catch (failure) {
       if (failure.businessCode == 40002 || failure.httpStatus == 409) {
-        await _resolveConflict(failure, conflict.pending);
+        await _resolveConflict(failure, draft);
       } else {
         state = state.copyWith(isSaving: false, failure: failure);
       }

@@ -23,6 +23,7 @@ import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.d
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_dice_presentation.dart';
 
 class ThreadDetailLoadingState extends StatelessWidget {
   const ThreadDetailLoadingState({super.key});
@@ -160,9 +161,9 @@ class ThreadSubthreadBody extends StatelessWidget {
             WenyouMarkdown(
               key: Key('thread-body-${subthread.id}'),
               data: body.markdown,
-              diceLabels: _diceLabels(body.diceRolls),
-              diceSemantics: _diceSemantics(body.diceRolls),
-              diceDetails: _diceDetails(body.diceRolls),
+              diceLabels: threadDiceLabels(body.diceRolls),
+              diceSemantics: threadDiceSemantics(body.diceRolls),
+              diceDetails: threadDiceDetails(body.diceRolls),
               enablePlainTextFastPath: false,
               diagnosticRenderKey: diagnosticMarkdownKey,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
@@ -173,9 +174,9 @@ class ThreadSubthreadBody extends StatelessWidget {
               key: Key('thread-body-${subthread.id}'),
               postId: body.postId!,
               data: body.markdown,
-              diceLabels: _diceLabels(body.diceRolls),
-              diceSemantics: _diceSemantics(body.diceRolls),
-              diceDetails: _diceDetails(body.diceRolls),
+              diceLabels: threadDiceLabels(body.diceRolls),
+              diceSemantics: threadDiceSemantics(body.diceRolls),
+              diceDetails: threadDiceDetails(body.diceRolls),
               enablePlainTextFastPath: false,
               diagnosticRenderKey: diagnosticMarkdownKey,
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
@@ -447,9 +448,11 @@ class ThreadFloorCard extends ConsumerWidget {
                       child: StickerPostMarkdown(
                         postId: floor.id,
                         data: floor.body.markdown,
-                        diceLabels: _diceLabels(floor.body.diceRolls),
-                        diceSemantics: _diceSemantics(floor.body.diceRolls),
-                        diceDetails: _diceDetails(floor.body.diceRolls),
+                        diceLabels: threadDiceLabels(floor.body.diceRolls),
+                        diceSemantics: threadDiceSemantics(
+                          floor.body.diceRolls,
+                        ),
+                        diceDetails: threadDiceDetails(floor.body.diceRolls),
                         onInternalLink: (uri) =>
                             _showInternalLinkNotice(context, uri),
                         onTapText: pending ? null : onReply,
@@ -533,7 +536,7 @@ class _FloorInlineReplyPreview extends StatelessWidget {
     final visibleReplies = replies.take(_previewLimit).toList(growable: false);
     final replyCards = <Widget>[
       for (var index = 0; index < visibleReplies.length; index++) ...[
-        if (index > 0) SizedBox(height: tokens.space4),
+        if (index > 0) Divider(height: 1, color: tokens.border),
         _FloorInlineReplyCard(
           floorId: floorId,
           reply: visibleReplies[index],
@@ -542,22 +545,25 @@ class _FloorInlineReplyPreview extends StatelessWidget {
         ),
       ],
     ];
-    return WenyouOverflowDestination(
-      key: Key('thread-floor-reply-preview-$floorId'),
-      maxHeight: _collapsedHeight,
-      forceAction: replyCount > visibleReplies.length,
-      fadeColor: tokens.panel,
-      collapsedKey: Key('thread-floor-reply-preview-collapsed-$floorId'),
-      action: WenyouOverflowAction(
-        key: Key('thread-floor-reply-preview-expand-$floorId'),
-        label: '展开全部 $replyCount 条回复',
-        icon: WenyouIconIds.navigationNext,
-        backgroundColor: tokens.panel,
-        onPressed: pending ? null : onDiscussion,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: replyCards,
+    return WenyouDiscussionReplyGroup(
+      child: WenyouOverflowDestination(
+        key: Key('thread-floor-reply-preview-$floorId'),
+        maxHeight: _collapsedHeight,
+        forceAction: replyCount > visibleReplies.length,
+        fadeColor: tokens.panel,
+        collapsedKey: Key('thread-floor-reply-preview-collapsed-$floorId'),
+        action: WenyouOverflowAction(
+          key: Key('thread-floor-reply-preview-expand-$floorId'),
+          label: '展开全部 $replyCount 条回复',
+          icon: WenyouIconIds.navigationNext,
+          backgroundColor: tokens.panel,
+          appearance: WenyouOverflowActionAppearance.quiet,
+          onPressed: pending ? null : onDiscussion,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: replyCards,
+        ),
       ),
     );
   }
@@ -615,9 +621,9 @@ class _FloorInlineReplyCard extends StatelessWidget {
             StickerPostMarkdown(
               postId: reply.id,
               data: reply.body.markdown,
-              diceLabels: _diceLabels(reply.body.diceRolls),
-              diceSemantics: _diceSemantics(reply.body.diceRolls),
-              diceDetails: _diceDetails(reply.body.diceRolls),
+              diceLabels: threadDiceLabels(reply.body.diceRolls),
+              diceSemantics: threadDiceSemantics(reply.body.diceRolls),
+              diceDetails: threadDiceDetails(reply.body.diceRolls),
               onInternalLink: (uri) => _showInternalLinkNotice(context, uri),
               onTapText: enabled ? onReply : null,
               bodyFontSize: 17,
@@ -863,36 +869,6 @@ PostItem threadFloorAsPost(
         )
         .toList(growable: false),
   );
-}
-
-Map<String, String> _diceLabels(List<ThreadDiceRollModel> rolls) {
-  return {
-    for (final roll in rolls)
-      roll.nodeId.toLowerCase(): '${roll.notation} = ${roll.total}',
-  };
-}
-
-Map<String, String> _diceSemantics(List<ThreadDiceRollModel> rolls) {
-  return {
-    for (final roll in rolls)
-      roll.nodeId.toLowerCase(): formatWenyouDiceSemantics(
-        notation: roll.notation,
-        results: roll.results,
-        total: roll.total,
-      ),
-  };
-}
-
-Map<String, WenyouDiceRollDetail> _diceDetails(
-  List<ThreadDiceRollModel> rolls,
-) {
-  return {
-    for (final roll in rolls)
-      roll.nodeId.toLowerCase(): WenyouDiceRollDetail(
-        results: roll.results,
-        total: roll.total,
-      ),
-  };
 }
 
 void _showInternalLinkNotice(BuildContext context, Uri uri) {

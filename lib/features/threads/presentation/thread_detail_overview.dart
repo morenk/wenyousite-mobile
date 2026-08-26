@@ -111,10 +111,8 @@ class ThreadDetailSubthreadHeaderSliver extends StatelessWidget {
 
     final navigatorExtent = _navigatorExtent(context, tokens);
     final pinned = subthreads.length > 1;
-    final maxExtent = navigatorExtent + tokens.space12 * 2 + _dividerExtent;
-    final minExtent = pinned
-        ? navigatorExtent + tokens.space4 * 2 + _dividerExtent
-        : maxExtent;
+    final maxExtent = navigatorExtent + tokens.space12 * 2;
+    final minExtent = pinned ? navigatorExtent + tokens.space4 * 2 : maxExtent;
     return SliverPersistentHeader(
       pinned: pinned,
       delegate: _ThreadSubthreadHeaderDelegate(
@@ -123,7 +121,6 @@ class ThreadDetailSubthreadHeaderSliver extends StatelessWidget {
         maxPadding: tokens.space12,
         minPadding: pinned ? tokens.space4 : tokens.space12,
         background: tokens.background,
-        border: tokens.border,
         headerKey: scrollCoordinator.headerKey,
         child: Semantics(
           container: true,
@@ -210,7 +207,6 @@ class _ThreadSubthreadHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.minPadding,
     required this.maxPadding,
     required this.background,
-    required this.border,
     required this.headerKey,
     required this.child,
   });
@@ -224,7 +220,6 @@ class _ThreadSubthreadHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double minPadding;
   final double maxPadding;
   final Color background;
-  final Color border;
   final GlobalKey headerKey;
   final Widget child;
 
@@ -242,20 +237,7 @@ class _ThreadSubthreadHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: ColoredBox(
         key: const Key('thread-subthread-sticky-header'),
         color: background,
-        child: Column(
-          children: [
-            Expanded(
-              child: WenyouContentFrame(
-                top: padding,
-                bottom: padding,
-                child: child,
-              ),
-            ),
-            WenyouContentFrame(
-              child: Divider(height: _dividerExtent, color: border),
-            ),
-          ],
-        ),
+        child: WenyouContentFrame(top: padding, bottom: padding, child: child),
       ),
     );
   }
@@ -267,10 +249,7 @@ class _ThreadSubthreadHeaderDelegate extends SliverPersistentHeaderDelegate {
         minPadding != oldDelegate.minPadding ||
         maxPadding != oldDelegate.maxPadding ||
         background != oldDelegate.background ||
-        border != oldDelegate.border ||
         headerKey != oldDelegate.headerKey ||
         child != oldDelegate.child;
   }
 }
-
-const _dividerExtent = 1.0;

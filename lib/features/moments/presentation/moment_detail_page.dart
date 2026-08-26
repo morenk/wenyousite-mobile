@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
@@ -774,37 +775,31 @@ class _MomentRootCommentPanel extends StatelessWidget {
         ),
         if (replies.isNotEmpty) ...[
           SizedBox(height: tokens.space12),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: tokens.border, width: 2)),
-            ),
-            child: Padding(
-              padding: EdgeInsets.only(left: tokens.space12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var index = 0; index < replies.length; index++) ...[
-                    _targetFrame(
-                      replies[index],
-                      MomentCommentBody(
-                        comment: replies[index],
-                        compact: true,
-                        busy: busyCommentIds.contains(replies[index].id),
-                        onReply: () => onReply(replies[index]),
-                        onDelete: replies[index].canDelete
-                            ? () => onDelete(replies[index])
-                            : null,
-                        onReport: () => onReport(replies[index]),
-                        reportReturnTo: replies[index].author.id == viewerId
-                            ? null
-                            : returnTo,
-                      ),
+          WenyouDiscussionReplyGroup(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var index = 0; index < replies.length; index++) ...[
+                  _targetFrame(
+                    replies[index],
+                    MomentCommentBody(
+                      comment: replies[index],
+                      compact: true,
+                      busy: busyCommentIds.contains(replies[index].id),
+                      onReply: () => onReply(replies[index]),
+                      onDelete: replies[index].canDelete
+                          ? () => onDelete(replies[index])
+                          : null,
+                      onReport: () => onReport(replies[index]),
+                      reportReturnTo: replies[index].author.id == viewerId
+                          ? null
+                          : returnTo,
                     ),
-                    if (index + 1 < replies.length)
-                      Divider(height: tokens.space20),
-                  ],
+                  ),
+                  if (index + 1 < replies.length)
+                    Divider(height: 1, color: tokens.border),
                 ],
-              ),
+              ],
             ),
           ),
         ],

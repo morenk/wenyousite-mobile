@@ -49,6 +49,7 @@ class ThreadManagementBodyEditor extends ConsumerStatefulWidget {
     this.autofocus = false,
     this.label = '正文编辑器',
     this.placeholder = '从这里开始写正文…',
+    this.onFocusChanged,
     this.onSubmit,
     this.submitLabel = '保存修改',
     this.showSubmit = false,
@@ -64,6 +65,7 @@ class ThreadManagementBodyEditor extends ConsumerStatefulWidget {
   final bool autofocus;
   final String label;
   final String placeholder;
+  final ValueChanged<bool>? onFocusChanged;
   final Future<void> Function()? onSubmit;
   final String submitLabel;
   final bool showSubmit;
@@ -101,6 +103,7 @@ class _ThreadManagementBodyEditorState
             .updateAutoSaveContent(markdown);
       },
     )..addListener(_onSessionChanged);
+    _session.focusNode.addListener(_onFocusChanged);
     widget.controller._attach(_session, _toolbar);
   }
 
@@ -130,10 +133,15 @@ class _ThreadManagementBodyEditorState
   void dispose() {
     widget.controller._detach(_session);
     _session
+      ..focusNode.removeListener(_onFocusChanged)
       ..removeListener(_onSessionChanged)
       ..dispose();
     _toolbar.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    widget.onFocusChanged?.call(_session.focusNode.hasFocus);
   }
 
   @override

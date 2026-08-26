@@ -8,7 +8,11 @@ import 'package:wenyousite_mobile/features/threads/data/thread_member_management
 import 'package:wenyousite_mobile/features/threads/domain/thread_member_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('楼主管理玩家标记并二次确认任命协作者', (tester) async {
     final repository = _FakeRepository(bootstrap: _bootstrap());
     await _pumpPage(tester, repository);
@@ -29,7 +33,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(repository.playerValues, [true]);
-    expect(find.text('玩家'), findsOneWidget);
+    expect(find.text('Lv.2 · 参与人 · 玩家'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const ValueKey('thread-member-collaborator-player-1')),
@@ -41,7 +45,29 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(repository.roles, [ThreadMemberManagementRole.collaborator]);
-    expect(find.text('协作者'), findsOneWidget);
+    expect(find.text('Lv.2 · 协作者 · 玩家'), findsOneWidget);
+  });
+
+  testWidgets('成员使用紧凑列表行和直接图标操作', (tester) async {
+    await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
+
+    final owner = find.byKey(const ValueKey('thread-member-profile-owner-1'));
+    final player = find.byKey(const ValueKey('thread-member-profile-player-1'));
+    final playerAction = find.byKey(
+      const ValueKey('thread-member-player-player-1'),
+    );
+    final collaboratorAction = find.byKey(
+      const ValueKey('thread-member-collaborator-player-1'),
+    );
+
+    expect(find.text('Lv.4 · 楼主 · 非玩家'), findsOneWidget);
+    expect(find.text('Lv.2 · 参与人 · 非玩家'), findsOneWidget);
+    expect(tester.widget(playerAction), isA<IconButton>());
+    expect(tester.widget(collaboratorAction), isA<IconButton>());
+    expect(
+      tester.getTopLeft(player).dy - tester.getTopLeft(owner).dy,
+      lessThan(70),
+    );
   });
 
   testWidgets('协作者只能维护玩家标记', (tester) async {
@@ -125,6 +151,19 @@ void main() {
       expect(find.text('玩家甲'), findsOneWidget);
     });
   }
+
+  testWidgets('360dp 成员权限紧凑列表视觉基线', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
+
+    await expectLater(
+      find.byType(Scaffold).last,
+      matchesGoldenFile('goldens/thread_member_management_list_360.png'),
+    );
+  });
 }
 
 Future<void> _pumpPage(

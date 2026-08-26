@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/features/threads/application/thread_management
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_controls.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_body_editor.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 
@@ -37,7 +38,9 @@ class ThreadManagementPage extends ConsumerStatefulWidget {
 class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
+  final _titleFocusNode = FocusNode();
   final _bodyEditorController = ThreadManagementBodyEditorController();
+  late final ThreadManagementAutosaveCoordinator _autosave;
   late ThreadManagementSection _section;
   String? _categorySlug;
   ThreadManagementStatus _status = ThreadManagementStatus.recruiting;
@@ -53,10 +56,19 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   void initState() {
     super.initState();
     _section = widget.initialSection;
+    _titleFocusNode.addListener(_handleTitleFocusChanged);
+    _autosave = ThreadManagementAutosaveCoordinator(
+      hasChanges: _hasAutosaveChanges,
+      onSave: _saveAutomatically,
+    );
   }
 
   @override
   void dispose() {
+    _autosave.dispose();
+    _titleFocusNode
+      ..removeListener(_handleTitleFocusChanged)
+      ..dispose();
     _titleController.dispose();
     _bodyEditorController.dispose();
     super.dispose();
@@ -85,19 +97,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         appBar: AppBar(
           title: const Text('管理主题'),
           actions: [
-            if (_section == ThreadManagementSection.settings &&
-                state.phase == ThreadManagementPhase.ready)
-              IconButton(
-                key: const Key('thread-management-save'),
-                tooltip: state.isSaving ? '正在保存' : '保存修改',
-                onPressed: state.isBusy ? null : _save,
-                icon: state.isSaving
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const WenyouIcon(WenyouIconIds.actionSave),
-              ),
+            if (_section == ThreadManagementSection.settings)
+              _ThreadManagementAutosaveIndicator(coordinator: _autosave),
           ],
         ),
         body: Column(
@@ -123,7 +124,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               semanticsLabel: '主题管理分区',
               placement: WenyouTabPlacement.page,
               keyPrefix: 'thread-management-tab',
-              enabled: !state.isBusy,
+              enabled: !state.isDeleting,
             ),
             Expanded(
               child: switch (state.phase) {
@@ -159,19 +160,19 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   ) {
     final tokens = context.wenyouTokens;
     final thread = bootstrap.thread;
-    final locked = state.isBusy;
+    final locked = state.isDeleting;
     return WenyouPageBody(
       maxWidth: 640,
       child: Form(
         key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const WenyouSectionHeader(title: '主题设置'),
-            SizedBox(height: tokens.space16),
             TextFormField(
               key: const Key('thread-management-title'),
               controller: _titleController,
+              focusNode: _titleFocusNode,
               enabled: !locked,
               maxLength: 100,
               textInputAction: TextInputAction.next,
@@ -179,6 +180,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 labelText: '标题',
                 hintText: '一句话说明这个主题',
               ),
+              onChanged: (_) => _autosave.schedule(),
               validator: (value) {
                 final title = value?.trim() ?? '';
                 if (title.isEmpty) return '请输入主题标题';
@@ -206,7 +208,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   .toList(growable: false),
               onChanged: locked
                   ? null
-                  : (value) => setState(() => _categorySlug = value),
+                  : (value) {
+                      setState(() => _categorySlug = value);
+                      unawaited(_autosave.saveNow());
+                    },
               validator: (value) => value == null ? '请选择主题分区' : null,
             ),
             SizedBox(height: tokens.space12),
@@ -229,7 +234,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                     onChanged: locked
                         ? null
                         : (value) {
-                            if (value != null) setState(() => _status = value);
+                            if (value == null) return;
+                            setState(() => _status = value);
+                            unawaited(_autosave.saveNow());
                           },
                   ),
                 ),
@@ -256,6 +263,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                           : (value) {
                               if (value != null) {
                                 setState(() => _visibility = value);
+                                unawaited(_autosave.saveNow());
                               }
                             },
                     ),
@@ -297,11 +305,14 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                       label: Text(tag),
                       onDeleted: locked
                           ? null
-                          : () => setState(
-                              () => _tagNames = List.unmodifiable(
-                                _tagNames.where((value) => value != tag),
-                              ),
-                            ),
+                          : () {
+                              setState(
+                                () => _tagNames = List.unmodifiable(
+                                  _tagNames.where((value) => value != tag),
+                                ),
+                              );
+                              unawaited(_autosave.saveNow());
+                            },
                       deleteIcon: const WenyouIcon(
                         WenyouIconIds.actionClose,
                         size: 16,
@@ -326,7 +337,13 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   ),
                   threadId: widget.threadId,
                   initialMarkdown: _body,
-                  onChanged: (value) => _body = value,
+                  onChanged: (value) {
+                    _body = value;
+                    _autosave.schedule();
+                  },
+                  onFocusChanged: (hasFocus) {
+                    if (!hasFocus) unawaited(_autosave.saveNow());
+                  },
                   controller: _bodyEditorController,
                   enabled: !locked,
                   label: '主题主正文编辑器',
@@ -342,12 +359,32 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 detail: state.failure!.requestId == null
                     ? null
                     : '问题编号：${state.failure!.requestId}',
-                action: state.conflict == null
-                    ? null
-                    : TextButton(
+                action: state.conflict != null
+                    ? TextButton(
                         key: const Key('thread-management-resolve-conflict'),
                         onPressed: locked ? null : _resolveConflict,
                         child: const Text('处理冲突'),
+                      )
+                    : _isDirty(state)
+                    ? TextButton(
+                        key: const Key('thread-management-autosave-retry'),
+                        onPressed: state.isBusy
+                            ? null
+                            : () => unawaited(_autosave.saveNow()),
+                        child: const Text('重试保存'),
+                      )
+                    : TextButton(
+                        key: const Key('thread-management-dismiss-failure'),
+                        onPressed: state.isBusy
+                            ? null
+                            : () => ref
+                                  .read(
+                                    threadManagementControllerProvider(
+                                      widget.threadId,
+                                    ).notifier,
+                                  )
+                                  .clearFailure(),
+                        child: const Text('知道了'),
                       ),
               ),
             ],
@@ -374,7 +411,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.error,
                       ),
-                      onPressed: locked ? null : _confirmDelete,
+                      onPressed: state.isBusy ? null : _confirmDelete,
                       icon: const WenyouIcon(WenyouIconIds.actionDelete),
                       label: const Text('删除这个主题'),
                     ),
@@ -402,6 +439,13 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     return thread != null && _draft.differsFrom(thread);
   }
 
+  bool _hasAutosaveChanges() {
+    if (!mounted || _boundSignature == null) return false;
+    return _isDirty(
+      ref.read(threadManagementControllerProvider(widget.threadId)),
+    );
+  }
+
   void _bindSnapshot(ThreadManagementSnapshot snapshot, {bool force = false}) {
     final signature = [
       snapshot.version,
@@ -410,7 +454,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       snapshot.body,
       snapshot.tagNames.join('\u0000'),
     ].join(':');
-    if (!force && _boundSignature == signature) return;
+    if (!force && _boundSignature != null) return;
     _boundSignature = signature;
     _titleController.text = snapshot.title;
     _categorySlug = snapshot.categorySlug;
@@ -420,35 +464,34 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     _tagNames = List.unmodifiable(snapshot.tagNames);
   }
 
-  Future<bool> _save() async {
+  Future<bool> _saveAutomatically() async {
     if (!(_formKey.currentState?.validate() ?? false)) return false;
     if (!await _bodyEditorController.flush()) return false;
     if (!mounted) return false;
-    FocusScope.of(context).unfocus();
-    final succeeded = await ref
-        .read(threadManagementControllerProvider(widget.threadId).notifier)
-        .save(_draft);
+    final provider = threadManagementControllerProvider(widget.threadId);
+    final state = ref.read(provider);
+    if (!_isDirty(state)) return true;
+    if (state.conflict != null) return false;
+    final succeeded = await ref.read(provider.notifier).save(_draft);
     if (!succeeded || !mounted) return false;
     _changed = true;
-    showWenyouSnackBar(context, '主题设置已保存。');
     return true;
+  }
+
+  void _handleTitleFocusChanged() {
+    if (!_titleFocusNode.hasFocus) unawaited(_autosave.saveNow());
   }
 
   Future<void> _switchSection(
     ThreadManagementSection next,
     ThreadManagementState state,
   ) async {
-    if (next == _section || state.isBusy) return;
-    if (_section == ThreadManagementSection.settings && _isDirty(state)) {
-      final choice = await _confirmUnsaved('切换管理分区');
-      if (!mounted || choice == null || choice == _UnsavedChoice.keepEditing) {
-        return;
-      }
-      if (choice == _UnsavedChoice.save && !await _save()) return;
-      if (choice == _UnsavedChoice.discard) {
-        _bindSnapshot(state.bootstrap!.thread, force: true);
-      }
+    if (next == _section || state.isDeleting) return;
+    if (_section == ThreadManagementSection.settings &&
+        !await _autosave.saveNow()) {
+      return;
     }
+    if (!mounted) return;
     setState(() {
       _section = next;
       if (next != ThreadManagementSection.settings) _changed = true;
@@ -456,39 +499,37 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   }
 
   Future<void> _handlePopAttempt(ThreadManagementState state) async {
-    if (state.isBusy || _bodyEditorController.closeToolbarTray()) return;
-    if (_section == ThreadManagementSection.settings && _isDirty(state)) {
-      final choice = await _confirmUnsaved('离开主题管理');
-      if (!mounted || choice == null || choice == _UnsavedChoice.keepEditing) {
-        return;
-      }
-      if (choice == _UnsavedChoice.save && !await _save()) return;
+    if (state.isDeleting || _bodyEditorController.closeToolbarTray()) return;
+    final saved = await _autosave.saveNow();
+    if (!mounted) return;
+    final current = ref.read(
+      threadManagementControllerProvider(widget.threadId),
+    );
+    if (!saved && _isDirty(current)) {
+      final discard = await _confirmDiscardExit();
+      if (!mounted || discard != true) return;
     }
     await _popWithResult(_changed ? true : null);
   }
 
-  Future<_UnsavedChoice?> _confirmUnsaved(String action) {
-    return showDialog<_UnsavedChoice>(
+  Future<bool?> _confirmDiscardExit() {
+    final failure = ref
+        .read(threadManagementControllerProvider(widget.threadId))
+        .failure;
+    return showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('还有未保存的修改'),
-        content: Text('$action前，可以先保存主题设置，也可以放弃本次修改。'),
+        title: const Text('修改还没有保存'),
+        content: Text(failure?.userMessage ?? '请检查当前内容后重试，或者放弃修改并离开。'),
         actions: [
           TextButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, _UnsavedChoice.keepEditing),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('继续编辑'),
           ),
-          TextButton(
-            key: const Key('thread-management-discard-confirm'),
-            onPressed: () =>
-                Navigator.pop(dialogContext, _UnsavedChoice.discard),
-            child: const Text('放弃修改'),
-          ),
           FilledButton(
-            key: const Key('thread-management-save-before-leave'),
-            onPressed: () => Navigator.pop(dialogContext, _UnsavedChoice.save),
-            child: const Text('保存后继续'),
+            key: const Key('thread-management-discard-confirm'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('放弃并离开'),
           ),
         ],
       ),
@@ -501,7 +542,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       barrierDismissible: false,
       builder: (_) => _ThreadTagSelectorDialog(initial: _tagNames),
     );
-    if (result != null && mounted) setState(() => _tagNames = result);
+    if (result != null && mounted) {
+      setState(() => _tagNames = result);
+      unawaited(_autosave.saveNow());
+    }
   }
 
   Future<void> _resolveConflict() async {
@@ -538,13 +582,19 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     if (choice == _ConflictChoice.useLatest) {
       notifier.adoptLatest();
       _bindSnapshot(conflict.latest.thread, force: true);
+      _autosave.markSaved();
       setState(() {});
       return;
     }
-    final succeeded = await notifier.overwriteConflict();
+    if (!(_formKey.currentState?.validate() ?? false) ||
+        !await _bodyEditorController.flush() ||
+        !mounted) {
+      return;
+    }
+    final succeeded = await notifier.overwriteConflict(_draft);
     if (succeeded && mounted) {
       _changed = true;
-      showWenyouSnackBar(context, '已用当前内容更新主题。');
+      _autosave.markSaved();
     }
   }
 
@@ -592,9 +642,72 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   }
 }
 
-enum _UnsavedChoice { keepEditing, discard, save }
-
 enum _ConflictChoice { useLatest, overwrite }
+
+class _ThreadManagementAutosaveIndicator extends StatelessWidget {
+  const _ThreadManagementAutosaveIndicator({required this.coordinator});
+
+  final ThreadManagementAutosaveCoordinator coordinator;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return AnimatedBuilder(
+      animation: coordinator,
+      builder: (context, _) {
+        final status = coordinator.status;
+        final label = switch (status) {
+          ThreadManagementAutosaveStatus.idle => null,
+          ThreadManagementAutosaveStatus.scheduled => '待保存',
+          ThreadManagementAutosaveStatus.saving => '保存中',
+          ThreadManagementAutosaveStatus.saved => '已保存',
+          ThreadManagementAutosaveStatus.failed => '未保存',
+        };
+        final color = status == ThreadManagementAutosaveStatus.failed
+            ? Theme.of(context).colorScheme.error
+            : tokens.mutedText;
+        return SizedBox(
+          key: const Key('thread-management-autosave-status'),
+          width: 88,
+          height: tokens.minimumTouchTarget,
+          child: label == null
+              ? null
+              : Semantics(
+                  liveRegion: true,
+                  label: label,
+                  child: ExcludeSemantics(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (status == ThreadManagementAutosaveStatus.saving)
+                          const SizedBox.square(
+                            dimension: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          WenyouIcon(
+                            status == ThreadManagementAutosaveStatus.failed
+                                ? WenyouIconIds.statusError
+                                : WenyouIconIds.actionConfirm,
+                            size: 16,
+                            color: color,
+                          ),
+                        SizedBox(width: tokens.space4),
+                        Text(
+                          label,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: color),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        );
+      },
+    );
+  }
+}
 
 class _ThreadTagSelectorDialog extends StatefulWidget {
   const _ThreadTagSelectorDialog({required this.initial});

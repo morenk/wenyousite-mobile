@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
-/// Shared surface for inline reply previews in discussion-like lists.
+/// Shared interaction surface for inline reply previews in discussion lists.
 ///
 /// Feature modules own the reply content and actions; this widget keeps the
-/// spacing, hit area, semantics and soft-panel treatment aligned.
+/// spacing, hit area and semantics aligned without turning each reply into a
+/// separate card.
 class WenyouDiscussionReplyCard extends StatelessWidget {
   const WenyouDiscussionReplyCard({
     required this.semanticsLabel,
@@ -35,14 +36,40 @@ class WenyouDiscussionReplyCard extends StatelessWidget {
       onTap: canTap ? onTap : null,
       onLongPress: onLongPress,
       child: Material(
-        color: tokens.softPanel,
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        color: Colors.transparent,
         child: InkWell(
           onTap: canTap ? onTap : null,
           onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(tokens.radius12),
-          child: Padding(padding: EdgeInsets.all(tokens.space12), child: child),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: tokens.space8),
+              child: child,
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Groups nested replies under a single visual guide instead of carding every
+/// individual reply.
+class WenyouDiscussionReplyGroup extends StatelessWidget {
+  const WenyouDiscussionReplyGroup({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: tokens.border, width: 2)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(left: tokens.space12),
+        child: child,
       ),
     );
   }

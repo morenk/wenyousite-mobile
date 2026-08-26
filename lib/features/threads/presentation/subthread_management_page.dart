@@ -70,22 +70,7 @@ class _SubthreadDirectory extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(child: WenyouSectionHeader(title: '子贴内容')),
-              IconButton(
-                key: const Key('subthread-management-refresh'),
-                tooltip: '刷新子贴',
-                onPressed: state.isBusy
-                    ? null
-                    : () => ref.read(provider.notifier).load(),
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-              ),
-            ],
-          ),
           if (state.failure != null) ...[
-            SizedBox(height: tokens.space12),
             WenyouStatusBanner(
               key: const Key('subthread-management-failure'),
               tone: WenyouStatusTone.error,
@@ -102,7 +87,7 @@ class _SubthreadDirectory extends ConsumerWidget {
             ),
           ],
           if (state.actionOutcome != null) ...[
-            SizedBox(height: tokens.space12),
+            if (state.failure != null) SizedBox(height: tokens.space12),
             WenyouWriteOutcomeBanner(
               key: const Key('subthread-management-write-outcome'),
               status: state.actionOutcome!,
@@ -199,7 +184,9 @@ class _SubthreadRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     final provider = subthreadManagementControllerProvider(threadId);
-    final pending = state.pendingItemId == item.id;
+    final pending =
+        state.pendingItemId == item.id &&
+        state.pendingAction != SubthreadManagementAction.reordering;
     return Semantics(
       container: true,
       label:

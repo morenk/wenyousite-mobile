@@ -54,7 +54,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
     required this.authors,
     required this.onOrderChanged,
     required this.onAuthorChanged,
-    this.allAuthorsLabel = '全部玩家与管理者',
+    this.allAuthorsLabel = '所有人',
     this.enabled = true,
     this.authorsLoading = false,
     this.authorsFailure,
@@ -77,7 +77,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
   }) : authorId = null,
        authors = const [],
        onAuthorChanged = null,
-       allAuthorsLabel = '全部玩家与管理者',
+       allAuthorsLabel = '所有人',
        authorsLoading = false,
        authorsFailure = null,
        onRetryAuthors = null,
@@ -256,6 +256,7 @@ class _DiscussionDirectActions<T extends Object> extends StatelessWidget {
       key: authorKey,
       tooltip: '选择讨论作者',
       icon: WenyouIconIds.identityMember,
+      appearance: WenyouDropdownFilterAppearance.quiet,
       enabled: enabled,
       options: [
         WenyouFilterOption(value: _allAuthorsValue, label: allAuthorsLabel),
@@ -290,9 +291,9 @@ class _DiscussionAuthorStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return OutlinedButton(
+    return TextButton(
       onPressed: enabled ? onPressed : null,
-      style: OutlinedButton.styleFrom(
+      style: TextButton.styleFrom(
         minimumSize: Size(0, tokens.minimumTouchTarget),
         padding: EdgeInsets.symmetric(horizontal: tokens.space8),
       ),
