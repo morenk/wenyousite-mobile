@@ -1,5 +1,21 @@
 # API 合同变更
 
+## 5.12.3-dev.20260826.1
+
+- 他人在主题内发表新主楼层时，主题楼主现在收到 `type/action=reply` 的直接互动通知，`replyTargetUserId/replyTargetName` 指向楼主；客户端因此显示“发送者 回复了你”并归入“互动”。
+- 同一主楼层对非作者协作者和实际订阅者仍使用 `type/action=new_post` 与“发布了新楼层”，继续归入“订阅”；子贴正文和 5.12.2 的楼中楼原因分流保持不变。显式提及仍优先，拉黑与 PRIVATE 成员过滤、导航目标和接收范围均不扩大；历史通知不回填。
+
+## 5.12.2-dev.20260826.1
+
+- `POST /subthreads/:subthreadId/posts` 收紧楼中楼父级不变量：携带 `replyToPostId` 时必须同时携带 `parentPostId`，且回复目标必须是该主楼层本身或其直属楼中楼回复；非法组合返回 HTTP 400，现有合法请求不变。
+- 楼中楼通知按 `mention → reply → new_post` 原因去重。直接被回复者继续收到 `reply/action=reply`；楼主、协作者、THREAD 订阅者及对应 USER 订阅者改收 `new_post/action=new_reply`，兼容正文为“发布了楼中楼回复”。每个用户对同一次发言最多收到一条通知。
+- 新帖 Outbox 重试复用已持久化的完整提及快照与稳定通知键；首次提及投递失败后不会丢失，也不会降级成重复的回复或订阅通知。历史通知不补发。
+
+## 5.12.1-dev.20260826.1
+
+- `DELETE /threads/:id`、`POST /threads/:id/like` 与 `DELETE /threads/:id/like` 现在都先经过统一主题访问校验，再读取所有权、发布状态或互动数据。不存在、已删除、他人草稿及 PRIVATE 非成员统一返回 HTTP 404 / `THREAD_NOT_FOUND`，不会通过 403 或“草稿暂不支持点赞”泄露主题存在性。
+- 已获访问权但非楼主的删除请求继续返回 403；楼主对本人草稿点赞或取消点赞继续返回 400。响应字段、邀请加入、提及过滤、通知范围和媒体对象访问策略均未改变。
+
 ## 5.12.0-dev.20260826.1
 
 - `NotificationPayloadResponseDto` 向后兼容新增可选、可空 `replyTargetUserId` 与 `replyTargetName`。新建 `reply` 通知固定写入实际被回复帖作者的 ID 和用户名；`schemaVersion=1`、`type/action=reply`、导航目标与通知分类保持不变。

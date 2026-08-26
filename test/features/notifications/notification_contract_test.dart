@@ -63,6 +63,19 @@ void main() {
     expect(formatNotificationCopy(fallback).plainText, '旧文案!');
   });
 
+  test('开放式楼中楼订阅动作保留服务端安全正文', () {
+    final newReply = _item(
+      content: '骰子猫 发布了楼中楼回复：雾港见',
+      payload: const NotificationPayload(
+        actorName: '骰子猫',
+        action: 'new_reply',
+        preview: '雾港见',
+      ),
+    );
+
+    expect(formatNotificationCopy(newReply).plainText, '骰子猫 发布了楼中楼回复：雾港见');
+  });
+
   test('主楼层与楼中楼回复生成不同的稳定目标路由', () {
     expect(
       notificationTargetLocation(

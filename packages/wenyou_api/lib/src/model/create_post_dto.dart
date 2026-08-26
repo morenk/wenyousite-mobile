@@ -13,7 +13,7 @@ part 'create_post_dto.g.dart';
 /// Properties:
 /// * [content] - 帖子正文；骰子使用 [[dice:v1:<UUID>:<NdM±K>]] 内联节点
 /// * [parentPostId] - 父楼层 ID（楼中楼回复时指定，平级挂载，无嵌套深度限制）
-/// * [replyToPostId] - 回复目标帖 ID（追踪具体回复哪个帖子，可为同楼层其他回复）
+/// * [replyToPostId] - 回复目标帖 ID；必须同时提供 parentPostId，且目标属于该主楼层
 /// * [clientRequestId] - 客户端创建请求幂等键；同一次用户提交及网络重试必须复用
 @BuiltValue()
 abstract class CreatePostDto implements Built<CreatePostDto, CreatePostDtoBuilder> {
@@ -25,7 +25,7 @@ abstract class CreatePostDto implements Built<CreatePostDto, CreatePostDtoBuilde
   @BuiltValueField(wireName: r'parentPostId')
   String? get parentPostId;
 
-  /// 回复目标帖 ID（追踪具体回复哪个帖子，可为同楼层其他回复）
+  /// 回复目标帖 ID；必须同时提供 parentPostId，且目标属于该主楼层
   @BuiltValueField(wireName: r'replyToPostId')
   String? get replyToPostId;
 
