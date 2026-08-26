@@ -147,6 +147,9 @@ void main() {
     for (final location in [
       '/me/bookmarks',
       '/me/bookmarks/threads',
+      '/me/bookmarks/moments',
+      '/me/bookmarks/threads/folders/folder-1',
+      '/me/bookmarks/moments/folders/folder-1',
       '/me/bookmarks/folders/folder-1',
     ]) {
       final redirect = resolveSessionRedirect(

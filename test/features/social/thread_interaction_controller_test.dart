@@ -52,9 +52,10 @@ void main() {
     final controller = ThreadInteractionController(repository, _target);
     addTearDown(controller.dispose);
 
-    expect(await controller.toggleBookmark(), isTrue);
+    expect(await controller.toggleBookmark(folderId: 'folder-custom'), isTrue);
     expect(controller.state.isBookmarked, isTrue);
     expect(controller.state.bookmarkId, 'bookmark-new');
+    expect(repository.createdFolderIds, ['folder-custom']);
 
     expect(await controller.toggleBookmark(), isTrue);
     expect(controller.state.isBookmarked, isFalse);
@@ -75,7 +76,7 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    expect(await controller.toggleBookmark(), isFalse);
+    expect(await controller.toggleBookmark(folderId: 'folder-custom'), isFalse);
 
     expect(controller.state.isBookmarked, isTrue);
     expect(controller.state.failure?.userMessage, contains('记录 ID'));
@@ -132,7 +133,7 @@ void main() {
     final controller = ThreadInteractionController(repository, _target);
     addTearDown(controller.dispose);
 
-    expect(await controller.toggleBookmark(), isFalse);
+    expect(await controller.toggleBookmark(folderId: 'folder-custom'), isFalse);
 
     expect(controller.state.failure, isNull);
     expect(controller.state.outcomeStatus, WriteOutcomeStatus.indeterminate);
@@ -168,6 +169,7 @@ class _FakeRepository
   int createBookmarkCalls = 0;
   int projectionReads = 0;
   final List<String> removedBookmarkIds = [];
+  final List<String> createdFolderIds = [];
 
   @override
   Future<int> like(String threadId) async {
@@ -184,8 +186,9 @@ class _FakeRepository
   }
 
   @override
-  Future<String> createBookmark(String threadId) async {
+  Future<String> createBookmark(String threadId, String folderId) async {
     createBookmarkCalls += 1;
+    createdFolderIds.add(folderId);
     if (failure != null) throw failure!;
     return createdBookmarkId;
   }

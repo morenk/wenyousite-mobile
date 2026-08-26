@@ -26,7 +26,11 @@ void main() {
   test('创建收藏提交 threadId 并返回后续删除所需记录 ID', () async {
     final threadsApi = _MockThreadsApi();
     final bookmarksApi = _MockBookmarksApi();
-    final body = CreateBookmarkDto((dto) => dto.threadId = 'thread-1');
+    final body = CreateBookmarkDto(
+      (dto) => dto
+        ..threadId = 'thread-1'
+        ..folderId = 'folder-1',
+    );
     when(
       () => bookmarksApi.bookmarksCreate(createBookmarkDto: body),
     ).thenAnswer((_) async => _createBookmarkResponse());
@@ -35,7 +39,10 @@ void main() {
     ).thenAnswer((_) async => _removeBookmarkResponse());
     final repository = ApiThreadInteractionRepository(threadsApi, bookmarksApi);
 
-    expect(await repository.createBookmark('thread-1'), 'bookmark-1');
+    expect(
+      await repository.createBookmark('thread-1', 'folder-1'),
+      'bookmark-1',
+    );
     await repository.removeBookmark('bookmark-1');
 
     verify(

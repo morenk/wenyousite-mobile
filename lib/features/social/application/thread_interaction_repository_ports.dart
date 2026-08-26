@@ -6,7 +6,7 @@ abstract interface class ThreadInteractionRepository {
 
   Future<int> unlike(String threadId);
 
-  Future<String> createBookmark(String threadId);
+  Future<String> createBookmark(String threadId, String folderId);
 
   Future<void> removeBookmark(String bookmarkId);
 }
@@ -31,7 +31,8 @@ class _UnboundThreadInteractionRepository
   Future<int> unlike(String threadId) => Future.error(_error());
 
   @override
-  Future<String> createBookmark(String threadId) => Future.error(_error());
+  Future<String> createBookmark(String threadId, String folderId) =>
+      Future.error(_error());
 
   @override
   Future<void> removeBookmark(String bookmarkId) => Future.error(_error());

@@ -174,8 +174,6 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       name: name,
       isDefault: dto.isDefault,
       bookmarkCount: dto.bookmarkCount.toInt(),
-      // 5.13 起动态目录独立；主题目录中的兼容计数不再进入新客户端状态。
-      momentBookmarkCount: 0,
       createdAt: dto.createdAt,
     );
   }

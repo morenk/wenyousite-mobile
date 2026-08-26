@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -65,20 +66,16 @@ void main() {
 
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
+    expect(find.text('收藏到收藏夹'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
+    await tester.pumpAndSettle();
     expect(find.text('已收藏'), findsOneWidget);
-    expect(find.text('已收藏到默认收藏夹。'), findsOneWidget);
-    expect(
-      find.byKey(const Key('thread-bookmark-change-folder')),
-      findsOneWidget,
-    );
+    expect(find.text('已收藏到“默认收藏夹”。'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
-    expect(find.text('已收藏到默认收藏夹。'), findsNothing);
-    expect(
-      find.byKey(const Key('thread-bookmark-change-folder')),
-      findsNothing,
-    );
+    expect(find.text('已收藏到“默认收藏夹”。'), findsNothing);
     expect(bookmarkRepository.moves, isEmpty);
+    expect(repository.createdFolderIds, ['folder-default']);
 
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
@@ -86,7 +83,7 @@ void main() {
     expect(repository.removedBookmarkIds, ['bookmark-1']);
   });
 
-  testWidgets('收藏成功气泡可把新收藏移动到指定收藏夹', (tester) async {
+  testWidgets('首次收藏可直接选择指定收藏夹且只写一次', (tester) async {
     final repository = _FakeRepository();
     final bookmarkRepository = _FakeBookmarkListRepository();
     final container = await _authenticatedContainer(
@@ -111,27 +108,24 @@ void main() {
 
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('thread-bookmark-change-folder')));
-    await tester.pumpAndSettle();
 
-    expect(find.text('当前已保存在默认收藏夹，选择后立即移动。'), findsOneWidget);
+    expect(find.text('选择收藏夹后确认，本次内容只会保存在一个收藏夹中。'), findsOneWidget);
     expect(find.text('默认收藏夹'), findsOneWidget);
     expect(find.text('稍后阅读'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey('bookmark-folder-picker-option-folder-later')),
     );
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
 
-    expect(bookmarkRepository.moves, [('bookmark-1', 'folder-later')]);
-    expect(find.text('已移动到“稍后阅读”。'), findsOneWidget);
+    expect(repository.createdFolderIds, ['folder-later']);
+    expect(bookmarkRepository.moves, isEmpty);
+    expect(find.text('已收藏到“稍后阅读”。'), findsOneWidget);
   });
 
-  testWidgets('修改收藏夹加载和移动失败时可在原面板重试', (tester) async {
-    final repository = _FakeRepository();
-    final bookmarkRepository = _FakeBookmarkListRepository(
-      folderFailures: 1,
-      moveFailures: 1,
-    );
+  testWidgets('首次收藏加载和写入失败时可在原面板重试', (tester) async {
+    final repository = _FakeRepository(bookmarkFailures: 1);
+    final bookmarkRepository = _FakeBookmarkListRepository(folderFailures: 1);
     final container = await _authenticatedContainer(
       repository,
       bookmarkRepository: bookmarkRepository,
@@ -154,8 +148,6 @@ void main() {
 
     await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('thread-bookmark-change-folder')));
-    await tester.pumpAndSettle();
 
     expect(find.text('收藏夹加载失败，请稍后重试。'), findsOneWidget);
     expect(find.text('问题编号：folder-request-id'), findsOneWidget);
@@ -166,17 +158,58 @@ void main() {
       const ValueKey('bookmark-folder-picker-option-folder-later'),
     );
     await tester.tap(customFolder);
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
-    expect(find.text('移动收藏失败，请稍后重试。'), findsOneWidget);
+    expect(find.text('收藏失败，请稍后重试。'), findsOneWidget);
     expect(customFolder, findsOneWidget);
 
-    await tester.tap(customFolder);
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
-    expect(bookmarkRepository.moves, [
-      ('bookmark-1', 'folder-later'),
-      ('bookmark-1', 'folder-later'),
-    ]);
-    expect(find.text('已移动到“稍后阅读”。'), findsOneWidget);
+    expect(repository.createdFolderIds, ['folder-later', 'folder-later']);
+    expect(find.text('已收藏到“稍后阅读”。'), findsOneWidget);
+  });
+
+  testWidgets('首次收藏可在选择面板内新建收藏夹后一次写入', (tester) async {
+    final repository = _FakeRepository();
+    final bookmarkRepository = _FakeBookmarkListRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      bookmarkRepository: bookmarkRepository,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ThreadInteractionActions(
+              target: _target,
+              onRequireAuthentication: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('thread-interaction-bookmark')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-create')));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('bookmark-folder-picker-name')),
+      '跑团资料',
+    );
+    await tester.tap(
+      find.byKey(const Key('bookmark-folder-picker-create-confirm')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(bookmarkRepository.createdNames, ['跑团资料']);
+    expect(repository.createdFolderIds, ['folder-created']);
+    expect(find.text('已收藏到“跑团资料”。'), findsOneWidget);
   });
 
   testWidgets('互动失败保留按钮状态并显示请求 ID', (tester) async {
@@ -266,6 +299,9 @@ Future<ProviderContainer> _authenticatedContainer(
       bookmarkListRepositoryProvider.overrideWithValue(
         bookmarkRepository ?? _FakeBookmarkListRepository(),
       ),
+      bookmarkFolderCatalogProvider.overrideWith(
+        (ref, kind) => bookmarkRepository ?? _FakeBookmarkListRepository(),
+      ),
     ],
   );
   await container
@@ -282,6 +318,7 @@ class _FakeBookmarkListRepository implements BookmarkListRepository {
   int _remainingFolderFailures;
   int _remainingMoveFailures;
   final List<(String, String)> moves = [];
+  final List<String> createdNames = [];
 
   @override
   Future<List<BookmarkFolderItem>> fetchFolders() async {
@@ -327,18 +364,28 @@ class _FakeBookmarkListRepository implements BookmarkListRepository {
   }) async => const CursorPage(items: [], hasMore: false);
 
   @override
-  Future<BookmarkFolderItem> createFolder(String name) =>
-      throw UnimplementedError();
+  Future<BookmarkFolderItem> createFolder(String name) async {
+    createdNames.add(name);
+    return BookmarkFolderItem(
+      id: 'folder-created',
+      name: name,
+      isDefault: false,
+      bookmarkCount: 0,
+      createdAt: DateTime(2026),
+    );
+  }
 
   @override
   Future<void> remove(String bookmarkId) => throw UnimplementedError();
 }
 
 class _FakeRepository implements ThreadInteractionRepository {
-  _FakeRepository({this.failLike = false});
+  _FakeRepository({this.failLike = false, this.bookmarkFailures = 0});
 
   final bool failLike;
+  int bookmarkFailures;
   int likeCalls = 0;
+  final List<String> createdFolderIds = [];
   final List<String> removedBookmarkIds = [];
 
   @override
@@ -357,7 +404,14 @@ class _FakeRepository implements ThreadInteractionRepository {
   Future<int> unlike(String threadId) async => 12;
 
   @override
-  Future<String> createBookmark(String threadId) async => 'bookmark-1';
+  Future<String> createBookmark(String threadId, String folderId) async {
+    createdFolderIds.add(folderId);
+    if (bookmarkFailures > 0) {
+      bookmarkFailures -= 1;
+      throw const ApiFailure(userMessage: '收藏失败，请稍后重试。');
+    }
+    return 'bookmark-1';
+  }
 
   @override
   Future<void> removeBookmark(String bookmarkId) async {

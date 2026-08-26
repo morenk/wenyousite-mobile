@@ -15,6 +15,8 @@ class MomentWaterfallCard extends StatelessWidget {
     required this.onTap,
     this.onAuthorTap,
     this.onLike,
+    this.onManage,
+    this.managePending = false,
     this.pendingAction,
     super.key,
   });
@@ -23,6 +25,8 @@ class MomentWaterfallCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onAuthorTap;
   final VoidCallback? onLike;
+  final VoidCallback? onManage;
+  final bool managePending;
   final MomentInteractionAction? pendingAction;
 
   @override
@@ -121,6 +125,32 @@ class MomentWaterfallCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (onManage != null)
+                  Semantics(
+                    button: true,
+                    label: '管理收藏：${moment.title}',
+                    excludeSemantics: true,
+                    child: IconButton(
+                      key: Key('moment-bookmark-manage-${moment.id}'),
+                      tooltip: '管理收藏',
+                      constraints: BoxConstraints.tightFor(
+                        width: tokens.minimumTouchTarget,
+                        height: tokens.minimumTouchTarget,
+                      ),
+                      onPressed: pendingAction == null && !managePending
+                          ? onManage
+                          : null,
+                      icon: managePending
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const WenyouIcon(
+                              WenyouIconIds.actionMore,
+                              size: 18,
+                            ),
+                    ),
+                  ),
                 _MomentWaterfallLikeButton(
                   key: Key('moment-like-${moment.id}'),
                   count: moment.likeCount,

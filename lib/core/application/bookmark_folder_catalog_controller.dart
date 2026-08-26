@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
-import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 enum BookmarkFolderCatalogPhase { loading, ready, failed }
 
@@ -29,10 +29,8 @@ class BookmarkFolderCatalogState {
   final ApiFailure? actionFailure;
 
   bool get isBusy => isRefreshing || isCreating;
-  int get threadBookmarkCount =>
+  int get bookmarkCount =>
       folders.fold(0, (total, folder) => total + folder.bookmarkCount);
-  int get momentBookmarkCount =>
-      folders.fold(0, (total, folder) => total + folder.momentBookmarkCount);
 
   BookmarkFolderCatalogState copyWith({
     BookmarkFolderCatalogPhase? phase,
@@ -64,7 +62,7 @@ class BookmarkFolderCatalogController
     load();
   }
 
-  final BookmarkListRepository _repository;
+  final BookmarkFolderCatalog _repository;
   var _epoch = 0;
 
   Future<void> load() async {
@@ -172,13 +170,14 @@ class BookmarkFolderCatalogController
   }
 }
 
-final bookmarkFolderCatalogControllerProvider =
-    StateNotifierProvider.autoDispose<
+final bookmarkFolderCatalogControllerProvider = StateNotifierProvider
+    .autoDispose
+    .family<
       BookmarkFolderCatalogController,
-      BookmarkFolderCatalogState
-    >(
-      (ref) => BookmarkFolderCatalogController(
-        ref.watch(bookmarkListRepositoryProvider),
-      ),
-      dependencies: [bookmarkListRepositoryProvider],
-    );
+      BookmarkFolderCatalogState,
+      BookmarkFolderContentKind
+    >((ref, kind) {
+      return BookmarkFolderCatalogController(
+        ref.watch(bookmarkFolderCatalogProvider(kind)),
+      );
+    }, dependencies: [bookmarkFolderCatalogProvider]);

@@ -6,23 +6,29 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
+import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 class BookmarkListPage extends ConsumerWidget {
-  const BookmarkListPage({this.folderId, this.initialFolderName, super.key});
+  const BookmarkListPage({
+    required this.folderId,
+    this.initialFolderName,
+    super.key,
+  });
 
-  final String? folderId;
+  final String folderId;
   final String? initialFolderName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookmarkListControllerProvider(folderId));
-    final title = folderId == null
-        ? '全部主题帖'
-        : state.folderById(folderId)?.name ?? initialFolderName ?? '收藏夹';
+    final title =
+        state.folderById(folderId)?.name ?? initialFolderName ?? '收藏夹';
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: BookmarkListView(folderId: folderId),
@@ -31,9 +37,13 @@ class BookmarkListPage extends ConsumerWidget {
 }
 
 class BookmarkListView extends ConsumerWidget {
-  const BookmarkListView({this.folderId, this.additionalRefresh, super.key});
+  const BookmarkListView({
+    required this.folderId,
+    this.additionalRefresh,
+    super.key,
+  });
 
-  final String? folderId;
+  final String folderId;
   final Future<void> Function()? additionalRefresh;
 
   @override
@@ -89,19 +99,23 @@ class BookmarkListView extends ConsumerWidget {
           ]);
         },
         onMove: (item) async {
-          final folderId = await _showMoveFolderSheet(
-            context,
-            item,
-            state.folders,
+          final folder = await showBookmarkFolderPicker(
+            context: context,
+            catalog: ref.read(bookmarkListRepositoryProvider),
+            mode: BookmarkFolderPickerMode.move,
+            currentFolderId: item.folderId,
+            onConfirm: (targetFolderId) async {
+              final succeeded = await notifier.moveBookmark(
+                item.bookmarkId,
+                targetFolderId,
+              );
+              if (succeeded) return;
+              throw ref.read(provider).actionFailure ??
+                  const ApiFailure(userMessage: '移动收藏失败，请稍后重试。');
+            },
           );
-          if (!context.mounted || folderId == null) return;
-          final folder = state.folderById(folderId);
-          final succeeded = await notifier.moveBookmark(
-            item.bookmarkId,
-            folderId,
-          );
-          if (!context.mounted || !succeeded) return;
-          showWenyouSnackBar(context, '已移动到“${folder?.name ?? '收藏夹'}”。');
+          if (!context.mounted || folder == null) return;
+          showWenyouSnackBar(context, '已移动到“${folder.name}”。');
         },
         onLoadMore: notifier.loadMore,
         onRemove: (bookmarkId) async {
@@ -237,12 +251,8 @@ class _ReadyBookmarkList extends StatelessWidget {
                 child: WenyouPanel(
                   child: WenyouEmptyState(
                     icon: WenyouIconIds.actionBookmark,
-                    title: state.selectedFolderId == null
-                        ? '还没有收藏'
-                        : '这个收藏夹还是空的',
-                    message: state.selectedFolderId == null
-                        ? ''
-                        : '可从“全部”中移动收藏。',
+                    title: '这个收藏夹还是空的',
+                    message: '收藏主题帖时可以直接选择这个收藏夹。',
                   ),
                 ),
               )
@@ -469,91 +479,6 @@ class _CenteredContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return WenyouConstrainedWidth(child: child);
   }
-}
-
-Future<String?> _showMoveFolderSheet(
-  BuildContext context,
-  BookmarkListItem item,
-  List<BookmarkFolderItem> folders,
-) {
-  return showModalBottomSheet<String>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) {
-      final tokens = context.wenyouTokens;
-      return SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.72,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  tokens.space20,
-                  0,
-                  tokens.space20,
-                  tokens.space12,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '移动到收藏夹',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    SizedBox(height: tokens.space4),
-                    Text(
-                      item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
-                    ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: folders.length,
-                  itemBuilder: (context, index) {
-                    final folder = folders[index];
-                    final current = folder.id == item.folderId;
-                    return ListTile(
-                      key: ValueKey('bookmark-move-option-${folder.id}'),
-                      enabled: !current,
-                      leading: WenyouIcon(
-                        current
-                            ? WenyouIconIds.contentFolderOpen
-                            : WenyouIconIds.contentFolder,
-                      ),
-                      title: Text(
-                        folder.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text('${folder.bookmarkCount} 条收藏'),
-                      trailing: current
-                          ? const WenyouIcon(WenyouIconIds.actionConfirm)
-                          : null,
-                      onTap: current
-                          ? null
-                          : () => Navigator.of(context).pop(folder.id),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
 }
 
 String? _requestDetail(String? requestId) =>

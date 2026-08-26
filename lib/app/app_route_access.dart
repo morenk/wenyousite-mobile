@@ -37,6 +37,7 @@ abstract final class AppRouteAccessPolicy {
     AppRoutePaths.meBlocks,
     AppRoutePaths.meBookmarks,
     AppRoutePaths.meBookmarkThreads,
+    AppRoutePaths.meBookmarkMoments,
     AppRoutePaths.meStickers,
     AppRoutePaths.loginSessions,
     AppRoutePaths.changePassword,
@@ -48,7 +49,7 @@ abstract final class AppRouteAccessPolicy {
     r'^/moments/(?:[^/]+|:momentId)/edit$',
   );
   static final _bookmarkFolderPattern = RegExp(
-    r'^/me/bookmarks/folders/(?:[^/]+|:folderId)$',
+    r'^/me/bookmarks/(?:(?:threads|moments)/)?folders/(?:[^/]+|:folderId)$',
   );
   static final _threadManagementPattern = RegExp(
     r'^/threads/(?:[^/]+|:threadId)/manage(?:/(?:members|tags)|/subthreads(?:/new|/(?:[^/]+|:subthreadId)/edit)?)?$',

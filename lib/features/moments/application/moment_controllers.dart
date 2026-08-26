@@ -135,12 +135,26 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
     return _runAction(card, bookmark: false);
   }
 
-  Future<bool> toggleBookmark(MomentCard card) {
-    return _runAction(card, bookmark: true);
+  Future<bool> toggleBookmark(MomentCard card, {String? folderId}) {
+    return _runAction(card, bookmark: true, folderId: folderId);
   }
 
-  Future<bool> _runAction(MomentCard card, {required bool bookmark}) async {
+  Future<bool> _runAction(
+    MomentCard card, {
+    required bool bookmark,
+    String? folderId,
+  }) async {
     if (state.pendingMomentActions.containsKey(card.id)) return false;
+    if (bookmark &&
+        !card.viewerBookmarked &&
+        (!card.canInteract || folderId == null || folderId.trim().isEmpty)) {
+      state = state.copyWith(
+        transientFailure: ApiFailure(
+          userMessage: card.canInteract ? '请选择收藏夹。' : '这条动态暂时无法收藏。',
+        ),
+      );
+      return false;
+    }
     final action = bookmark
         ? MomentInteractionAction.bookmark
         : MomentInteractionAction.like;
@@ -153,6 +167,7 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
           ? await _repository.setBookmark(
               card.id,
               active: !card.viewerBookmarked,
+              folderId: folderId,
             )
           : await _repository.setLike(card.id, active: !card.viewerLiked);
       if (!mounted) return false;
@@ -231,7 +246,6 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
         mode: state.target.mode,
         cursor: cursor,
       ),
-      MomentFeedKind.bookmarks => _repository.fetchBookmarks(cursor: cursor),
       MomentFeedKind.user => _repository.fetchUserMoments(
         userId: state.target.userId!,
         cursor: cursor,
@@ -518,11 +532,28 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
 
   Future<bool> toggleLike() => _runMomentAction(bookmark: false);
 
-  Future<bool> toggleBookmark() => _runMomentAction(bookmark: true);
+  Future<bool> toggleBookmark({String? folderId}) =>
+      _runMomentAction(bookmark: true, folderId: folderId);
 
-  Future<bool> _runMomentAction({required bool bookmark}) async {
+  ApiFailure? get momentActionFailure => state.transientFailure;
+
+  Future<bool> _runMomentAction({
+    required bool bookmark,
+    String? folderId,
+  }) async {
     final detail = state.detail;
     if (detail == null || state.pendingMomentAction != null) return false;
+    final card = detail.card;
+    if (bookmark &&
+        !card.viewerBookmarked &&
+        (!card.canInteract || folderId == null || folderId.trim().isEmpty)) {
+      state = state.copyWith(
+        transientFailure: ApiFailure(
+          userMessage: card.canInteract ? '请选择收藏夹。' : '这条动态暂时无法收藏。',
+        ),
+      );
+      return false;
+    }
     state = state.copyWith(
       pendingMomentAction: bookmark
           ? MomentInteractionAction.bookmark
@@ -530,11 +561,11 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
       transientFailure: null,
     );
     try {
-      final card = detail.card;
       final result = bookmark
           ? await _repository.setBookmark(
               momentId,
               active: !card.viewerBookmarked,
+              folderId: folderId,
             )
           : await _repository.setLike(momentId, active: !card.viewerLiked);
       if (!mounted) return false;
@@ -542,6 +573,7 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
           ? card.copyWith(
               bookmarkCount: result.count,
               viewerBookmarked: result.active,
+              bookmarkFolderId: result.active ? folderId : null,
             )
           : card.copyWith(likeCount: result.count, viewerLiked: result.active);
       state = state.copyWith(

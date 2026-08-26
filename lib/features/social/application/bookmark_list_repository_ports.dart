@@ -14,6 +14,7 @@ abstract interface class BookmarkListRepository
   @override
   Future<List<BookmarkFolderItem>> fetchFolders();
 
+  @override
   Future<BookmarkFolderItem> createFolder(String name);
 
   Future<void> move(String bookmarkId, String folderId);

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -18,6 +19,7 @@ import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
 import 'package:wenyousite_mobile/features/moderation/presentation/moderation_appeal_page.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_bookmark_folder_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
@@ -139,13 +141,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutePaths.momentBookmarks,
-        name: AppRouteNames.momentBookmarks,
-        builder: (context, state) => const MomentCollectionPage(
-          target: MomentFeedTarget.bookmarks(),
-          title: '动态收藏',
-          emptyTitle: '还没有收藏动态',
-          emptyMessage: '',
-        ),
+        redirect: (context, state) => AppRouteLocations.meBookmarkMoments,
       ),
       GoRoute(
         path: AppRoutePaths.momentEdit,
@@ -392,14 +388,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.meBookmarkThreads,
         name: AppRouteNames.meBookmarkThreads,
-        builder: (context, state) => const BookmarkListPage(),
+        builder: (context, state) => const BookmarkFolderDirectoryPage(
+          kind: BookmarkFolderContentKind.thread,
+        ),
       ),
       GoRoute(
-        path: AppRoutePaths.meBookmarkFolder,
-        name: AppRouteNames.meBookmarkFolder,
+        path: AppRoutePaths.meBookmarkMoments,
+        name: AppRouteNames.meBookmarkMoments,
+        builder: (context, state) => const BookmarkFolderDirectoryPage(
+          kind: BookmarkFolderContentKind.moment,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutePaths.meThreadBookmarkFolder,
+        name: AppRouteNames.meThreadBookmarkFolder,
         builder: (context, state) => BookmarkListPage(
           folderId: state.pathParameters['folderId']!,
           initialFolderName: state.uri.queryParameters['name'],
+        ),
+      ),
+      GoRoute(
+        path: AppRoutePaths.meMomentBookmarkFolder,
+        name: AppRouteNames.meMomentBookmarkFolder,
+        builder: (context, state) => MomentBookmarkFolderPage(
+          folderId: state.pathParameters['folderId']!,
+          initialFolderName: state.uri.queryParameters['name'],
+        ),
+      ),
+      GoRoute(
+        path: AppRoutePaths.legacyMeBookmarkFolder,
+        redirect: (context, state) => AppRouteLocations.meThreadBookmarkFolder(
+          state.pathParameters['folderId']!,
+          name: state.uri.queryParameters['name'],
         ),
       ),
       GoRoute(

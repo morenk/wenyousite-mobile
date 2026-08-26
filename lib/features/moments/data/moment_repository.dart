@@ -47,8 +47,8 @@ class ApiMomentRepository implements MomentRepository {
 
   @override
   Future<CursorPage<MomentCard>> fetchBookmarks({
+    required String folderId,
     String? cursor,
-    String? folderId,
     int limit = 20,
   }) async {
     _validatePage(limit);
@@ -210,11 +210,18 @@ class ApiMomentRepository implements MomentRepository {
   Future<MomentActionResult> setBookmark(
     String momentId, {
     required bool active,
+    String? folderId,
   }) async {
     final id = _requiredText(momentId, '动态 ID');
+    final targetFolderId = _optionalText(folderId);
     try {
       final dto = active
-          ? (await _api.momentsBookmark(id: id)).data?.data
+          ? (await _api.momentsBookmark(
+              id: id,
+              createMomentBookmarkDto: CreateMomentBookmarkDto(
+                (builder) => builder.folderId = targetFolderId,
+              ),
+            )).data?.data
           : (await _api.momentsUnbookmark(id: id)).data?.data;
       if (dto == null) {
         throw const ApiFailure(userMessage: '收藏失败，请重新加载。');
@@ -444,13 +451,14 @@ class ApiMomentRepository implements MomentRepository {
       tipTotal: dto.tipTotal,
       viewerLiked: dto.viewerLiked,
       viewerBookmarked: dto.viewerBookmarked,
+      canInteract: dto.canInteract ?? true,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
     );
   }
 
   MomentCard _ownBookmarkCard(OwnMomentBookmarkResponseDto dto) {
-    _requiredText(dto.bookmarkFolderId, '动态收藏夹 ID');
+    final bookmarkFolderId = _requiredText(dto.bookmarkFolderId, '动态收藏夹 ID');
     return _cardFields(
       id: dto.id,
       authorId: dto.authorId,
@@ -467,6 +475,8 @@ class ApiMomentRepository implements MomentRepository {
       tipTotal: dto.tipTotal,
       viewerLiked: dto.viewerLiked,
       viewerBookmarked: dto.viewerBookmarked,
+      canInteract: dto.canInteract ?? true,
+      bookmarkFolderId: bookmarkFolderId,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
     );
@@ -489,6 +499,7 @@ class ApiMomentRepository implements MomentRepository {
       tipTotal: dto.tipTotal,
       viewerLiked: dto.viewerLiked,
       viewerBookmarked: dto.viewerBookmarked,
+      canInteract: dto.canInteract ?? true,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
     );
@@ -530,6 +541,8 @@ class ApiMomentRepository implements MomentRepository {
     required String tipTotal,
     required bool viewerLiked,
     required bool viewerBookmarked,
+    required bool canInteract,
+    String? bookmarkFolderId,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) {
@@ -580,6 +593,8 @@ class ApiMomentRepository implements MomentRepository {
       tipTotal: tipTotal,
       viewerLiked: viewerLiked,
       viewerBookmarked: viewerBookmarked,
+      canInteract: canInteract,
+      bookmarkFolderId: bookmarkFolderId,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

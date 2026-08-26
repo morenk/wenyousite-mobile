@@ -3,27 +3,85 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
+import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/social/application/bookmark_folder_catalog_controller.dart';
-import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
 
 class BookmarkFolderCatalogPage extends ConsumerWidget {
   const BookmarkFolderCatalogPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(bookmarkFolderCatalogControllerProvider);
-    final notifier = ref.read(bookmarkFolderCatalogControllerProvider.notifier);
+    final threads = ref.watch(
+      bookmarkFolderCatalogControllerProvider(BookmarkFolderContentKind.thread),
+    );
+    final moments = ref.watch(
+      bookmarkFolderCatalogControllerProvider(BookmarkFolderContentKind.moment),
+    );
+    final tokens = context.wenyouTokens;
+    return Scaffold(
+      appBar: AppBar(title: const Text('我的收藏')),
+      body: ListView(
+        key: const Key('bookmark-overview-list'),
+        padding: EdgeInsets.fromLTRB(
+          tokens.space16,
+          tokens.space16,
+          tokens.space16,
+          tokens.space32,
+        ),
+        children: [
+          WenyouConstrainedWidth(
+            child: WenyouPanel(
+              child: Column(
+                children: [
+                  _BookmarkTypeTile(
+                    key: const Key('bookmark-catalog-threads'),
+                    icon: WenyouIconIds.actionBookmark,
+                    title: '主题帖收藏夹',
+                    state: threads,
+                    onTap: () => context.pushNamed('me-bookmark-threads'),
+                  ),
+                  const Divider(height: 1),
+                  _BookmarkTypeTile(
+                    key: const Key('bookmark-catalog-moments'),
+                    icon: WenyouIconIds.navigationMoments,
+                    title: '动态收藏夹',
+                    state: moments,
+                    onTap: () => context.pushNamed('me-bookmark-moments'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BookmarkFolderDirectoryPage extends ConsumerWidget {
+  const BookmarkFolderDirectoryPage({required this.kind, super.key});
+
+  final BookmarkFolderContentKind kind;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = bookmarkFolderCatalogControllerProvider(kind);
+    final state = ref.watch(provider);
+    final notifier = ref.read(provider.notifier);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的收藏'),
+        title: Text(
+          kind == BookmarkFolderContentKind.thread ? '主题帖收藏夹' : '动态收藏夹',
+        ),
         actions: [
           IconButton(
-            key: const Key('bookmark-folder-create'),
+            key: Key('bookmark-folder-create-${kind.name}'),
             tooltip: '新建收藏夹',
             onPressed:
                 state.phase == BookmarkFolderCatalogPhase.ready && !state.isBusy
-                ? () => _createFolder(context, ref, notifier)
+                ? () => _createFolder(context, ref, provider, notifier)
                 : null,
             icon: state.isCreating
                 ? const SizedBox.square(
@@ -48,7 +106,7 @@ class BookmarkFolderCatalogPage extends ConsumerWidget {
               message: state.failure?.userMessage ?? '请稍后重试。',
               detail: _requestDetail(state.failure?.requestId),
               action: OutlinedButton.icon(
-                key: const Key('bookmark-folder-catalog-retry'),
+                key: Key('bookmark-folder-catalog-retry-${kind.name}'),
                 onPressed: notifier.load,
                 icon: const WenyouIcon(WenyouIconIds.actionRefresh),
                 label: const Text('重新加载'),
@@ -56,7 +114,8 @@ class BookmarkFolderCatalogPage extends ConsumerWidget {
             ),
           ),
         ),
-        BookmarkFolderCatalogPhase.ready => _ReadyBookmarkFolderCatalog(
+        BookmarkFolderCatalogPhase.ready => _ReadyFolderDirectory(
+          kind: kind,
           state: state,
           onRefresh: notifier.refresh,
         ),
@@ -67,26 +126,70 @@ class BookmarkFolderCatalogPage extends ConsumerWidget {
   Future<void> _createFolder(
     BuildContext context,
     WidgetRef ref,
+    AutoDisposeStateNotifierProvider<
+      BookmarkFolderCatalogController,
+      BookmarkFolderCatalogState
+    >
+    provider,
     BookmarkFolderCatalogController notifier,
   ) async {
     notifier.clearActionFailure();
-    final folder = await _showCreateFolderDialog(context, ref, notifier);
+    final folder = await _showCreateFolderDialog(
+      context,
+      ref,
+      provider,
+      notifier,
+    );
     if (!context.mounted || folder == null) return;
     showWenyouSnackBar(context, '已新建“${folder.name}”。');
-    await context.pushNamed<void>(
-      'me-bookmark-folder',
-      pathParameters: {'folderId': folder.id},
-      queryParameters: {'name': folder.name},
+    await _openFolder(context, kind, folder);
+  }
+}
+
+class _BookmarkTypeTile extends StatelessWidget {
+  const _BookmarkTypeTile({
+    required this.icon,
+    required this.title,
+    required this.state,
+    required this.onTap,
+    super.key,
+  });
+
+  final String icon;
+  final String title;
+  final BookmarkFolderCatalogState state;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final countLabel = switch (state.phase) {
+      BookmarkFolderCatalogPhase.loading => '正在加载',
+      BookmarkFolderCatalogPhase.failed => '加载失败，点按重试',
+      BookmarkFolderCatalogPhase.ready => '${state.bookmarkCount} 条收藏',
+    };
+    return Semantics(
+      button: true,
+      label: '$title，$countLabel',
+      excludeSemantics: true,
+      child: ListTile(
+        leading: WenyouIcon(icon),
+        title: Text(title),
+        subtitle: Text(countLabel),
+        trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+        onTap: onTap,
+      ),
     );
   }
 }
 
-class _ReadyBookmarkFolderCatalog extends StatelessWidget {
-  const _ReadyBookmarkFolderCatalog({
+class _ReadyFolderDirectory extends StatelessWidget {
+  const _ReadyFolderDirectory({
+    required this.kind,
     required this.state,
     required this.onRefresh,
   });
 
+  final BookmarkFolderContentKind kind;
   final BookmarkFolderCatalogState state;
   final Future<void> Function() onRefresh;
 
@@ -100,7 +203,7 @@ class _ReadyBookmarkFolderCatalog extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: state.isBusy ? () async {} : onRefresh,
       child: ListView(
-        key: const Key('bookmark-folder-catalog-list'),
+        key: ValueKey('bookmark-folder-directory-${kind.name}'),
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
           horizontal,
@@ -119,117 +222,62 @@ class _ReadyBookmarkFolderCatalog extends StatelessWidget {
             ),
             SizedBox(height: tokens.space12),
           ],
-          const _CatalogSectionTitle('收藏内容'),
-          SizedBox(height: tokens.space8),
           WenyouConstrainedWidth(
             child: WenyouPanel(
-              child: Column(
-                children: [
-                  _CatalogTile(
-                    key: const Key('bookmark-catalog-all-threads'),
-                    icon: WenyouIconIds.actionBookmark,
-                    title: '全部主题帖',
-                    countLabel: '${state.threadBookmarkCount} 条收藏',
-                    onTap: () => context.pushNamed('me-bookmark-threads'),
-                  ),
-                  const Divider(height: 1),
-                  _CatalogTile(
-                    key: const Key('bookmark-catalog-moments'),
-                    icon: WenyouIconIds.navigationMoments,
-                    title: '动态收藏',
-                    countLabel: '${state.momentBookmarkCount} 条收藏',
-                    onTap: () => context.pushNamed('moment-bookmarks'),
-                  ),
-                ],
-              ),
+              child: state.folders.isEmpty
+                  ? const WenyouEmptyState(
+                      icon: WenyouIconIds.contentFolder,
+                      title: '还没有收藏夹',
+                      message: '可使用右上角按钮新建收藏夹。',
+                    )
+                  : Column(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < state.folders.length;
+                          index++
+                        ) ...[
+                          if (index > 0) const Divider(height: 1),
+                          _FolderTile(
+                            folder: state.folders[index],
+                            onTap: () => _openFolder(
+                              context,
+                              kind,
+                              state.folders[index],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
             ),
           ),
-          SizedBox(height: tokens.space24),
-          const _CatalogSectionTitle('主题帖收藏夹'),
-          SizedBox(height: tokens.space8),
-          if (state.folders.isEmpty)
-            WenyouConstrainedWidth(
-              child: WenyouPanel(
-                child: WenyouEmptyState(
-                  icon: WenyouIconIds.contentFolder,
-                  title: '还没有收藏夹',
-                  message: '可使用右上角按钮新建收藏夹。',
-                ),
-              ),
-            )
-          else
-            WenyouConstrainedWidth(
-              child: WenyouPanel(
-                child: Column(
-                  children: [
-                    for (
-                      var index = 0;
-                      index < state.folders.length;
-                      index++
-                    ) ...[
-                      if (index > 0) const Divider(height: 1),
-                      _CatalogTile(
-                        key: ValueKey(
-                          'bookmark-catalog-folder-${state.folders[index].id}',
-                        ),
-                        icon: state.folders[index].isDefault
-                            ? WenyouIconIds.contentFolderOpen
-                            : WenyouIconIds.contentFolder,
-                        title: state.folders[index].name,
-                        countLabel: '${state.folders[index].bookmarkCount} 条收藏',
-                        onTap: () => context.pushNamed(
-                          'me-bookmark-folder',
-                          pathParameters: {'folderId': state.folders[index].id},
-                          queryParameters: {'name': state.folders[index].name},
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 }
 
-class _CatalogSectionTitle extends StatelessWidget {
-  const _CatalogSectionTitle(this.label);
+class _FolderTile extends StatelessWidget {
+  const _FolderTile({required this.folder, required this.onTap});
 
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouConstrainedWidth(
-      child: Text(label, style: Theme.of(context).textTheme.titleMedium),
-    );
-  }
-}
-
-class _CatalogTile extends StatelessWidget {
-  const _CatalogTile({
-    required this.icon,
-    required this.title,
-    required this.countLabel,
-    required this.onTap,
-    super.key,
-  });
-
-  final String icon;
-  final String title;
-  final String countLabel;
+  final BookmarkFolderItem folder;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final countLabel = '${folder.bookmarkCount} 条收藏';
     return Semantics(
       button: true,
-      label: '$title，$countLabel',
+      label: '${folder.name}，$countLabel',
       excludeSemantics: true,
       child: ListTile(
-        leading: WenyouIcon(icon),
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        key: ValueKey('bookmark-catalog-folder-${folder.id}'),
+        leading: WenyouIcon(
+          folder.isDefault
+              ? WenyouIconIds.contentFolderOpen
+              : WenyouIconIds.contentFolder,
+        ),
+        title: Text(folder.name, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(countLabel),
         trailing: const WenyouIcon(WenyouIconIds.navigationNext),
         onTap: onTap,
@@ -238,9 +286,28 @@ class _CatalogTile extends StatelessWidget {
   }
 }
 
+Future<void> _openFolder(
+  BuildContext context,
+  BookmarkFolderContentKind kind,
+  BookmarkFolderItem folder,
+) {
+  return context.pushNamed<void>(
+    kind == BookmarkFolderContentKind.thread
+        ? 'me-thread-bookmark-folder'
+        : 'me-moment-bookmark-folder',
+    pathParameters: {'folderId': folder.id},
+    queryParameters: {'name': folder.name},
+  );
+}
+
 Future<BookmarkFolderItem?> _showCreateFolderDialog(
   BuildContext context,
   WidgetRef ref,
+  AutoDisposeStateNotifierProvider<
+    BookmarkFolderCatalogController,
+    BookmarkFolderCatalogState
+  >
+  provider,
   BookmarkFolderCatalogController notifier,
 ) async {
   final formKey = GlobalKey<FormState>();
@@ -252,7 +319,6 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, setState) {
-        final tokens = context.wenyouTokens;
         Future<void> submit() async {
           if (submitting || !(formKey.currentState?.validate() ?? false)) {
             return;
@@ -264,9 +330,7 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
             Navigator.of(dialogContext).pop(folder);
             return;
           }
-          final failure = ref
-              .read(bookmarkFolderCatalogControllerProvider)
-              .actionFailure;
+          final failure = ref.read(provider).actionFailure;
           setState(() {
             submitting = false;
             submissionError = failure?.userMessage ?? '新建收藏夹失败，请稍后重试。';
@@ -288,41 +352,20 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
                   enabled: !submitting,
                   maxLength: 24,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: '收藏夹名称',
-                    hintText: '例如：跑团资料',
-                  ),
+                  decoration: const InputDecoration(labelText: '收藏夹名称'),
+                  onChanged: (value) => folderName = value,
+                  onFieldSubmitted: (_) => submit(),
                   validator: (value) {
-                    final name = value?.trim() ?? '';
-                    if (name.isEmpty) return '请输入收藏夹名称';
-                    if (name.length > 24) return '名称最多 24 个字符';
+                    final normalized = value?.trim() ?? '';
+                    if (normalized.isEmpty) return '请输入收藏夹名称。';
+                    if (normalized.length > 24) return '名称不能超过 24 个字符。';
                     return null;
                   },
-                  onChanged: (value) {
-                    folderName = value;
-                    if (submissionError == null) return;
-                    setState(() {
-                      submissionError = null;
-                      requestId = null;
-                    });
-                  },
-                  onFieldSubmitted: submitting ? null : (_) => submit(),
                 ),
                 if (submissionError != null) ...[
-                  SizedBox(height: tokens.space8),
-                  Text(
-                    submissionError!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  if (requestId != null) ...[
-                    SizedBox(height: tokens.space4),
-                    SelectableText(
-                      '问题编号：$requestId',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                  const SizedBox(height: 8),
+                  Text(submissionError!),
+                  if (requestId != null) Text('问题编号：$requestId'),
                 ],
               ],
             ),
@@ -334,16 +377,15 @@ Future<BookmarkFolderItem?> _showCreateFolderDialog(
                   : () => Navigator.of(dialogContext).pop(),
               child: const Text('取消'),
             ),
-            FilledButton.icon(
+            FilledButton(
               key: const Key('bookmark-folder-submit'),
               onPressed: submitting ? null : submit,
-              icon: submitting
+              child: submitting
                   ? const SizedBox.square(
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const WenyouIcon(WenyouIconIds.actionAdd),
-              label: const Text('新建'),
+                  : const Text('新建'),
             ),
           ],
         );

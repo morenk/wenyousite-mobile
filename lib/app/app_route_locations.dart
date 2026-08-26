@@ -5,6 +5,7 @@ abstract final class AppRouteLocations {
   static const meSettings = AppRoutePaths.meSettings;
   static const meBookmarks = AppRoutePaths.meBookmarks;
   static const meBookmarkThreads = AppRoutePaths.meBookmarkThreads;
+  static const meBookmarkMoments = AppRoutePaths.meBookmarkMoments;
   static const moments = AppRoutePaths.moments;
   static const notifications = AppRoutePaths.notifications;
   static const search = AppRoutePaths.search;
@@ -63,6 +64,18 @@ abstract final class AppRouteLocations {
 
   static String moment(String momentId, {String? commentId}) =>
       _fromSegments(['moments', momentId], {'comment': ?commentId});
+
+  static String meThreadBookmarkFolder(String folderId, {String? name}) =>
+      _fromSegments(
+        ['me', 'bookmarks', 'threads', 'folders', folderId],
+        {'name': ?name},
+      );
+
+  static String meMomentBookmarkFolder(String folderId, {String? name}) =>
+      _fromSegments(
+        ['me', 'bookmarks', 'moments', 'folders', folderId],
+        {'name': ?name},
+      );
 
   static String meBookmarkFolder(String folderId, {String? name}) =>
       _fromSegments(['me', 'bookmarks', 'folders', folderId], {'name': ?name});
@@ -123,7 +136,12 @@ abstract final class AppRoutePaths {
   static const meBlocks = '/me/blocks';
   static const meBookmarks = '/me/bookmarks';
   static const meBookmarkThreads = '/me/bookmarks/threads';
-  static const meBookmarkFolder = '/me/bookmarks/folders/:folderId';
+  static const meBookmarkMoments = '/me/bookmarks/moments';
+  static const meThreadBookmarkFolder =
+      '/me/bookmarks/threads/folders/:folderId';
+  static const meMomentBookmarkFolder =
+      '/me/bookmarks/moments/folders/:folderId';
+  static const legacyMeBookmarkFolder = '/me/bookmarks/folders/:folderId';
   static const meStickers = '/me/stickers';
   static const loginSessions = '/me/security/sessions';
   static const changePassword = '/me/security/password';
@@ -174,7 +192,9 @@ abstract final class AppRouteNames {
   static const meBlocks = 'me-blocks';
   static const meBookmarks = 'me-bookmarks';
   static const meBookmarkThreads = 'me-bookmark-threads';
-  static const meBookmarkFolder = 'me-bookmark-folder';
+  static const meBookmarkMoments = 'me-bookmark-moments';
+  static const meThreadBookmarkFolder = 'me-thread-bookmark-folder';
+  static const meMomentBookmarkFolder = 'me-moment-bookmark-folder';
   static const meStickers = 'me-stickers';
   static const loginSessions = 'login-sessions';
   static const changePassword = 'change-password';

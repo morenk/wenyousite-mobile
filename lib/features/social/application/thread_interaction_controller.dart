@@ -74,7 +74,7 @@ class ThreadInteractionController
     }
   }
 
-  Future<bool> toggleBookmark() async {
+  Future<bool> toggleBookmark({String? folderId}) async {
     if (state.isPending) return false;
     final before = state;
     final wasBookmarked = before.isBookmarked;
@@ -82,6 +82,13 @@ class ThreadInteractionController
     if (wasBookmarked && oldBookmarkId == null) {
       state = state.copyWith(
         failure: const ApiFailure(userMessage: '收藏状态缺少记录 ID，请下拉刷新后重试。'),
+        clearPending: true,
+      );
+      return false;
+    }
+    if (!wasBookmarked && (folderId == null || folderId.trim().isEmpty)) {
+      state = state.copyWith(
+        failure: const ApiFailure(userMessage: '请选择收藏夹。'),
         clearPending: true,
       );
       return false;
@@ -97,7 +104,7 @@ class ThreadInteractionController
           await _repository.removeBookmark(oldBookmarkId!);
           return null;
         }
-        return _repository.createBookmark(target.threadId);
+        return _repository.createBookmark(target.threadId, folderId!);
       },
       read: _readProjection,
       targetReached: (projection) => wasBookmarked
@@ -122,11 +129,11 @@ class ThreadInteractionController
                 likeCount: before.likeCount,
                 isBookmarked: !wasBookmarked,
                 bookmarkId: outcome.writeValue,
-                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏到默认收藏夹。',
+                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏。',
               )
             : _fromProjection(
                 projection,
-                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏到默认收藏夹。',
+                successMessage: wasBookmarked ? '已取消收藏。' : '已收藏。',
               );
         return true;
       case WriteOutcomeStatus.failed:

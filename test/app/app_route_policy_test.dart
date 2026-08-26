@@ -19,6 +19,9 @@ void main() {
       '/moments/moment-1/edit',
       '/join/invite-token',
       '/me/bookmarks/threads',
+      '/me/bookmarks/moments',
+      '/me/bookmarks/threads/folders/:folderId',
+      '/me/bookmarks/moments/folders/folder-1',
       '/me/bookmarks/folders/:folderId',
       '/me/bookmarks/folders/folder-1',
     ]) {
@@ -74,8 +77,12 @@ void main() {
       '/threads/thread%2F1/manage/subthreads/sub%2F2/edit',
     );
     expect(
-      AppRouteLocations.meBookmarkFolder('folder/1', name: '跑团 资料'),
-      '/me/bookmarks/folders/folder%2F1?name=%E8%B7%91%E5%9B%A2+%E8%B5%84%E6%96%99',
+      AppRouteLocations.meThreadBookmarkFolder('folder/1', name: '跑团 资料'),
+      '/me/bookmarks/threads/folders/folder%2F1?name=%E8%B7%91%E5%9B%A2+%E8%B5%84%E6%96%99',
+    );
+    expect(
+      AppRouteLocations.meMomentBookmarkFolder('folder/1', name: '稍后 阅读'),
+      '/me/bookmarks/moments/folders/folder%2F1?name=%E7%A8%8D%E5%90%8E+%E9%98%85%E8%AF%BB',
     );
   });
 }

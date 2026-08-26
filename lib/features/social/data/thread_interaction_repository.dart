@@ -72,10 +72,14 @@ class ApiThreadInteractionRepository
   }
 
   @override
-  Future<String> createBookmark(String threadId) async {
+  Future<String> createBookmark(String threadId, String folderId) async {
     try {
       final data = (await _bookmarksApi.bookmarksCreate(
-        createBookmarkDto: CreateBookmarkDto((dto) => dto.threadId = threadId),
+        createBookmarkDto: CreateBookmarkDto(
+          (dto) => dto
+            ..threadId = threadId
+            ..folderId = folderId,
+        ),
       )).data?.data;
       if (data == null || data.id.trim().isEmpty) {
         throw const ApiFailure(userMessage: '收藏失败，请重新加载。');

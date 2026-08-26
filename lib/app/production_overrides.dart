@@ -27,6 +27,7 @@ import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart'
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_repository.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/notifications/data/notification_repository.dart';
@@ -132,6 +133,9 @@ List<Override> productionProviderOverrides() => [
   momentRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiMomentRepositoryProvider),
   ),
+  momentBookmarkRepositoryProvider.overrideWith(
+    (ref) => ref.watch(apiMomentBookmarkRepositoryProvider),
+  ),
   notificationRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiNotificationRepositoryProvider),
   ),
@@ -158,7 +162,14 @@ List<Override> productionProviderOverrides() => [
     (ref) => ref.watch(apiBookmarkListRepositoryProvider),
   ),
   bookmarkFolderCatalogProvider.overrideWith(
-    (ref) => ref.watch(apiBookmarkListRepositoryProvider),
+    (ref, kind) => switch (kind) {
+      BookmarkFolderContentKind.thread => ref.watch(
+        apiBookmarkListRepositoryProvider,
+      ),
+      BookmarkFolderContentKind.moment => ref.watch(
+        apiMomentBookmarkRepositoryProvider,
+      ),
+    },
   ),
   threadInteractionRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiThreadInteractionRepositoryProvider),

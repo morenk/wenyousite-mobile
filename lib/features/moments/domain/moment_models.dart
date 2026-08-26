@@ -1,8 +1,10 @@
 import 'package:wenyousite_mobile/core/domain/domain_validation_exception.dart';
 
+const _unsetMomentValue = Object();
+
 enum MomentFeedMode { discover, following }
 
-enum MomentFeedKind { main, bookmarks, user }
+enum MomentFeedKind { main, user }
 
 enum MomentCoverType { image, text }
 
@@ -13,11 +15,6 @@ enum MomentCommentOrder { newest, oldest }
 class MomentFeedTarget {
   const MomentFeedTarget.main(this.mode)
     : kind = MomentFeedKind.main,
-      userId = null;
-
-  const MomentFeedTarget.bookmarks()
-    : kind = MomentFeedKind.bookmarks,
-      mode = MomentFeedMode.discover,
       userId = null;
 
   const MomentFeedTarget.user(String id)
@@ -127,6 +124,8 @@ class MomentCard {
     required this.createdAt,
     required this.updatedAt,
     this.coverMedia,
+    this.canInteract = true,
+    this.bookmarkFolderId,
   });
 
   final String id;
@@ -143,6 +142,8 @@ class MomentCard {
   final String tipTotal;
   final bool viewerLiked;
   final bool viewerBookmarked;
+  final bool canInteract;
+  final String? bookmarkFolderId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -153,6 +154,8 @@ class MomentCard {
     String? tipTotal,
     bool? viewerLiked,
     bool? viewerBookmarked,
+    bool? canInteract,
+    Object? bookmarkFolderId = _unsetMomentValue,
   }) {
     return MomentCard(
       id: id,
@@ -169,6 +172,10 @@ class MomentCard {
       tipTotal: tipTotal ?? this.tipTotal,
       viewerLiked: viewerLiked ?? this.viewerLiked,
       viewerBookmarked: viewerBookmarked ?? this.viewerBookmarked,
+      canInteract: canInteract ?? this.canInteract,
+      bookmarkFolderId: identical(bookmarkFolderId, _unsetMomentValue)
+          ? this.bookmarkFolderId
+          : bookmarkFolderId as String?,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

@@ -1,14 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/thread_interaction_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/thread_interaction_models.dart';
 
@@ -32,7 +31,9 @@ class ThreadInteractionActions extends ConsumerWidget {
     final provider = threadInteractionControllerProvider(target);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
-    final bookmarkRepository = ref.read(bookmarkListRepositoryProvider);
+    final bookmarkCatalog = ref.read(
+      bookmarkFolderCatalogProvider(BookmarkFolderContentKind.thread),
+    );
     final tokens = context.wenyouTokens;
     if (compact) {
       return Row(
@@ -71,7 +72,7 @@ class ThreadInteractionActions extends ConsumerWidget {
                       context,
                       notifier,
                       wasBookmarked: state.isBookmarked,
-                      bookmarkRepository: bookmarkRepository,
+                      bookmarkCatalog: bookmarkCatalog,
                       compact: true,
                     ),
               semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
@@ -117,7 +118,7 @@ class ThreadInteractionActions extends ConsumerWidget {
                         context,
                         notifier,
                         wasBookmarked: state.isBookmarked,
-                        bookmarkRepository: bookmarkRepository,
+                        bookmarkCatalog: bookmarkCatalog,
                       ),
                 semanticLabel: state.isBookmarked ? '取消收藏' : '收藏主题',
                 supporting: Text(state.isBookmarked ? '已收藏' : '收藏'),
@@ -168,21 +169,34 @@ class ThreadInteractionActions extends ConsumerWidget {
     BuildContext context,
     ThreadInteractionController notifier, {
     required bool wasBookmarked,
-    required BookmarkListRepository bookmarkRepository,
+    required BookmarkFolderCatalog bookmarkCatalog,
     bool compact = false,
   }) async {
-    final succeeded = await notifier.toggleBookmark();
-    if (!context.mounted) return;
-    if (!succeeded) {
-      if (compact) _showFailure(context, notifier);
+    if (wasBookmarked) {
+      final succeeded = await notifier.toggleBookmark();
+      if (!context.mounted) return;
+      if (!succeeded) {
+        if (compact) _showFailure(context, notifier);
+        return;
+      }
+      _showSuccess(context, notifier);
       return;
     }
-    final bookmarkId = notifier.currentBookmarkId;
-    if (!wasBookmarked && bookmarkId != null) {
-      _showBookmarkSuccess(context, notifier, bookmarkRepository, bookmarkId);
-      return;
-    }
-    _showSuccess(context, notifier);
+    final folder = await showBookmarkFolderPicker(
+      context: context,
+      catalog: bookmarkCatalog,
+      onConfirm: (folderId) async {
+        final succeeded = await notifier.toggleBookmark(folderId: folderId);
+        if (succeeded) return;
+        throw notifier.takeFailure() ??
+            ApiFailure(
+              userMessage: notifier.takeIndeterminateNotice() ?? '收藏失败，请稍后重试。',
+            );
+      },
+    );
+    if (!context.mounted || folder == null) return;
+    notifier.takeSuccessMessage();
+    showWenyouSnackBar(context, '已收藏到“${folder.name}”。');
   }
 
   void _showFailure(
@@ -215,37 +229,5 @@ class ThreadInteractionActions extends ConsumerWidget {
     final message = notifier.takeSuccessMessage();
     if (message == null) return;
     showWenyouSnackBar(context, message);
-  }
-
-  void _showBookmarkSuccess(
-    BuildContext context,
-    ThreadInteractionController notifier,
-    BookmarkListRepository repository,
-    String bookmarkId,
-  ) {
-    final message = notifier.takeSuccessMessage();
-    if (message == null) return;
-    showWenyouSnackBar(
-      context,
-      message,
-      actionLabel: '修改收藏夹',
-      actionKey: const Key('thread-bookmark-change-folder'),
-      onAction: () =>
-          unawaited(_changeBookmarkFolder(context, repository, bookmarkId)),
-    );
-  }
-
-  Future<void> _changeBookmarkFolder(
-    BuildContext context,
-    BookmarkListRepository repository,
-    String bookmarkId,
-  ) async {
-    final folder = await showBookmarkFolderPicker(
-      context: context,
-      catalog: repository,
-      moveToFolder: (folderId) => repository.move(bookmarkId, folderId),
-    );
-    if (!context.mounted || folder == null) return;
-    showWenyouSnackBar(context, '已移动到“${folder.name}”。');
   }
 }

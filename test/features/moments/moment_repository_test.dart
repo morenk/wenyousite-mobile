@@ -39,7 +39,11 @@ void main() {
       ),
     );
     when(
-      () => api.momentsBookmarks(cursor: null, limit: 20, folderId: null),
+      () => api.momentsBookmarks(
+        cursor: null,
+        limit: 20,
+        folderId: 'folder-default',
+      ),
     ).thenAnswer(
       (_) async => _response(
         '/api/v1/moments/bookmarks',
@@ -140,7 +144,9 @@ void main() {
       cursor: 'cursor-1',
       limit: 7,
     );
-    final bookmarks = await repository.fetchBookmarks();
+    final bookmarks = await repository.fetchBookmarks(
+      folderId: 'folder-default',
+    );
     final user = await repository.fetchUserMoments(userId: 'user-1');
     final detail = await repository.fetchDetail('moment-1');
     final comments = await repository.fetchComments(
@@ -162,7 +168,10 @@ void main() {
     expect(feed.items.single.coverMedia?.contentType, 'image/webp');
     expect(feed.items.single.coverMedia?.animated, isFalse);
     expect(feed.items.single.tipTotal, '25');
+    expect(feed.items.single.canInteract, isTrue);
     expect(bookmarks.items.single.viewerBookmarked, isTrue);
+    expect(bookmarks.items.single.bookmarkFolderId, 'folder-default');
+    expect(bookmarks.items.single.canInteract, isFalse);
     expect(user.items.single.author.username, '温柔测试员');
     expect(detail.images.single.width, 1200);
     expect(detail.version, 3);
@@ -299,7 +308,11 @@ void main() {
     await repository.remove('moment-1');
     final liked = await repository.setLike('moment-1', active: true);
     final unliked = await repository.setLike('moment-1', active: false);
-    final bookmarked = await repository.setBookmark('moment-1', active: true);
+    final bookmarked = await repository.setBookmark(
+      'moment-1',
+      active: true,
+      folderId: 'folder-2',
+    );
     final unbookmarked = await repository.setBookmark(
       'moment-1',
       active: false,
@@ -333,6 +346,14 @@ void main() {
     expect(commentPayload.replyToCommentId, 'comment-root');
     expect(commentPayload.clientRequestId, _requestId);
     verify(() => api.momentsRemove(id: 'moment-1')).called(1);
+    verify(
+      () => api.momentsBookmark(
+        id: 'moment-1',
+        createMomentBookmarkDto: CreateMomentBookmarkDto(
+          (builder) => builder.folderId = 'folder-2',
+        ),
+      ),
+    ).called(1);
     verify(
       () =>
           api.momentsRemoveComment(id: 'moment-1', commentId: 'comment-reply'),
@@ -566,6 +587,7 @@ OwnMomentBookmarkResponseDto _ownBookmarkDto() {
       ..tipTotal = '25'
       ..viewerLiked = false
       ..viewerBookmarked = true
+      ..canInteract = false
       ..createdAt = now
       ..updatedAt = now
       ..bookmarkFolderId = 'folder-default',
@@ -711,7 +733,12 @@ void _stubActions(_MockMomentsApi api) {
       ),
     ),
   );
-  when(() => api.momentsBookmark(id: 'moment-1')).thenAnswer(
+  when(
+    () => api.momentsBookmark(
+      id: 'moment-1',
+      createMomentBookmarkDto: any(named: 'createMomentBookmarkDto'),
+    ),
+  ).thenAnswer(
     (_) async => _response(
       '/api/v1/moments/moment-1/bookmark',
       MomentsBookmark201Response(

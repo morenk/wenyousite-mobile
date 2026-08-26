@@ -31,7 +31,10 @@ void main() {
     final liked = controller.state.items.single;
     expect(liked.viewerLiked, isTrue);
     expect(liked.likeCount, 8);
-    expect(await controller.toggleBookmark(liked), isTrue);
+    expect(
+      await controller.toggleBookmark(liked, folderId: 'folder-default'),
+      isTrue,
+    );
     expect(controller.state.items.single.viewerBookmarked, isTrue);
     expect(controller.state.items.single.bookmarkCount, 5);
   });
@@ -196,6 +199,7 @@ class _FeedRepository extends Fake implements MomentRepository {
   Future<MomentActionResult> setBookmark(
     String momentId, {
     required bool active,
+    String? folderId,
   }) async {
     return MomentActionResult(momentId: momentId, count: 5, active: active);
   }

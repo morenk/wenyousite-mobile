@@ -20,6 +20,7 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -327,7 +328,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('动态收藏默认入夹并在四秒提示中修改收藏夹', (tester) async {
+  testWidgets('动态首次收藏先选夹并只提交一次写入', (tester) async {
     final repository = _PageRepository();
     final folderRepository = _MomentFolderRepository();
     final container = ProviderContainer(
@@ -335,7 +336,9 @@ void main() {
         tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
         sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
         momentRepositoryProvider.overrideWithValue(repository),
-        bookmarkFolderCatalogProvider.overrideWithValue(folderRepository),
+        bookmarkFolderCatalogProvider.overrideWith(
+          (ref, kind) => folderRepository,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -355,24 +358,53 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('moment-detail-bookmark')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('已收藏到默认收藏夹。'), findsOneWidget);
-    expect(
-      find.byKey(const Key('moment-bookmark-change-folder')),
-      findsOneWidget,
-    );
-
-    await tester.tap(find.byKey(const Key('moment-bookmark-change-folder')));
     await tester.pumpAndSettle();
+    expect(find.text('收藏到收藏夹'), findsOneWidget);
+    expect(find.text('1 条收藏'), findsOneWidget);
     expect(find.text('3 条收藏'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey('bookmark-folder-picker-option-folder-later')),
     );
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
     await tester.pumpAndSettle();
 
-    expect(repository.bookmarkMoves, [('moment-1', 'folder-later')]);
-    expect(find.text('已移动到“稍后阅读”。'), findsOneWidget);
+    expect(repository.bookmarkWrites, [
+      (momentId: 'moment-1', active: true, folderId: 'folder-later'),
+    ]);
+    expect(repository.bookmarkMoves, isEmpty);
+    expect(find.text('已收藏到“稍后阅读”。'), findsOneWidget);
+  });
+
+  testWidgets('canInteract false 时动态详情禁止新增收藏', (tester) async {
+    final repository = _PageRepository(
+      detail: MomentDetail(
+        card: _card(canInteract: false),
+        content: '动态正文是纯文本',
+        images: const [],
+        version: 3,
+        canEdit: false,
+        canDelete: false,
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [momentRepositoryProvider.overrideWithValue(repository)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final toggle = tester.widget<WenyouInteractionToggle>(
+      find.descendant(
+        of: find.byKey(const Key('moment-detail-bookmark')),
+        matching: find.byType(WenyouInteractionToggle),
+      ),
+    );
+    expect(toggle.onPressed, isNull);
+    expect(repository.bookmarkWrites, isEmpty);
   });
 
   testWidgets('动态详情按来源返回且直接进入时回到动态列表', (tester) async {
@@ -1509,6 +1541,7 @@ class _PageRepository extends Fake implements MomentRepository {
   final createdInputs = <MomentDraftInput>[];
   final commentInputs = <MomentCommentInput>[];
   final bookmarkMoves = <(String, String)>[];
+  final bookmarkWrites = <({String momentId, bool active, String? folderId})>[];
   final commentOrders = <MomentCommentOrder>[];
   final MomentDetail _detailValue;
   var commentAuthorCalls = 0;
@@ -1546,11 +1579,19 @@ class _PageRepository extends Fake implements MomentRepository {
   Future<MomentActionResult> setBookmark(
     String momentId, {
     required bool active,
-  }) async => MomentActionResult(
-    momentId: momentId,
-    count: active ? 2 : 1,
-    active: active,
-  );
+    String? folderId,
+  }) async {
+    bookmarkWrites.add((
+      momentId: momentId,
+      active: active,
+      folderId: folderId,
+    ));
+    return MomentActionResult(
+      momentId: momentId,
+      count: active ? 2 : 1,
+      active: active,
+    );
+  }
 
   @override
   Future<void> moveBookmark(String momentId, String folderId) async {
@@ -1611,16 +1652,14 @@ class _MomentFolderRepository extends Fake implements BookmarkFolderCatalog {
       id: 'folder-default',
       name: '默认收藏夹',
       isDefault: true,
-      bookmarkCount: 4,
-      momentBookmarkCount: 1,
+      bookmarkCount: 1,
       createdAt: DateTime.utc(2026, 8, 19),
     ),
     BookmarkFolderItem(
       id: 'folder-later',
       name: '稍后阅读',
       isDefault: false,
-      bookmarkCount: 8,
-      momentBookmarkCount: 3,
+      bookmarkCount: 3,
       createdAt: DateTime.utc(2026, 8, 19),
     ),
   ];
@@ -1940,6 +1979,7 @@ MomentCard _card({
   MomentTextCoverTheme theme = MomentTextCoverTheme.mint,
   MomentMedia? coverMedia,
   int imageCount = 0,
+  bool canInteract = true,
 }) {
   final now = DateTime.utc(2026, 8, 10, 12);
   return MomentCard(
@@ -1959,6 +1999,7 @@ MomentCard _card({
     tipTotal: '0',
     viewerLiked: false,
     viewerBookmarked: false,
+    canInteract: canInteract,
     createdAt: now,
     updatedAt: now,
   );
