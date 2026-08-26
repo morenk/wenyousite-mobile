@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
@@ -23,6 +24,8 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_task_c
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
+import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
@@ -173,6 +176,48 @@ void main() {
     );
     expect(find.text('上文'), findsOneWidget);
     expect(find.text('下文'), findsOneWidget);
+  });
+
+  testWidgets('主题正文和原子表情共同进入创建及聚合保存载荷', (tester) async {
+    const expected =
+        '前文![表情]($_composeStickerUrl '
+        '"wenyousite-sticker:v1:$_composeStickerAssetId")后文';
+    final repository = _FakeRepository();
+    final controller =
+        await _readyController(_MemorySnapshotStore(), repository: repository)
+          ..updateTitle('混合正文主题')
+          ..updateCategory('TRPG')
+          ..updateBody('前文后文');
+    await _pumpPage(
+      tester,
+      controller,
+      stickerRepository: _ComposeStickerRepository(),
+    );
+    final editorController = tester
+        .widget<QuillEditor>(find.byKey(const Key('compose-body')))
+        .controller;
+    editorController.updateSelection(
+      const TextSelection.collapsed(offset: 2),
+      ChangeSource.local,
+    );
+    editorController.formatSelection(Attribute.bold);
+
+    final promotedSticker = find.byKey(const Key('editor-sticker'));
+    if (promotedSticker.evaluate().isEmpty) {
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byTooltip('表情包').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('收藏表情'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('收藏表情'));
+    await tester.pumpAndSettle();
+
+    expect(controller.state.body, expected);
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pumpAndSettle();
+    expect(repository.createPayload?.body, expected);
+    expect(repository.savedBody, expected);
   });
 
   testWidgets('图片上传完成后插入安全 Markdown 图片节点', (tester) async {
@@ -575,11 +620,50 @@ Future<void> _pumpPage(
   MediaUploadRepository? mediaRepository,
   MediaUploadGateway? mediaGateway,
   ContentDraftsController? contentDraftsController,
+  _ComposeStickerRepository? stickerRepository,
 }) async {
+  late final Widget app;
+  if (stickerRepository == null) {
+    app = MaterialApp(
+      theme: AppTheme.light,
+      home: const RepaintBoundary(
+        key: Key('compose-text-first-visual'),
+        child: ThreadComposePage(),
+      ),
+    );
+  } else {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const RepaintBoundary(
+            key: Key('compose-text-first-visual'),
+            child: ThreadComposePage(),
+          ),
+        ),
+        GoRoute(
+          path: '/stickers',
+          name: 'me-stickers',
+          builder: (context, state) => const SizedBox.shrink(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    app = MaterialApp.router(theme: AppTheme.light, routerConfig: router);
+  }
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        stickersEnabledProvider.overrideWithValue(false),
+        stickersEnabledProvider.overrideWithValue(stickerRepository != null),
+        if (stickerRepository != null) ...[
+          stickerRepositoryProvider.overrideWithValue(stickerRepository),
+          stickerCollectionControllerProvider.overrideWith((ref) {
+            return StickerCollectionController(
+              stickerRepository,
+              pollInterval: Duration.zero,
+            );
+          }),
+        ],
         imageCropProcessorPortProvider.overrideWithValue(
           const FakePassThroughImageCropProcessor(),
         ),
@@ -597,13 +681,7 @@ Future<void> _pumpPage(
             RepositoryMediaUploadGateway(mediaRepository),
           ),
       ],
-      child: MaterialApp(
-        theme: AppTheme.light,
-        home: const RepaintBoundary(
-          key: Key('compose-text-first-visual'),
-          child: ThreadComposePage(),
-        ),
-      ),
+      child: app,
     ),
   );
   await tester.pump();
@@ -706,6 +784,59 @@ class _FakeRepository implements ThreadComposeRepository {
     );
   }
 }
+
+class _ComposeStickerRepository implements StickerRepository {
+  @override
+  Future<StickerCollection> fetchCollection() async =>
+      _composeStickerCollection;
+
+  @override
+  Future<StickerImport> fetchImport(String id) => throw UnimplementedError();
+
+  @override
+  Future<StickerImport> importSource(
+    StickerImportSource source, {
+    required String clientRequestId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<StickerCollection> remove(String favoriteId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<StickerCollection> reorder({
+    required int version,
+    required List<String> favoriteIds,
+  }) => throw UnimplementedError();
+}
+
+const _composeStickerAssetId = 'cm1234567890123456789012';
+const _composeStickerUrl =
+    'https://cdn.example.com/stickers/thread-compose.webp';
+const _composeSticker = UserSticker(
+  id: 'favorite-compose',
+  position: 0,
+  asset: StickerAsset(
+    id: _composeStickerAssetId,
+    url: _composeStickerUrl,
+    thumbnailUrl: 'https://cdn.example.com/stickers/thread-compose-thumb.webp',
+    width: 96,
+    height: 96,
+    animated: false,
+    frameCount: 1,
+    durationMs: 0,
+  ),
+  markdown:
+      '![表情]($_composeStickerUrl '
+      '"wenyousite-sticker:v1:$_composeStickerAssetId")',
+);
+const _composeStickerCollection = StickerCollection(
+  version: 1,
+  limit: 200,
+  items: [_composeSticker],
+  recent: [],
+  pendingImports: [],
+);
 
 class _FakeContentDraftRepository implements ContentDraftRepository {
   ContentDraft _draft = ContentDraft(

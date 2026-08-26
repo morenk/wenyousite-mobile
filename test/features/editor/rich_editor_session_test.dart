@@ -315,10 +315,95 @@ void main() {
     expect(emitted.last, isNot(contains('替换我')));
 
     session.insertSticker(
+      selection: session.controller.selection,
       assetId: 'cm12345678901234567890',
       url: 'https://cdn.example.com/sticker.png',
     );
     expect(emitted.last, contains('wenyousite-sticker:v1:'));
+  });
+
+  testWidgets('正文光标带待应用样式时表情仍以无属性原子节点安全保存', (tester) async {
+    const assetId = 'cm1234567890123456789012';
+    const url = 'https://cdn.example.com/stickers/mixed.webp';
+    const expected = '前文![表情]($url "wenyousite-sticker:v1:$assetId")后文';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '前文后文',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection.collapsed(offset: 2),
+      ChangeSource.local,
+    );
+    session.controller.formatSelection(Attribute.bold);
+    expect(
+      session.controller.toggledStyle.attributes,
+      contains(Attribute.bold.key),
+    );
+
+    session.insertSticker(
+      selection: session.controller.selection,
+      assetId: assetId,
+      url: url,
+    );
+    await tester.pump();
+
+    expect(await session.flush(), isTrue);
+    expect(session.codecFailure, isNull);
+    expect(emitted.last, expected);
+    final stickerOperation = session.controller.document
+        .toDelta()
+        .operations
+        .singleWhere(
+          (operation) =>
+              operation.data is Map &&
+              (operation.data as Map).containsKey(
+                MarkdownDeltaCodec.stickerEmbed,
+              ),
+        );
+    expect(stickerOperation.attributes, isNull);
+
+    final reopened = RichEditorSession(
+      initialMarkdown: emitted.last,
+      onMarkdownChanged: (_) {},
+    );
+    addTearDown(reopened.dispose);
+    expect(
+      MarkdownDeltaCodec.encode(reopened.controller.document.toDelta()),
+      expected,
+    );
+  });
+
+  testWidgets('异步表情选择完成后按打开选择器前的选区插入', (tester) async {
+    const assetId = 'cm1234567890123456789012';
+    const url = 'https://cdn.example.com/stickers/anchored.webp';
+    const targetSelection = TextSelection.collapsed(offset: 2);
+    const expected = '前文![表情]($url "wenyousite-sticker:v1:$assetId")后文';
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '前文后文',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection.collapsed(offset: 4),
+      ChangeSource.local,
+    );
+
+    session.insertSticker(
+      selection: targetSelection,
+      assetId: assetId,
+      url: url,
+    );
+    await tester.pump();
+
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, expected);
+    expect(
+      session.controller.selection,
+      const TextSelection.collapsed(offset: 3),
+    );
   });
 
   testWidgets('粘贴合法站内链接会替换选区为原子传送门', (tester) async {

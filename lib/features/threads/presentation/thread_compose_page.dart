@@ -503,10 +503,11 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     _editorSession.insertBlockImage(url: image.url);
   }
 
-  Future<void> _insertSticker() async {
+  Future<void> _insertSticker(TextSelection selection) async {
     final sticker = await showStickerPicker(context);
     if (!mounted || sticker == null) return;
     _editorSession.insertSticker(
+      selection: selection,
       assetId: sticker.asset.id,
       url: sticker.asset.url,
     );

@@ -413,10 +413,12 @@ class RichEditorSession extends ChangeNotifier {
   }
 
   void insertSticker({
+    required TextSelection selection,
     required String assetId,
     required String url,
     String alt = '表情',
   }) {
+    if (controller.readOnly) return;
     _replaceSelectionWithInlineEmbed(
       Embeddable(MarkdownDeltaCodec.stickerEmbed, {
         'version': 1,
@@ -424,7 +426,9 @@ class RichEditorSession extends ChangeNotifier {
         'url': url,
         'alt': alt,
       }),
+      selection: selection,
     );
+    focusNode.requestFocus();
     _flushCurrentDelta();
   }
 
@@ -642,13 +646,18 @@ class RichEditorSession extends ChangeNotifier {
     );
   }
 
-  void _replaceSelectionWithInlineEmbed(Embeddable embed) {
-    final offset = _deleteSelection();
+  void _replaceSelectionWithInlineEmbed(
+    Embeddable embed, {
+    required TextSelection selection,
+  }) {
+    final documentEnd = controller.document.length - 1;
+    final start = selection.start.clamp(0, documentEnd).toInt();
+    final end = selection.end.clamp(start, documentEnd).toInt();
     controller.replaceText(
-      offset,
-      0,
+      start,
+      end - start,
       embed,
-      TextSelection.collapsed(offset: offset + 1),
+      TextSelection.collapsed(offset: start + 1),
     );
   }
 
@@ -777,6 +786,13 @@ class _LiteralTextQuillController extends QuillController {
     bool shouldNotifyListeners = true,
   }) {
     final before = document.toDelta();
+    if (_containsEmbed(data)) {
+      // Quill applies pending inline toolbar styles to every replacement,
+      // including embeds. Protocol nodes must remain attribute-free so the
+      // Markdown codec can persist them without weakening its fail-closed
+      // validation.
+      toggledStyle = const Style();
+    }
     super.replaceText(
       index,
       len,
@@ -827,6 +843,14 @@ class _LiteralTextQuillController extends QuillController {
       document.compose(formatting, ChangeSource.local);
     }
   }
+
+  static bool _containsEmbed(Object? data) => switch (data) {
+    Embeddable() => true,
+    Delta value => value.operations.any(
+      (operation) => operation.isInsert && operation.data is Map,
+    ),
+    _ => false,
+  };
 }
 
 class _CallbackEditorClipboardGateway implements EditorClipboardGateway {

@@ -735,7 +735,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _editorSession.insertBlockImage(url: image.url);
   }
 
-  Future<void> _insertSticker() async {
+  Future<void> _insertSticker(TextSelection selection) async {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
@@ -747,6 +747,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
       return;
     }
     _editorSession.insertSticker(
+      selection: selection,
       assetId: sticker.asset.id,
       url: sticker.asset.url,
     );

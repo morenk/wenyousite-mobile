@@ -314,10 +314,14 @@ class _ThreadManagementBodyEditorState
     _session.insertBlockImage(url: uploaded.url);
   }
 
-  Future<void> _insertSticker() async {
+  Future<void> _insertSticker(TextSelection selection) async {
     final sticker = await showStickerPicker(context);
     if (!mounted || sticker == null) return;
-    _session.insertSticker(assetId: sticker.asset.id, url: sticker.asset.url);
+    _session.insertSticker(
+      selection: selection,
+      assetId: sticker.asset.id,
+      url: sticker.asset.url,
+    );
   }
 }
 

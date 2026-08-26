@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -144,6 +146,56 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('异步表情选择器收到打开前选区并在取消后恢复该选区', (tester) async {
+    tester.view.physicalSize = const Size(600, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = QuillController(
+      document: Document()..insert(0, '前文后文'),
+      selection: const TextSelection.collapsed(offset: 2),
+    );
+    final focusNode = FocusNode();
+    final pickerClosed = Completer<void>();
+    TextSelection? receivedSelection;
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: WenyouEditorToolbar(
+              controller: controller,
+              editorFocusNode: focusNode,
+              enabled: true,
+              onInsertImage: () async {},
+              onInsertSticker: (selection) async {
+                receivedSelection = selection;
+                await pickerClosed.future;
+              },
+              onSaveDraft: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-sticker')));
+    await tester.pump();
+    expect(receivedSelection, const TextSelection.collapsed(offset: 2));
+    controller.updateSelection(
+      const TextSelection.collapsed(offset: 4),
+      ChangeSource.local,
+    );
+
+    pickerClosed.complete();
+    await tester.pumpAndSettle();
+    expect(controller.selection, const TextSelection.collapsed(offset: 2));
+  });
 
   testWidgets('无提交按钮时分隔线仍固定放在更多面板', (tester) async {
     tester.view.physicalSize = const Size(400, 640);

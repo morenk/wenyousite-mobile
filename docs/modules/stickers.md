@@ -18,6 +18,8 @@
 
 管理页读取收藏夹版本、容量、收藏、最近使用和处理中任务。从相册选择一张图片后进入单图准备，静态图确认取景、GIF 原样确认后由 media 共享任务以 `STICKER_SOURCE` 用途完成预签名上传、确认与完成态轮询；只有安全完成的 `mediaId` 才以稳定 UUID v4 导入。上传可取消，失败可在当前页面复用同一输入重试；私聊和帖子来源直接提交稳定来源标识。PROCESSING 任务每 2 秒读取状态，完成或失败后重读收藏夹。排序必须提交当前版本和完整收藏 ID 列表；移除需二次确认。
 
+在 Markdown 编辑器中选择收藏表情时，工具栏先固定正文选区，选择完成后把资产 ID 与安全 URL 写入无富文本属性的原子节点；普通正文与表情允许同段混排并作为完整 Markdown 保存。私信仍使用 `stickerAssetId` 独占消息，不与正文混合。
+
 ## 5. API operationId 与生成类型
 
 - `stickersGetCollection`、`stickersGetImport`。
@@ -44,7 +46,7 @@
 
 ## 10. 跨模块约束
 
-media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL。视觉只使用 Foundation v6.4.0 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
+media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL。视觉只使用 Foundation v6.5.1 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
 
 ## 11. 测试场景与验收条件
 
@@ -55,6 +57,7 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 - [x] 相册导入上传固定传入 `STICKER_SOURCE`，静态图归一化为 WebP，GIF 原样校验且不进入裁剪。
 - [x] 私信选择独占表情、图片快速收藏和陌生请求图片隐藏入口有集成 Widget 测试。
 - [x] 表情选择器“收藏 / 最近”使用共享点按页签，管理页首屏使用结构 Skeleton。
+- [x] 回复、主题创建和主题正文管理的真实选择器链路覆盖正文与原子表情共同保存；待应用行内样式不会污染 embed，取消选择仍保留原选区和正文。
 - [ ] 使用公网专用账号完成相册导入、帖子/私聊收藏、排序、删除、私信发送与编辑器发布真机联调。
 
 ## 12. 已知限制和后续功能
@@ -63,7 +66,7 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.12.0-dev.20260826.1`；Markdown v3；后端 `f9bc3ab9ff2d06b142d72c9323d4e908cd351cee`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.12.0-dev.20260826.1`；Markdown v3；后端 `f9bc3ab9ff2d06b142d72c9323d4e908cd351cee`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 

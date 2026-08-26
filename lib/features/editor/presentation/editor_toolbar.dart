@@ -110,7 +110,7 @@ class WenyouEditorToolbar extends StatefulWidget {
 
   final QuillController controller;
   final Future<void> Function() onInsertImage;
-  final Future<void> Function()? onInsertSticker;
+  final Future<void> Function(TextSelection selection)? onInsertSticker;
   final VoidCallback? onInsertHorizontalRule;
   final Future<void> Function() onSaveDraft;
   final bool enabled;
@@ -298,8 +298,9 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                               icon: WenyouIconIds.editorSticker,
                               label: '表情包',
                               enabled: widget.enabled,
-                              onPressed: () =>
-                                  _runExternal(widget.onInsertSticker!),
+                              onPressed: () => _runSelectionExternal(
+                                widget.onInsertSticker!,
+                              ),
                             ),
                         ];
                         final controls = <Widget>[
@@ -486,7 +487,8 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorSticker,
                   label: '表情包',
-                  onPressed: () => _runExternal(widget.onInsertSticker!),
+                  onPressed: () =>
+                      _runSelectionExternal(widget.onInsertSticker!),
                 ),
               if (widget.capabilities.inlineStyles)
                 WenyouEditorTrayButton(
@@ -713,6 +715,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
         widget.editorFocusNode?.requestFocus();
       }
     }
+  }
+
+  Future<void> _runSelectionExternal(
+    Future<void> Function(TextSelection selection) action,
+  ) {
+    final selection = widget.controller.selection;
+    return _runExternal(() => action(selection));
   }
 
   void _openLinkTray() {
