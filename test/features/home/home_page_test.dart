@@ -236,11 +236,11 @@ void main() {
   });
 
   for (final (width, visibleTags) in <(double, int)>[
-    (320, 1),
-    (360, 2),
+    (320, 2),
+    (360, 3),
     (600, 3),
   ]) {
-    testWidgets('$width dp 底栏按可用宽度限制 $visibleTags 个标签并汇总剩余项', (tester) async {
+    testWidgets('$width dp 底栏优先展示 $visibleTags 个标签并汇总真正放不下的项', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 900);
       addTearDown(tester.view.resetDevicePixelRatio);

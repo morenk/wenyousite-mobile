@@ -544,28 +544,25 @@ class _FloorInlineReplyPreview extends StatelessWidget {
         ),
       ],
     ];
-    return Padding(
+    return WenyouDiscussionReplyGroup(
       key: Key('thread-floor-reply-preview-$floorId'),
-      padding: EdgeInsets.only(left: tokens.space12),
-      child: WenyouDiscussionReplyGroup(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ...replyCards,
-            if (replyCards.isNotEmpty) SizedBox(height: tokens.space4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: WenyouOverflowAction(
-                key: Key('thread-floor-reply-preview-expand-$floorId'),
-                label: '展开楼中楼（$replyCount 条）',
-                icon: WenyouIconIds.navigationNext,
-                backgroundColor: tokens.panel,
-                appearance: WenyouOverflowActionAppearance.quiet,
-                onPressed: pending ? null : onDiscussion,
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ...replyCards,
+          if (replyCards.isNotEmpty) SizedBox(height: tokens.space4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: WenyouOverflowAction(
+              key: Key('thread-floor-reply-preview-expand-$floorId'),
+              label: '展开楼中楼（$replyCount 条）',
+              icon: WenyouIconIds.navigationNext,
+              backgroundColor: tokens.panel,
+              appearance: WenyouOverflowActionAppearance.quiet,
+              onPressed: pending ? null : onDiscussion,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

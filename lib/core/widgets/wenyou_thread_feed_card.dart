@@ -262,46 +262,36 @@ class _ThreadFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final tagLimit = constraints.maxWidth <= 300
-            ? 1
-            : constraints.maxWidth <= 400
-            ? 2
-            : 3;
-        return Row(
-          children: [
-            if (thread.playerCount case final playerCount?) ...[
-              _ThreadStat(
-                icon: WenyouIconIds.metricPlayers,
-                value: playerCount,
-                label: '玩家',
-              ),
-              SizedBox(width: tokens.space12),
-            ],
-            _ThreadStat(
-              icon: WenyouIconIds.metricReplies,
-              value: thread.postCount,
-              label: '回复',
+    return Row(
+      children: [
+        if (thread.playerCount case final playerCount?) ...[
+          _ThreadStat(
+            icon: WenyouIconIds.metricPlayers,
+            value: playerCount,
+            label: '玩家',
+          ),
+          SizedBox(width: tokens.space12),
+        ],
+        _ThreadStat(
+          icon: WenyouIconIds.metricReplies,
+          value: thread.postCount,
+          label: '回复',
+        ),
+        if (thread.tipTotal != '0') ...[
+          SizedBox(width: tokens.space12),
+          _ThreadTipStat(value: thread.tipTotal),
+        ],
+        if (thread.tags.isNotEmpty) ...[
+          SizedBox(width: tokens.space8),
+          Expanded(
+            child: _ThreadTagSummary(
+              threadId: thread.id,
+              tags: thread.tags,
+              onTagTap: onTagTap,
             ),
-            if (thread.tipTotal != '0') ...[
-              SizedBox(width: tokens.space12),
-              _ThreadTipStat(value: thread.tipTotal),
-            ],
-            if (thread.tags.isNotEmpty) ...[
-              SizedBox(width: tokens.space8),
-              Expanded(
-                child: _ThreadTagSummary(
-                  threadId: thread.id,
-                  tags: thread.tags,
-                  visibleLimit: tagLimit,
-                  onTagTap: onTagTap,
-                ),
-              ),
-            ],
-          ],
-        );
-      },
+          ),
+        ],
+      ],
     );
   }
 }
@@ -310,48 +300,87 @@ class _ThreadTagSummary extends StatelessWidget {
   const _ThreadTagSummary({
     required this.threadId,
     required this.tags,
-    required this.visibleLimit,
     required this.onTagTap,
   });
 
   final String threadId;
   final List<HomeThreadTag> tags;
-  final int visibleLimit;
   final ValueChanged<HomeThreadTag>? onTagTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final visibleTags = tags.take(visibleLimit).toList(growable: false);
-    final hiddenCount = tags.length - visibleTags.length;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        for (var index = 0; index < visibleTags.length; index++) ...[
-          if (index > 0) SizedBox(width: tokens.space4),
-          Flexible(
-            child: WenyouTagLink(
-              key: Key('home-thread-tag-$threadId-${visibleTags[index].id}'),
-              name: visibleTags[index].name,
-              onPressed: onTagTap == null
-                  ? null
-                  : () => onTagTap!(visibleTags[index]),
-            ),
-          ),
-        ],
-        if (hiddenCount > 0) ...[
-          SizedBox(width: tokens.space4),
-          Text(
-            '+$hiddenCount',
-            key: Key('home-thread-tags-more-$threadId'),
-            maxLines: 1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final visibleLimit = _visibleLimit(context, constraints.maxWidth);
+        final visibleTags = tags.take(visibleLimit).toList(growable: false);
+        final hiddenCount = tags.length - visibleTags.length;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            for (var index = 0; index < visibleTags.length; index++) ...[
+              if (index > 0) SizedBox(width: tokens.space4),
+              Flexible(
+                child: WenyouTagLink(
+                  key: Key(
+                    'home-thread-tag-$threadId-${visibleTags[index].id}',
+                  ),
+                  name: visibleTags[index].name,
+                  onPressed: onTagTap == null
+                      ? null
+                      : () => onTagTap!(visibleTags[index]),
+                ),
+              ),
+            ],
+            if (hiddenCount > 0) ...[
+              SizedBox(width: tokens.space4),
+              Text(
+                '+$hiddenCount',
+                key: Key('home-thread-tags-more-$threadId'),
+                maxLines: 1,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  int _visibleLimit(BuildContext context, double maxWidth) {
+    final tokens = context.wenyouTokens;
+    final maximum = tags.length < 3 ? tags.length : 3;
+    for (var visible = maximum; visible >= 1; visible--) {
+      final hiddenCount = tags.length - visible;
+      var requiredWidth = 0.0;
+      for (var index = 0; index < visible; index++) {
+        if (index > 0) requiredWidth += tokens.space4;
+        requiredWidth += WenyouTagLink.preferredWidth(
+          context,
+          tags[index].name,
+          interactive: onTagTap != null,
+        );
+      }
+      if (hiddenCount > 0) {
+        requiredWidth += tokens.space4;
+        final painter = TextPainter(
+          text: TextSpan(
+            text: '+$hiddenCount',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
           ),
-        ],
-      ],
-    );
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        requiredWidth += painter.width;
+      }
+      if (requiredWidth <= maxWidth) return visible;
+    }
+    return 1;
   }
 }
 

@@ -59,6 +59,14 @@ void main() {
       find.descendant(of: tag, matching: find.byType(InputChip)),
       findsNothing,
     );
+    expect(
+      find.descendant(of: tag, matching: find.byType(OutlinedButton)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: tag, matching: find.byType(TextButton)),
+      findsOneWidget,
+    );
     expect(tester.getSize(tag).height, greaterThanOrEqualTo(48));
     await tester.tap(tag);
     await tester.pumpAndSettle();

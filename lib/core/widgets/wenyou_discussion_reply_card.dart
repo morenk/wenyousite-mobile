@@ -63,13 +63,16 @@ class WenyouDiscussionReplyGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: tokens.border, width: 2)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(left: tokens.space12),
-        child: child,
+    return Padding(
+      padding: EdgeInsets.only(left: tokens.space12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: tokens.border, width: 2)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(left: tokens.space12),
+          child: child,
+        ),
       ),
     );
   }

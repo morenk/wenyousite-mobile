@@ -201,14 +201,14 @@ class _MemberRow extends ConsumerWidget {
             ),
           ),
           if (_actionable) ...[
-            IconButton.filled(
+            IconButton(
               key: ValueKey('thread-member-player-${member.userId}'),
               tooltip: member.playerMarked ? '收回玩家标记' : '标记为玩家',
-              style: IconButton.styleFrom(
-                backgroundColor: tokens.actionSurface,
-                foregroundColor: tokens.onActionSurface,
-                disabledBackgroundColor: tokens.border,
-                disabledForegroundColor: tokens.mutedText,
+              style: _memberRoleButtonStyle(
+                tokens: tokens,
+                selected: member.playerMarked,
+                fillColor: tokens.actionSurface,
+                onFillColor: tokens.onActionSurface,
               ),
               onPressed: state.isUpdating
                   ? null
@@ -227,22 +227,26 @@ class _MemberRow extends ConsumerWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: tokens.onActionSurface,
+                        color: member.playerMarked
+                            ? tokens.onActionSurface
+                            : tokens.actionSurface,
                       ),
                     )
                   : const WenyouIcon(WenyouIconIds.contentRoleplay),
             ),
-            if (actorIsOwner)
-              IconButton.filled(
+            if (actorIsOwner) ...[
+              SizedBox(width: tokens.space8),
+              IconButton(
                 key: ValueKey('thread-member-collaborator-${member.userId}'),
                 tooltip: member.role == ThreadMemberManagementRole.collaborator
                     ? '移除协作者'
                     : '设为协作者',
-                style: IconButton.styleFrom(
-                  backgroundColor: tokens.info,
-                  foregroundColor: tokens.panel,
-                  disabledBackgroundColor: tokens.border,
-                  disabledForegroundColor: tokens.mutedText,
+                style: _memberRoleButtonStyle(
+                  tokens: tokens,
+                  selected:
+                      member.role == ThreadMemberManagementRole.collaborator,
+                  fillColor: tokens.info,
+                  onFillColor: tokens.panel,
                 ),
                 onPressed: state.isUpdating
                     ? null
@@ -252,11 +256,16 @@ class _MemberRow extends ConsumerWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: tokens.panel,
+                          color:
+                              member.role ==
+                                  ThreadMemberManagementRole.collaborator
+                              ? tokens.panel
+                              : tokens.info,
                         ),
                       )
                     : const WenyouIcon(WenyouIconIds.statusShield),
               ),
+            ],
           ],
         ],
       ),
@@ -298,6 +307,22 @@ class _MemberRow extends ConsumerWidget {
       promoting ? '已任命 ${member.username} 为协作者。' : '已移除协作者身份。',
     );
   }
+}
+
+ButtonStyle _memberRoleButtonStyle({
+  required WenyouThemeTokens tokens,
+  required bool selected,
+  required Color fillColor,
+  required Color onFillColor,
+}) {
+  return IconButton.styleFrom(
+    backgroundColor: selected ? fillColor : Colors.transparent,
+    foregroundColor: selected ? onFillColor : fillColor,
+    disabledBackgroundColor: selected ? tokens.border : Colors.transparent,
+    disabledForegroundColor: tokens.mutedText,
+    minimumSize: Size.square(tokens.minimumTouchTarget),
+    side: BorderSide(color: fillColor),
+  );
 }
 
 class _MemberAvatar extends StatelessWidget {

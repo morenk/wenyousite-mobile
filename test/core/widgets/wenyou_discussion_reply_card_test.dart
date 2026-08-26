@@ -35,6 +35,11 @@ void main() {
     final groupBorder = groupDecoration.border! as Border;
     expect(groupBorder.left.width, 2);
     expect(groupBorder.left.color, WenyouThemeTokens.light.border);
+    expect(
+      tester.getTopLeft(find.byKey(const Key('reply'))).dx -
+          tester.getTopLeft(find.byKey(const Key('reply-group'))).dx,
+      greaterThanOrEqualTo(24),
+    );
 
     final replyMaterial = tester.widget<Material>(
       find.descendant(

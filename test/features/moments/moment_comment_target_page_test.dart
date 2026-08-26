@@ -54,6 +54,19 @@ void main() {
     expect(find.text('目标主评论'), findsOneWidget);
     expect(find.text('目标回复').hitTestable(), findsOneWidget);
     expect(
+      tester
+              .getTopLeft(
+                find.byKey(const Key('moment-comment-card-reply-target')),
+              )
+              .dx -
+          tester
+              .getTopLeft(
+                find.byKey(const Key('moment-comment-card-root-target')),
+              )
+              .dx,
+      greaterThanOrEqualTo(24),
+    );
+    expect(
       find.byKey(const ValueKey('target-frame-reply-target')),
       findsOneWidget,
     );

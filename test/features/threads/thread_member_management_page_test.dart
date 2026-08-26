@@ -35,6 +35,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.playerValues, [true]);
     expect(find.text('Lv.2 · 参与人 · 玩家'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('thread-member-player-player-1')),
+          )
+          .style
+          ?.backgroundColor
+          ?.resolve(const {}),
+      WenyouThemeTokens.light.actionSurface,
+    );
 
     await tester.tap(
       find.byKey(const ValueKey('thread-member-collaborator-player-1')),
@@ -47,9 +57,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.roles, [ThreadMemberManagementRole.collaborator]);
     expect(find.text('Lv.2 · 协作者 · 玩家'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('thread-member-collaborator-player-1')),
+          )
+          .style
+          ?.backgroundColor
+          ?.resolve(const {}),
+      WenyouThemeTokens.light.info,
+    );
   });
 
-  testWidgets('成员使用紧凑列表行和实心角色操作', (tester) async {
+  testWidgets('成员使用紧凑列表行且未选角色为空心并留出按钮间距', (tester) async {
     await _pumpPage(tester, _FakeRepository(bootstrap: _bootstrap()));
 
     final owner = find.byKey(const ValueKey('thread-member-profile-owner-1'));
@@ -67,11 +87,24 @@ void main() {
     final collaboratorButton = tester.widget<IconButton>(collaboratorAction);
     expect(
       playerButton.style?.backgroundColor?.resolve(const {}),
-      WenyouThemeTokens.light.actionSurface,
+      Colors.transparent,
     );
     expect(
       collaboratorButton.style?.backgroundColor?.resolve(const {}),
+      Colors.transparent,
+    );
+    expect(
+      playerButton.style?.side?.resolve(const {})?.color,
+      WenyouThemeTokens.light.actionSurface,
+    );
+    expect(
+      collaboratorButton.style?.side?.resolve(const {})?.color,
       WenyouThemeTokens.light.info,
+    );
+    expect(
+      tester.getTopLeft(collaboratorAction).dx -
+          tester.getTopRight(playerAction).dx,
+      greaterThanOrEqualTo(WenyouThemeTokens.light.space8),
     );
     expect(
       tester.getTopLeft(player).dy - tester.getTopLeft(owner).dy,
