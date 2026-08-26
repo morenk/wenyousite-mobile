@@ -24,6 +24,58 @@ enum WenyouDropdownFilterAppearance { outlined, quiet }
 
 enum WenyouTabPlacement { page, embedded }
 
+/// Canonical outlined dropdown for form fields.
+///
+/// Flutter's default dropdown route and tap state use smaller, unrelated
+/// corners. Keeping these values here makes the closed field, transient state
+/// layer, expanded menu and menu rows share the mobile control geometry.
+class WenyouDropdownFormField<T> extends StatelessWidget {
+  const WenyouDropdownFormField({
+    required this.items,
+    required this.onChanged,
+    this.initialValue,
+    this.decoration = const InputDecoration(),
+    this.hint,
+    this.validator,
+    this.autovalidateMode,
+    super.key,
+  });
+
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?>? onChanged;
+  final T? initialValue;
+  final InputDecoration decoration;
+  final Widget? hint;
+  final FormFieldValidator<T>? validator;
+  final AutovalidateMode? autovalidateMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final radius = BorderRadius.circular(tokens.radius16);
+    return DropdownButtonFormField<T>(
+      initialValue: initialValue,
+      decoration: decoration,
+      hint: hint,
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
+      autovalidateMode: autovalidateMode,
+      isExpanded: true,
+      itemHeight: tokens.minimumTouchTarget,
+      menuMaxHeight: MediaQuery.sizeOf(context).height * 0.5,
+      dropdownColor: tokens.panel,
+      focusColor: tokens.accentedBackground,
+      borderRadius: radius,
+      icon: WenyouIcon(
+        WenyouIconIds.navigationExpand,
+        size: 18,
+        color: onChanged == null ? tokens.mutedText : tokens.text,
+      ),
+    );
+  }
+}
+
 /// Canonical selection for sibling content and page-leading feed categories.
 ///
 /// This is intentionally tap-driven. Pages keep ownership of the selected
@@ -319,67 +371,79 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     final showLeadingIcon =
         appearance == WenyouDropdownFilterAppearance.outlined &&
         MediaQuery.sizeOf(context).width >= 480;
-    return PopupMenuButton<T>(
-      initialValue: selected,
-      tooltip: tooltip,
-      enabled: enabled,
-      onSelected: enabled ? onSelected : null,
-      position: PopupMenuPosition.under,
-      offset: Offset(0, tokens.space4),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radius12),
-        side: BorderSide(color: tokens.border),
-      ),
-      constraints: const BoxConstraints(minWidth: 160, maxWidth: 260),
-      itemBuilder: (context) => [
-        for (final option in options)
-          PopupMenuItem<T>(
-            value: option.value,
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  child: option.value == selected
-                      ? WenyouIcon(
-                          WenyouIconIds.actionConfirm,
-                          size: 18,
-                          color: tokens.brandForeground,
-                        )
-                      : null,
-                ),
-                SizedBox(width: tokens.space8),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        option.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (option.supportingLabel case final supportingLabel?)
-                        Text(
-                          supportingLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: tokens.mutedText),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+    final radius = BorderRadius.circular(tokens.radius16);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final alignedMenuConstraints = constraints.hasBoundedWidth
+            ? BoxConstraints.tightFor(width: constraints.maxWidth)
+            : const BoxConstraints(minWidth: 160, maxWidth: 260);
+        return PopupMenuButton<T>(
+          initialValue: selected,
+          tooltip: tooltip,
+          enabled: enabled,
+          onSelected: enabled ? onSelected : null,
+          position: PopupMenuPosition.under,
+          offset: Offset(0, tokens.space4),
+          elevation: 4,
+          borderRadius: radius,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(color: tokens.border),
           ),
-      ],
-      child: _DropdownFilterAnchor(
-        appearance: appearance,
-        selectedLabel: selectedLabel,
-        icon: icon,
-        showLeadingIcon: showLeadingIcon,
-      ),
+          constraints: alignedMenuConstraints,
+          itemBuilder: (context) => [
+            for (final option in options)
+              PopupMenuItem<T>(
+                value: option.value,
+                height: tokens.minimumTouchTarget,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      child: option.value == selected
+                          ? WenyouIcon(
+                              WenyouIconIds.actionConfirm,
+                              size: 18,
+                              color: tokens.brandForeground,
+                            )
+                          : null,
+                    ),
+                    SizedBox(width: tokens.space8),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            option.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (option.supportingLabel
+                              case final supportingLabel?)
+                            Text(
+                              supportingLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: tokens.mutedText),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          child: _DropdownFilterAnchor(
+            appearance: appearance,
+            selectedLabel: selectedLabel,
+            icon: icon,
+            showLeadingIcon: showLeadingIcon,
+          ),
+        );
+      },
     );
   }
 }
@@ -442,7 +506,7 @@ class _DropdownFilterAnchor extends StatelessWidget {
       decoration: BoxDecoration(
         color: tokens.panel,
         border: Border.all(color: tokens.border),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+        borderRadius: BorderRadius.circular(tokens.radius16),
       ),
       child: content,
     );

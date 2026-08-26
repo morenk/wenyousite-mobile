@@ -994,6 +994,11 @@ void main() {
       find.byKey(const Key('thread-subthread-subthread-1')),
       findsOneWidget,
     );
+    final directoryDivider = find.byKey(
+      const Key('thread-subthread-directory-divider-0'),
+    );
+    expect(directoryDivider, findsOneWidget);
+    expect(tester.widget<Divider>(directoryDivider).height, 1);
     final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
     expect(subthread, findsOneWidget);
     await tester.tap(subthread);
@@ -3325,7 +3330,8 @@ class _FakeThreadSubscriptionRepository
 
 class _FakeThreadInteractionRepository implements ThreadInteractionRepository {
   @override
-  Future<String> createBookmark(String threadId) async => 'bookmark-1';
+  Future<String> createBookmark(String threadId, String folderId) async =>
+      'bookmark-1';
 
   @override
   Future<int> like(String threadId) async => 13;

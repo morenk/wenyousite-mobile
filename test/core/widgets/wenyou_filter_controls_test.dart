@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
@@ -75,6 +77,110 @@ void main() {
     );
 
     expect(tester.getSize(find.byKey(const Key('framed-content'))).width, 600);
+  });
+
+  testWidgets('锚点下拉的触发态、菜单圆角、宽度和选项高度保持一致', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 224,
+              child: WenyouDropdownFilter<int>(
+                key: const Key('test-dropdown-filter'),
+                options: const [
+                  WenyouFilterOption(value: 0, label: '最早在前'),
+                  WenyouFilterOption(value: 1, label: '最新在前'),
+                ],
+                selected: 0,
+                onSelected: (_) {},
+                tooltip: '选择排序',
+                icon: WenyouIconIds.actionSort,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final popup = tester.widget<PopupMenuButton<int>>(
+      find.descendant(
+        of: find.byKey(const Key('test-dropdown-filter')),
+        matching: find.byType(PopupMenuButton<int>),
+      ),
+    );
+    final expectedRadius = BorderRadius.circular(
+      WenyouThemeTokens.light.radius16,
+    );
+    expect(popup.borderRadius, expectedRadius);
+    expect(
+      (popup.shape! as RoundedRectangleBorder).borderRadius,
+      expectedRadius,
+    );
+    expect(popup.clipBehavior, Clip.antiAlias);
+    expect(popup.constraints?.minWidth, 224);
+    expect(popup.constraints?.maxWidth, 224);
+    expect(
+      tester.getSize(find.byKey(const Key('test-dropdown-filter'))).height,
+      WenyouThemeTokens.light.minimumTouchTarget,
+    );
+
+    await tester.tap(find.byKey(const Key('test-dropdown-filter')));
+    await tester.pumpAndSettle();
+    final menuItems = find.byWidgetPredicate(
+      (widget) => widget is PopupMenuItem<int>,
+    );
+    expect(menuItems, findsNWidgets(2));
+    for (final element in menuItems.evaluate()) {
+      expect(
+        tester.getSize(find.byWidget(element.widget)).height,
+        WenyouThemeTokens.light.minimumTouchTarget,
+      );
+    }
+  });
+
+  testWidgets('表单下拉统一使用 48dp 选项与 16dp 展开圆角', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 240,
+              child: WenyouDropdownFormField<int>(
+                key: const Key('test-dropdown-form-field'),
+                initialValue: 0,
+                decoration: const InputDecoration(labelText: '主题状态'),
+                items: const [
+                  DropdownMenuItem(value: 0, child: Text('招募中')),
+                  DropdownMenuItem(value: 1, child: Text('已停招')),
+                ],
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final field = tester.widget<DropdownButton<int>>(
+      find.descendant(
+        of: find.byKey(const Key('test-dropdown-form-field')),
+        matching: find.byType(DropdownButton<int>),
+      ),
+    );
+    expect(field.isExpanded, isTrue);
+    expect(field.itemHeight, WenyouThemeTokens.light.minimumTouchTarget);
+    expect(
+      field.borderRadius,
+      BorderRadius.circular(WenyouThemeTokens.light.radius16),
+    );
   });
 
   testWidgets('四栏内容页签在 360dp 等宽铺满且不溢出', (tester) async {

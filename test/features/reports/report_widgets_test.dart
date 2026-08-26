@@ -23,7 +23,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('管理员可看到你的举报账号'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('report-reason')));
+    await tester.tap(find.text('垃圾广告'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('其他原因', skipOffstage: false).last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('其他原因').last);
     await tester.pumpAndSettle();

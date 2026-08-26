@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/application/report_controller.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -123,7 +124,7 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                     ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
                   ),
                   SizedBox(height: tokens.space16),
-                  DropdownButtonFormField<ReportReason>(
+                  WenyouDropdownFormField<ReportReason>(
                     key: const Key('report-reason'),
                     initialValue: _reason,
                     decoration: const InputDecoration(labelText: '举报原因'),

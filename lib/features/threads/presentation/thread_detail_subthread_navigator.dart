@@ -145,8 +145,11 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                       scrollDirection: Axis.vertical,
                       padding: EdgeInsets.all(tokens.space12),
                       itemCount: widget.subthreads.length,
-                      separatorBuilder: (_, _) =>
-                          SizedBox(height: tokens.space4),
+                      separatorBuilder: (_, index) => Divider(
+                        key: Key('thread-subthread-directory-divider-$index'),
+                        height: 1,
+                        color: tokens.border,
+                      ),
                       itemBuilder: (context, index) {
                         final subthread = widget.subthreads[index];
                         final isSelected =

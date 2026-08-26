@@ -54,6 +54,7 @@ class ThreadManagementBodyEditor extends ConsumerStatefulWidget {
     this.submitLabel = '保存修改',
     this.showSubmit = false,
     this.surface = WenyouComposerSurface.inline,
+    this.dockToolbarToKeyboard = false,
     super.key,
   });
 
@@ -70,6 +71,7 @@ class ThreadManagementBodyEditor extends ConsumerStatefulWidget {
   final String submitLabel;
   final bool showSubmit;
   final WenyouComposerSurface surface;
+  final bool dockToolbarToKeyboard;
 
   @override
   ConsumerState<ThreadManagementBodyEditor> createState() =>
@@ -77,9 +79,11 @@ class ThreadManagementBodyEditor extends ConsumerStatefulWidget {
 }
 
 class _ThreadManagementBodyEditorState
-    extends ConsumerState<ThreadManagementBodyEditor> {
+    extends ConsumerState<ThreadManagementBodyEditor>
+    with WidgetsBindingObserver {
   late final RichEditorSession _session;
   final _toolbar = WenyouEditorToolbarController();
+  final _toolbarPortal = OverlayPortalController();
   final Object _uploadTaskId = Object();
   final Object _contentDraftSessionKey = Object();
   var _externalRevision = 0;
@@ -88,6 +92,7 @@ class _ThreadManagementBodyEditorState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _markdown = widget.initialMarkdown;
     _session = RichEditorSession(
       initialMarkdown: widget.initialMarkdown,
@@ -131,6 +136,7 @@ class _ThreadManagementBodyEditorState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.controller._detach(_session);
     _session
       ..focusNode.removeListener(_onFocusChanged)
@@ -140,8 +146,31 @@ class _ThreadManagementBodyEditorState
     super.dispose();
   }
 
+  @override
+  void didChangeMetrics() {
+    if (!mounted || !widget.dockToolbarToKeyboard) return;
+    if (_session.focusNode.hasFocus || _toolbar.trayOpen) {
+      setState(() {});
+    }
+  }
+
   void _onFocusChanged() {
-    widget.onFocusChanged?.call(_session.focusNode.hasFocus);
+    final hasFocus = _session.focusNode.hasFocus;
+    widget.onFocusChanged?.call(hasFocus);
+    if (widget.dockToolbarToKeyboard) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _syncToolbarPortal();
+      });
+    }
+  }
+
+  void _syncToolbarPortal() {
+    if (!widget.dockToolbarToKeyboard) return;
+    if (_session.focusNode.hasFocus || _toolbar.trayOpen) {
+      _toolbarPortal.show();
+    } else {
+      _toolbarPortal.hide();
+    }
   }
 
   @override
@@ -156,7 +185,7 @@ class _ThreadManagementBodyEditorState
     final enabled =
         widget.enabled && !uploadState.isBusy && _session.codecFailure == null;
     _session.readOnly = !enabled;
-    return Column(
+    final editor = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_session.codecFailure != null)
@@ -256,26 +285,75 @@ class _ThreadManagementBodyEditorState
             ],
           ),
         ),
-        WenyouComposerDock(
-          key: const Key('thread-management-body-toolbar'),
-          controller: _session.controller,
-          surface: widget.surface,
-          enabled: enabled,
-          editorFocusNode: _session.focusNode,
-          onInsertImage: _insertImage,
-          onInsertHorizontalRule: _session.insertHorizontalRule,
-          onInsertSticker: ref.watch(stickersEnabledProvider)
-              ? _insertSticker
-              : null,
-          onSaveDraft: _openDrafts,
-          draftStatusLabel: contentDraftsState.autoSaveToolbarLabel,
-          onSubmit: widget.showSubmit ? widget.onSubmit : null,
-          submitLabel: widget.submitLabel,
-          characterCount: _session.characterCount,
-          characterLimit: 10000,
-          toolbarController: _toolbar,
-        ),
+        if (!widget.dockToolbarToKeyboard)
+          _buildToolbar(
+            enabled: enabled,
+            draftStatusLabel: contentDraftsState.autoSaveToolbarLabel,
+          ),
       ],
+    );
+    if (!widget.dockToolbarToKeyboard) return editor;
+    return OverlayPortal(
+      controller: _toolbarPortal,
+      overlayChildBuilder: (overlayContext) {
+        final mediaBottomInset = MediaQuery.viewInsetsOf(overlayContext).bottom;
+        final view = View.of(overlayContext);
+        final viewBottomInset = view.viewInsets.bottom / view.devicePixelRatio;
+        final bottomInset = mediaBottomInset > viewBottomInset
+            ? mediaBottomInset
+            : viewBottomInset;
+        return Positioned(
+          left: 0,
+          right: 0,
+          bottom: bottomInset,
+          child: SafeArea(
+            top: false,
+            bottom: bottomInset == 0,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: _buildToolbar(
+                  enabled: enabled,
+                  draftStatusLabel: contentDraftsState.autoSaveToolbarLabel,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      child: editor,
+    );
+  }
+
+  Widget _buildToolbar({
+    required bool enabled,
+    required String? draftStatusLabel,
+  }) {
+    return WenyouComposerDock(
+      key: const Key('thread-management-body-toolbar'),
+      controller: _session.controller,
+      surface: widget.surface,
+      enabled: enabled,
+      editorFocusNode: _session.focusNode,
+      onInsertImage: _insertImage,
+      onInsertHorizontalRule: _session.insertHorizontalRule,
+      onInsertSticker: ref.watch(stickersEnabledProvider)
+          ? _insertSticker
+          : null,
+      onSaveDraft: _openDrafts,
+      draftStatusLabel: draftStatusLabel,
+      onSubmit: widget.showSubmit ? widget.onSubmit : null,
+      submitLabel: widget.submitLabel,
+      characterCount: _session.characterCount,
+      characterLimit: 10000,
+      toolbarController: _toolbar,
+      onInteractionChanged: (_) {
+        if (widget.dockToolbarToKeyboard) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _syncToolbarPortal();
+          });
+        }
+      },
     );
   }
 

@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -173,7 +174,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
             },
           ),
           SizedBox(height: tokens.space8),
-          DropdownButtonFormField<SubthreadPostingPolicy>(
+          WenyouDropdownFormField<SubthreadPostingPolicy>(
             key: const Key('subthread-form-policy'),
             initialValue: _policy,
             decoration: const InputDecoration(labelText: '发帖权限'),

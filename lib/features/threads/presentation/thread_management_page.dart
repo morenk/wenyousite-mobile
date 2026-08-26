@@ -189,7 +189,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               },
             ),
             SizedBox(height: tokens.space12),
-            DropdownButtonFormField<String>(
+            WenyouDropdownFormField<String>(
               key: ValueKey('thread-management-category-${thread.version}'),
               initialValue: _categorySlug,
               decoration: const InputDecoration(labelText: '分区'),
@@ -219,7 +219,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<ThreadManagementStatus>(
+                  child: WenyouDropdownFormField<ThreadManagementStatus>(
                     key: ValueKey('thread-management-status-${thread.version}'),
                     initialValue: _status,
                     decoration: const InputDecoration(labelText: '主题状态'),
@@ -244,7 +244,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 Expanded(
                   child: KeyedSubtree(
                     key: const Key('thread-management-visibility'),
-                    child: DropdownButtonFormField<ThreadManagementVisibility>(
+                    child: WenyouDropdownFormField<ThreadManagementVisibility>(
                       key: ValueKey(
                         'thread-management-visibility-${thread.version}',
                       ),
@@ -332,9 +332,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               child: SizedBox(
                 height: 440,
                 child: ThreadManagementBodyEditor(
-                  key: ValueKey(
-                    'thread-management-body-${thread.bodyVersion ?? 0}',
-                  ),
+                  key: const Key('thread-management-body'),
                   threadId: widget.threadId,
                   initialMarkdown: _body,
                   onChanged: (value) {
@@ -347,6 +345,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   controller: _bodyEditorController,
                   enabled: !locked,
                   label: '主题主正文编辑器',
+                  dockToolbarToKeyboard: true,
                 ),
               ),
             ),

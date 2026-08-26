@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -181,6 +182,54 @@ void main() {
     expect(repository.lastDraft?.title, '新的主题标题');
     expect(find.text('已保存'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
+  });
+
+  testWidgets('主正文自动保存保持编辑会话并把工具栏停靠在键盘上方', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.viewInsets = FakeViewPadding.zero;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetViewInsets);
+    final repository = _FakeRepository(initial: _bootstrap());
+    await _pumpPage(tester, repository);
+
+    final editorFinder = find.byKey(const Key('thread-management-body-editor'));
+    await tester.ensureVisible(editorFinder);
+    await tester.pumpAndSettle();
+    final editorBefore = tester.widget<QuillEditor>(editorFinder);
+    expect(
+      find.byKey(const Key('thread-management-body-toolbar')),
+      findsNothing,
+    );
+
+    editorBefore.focusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(editorBefore.focusNode.hasFocus, isTrue);
+    final toolbar = find.byKey(const Key('thread-management-body-toolbar'));
+    expect(toolbar, findsOneWidget);
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pump();
+    expect(tester.getBottomLeft(toolbar).dy, closeTo(500, 1));
+
+    const updatedBody = '更新后的主题主正文';
+    editorBefore.controller.replaceText(
+      0,
+      editorBefore.controller.document.length - 1,
+      updatedBody,
+      const TextSelection.collapsed(offset: updatedBody.length),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 1200));
+    await tester.pumpAndSettle();
+
+    final editorAfter = tester.widget<QuillEditor>(editorFinder);
+    expect(identical(editorAfter.controller, editorBefore.controller), isTrue);
+    expect(editorAfter.focusNode.hasFocus, isTrue);
+    expect(repository.lastDraft?.body, updatedBody);
+    expect(toolbar, findsOneWidget);
+    expect(tester.getBottomLeft(toolbar).dy, closeTo(500, 1));
   });
 
   testWidgets('主题保存失败保留当前表单并恢复重试入口', (tester) async {
@@ -549,7 +598,9 @@ class _FakeRepository implements ThreadManagementRepository {
       defaultSubthreadId: current.defaultSubthreadId,
       defaultSubthreadVersion: current.defaultSubthreadVersion,
       bodyPostId: current.bodyPostId,
-      bodyVersion: current.bodyVersion,
+      bodyVersion: draft.body == current.body
+          ? current.bodyVersion
+          : (current.bodyVersion ?? 0) + 1,
       body: draft.body,
       tagNames: draft.normalizedTagNames,
     );
