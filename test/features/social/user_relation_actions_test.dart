@@ -12,6 +12,13 @@ void main() {
     final repository = _FakeUserRelationRepository();
     await tester.pumpWidget(_app(repository));
 
+    expect(find.byType(FilledButton), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('user-relation-follow'))).width,
+      tester.getSize(find.byKey(const Key('user-relation-block'))).width,
+    );
+
     await tester.tap(find.byKey(const Key('user-relation-follow')));
     await tester.pumpAndSettle();
 

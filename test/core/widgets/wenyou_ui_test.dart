@@ -49,6 +49,101 @@ void main() {
     );
   });
 
+  testWidgets('图标文字操作等宽排列且不创建胶囊按钮', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 180);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    var pressed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(12),
+            child: WenyouIconLabelActionBar(
+              key: const Key('icon-label-actions'),
+              actions: [
+                WenyouIconLabelAction(
+                  key: const Key('action-edit'),
+                  icon: WenyouIconIds.actionEdit,
+                  label: '编辑资料',
+                  onPressed: () => pressed = true,
+                ),
+                const WenyouIconLabelAction(
+                  key: Key('action-bookmark'),
+                  icon: WenyouIconIds.actionBookmark,
+                  label: '收藏',
+                  onPressed: null,
+                ),
+                const WenyouIconLabelAction(
+                  key: Key('action-message'),
+                  icon: WenyouIconIds.contentThread,
+                  label: '私聊',
+                  onPressed: null,
+                ),
+                const WenyouIconLabelAction(
+                  key: Key('action-moments'),
+                  icon: WenyouIconIds.navigationMoments,
+                  label: '动态',
+                  onPressed: null,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final actions = [
+      const Key('action-edit'),
+      const Key('action-bookmark'),
+      const Key('action-message'),
+      const Key('action-moments'),
+    ];
+    expect(
+      actions.map((key) => tester.getSize(find.byKey(key)).width).toSet(),
+      hasLength(1),
+    );
+    expect(
+      tester.getSize(find.byKey(actions.first)).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('icon-label-actions')),
+        matching: find.byType(FilledButton),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('icon-label-actions')),
+        matching: find.byType(OutlinedButton),
+      ),
+      findsNothing,
+    );
+    final edit = find.byKey(const Key('action-edit'));
+    final editIcon = find.descendant(
+      of: edit,
+      matching: findFoundationIcon(WenyouIconIds.actionEdit),
+    );
+    expect(
+      tester.getCenter(editIcon).dy,
+      lessThan(tester.getCenter(find.text('编辑资料')).dy),
+    );
+    expect(tester.getSemantics(edit).label, '编辑资料');
+
+    await expectLater(
+      find.byKey(const Key('icon-label-actions')),
+      matchesGoldenFile('goldens/icon_label_actions_320.png'),
+    );
+
+    await tester.tap(edit);
+    expect(pressed, isTrue);
+  });
+
   testWidgets('悬浮输入入口不压缩正文并保留 48dp 命中区', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 240);

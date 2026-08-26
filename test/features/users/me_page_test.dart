@@ -97,6 +97,7 @@ void main() {
     );
     expect(bookmarkRect.top, editRect.top);
     expect(bookmarkRect.height, editRect.height);
+    expect(bookmarkRect.width, closeTo(editRect.width, 0.01));
     expect(
       bookmarkRect.top,
       greaterThan(
@@ -104,8 +105,16 @@ void main() {
       ),
     );
     expect(find.byKey(const Key('me-open-edit-profile')), findsOneWidget);
-    expect(find.byKey(const Key('me-open-public-profile')), findsOneWidget);
+    expect(find.byKey(const Key('me-open-public-profile')), findsNothing);
+    expect(find.text('预览公开主页'), findsNothing);
     expect(find.byKey(const Key('me-open-settings')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byKey(const Key('me-open-settings')),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('我的内容'), findsNothing);
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
     await tester.pumpAndSettle();
@@ -282,7 +291,25 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('me-open-stickers')));
-    expect(find.byKey(const Key('me-open-stickers')), findsOneWidget);
+    final stickers = find.byKey(const Key('me-open-stickers'));
+    expect(stickers, findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: stickers),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('me-profile-header')),
+        matching: stickers,
+      ),
+      findsOneWidget,
+    );
+    final actionWidths = [
+      const Key('me-open-edit-profile'),
+      const Key('me-open-bookmarks'),
+      const Key('me-open-stickers'),
+    ].map((key) => tester.getSize(find.byKey(key)).width).toSet();
+    expect(actionWidths, hasLength(1));
   });
 
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {

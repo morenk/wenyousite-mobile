@@ -93,8 +93,6 @@ class _AuthenticatedMePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(meProfileControllerProvider);
     final notifier = ref.read(meProfileControllerProvider.notifier);
-    final stickersEnabled = ref.watch(stickersEnabledProvider);
-    final profile = state.profile;
     ref.listen(
       meProfileControllerProvider.select((value) => value.refreshFailure),
       (previous, next) {
@@ -107,24 +105,6 @@ class _AuthenticatedMePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('我的'),
         actions: [
-          if (profile != null)
-            IconButton(
-              key: const Key('me-open-public-profile'),
-              tooltip: '预览公开主页',
-              onPressed: () => context.pushNamed(
-                'user-profile',
-                pathParameters: {'userId': profile.id},
-                queryParameters: const {'mode': 'preview'},
-              ),
-              icon: const WenyouIcon(WenyouIconIds.actionShow),
-            ),
-          if (profile != null && stickersEnabled)
-            IconButton(
-              key: const Key('me-open-stickers'),
-              tooltip: '管理表情包',
-              onPressed: () => context.pushNamed('me-stickers'),
-              icon: const WenyouIcon(WenyouIconIds.actionAddReaction),
-            ),
           IconButton(
             key: const Key('me-open-settings'),
             tooltip: '账号设置',
@@ -389,6 +369,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
     final tokens = context.wenyouTokens;
     final walletProvider = walletControllerProvider(walletSessionKey(ref));
     final walletState = ref.watch(walletProvider);
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
     final horizontal = wenyouHorizontalPagePadding(context);
     ref.listen(
       meUserContentControllerProvider(
@@ -421,6 +402,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
                 child: _ProfileOverview(
                   profile: widget.profile,
                   walletState: walletState,
+                  stickersEnabled: stickersEnabled,
                 ),
               ),
             ),
@@ -590,10 +572,15 @@ class _AccountSecurityPanel extends StatelessWidget {
 }
 
 class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({required this.profile, required this.walletState});
+  const _ProfileOverview({
+    required this.profile,
+    required this.walletState,
+    required this.stickersEnabled,
+  });
 
   final MeProfileModel profile;
   final WalletState walletState;
+  final bool stickersEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -610,27 +597,27 @@ class _ProfileOverview extends StatelessWidget {
       levelProgressLabel: profile.nextLevelExperience == null
           ? '已达到当前最高等级'
           : '${profile.experience} / ${profile.nextLevelExperience} 经验',
-      actions: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: FilledButton.icon(
-              key: const Key('me-open-edit-profile'),
-              onPressed: () => context.pushNamed('me-edit'),
-              icon: const WenyouIcon(WenyouIconIds.actionEdit),
-              label: const Text('编辑资料'),
-            ),
+      actions: WenyouIconLabelActionBar(
+        actions: [
+          WenyouIconLabelAction(
+            key: const Key('me-open-edit-profile'),
+            onPressed: () => context.pushNamed('me-edit'),
+            icon: WenyouIconIds.actionEdit,
+            label: '编辑资料',
           ),
-          SizedBox(width: context.wenyouTokens.space8),
-          Expanded(
-            flex: 2,
-            child: OutlinedButton.icon(
-              key: const Key('me-open-bookmarks'),
-              onPressed: () => context.pushNamed('me-bookmarks'),
-              icon: const WenyouIcon(WenyouIconIds.actionBookmark),
-              label: const Text('收藏'),
-            ),
+          WenyouIconLabelAction(
+            key: const Key('me-open-bookmarks'),
+            onPressed: () => context.pushNamed('me-bookmarks'),
+            icon: WenyouIconIds.actionBookmark,
+            label: '收藏',
           ),
+          if (stickersEnabled)
+            WenyouIconLabelAction(
+              key: const Key('me-open-stickers'),
+              onPressed: () => context.pushNamed('me-stickers'),
+              icon: WenyouIconIds.actionAddReaction,
+              label: '表情包',
+            ),
         ],
       ),
       stats: [

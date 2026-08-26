@@ -176,6 +176,102 @@ class WenyouComposerAction extends StatelessWidget {
   }
 }
 
+class WenyouIconLabelActionBar extends StatelessWidget {
+  const WenyouIconLabelActionBar({required this.actions, super.key})
+    : assert(actions.length > 0);
+
+  final List<WenyouIconLabelAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [for (final action in actions) Expanded(child: action)],
+      ),
+    );
+  }
+}
+
+class WenyouIconLabelAction extends StatelessWidget {
+  const WenyouIconLabelAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.loading = false,
+    this.selected,
+    this.foregroundColor,
+    this.semanticsLabel,
+    super.key,
+  });
+
+  final String icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool loading;
+  final bool? selected;
+  final Color? foregroundColor;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    final enabled = onPressed != null && !loading;
+    final color = enabled || loading
+        ? foregroundColor ?? tokens.text
+        : tokens.mutedText;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      selected: selected,
+      label: semanticsLabel ?? label,
+      excludeSemantics: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: tokens.minimumTouchTarget + tokens.space12,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.space4,
+                vertical: tokens.space8,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox.square(
+                    dimension: 22,
+                    child: loading
+                        ? CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: color,
+                          )
+                        : WenyouIcon(icon, size: 22, color: color),
+                  ),
+                  SizedBox(height: tokens.space4),
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: color,
+                      height: 1.15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class WenyouPanel extends StatelessWidget {
   const WenyouPanel({
     required this.child,

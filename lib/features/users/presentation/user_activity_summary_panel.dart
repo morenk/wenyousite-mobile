@@ -21,12 +21,12 @@ class UserActivitySummaryPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return WenyouPanel(
-      padding: EdgeInsets.all(tokens.space16),
+      padding: EdgeInsets.all(tokens.space12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const WenyouSectionHeader(title: '创作概览'),
-          SizedBox(height: tokens.space12),
+          SizedBox(height: tokens.space8),
           switch (state.activityPhase) {
             PublicUserActivityPhase.idle || PublicUserActivityPhase.loading =>
               _ActivitySummarySkeleton(key: Key('$keyPrefix-loading')),
@@ -61,61 +61,59 @@ class _ActivitySummaryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth - tokens.space8) / 2;
-        return Wrap(
-          spacing: tokens.space8,
-          runSpacing: tokens.space8,
+    final items = [
+      _ActivitySummaryItem(
+        icon: WenyouIconIds.contentMoment,
+        label: '发布动态',
+        value: summary.momentCount,
+      ),
+      _ActivitySummaryItem(
+        icon: WenyouIconIds.contentThread,
+        label: '创建主题',
+        value: summary.createdThreadCount,
+      ),
+      _ActivitySummaryItem(
+        icon: WenyouIconIds.metricPlayers,
+        label: '参与主题',
+        value: summary.playedThreadCount,
+      ),
+      _ActivitySummaryItem(
+        icon: WenyouIconIds.actionReply,
+        label: '累计回复',
+        value: summary.replyCount,
+      ),
+    ];
+    return Column(
+      children: [
+        Row(
           children: [
-            _ActivitySummaryItem(
-              width: itemWidth,
-              icon: WenyouIconIds.contentMoment,
-              label: '发布动态',
-              hint: '短内容',
-              value: summary.momentCount,
-            ),
-            _ActivitySummaryItem(
-              width: itemWidth,
-              icon: WenyouIconIds.contentThread,
-              label: '创建主题',
-              hint: '担任楼主',
-              value: summary.createdThreadCount,
-            ),
-            _ActivitySummaryItem(
-              width: itemWidth,
-              icon: WenyouIconIds.metricPlayers,
-              label: '参与主题',
-              hint: '玩家身份',
-              value: summary.playedThreadCount,
-            ),
-            _ActivitySummaryItem(
-              width: itemWidth,
-              icon: WenyouIconIds.actionReply,
-              label: '累计回复',
-              hint: '楼层讨论',
-              value: summary.replyCount,
-            ),
+            Expanded(child: items[0]),
+            SizedBox(width: tokens.space8),
+            Expanded(child: items[1]),
           ],
-        );
-      },
+        ),
+        SizedBox(height: tokens.space8),
+        Row(
+          children: [
+            Expanded(child: items[2]),
+            SizedBox(width: tokens.space8),
+            Expanded(child: items[3]),
+          ],
+        ),
+      ],
     );
   }
 }
 
 class _ActivitySummaryItem extends StatelessWidget {
   const _ActivitySummaryItem({
-    required this.width,
     required this.icon,
     required this.label,
-    required this.hint,
     required this.value,
   });
 
-  final double width;
   final String icon;
   final String label;
-  final String hint;
   final int? value;
 
   @override
@@ -125,43 +123,31 @@ class _ActivitySummaryItem extends StatelessWidget {
         ? '未公开'
         : formatWenyouCompactCount(value!);
     return Semantics(
-      label: '$label，$displayValue，$hint',
+      label: '$label，$displayValue',
       excludeSemantics: true,
-      child: SizedBox(
-        width: width,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: tokens.softPanel,
-            borderRadius: BorderRadius.circular(tokens.radius12),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(tokens.space12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                    WenyouIcon(icon, size: 18, color: tokens.brandForeground),
-                  ],
-                ),
-                SizedBox(height: tokens.space8),
-                Text(
-                  displayValue,
-                  style: value == null
-                      ? Theme.of(context).textTheme.labelLarge
-                      : Theme.of(context).textTheme.headlineSmall,
-                ),
-                SizedBox(height: tokens.space4),
-                Text(hint, style: Theme.of(context).textTheme.bodySmall),
-              ],
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: tokens.space4),
+        child: Row(
+          children: [
+            WenyouIcon(icon, size: 20, color: tokens.mutedText),
+            SizedBox(width: tokens.space8),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayValue,
+                    style: value == null
+                        ? Theme.of(context).textTheme.labelLarge
+                        : Theme.of(context).textTheme.titleLarge,
+                  ),
+                  SizedBox(height: tokens.space4),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -176,25 +162,62 @@ class _ActivitySummarySkeleton extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Semantics(
       label: '创作概览加载中',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final itemWidth = (constraints.maxWidth - tokens.space8) / 2;
-          return Wrap(
-            spacing: tokens.space8,
-            runSpacing: tokens.space8,
+      child: Column(
+        children: [
+          Row(
             children: [
-              for (var index = 0; index < 4; index++)
-                Container(
-                  width: itemWidth,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: tokens.softPanel,
-                    borderRadius: BorderRadius.circular(tokens.radius12),
-                  ),
-                ),
+              const Expanded(child: _ActivitySummarySkeletonItem()),
+              SizedBox(width: tokens.space8),
+              const Expanded(child: _ActivitySummarySkeletonItem()),
             ],
-          );
-        },
+          ),
+          SizedBox(height: tokens.space8),
+          Row(
+            children: [
+              const Expanded(child: _ActivitySummarySkeletonItem()),
+              SizedBox(width: tokens.space8),
+              const Expanded(child: _ActivitySummarySkeletonItem()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivitySummarySkeletonItem extends StatelessWidget {
+  const _ActivitySummarySkeletonItem();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: tokens.space4),
+      child: Row(
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              color: tokens.softPanel,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: tokens.space8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 20, color: tokens.softPanel),
+                SizedBox(height: tokens.space4),
+                FractionallySizedBox(
+                  widthFactor: 0.72,
+                  child: Container(height: 12, color: tokens.softPanel),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

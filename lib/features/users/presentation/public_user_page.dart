@@ -22,14 +22,9 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class PublicUserPage extends ConsumerWidget {
-  const PublicUserPage({
-    required this.userId,
-    this.previewOnly = false,
-    super.key,
-  });
+  const PublicUserPage({required this.userId, super.key});
 
   final String userId;
-  final bool previewOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,7 +42,7 @@ class PublicUserPage extends ConsumerWidget {
                 meState!.profile!.id != state.profile!.id));
     return Scaffold(
       appBar: AppBar(
-        title: Text(previewOnly ? '预览公开主页' : '用户主页'),
+        title: const Text('用户主页'),
         actions: [
           if (canTip)
             WenyouTipButton(
@@ -102,7 +97,6 @@ class PublicUserPage extends ConsumerWidget {
                             isCurrentUser:
                                 meState?.phase == MeProfilePhase.ready &&
                                 meState!.profile!.id == state.profile!.id,
-                            previewOnly: previewOnly,
                           ),
                           SizedBox(height: context.wenyouTokens.space12),
                           UserActivitySummaryPanel(
@@ -163,18 +157,15 @@ class _UserProfileContent extends ConsumerWidget {
   const _UserProfileContent({
     required this.profile,
     required this.isCurrentUser,
-    required this.previewOnly,
     this.relationTarget,
   });
 
   final PublicUserProfileModel profile;
   final bool isCurrentUser;
-  final bool previewOnly;
   final UserRelationTarget? relationTarget;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.wenyouTokens;
     final relationState = relationTarget == null
         ? null
         : ref.watch(userRelationControllerProvider(relationTarget!));
@@ -186,9 +177,29 @@ class _UserProfileContent extends ConsumerWidget {
         (capabilities) => capabilities.directMessages,
       ),
     );
-    final hasLeadingAction =
-        (isCurrentUser && !previewOnly) ||
-        (directMessagesEnabled && relationTarget != null);
+    final destinationActions = <WenyouIconLabelAction>[
+      if (directMessagesEnabled && relationTarget != null)
+        WenyouIconLabelAction(
+          key: const Key('public-user-open-direct-message'),
+          onPressed: () => context.pushNamed(
+            'direct-message-new',
+            pathParameters: {'userId': profile.id},
+          ),
+          icon: WenyouIconIds.contentThread,
+          label: '私聊',
+          semanticsLabel: '发私聊',
+        ),
+      WenyouIconLabelAction(
+        key: const Key('public-user-open-moments'),
+        onPressed: () => context.pushNamed(
+          'user-moments',
+          pathParameters: {'userId': profile.id},
+        ),
+        icon: WenyouIconIds.navigationMoments,
+        label: '动态',
+        semanticsLabel: '查看动态',
+      ),
+    ];
     final statuses = <UserProfileStatusItem>[
       if (isFollowing)
         const UserProfileStatusItem(
@@ -249,52 +260,23 @@ class _UserProfileContent extends ConsumerWidget {
           value: '${WenyouAmount.format(profile.receivedTipTotal)}L',
         ),
       ],
-      actions: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (relationTarget != null) ...[
-            UserRelationActions(target: relationTarget!),
-            SizedBox(height: tokens.space12),
-          ],
-          Row(
-            children: [
-              if (isCurrentUser && !previewOnly)
-                Expanded(
-                  child: FilledButton.icon(
+      actions: relationTarget == null
+          ? WenyouIconLabelActionBar(
+              actions: [
+                if (isCurrentUser)
+                  WenyouIconLabelAction(
                     key: const Key('public-user-edit-profile'),
                     onPressed: () => context.pushNamed('me-edit'),
-                    icon: const WenyouIcon(WenyouIconIds.actionEdit),
-                    label: const Text('编辑资料'),
+                    icon: WenyouIconIds.actionEdit,
+                    label: '编辑资料',
                   ),
-                )
-              else if (directMessagesEnabled && relationTarget != null)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    key: const Key('public-user-open-direct-message'),
-                    onPressed: () => context.pushNamed(
-                      'direct-message-new',
-                      pathParameters: {'userId': profile.id},
-                    ),
-                    icon: const WenyouIcon(WenyouIconIds.contentThread),
-                    label: const Text('发私聊'),
-                  ),
-                ),
-              if (hasLeadingAction) SizedBox(width: tokens.space12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  key: const Key('public-user-open-moments'),
-                  onPressed: () => context.pushNamed(
-                    'user-moments',
-                    pathParameters: {'userId': profile.id},
-                  ),
-                  icon: const WenyouIcon(WenyouIconIds.navigationMoments),
-                  label: const Text('查看动态'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+                ...destinationActions,
+              ],
+            )
+          : UserRelationActions(
+              target: relationTarget!,
+              additionalActions: destinationActions,
+            ),
     );
   }
 }

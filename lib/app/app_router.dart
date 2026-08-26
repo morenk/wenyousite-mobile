@@ -315,10 +315,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.userProfile,
         name: AppRouteNames.userProfile,
         builder: (context, state) {
-          return PublicUserPage(
-            userId: state.pathParameters['userId']!,
-            previewOnly: state.uri.queryParameters['mode'] == 'preview',
-          );
+          return PublicUserPage(userId: state.pathParameters['userId']!);
         },
       ),
       GoRoute(

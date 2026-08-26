@@ -137,7 +137,7 @@ void main() {
     expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
   });
 
-  testWidgets('本人公开主页预览模式只读且保留公开内容入口', (tester) async {
+  testWidgets('公开页不再提供本人只读预览分支', (tester) async {
     final container = await _authenticatedContainer(
       currentUserId: 'user-1',
       publicRepository: _FakePublicUserRepository(),
@@ -149,14 +149,15 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const PublicUserPage(userId: 'user-1', previewOnly: true),
+          home: const PublicUserPage(userId: 'user-1'),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('预览公开主页'), findsOneWidget);
-    expect(find.byKey(const Key('public-user-edit-profile')), findsNothing);
+    expect(find.text('用户主页'), findsOneWidget);
+    expect(find.text('预览公开主页'), findsNothing);
+    expect(find.byKey(const Key('public-user-edit-profile')), findsOneWidget);
     expect(find.byKey(const Key('public-user-open-moments')), findsOneWidget);
   });
 
@@ -193,6 +194,25 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final profileHeader = find.byKey(const Key('public-user-profile-header'));
+    final actionKeys = [
+      const Key('user-relation-follow'),
+      const Key('user-relation-block'),
+      const Key('public-user-open-direct-message'),
+      const Key('public-user-open-moments'),
+    ];
+    expect(
+      actionKeys.map((key) => tester.getSize(find.byKey(key)).width).toSet(),
+      hasLength(1),
+    );
+    expect(
+      find.descendant(of: profileHeader, matching: find.byType(FilledButton)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: profileHeader, matching: find.byType(OutlinedButton)),
+      findsNothing,
+    );
     await tester.scrollUntilVisible(
       find.byKey(const Key('public-user-open-direct-message')),
       300,
