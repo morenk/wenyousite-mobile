@@ -77,7 +77,6 @@ void main() {
     expect(find.byKey(const Key('forced-collapsed')), findsNothing);
     expect(find.text('展开全部 6 条回复'), findsOneWidget);
   });
-
 }
 
 Widget _testApp(Widget child) {

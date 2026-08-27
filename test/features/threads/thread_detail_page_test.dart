@@ -711,9 +711,7 @@ void main() {
       id: 'floor-tall-body',
       floorNumber: 1,
       author: _author,
-      body: ThreadBodyModel(
-        markdown: paragraphs.join('\n\n'),
-      ),
+      body: ThreadBodyModel(markdown: paragraphs.join('\n\n')),
       createdAt: DateTime.utc(2026, 8, 9, 12, 10),
       isDeleted: false,
       replyCount: 0,

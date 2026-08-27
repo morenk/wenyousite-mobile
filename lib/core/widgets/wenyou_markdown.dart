@@ -738,9 +738,7 @@ class _MarkdownImage extends StatelessWidget {
       Semantics(
         button: true,
         image: true,
-        label: descriptiveAlt.isEmpty
-            ? '查看正文图片原图'
-            : '查看正文图片原图：$descriptiveAlt',
+        label: descriptiveAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$descriptiveAlt',
         onLongPress: onLongPress,
         child: InkWell(
           key: ValueKey('markdown-image-$uri'),

@@ -734,11 +734,12 @@ $diceNode
         MaterialApp(
           theme: AppTheme.light,
           home: const Scaffold(
-            body: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: WenyouMarkdown(
-                data:
-                    '前文![窄图一]($firstUrl)![窄图二]($secondUrl)后文',
+            body: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: WenyouMarkdown(
+                  data: '前文![窄图一]($firstUrl)![窄图二]($secondUrl)后文',
+                ),
               ),
             ),
           ),

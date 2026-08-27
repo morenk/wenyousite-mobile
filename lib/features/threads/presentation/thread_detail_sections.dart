@@ -445,9 +445,7 @@ class ThreadFloorCard extends ConsumerWidget {
                       postId: floor.id,
                       data: floor.body.markdown,
                       diceLabels: threadDiceLabels(floor.body.diceRolls),
-                      diceSemantics: threadDiceSemantics(
-                        floor.body.diceRolls,
-                      ),
+                      diceSemantics: threadDiceSemantics(floor.body.diceRolls),
                       diceDetails: threadDiceDetails(floor.body.diceRolls),
                       onInternalLink: (uri) =>
                           _showInternalLinkNotice(context, uri),
