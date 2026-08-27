@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -34,7 +32,7 @@ void main() {
     expect(find.textContaining('主正文位于'), findsNothing);
   });
 
-  testWidgets('新建子贴可在全屏编辑器同时填写正文', (tester) async {
+  testWidgets('新建子贴只填写标题和发帖权限', (tester) async {
     final repository = _FakeRepository();
     await _pumpWorkspace(tester, repository);
 
@@ -43,23 +41,22 @@ void main() {
     expect(find.text('添加子贴'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-management-body-editor')),
-      findsOneWidget,
+      findsNothing,
     );
+    expect(find.textContaining('正文编辑器'), findsNothing);
 
     await tester.enterText(
       find.byKey(const Key('subthread-form-title')),
       '玩家区',
     );
-    await _replaceBody(tester, '这里是玩家区正文');
     await tester.tap(find.byKey(const Key('subthread-editor-save')));
     await tester.pumpAndSettle();
 
     expect(repository.createdDraft?.title, '玩家区');
-    expect(repository.createdDraft?.body, '这里是玩家区正文');
     expect(find.text('玩家区'), findsOneWidget);
   });
 
-  testWidgets('点击子贴进入全屏编辑并同时保存标题权限正文', (tester) async {
+  testWidgets('点击子贴只编辑标题和发帖权限并保留既有正文', (tester) async {
     final repository = _FakeRepository();
     await _pumpWorkspace(tester, repository);
 
@@ -67,27 +64,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('编辑子贴'), findsOneWidget);
     expect(
-      tester
-          .widget<QuillEditor>(
-            find.byKey(const Key('thread-management-body-editor')),
-          )
-          .controller
-          .document
-          .toPlainText()
-          .trim(),
-      '剧情区正文',
+      find.byKey(const Key('thread-management-body-editor')),
+      findsNothing,
     );
 
     await tester.enterText(
       find.byKey(const Key('subthread-form-title')),
       '新剧情区',
     );
-    await _replaceBody(tester, '更新后的剧情区正文');
     await tester.tap(find.byKey(const Key('subthread-editor-save')));
     await tester.pumpAndSettle();
 
     expect(repository.updatedDraft?.title, '新剧情区');
-    expect(repository.updatedDraft?.body, '更新后的剧情区正文');
+    expect(repository.currentItems.last.body, '剧情区正文');
     expect(find.text('新剧情区'), findsOneWidget);
   });
 
@@ -101,7 +90,7 @@ void main() {
     );
     await _pumpWorkspace(tester, repository);
 
-    expect(find.text('子贴内容暂时不可用'), findsOneWidget);
+    expect(find.text('子贴管理暂时不可用'), findsOneWidget);
     expect(find.text('问题编号：subthread-load-request-id'), findsOneWidget);
     expect(find.byKey(const Key('subthread-management-create')), findsNothing);
 
@@ -133,7 +122,7 @@ void main() {
     expect(find.byKey(const Key('subthread-management-list')), findsNothing);
   });
 
-  testWidgets('子贴保存失败保留标题和正文以便重试', (tester) async {
+  testWidgets('子贴保存失败保留标题以便重试', (tester) async {
     final repository = _FakeRepository(
       updateFailure: const ApiFailure(
         userMessage: '子贴保存失败',
@@ -148,7 +137,6 @@ void main() {
       find.byKey(const Key('subthread-form-title')),
       '待重试的剧情区',
     );
-    await _replaceBody(tester, '待重试的正文');
     await tester.tap(find.byKey(const Key('subthread-editor-save')));
     await tester.pumpAndSettle();
 
@@ -162,15 +150,8 @@ void main() {
       '待重试的剧情区',
     );
     expect(
-      tester
-          .widget<QuillEditor>(
-            find.byKey(const Key('thread-management-body-editor')),
-          )
-          .controller
-          .document
-          .toPlainText()
-          .trim(),
-      '待重试的正文',
+      find.byKey(const Key('thread-management-body-editor')),
+      findsNothing,
     );
     expect(
       tester
@@ -287,7 +268,6 @@ Future<ProviderContainer> _pumpWorkspace(
 ) async {
   final container = ProviderContainer(
     overrides: [
-      stickersEnabledProvider.overrideWithValue(false),
       subthreadManagementRepositoryProvider.overrideWithValue(repository),
     ],
   );
@@ -324,19 +304,6 @@ Future<ProviderContainer> _pumpWorkspace(
   );
   await tester.pumpAndSettle();
   return container;
-}
-
-Future<void> _replaceBody(WidgetTester tester, String text) async {
-  final editor = tester.widget<QuillEditor>(
-    find.byKey(const Key('thread-management-body-editor')),
-  );
-  editor.controller.replaceText(
-    0,
-    editor.controller.document.length - 1,
-    text,
-    TextSelection.collapsed(offset: text.length),
-  );
-  await tester.pump(const Duration(milliseconds: 200));
 }
 
 class _FakeRepository implements SubthreadManagementRepository {
@@ -397,9 +364,6 @@ class _FakeRepository implements SubthreadManagementRepository {
       version: 1,
       postCount: 0,
       isDefault: false,
-      body: draft.body,
-      bodyPostId: draft.body.isEmpty ? null : 'body-new',
-      bodyVersion: draft.body.isEmpty ? null : 1,
     );
     _bootstrap = _bootstrap.copyWith(items: [..._bootstrap.items, item]);
     return item;
@@ -416,9 +380,6 @@ class _FakeRepository implements SubthreadManagementRepository {
       title: draft.normalizedTitle,
       postingPolicy: draft.postingPolicy,
       version: current.version + 1,
-      body: draft.body,
-      bodyPostId: current.bodyPostId ?? 'body-second',
-      bodyVersion: (current.bodyVersion ?? 0) + 1,
     );
     _bootstrap = _bootstrap.copyWith(
       items: [

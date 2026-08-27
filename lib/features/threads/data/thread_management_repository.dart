@@ -94,7 +94,7 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
           builder
             ..version = current.version
             ..defaultSubthreadVersion = current.defaultSubthreadVersion
-            ..content = MarkdownContent.normalize(draft.body)
+            ..content = MarkdownContent.normalize(current.body)
             ..tagNames.replace(draft.normalizedTagNames);
           if (current.bodyVersion != null) {
             builder.bodyVersion = current.bodyVersion;

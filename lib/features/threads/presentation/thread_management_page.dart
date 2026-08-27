@@ -13,7 +13,6 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_management_mode
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_controls.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_management_body_editor.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_settings_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 
@@ -40,13 +39,11 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _titleFocusNode = FocusNode();
-  final _bodyEditorController = ThreadManagementBodyEditorController();
   late final ThreadManagementAutosaveCoordinator _autosave;
   late ThreadManagementSection _section;
   String? _categorySlug;
   ThreadManagementStatus _status = ThreadManagementStatus.recruiting;
   ThreadManagementVisibility _visibility = ThreadManagementVisibility.public;
-  String _body = '';
   List<String> _tagNames = const [];
   String? _boundSignature;
   bool _changed = false;
@@ -71,7 +68,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       ..removeListener(_handleTitleFocusChanged)
       ..dispose();
     _titleController.dispose();
-    _bodyEditorController.dispose();
     super.dispose();
   }
 
@@ -113,7 +109,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 ),
                 WenyouFilterOption(
                   value: ThreadManagementSection.subthreads,
-                  label: '子贴内容',
+                  label: '子贴管理',
                 ),
                 WenyouFilterOption(
                   value: ThreadManagementSection.members,
@@ -216,40 +212,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
-            SizedBox(height: tokens.space24),
-            Divider(height: 1, color: tokens.border),
-            SizedBox(height: tokens.space24),
-            const WenyouSectionHeader(
-              title: '主正文',
-              subtitle: '这里的内容会显示在默认子贴顶部。',
-            ),
-            SizedBox(height: tokens.space12),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.panel,
-                border: Border.all(color: tokens.border),
-                borderRadius: BorderRadius.circular(tokens.radius12),
-              ),
-              child: SizedBox(
-                height: 440,
-                child: ThreadManagementBodyEditor(
-                  key: const Key('thread-management-body'),
-                  threadId: widget.threadId,
-                  initialMarkdown: _body,
-                  onChanged: (value) {
-                    _body = value;
-                    _autosave.schedule();
-                  },
-                  onFocusChanged: (hasFocus) {
-                    if (!hasFocus) unawaited(_autosave.saveNow());
-                  },
-                  controller: _bodyEditorController,
-                  enabled: !locked,
-                  label: '主题主正文编辑器',
-                  dockToolbarToKeyboard: true,
-                ),
-              ),
-            ),
             if (state.failure != null) ...[
               SizedBox(height: tokens.space12),
               WenyouStatusBanner(
@@ -329,7 +291,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     categorySlug: _categorySlug,
     status: _status,
     visibility: _visibility,
-    body: _body,
     tagNames: _tagNames,
   );
 
@@ -350,7 +311,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       snapshot.version,
       snapshot.defaultSubthreadVersion,
       snapshot.bodyVersion,
-      snapshot.body,
       snapshot.tagNames.join('\u0000'),
     ].join(':');
     if (!force && _boundSignature != null) return;
@@ -359,13 +319,11 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     _categorySlug = snapshot.categorySlug;
     _status = snapshot.status;
     _visibility = snapshot.visibility;
-    _body = snapshot.body;
     _tagNames = List.unmodifiable(snapshot.tagNames);
   }
 
   Future<bool> _saveAutomatically() async {
     if (!(_formKey.currentState?.validate() ?? false)) return false;
-    if (!await _bodyEditorController.flush()) return false;
     if (!mounted) return false;
     final provider = threadManagementControllerProvider(widget.threadId);
     final state = ref.read(provider);
@@ -398,7 +356,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   }
 
   Future<void> _handlePopAttempt(ThreadManagementState state) async {
-    if (state.isDeleting || _bodyEditorController.closeToolbarTray()) return;
+    if (state.isDeleting) return;
     final saved = await _autosave.saveNow();
     if (!mounted) return;
     final current = ref.read(
@@ -485,9 +443,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       setState(() {});
       return;
     }
-    if (!(_formKey.currentState?.validate() ?? false) ||
-        !await _bodyEditorController.flush() ||
-        !mounted) {
+    if (!(_formKey.currentState?.validate() ?? false) || !mounted) {
       return;
     }
     final succeeded = await notifier.overwriteConflict(_draft);

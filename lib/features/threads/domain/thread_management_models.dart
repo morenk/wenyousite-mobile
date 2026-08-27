@@ -1,5 +1,3 @@
-import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart'
     show normalizeTagNames;
 
@@ -101,7 +99,6 @@ class ThreadManagementDraft {
     required this.categorySlug,
     required this.status,
     required this.visibility,
-    this.body = '',
     this.tagNames = const [],
   });
 
@@ -109,7 +106,6 @@ class ThreadManagementDraft {
   final String? categorySlug;
   final ThreadManagementStatus status;
   final ThreadManagementVisibility visibility;
-  final String body;
   final List<String> tagNames;
 
   List<String> get normalizedTagNames => normalizeTagNames(tagNames);
@@ -119,7 +115,6 @@ class ThreadManagementDraft {
         categorySlug != snapshot.categorySlug ||
         status != snapshot.status ||
         visibility != snapshot.visibility ||
-        MarkdownContent.normalize(body) != snapshot.body ||
         !_sameStrings(normalizedTagNames, snapshot.tagNames);
   }
 
@@ -128,17 +123,6 @@ class ThreadManagementDraft {
     if (normalizedTitle.isEmpty) return '请输入主题标题';
     if (normalizedTitle.length > 100) return '标题不能超过 100 个字符';
     if (categorySlug == null) return '请选择主题分区';
-    final normalizedBody = MarkdownContent.normalize(body);
-    if (normalizedBody.length > 10000) return '正文不能超过 10000 个字符';
-    if (MarkdownDiceContract.countMarkdownNodes(normalizedBody) >
-        MarkdownDiceContract.maximumNodesPerPost) {
-      return '当前正文最多可插入 20 个骰子，请删除一个后重试。';
-    }
-    if (snapshot.published &&
-        snapshot.defaultSubthreadId != null &&
-        !MarkdownContent.hasVisibleNonDiceContent(normalizedBody)) {
-      return '主题正文需要包含文字，骰子可作为补充。';
-    }
     if (normalizedTagNames.length > 5) return '最多添加 5 个标签。';
     final tagPattern = RegExp(r'^[A-Za-z0-9_\u4e00-\u9fff#]+$');
     for (final tag in normalizedTagNames) {

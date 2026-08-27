@@ -94,7 +94,7 @@ class SubthreadManagementController
       );
     }
     final fingerprint =
-        '${draft.normalizedTitle}\u0000${draft.postingPolicy.name}\u0000${draft.body}';
+        '${draft.normalizedTitle}\u0000${draft.postingPolicy.name}';
     if (_pendingCreateIndeterminate &&
         _pendingCreateFingerprint != fingerprint &&
         _pendingCreateDraft != null) {
@@ -131,8 +131,7 @@ class SubthreadManagementController
         (item) =>
             !beforeIds.contains(item.id) &&
             item.title == draft.normalizedTitle &&
-            item.postingPolicy == draft.postingPolicy &&
-            item.body == draft.body,
+            item.postingPolicy == draft.postingPolicy,
       ),
       failureMessage: '子贴创建失败，请稍后刷新查看。',
     );
@@ -161,8 +160,7 @@ class SubthreadManagementController
             (item) =>
                 !beforeIds.contains(item.id) &&
                 item.title == draft.normalizedTitle &&
-                item.postingPolicy == draft.postingPolicy &&
-                item.body == draft.body,
+                item.postingPolicy == draft.postingPolicy,
           );
         }
         _pendingCreateId = null;
@@ -215,8 +213,7 @@ class SubthreadManagementController
         (item) =>
             item.id == current.id &&
             item.title == draft.normalizedTitle &&
-            item.postingPolicy == draft.postingPolicy &&
-            item.body == draft.body,
+            item.postingPolicy == draft.postingPolicy,
       ),
       failureMessage: '子贴保存失败，请稍后刷新查看。',
     );
@@ -246,8 +243,7 @@ class SubthreadManagementController
               (item) =>
                   item.id == current.id &&
                   item.title == draft.normalizedTitle &&
-                  item.postingPolicy == draft.postingPolicy &&
-                  item.body == draft.body,
+                  item.postingPolicy == draft.postingPolicy,
             );
             if (matches.isNotEmpty) {
               _completeFromProjection(latest);

@@ -120,6 +120,9 @@ class WenyouOverflowAction extends StatelessWidget {
     final textStyle = TextButton.styleFrom(
       minimumSize: Size(0, tokens.minimumTouchTarget),
       foregroundColor: tokens.mutedText,
+      textStyle: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w400),
       padding: EdgeInsets.symmetric(horizontal: tokens.space8),
     );
     final button = switch ((appearance, icon)) {

@@ -20,7 +20,7 @@ class SubthreadManagementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('子贴内容')),
+      appBar: AppBar(title: const Text('子贴管理')),
       body: SubthreadManagementContent(threadId: threadId),
     );
   }
@@ -185,7 +185,7 @@ class _SubthreadRow extends ConsumerWidget {
       container: true,
       label:
           '${item.title}，${item.postingPolicy.label}，${item.postCount} 个楼层，${item.hasBody ? '有正文' : '暂无正文'}',
-      hint: '点击编辑；拖动排序手柄调整位置',
+      hint: '点击编辑标题和发帖权限；拖动排序手柄调整位置',
       customSemanticsActions: {
         if (index > 0)
           const CustomSemanticsAction(label: '上移子贴'): () =>
@@ -323,7 +323,7 @@ class _SubthreadsFatalState extends StatelessWidget {
       maxWidth: 520,
       child: WenyouEmptyState(
         icon: WenyouIconIds.contentList,
-        title: '子贴内容暂时不可用',
+        title: '子贴管理暂时不可用',
         message: failure?.userMessage ?? '请检查网络后重试。',
         detail: failure?.requestId == null
             ? null

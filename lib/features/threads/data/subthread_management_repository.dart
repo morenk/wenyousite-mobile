@@ -13,15 +13,10 @@ export 'package:wenyousite_mobile/features/threads/application/subthread_managem
 
 class ApiSubthreadManagementRepository
     implements SubthreadManagementRepository {
-  ApiSubthreadManagementRepository(
-    this._threadsApi,
-    this._subthreadsApi, [
-    this._postsApi,
-  ]);
+  ApiSubthreadManagementRepository(this._threadsApi, this._subthreadsApi);
 
   final ThreadsApi _threadsApi;
   final SubthreadsApi _subthreadsApi;
-  final PostsApi? _postsApi;
 
   @override
   Future<SubthreadManagementBootstrap> load(String threadId) async {
@@ -131,8 +126,6 @@ class ApiSubthreadManagementRepository
             ..clientRequestId = clientRequestId
             ..title = draft.normalizedTitle
             ..postingPolicy = _mapCreatePolicy(draft.postingPolicy);
-          final body = MarkdownContent.normalize(draft.body);
-          if (body.isNotEmpty) builder.content = body;
         }),
       )).data;
       if (envelope == null) {
@@ -142,7 +135,6 @@ class ApiSubthreadManagementRepository
         envelope.data,
         expectedThreadId: threadId,
         isDefault: false,
-        body: MarkdownContent.normalize(draft.body),
       );
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
@@ -155,75 +147,33 @@ class ApiSubthreadManagementRepository
     required SubthreadManagementDraft draft,
   }) async {
     if (!draft.differsFrom(current)) return current;
-    var updated = current;
-    var metadataSaved = false;
     try {
-      if (draft.normalizedTitle != current.title ||
-          draft.postingPolicy != current.postingPolicy) {
-        final envelope = (await _subthreadsApi.subthreadsUpdate(
-          id: current.id,
-          updateSubthreadDto: UpdateSubthreadDto((builder) {
-            builder.version = current.version;
-            if (draft.normalizedTitle != current.title) {
-              builder.title = draft.normalizedTitle;
-            }
-            if (draft.postingPolicy != current.postingPolicy) {
-              builder.postingPolicy = _mapUpdatePolicy(draft.postingPolicy);
-            }
-          }),
-        )).data;
-        if (envelope == null) {
-          throw const ApiFailure(userMessage: '子贴更新失败，请重试。');
-        }
-        updated = _mapItem(
-          envelope.data,
-          expectedThreadId: current.threadId,
-          expectedId: current.id,
-          isDefault: current.isDefault,
-          bodyPostId: current.bodyPostId,
-          bodyVersion: current.bodyVersion,
-          body: current.body,
-        );
-        metadataSaved = true;
+      final envelope = (await _subthreadsApi.subthreadsUpdate(
+        id: current.id,
+        updateSubthreadDto: UpdateSubthreadDto((builder) {
+          builder.version = current.version;
+          if (draft.normalizedTitle != current.title) {
+            builder.title = draft.normalizedTitle;
+          }
+          if (draft.postingPolicy != current.postingPolicy) {
+            builder.postingPolicy = _mapUpdatePolicy(draft.postingPolicy);
+          }
+        }),
+      )).data;
+      if (envelope == null) {
+        throw const ApiFailure(userMessage: '子贴更新失败，请重试。');
       }
-      final normalizedBody = MarkdownContent.normalize(draft.body);
-      if (normalizedBody != current.body) {
-        final postsApi = _postsApi;
-        if (postsApi == null) {
-          throw const ApiFailure(userMessage: '正文编辑服务暂时不可用，请稍后重试。');
-        }
-        final bodyEnvelope = (await postsApi.postsUpsertBody(
-          subthreadId: current.id,
-          upsertBodyDto: UpsertBodyDto((builder) {
-            builder.content = normalizedBody;
-            if (current.bodyVersion != null) {
-              builder.version = current.bodyVersion;
-            }
-          }),
-        )).data;
-        if (bodyEnvelope == null) {
-          throw const ApiFailure(userMessage: '子贴正文保存失败，请重试。');
-        }
-        final post = bodyEnvelope.data;
-        updated = updated.copyWith(
-          bodyPostId: post.id,
-          bodyVersion: post.version.toInt(),
-          body: MarkdownContent.normalize(post.content),
-        );
-      }
-      return updated;
-    } on DioException catch (error) {
-      final failure = ApiFailure.fromDio(error);
-      if (!metadataSaved) throw failure;
-      throw ApiFailure(
-        userMessage: '标题和发帖权限已保存，但正文保存失败；当前正文仍已保留。',
-        httpStatus: failure.httpStatus,
-        businessCode: failure.businessCode,
-        requestId: failure.requestId,
-        contractVersion: failure.contractVersion,
-        retryAfter: failure.retryAfter,
-        cause: failure.cause,
+      return _mapItem(
+        envelope.data,
+        expectedThreadId: current.threadId,
+        expectedId: current.id,
+        isDefault: current.isDefault,
+        bodyPostId: current.bodyPostId,
+        bodyVersion: current.bodyVersion,
+        body: current.body,
       );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
     }
   }
 
@@ -356,6 +306,5 @@ final apiSubthreadManagementRepositoryProvider =
       return ApiSubthreadManagementRepository(
         api.getThreadsApi(),
         api.getSubthreadsApi(),
-        api.getPostsApi(),
       );
     });

@@ -6,14 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_management_body_editor.dart';
 
 class SubthreadEditorPage extends ConsumerStatefulWidget {
   const SubthreadEditorPage({
@@ -35,10 +32,8 @@ class SubthreadEditorPage extends ConsumerStatefulWidget {
 class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _bodyController = ThreadManagementBodyEditorController();
   SubthreadPostingPolicy _policy = SubthreadPostingPolicy.participants;
   SubthreadManagementItem? _baseline;
-  String _body = '';
   bool _initialized = false;
   bool _preparing = false;
   bool _allowPop = false;
@@ -48,7 +43,6 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
   @override
   void dispose() {
     _titleController.dispose();
-    _bodyController.dispose();
     super.dispose();
   }
 
@@ -84,35 +78,13 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
         ),
         body: !_initialized
             ? _buildLoading(state)
-            : SafeArea(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 760),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildMetadata(locked),
-                          _buildFeedback(state),
-                          Expanded(
-                            child: ThreadManagementBodyEditor(
-                              key: ValueKey(
-                                'subthread-editor-body-${_baseline?.bodyVersion ?? 0}',
-                              ),
-                              threadId: widget.threadId,
-                              initialMarkdown: _body,
-                              onChanged: (value) => _body = value,
-                              controller: _bodyController,
-                              enabled: !locked,
-                              autofocus: widget.creating,
-                              label: '子贴正文编辑器',
-                              placeholder: '输入子贴正文，也可以暂时留空…',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            : WenyouPageBody(
+                maxWidth: 640,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [_buildMetadata(locked), _buildFeedback(state)],
                   ),
                 ),
               ),
@@ -146,61 +118,52 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
 
   Widget _buildMetadata(bool locked) {
     final tokens = context.wenyouTokens;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        wenyouHorizontalPagePadding(context),
-        tokens.space12,
-        wenyouHorizontalPagePadding(context),
-        tokens.space8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextFormField(
-            key: const Key('subthread-form-title'),
-            controller: _titleController,
-            enabled: !locked,
-            maxLength: 100,
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: '子贴标题',
-              hintText: '例如：设定区 / 剧情区',
-            ),
-            validator: (value) {
-              final title = value?.trim() ?? '';
-              if (title.isEmpty) return '请输入子贴标题';
-              if (title.length > 100) return '标题不能超过 100 个字符';
-              return null;
-            },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          key: const Key('subthread-form-title'),
+          controller: _titleController,
+          enabled: !locked,
+          autofocus: widget.creating,
+          maxLength: 100,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            labelText: '子贴标题',
+            hintText: '例如：设定区 / 剧情区',
           ),
-          SizedBox(height: tokens.space8),
-          WenyouDropdownFormField<SubthreadPostingPolicy>(
-            key: const Key('subthread-form-policy'),
-            initialValue: _policy,
-            decoration: const InputDecoration(labelText: '发帖权限'),
-            items: SubthreadPostingPolicy.values
-                .map(
-                  (policy) => DropdownMenuItem(
-                    value: policy,
-                    child: Text(policy.label),
-                  ),
-                )
-                .toList(growable: false),
-            onChanged: locked
-                ? null
-                : (policy) {
-                    if (policy != null) setState(() => _policy = policy);
-                  },
-          ),
-          SizedBox(height: tokens.space4),
-          Text(
-            _policy.description,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-          ),
-        ],
-      ),
+          validator: (value) {
+            final title = value?.trim() ?? '';
+            if (title.isEmpty) return '请输入子贴标题';
+            if (title.length > 100) return '标题不能超过 100 个字符';
+            return null;
+          },
+        ),
+        SizedBox(height: tokens.space8),
+        WenyouDropdownFormField<SubthreadPostingPolicy>(
+          key: const Key('subthread-form-policy'),
+          initialValue: _policy,
+          decoration: const InputDecoration(labelText: '发帖权限'),
+          items: SubthreadPostingPolicy.values
+              .map(
+                (policy) =>
+                    DropdownMenuItem(value: policy, child: Text(policy.label)),
+              )
+              .toList(growable: false),
+          onChanged: locked
+              ? null
+              : (policy) {
+                  if (policy != null) setState(() => _policy = policy);
+                },
+        ),
+        SizedBox(height: tokens.space4),
+        Text(
+          _policy.description,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+        ),
+      ],
     );
   }
 
@@ -211,12 +174,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
     }
     final tokens = context.wenyouTokens;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        wenyouHorizontalPagePadding(context),
-        0,
-        wenyouHorizontalPagePadding(context),
-        tokens.space8,
-      ),
+      padding: EdgeInsets.only(top: tokens.space12),
       child: _indeterminateRequestId != null
           ? WenyouWriteOutcomeBanner(
               key: const Key('subthread-form-indeterminate'),
@@ -273,7 +231,6 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
         _baseline = latest;
         _titleController.text = latest.title;
         _policy = latest.postingPolicy;
-        _body = latest.body;
         _preparing = false;
         _initialized = true;
       });
@@ -283,49 +240,23 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
   SubthreadManagementDraft get _draft => SubthreadManagementDraft(
     title: _titleController.text,
     postingPolicy: _policy,
-    body: MarkdownContent.normalize(_body),
   );
 
   bool get _dirty {
     final baseline = _baseline;
     if (widget.creating) {
       return _titleController.text.trim().isNotEmpty ||
-          _body.trim().isNotEmpty ||
           _policy != SubthreadPostingPolicy.participants;
     }
     return baseline != null && _draft.differsFrom(baseline);
   }
 
-  String? _validateBody(SubthreadManagementBootstrap bootstrap) {
-    final body = MarkdownContent.normalize(_body);
-    if (body.length > 10000) return '正文不能超过 10000 个字符。';
-    if (MarkdownDiceContract.countMarkdownNodes(body) >
-        MarkdownDiceContract.maximumNodesPerPost) {
-      return '当前正文最多可插入 20 个骰子，请删除一个后重试。';
-    }
-    final bodyChanged = _baseline == null || body != _baseline!.body;
-    if (body.isEmpty && widget.creating) return null;
-    if (bodyChanged &&
-        bootstrap.published &&
-        !MarkdownContent.hasVisibleNonDiceContent(body)) {
-      return '已发布主题的子贴正文需要包含文字，骰子可作为补充。';
-    }
-    return null;
-  }
-
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!await _bodyController.flush()) return;
-    if (!mounted) return;
     final provider = subthreadManagementControllerProvider(widget.threadId);
     final state = ref.read(provider);
     final bootstrap = state.bootstrap;
     if (bootstrap == null) return;
-    final bodyError = _validateBody(bootstrap);
-    if (bodyError != null) {
-      setState(() => _localFailure = ApiFailure(userMessage: bodyError));
-      return;
-    }
     FocusScope.of(context).unfocus();
     setState(() {
       _localFailure = null;
@@ -352,9 +283,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
   }
 
   Future<void> _requestClose(bool locked) async {
-    if (locked || _bodyController.closeToolbarTray()) return;
-    if (!await _bodyController.flush()) return;
-    if (!mounted) return;
+    if (locked) return;
     if (!_dirty) {
       await _pop();
       return;
@@ -363,7 +292,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('放弃未保存的修改？'),
-        content: const Text('标题、权限或正文尚未保存，离开后会丢失。'),
+        content: const Text('标题或发帖权限尚未保存，离开后会丢失。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),

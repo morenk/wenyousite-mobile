@@ -98,19 +98,15 @@ class SubthreadManagementDraft {
   const SubthreadManagementDraft({
     required this.title,
     required this.postingPolicy,
-    this.body = '',
   });
 
   final String title;
   final SubthreadPostingPolicy postingPolicy;
-  final String body;
 
   String get normalizedTitle => title.trim();
 
   bool differsFrom(SubthreadManagementItem item) {
-    return normalizedTitle != item.title ||
-        postingPolicy != item.postingPolicy ||
-        body != item.body;
+    return normalizedTitle != item.title || postingPolicy != item.postingPolicy;
   }
 }
 

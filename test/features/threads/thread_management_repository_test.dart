@@ -66,7 +66,6 @@ void main() {
         categorySlug: 'RPG',
         status: ThreadManagementStatus.closed,
         visibility: ThreadManagementVisibility.public,
-        body: '主正文',
         tagNames: ['跑团'],
       ),
     );

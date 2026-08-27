@@ -245,6 +245,16 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('展开楼中楼（1 条）'), findsOneWidget);
+    final expandAction = tester.widget<TextButton>(
+      find.ancestor(
+        of: find.text('展开楼中楼（1 条）'),
+        matching: find.byType(TextButton),
+      ),
+    );
+    expect(
+      expandAction.style?.textStyle?.resolve(const <WidgetState>{})?.fontWeight,
+      FontWeight.w400,
+    );
 
     final floorAvatar = find.byKey(
       const Key('thread-floor-author-avatar-floor-1'),

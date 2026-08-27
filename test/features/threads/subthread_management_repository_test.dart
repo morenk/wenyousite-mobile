@@ -11,7 +11,6 @@ void main() {
   setUpAll(() {
     registerFallbackValue(CreateSubthreadDto((builder) => builder.title = 'x'));
     registerFallbackValue(UpdateSubthreadDto((builder) => builder.version = 1));
-    registerFallbackValue(UpsertBodyDto((builder) => builder.content = 'x'));
     registerFallbackValue(
       ReorderSubthreadsDto((builder) => builder.ids.add('sub-default')),
     );
@@ -111,7 +110,6 @@ void main() {
       draft: const SubthreadManagementDraft(
         title: ' 玩家区 ',
         postingPolicy: SubthreadPostingPolicy.players,
-        body: '第一段正文',
       ),
       clientRequestId: '11111111-1111-4111-8111-111111111111',
     );
@@ -128,65 +126,8 @@ void main() {
     expect(payload.clientRequestId, '11111111-1111-4111-8111-111111111111');
     expect(payload.title, '玩家区');
     expect(payload.postingPolicy, CreateSubthreadDtoPostingPolicyEnum.PLAYERS);
-    expect(payload.content, '第一段正文');
+    expect(payload.content, isNull);
     expect(payload.sortOrder, isNull);
-  });
-
-  test('只修改正文时跳过元数据请求并携带正文版本', () async {
-    final subthreadsApi = _MockSubthreadsApi();
-    final postsApi = _MockPostsApi();
-    final envelope = _MockBodyEnvelope();
-    final post = _MockPostResponse();
-    when(() => envelope.data).thenReturn(post);
-    when(() => post.id).thenReturn('body-1');
-    when(() => post.version).thenReturn(6);
-    when(() => post.content).thenReturn('更新后的正文');
-    when(
-      () => postsApi.postsUpsertBody(
-        subthreadId: 'sub-second',
-        upsertBodyDto: any(named: 'upsertBodyDto'),
-      ),
-    ).thenAnswer(
-      (_) async => Response(
-        requestOptions: RequestOptions(
-          path: '/api/v1/subthreads/sub-second/body',
-        ),
-        data: envelope,
-      ),
-    );
-
-    final result =
-        await ApiSubthreadManagementRepository(
-          _MockThreadsApi(),
-          subthreadsApi,
-          postsApi,
-        ).update(
-          current: _item(body: '原正文', bodyVersion: 5),
-          draft: const SubthreadManagementDraft(
-            title: '剧情区',
-            postingPolicy: SubthreadPostingPolicy.participants,
-            body: '更新后的正文',
-          ),
-        );
-
-    final payload =
-        verify(
-              () => postsApi.postsUpsertBody(
-                subthreadId: 'sub-second',
-                upsertBodyDto: captureAny(named: 'upsertBodyDto'),
-              ),
-            ).captured.single
-            as UpsertBodyDto;
-    expect(payload.content, '更新后的正文');
-    expect(payload.version, 5);
-    expect(result.body, '更新后的正文');
-    expect(result.bodyVersion, 6);
-    verifyNever(
-      () => subthreadsApi.subthreadsUpdate(
-        id: any(named: 'id'),
-        updateSubthreadDto: any(named: 'updateSubthreadDto'),
-      ),
-    );
   });
 
   test('更新只发送变化字段和当前版本', () async {
@@ -205,15 +146,16 @@ void main() {
         ),
       ),
     );
-    final current = _item();
+    final current = _item(body: '原正文', bodyVersion: 5);
 
-    await ApiSubthreadManagementRepository(_MockThreadsApi(), api).update(
-      current: current,
-      draft: const SubthreadManagementDraft(
-        title: '新剧情区',
-        postingPolicy: SubthreadPostingPolicy.collaborators,
-      ),
-    );
+    final result =
+        await ApiSubthreadManagementRepository(_MockThreadsApi(), api).update(
+          current: current,
+          draft: const SubthreadManagementDraft(
+            title: '新剧情区',
+            postingPolicy: SubthreadPostingPolicy.collaborators,
+          ),
+        );
 
     final payload =
         verify(
@@ -230,6 +172,8 @@ void main() {
       UpdateSubthreadDtoPostingPolicyEnum.COLLABORATORS,
     );
     expect(payload.sortOrder, isNull);
+    expect(result.body, '原正文');
+    expect(result.bodyVersion, 5);
   });
 
   test('更新响应必须匹配请求子贴', () async {
@@ -315,12 +259,6 @@ void main() {
 class _MockThreadsApi extends Mock implements ThreadsApi {}
 
 class _MockSubthreadsApi extends Mock implements SubthreadsApi {}
-
-class _MockPostsApi extends Mock implements PostsApi {}
-
-class _MockBodyEnvelope extends Mock implements PostsUpsertBody200Response {}
-
-class _MockPostResponse extends Mock implements PostResponseDto {}
 
 Response<ThreadsFindById200Response> _threadResponse({bool canManage = true}) {
   final now = DateTime.utc(2026, 8, 10);
