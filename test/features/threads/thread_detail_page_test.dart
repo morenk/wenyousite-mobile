@@ -137,8 +137,8 @@ void main() {
     expect(find.byKey(const Key('thread-floors-order')), findsOneWidget);
     expect(find.byKey(const Key('thread-floors-settings')), findsNothing);
     expect(find.text('楼层'), findsNothing);
-    expect(find.text('最早在前'), findsOneWidget);
-    expect(find.text('最新在前'), findsNothing);
+    expect(find.text('正序'), findsOneWidget);
+    expect(find.text('倒序'), findsNothing);
     final bodyBottom = tester
         .getBottomLeft(find.byType(ThreadSubthreadBody))
         .dy;
@@ -149,7 +149,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-floors-order')));
     await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-floors-order')));
     await tester.pumpAndSettle();
     expect(repository.requestedOrders.last, ThreadFloorOrder.oldest);
@@ -468,7 +468,7 @@ void main() {
     ]);
     expect(repository.requestedOrders.last, ThreadFloorOrder.newest);
     expect(repository.requestedAuthors.last, 'user-2');
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
     expect(find.text('下一位接力者'), findsOneWidget);
     expect(find.text('没有符合条件的楼层'), findsOneWidget);
     expect(find.text('查看全部楼层'), findsOneWidget);
@@ -854,6 +854,11 @@ void main() {
       );
       expect(find.text('主线正文'), findsOneWidget);
       expect(find.text('第一层内容'), findsOneWidget);
+      final navigatorFrame = find.byKey(
+        const Key('thread-subthread-navigator-frame'),
+      );
+      expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+      expect(tester.getCenter(navigatorFrame).dx, closeTo(size.width / 2, 0.1));
       await expectLater(
         find.byKey(visualKey),
         matchesGoldenFile(
@@ -1044,14 +1049,25 @@ void main() {
     await tester.pumpAndSettle();
 
     final scrollView = find.byType(CustomScrollView);
+    final stickyHeader = find.byKey(
+      const Key('thread-subthread-sticky-header'),
+    );
+    final navigatorFrame = find.byKey(
+      const Key('thread-subthread-navigator-frame'),
+    );
+    expect(tester.getSize(stickyHeader).height, closeTo(64, 0.1));
+    expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+    expect(tester.getCenter(navigatorFrame).dx, closeTo(180, 0.1));
+    expect(
+      tester.getSize(find.byKey(const Key('thread-subthread-menu'))).width,
+      closeTo(200, 0.1),
+    );
     await tester.drag(scrollView, const Offset(0, -650));
     await tester.pumpAndSettle();
 
     final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
-    final stickyHeader = find.byKey(
-      const Key('thread-subthread-sticky-header'),
-    );
     expect(tester.getTopLeft(stickyHeader).dy, closeTo(appBarBottom, 1));
+    expect(tester.getSize(stickyHeader).height, closeTo(48, 0.1));
     expect(find.byKey(const Key('thread-subthread-menu')), findsOneWidget);
     final scrollController = tester
         .widget<CustomScrollView>(scrollView)
@@ -1116,6 +1132,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+    final navigatorFrame = find.byKey(
+      const Key('thread-subthread-navigator-frame'),
+    );
+    expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+    expect(tester.getCenter(navigatorFrame).dx, closeTo(180, 0.1));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
     await tester.pumpAndSettle();
 
@@ -1835,6 +1856,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+    final navigatorFrame = find.byKey(
+      const Key('thread-subthread-navigator-frame'),
+    );
+    expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+    expect(tester.getCenter(navigatorFrame).dx, closeTo(160, 0.1));
     final compose = find.byKey(const Key('thread-floor-compose'));
     expect(compose, findsOneWidget);
     expect(find.text('发表楼层'), findsNothing);

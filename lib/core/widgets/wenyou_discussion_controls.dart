@@ -147,13 +147,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
             children: [
               count,
               SizedBox(height: tokens.space4),
-              if (hasAuthorControl)
-                actions
-              else
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SizedBox(width: 116, child: actions),
-                ),
+              Align(alignment: Alignment.centerRight, child: actions),
             ],
           );
         }
@@ -169,7 +163,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
                 child: actions,
               )
             else
-              SizedBox(width: 116, child: actions),
+              actions,
           ],
         );
       },
@@ -214,18 +208,19 @@ class _DiscussionDirectActions<T extends Object> extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(child: _buildAuthorControl(context)),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 112),
+          child: _buildAuthorControl(context),
+        ),
         SizedBox(width: tokens.space4),
-        SizedBox(
-          width: 116,
-          child: _DiscussionOrderToggle<T>(
-            key: orderKey,
-            order: order,
-            options: orderOptions,
-            enabled: enabled,
-            onChanged: onOrderChanged,
-          ),
+        _DiscussionOrderToggle<T>(
+          key: orderKey,
+          order: order,
+          options: orderOptions,
+          enabled: enabled,
+          onChanged: onOrderChanged,
         ),
       ],
     );
@@ -295,7 +290,8 @@ class _DiscussionAuthorStatus extends StatelessWidget {
       onPressed: enabled ? onPressed : null,
       style: TextButton.styleFrom(
         minimumSize: Size(0, tokens.minimumTouchTarget),
-        padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+        padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+        foregroundColor: tokens.mutedText,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -306,7 +302,15 @@ class _DiscussionAuthorStatus extends StatelessWidget {
           ),
           SizedBox(width: tokens.space4),
           Flexible(
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens.mutedText,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -336,30 +340,33 @@ class _DiscussionOrderToggle<T extends Object> extends StatelessWidget {
     final current = options[resolvedIndex];
     final next = options[(resolvedIndex + 1) % options.length];
     final currentLabel = current.summaryLabel ?? current.label;
-    final nextLabel = next.summaryLabel ?? next.label;
     return Semantics(
       button: true,
       enabled: enabled,
-      label: '当前$currentLabel，点击切换为$nextLabel',
+      label: '当前${current.label}，点击切换为${next.label}',
       child: ExcludeSemantics(
         child: TextButton(
           onPressed: enabled ? () => onChanged(next.value) : null,
           style: TextButton.styleFrom(
             minimumSize: Size(0, tokens.minimumTouchTarget),
-            padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+            padding: EdgeInsets.symmetric(horizontal: tokens.space4),
             foregroundColor: tokens.mutedText,
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const WenyouIcon(WenyouIconIds.actionSort, size: 18),
+              const WenyouIcon(WenyouIconIds.actionSort, size: 16),
               SizedBox(width: tokens.space4),
               Flexible(
                 child: Text(
                   currentLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: tokens.mutedText,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],

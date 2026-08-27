@@ -111,15 +111,15 @@ class ThreadDetailSubthreadHeaderSliver extends StatelessWidget {
 
     final navigatorExtent = _navigatorExtent(context, tokens);
     final pinned = subthreads.length > 1;
-    final maxExtent = navigatorExtent + tokens.space12 * 2;
-    final minExtent = pinned ? navigatorExtent + tokens.space4 * 2 : maxExtent;
+    final maxExtent = navigatorExtent + tokens.space8 * 2;
+    final minExtent = pinned ? navigatorExtent : maxExtent;
     return SliverPersistentHeader(
       pinned: pinned,
       delegate: _ThreadSubthreadHeaderDelegate(
         minExtent: minExtent,
         maxExtent: maxExtent,
-        maxPadding: tokens.space12,
-        minPadding: pinned ? tokens.space4 : tokens.space12,
+        maxPadding: tokens.space8,
+        minPadding: pinned ? 0 : tokens.space8,
         background: tokens.background,
         headerKey: scrollCoordinator.headerKey,
         child: Semantics(
@@ -140,7 +140,9 @@ class ThreadDetailSubthreadHeaderSliver extends StatelessWidget {
     final painter = TextPainter(
       text: TextSpan(
         text: '子贴\n子贴',
-        style: Theme.of(context).textTheme.labelLarge,
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
       ),
       maxLines: 2,
       textDirection: Directionality.of(context),

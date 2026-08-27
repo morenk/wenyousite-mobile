@@ -41,7 +41,7 @@ class PostReplyFilters extends StatelessWidget {
           WenyouDiscussionOrderOption(
             value: value,
             label: value.label,
-            summaryLabel: value == PostReplyOrder.oldest ? '最早在前' : '最新在前',
+            summaryLabel: value == PostReplyOrder.oldest ? '正序' : '倒序',
           ),
       ],
       authorId: state.authorId,

@@ -267,7 +267,7 @@ void main() {
       findsNothing,
     );
     expect(find.text('回复'), findsNothing);
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
     expect(find.byKey(const Key('moment-comments-order')), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-settings')), findsNothing);
     expect(find.text('只看作者'), findsNothing);
@@ -283,7 +283,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('moment-comments-order')));
     await tester.pumpAndSettle();
-    expect(find.text('最早在前'), findsOneWidget);
+    expect(find.text('正序'), findsOneWidget);
     expect(repository.commentOrders, [
       MomentCommentOrder.newest,
       MomentCommentOrder.oldest,

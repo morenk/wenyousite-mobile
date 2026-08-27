@@ -1542,12 +1542,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('最早在前'), findsOneWidget);
+    expect(find.text('正序'), findsOneWidget);
     expect(find.byKey(const Key('post-replies-settings')), findsNothing);
     await tester.tap(find.byKey(const Key('post-replies-order')));
     await tester.pumpAndSettle();
 
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('他人的回复')).dy,
       lessThan(tester.getTopLeft(find.text('自己的回复')).dy),
@@ -1558,7 +1558,7 @@ void main() {
     await tester.tap(find.text('自己').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
     expect(find.text('自己'), findsAtLeastNWidgets(1));
     expect(find.text('自己的回复'), findsOneWidget);
     expect(find.text('他人的回复'), findsNothing);

@@ -35,29 +35,34 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
     final previousIndex =
         (safeIndex - 1 + widget.subthreads.length) % widget.subthreads.length;
     final nextIndex = (safeIndex + 1) % widget.subthreads.length;
-    return Row(
-      children: [
-        IconButton(
-          key: const Key('thread-subthread-previous'),
-          onPressed: canCycle
-              ? () => widget.onSelected(widget.subthreads[previousIndex].id)
-              : null,
-          tooltip: canCycle
-              ? '上一个子贴：${widget.subthreads[previousIndex].title}'
-              : '没有其他子贴',
-          icon: const WenyouIcon(WenyouIconIds.navigationPrevious),
-        ),
-        Expanded(
-          child: OutlinedButton(
-            key: const Key('thread-subthread-menu'),
-            onPressed: () => _showSubthreads(context),
-            style: OutlinedButton.styleFrom(
-              minimumSize: Size(0, tokens.minimumTouchTarget),
-              padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+    return Center(
+      child: ConstrainedBox(
+        key: const Key('thread-subthread-navigator-frame'),
+        constraints: const BoxConstraints(maxWidth: 296),
+        child: Row(
+          children: [
+            IconButton(
+              key: const Key('thread-subthread-previous'),
+              onPressed: canCycle
+                  ? () => widget.onSelected(widget.subthreads[previousIndex].id)
+                  : null,
+              tooltip: canCycle
+                  ? '上一个子贴：${widget.subthreads[previousIndex].title}'
+                  : '没有其他子贴',
+              icon: const WenyouIcon(WenyouIconIds.navigationPrevious),
             ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Row(
+            Expanded(
+              child: OutlinedButton(
+                key: const Key('thread-subthread-menu'),
+                onPressed: () => _showSubthreads(context),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: Size(0, tokens.minimumTouchTarget),
+                  padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+                  textStyle: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                ),
+                child: Row(
                   children: [
                     Expanded(
                       child: Text(
@@ -72,25 +77,25 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                       _menuOpen
                           ? WenyouIconIds.navigationCollapse
                           : WenyouIconIds.navigationExpand,
-                      size: 18,
+                      size: 16,
                     ),
                   ],
-                );
-              },
+                ),
+              ),
             ),
-          ),
+            IconButton(
+              key: const Key('thread-subthread-next'),
+              onPressed: canCycle
+                  ? () => widget.onSelected(widget.subthreads[nextIndex].id)
+                  : null,
+              tooltip: canCycle
+                  ? '下一个子贴：${widget.subthreads[nextIndex].title}'
+                  : '没有其他子贴',
+              icon: const WenyouIcon(WenyouIconIds.navigationNext),
+            ),
+          ],
         ),
-        IconButton(
-          key: const Key('thread-subthread-next'),
-          onPressed: canCycle
-              ? () => widget.onSelected(widget.subthreads[nextIndex].id)
-              : null,
-          tooltip: canCycle
-              ? '下一个子贴：${widget.subthreads[nextIndex].title}'
-              : '没有其他子贴',
-          icon: const WenyouIcon(WenyouIconIds.navigationNext),
-        ),
-      ],
+      ),
     );
   }
 

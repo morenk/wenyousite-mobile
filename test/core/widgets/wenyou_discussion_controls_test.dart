@@ -109,10 +109,12 @@ void main() {
                     WenyouDiscussionOrderOption(
                       value: _Order.oldest,
                       label: '最早在前',
+                      summaryLabel: '正序',
                     ),
                     WenyouDiscussionOrderOption(
                       value: _Order.newest,
                       label: '最新在前',
+                      summaryLabel: '倒序',
                     ),
                   ],
                   authorId: authorId,
@@ -139,13 +141,13 @@ void main() {
       ),
     );
 
-    expect(find.text('最早在前'), findsOneWidget);
+    expect(find.text('正序'), findsOneWidget);
     expect(find.text('所有人'), findsOneWidget);
     await tester.tap(find.byKey(const Key('direct-order')));
     await tester.pumpAndSettle();
     expect(order, _Order.newest);
     expect(orderChanges, 1);
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('direct-author')));
     await tester.pumpAndSettle();
@@ -156,6 +158,76 @@ void main() {
     expect(authorChanges, 1);
     expect(find.text('小温'), findsOneWidget);
     expect(find.text('讨论设置'), findsNothing);
+  });
+
+  testWidgets('作者与顺序使用一致的紧凑排版，菜单保留独立宽度', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    const longAuthor = '一位名字非常长的接力玩家';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouDiscussionListControls<_Order>(
+            countLabel: '12 条回复',
+            order: _Order.oldest,
+            orderOptions: const [
+              WenyouDiscussionOrderOption(
+                value: _Order.oldest,
+                label: '最早在前',
+                summaryLabel: '正序',
+              ),
+              WenyouDiscussionOrderOption(
+                value: _Order.newest,
+                label: '最新在前',
+                summaryLabel: '倒序',
+              ),
+            ],
+            authorId: null,
+            authors: const [
+              WenyouDiscussionAuthorOption(
+                id: 'author-1',
+                label: longAuthor,
+                supportingLabel: '玩家',
+              ),
+            ],
+            authorKey: const Key('compact-author'),
+            orderKey: const Key('compact-order'),
+            onOrderChanged: (_) {},
+            onAuthorChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    final authorSize = tester.getSize(find.byKey(const Key('compact-author')));
+    final orderSize = tester.getSize(find.byKey(const Key('compact-order')));
+    expect(authorSize.width, lessThanOrEqualTo(112));
+    expect(authorSize.height, greaterThanOrEqualTo(48));
+    expect(orderSize.width, lessThan(116));
+    expect(orderSize.height, greaterThanOrEqualTo(48));
+
+    final authorStyle = tester.widget<Text>(find.text('所有人')).style!;
+    final orderStyle = tester.widget<Text>(find.text('正序')).style!;
+    expect(authorStyle.fontSize, 12);
+    expect(authorStyle.height, 1.4);
+    expect(authorStyle.fontWeight, FontWeight.w500);
+    expect(orderStyle.fontSize, authorStyle.fontSize);
+    expect(orderStyle.height, authorStyle.height);
+    expect(orderStyle.fontWeight, authorStyle.fontWeight);
+    expect(orderStyle.color, authorStyle.color);
+
+    await tester.tap(find.byKey(const Key('compact-author')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(longAuthor), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(PopupMenuItem<String>).first).width,
+      greaterThanOrEqualTo(160),
+    );
   });
 
   testWidgets('直接讨论控件可只保留与主题帖一致的顺序按钮', (tester) async {
@@ -175,10 +247,12 @@ void main() {
                     WenyouDiscussionOrderOption(
                       value: _Order.oldest,
                       label: '最早在前',
+                      summaryLabel: '正序',
                     ),
                     WenyouDiscussionOrderOption(
                       value: _Order.newest,
                       label: '最新在前',
+                      summaryLabel: '倒序',
                     ),
                   ],
                   orderKey: const Key('order-only'),
@@ -193,7 +267,7 @@ void main() {
     );
 
     expect(find.text('12 条评论'), findsOneWidget);
-    expect(find.text('最新在前'), findsOneWidget);
+    expect(find.text('倒序'), findsOneWidget);
     expect(find.text('暂无可筛选作者'), findsNothing);
     expect(find.text('讨论设置'), findsNothing);
     expect(
@@ -210,7 +284,7 @@ void main() {
 
     expect(changes, 1);
     expect(order, _Order.oldest);
-    expect(find.text('最早在前'), findsOneWidget);
+    expect(find.text('正序'), findsOneWidget);
   });
 
   testWidgets('直接讨论控件在作者失败和窄屏大字号下保持可操作', (tester) async {
@@ -240,10 +314,12 @@ void main() {
                     WenyouDiscussionOrderOption(
                       value: _Order.oldest,
                       label: '最早在前',
+                      summaryLabel: '正序',
                     ),
                     WenyouDiscussionOrderOption(
                       value: _Order.newest,
                       label: '最新在前',
+                      summaryLabel: '倒序',
                     ),
                   ],
                   authorId: null,

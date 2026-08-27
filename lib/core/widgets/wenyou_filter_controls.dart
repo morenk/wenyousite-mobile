@@ -351,6 +351,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     required this.icon,
     this.enabled = true,
     this.appearance = WenyouDropdownFilterAppearance.outlined,
+    this.optionKeyPrefix,
     super.key,
   });
 
@@ -361,6 +362,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
   final String icon;
   final bool enabled;
   final WenyouDropdownFilterAppearance appearance;
+  final String? optionKeyPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +376,10 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     final radius = BorderRadius.circular(tokens.radius16);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final alignedMenuConstraints = constraints.hasBoundedWidth
+        final alignedMenuConstraints =
+            appearance == WenyouDropdownFilterAppearance.quiet
+            ? const BoxConstraints(minWidth: 160, maxWidth: 260)
+            : constraints.hasBoundedWidth
             ? BoxConstraints.tightFor(width: constraints.maxWidth)
             : const BoxConstraints(minWidth: 160, maxWidth: 260);
         return PopupMenuButton<T>(
@@ -395,6 +400,9 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
           itemBuilder: (context) => [
             for (final option in options)
               PopupMenuItem<T>(
+                key: optionKeyPrefix == null || option.keyValue == null
+                    ? null
+                    : Key('$optionKeyPrefix-${option.keyValue}'),
                 value: option.value,
                 height: tokens.minimumTouchTarget,
                 child: Row(
@@ -464,11 +472,21 @@ class _DropdownFilterAnchor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final quiet = appearance == WenyouDropdownFilterAppearance.quiet;
+    final labelStyle = quiet
+        ? Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: tokens.mutedText,
+            fontWeight: FontWeight.w500,
+          )
+        : Theme.of(context).textTheme.labelMedium;
     final content = ConstrainedBox(
       constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+        padding: EdgeInsets.symmetric(
+          horizontal: quiet ? tokens.space4 : tokens.space8,
+        ),
         child: Row(
+          mainAxisSize: quiet ? MainAxisSize.min : MainAxisSize.max,
           children: [
             if (showLeadingIcon) ...[
               DecoratedBox(
@@ -483,18 +501,19 @@ class _DropdownFilterAnchor extends StatelessWidget {
               ),
               SizedBox(width: tokens.space8),
             ],
-            Expanded(
+            Flexible(
+              fit: quiet ? FlexFit.loose : FlexFit.tight,
               child: Text(
                 selectedLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium,
+                style: labelStyle,
               ),
             ),
             SizedBox(width: tokens.space4),
             WenyouIcon(
               WenyouIconIds.navigationExpand,
-              size: 18,
+              size: quiet ? 16 : 18,
               color: tokens.mutedText,
             ),
           ],

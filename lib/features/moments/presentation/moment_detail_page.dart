@@ -723,6 +723,7 @@ class _CommentOrderControls extends StatelessWidget {
           WenyouDiscussionOrderOption(
             value: order,
             label: order == MomentCommentOrder.newest ? '最新在前' : '最早在前',
+            summaryLabel: order == MomentCommentOrder.newest ? '倒序' : '正序',
           ),
       ],
       enabled: !state.isRefreshing && !state.isLoadingMoreComments,

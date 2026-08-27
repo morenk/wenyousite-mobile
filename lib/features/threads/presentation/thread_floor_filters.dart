@@ -45,7 +45,11 @@ class ThreadFloorFilters extends StatelessWidget {
           order: state.floorOrder,
           orderOptions: [
             for (final value in ThreadFloorOrder.values)
-              WenyouDiscussionOrderOption(value: value, label: value.label),
+              WenyouDiscussionOrderOption(
+                value: value,
+                label: value.label,
+                summaryLabel: value == ThreadFloorOrder.oldest ? '正序' : '倒序',
+              ),
           ],
           authorId: state.floorAuthorId,
           authors: [
