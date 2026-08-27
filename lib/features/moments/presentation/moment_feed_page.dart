@@ -22,6 +22,7 @@ class MomentFeedPage extends ConsumerStatefulWidget {
 
 class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
   var _mode = MomentFeedMode.discover;
+  final _visitedModes = <MomentFeedMode>{MomentFeedMode.discover};
 
   @override
   Widget build(BuildContext context) {
@@ -58,31 +59,55 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
               ),
             ],
             selected: _mode,
-            onSelected: (mode) => setState(() => _mode = mode),
+            onSelected: _selectMode,
           ),
           Expanded(
             child: WenyouSwipeTabRegion<MomentFeedMode>(
               key: const Key('moment-feed-swipe'),
               values: MomentFeedMode.values,
               selected: _mode,
-              onSelected: (mode) => setState(() => _mode = mode),
-              child:
-                  _mode == MomentFeedMode.following && !session.isAuthenticated
-                  ? _FollowingLoginState(
-                      onLogin: () => _openLogin(context, '/moments'),
-                    )
-                  : MomentFeedList(
-                      key: ValueKey(_mode),
-                      target: MomentFeedTarget.main(_mode),
-                      emptyTitle: _mode == MomentFeedMode.discover
-                          ? '还没有公开动态'
-                          : '关注动态暂时为空',
-                      emptyMessage: '',
-                    ),
+              onSelected: _selectMode,
+              child: IndexedStack(
+                index: MomentFeedMode.values.indexOf(_mode),
+                children: [
+                  for (final mode in MomentFeedMode.values)
+                    _visitedModes.contains(mode)
+                        ? _buildModeContent(
+                            mode,
+                            isAuthenticated: session.isAuthenticated,
+                          )
+                        : const SizedBox.expand(),
+                ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _selectMode(MomentFeedMode mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _visitedModes.add(mode);
+      _mode = mode;
+    });
+  }
+
+  Widget _buildModeContent(
+    MomentFeedMode mode, {
+    required bool isAuthenticated,
+  }) {
+    if (mode == MomentFeedMode.following && !isAuthenticated) {
+      return _FollowingLoginState(
+        onLogin: () => _openLogin(context, '/moments'),
+      );
+    }
+    return MomentFeedList(
+      key: ValueKey(mode),
+      target: MomentFeedTarget.main(mode),
+      emptyTitle: mode == MomentFeedMode.discover ? '还没有公开动态' : '关注动态暂时为空',
+      emptyMessage: '',
     );
   }
 }

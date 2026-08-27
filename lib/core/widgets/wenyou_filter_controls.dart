@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 @immutable
@@ -133,7 +134,7 @@ class WenyouSwipeTabRegion<T> extends StatefulWidget {
     required this.child,
     this.minimumDragDistance = 48,
     super.key,
-  });
+  }) : assert(minimumDragDistance > 0);
 
   final List<T> values;
   final T selected;
@@ -146,11 +147,51 @@ class WenyouSwipeTabRegion<T> extends StatefulWidget {
       _WenyouSwipeTabRegionState<T>();
 }
 
-class _WenyouSwipeTabRegionState<T> extends State<WenyouSwipeTabRegion<T>> {
+class _WenyouSwipeTabRegionState<T> extends State<WenyouSwipeTabRegion<T>>
+    with SingleTickerProviderStateMixin {
   double _horizontalDistance = 0;
+  var _direction = 1;
+  late final AnimationController _contentTransitionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentTransitionController = AnimationController(
+      vsync: this,
+      duration: WenyouFoundationMotion.standard,
+      value: 1,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant WenyouSwipeTabRegion<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selected == widget.selected) return;
+    final previousIndex = widget.values.indexOf(oldWidget.selected);
+    final currentIndex = widget.values.indexOf(widget.selected);
+    if (previousIndex >= 0 && currentIndex >= 0) {
+      _direction = currentIndex >= previousIndex ? 1 : -1;
+    }
+    if (wenyouAnimationsDisabled(context)) {
+      _contentTransitionController.value = 1;
+    } else {
+      _contentTransitionController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _contentTransitionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final position = _contentTransitionController
+        .drive(CurveTween(curve: wenyouStandardMotionCurve))
+        .drive(
+          Tween<Offset>(begin: Offset(_direction * 0.06, 0), end: Offset.zero),
+        );
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragStart: (_) => _horizontalDistance = 0,
@@ -169,7 +210,12 @@ class _WenyouSwipeTabRegionState<T> extends State<WenyouSwipeTabRegion<T>> {
         if (targetIndex < 0 || targetIndex >= widget.values.length) return;
         widget.onSelected(widget.values[targetIndex]);
       },
-      child: widget.child,
+      child: ClipRect(
+        child: ColoredBox(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: SlideTransition(position: position, child: widget.child),
+        ),
+      ),
     );
   }
 

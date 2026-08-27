@@ -165,21 +165,37 @@ void main() {
       find.byKey(const Key('message-section-swipe')),
       const Offset(100, 0),
     );
+    await tester.pump();
+    final sectionSlide = find.descendant(
+      of: find.byKey(const Key('message-section-swipe')),
+      matching: find.byType(SlideTransition),
+    );
+    expect(
+      tester.widget<SlideTransition>(sectionSlide).position.value.dx,
+      isNegative,
+    );
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.toString(),
       '/notifications',
     );
+    expect(repository.filters, [NotificationFilters.all]);
 
     await tester.drag(
       find.byKey(const Key('message-section-swipe')),
       const Offset(-100, 0),
+    );
+    await tester.pump();
+    expect(
+      tester.widget<SlideTransition>(sectionSlide).position.value.dx,
+      isPositive,
     );
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.toString(),
       '/notifications?section=directMessages',
     );
+    expect(repository.filters, [NotificationFilters.all]);
   });
 
   testWidgets('能力关闭时非法私聊 section 回退并规范化 URL', (tester) async {

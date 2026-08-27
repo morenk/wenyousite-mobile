@@ -29,6 +29,7 @@ class MessageCenterPage extends ConsumerStatefulWidget {
 
 class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
   var _canonicalizationScheduled = false;
+  final _visitedSections = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +38,7 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
 
     final messagesEnabled = ref.watch(directMessagesEnabledProvider);
     final selected = _selectedSection(messagesEnabled);
+    _visitedSections.add(selected);
     _canonicalizeIfNeeded(selected);
 
     final notificationUnread = ref.watch(
@@ -97,9 +99,20 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
                   : [MessageCenterSections.notifications],
               selected: selected,
               onSelected: _replaceSection,
-              child: selected == MessageCenterSections.directMessages
-                  ? const DirectMessagesPage(embedded: true)
-                  : const NotificationSection(),
+              child: IndexedStack(
+                index: selected == MessageCenterSections.directMessages ? 1 : 0,
+                children: [
+                  _visitedSections.contains(MessageCenterSections.notifications)
+                      ? const NotificationSection()
+                      : const SizedBox.expand(),
+                  messagesEnabled &&
+                          _visitedSections.contains(
+                            MessageCenterSections.directMessages,
+                          )
+                      ? const DirectMessagesPage(embedded: true)
+                      : const SizedBox.expand(),
+                ],
+              ),
             ),
           ),
         ],
@@ -131,6 +144,9 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
   }
 
   void _replaceSection(String section) {
+    if (!_visitedSections.contains(section)) {
+      setState(() => _visitedSections.add(section));
+    }
     context.replace(
       AppRouteLocations.messageCenter(
         section: section == MessageCenterSections.notifications

@@ -76,10 +76,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('moment-card-moment-1')), findsOneWidget);
-    expect(repository.feedModes, [
-      MomentFeedMode.discover,
-      MomentFeedMode.discover,
-    ]);
+    expect(repository.feedModes, [MomentFeedMode.discover]);
   });
 
   testWidgets('动态信息流通过滚动通知在接近底部时继续分页', (tester) async {

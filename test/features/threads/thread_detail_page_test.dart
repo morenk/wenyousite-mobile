@@ -1010,6 +1010,25 @@ void main() {
     );
     expect(directoryDivider, findsOneWidget);
     expect(tester.widget<Divider>(directoryDivider).height, 1);
+    final selectedDirectoryRow = find.byKey(
+      const Key('thread-subthread-subthread-1'),
+    );
+    final selectedTile = tester.widget<ListTile>(selectedDirectoryRow);
+    expect(selectedTile.selected, isTrue);
+    expect(
+      (selectedTile.shape! as RoundedRectangleBorder).borderRadius,
+      BorderRadius.zero,
+    );
+    expect(selectedTile.selectedTileColor, isNotNull);
+    expect(
+      tester.getSize(selectedDirectoryRow).width,
+      closeTo(
+        tester
+            .getSize(find.byKey(const Key('thread-subthread-directory')))
+            .width,
+        0.1,
+      ),
+    );
     final subthread = find.byKey(const Key('thread-subthread-subthread-2'));
     expect(subthread, findsOneWidget);
     await tester.tap(subthread);
@@ -1041,6 +1060,23 @@ void main() {
     expect(find.text('支线楼层'), findsOneWidget);
     expect(find.text('第一层内容'), findsNothing);
     expect(repository.requestedSubthreads.last, 'subthread-2');
+  });
+
+  testWidgets('360dp 子贴目录使用分隔列表与整行选中高亮', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_detailApp(_FakeThreadDetailRepository()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-subthread-menu')));
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byType(Overlay).first,
+      matchesGoldenFile('goldens/thread_subthread_directory_360.png'),
+    );
   });
 
   testWidgets('多子贴切换栏滚动后冻结并在切换时回到新正文开头', (tester) async {
@@ -2888,6 +2924,7 @@ Widget _detailApp(
       ),
     ],
     child: MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       builder: textScale == null
           ? null

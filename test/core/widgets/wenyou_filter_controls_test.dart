@@ -55,7 +55,7 @@ void main() {
     expect(selected, 1);
   });
 
-  testWidgets('内容滑动区按相邻顺序切栏并忽略短滑与边界', (tester) async {
+  testWidgets('内容滑动区按方向播放切栏动画并忽略短滑与边界', (tester) async {
     var selected = 1;
 
     await tester.pumpWidget(
@@ -81,6 +81,13 @@ void main() {
     );
     await tester.pump();
     expect(selected, 2);
+    final slide = find.descendant(
+      of: find.byKey(const Key('test-swipe-tabs')),
+      matching: find.byType(SlideTransition),
+    );
+    expect(tester.widget<SlideTransition>(slide).position.value.dx, isPositive);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SlideTransition>(slide).position.value.dx, 0);
 
     await tester.drag(
       find.byKey(const Key('test-swipe-tabs')),
@@ -88,6 +95,7 @@ void main() {
     );
     await tester.pump();
     expect(selected, 2);
+    expect(tester.widget<SlideTransition>(slide).position.value.dx, 0);
 
     await tester.drag(
       find.byKey(const Key('test-swipe-tabs')),
@@ -102,6 +110,48 @@ void main() {
     );
     await tester.pump();
     expect(selected, 1);
+    expect(tester.widget<SlideTransition>(slide).position.value.dx, isNegative);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SlideTransition>(slide).position.value.dx, 0);
+  });
+
+  testWidgets('减少动态效果时切栏直接进入最终位置', (tester) async {
+    var selected = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => WenyouSwipeTabRegion<int>(
+                key: const Key('reduced-motion-swipe-tabs'),
+                values: const [0, 1],
+                selected: selected,
+                onSelected: (value) => setState(() => selected = value),
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(
+      find.byKey(const Key('reduced-motion-swipe-tabs')),
+      const Offset(-80, 0),
+    );
+    await tester.pump();
+
+    expect(selected, 1);
+    final slide = tester.widget<SlideTransition>(
+      find.descendant(
+        of: find.byKey(const Key('reduced-motion-swipe-tabs')),
+        matching: find.byType(SlideTransition),
+      ),
+    );
+    expect(slide.position.value.dx, 0);
   });
 
   testWidgets('内容框架统一响应式边距与最大宽度', (tester) async {

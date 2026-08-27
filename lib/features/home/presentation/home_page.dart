@@ -69,30 +69,49 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: WenyouSwipeTabRegion<String?>(
-        key: const Key('home-category-swipe'),
-        values: [null, for (final category in state.categories) category.slug],
-        selected: state.query.categorySlug,
-        onSelected: (slug) =>
-            ref.read(homeFeedControllerProvider.notifier).selectCategory(slug),
-        child: RefreshIndicator(
-          onRefresh: () =>
-              ref.read(homeFeedControllerProvider.notifier).refresh(),
-          child: CustomScrollView(
-            key: const PageStorageKey('home-feed-scroll'),
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: _buildSlivers(context, state),
+      body: Column(
+        children: [
+          if (state.categories.isNotEmpty || state.phase == HomeFeedPhase.ready)
+            _HomeCategoryTabs(
+              categories: state.categories,
+              selected: state.query.categorySlug,
+              onSelected: (slug) => ref
+                  .read(homeFeedControllerProvider.notifier)
+                  .selectCategory(slug),
+            ),
+          Expanded(
+            child: WenyouSwipeTabRegion<String?>(
+              key: const Key('home-category-swipe'),
+              values: [
+                null,
+                for (final category in state.categories) category.slug,
+              ],
+              selected: state.query.categorySlug,
+              onSelected: (slug) => ref
+                  .read(homeFeedControllerProvider.notifier)
+                  .selectCategory(slug),
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    ref.read(homeFeedControllerProvider.notifier).refresh(),
+                child: CustomScrollView(
+                  key: const PageStorageKey('home-feed-scroll'),
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: _buildSlivers(context, state),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   List<Widget> _buildSlivers(BuildContext context, HomeFeedState state) {
     if (state.phase == HomeFeedPhase.loading) {
-      return const [
-        SliverFillRemaining(
+      return [
+        if (state.categories.isNotEmpty) _queryFiltersSliver(state),
+        const SliverFillRemaining(
           hasScrollBody: false,
           child: _HomeCenteredState(child: _HomeLoadingState()),
         ),
@@ -100,6 +119,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
     if (state.phase == HomeFeedPhase.failed) {
       return [
+        if (state.categories.isNotEmpty) _queryFiltersSliver(state),
         SliverFillRemaining(
           hasScrollBody: false,
           child: _HomeCenteredState(
@@ -114,19 +134,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     return [
-      SliverToBoxAdapter(
-        child: _HomeFilters(
-          state: state,
-          onCategorySelected: (slug) => ref
-              .read(homeFeedControllerProvider.notifier)
-              .selectCategory(slug),
-          onSortSelected: (sort) =>
-              ref.read(homeFeedControllerProvider.notifier).selectSort(sort),
-          onStatusSelected: (status) => ref
-              .read(homeFeedControllerProvider.notifier)
-              .selectStatus(status),
-        ),
-      ),
+      _queryFiltersSliver(state),
       if (state.transientFailure != null)
         SliverToBoxAdapter(
           child: WenyouContentFrame(
@@ -206,6 +214,18 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
     ];
   }
+
+  SliverToBoxAdapter _queryFiltersSliver(HomeFeedState state) {
+    return SliverToBoxAdapter(
+      child: _HomeQueryFilters(
+        state: state,
+        onSortSelected: (sort) =>
+            ref.read(homeFeedControllerProvider.notifier).selectSort(sort),
+        onStatusSelected: (status) =>
+            ref.read(homeFeedControllerProvider.notifier).selectStatus(status),
+      ),
+    );
+  }
 }
 
 class _HomeCenteredState extends StatelessWidget {
@@ -276,83 +296,90 @@ class _HomeTransientError extends StatelessWidget {
   }
 }
 
-class _HomeFilters extends StatelessWidget {
-  const _HomeFilters({
+class _HomeCategoryTabs extends StatelessWidget {
+  const _HomeCategoryTabs({
+    required this.categories,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<HomeCategory> categories;
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const allCategories = '__all_categories__';
+    final categoryLabels = <String, String>{
+      allCategories: '全部分类',
+      for (final category in categories) category.slug: category.name,
+    };
+    return WenyouContentTabs<String>(
+      key: const Key('home-category-menu'),
+      keyPrefix: 'home-category',
+      semanticsLabel: '主题分类',
+      placement: WenyouTabPlacement.page,
+      options: [
+        for (final entry in categoryLabels.entries)
+          WenyouFilterOption(
+            value: entry.key,
+            label: entry.value,
+            keyValue: entry.key,
+          ),
+      ],
+      selected: selected ?? allCategories,
+      onSelected: (value) => onSelected(value == allCategories ? null : value),
+    );
+  }
+}
+
+class _HomeQueryFilters extends StatelessWidget {
+  const _HomeQueryFilters({
     required this.state,
-    required this.onCategorySelected,
     required this.onSortSelected,
     required this.onStatusSelected,
   });
 
   final HomeFeedState state;
-  final ValueChanged<String?> onCategorySelected;
   final ValueChanged<HomeFeedSort> onSortSelected;
   final ValueChanged<HomeThreadStatusFilter> onStatusSelected;
 
   @override
   Widget build(BuildContext context) {
-    const allCategories = '__all_categories__';
     final tokens = context.wenyouTokens;
-    final categoryLabels = <String, String>{
-      allCategories: '全部分类',
-      for (final category in state.categories) category.slug: category.name,
-    };
-    final selectedCategory = state.query.categorySlug ?? allCategories;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        WenyouContentTabs<String>(
-          key: const Key('home-category-menu'),
-          keyPrefix: 'home-category',
-          semanticsLabel: '主题分类',
-          placement: WenyouTabPlacement.page,
-          options: [
-            for (final entry in categoryLabels.entries)
-              WenyouFilterOption(
-                value: entry.key,
-                label: entry.value,
-                keyValue: entry.key,
-              ),
-          ],
-          selected: selectedCategory,
-          onSelected: (value) =>
-              onCategorySelected(value == allCategories ? null : value),
-        ),
-        WenyouContentFrame(
-          top: tokens.space8,
-          child: Row(
-            children: [
-              Expanded(
-                child: WenyouDropdownFilter<HomeFeedSort>(
-                  key: const Key('home-sort-menu'),
-                  tooltip: '选择主题排序',
-                  icon: WenyouIconIds.actionSort,
-                  options: [
-                    for (final value in HomeFeedSort.values)
-                      WenyouFilterOption(value: value, label: value.label),
-                  ],
-                  selected: state.query.sort,
-                  onSelected: onSortSelected,
-                ),
-              ),
-              SizedBox(width: tokens.space8),
-              Expanded(
-                child: WenyouDropdownFilter<HomeThreadStatusFilter>(
-                  key: const Key('home-status-menu'),
-                  tooltip: '选择主题状态',
-                  icon: WenyouIconIds.actionFilter,
-                  options: [
-                    for (final value in HomeThreadStatusFilter.values)
-                      WenyouFilterOption(value: value, label: value.label),
-                  ],
-                  selected: state.query.status,
-                  onSelected: onStatusSelected,
-                ),
-              ),
-            ],
+    return WenyouContentFrame(
+      top: tokens.space8,
+      child: Row(
+        children: [
+          Expanded(
+            child: WenyouDropdownFilter<HomeFeedSort>(
+              key: const Key('home-sort-menu'),
+              tooltip: '选择主题排序',
+              icon: WenyouIconIds.actionSort,
+              options: [
+                for (final value in HomeFeedSort.values)
+                  WenyouFilterOption(value: value, label: value.label),
+              ],
+              selected: state.query.sort,
+              onSelected: onSortSelected,
+            ),
           ),
-        ),
-      ],
+          SizedBox(width: tokens.space8),
+          Expanded(
+            child: WenyouDropdownFilter<HomeThreadStatusFilter>(
+              key: const Key('home-status-menu'),
+              tooltip: '选择主题状态',
+              icon: WenyouIconIds.actionFilter,
+              options: [
+                for (final value in HomeThreadStatusFilter.values)
+                  WenyouFilterOption(value: value, label: value.label),
+              ],
+              selected: state.query.status,
+              onSelected: onStatusSelected,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

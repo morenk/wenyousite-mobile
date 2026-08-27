@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 
 /// Transient navigation intent that must never be persisted in a route URL.
 enum WenyouRouteTransitionIntent { instantFallback }
@@ -25,15 +26,15 @@ class WenyouPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (_animationsDisabled(context)) return child;
+    if (wenyouAnimationsDisabled(context)) return child;
 
     return SlideTransition(
       position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
           .animate(
             CurvedAnimation(
               parent: animation,
-              curve: _standardCurve,
-              reverseCurve: _exitCurve,
+              curve: wenyouStandardMotionCurve,
+              reverseCurve: wenyouExitMotionCurve,
             ),
           ),
       textDirection: Directionality.of(context),
@@ -85,7 +86,7 @@ Route<T> _wenyouFullscreenRoute<T>({
   required WidgetBuilder builder,
   RouteSettings? settings,
 }) {
-  final duration = _animationsDisabled(context)
+  final duration = wenyouAnimationsDisabled(context)
       ? Duration.zero
       : WenyouFoundationMotion.fast;
   return PageRouteBuilder<T>(
@@ -95,12 +96,12 @@ Route<T> _wenyouFullscreenRoute<T>({
     reverseTransitionDuration: duration,
     pageBuilder: (context, animation, secondaryAnimation) => builder(context),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      if (_animationsDisabled(context)) return child;
+      if (wenyouAnimationsDisabled(context)) return child;
       return FadeTransition(
         opacity: CurvedAnimation(
           parent: animation,
-          curve: _standardCurve,
-          reverseCurve: _exitCurve,
+          curve: wenyouStandardMotionCurve,
+          reverseCurve: wenyouExitMotionCurve,
         ),
         child: child,
       );
@@ -108,17 +109,8 @@ Route<T> _wenyouFullscreenRoute<T>({
   );
 }
 
-bool _animationsDisabled(BuildContext context) {
-  return (MediaQuery.maybeOf(context)?.disableAnimations ?? false) ||
-      _platformAnimationsDisabled;
-}
-
 bool get _platformAnimationsDisabled => WidgetsBinding
     .instance
     .platformDispatcher
     .accessibilityFeatures
     .disableAnimations;
-
-// Exact Foundation v6.3.0 motion curves; kept only at the shared route boundary.
-const _standardCurve = Cubic(0.2, 0.8, 0.2, 1);
-const _exitCurve = Cubic(0.4, 0, 1, 1);

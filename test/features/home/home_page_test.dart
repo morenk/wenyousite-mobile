@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
@@ -94,6 +97,46 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(repository.lastQuery?.categorySlug, isNull);
+  });
+
+  testWidgets('首页切换分类时页签保持稳定且只在内容区展示加载骨架', (tester) async {
+    final categoryPage = Completer<CursorPage<HomeThreadCardModel>>();
+    final repository = _FakeHomeRepository(categoryPage: categoryPage);
+    await tester.pumpWidget(_homeApp(repository));
+    await tester.pumpAndSettle();
+
+    final categoryTabs = find.byKey(const Key('home-category-menu'));
+    final tabsTop = tester.getTopLeft(categoryTabs);
+    await tester.drag(
+      find.byKey(const Key('home-category-swipe')),
+      const Offset(-100, 0),
+    );
+    await tester.pump();
+
+    expect(categoryTabs, findsOneWidget);
+    expect(tester.getTopLeft(categoryTabs), tabsTop);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('home-category-swipe')),
+        matching: categoryTabs,
+      ),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('home-sort-menu')), findsOneWidget);
+    expect(find.byKey(const Key('home-status-menu')), findsOneWidget);
+    expect(find.byType(WenyouListSkeleton), findsOneWidget);
+    final transition = tester.widget<SlideTransition>(
+      find.descendant(
+        of: find.byKey(const Key('home-category-swipe')),
+        matching: find.byType(SlideTransition),
+      ),
+    );
+    expect(transition.position.value.dx, isPositive);
+
+    categoryPage.complete(CursorPage(items: [_thread], hasMore: false));
+    await tester.pumpAndSettle();
+    expect(find.text('星海旅团'), findsOneWidget);
+    expect(tester.getTopLeft(categoryTabs), tabsTop);
   });
 
   testWidgets('首屏失败展示请求 ID 并可重试恢复', (tester) async {
@@ -354,6 +397,7 @@ class _FakeHomeRepository implements HomeRepository {
   _FakeHomeRepository({
     this.failFirstRequest = false,
     this.items,
+    this.categoryPage,
     this.categories = const [
       HomeCategory(
         id: 'category-rpg',
@@ -367,6 +411,7 @@ class _FakeHomeRepository implements HomeRepository {
 
   final bool failFirstRequest;
   final List<HomeThreadCardModel>? items;
+  final Completer<CursorPage<HomeThreadCardModel>>? categoryPage;
   final List<HomeCategory> categories;
   int threadCalls = 0;
   HomeFeedQuery? lastQuery;
@@ -387,6 +432,9 @@ class _FakeHomeRepository implements HomeRepository {
         userMessage: '暂时无法连接温油站，请检查网络。',
         requestId: 'home-request-id',
       );
+    }
+    if (query.categorySlug != null && categoryPage != null) {
+      return categoryPage!.future;
     }
     return CursorPage(items: items ?? [_thread], hasMore: false);
   }

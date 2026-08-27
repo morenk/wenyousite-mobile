@@ -160,11 +160,13 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                       key: const Key('thread-subthread-directory'),
                       shrinkWrap: true,
                       scrollDirection: Axis.vertical,
-                      padding: EdgeInsets.all(tokens.space12),
+                      padding: EdgeInsets.symmetric(vertical: tokens.space4),
                       itemCount: widget.subthreads.length,
                       separatorBuilder: (_, index) => Divider(
                         key: Key('thread-subthread-directory-divider-$index'),
                         height: 1,
+                        indent: tokens.space16,
+                        endIndent: tokens.space16,
                         color: tokens.border,
                       ),
                       itemBuilder: (context, index) {
@@ -177,11 +179,7 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                           selected: isSelected,
                           selectedColor: tokens.brandForeground,
                           selectedTileColor: tokens.accentedBackground,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              tokens.radius12,
-                            ),
-                          ),
+                          shape: const RoundedRectangleBorder(),
                           leading: SizedBox.square(
                             dimension: 24,
                             child: isSelected
@@ -191,7 +189,13 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                                   )
                                 : null,
                           ),
-                          title: Text(subthread.title),
+                          title: Text(
+                            subthread.title,
+                            style: isSelected
+                                ? Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(fontWeight: FontWeight.w600)
+                                : null,
+                          ),
                           trailing: Text(
                             '${subthread.postCount} 楼',
                             style: Theme.of(context).textTheme.bodySmall
