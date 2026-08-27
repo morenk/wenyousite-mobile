@@ -185,7 +185,6 @@ class _WenyouMeasuredHeight extends SingleChildRenderObjectWidget {
     required this.clipOverflow,
     required this.onOverflowChanged,
     required super.child,
-    super.key,
   });
 
   final double triggerHeight;
