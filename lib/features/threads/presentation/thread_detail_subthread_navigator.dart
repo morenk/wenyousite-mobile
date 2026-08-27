@@ -57,29 +57,48 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                 onPressed: () => _showSubthreads(context),
                 style: OutlinedButton.styleFrom(
                   minimumSize: Size(0, tokens.minimumTouchTarget),
-                  padding: EdgeInsets.symmetric(horizontal: tokens.space8),
+                  padding: EdgeInsets.zero,
+                  side: BorderSide.none,
                   textStyle: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        selected.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ConstrainedBox(
+                    key: const Key('thread-subthread-menu-capsule'),
+                    constraints: const BoxConstraints(minHeight: 36),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: tokens.border),
+                        borderRadius: BorderRadius.circular(tokens.radius16),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tokens.space8,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                selected.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(width: tokens.space4),
+                            WenyouIcon(
+                              _menuOpen
+                                  ? WenyouIconIds.navigationCollapse
+                                  : WenyouIconIds.navigationExpand,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(width: tokens.space4),
-                    WenyouIcon(
-                      _menuOpen
-                          ? WenyouIconIds.navigationCollapse
-                          : WenyouIconIds.navigationExpand,
-                      size: 16,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

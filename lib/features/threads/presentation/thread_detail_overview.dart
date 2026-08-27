@@ -111,15 +111,15 @@ class ThreadDetailSubthreadHeaderSliver extends StatelessWidget {
 
     final navigatorExtent = _navigatorExtent(context, tokens);
     final pinned = subthreads.length > 1;
-    final maxExtent = navigatorExtent + tokens.space8 * 2;
+    final maxExtent = navigatorExtent + tokens.space4 * 2;
     final minExtent = pinned ? navigatorExtent : maxExtent;
     return SliverPersistentHeader(
       pinned: pinned,
       delegate: _ThreadSubthreadHeaderDelegate(
         minExtent: minExtent,
         maxExtent: maxExtent,
-        maxPadding: tokens.space8,
-        minPadding: pinned ? 0 : tokens.space8,
+        maxPadding: tokens.space4,
+        minPadding: pinned ? 0 : tokens.space4,
         background: tokens.background,
         headerKey: scrollCoordinator.headerKey,
         child: Semantics(

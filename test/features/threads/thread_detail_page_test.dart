@@ -1055,12 +1055,18 @@ void main() {
     final navigatorFrame = find.byKey(
       const Key('thread-subthread-navigator-frame'),
     );
-    expect(tester.getSize(stickyHeader).height, closeTo(64, 0.1));
+    expect(tester.getSize(stickyHeader).height, closeTo(56, 0.1));
     expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
     expect(tester.getCenter(navigatorFrame).dx, closeTo(180, 0.1));
     expect(
       tester.getSize(find.byKey(const Key('thread-subthread-menu'))).width,
       closeTo(200, 0.1),
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const Key('thread-subthread-menu-capsule')))
+          .height,
+      closeTo(36, 0.1),
     );
     await tester.drag(scrollView, const Offset(0, -650));
     await tester.pumpAndSettle();
