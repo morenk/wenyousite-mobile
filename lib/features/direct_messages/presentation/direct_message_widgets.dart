@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
@@ -829,7 +830,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
   Future<void> _copyMessage() async {
     final content = widget.message.content;
     if (content == null) return;
-    await Clipboard.setData(ClipboardData(text: content));
+    await Clipboard.setData(
+      ClipboardData(text: MarkdownClipboardText.project(content)),
+    );
     if (!mounted) return;
     showDirectMessageNotice(context, '已复制');
   }

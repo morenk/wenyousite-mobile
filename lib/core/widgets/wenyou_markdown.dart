@@ -535,13 +535,25 @@ class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
     final index = int.tryParse(element.attributes['index'] ?? '');
     if (index == null || index < 0 || index >= references.length) return null;
     final portal = references[index];
-    return WenyouInternalReferenceChip(
-      key: ValueKey('markdown-internal-reference-$index'),
-      surfaceKey: ValueKey('markdown-internal-reference-surface-$index'),
-      label: portal.label,
-      style: parentStyle,
-      onTap: () => onTap(portal.reference),
-      onLongPress: onLongPress,
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: WenyouInternalReferenceChip(
+              key: ValueKey('markdown-internal-reference-$index'),
+              surfaceKey: ValueKey(
+                'markdown-internal-reference-surface-$index',
+              ),
+              label: portal.label,
+              style: parentStyle,
+              onTap: () => onTap(portal.reference),
+              onLongPress: onLongPress,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -688,8 +700,24 @@ class _MarkdownImage extends StatelessWidget {
       return Semantics(
         image: true,
         label: alt?.trim().isNotEmpty == true ? alt!.trim() : '收藏表情',
+        excludeSemantics: true,
         onLongPress: onLongPress,
-        child: GestureDetector(onLongPress: onLongPress, child: imageContent),
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              imageContent,
+              // Image render objects do not contribute text to SelectionArea.
+              // Keep the reading label selectable without painting a duplicate.
+              const IgnorePointer(
+                child: ExcludeSemantics(
+                  child: Opacity(opacity: 0, child: Text('[表情]')),
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
     final imageAlt = alt?.trim() ?? '';

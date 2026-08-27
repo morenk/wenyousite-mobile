@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
@@ -175,7 +176,11 @@ class MomentCommentBody extends StatelessWidget {
   ) async {
     switch (action) {
       case PostCardAction.copyText:
-        await copyPostCardValue(context, comment.content!, '内容已复制');
+        await copyPostCardValue(
+          context,
+          MarkdownClipboardText.project(comment.content!),
+          '内容已复制',
+        );
       case PostCardAction.copyLink:
         return;
       case PostCardAction.edit:

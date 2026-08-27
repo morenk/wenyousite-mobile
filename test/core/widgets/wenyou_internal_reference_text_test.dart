@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -38,9 +39,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('参见 '), findsOneWidget);
+    expect(find.textContaining('参见 ', findRichText: true), findsOneWidget);
     expect(find.text('设定 A'), findsOneWidget);
-    expect(find.text('。'), findsOneWidget);
+    expect(find.textContaining('。', findRichText: true), findsOneWidget);
     expect(find.byType(SelectionArea), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('站内传送门：设定 A')), findsOneWidget);
     final portal = find.byKey(const ValueKey('wenyou-internal-reference-0'));
@@ -108,6 +109,94 @@ void main() {
     expect(label.maxLines, isNull);
     expect(label.overflow, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('传送门以字母基线 WidgetSpan 参与同一段落排版', (tester) async {
+    for (final width in <double>[320, 360, 400, 600]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: SizedBox(
+              width: width,
+              child: const WenyouInternalReferenceText(
+                content:
+                    '接近行尾的前文 [入口一](/threads/cmsewdo0h000x7qv6aa77ll1v) '
+                    '继续阅读 [入口二](/threads/cmsewdo0h000x7qv6aa77ll1v) 后文',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final richText = tester.widget<Text>(
+        find.descendant(
+          of: find.byType(WenyouInternalReferenceText),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Text && widget.textSpan != null,
+          ),
+        ),
+      );
+      final spans = (richText.textSpan! as TextSpan).children!;
+      final portals = spans.whereType<WidgetSpan>().toList();
+      expect(portals, hasLength(2), reason: 'width=$width');
+      expect(
+        portals.every(
+          (span) =>
+              span.alignment == PlaceholderAlignment.baseline &&
+              span.baseline == TextBaseline.alphabetic,
+        ),
+        isTrue,
+        reason: 'width=$width',
+      );
+      expect(
+        find.descendant(
+          of: find.byType(WenyouInternalReferenceText),
+          matching: find.byType(Wrap),
+        ),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull, reason: 'width=$width');
+    }
+  });
+
+  testWidgets('系统全选复制按正文顺序写入传送门可见 label', (tester) async {
+    String? copiedText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText =
+            (call.arguments as Map<Object?, Object?>)['text'] as String?;
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouInternalReferenceText(
+            content: '前文 [入口](/threads/cmsewdo0h000x7qv6aa77ll1v) 后文',
+            selectable: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final selectionContext = tester.element(find.text('入口'));
+    Actions.invoke(
+      selectionContext,
+      const SelectAllTextIntent(SelectionChangedCause.keyboard),
+    );
+    Actions.invoke(selectionContext, CopySelectionTextIntent.copy);
+    await tester.pump();
+
+    expect(copiedText, '前文 入口 后文');
   });
 
   testWidgets('评论文字同行右侧空白长按转交评论操作', (tester) async {

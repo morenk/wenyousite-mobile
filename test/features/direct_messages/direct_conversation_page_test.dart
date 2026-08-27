@@ -97,7 +97,7 @@ void main() {
     expect(find.byTooltip('更多会话操作'), findsOneWidget);
   });
 
-  testWidgets('完整私信渲染邀请传送门并保留导航、长按与原文复制', (tester) async {
+  testWidgets('完整私信渲染邀请传送门并保留导航、长按与 label 复制', (tester) async {
     const raw =
         '入口 [https://wenyou.site/join/AbCdEfGh_123-XYZ]'
         '(/join/AbCdEfGh_123-XYZ)';
@@ -167,7 +167,7 @@ void main() {
       find.byKey(const Key('direct-message-copy-portal-invite')),
     );
     await tester.pumpAndSettle();
-    expect(copiedText, raw);
+    expect(copiedText, '入口 传送门');
 
     await tester.tap(invitePortal);
     await tester.pumpAndSettle();

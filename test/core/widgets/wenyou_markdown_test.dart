@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
@@ -469,6 +470,21 @@ $diceNode
     expect(tester.getSize(portal).width, lessThan(100));
     expect(tester.getSize(portal).height, greaterThanOrEqualTo(48));
     expect(tester.getTopLeft(portal).dx, lessThan(120));
+    final inlineParagraph = tester
+        .renderObjectList<RenderParagraph>(find.byType(RichText))
+        .singleWhere(
+          (paragraph) =>
+              paragraph.text.toPlainText().contains('前文') &&
+              _widgetSpans(
+                paragraph.text,
+              ).any((span) => span.child is WenyouInternalReferenceChip),
+        );
+    final portalSpan = _widgetSpans(
+      inlineParagraph.text,
+    ).singleWhere((span) => span.child is WenyouInternalReferenceChip);
+    expect(portalSpan.alignment, PlaceholderAlignment.baseline);
+    expect(portalSpan.baseline, TextBaseline.alphabetic);
+    expect(inlineParagraph.text.toPlainText(), contains('后文仍在同一行'));
     expect(tester.takeException(), isNull);
 
     await expectLater(
@@ -723,4 +739,15 @@ $diceNode
     expect(find.bySemanticsLabel('挥手'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+Iterable<WidgetSpan> _widgetSpans(InlineSpan root) sync* {
+  if (root case WidgetSpan span) {
+    yield span;
+  }
+  if (root case TextSpan(:final children?)) {
+    for (final child in children) {
+      yield* _widgetSpans(child);
+    }
+  }
 }

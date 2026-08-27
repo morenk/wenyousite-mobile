@@ -44,6 +44,18 @@ class InternalReferencePortal extends InternalReferenceTextSegment {
   final InternalReference reference;
 }
 
+class InternalReferencePortalMatch {
+  const InternalReferencePortalMatch({
+    required this.start,
+    required this.end,
+    required this.portal,
+  });
+
+  final int start;
+  final int end;
+  final InternalReferencePortal portal;
+}
+
 final _idPattern = RegExp(r'^[a-z0-9]{20,32}$', unicode: true);
 final _inviteTokenPattern = RegExp(r'^[A-Za-z0-9_-]{16}$', unicode: true);
 final _threadPathPattern = RegExp(r'^/threads/([^/]+)$', unicode: true);
@@ -219,43 +231,13 @@ List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {
         InternalReferencePlainText(value.substring(offset, match.start)),
       );
     }
-    final candidate = match.group(0)!;
-    final rawLabel = match.group(1)?.trim();
-    final label = rawLabel == null
-        ? null
-        : _unescapeInternalReferenceLabel(rawLabel);
-    final markdownLocation = match.group(2)?.trim();
-    final trailing = markdownLocation == null
-        ? _trailingPunctuationPattern.firstMatch(candidate)?.group(0) ?? ''
-        : '';
-    final location =
-        markdownLocation ??
-        (trailing.isEmpty
-            ? candidate
-            : candidate.substring(0, candidate.length - trailing.length));
-    final hasBareBoundaries =
-        markdownLocation != null ||
-        _hasBareBoundaries(value, match.start, match.end);
-    final reference = hasBareBoundaries
-        ? parseInternalReference(location)
-        : null;
-    if (reference == null) {
-      segments.add(InternalReferencePlainText(candidate));
+    final resolved = _resolveInternalReferenceCandidate(value, match);
+    if (resolved == null) {
+      segments.add(InternalReferencePlainText(match.group(0)!));
     } else {
-      final candidateLabel = label?.isNotEmpty == true
-          ? label!
-          : internalReferenceDefaultLabel;
-      segments.add(
-        InternalReferencePortal(
-          label: resolveInternalReferenceLabel(
-            label: candidateLabel,
-            reference: reference,
-          ),
-          reference: reference,
-        ),
-      );
-      if (trailing.isNotEmpty) {
-        segments.add(InternalReferencePlainText(trailing));
+      segments.add(resolved.portal);
+      if (resolved.trailing.isNotEmpty) {
+        segments.add(InternalReferencePlainText(resolved.trailing));
       }
     }
     offset = match.end;
@@ -266,6 +248,30 @@ List<InternalReferenceTextSegment> tokenizeInternalReferenceText(String value) {
   return segments.isEmpty ? [InternalReferencePlainText(value)] : segments;
 }
 
+/// Resolves one portal beginning exactly at [offset].
+///
+/// Markdown renderers and clipboard projections use this to share the same
+/// production-host, boundary, label and trailing-punctuation rules without
+/// reimplementing the internal-reference contract.
+InternalReferencePortalMatch? matchInternalReferencePortalAt(
+  String value,
+  int offset,
+) {
+  if (offset < 0 || offset >= value.length) return null;
+  if (offset > 0 && (value[offset - 1] == '!' || value[offset - 1] == r'\')) {
+    return null;
+  }
+  final match = _candidatePattern.matchAsPrefix(value, offset);
+  if (match == null) return null;
+  final resolved = _resolveInternalReferenceCandidate(value, match);
+  if (resolved == null) return null;
+  return InternalReferencePortalMatch(
+    start: match.start,
+    end: match.end - resolved.trailing.length,
+    portal: resolved.portal,
+  );
+}
+
 String formatInternalReferencePreview(String value) {
   return tokenizeInternalReferenceText(value).map((segment) {
     return switch (segment) {
@@ -273,6 +279,42 @@ String formatInternalReferencePreview(String value) {
       InternalReferencePortal(:final label) => label,
     };
   }).join();
+}
+
+({InternalReferencePortal portal, String trailing})?
+_resolveInternalReferenceCandidate(String source, Match match) {
+  final candidate = match.group(0)!;
+  final rawLabel = match.group(1)?.trim();
+  final label = rawLabel == null
+      ? null
+      : _unescapeInternalReferenceLabel(rawLabel);
+  final markdownLocation = match.group(2)?.trim();
+  final trailing = markdownLocation == null
+      ? _trailingPunctuationPattern.firstMatch(candidate)?.group(0) ?? ''
+      : '';
+  final location =
+      markdownLocation ??
+      (trailing.isEmpty
+          ? candidate
+          : candidate.substring(0, candidate.length - trailing.length));
+  final hasBareBoundaries =
+      markdownLocation != null ||
+      _hasBareBoundaries(source, match.start, match.end);
+  final reference = hasBareBoundaries ? parseInternalReference(location) : null;
+  if (reference == null) return null;
+  final candidateLabel = label?.isNotEmpty == true
+      ? label!
+      : internalReferenceDefaultLabel;
+  return (
+    portal: InternalReferencePortal(
+      label: resolveInternalReferenceLabel(
+        label: candidateLabel,
+        reference: reference,
+      ),
+      reference: reference,
+    ),
+    trailing: trailing,
+  );
 }
 
 bool _isProductionHost(String host) {

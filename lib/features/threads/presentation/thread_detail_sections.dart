@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
@@ -203,7 +204,16 @@ class ThreadSubthreadBody extends StatelessWidget {
       onSelected: (action) {
         switch (action) {
           case PostCardAction.copyText:
-            unawaited(copyPostCardValue(context, body.markdown, '正文已复制。'));
+            unawaited(
+              copyPostCardValue(
+                context,
+                MarkdownClipboardText.project(
+                  body.markdown,
+                  diceLabels: threadDiceLabels(body.diceRolls),
+                ),
+                '正文已复制。',
+              ),
+            );
           case PostCardAction.copyLink:
             unawaited(
               copyPostCardValue(context, _publicBodyLink(), '正文链接已复制。'),
@@ -486,7 +496,14 @@ class ThreadFloorCard extends ConsumerWidget {
   ) async {
     switch (action) {
       case PostCardAction.copyText:
-        await copyPostCardValue(context, floor.body.markdown, '内容已复制');
+        await copyPostCardValue(
+          context,
+          MarkdownClipboardText.project(
+            floor.body.markdown,
+            diceLabels: threadDiceLabels(floor.body.diceRolls),
+          ),
+          '内容已复制',
+        );
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
       case PostCardAction.edit:

@@ -37,40 +37,36 @@ class _WenyouInternalReferenceTextState
     final resolvedStyle = DefaultTextStyle.of(
       context,
     ).style.merge(widget.style);
-    final children = <Widget>[];
-    final plainText = StringBuffer();
+    final spans = <InlineSpan>[];
     var portalIndex = 0;
     for (final segment in tokenizeInternalReferenceText(widget.content)) {
       switch (segment) {
         case InternalReferencePlainText(:final value):
-          plainText.write(value);
+          spans.add(TextSpan(text: value));
         case InternalReferencePortal(:final label, :final reference):
-          if (plainText.isNotEmpty) {
-            children.add(Text(plainText.toString(), style: resolvedStyle));
-            plainText.clear();
-          }
           final index = portalIndex++;
-          children.add(
-            WenyouInternalReferenceChip(
-              key: ValueKey('wenyou-internal-reference-$index'),
-              surfaceKey: ValueKey('wenyou-internal-reference-surface-$index'),
-              label: label,
-              style: resolvedStyle,
-              onTap: () => openInternalWenyouLink(context, reference.location),
-              onLongPress: widget.onLongPressNonText == null
-                  ? null
-                  : _handleNonTextLongPress,
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic,
+              child: WenyouInternalReferenceChip(
+                key: ValueKey('wenyou-internal-reference-$index'),
+                surfaceKey: ValueKey(
+                  'wenyou-internal-reference-surface-$index',
+                ),
+                label: label,
+                style: resolvedStyle,
+                onTap: () =>
+                    openInternalWenyouLink(context, reference.location),
+                onLongPress: widget.onLongPressNonText == null
+                    ? null
+                    : _handleNonTextLongPress,
+              ),
             ),
           );
       }
     }
-    if (plainText.isNotEmpty) {
-      children.add(Text(plainText.toString(), style: resolvedStyle));
-    }
-    final layout = Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: children,
-    );
+    final layout = Text.rich(TextSpan(style: resolvedStyle, children: spans));
     final tappableLayout = widget.onTapText == null
         ? layout
         : GestureDetector(
