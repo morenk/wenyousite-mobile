@@ -87,9 +87,20 @@ class _MessageCenterPageState extends ConsumerState<MessageCenterPage> {
               onSelected: _replaceSection,
             ),
           Expanded(
-            child: selected == MessageCenterSections.directMessages
-                ? const DirectMessagesPage(embedded: true)
-                : const NotificationSection(),
+            child: WenyouSwipeTabRegion<String>(
+              key: const Key('message-section-swipe'),
+              values: messagesEnabled
+                  ? [
+                      MessageCenterSections.notifications,
+                      MessageCenterSections.directMessages,
+                    ]
+                  : [MessageCenterSections.notifications],
+              selected: selected,
+              onSelected: _replaceSection,
+              child: selected == MessageCenterSections.directMessages
+                  ? const DirectMessagesPage(embedded: true)
+                  : const NotificationSection(),
+            ),
           ),
         ],
       ),

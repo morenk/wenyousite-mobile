@@ -32,6 +32,7 @@ import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.d
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_subthread_navigator.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
 import '../../support/foundation_test_fonts.dart';
 
@@ -850,7 +851,19 @@ void main() {
       final navigatorFrame = find.byKey(
         const Key('thread-subthread-navigator-frame'),
       );
-      expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+      final navigatorContext = tester.element(navigatorFrame);
+      expect(
+        tester.getSize(navigatorFrame).width,
+        closeTo(
+          size.width -
+              wenyouHorizontalPagePadding(
+                    navigatorContext,
+                    availableWidth: size.width,
+                  ) *
+                  2,
+          0.1,
+        ),
+      );
       expect(tester.getCenter(navigatorFrame).dx, closeTo(size.width / 2, 0.1));
       await expectLater(
         find.byKey(visualKey),
@@ -1049,11 +1062,11 @@ void main() {
       const Key('thread-subthread-navigator-frame'),
     );
     expect(tester.getSize(stickyHeader).height, closeTo(56, 0.1));
-    expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+    expect(tester.getSize(navigatorFrame).width, closeTo(336, 0.1));
     expect(tester.getCenter(navigatorFrame).dx, closeTo(180, 0.1));
     expect(
       tester.getSize(find.byKey(const Key('thread-subthread-menu'))).width,
-      closeTo(200, 0.1),
+      closeTo(240, 0.1),
     );
     expect(
       tester
@@ -1085,6 +1098,51 @@ void main() {
       greaterThanOrEqualTo(tester.getBottomLeft(stickyHeader).dy),
     );
   });
+
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
+    testWidgets('$width dp 子贴导航填满内容行且浮标保持可操作', (tester) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: WenyouContentFrame(
+              child: ThreadSubthreadNavigator(
+                subthreads: _detail.subthreads,
+                selectedSubthreadId: _detail.subthreads.first.id,
+                onSelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final frame = find.byKey(const Key('thread-subthread-navigator-frame'));
+      final previous = find.byKey(const Key('thread-subthread-previous'));
+      final next = find.byKey(const Key('thread-subthread-next'));
+      final menu = find.byKey(const Key('thread-subthread-menu'));
+      final context = tester.element(frame);
+      final expectedWidth =
+          width -
+          wenyouHorizontalPagePadding(context, availableWidth: width) * 2;
+      final previousWidth = tester.getSize(previous).width;
+      final nextWidth = tester.getSize(next).width;
+
+      expect(tester.takeException(), isNull);
+      expect(tester.getSize(frame).width, closeTo(expectedWidth, 0.1));
+      expect(tester.getCenter(frame).dx, closeTo(width / 2, 0.1));
+      expect(previousWidth, greaterThanOrEqualTo(48));
+      expect(nextWidth, greaterThanOrEqualTo(48));
+      expect(
+        tester.getSize(menu).width,
+        closeTo(expectedWidth - previousWidth - nextWidth, 0.1),
+      );
+    });
+  }
 
   testWidgets('360dp 两倍字号下冻结栏保持双行标题与 48dp 操作区', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -1134,7 +1192,7 @@ void main() {
     final navigatorFrame = find.byKey(
       const Key('thread-subthread-navigator-frame'),
     );
-    expect(tester.getSize(navigatorFrame).width, closeTo(296, 0.1));
+    expect(tester.getSize(navigatorFrame).width, closeTo(336, 0.1));
     expect(tester.getCenter(navigatorFrame).dx, closeTo(180, 0.1));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
     await tester.pumpAndSettle();

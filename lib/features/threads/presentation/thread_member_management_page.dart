@@ -106,11 +106,9 @@ class _MembersReadyState extends ConsumerWidget {
           if (state.failure != null || state.actionOutcome != null)
             SizedBox(height: tokens.space12),
           if (bootstrap.members.isEmpty)
-            const WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusGroupUnavailable,
-                title: '还没有参与人',
-              ),
+            const WenyouEmptyState(
+              icon: WenyouIconIds.statusGroupUnavailable,
+              title: '还没有参与人',
             )
           else
             for (var index = 0; index < bootstrap.members.length; index++) ...[
@@ -349,20 +347,18 @@ class _MembersFatalState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WenyouPageBody(
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.statusGroupUnavailable,
-          title: '成员列表加载失败',
-          message: failure?.userMessage ?? '请检查网络或管理权限后重试。',
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
-          action: OutlinedButton.icon(
-            key: const Key('thread-members-load-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
-          ),
+      child: WenyouEmptyState(
+        icon: WenyouIconIds.statusGroupUnavailable,
+        title: '成员列表加载失败',
+        message: failure?.userMessage ?? '请检查网络或管理权限后重试。',
+        detail: failure?.requestId == null
+            ? null
+            : '问题编号：${failure!.requestId}',
+        action: OutlinedButton.icon(
+          key: const Key('thread-members-load-retry'),
+          onPressed: onRetry,
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+          label: const Text('重新加载'),
         ),
       ),
     );

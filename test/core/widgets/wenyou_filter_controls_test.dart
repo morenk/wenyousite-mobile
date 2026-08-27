@@ -55,6 +55,55 @@ void main() {
     expect(selected, 1);
   });
 
+  testWidgets('内容滑动区按相邻顺序切栏并忽略短滑与边界', (tester) async {
+    var selected = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => WenyouSwipeTabRegion<int>(
+              key: const Key('test-swipe-tabs'),
+              values: const [0, 1, 2],
+              selected: selected,
+              onSelected: (value) => setState(() => selected = value),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(
+      find.byKey(const Key('test-swipe-tabs')),
+      const Offset(-80, 0),
+    );
+    await tester.pump();
+    expect(selected, 2);
+
+    await tester.drag(
+      find.byKey(const Key('test-swipe-tabs')),
+      const Offset(-80, 0),
+    );
+    await tester.pump();
+    expect(selected, 2);
+
+    await tester.drag(
+      find.byKey(const Key('test-swipe-tabs')),
+      const Offset(30, 0),
+    );
+    await tester.pump();
+    expect(selected, 2);
+
+    await tester.drag(
+      find.byKey(const Key('test-swipe-tabs')),
+      const Offset(80, 0),
+    );
+    await tester.pump();
+    expect(selected, 1);
+  });
+
   testWidgets('内容框架统一响应式边距与最大宽度', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(900, 240);

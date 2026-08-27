@@ -61,18 +61,25 @@ class _MomentFeedPageState extends ConsumerState<MomentFeedPage> {
             onSelected: (mode) => setState(() => _mode = mode),
           ),
           Expanded(
-            child: _mode == MomentFeedMode.following && !session.isAuthenticated
-                ? _FollowingLoginState(
-                    onLogin: () => _openLogin(context, '/moments'),
-                  )
-                : MomentFeedList(
-                    key: ValueKey(_mode),
-                    target: MomentFeedTarget.main(_mode),
-                    emptyTitle: _mode == MomentFeedMode.discover
-                        ? '还没有公开动态'
-                        : '关注动态暂时为空',
-                    emptyMessage: '',
-                  ),
+            child: WenyouSwipeTabRegion<MomentFeedMode>(
+              key: const Key('moment-feed-swipe'),
+              values: MomentFeedMode.values,
+              selected: _mode,
+              onSelected: (mode) => setState(() => _mode = mode),
+              child:
+                  _mode == MomentFeedMode.following && !session.isAuthenticated
+                  ? _FollowingLoginState(
+                      onLogin: () => _openLogin(context, '/moments'),
+                    )
+                  : MomentFeedList(
+                      key: ValueKey(_mode),
+                      target: MomentFeedTarget.main(_mode),
+                      emptyTitle: _mode == MomentFeedMode.discover
+                          ? '还没有公开动态'
+                          : '关注动态暂时为空',
+                      emptyMessage: '',
+                    ),
+            ),
           ),
         ],
       ),

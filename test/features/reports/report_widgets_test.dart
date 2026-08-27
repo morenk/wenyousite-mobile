@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/features/reports/data/report_repository.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -23,11 +24,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('管理员可看到你的举报账号'), findsOneWidget);
 
-    await tester.tap(find.text('垃圾广告'));
+    final reasonFilter = find.byKey(const Key('report-reason'));
+    expect(reasonFilter, findsOneWidget);
+    expect(
+      tester.widget<WenyouDropdownFilter<ReportReason>>(reasonFilter).selected,
+      ReportReason.spam,
+    );
+    expect(find.byType(WenyouDropdownFormField<ReportReason>), findsNothing);
+    await tester.tap(reasonFilter);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('其他原因', skipOffstage: false).last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('其他原因').last);
+    await tester.tap(find.byKey(const Key('report-reason-option-other')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('report-submit')));
     await tester.pumpAndSettle();

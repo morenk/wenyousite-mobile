@@ -142,7 +142,7 @@ void main() {
     expect(find.text('回复页=thread-1/floor-2/reply-9'), findsOneWidget);
   });
 
-  testWidgets('私聊页签写入 URL，旧 messages 路由兼容跳转', (tester) async {
+  testWidgets('私聊页签写入 URL，消息内容区可左右滑动切栏', (tester) async {
     final repository = _FakeRepository();
     final router = _router(initialLocation: '/messages');
     final container = await _authenticatedContainer(
@@ -161,11 +161,24 @@ void main() {
     expect(find.text('私聊 4'), findsOneWidget);
     expect(find.text('暂无私聊会话'), findsOneWidget);
 
-    await tester.tap(find.text('通知'));
+    await tester.drag(
+      find.byKey(const Key('message-section-swipe')),
+      const Offset(100, 0),
+    );
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.toString(),
       '/notifications',
+    );
+
+    await tester.drag(
+      find.byKey(const Key('message-section-swipe')),
+      const Offset(-100, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.toString(),
+      '/notifications?section=directMessages',
     );
   });
 

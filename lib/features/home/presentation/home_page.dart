@@ -69,14 +69,21 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(homeFeedControllerProvider.notifier).refresh(),
-        child: CustomScrollView(
-          key: const PageStorageKey('home-feed-scroll'),
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: _buildSlivers(context, state),
+      body: WenyouSwipeTabRegion<String?>(
+        key: const Key('home-category-swipe'),
+        values: [null, for (final category in state.categories) category.slug],
+        selected: state.query.categorySlug,
+        onSelected: (slug) =>
+            ref.read(homeFeedControllerProvider.notifier).selectCategory(slug),
+        child: RefreshIndicator(
+          onRefresh: () =>
+              ref.read(homeFeedControllerProvider.notifier).refresh(),
+          child: CustomScrollView(
+            key: const PageStorageKey('home-feed-scroll'),
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: _buildSlivers(context, state),
+          ),
         ),
       ),
     );

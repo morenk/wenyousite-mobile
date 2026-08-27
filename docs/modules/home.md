@@ -18,6 +18,8 @@
 
 首次并行加载服务端分类和推荐流；分类作为首页排头内容切换，使用与动态、通知一致的共享线性页签、底部分隔线和短选中线，二至四项在文字容纳时等宽铺满，更多分类或放大字号时只横向滚动页签条。排序和状态在下一行使用两个紧凑锚点下拉框，三类控件均保留 48dp 触控目标，不为状态筛选打开底部抽屉。分类不再消费服务端颜色字段。首页发现中的每个主题都是独立内容单元，使用占满内容列的细边框圆角卡片，卡片之间保留 12dp 间距且不叠加永久阴影；主题标题首先建立内容层级，随后由 40dp 头像、作者/等级/时间和分类/状态/置顶两行元信息补充语境，再展示整宽 16:9 封面和最多两行摘要。有安全首图时只消费服务端唯一首图并以 `cover` 裁切，无图不预留图片区。固定 48dp 页脚左侧使用 Foundation 语义图标展示玩家、回复与加油，右侧优先展示最多三个标签；只有三个标签按真实文字宽度放不下时才减少可见项，超过三项或因宽度隐藏的标签统一由不可点击的 `+N` 汇总。阅读态标签只显示中性 `#名称` 文字，不绘制常驻背景、边框或圆角气泡，但外围点击区域仍保留 48dp。下拉刷新重置 cursor，接近列表尾部或点击“加载更多”时按原筛选继续；改变分类、状态或排序先清空数据与 cursor，再请求第一页；`CLOSED` 状态在筛选和卡片中统一显示“已停招”。点击主题条目后进入对应公开主题详情，点击可见标签则由 tags 模块按稳定 ID 精确聚合主题。
 
+首页分类同时支持点按和在主题流内容区左右滑动切换相邻项；短滑和首尾越界不改变选择，页签条自身的横向拖动仍只用于浏览溢出项目，纵向滚动与下拉刷新继续由列表处理。
+
 ## 5. API operationId 与生成类型
 
 - `threadCategoriesList`、`threadsFindAll`；公开标签聚合由 tags 模块使用同一列表 operation 的 tagId 参数，并通过 `tagsGetById` 固定标签事实。
@@ -52,6 +54,7 @@
 - [x] 游客通过公网 API 进入推荐主题流并看到动态分类、作者、摘要、封面、标签与计数。
 - [x] 分类、状态和排序改变后正确重置分页；卡片标签进入稳定标签主题页。
 - [x] 分类复用全局共享线性页签并按数量和字号自动选择等宽或横滑，排序与状态使用锚点下拉框；选中反馈和 48dp 触控目标一致，320/360/400/600dp 不产生布局溢出。
+- [x] 主题流内容区左右滑动只切换相邻分类，短滑与首尾越界保持当前分类，纵向滚动和下拉刷新不受影响。
 - [x] 主题卡分类只显示用户 label，已知、未知和缺失分类都有回归测试，不显示 `DEDUCTION` 或其他 slug。
 - [x] 320/360/400/600dp 固定独立卡片不会溢出；标题先于作者与上下文元信息，作者头像、可收缩作者名、等级与活跃时间在窄屏保持同一元信息行，头像缺失/非法/加载失败均安全降级；360dp 视觉基线覆盖无图卡片与整宽 16:9 单封面卡片，超契约多图响应也只渲染首图，无图不出现图片占位；页脚高度固定 48dp，标签可见高度为 32dp 且命中区为 48dp，内宽 `≤300 / 301～400 / >400dp` 分别最多显示一、二、三个标签，隐藏标签只显示不可点击 `+N`。
 - [x] 加载、空、错、重试、到底、去重和无效 cursor 状态完整。
@@ -65,8 +68,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `897a152c34ca6707e333790639b68a739f2ec19f`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `897a152c34ca6707e333790639b68a739f2ec19f`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。

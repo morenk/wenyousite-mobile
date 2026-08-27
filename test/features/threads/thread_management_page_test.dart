@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
@@ -210,6 +212,36 @@ void main() {
       ThreadManagementVisibility.private,
     );
     expect(find.text('只有主题成员可以查看'), findsOneWidget);
+  });
+
+  testWidgets('主题分区复用列表筛选器且设置区不再套卡片', (tester) async {
+    final repository = _FakeRepository(initial: _bootstrap());
+    await _pumpPage(tester, repository);
+
+    final category = find.byKey(const Key('thread-management-category'));
+    expect(category, findsOneWidget);
+    expect(
+      tester.widget<WenyouDropdownFilter<String?>>(category).selected,
+      'RPG',
+    );
+    expect(find.byType(WenyouDropdownFormField<String>), findsNothing);
+    expect(find.byType(WenyouPanel), findsNothing);
+
+    await tester.ensureVisible(category);
+    await tester.tap(category);
+    await tester.pumpAndSettle();
+    final board = find.byKey(
+      const Key('thread-management-category-option-BOARD'),
+    );
+    expect(board, findsOneWidget);
+    await tester.tap(board);
+    await tester.pumpAndSettle();
+
+    expect(repository.lastDraft?.categorySlug, 'BOARD');
+    expect(
+      tester.widget<WenyouDropdownFilter<String?>>(category).selected,
+      'BOARD',
+    );
   });
 
   testWidgets('主正文自动保存保持编辑会话并把工具栏停靠在键盘上方', (tester) async {

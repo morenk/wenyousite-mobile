@@ -6,7 +6,7 @@ go_router 是唯一导航入口。`AppRouteLocations` 负责路径段与 `return
 
 Android 页面转场也只有一个实现边界：真实入栈与返回统一使用 Foundation standard 180ms 的水平位移，不叠加缩放、圆角、阴影或淡化。主分支壳切换和无来源栈的安全兜底保持瞬时；正文与动态全屏原图使用 Foundation fast 120ms 单一淡化，Bottom Sheet、Dialog 及帖子编辑器内部 Navigator 保持各自交互语义。系统开启“减少动态效果”时，上述路由时长全部降为零。页面不得自行构造 `MaterialPageRoute`、`PageRouteBuilder`、`CustomTransitionPage` 或 `NoTransitionPage`。共享标准转场纳入[移动端性能基线](performance.md)的 60 Hz Profile 三轮门禁；Debug 目测不作为删除转场的依据。
 
-主导航使用保留状态的四分支壳：首页 `/home`、动态 `/moments`、消息 `/notifications`、我的 `/me`；底栏中央发布是动作而非分支。全站搜索 `/search` 由首页和动态顶栏进入。消息分支在 capability 开启时以“通知 / 私聊”同级页签组合两类状态，通知分类与私聊“会话 / 请求 / 归档”只改变页面筛选，不创建额外路由事实源。
+主导航使用保留状态的四分支壳：首页 `/home`、动态 `/moments`、消息 `/notifications`、我的 `/me`；底栏中央发布是动作而非分支。左右滑动只作用于首页分类、动态“发现 / 关注”和消息“通知 / 私聊”等页面内部相邻栏目，不切换底部四个主分支。全站搜索 `/search` 由首页和动态顶栏进入。消息分支在 capability 开启时以“通知 / 私聊”同级页签组合两类状态，点按或内容区左右滑动都写入同一规范 URL；通知分类与私聊“会话 / 请求 / 归档”只改变页面筛选，不创建额外路由事实源。
 
 `/me` 对游客提供登录入口，登录后展示本人摘要与“概览 / 动态 / 创建 / 参与”四个同级内容页签；`/me/edit` 编辑资料，`/me/settings` 独立汇总账号设置。`/me/bookmarks` 是统一收藏入口，直接展示当前类型默认夹，以“主题 / 动态”页签和收藏夹筛选器原地切换；旧 `/me/bookmarks/threads`、`/me/bookmarks/moments` 与 `/moments/bookmarks` 重定向到统一页，指定夹路径继续使用 `/me/bookmarks/threads/folders/:folderId` 或 `/me/bookmarks/moments/folders/:folderId`，旧 `/me/bookmarks/folders/:folderId` 兼容主题指定夹。关系入口使用 `/me/following`、`/me/followers`、`/me/blocks`。
 

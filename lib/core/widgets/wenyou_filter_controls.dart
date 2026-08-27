@@ -78,8 +78,9 @@ class WenyouDropdownFormField<T> extends StatelessWidget {
 
 /// Canonical selection for sibling content and page-leading feed categories.
 ///
-/// This is intentionally tap-driven. Pages keep ownership of the selected
-/// value and swap their content without installing a swipeable [TabBarView].
+/// Pages keep ownership of the selected value and swap their content without
+/// installing a [TabBarView]. A page can pair this bar with
+/// [WenyouSwipeTabRegion] when its content should also support swipe switching.
 class WenyouContentTabs<T> extends StatelessWidget {
   const WenyouContentTabs({
     required this.options,
@@ -116,6 +117,64 @@ class WenyouContentTabs<T> extends StatelessWidget {
       color: context.wenyouTokens.panel,
       child: WenyouContentFrame(child: tabs),
     );
+  }
+}
+
+/// Adds adjacent-tab switching to a page's content region.
+///
+/// The horizontal recognizer does not claim vertical drags, so feed scrolling
+/// and pull-to-refresh remain owned by the child. Keep horizontally scrollable
+/// tab bars outside this region when their own drag interaction is required.
+class WenyouSwipeTabRegion<T> extends StatefulWidget {
+  const WenyouSwipeTabRegion({
+    required this.values,
+    required this.selected,
+    required this.onSelected,
+    required this.child,
+    this.minimumDragDistance = 48,
+    super.key,
+  });
+
+  final List<T> values;
+  final T selected;
+  final ValueChanged<T> onSelected;
+  final Widget child;
+  final double minimumDragDistance;
+
+  @override
+  State<WenyouSwipeTabRegion<T>> createState() =>
+      _WenyouSwipeTabRegionState<T>();
+}
+
+class _WenyouSwipeTabRegionState<T> extends State<WenyouSwipeTabRegion<T>> {
+  double _horizontalDistance = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: (_) => _horizontalDistance = 0,
+      onHorizontalDragUpdate: (details) {
+        _horizontalDistance += details.primaryDelta ?? 0;
+      },
+      onHorizontalDragCancel: _resetDrag,
+      onHorizontalDragEnd: (_) {
+        final distance = _horizontalDistance;
+        _resetDrag();
+        if (distance.abs() < widget.minimumDragDistance) return;
+
+        final currentIndex = widget.values.indexOf(widget.selected);
+        if (currentIndex < 0) return;
+        final targetIndex = distance < 0 ? currentIndex + 1 : currentIndex - 1;
+        if (targetIndex < 0 || targetIndex >= widget.values.length) return;
+        widget.onSelected(widget.values[targetIndex]);
+      },
+      child: widget.child,
+    );
+  }
+
+  void _resetDrag() {
+    _horizontalDistance = 0;
   }
 }
 

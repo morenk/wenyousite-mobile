@@ -50,7 +50,7 @@ void main() {
         );
   });
 
-  testWidgets('发现信息流展示文本封面，游客切到关注只发起登录引导', (tester) async {
+  testWidgets('发现信息流展示文本封面，游客左右滑动切换关注栏目', (tester) async {
     final repository = _PageRepository();
     await tester.pumpWidget(_feedApp(repository));
     await tester.pumpAndSettle();
@@ -61,11 +61,25 @@ void main() {
     expect(find.byKey(const Key('moment-open-bookmarks')), findsNothing);
     expect(repository.feedModes, [MomentFeedMode.discover]);
 
-    await tester.tap(find.text('关注'));
+    await tester.drag(
+      find.byKey(const Key('moment-feed-swipe')),
+      const Offset(-100, 0),
+    );
     await tester.pumpAndSettle();
     expect(find.text('登录后查看关注动态'), findsOneWidget);
     expect(find.textContaining('这里会按时间展示'), findsNothing);
     expect(repository.feedModes, [MomentFeedMode.discover]);
+
+    await tester.drag(
+      find.byKey(const Key('moment-feed-swipe')),
+      const Offset(100, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('moment-card-moment-1')), findsOneWidget);
+    expect(repository.feedModes, [
+      MomentFeedMode.discover,
+      MomentFeedMode.discover,
+    ]);
   });
 
   testWidgets('动态信息流通过滚动通知在接近底部时继续分页', (tester) async {

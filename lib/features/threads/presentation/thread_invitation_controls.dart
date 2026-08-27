@@ -22,84 +22,67 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
     final provider = threadInviteLinkControllerProvider(threadId);
     final state = ref.watch(provider);
     final tokens = context.wenyouTokens;
-    return WenyouPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const WenyouSectionHeader(
-            title: '私密邀请',
-            subtitle: '每次生成都会让旧邀请立即失效。只把链接发送给你希望加入这个私密主题的人。',
-          ),
-          if (state.failure != null) ...[
-            SizedBox(height: tokens.space12),
-            WenyouStatusBanner(
-              key: const Key('thread-invite-link-failure'),
-              tone: WenyouStatusTone.error,
-              message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const WenyouSectionHeader(
+          title: '私密邀请',
+          subtitle: '每次生成都会让旧邀请立即失效。只把链接发送给你希望加入这个私密主题的人。',
+        ),
+        if (state.failure != null) ...[
+          SizedBox(height: tokens.space12),
+          WenyouStatusBanner(
+            key: const Key('thread-invite-link-failure'),
+            tone: WenyouStatusTone.error,
+            message: state.failure!.userMessage,
+            detail: state.failure!.requestId == null
+                ? null
+                : '问题编号：${state.failure!.requestId}',
+            action: TextButton(
+              key: const Key('thread-invite-link-dismiss-failure'),
+              onPressed: state.isGenerating
                   ? null
-                  : '问题编号：${state.failure!.requestId}',
-              action: TextButton(
-                key: const Key('thread-invite-link-dismiss-failure'),
-                onPressed: state.isGenerating
-                    ? null
-                    : () => ref.read(provider.notifier).clearFailure(),
-                child: const Text('知道了'),
-              ),
+                  : () => ref.read(provider.notifier).clearFailure(),
+              child: const Text('知道了'),
             ),
-          ],
-          if (state.link != null) ...[
-            SizedBox(height: tokens.space12),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.softPanel,
-                borderRadius: BorderRadius.circular(tokens.radius12),
-                border: Border.all(color: tokens.border),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(tokens.space12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '当前新邀请',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    SizedBox(height: tokens.space8),
-                    SelectableText(
-                      state.link!.url.toString(),
-                      key: const Key('thread-invite-link-value'),
-                    ),
-                    SizedBox(height: tokens.space8),
-                    OutlinedButton.icon(
-                      key: const Key('thread-invite-link-copy'),
-                      onPressed: enabled && !state.isGenerating
-                          ? () => _copyLink(context, state.link!)
-                          : null,
-                      icon: const WenyouIcon(WenyouIconIds.actionCopyAll),
-                      label: const Text('再次复制'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          SizedBox(height: tokens.space16),
-          OutlinedButton.icon(
-            key: const Key('thread-invite-link-generate'),
-            onPressed: enabled && !state.isGenerating
-                ? () => _confirmAndGenerate(context, ref)
-                : null,
-            icon: state.isGenerating
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const WenyouIcon(WenyouIconIds.securityPassword),
-            label: Text(state.isGenerating ? '正在生成新邀请' : '生成新邀请链接'),
           ),
         ],
-      ),
+        if (state.link != null) ...[
+          SizedBox(height: tokens.space16),
+          Text('当前新邀请', style: Theme.of(context).textTheme.labelLarge),
+          SizedBox(height: tokens.space8),
+          SelectableText(
+            state.link!.url.toString(),
+            key: const Key('thread-invite-link-value'),
+          ),
+          SizedBox(height: tokens.space8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              key: const Key('thread-invite-link-copy'),
+              onPressed: enabled && !state.isGenerating
+                  ? () => _copyLink(context, state.link!)
+                  : null,
+              icon: const WenyouIcon(WenyouIconIds.actionCopyAll),
+              label: const Text('再次复制'),
+            ),
+          ),
+        ],
+        SizedBox(height: tokens.space16),
+        OutlinedButton.icon(
+          key: const Key('thread-invite-link-generate'),
+          onPressed: enabled && !state.isGenerating
+              ? () => _confirmAndGenerate(context, ref)
+              : null,
+          icon: state.isGenerating
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const WenyouIcon(WenyouIconIds.securityPassword),
+          label: Text(state.isGenerating ? '正在生成新邀请' : '生成新邀请链接'),
+        ),
+      ],
     );
   }
 

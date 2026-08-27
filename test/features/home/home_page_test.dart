@@ -76,6 +76,26 @@ void main() {
     expect(repository.lastQuery?.status, HomeThreadStatusFilter.recruiting);
   });
 
+  testWidgets('首页内容区左右滑动切换相邻分类', (tester) async {
+    final repository = _FakeHomeRepository();
+    await tester.pumpWidget(_homeApp(repository));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(const Key('home-category-swipe')),
+      const Offset(-100, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.lastQuery?.categorySlug, 'RPG');
+
+    await tester.drag(
+      find.byKey(const Key('home-category-swipe')),
+      const Offset(100, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.lastQuery?.categorySlug, isNull);
+  });
+
   testWidgets('首屏失败展示请求 ID 并可重试恢复', (tester) async {
     final repository = _FakeHomeRepository(failFirstRequest: true);
     await tester.pumpWidget(_homeApp(repository));

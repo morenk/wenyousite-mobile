@@ -111,42 +111,36 @@ class _SubthreadDirectory extends ConsumerWidget {
               title: '还没有其他子贴',
             )
           else
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.panel,
-                border: Border.all(color: tokens.border),
-                borderRadius: BorderRadius.circular(tokens.radius12),
-              ),
-              child: ReorderableListView.builder(
-                key: const Key('subthread-management-list'),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                itemCount: items.length,
-                onReorderItem: state.isBusy
-                    ? (_, _) {}
-                    : (oldIndex, newIndex) => unawaited(
-                        ref
-                            .read(provider.notifier)
-                            .reorderNonDefault(oldIndex, newIndex),
-                      ),
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return Column(
-                    key: ValueKey(item.id),
-                    children: [
-                      _SubthreadRow(
-                        threadId: threadId,
-                        item: item,
-                        index: index,
-                        itemCount: items.length,
-                        state: state,
-                      ),
-                      if (index < items.length - 1) const Divider(height: 1),
-                    ],
-                  );
-                },
-              ),
+            ReorderableListView.builder(
+              key: const Key('subthread-management-list'),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: items.length,
+              onReorderItem: state.isBusy
+                  ? (_, _) {}
+                  : (oldIndex, newIndex) => unawaited(
+                      ref
+                          .read(provider.notifier)
+                          .reorderNonDefault(oldIndex, newIndex),
+                    ),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Column(
+                  key: ValueKey(item.id),
+                  children: [
+                    _SubthreadRow(
+                      threadId: threadId,
+                      item: item,
+                      index: index,
+                      itemCount: items.length,
+                      state: state,
+                    ),
+                    if (index < items.length - 1)
+                      Divider(height: 1, color: tokens.border),
+                  ],
+                );
+              },
             ),
         ],
       ),

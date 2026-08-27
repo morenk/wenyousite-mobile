@@ -170,7 +170,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ThreadManagementBasicsPanel(
+            ThreadManagementBasicsSection(
               titleController: _titleController,
               titleFocusNode: _titleFocusNode,
               categories: bootstrap.categories,
@@ -183,8 +183,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
-            SizedBox(height: tokens.space12),
-            ThreadManagementPublishingPanel(
+            SizedBox(height: tokens.space24),
+            Divider(height: 1, color: tokens.border),
+            SizedBox(height: tokens.space24),
+            ThreadManagementPublishingSection(
               status: _status,
               visibility: _visibility,
               enabled: !locked,
@@ -198,8 +200,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
-            SizedBox(height: tokens.space12),
-            ThreadManagementTagsPanel(
+            SizedBox(height: tokens.space24),
+            Divider(height: 1, color: tokens.border),
+            SizedBox(height: tokens.space24),
+            ThreadManagementTagsSection(
               tags: _tagNames,
               enabled: !locked,
               onEdit: _editTags,
@@ -212,7 +216,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
-            SizedBox(height: tokens.space20),
+            SizedBox(height: tokens.space24),
+            Divider(height: 1, color: tokens.border),
+            SizedBox(height: tokens.space24),
             const WenyouSectionHeader(
               title: '主正文',
               subtitle: '这里的内容会显示在默认子贴顶部。',
@@ -285,31 +291,30 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             if (thread.isOwner &&
                 thread.published &&
                 thread.visibility == ThreadManagementVisibility.private) ...[
-              SizedBox(height: tokens.space16),
+              SizedBox(height: tokens.space24),
+              Divider(height: 1, color: tokens.border),
+              SizedBox(height: tokens.space24),
               ThreadInviteLinkPanel(threadId: thread.id, enabled: !locked),
             ],
             if (thread.isOwner) ...[
               SizedBox(height: tokens.space24),
-              WenyouPanel(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const WenyouSectionHeader(
-                      title: '删除主题',
-                      subtitle: '主题、子贴和全部内容会永久删除，且无法恢复。',
-                    ),
-                    SizedBox(height: tokens.space12),
-                    OutlinedButton.icon(
-                      key: const Key('thread-management-delete'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                      onPressed: state.isBusy ? null : _confirmDelete,
-                      icon: const WenyouIcon(WenyouIconIds.actionDelete),
-                      label: const Text('删除这个主题'),
-                    ),
-                  ],
+              Divider(height: 1, color: tokens.border),
+              SizedBox(height: tokens.space24),
+              const WenyouSectionHeader(
+                title: '删除主题',
+                subtitle: '主题、子贴和全部内容会永久删除，且无法恢复。',
+              ),
+              SizedBox(height: tokens.space12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  key: const Key('thread-management-delete'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: state.isBusy ? null : _confirmDelete,
+                  icon: const WenyouIcon(WenyouIconIds.actionDelete),
+                  label: const Text('删除这个主题'),
                 ),
               ),
             ],
@@ -737,18 +742,16 @@ class _ManagementFatalState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WenyouPageBody(
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.actionAccount,
-          title: '主题管理信息加载失败',
-          message: failureMessage ?? '请检查网络或账号权限后重试。',
-          detail: requestId == null ? null : '问题编号：$requestId',
-          action: OutlinedButton.icon(
-            key: const Key('thread-management-load-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
-          ),
+      child: WenyouEmptyState(
+        icon: WenyouIconIds.actionAccount,
+        title: '主题管理信息加载失败',
+        message: failureMessage ?? '请检查网络或账号权限后重试。',
+        detail: requestId == null ? null : '问题编号：$requestId',
+        action: OutlinedButton.icon(
+          key: const Key('thread-management-load-retry'),
+          onPressed: onRetry,
+          icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+          label: const Text('重新加载'),
         ),
       ),
     );

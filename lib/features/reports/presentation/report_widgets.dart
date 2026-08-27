@@ -108,8 +108,8 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
       canPop: !state.isSubmitting,
       child: AlertDialog(
         title: Text('举报${widget.targetLabel}'),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
+        content: SizedBox(
+          width: 420,
           child: SingleChildScrollView(
             child: Form(
               key: _formKey,
@@ -124,22 +124,24 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                     ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
                   ),
                   SizedBox(height: tokens.space16),
-                  WenyouDropdownFormField<ReportReason>(
+                  Text('举报原因', style: Theme.of(context).textTheme.titleSmall),
+                  SizedBox(height: tokens.space8),
+                  WenyouDropdownFilter<ReportReason>(
                     key: const Key('report-reason'),
-                    initialValue: _reason,
-                    decoration: const InputDecoration(labelText: '举报原因'),
-                    items: [
+                    optionKeyPrefix: 'report-reason-option',
+                    tooltip: '选择举报原因',
+                    icon: WenyouIconIds.actionReport,
+                    selected: _reason,
+                    enabled: !state.isSubmitting,
+                    options: [
                       for (final reason in ReportReason.values)
-                        DropdownMenuItem(
+                        WenyouFilterOption(
                           value: reason,
-                          child: Text(reason.label),
+                          keyValue: reason.name,
+                          label: reason.label,
                         ),
                     ],
-                    onChanged: state.isSubmitting
-                        ? null
-                        : (value) {
-                            if (value != null) setState(() => _reason = value);
-                          },
+                    onSelected: (value) => setState(() => _reason = value),
                   ),
                   SizedBox(height: tokens.space12),
                   TextFormField(
