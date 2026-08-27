@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_verification_code_field.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
 
 class ChangeEmailPage extends ConsumerStatefulWidget {
@@ -101,7 +102,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               enabled: !state.isBusy,
               autofillHints: const [AutofillHints.password],
               textInputAction: TextInputAction.next,
-              validator: _validateCurrentPassword,
+              validator: CredentialInputPolicy.validateCurrentPassword,
             ),
             SizedBox(height: tokens.space16),
             TextFormField(
@@ -112,10 +113,13 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: state.isBusy ? null : (_) => _requestCode(),
-              validator: _validateEmail,
+              validator: (value) => CredentialInputPolicy.validateEmail(
+                value,
+                emptyMessage: '请输入新邮箱',
+              ),
               decoration: const InputDecoration(
                 labelText: '新邮箱',
-                prefixIcon: WenyouIcon(WenyouIconIds.actionMention),
+                prefixIcon: WenyouIcon(WenyouIconIds.statusMail),
               ),
             ),
             if (state.failure != null) ...[
@@ -179,25 +183,12 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
             ),
           ),
           SizedBox(height: tokens.space8),
-          TextFormField(
-            key: const Key('change-email-code'),
+          WenyouVerificationCodeField(
+            textFieldKey: const Key('change-email-code'),
             controller: _codeController,
             enabled: !state.isBusy,
-            keyboardType: TextInputType.number,
-            autofillHints: const [AutofillHints.oneTimeCode],
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            maxLength: 6,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: state.isBusy ? null : (_) => _verifyCode(),
-            validator: (value) => value?.length == 6 ? null : '请输入 6 位数字验证码',
-            decoration: const InputDecoration(
-              labelText: '6 位验证码',
-              counterText: '',
-              prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
-            ),
           ),
           if (state.failure != null && !state.codeDeliveryUncertain) ...[
             SizedBox(height: tokens.space16),
@@ -254,20 +245,4 @@ class _FailureBanner extends ConsumerWidget {
       ),
     );
   }
-}
-
-String? _validateCurrentPassword(String? value) {
-  final password = value ?? '';
-  if (password.isEmpty) return '请输入当前密码';
-  if (password.length > 100) return '密码不能超过 100 位';
-  return null;
-}
-
-String? _validateEmail(String? value) {
-  final email = value?.trim() ?? '';
-  if (email.isEmpty) return '请输入新邮箱';
-  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-    return '请输入有效的邮箱地址';
-  }
-  return null;
 }

@@ -19,7 +19,10 @@ double wenyouHorizontalPagePadding(
 }
 
 String? wenyouRequestDetail(ApiFailure? failure) {
-  final requestId = failure?.requestId;
+  return wenyouRequestDetailFromId(failure?.requestId);
+}
+
+String? wenyouRequestDetailFromId(String? requestId) {
   return requestId == null ? null : '问题编号：$requestId';
 }
 
@@ -335,7 +338,7 @@ class WenyouListSkeleton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (showAvatar) ...[
-                      _WenyouSkeletonBlock(
+                      WenyouSkeletonBlock(
                         width: 40,
                         height: 40,
                         radius: tokens.radiusPill,
@@ -348,14 +351,14 @@ class WenyouListSkeleton extends StatelessWidget {
                         children: [
                           FractionallySizedBox(
                             widthFactor: index.isEven ? 0.64 : 0.48,
-                            child: const _WenyouSkeletonBlock(height: 14),
+                            child: const WenyouSkeletonBlock(height: 14),
                           ),
                           SizedBox(height: tokens.space12),
-                          const _WenyouSkeletonBlock(height: 12),
+                          const WenyouSkeletonBlock(height: 12),
                           SizedBox(height: tokens.space8),
                           const FractionallySizedBox(
                             widthFactor: 0.72,
-                            child: _WenyouSkeletonBlock(height: 12),
+                            child: WenyouSkeletonBlock(height: 12),
                           ),
                         ],
                       ),
@@ -390,19 +393,19 @@ class WenyouDetailSkeleton extends StatelessWidget {
             children: [
               const FractionallySizedBox(
                 widthFactor: 0.74,
-                child: _WenyouSkeletonBlock(height: 24),
+                child: WenyouSkeletonBlock(height: 24),
               ),
               SizedBox(height: tokens.space16),
-              const _WenyouSkeletonBlock(height: 14),
+              const WenyouSkeletonBlock(height: 14),
               SizedBox(height: tokens.space8),
-              const _WenyouSkeletonBlock(height: 14),
+              const WenyouSkeletonBlock(height: 14),
               SizedBox(height: tokens.space8),
               const FractionallySizedBox(
                 widthFactor: 0.58,
-                child: _WenyouSkeletonBlock(height: 14),
+                child: WenyouSkeletonBlock(height: 14),
               ),
               SizedBox(height: tokens.space20),
-              const _WenyouSkeletonBlock(height: 88),
+              const WenyouSkeletonBlock(height: 88),
             ],
           ),
         ),
@@ -411,11 +414,12 @@ class WenyouDetailSkeleton extends StatelessWidget {
   }
 }
 
-class _WenyouSkeletonBlock extends StatelessWidget {
-  const _WenyouSkeletonBlock({
+class WenyouSkeletonBlock extends StatelessWidget {
+  const WenyouSkeletonBlock({
     required this.height,
     this.width = double.infinity,
     this.radius,
+    super.key,
   });
 
   final double width;
@@ -640,9 +644,40 @@ class WenyouAsyncPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return WenyouAsyncButton(
+      label: label,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      loadingLabel: loadingLabel,
+      icon: icon,
+      expand: true,
+    );
+  }
+}
+
+class WenyouAsyncButton extends StatelessWidget {
+  const WenyouAsyncButton({
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.loadingLabel,
+    this.icon,
+    this.expand = false,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final String? loadingLabel;
+  final String? icon;
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return SizedBox(
-      width: double.infinity,
+      width: expand ? double.infinity : null,
       height: tokens.minimumTouchTarget,
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,

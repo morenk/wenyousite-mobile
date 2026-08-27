@@ -66,8 +66,8 @@ class ModerationDecision {
 
   String get targetTypeLabel => switch (targetType) {
     'USER' => '账号',
-    'THREAD' => '主题帖',
-    'POST' => '帖子',
+    'THREAD' => '主题',
+    'POST' => '楼层',
     'MOMENT' => '动态',
     'MOMENT_COMMENT' => '动态评论',
     'DIRECT_MESSAGE' => '私聊消息',

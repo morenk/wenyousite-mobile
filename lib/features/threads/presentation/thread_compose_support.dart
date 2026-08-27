@@ -6,7 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_compose_controller.dart';
 
 enum ThreadRemoteDraftAction { save, open }
@@ -151,9 +151,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
     required this.documentIssues,
     required this.codecFailure,
     required this.operationFailure,
-    required this.uploadFailure,
-    required this.uploadProgress,
-    required this.uploading,
+    required this.uploadState,
     required this.onCancelUpload,
     required this.onRetryUpload,
     required this.onRefreshBootstrap,
@@ -164,9 +162,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
   final List<MarkdownCodecIssue> documentIssues;
   final String? codecFailure;
   final String? operationFailure;
-  final MediaUploadFailure? uploadFailure;
-  final MediaUploadProgress? uploadProgress;
-  final bool uploading;
+  final MediaUploadTaskState uploadState;
   final VoidCallback onCancelUpload;
   final VoidCallback onRetryUpload;
   final VoidCallback onRefreshBootstrap;
@@ -222,21 +218,13 @@ class ThreadComposeStatusArea extends StatelessWidget {
           message: state.successMessage!,
           tone: WenyouStatusTone.accent,
         ),
-      if (uploadFailure != null)
-        WenyouStatusBanner(
-          message: uploadFailure!.userMessage,
-          detail: _uploadRequestDetail(uploadFailure),
-          tone: WenyouStatusTone.error,
-          action: uploadFailure!.canRetry
-              ? TextButton(
-                  key: const Key('compose-retry-upload'),
-                  onPressed: onRetryUpload,
-                  child: const Text('重试上传'),
-                )
-              : null,
+      if (uploadState.failure != null || uploadState.isBusy)
+        MediaUploadStatusBanner(
+          state: uploadState,
+          onCancel: onCancelUpload,
+          onRetry: onRetryUpload,
+          retryKey: const Key('compose-retry-upload'),
         ),
-      if (uploading)
-        _UploadStatus(progress: uploadProgress, onCancel: onCancelUpload),
     ];
     if (banners.isEmpty) return const SizedBox.shrink();
     return ConstrainedBox(
@@ -269,11 +257,6 @@ bool hasMeaningfulThreadComposeContent(ThreadComposeState state) {
       state.remoteDraft != null;
 }
 
-String? _uploadRequestDetail(MediaUploadFailure? failure) {
-  final requestId = failure?.requestId;
-  return requestId == null ? null : '问题编号：$requestId';
-}
-
 class ThreadComposeLoadFailure extends StatelessWidget {
   const ThreadComposeLoadFailure({
     required this.failure,
@@ -295,38 +278,6 @@ class ThreadComposeLoadFailure extends StatelessWidget {
           detail: wenyouRequestDetail(failure),
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
         ),
-      ),
-    );
-  }
-}
-
-class _UploadStatus extends StatelessWidget {
-  const _UploadStatus({required this.progress, required this.onCancel});
-
-  final MediaUploadProgress? progress;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final current = progress;
-    final label = switch (current?.stage) {
-      MediaUploadStage.preparing => '正在准备图片…',
-      MediaUploadStage.uploading => '正在上传图片…',
-      MediaUploadStage.confirming => '正在确认上传…',
-      MediaUploadStage.processing => '图片处理中…',
-      null => '正在准备图片…',
-    };
-    return WenyouStatusBanner(
-      message: label,
-      action: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LinearProgressIndicator(value: current?.fraction),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(onPressed: onCancel, child: const Text('取消上传')),
-          ),
-        ],
       ),
     );
   }

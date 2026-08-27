@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -131,7 +132,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
 
   bool _loadMoreNearEnd(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical ||
-        notification.metrics.extentAfter > 480 ||
+        !wenyouShouldPrefetch(notification.metrics) ||
         (notification is! ScrollUpdateNotification &&
             notification is! OverscrollNotification)) {
       return false;
@@ -315,20 +316,12 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
     return WenyouContentFrame(
       top: 12,
       bottom: 112,
-      child: Center(
-        child: state.isLoadingMore
-            ? const Padding(
-                padding: EdgeInsets.all(12),
-                child: CircularProgressIndicator(),
-              )
-            : state.hasMore
-            ? OutlinedButton.icon(
-                key: const Key('moment-load-more'),
-                onPressed: () => ref.read(provider.notifier).loadMore(),
-                icon: const WenyouIcon(WenyouIconIds.navigationExpand),
-                label: const Text('加载更多'),
-              )
-            : Text('已经看到这里了', style: Theme.of(context).textTheme.bodySmall),
+      child: WenyouPaginationFooter(
+        hasMore: state.hasMore,
+        isLoading: state.isLoadingMore,
+        onLoadMore: () => ref.read(provider.notifier).loadMore(),
+        loadMoreKey: const Key('moment-load-more'),
+        endLabel: '已经看到这里了',
       ),
     );
   }
@@ -386,18 +379,12 @@ class _MomentWaterfallSkeletonCard extends StatelessWidget {
                     children: [
                       FractionallySizedBox(
                         widthFactor: index.isEven ? 0.82 : 0.68,
-                        child: _SkeletonLine(
-                          color: tokens.softPanel,
-                          height: 14,
-                        ),
+                        child: const WenyouSkeletonBlock(height: 14),
                       ),
                       SizedBox(height: tokens.space12),
                       FractionallySizedBox(
                         widthFactor: 0.58,
-                        child: _SkeletonLine(
-                          color: tokens.softPanel,
-                          height: 12,
-                        ),
+                        child: const WenyouSkeletonBlock(height: 12),
                       ),
                     ],
                   ),
@@ -406,24 +393,6 @@ class _MomentWaterfallSkeletonCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SkeletonLine extends StatelessWidget {
-  const _SkeletonLine({required this.color, required this.height});
-
-  final Color color;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(context.wenyouTokens.radiusPill),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -146,25 +147,14 @@ class MeAvatarEditor extends ConsumerWidget {
   }
 
   Future<void> _confirmRemove(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('移除当前头像？'),
-        content: const Text('移除后将使用默认头像占位，之后仍可重新上传。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('me-avatar-remove-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认移除'),
-          ),
-        ],
-      ),
+      title: '移除当前头像？',
+      message: '移除后将使用默认头像占位，之后仍可重新上传。',
+      confirmLabel: '确认移除',
+      confirmKey: const Key('me-avatar-remove-confirm'),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
     final result = await ref.read(avatarControllerProvider.notifier).remove();
     if (!context.mounted || result == null) return;
     _applyResult(context, ref, result, '头像已移除。');

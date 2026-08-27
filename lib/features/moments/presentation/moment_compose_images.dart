@@ -37,6 +37,24 @@ class MomentComposeImageStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    if (images.isEmpty &&
+        pendingImages.isEmpty &&
+        !uploadState.isBusy &&
+        uploadState.failure == null) {
+      return Align(
+        key: const Key('moment-compose-images'),
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          height: tokens.minimumTouchTarget,
+          child: OutlinedButton.icon(
+            key: const Key('moment-compose-add-image'),
+            onPressed: onAdd,
+            icon: const WenyouIcon(WenyouIconIds.actionAddImage, size: 18),
+            label: const Text('添加图片'),
+          ),
+        ),
+      );
+    }
     return Column(
       key: const Key('moment-compose-images'),
       crossAxisAlignment: CrossAxisAlignment.stretch,

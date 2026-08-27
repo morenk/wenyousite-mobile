@@ -43,7 +43,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-subscription-official')));
     await tester.pumpAndSettle();
     expect(find.text('已订阅官方更新'), findsOneWidget);
-    expect(find.text('已订阅帖子官方更新。'), findsOneWidget);
+    expect(find.text('已订阅主题官方更新。'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
 
@@ -180,7 +180,7 @@ void main() {
 
     expect(find.text('订阅官方更新'), findsOneWidget);
     expect(find.text('已订阅官方更新'), findsNothing);
-    expect(find.text('已订阅帖子官方更新。'), findsNothing);
+    expect(find.text('已订阅主题官方更新。'), findsNothing);
     expect(repository.candidateViewerUserIds, ['account-a', 'account-b']);
   });
 

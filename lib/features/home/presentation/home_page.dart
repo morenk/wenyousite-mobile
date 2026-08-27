@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/home/application/home_feed_controller.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
@@ -37,7 +38,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _loadMoreNearEnd() {
     if (!_scrollController.hasClients ||
-        _scrollController.position.extentAfter > 480) {
+        !wenyouShouldPrefetch(_scrollController.position)) {
       return;
     }
     ref.read(homeFeedControllerProvider.notifier).loadMore();
@@ -237,9 +238,7 @@ class _HomeErrorState extends StatelessWidget {
         icon: WenyouIconIds.statusOffline,
         title: '主题列表加载失败',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: failure?.requestId == null
-            ? null
-            : '问题编号：${failure!.requestId}',
+        detail: wenyouRequestDetail(failure),
         action: FilledButton.icon(
           key: const Key('home-retry'),
           onPressed: onRetry,
@@ -259,10 +258,8 @@ class _HomeTransientError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouStatusBanner(
-      message: failure.userMessage,
-      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
-      tone: WenyouStatusTone.error,
+    return WenyouFailureBanner(
+      failure: failure,
       action: TextButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
@@ -300,7 +297,7 @@ class _HomeFilters extends StatelessWidget {
         WenyouContentTabs<String>(
           key: const Key('home-category-menu'),
           keyPrefix: 'home-category',
-          semanticsLabel: '主题帖分类',
+          semanticsLabel: '主题分类',
           placement: WenyouTabPlacement.page,
           options: [
             for (final entry in categoryLabels.entries)
@@ -361,27 +358,14 @@ class _HomeFeedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    if (!state.hasMore) {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: tokens.space12),
-        child: Text(
-          '已经看到全部公开主题',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      );
-    }
-    return OutlinedButton.icon(
-      key: const Key('home-load-more'),
-      onPressed: state.isLoadingMore ? null : onLoadMore,
-      icon: state.isLoadingMore
-          ? const SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const WenyouIcon(WenyouIconIds.navigationExpand),
-      label: Text(state.isLoadingMore ? '正在加载更多' : '加载更多主题'),
+    return WenyouPaginationFooter(
+      hasMore: state.hasMore,
+      isLoading: state.isLoadingMore,
+      onLoadMore: onLoadMore,
+      loadMoreLabel: '加载更多主题',
+      loadingLabel: '正在加载更多主题',
+      endLabel: '已经看到全部公开主题',
+      loadMoreKey: const Key('home-load-more'),
     );
   }
 }

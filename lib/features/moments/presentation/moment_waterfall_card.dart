@@ -56,27 +56,28 @@ class MomentWaterfallCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ExcludeSemantics(child: _buildCover(context)),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        tokens.space8,
-                        tokens.space8,
-                        tokens.space8,
-                        tokens.space4,
-                      ),
-                      child: ExcludeSemantics(
-                        child: Text(
-                          moment.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: tokens.text,
-                                fontWeight: FontWeight.w700,
-                                height: 1.4,
-                              ),
+                    if (moment.coverType == MomentCoverType.image)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          tokens.space8,
+                          tokens.space8,
+                          tokens.space8,
+                          tokens.space4,
+                        ),
+                        child: ExcludeSemantics(
+                          child: Text(
+                            moment.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: tokens.text,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.4,
+                                ),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

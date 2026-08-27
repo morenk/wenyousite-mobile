@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,11 +42,13 @@ class BookmarkListView extends ConsumerWidget {
   const BookmarkListView({
     required this.folderId,
     this.additionalRefresh,
+    this.onCatalogChanged,
     super.key,
   });
 
   final String folderId;
   final Future<void> Function()? additionalRefresh;
+  final Future<void> Function()? onCatalogChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -115,12 +119,14 @@ class BookmarkListView extends ConsumerWidget {
             },
           );
           if (!context.mounted || folder == null) return;
+          if (onCatalogChanged case final refresh?) unawaited(refresh());
           showWenyouSnackBar(context, '已移动到“${folder.name}”。');
         },
         onLoadMore: notifier.loadMore,
         onRemove: (bookmarkId) async {
           final succeeded = await notifier.removeBookmark(bookmarkId);
           if (!context.mounted || !succeeded) return;
+          if (onCatalogChanged case final refresh?) unawaited(refresh());
           showWenyouSnackBar(context, '已取消收藏。');
         },
         onDismissFailure: notifier.clearActionFailure,
@@ -252,7 +258,7 @@ class _ReadyBookmarkList extends StatelessWidget {
                   child: WenyouEmptyState(
                     icon: WenyouIconIds.actionBookmark,
                     title: '这个收藏夹还是空的',
-                    message: '收藏主题帖时可以直接选择这个收藏夹。',
+                    message: '收藏主题时可以直接选择这个收藏夹。',
                   ),
                 ),
               )

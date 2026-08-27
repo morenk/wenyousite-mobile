@@ -222,9 +222,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                 documentIssues: _editorSession.issues,
                 codecFailure: _editorSession.codecFailure,
                 operationFailure: _editorSession.operationFailure?.message,
-                uploadFailure: uploadState.failure,
-                uploadProgress: uploadState.progress,
-                uploading: uploadState.isBusy,
+                uploadState: uploadState,
                 onCancelUpload: _cancelUpload,
                 onRetryUpload: _retryImageUpload,
                 onRefreshBootstrap: () => ref

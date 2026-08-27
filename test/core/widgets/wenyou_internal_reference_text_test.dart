@@ -236,4 +236,42 @@ void main() {
     expect(longPresses, 1);
     expect(paragraph.selections, isEmpty);
   });
+
+  testWidgets('评论文字长按优先选字而不打开评论操作', (tester) async {
+    var longPresses = 0;
+    const text = '主评论';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SizedBox(
+            width: 320,
+            child: WenyouInternalReferenceText(
+              content: text,
+              selectable: true,
+              onLongPressNonText: () => longPresses += 1,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == text,
+      ),
+    );
+    final glyphCenter = paragraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 1, extentOffset: 2),
+        )
+        .first
+        .toRect()
+        .center;
+    await tester.longPressAt(paragraph.localToGlobal(glyphCenter));
+    await tester.pump();
+
+    expect(longPresses, 0);
+    expect(paragraph.selections, isNotEmpty);
+  });
 }

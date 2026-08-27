@@ -165,7 +165,7 @@ void main() {
 
     expect(await controller.saveToNextSlot('不会发送'), isFalse);
     expect(repository.createSlots, isEmpty);
-    expect(controller.state.actionFailure?.userMessage, contains('5 个'));
+    expect(controller.state.actionFailure?.userMessage, contains('五个草稿位'));
   });
 
   test('正文草稿的新建路径覆盖 0、20、21 个骰子边界', () async {

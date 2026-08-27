@@ -89,16 +89,23 @@ class _WenyouSelectableActionRegionState
     if (root is! RenderBox || !root.attached) return false;
     final rootPosition = root.globalToLocal(globalPosition);
     if (!root.paintBounds.contains(rootPosition)) return false;
-    final result = BoxHitTestResult();
-    root.hitTest(result, position: rootPosition);
-    for (final entry in result.path) {
-      if (entry is! BoxHitTestEntry || entry.target is! RenderParagraph) {
-        continue;
+
+    var hitText = false;
+    void inspect(RenderObject renderObject) {
+      if (hitText || !renderObject.attached) return;
+      if (renderObject case RenderParagraph paragraph) {
+        final localPosition = paragraph.globalToLocal(globalPosition);
+        if (paragraph.paintBounds.contains(localPosition) &&
+            _paragraphHasGlyphAt(paragraph, localPosition)) {
+          hitText = true;
+          return;
+        }
       }
-      final paragraph = entry.target as RenderParagraph;
-      if (_paragraphHasGlyphAt(paragraph, entry.localPosition)) return true;
+      renderObject.visitChildren(inspect);
     }
-    return false;
+
+    inspect(root);
+    return hitText;
   }
 
   bool _paragraphHasGlyphAt(RenderParagraph paragraph, Offset localPosition) {

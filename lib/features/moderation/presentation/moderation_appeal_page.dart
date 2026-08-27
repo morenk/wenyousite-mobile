@@ -175,13 +175,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WenyouPanel(
-      child: WenyouEmptyState(
-        icon: WenyouIconIds.moderationDecision,
-        title: '正在读取治理决定',
-        action: CircularProgressIndicator(),
-      ),
-    );
+    return const WenyouDetailSkeleton(label: '正在读取治理决定');
   }
 }
 

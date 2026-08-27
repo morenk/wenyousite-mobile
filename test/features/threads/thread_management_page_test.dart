@@ -184,6 +184,34 @@ void main() {
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
   });
 
+  testWidgets('发布设置使用直接点选并在变更后立即自动保存', (tester) async {
+    final repository = _FakeRepository(initial: _bootstrap());
+    await _pumpPage(tester, repository);
+
+    final closed = find.byKey(
+      const ValueKey('thread-management-status-choice-closed'),
+    );
+    await tester.ensureVisible(closed);
+    await tester.tap(closed);
+    await tester.pumpAndSettle();
+
+    expect(repository.lastDraft?.status, ThreadManagementStatus.closed);
+    expect(tester.widget<ChoiceChip>(closed).selected, isTrue);
+
+    final private = find.byKey(
+      const ValueKey('thread-management-visibility-choice-private'),
+    );
+    await tester.ensureVisible(private);
+    await tester.tap(private);
+    await tester.pumpAndSettle();
+
+    expect(
+      repository.lastDraft?.visibility,
+      ThreadManagementVisibility.private,
+    );
+    expect(find.text('只有主题成员可以查看'), findsOneWidget);
+  });
+
   testWidgets('主正文自动保存保持编辑会话并把工具栏停靠在键盘上方', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
@@ -273,16 +301,17 @@ void main() {
     final repository = _FakeRepository(initial: _bootstrap(isOwner: false));
     await _pumpPage(tester, repository);
 
-    final visibility = tester
-        .widget<DropdownButtonFormField<ThreadManagementVisibility>>(
-          find.descendant(
-            of: find.byKey(const Key('thread-management-visibility')),
-            matching: find.byType(
-              DropdownButtonFormField<ThreadManagementVisibility>,
-            ),
-          ),
-        );
-    expect(visibility.onChanged, isNull);
+    final visibilityChoices = tester.widgetList<ChoiceChip>(
+      find.descendant(
+        of: find.byKey(const Key('thread-management-visibility')),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(visibilityChoices, hasLength(2));
+    expect(
+      visibilityChoices.every((choice) => choice.onSelected == null),
+      isTrue,
+    );
     expect(find.text('仅楼主可修改可见范围。'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
 

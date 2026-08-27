@@ -191,7 +191,7 @@ void main() {
     expect(firstTopLeft.dx, lessThan(secondTopLeft.dx));
     expect(thirdTopLeft.dx, closeTo(firstTopLeft.dx, 0.1));
     expect(thirdTopLeft.dy, greaterThan(firstTopLeft.dy));
-    expect(thirdTopLeft.dy, lessThan(tester.getBottomRight(second).dy));
+    expect(thirdTopLeft.dy, closeTo(tester.getBottomRight(first).dy + 12, 0.1));
 
     final likeSize = tester.getSize(
       find.byKey(const Key('moment-like-moment-1')),
@@ -290,22 +290,31 @@ void main() {
     ]);
     expect(repository.commentAuthorCalls, 0);
 
-    await tester.longPress(find.text('主评论'));
+    final commentParagraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == '主评论',
+      ),
+    );
+    final commentGlyphCenter = commentParagraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 1, extentOffset: 2),
+        )
+        .first
+        .toRect()
+        .center;
+    await tester.longPressAt(
+      commentParagraph.localToGlobal(commentGlyphCenter),
+    );
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('moment-comment-action-comment-root-report')),
       findsNothing,
     );
-    await tester.tap(find.text('主评论'));
+    await tester.tapAt(commentParagraph.localToGlobal(commentGlyphCenter));
     await tester.pump();
 
     final commentCard = find.byKey(
       const Key('moment-comment-card-comment-root'),
-    );
-    final commentParagraph = tester.renderObject<RenderParagraph>(
-      find.byWidgetPredicate(
-        (widget) => widget is RichText && widget.text.toPlainText() == '主评论',
-      ),
     );
     final commentRect = tester.getRect(commentCard);
     await tester.longPressAt(
@@ -1452,7 +1461,7 @@ void main() {
     );
   });
 
-  for (final width in [360.0, 400.0, 600.0]) {
+  for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 动态信息流、详情与发布页无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 760);

@@ -34,8 +34,8 @@ class ThreadMemberManagementContent extends ConsumerWidget {
     final provider = threadMemberManagementControllerProvider(threadId);
     final state = ref.watch(provider);
     return switch (state.phase) {
-      ThreadMemberManagementPhase.loading => const Center(
-        child: CircularProgressIndicator(),
+      ThreadMemberManagementPhase.loading => const WenyouPageBody(
+        child: WenyouListSkeleton(label: '正在加载主题成员'),
       ),
       ThreadMemberManagementPhase.failed => _MembersFatalState(
         failure: state.failure,

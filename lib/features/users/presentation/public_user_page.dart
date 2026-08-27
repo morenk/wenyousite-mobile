@@ -45,15 +45,6 @@ class PublicUserPage extends ConsumerWidget {
         title: const Text('用户主页'),
         actions: [
           if (canTip)
-            WenyouTipButton(
-              key: const Key('public-user-tip'),
-              target: TipTarget.user(id: state.profile!.id),
-              recipientName: state.profile!.username,
-              returnTo: '/users/${state.profile!.id}',
-              iconOnly: true,
-              onSuccess: (_) => ref.read(provider.notifier).load(),
-            ),
-          if (canTip)
             WenyouReportButton(
               key: const Key('public-user-report'),
               target: ReportTarget.user(state.profile!.id),
@@ -90,6 +81,7 @@ class PublicUserPage extends ConsumerWidget {
                         children: [
                           _UserProfileContent(
                             profile: state.profile!,
+                            canTip: canTip,
                             relationTarget: _relationTarget(
                               state.profile!,
                               meState,
@@ -157,11 +149,13 @@ class _UserProfileContent extends ConsumerWidget {
   const _UserProfileContent({
     required this.profile,
     required this.isCurrentUser,
+    required this.canTip,
     this.relationTarget,
   });
 
   final PublicUserProfileModel profile;
   final bool isCurrentUser;
+  final bool canTip;
   final UserRelationTarget? relationTarget;
 
   @override
@@ -178,6 +172,22 @@ class _UserProfileContent extends ConsumerWidget {
       ),
     );
     final destinationActions = <WenyouIconLabelAction>[
+      if (canTip)
+        WenyouIconLabelAction(
+          key: const Key('public-user-tip'),
+          onPressed: () => showWenyouTipFlow(
+            context: context,
+            ref: ref,
+            target: TipTarget.user(id: profile.id),
+            recipientName: profile.username,
+            returnTo: '/users/${profile.id}',
+            onSuccess: (_) => ref
+                .read(publicUserControllerProvider(profile.id).notifier)
+                .load(),
+          ),
+          icon: WenyouIconIds.actionTip,
+          label: '加油',
+        ),
       if (directMessagesEnabled && relationTarget != null)
         WenyouIconLabelAction(
           key: const Key('public-user-open-direct-message'),
@@ -257,7 +267,7 @@ class _UserProfileContent extends ConsumerWidget {
         ),
         UserProfileStatItem(
           label: '收到加油',
-          value: '${WenyouAmount.format(profile.receivedTipTotal)}L',
+          value: '${WenyouAmount.format(profile.receivedTipTotal)} 升',
         ),
       ],
       actions: relationTarget == null

@@ -658,20 +658,32 @@ class _MarkdownImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    final isSticker = title?.startsWith('wenyousite-sticker:') == true;
+
+    Widget preserveBlockImageRow(Widget child) {
+      if (isSticker) return child;
+      return SizedBox(
+        key: ValueKey('markdown-block-image-row-$uri'),
+        width: double.infinity,
+        child: Align(alignment: AlignmentDirectional.centerStart, child: child),
+      );
+    }
+
     if (!MarkdownContent.isSafeImage(uri)) {
-      return Semantics(
-        label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
-        onLongPress: onLongPress,
-        child: GestureDetector(
+      return preserveBlockImageRow(
+        Semantics(
+          label: '已阻止不安全图片${alt == null ? '' : '：$alt'}',
           onLongPress: onLongPress,
-          child: WenyouIcon(
-            WenyouIconIds.statusImageUnavailable,
-            color: tokens.mutedText,
+          child: GestureDetector(
+            onLongPress: onLongPress,
+            child: WenyouIcon(
+              WenyouIconIds.statusImageUnavailable,
+              color: tokens.mutedText,
+            ),
           ),
         ),
       );
     }
-    final isSticker = title?.startsWith('wenyousite-sticker:') == true;
     final fallback = ColoredBox(
       color: tokens.softPanel,
       child: Center(
@@ -722,24 +734,28 @@ class _MarkdownImage extends StatelessWidget {
     }
     final imageAlt = alt?.trim() ?? '';
     final descriptiveAlt = imageAlt == '图片' ? '' : imageAlt;
-    return Semantics(
-      button: true,
-      image: true,
-      label: descriptiveAlt.isEmpty ? '查看正文图片原图' : '查看正文图片原图：$descriptiveAlt',
-      onLongPress: onLongPress,
-      child: InkWell(
-        key: ValueKey('markdown-image-$uri'),
-        borderRadius: BorderRadius.circular(tokens.radius12),
+    return preserveBlockImageRow(
+      Semantics(
+        button: true,
+        image: true,
+        label: descriptiveAlt.isEmpty
+            ? '查看正文图片原图'
+            : '查看正文图片原图：$descriptiveAlt',
         onLongPress: onLongPress,
-        onTap: () => pushWenyouFullscreenPage<void>(
-          context: context,
-          builder: (_) => ContentImageViewerPage(
-            url: uri.toString(),
-            alt: imageAlt,
-            onSaveImage: onSave == null ? null : () => onSave!(uri),
+        child: InkWell(
+          key: ValueKey('markdown-image-$uri'),
+          borderRadius: BorderRadius.circular(tokens.radius12),
+          onLongPress: onLongPress,
+          onTap: () => pushWenyouFullscreenPage<void>(
+            context: context,
+            builder: (_) => ContentImageViewerPage(
+              url: uri.toString(),
+              alt: imageAlt,
+              onSaveImage: onSave == null ? null : () => onSave!(uri),
+            ),
           ),
+          child: imageContent,
         ),
-        child: imageContent,
       ),
     );
   }

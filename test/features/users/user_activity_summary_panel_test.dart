@@ -62,6 +62,20 @@ void main() {
       tester.getCenter(find.text('参与主题')).dy,
       greaterThan(tester.getCenter(find.text('发布动态')).dy),
     );
+    final panelCenter = tester.getCenter(
+      find.byKey(const Key('activity-summary')),
+    );
+    final firstColumnCenter =
+        (tester.getCenter(find.text('发布动态')).dx +
+            tester.getCenter(find.text('创建主题')).dx) /
+        2;
+    final secondColumnCenter =
+        (tester.getCenter(find.text('参与主题')).dx +
+            tester.getCenter(find.text('累计回复')).dx) /
+        2;
+    expect(firstColumnCenter, greaterThan(panelCenter.dx + 8));
+    expect(firstColumnCenter, lessThan(panelCenter.dx + 24));
+    expect(secondColumnCenter, closeTo(firstColumnCenter, 6));
     expect(
       tester.getSize(find.byKey(const Key('activity-summary'))).height,
       lessThan(180),

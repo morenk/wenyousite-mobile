@@ -6,7 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_page_failure_state.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
@@ -25,22 +28,31 @@ class NotificationSection extends ConsumerWidget {
     final notifier = ref.read(notificationListControllerProvider.notifier);
     return Column(
       children: [
-        WenyouContentTabs<NotificationFilter>(
-          key: const Key('notification-filter-tabs'),
-          keyPrefix: 'notification-filter',
-          semanticsLabel: '通知分类',
-          placement: WenyouTabPlacement.page,
-          options: [
-            for (final filter in NotificationFilters.values)
-              WenyouFilterOption(
-                value: filter,
-                label: filter.label,
-                keyValue: filter.id,
-              ),
-          ],
-          selected: state.filter,
-          enabled: !state.isBusy,
-          onSelected: notifier.selectFilter,
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: wenyouHorizontalPagePadding(context),
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: WenyouDropdownFilter<NotificationFilter>(
+              key: const Key('notification-filter-menu'),
+              optionKeyPrefix: 'notification-filter',
+              tooltip: '筛选通知',
+              icon: WenyouIconIds.actionFilter,
+              appearance: WenyouDropdownFilterAppearance.quiet,
+              options: [
+                for (final filter in NotificationFilters.values)
+                  WenyouFilterOption(
+                    value: filter,
+                    label: filter.label,
+                    keyValue: filter.id,
+                  ),
+              ],
+              selected: state.filter,
+              enabled: !state.isBusy,
+              onSelected: notifier.selectFilter,
+            ),
+          ),
         ),
         Expanded(
           child: switch (state.phase) {
@@ -97,25 +109,15 @@ class NotificationSection extends ConsumerWidget {
     NotificationListController notifier,
     String id,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('删除这条通知？'),
-        content: const Text('删除后无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('notification-remove-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      title: '删除这条通知？',
+      message: '删除后无法恢复。',
+      confirmLabel: '删除',
+      confirmKey: const Key('notification-remove-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
     final succeeded = await notifier.remove(id);
     if (!context.mounted || !succeeded) return;
     showWenyouSnackBar(context, '通知已删除。');
@@ -130,24 +132,12 @@ class _NotificationListFailure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPageBody(
+    return WenyouPageFailureState(
+      title: '通知列表加载失败',
+      failure: state.failure,
+      onRetry: onRetry,
       maxWidth: 600,
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.statusOffline,
-          title: '通知列表加载失败',
-          message: state.failure?.userMessage ?? '请稍后重试。',
-          detail: state.failure?.requestId == null
-              ? null
-              : '问题编号：${state.failure!.requestId}',
-          action: OutlinedButton.icon(
-            key: const Key('notification-list-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
-          ),
-        ),
-      ),
+      retryKey: const Key('notification-list-retry'),
     );
   }
 }
@@ -185,13 +175,9 @@ class _ReadyNotificationList extends StatelessWidget {
         ),
         children: [
           if (state.actionFailure != null) ...[
-            _Centered(
-              child: WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.actionFailure!.userMessage,
-                detail: state.actionFailure!.requestId == null
-                    ? null
-                    : '问题编号：${state.actionFailure!.requestId}',
+            WenyouConstrainedWidth(
+              child: WenyouFailureBanner(
+                failure: state.actionFailure!,
                 action: TextButton(
                   key: const Key('notification-action-error-dismiss'),
                   onPressed: onDismissFailure,
@@ -202,7 +188,7 @@ class _ReadyNotificationList extends StatelessWidget {
             SizedBox(height: tokens.space12),
           ],
           if (state.items.isEmpty)
-            _Centered(
+            WenyouConstrainedWidth(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusNotifications,
                 title: state.filter == NotificationFilters.all
@@ -213,7 +199,7 @@ class _ReadyNotificationList extends StatelessWidget {
           else
             for (var index = 0; index < state.items.length; index++) ...[
               if (index > 0) const Divider(height: 1),
-              _Centered(
+              WenyouConstrainedWidth(
                 child: _NotificationCard(
                   item: state.items[index],
                   isPending: state.pendingId == state.items[index].id,
@@ -225,39 +211,17 @@ class _ReadyNotificationList extends StatelessWidget {
                 ),
               ),
             ],
-          if (state.loadMoreFailure != null) ...[
+          if (state.items.isNotEmpty) ...[
             SizedBox(height: tokens.space12),
-            _Centered(
-              child: WenyouStatusBanner(
-                tone: WenyouStatusTone.error,
-                message: state.loadMoreFailure!.userMessage,
-                detail: state.loadMoreFailure!.requestId == null
-                    ? null
-                    : '问题编号：${state.loadMoreFailure!.requestId}',
-                action: TextButton.icon(
-                  key: const Key('notification-load-more-retry'),
-                  onPressed: state.isBusy ? null : onLoadMore,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-                  label: const Text('重试'),
-                ),
-              ),
-            ),
-          ] else if (state.hasMore) ...[
-            SizedBox(height: tokens.space12),
-            _Centered(
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('notification-load-more'),
-                  onPressed: state.isBusy ? null : onLoadMore,
-                  icon: state.isLoadingMore
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.navigationExpand),
-                  label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
-                ),
+            WenyouConstrainedWidth(
+              child: WenyouPaginationFooter(
+                hasMore: state.hasMore,
+                isLoading: state.isLoadingMore,
+                failure: state.loadMoreFailure,
+                onLoadMore: state.isBusy ? null : onLoadMore,
+                loadMoreKey: const Key('notification-load-more'),
+                retryKey: const Key('notification-load-more-retry'),
+                endLabel: '已经看到全部通知',
               ),
             ),
           ],
@@ -433,15 +397,6 @@ class _NotificationLeading extends StatelessWidget {
   }
 }
 
-class _Centered extends StatelessWidget {
-  const _Centered({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => WenyouConstrainedWidth(child: child);
-}
-
 String _kindIcon(NotificationKind kind) => switch (kind) {
   NotificationKind.reply => WenyouIconIds.metricComments,
   NotificationKind.mention => WenyouIconIds.actionMention,
@@ -449,7 +404,7 @@ String _kindIcon(NotificationKind kind) => switch (kind) {
   NotificationKind.threadCreated => WenyouIconIds.contentThread,
   NotificationKind.follow => WenyouIconIds.actionFollow,
   NotificationKind.like => WenyouIconIds.actionLike,
-  NotificationKind.tip => WenyouIconIds.actionRedeem,
+  NotificationKind.tip => WenyouIconIds.actionTip,
   NotificationKind.levelUp => WenyouIconIds.statusTrending,
   NotificationKind.system => WenyouIconIds.contentAnnouncement,
   NotificationKind.unknown => WenyouIconIds.statusNotifications,

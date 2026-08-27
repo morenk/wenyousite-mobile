@@ -45,8 +45,11 @@ void main() {
     expect(unreadBadge.textColor, WenyouFoundationPalette.onDestructive);
     expect(unreadBadge.largeSize, WenyouElementContract.unreadCountHeight);
     expect(find.text('2'), findsOneWidget);
+    expect(find.text('会话 · 请求 1'), findsOneWidget);
 
-    await tester.tap(find.text('请求 1'));
+    await tester.tap(find.byKey(const Key('direct-message-view-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('direct-message-view-requests')));
     await tester.pumpAndSettle();
     expect(repository.views.last, DirectConversationView.requests);
     expect(find.text('想和你聊聊'), findsOneWidget);

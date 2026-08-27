@@ -70,7 +70,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       if (!mounted || epoch != _loadEpoch) return;
       final loadFailure = _asFailure(
         error,
-        autoSaveEnabled ? '槽位 1 刷新失败，自动保存已关闭，请重新开启。' : '正文草稿加载失败，请稍后重试。',
+        autoSaveEnabled ? '草稿位 1 刷新失败，自动保存已关闭，请重新开启。' : '正文草稿加载失败，请稍后重试。',
       );
       state = ContentDraftsState(
         phase: ContentDraftsPhase.failed,
@@ -92,7 +92,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
   Future<bool> saveToNextSlot(String content) async {
     if (!_canWrite(content) || state.usage.isFull) {
       if (state.usage.isFull) {
-        _setActionFailure('5 个正文草稿槽位都已占用，请先删除或覆盖旧草稿。');
+        _setActionFailure('五个草稿位都已有内容，请选择一个位置保存并确认替换。');
       }
       return false;
     }
@@ -104,7 +104,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       return false;
     }
     if (state.draftAt(slot) != null) {
-      _setActionFailure('槽位 $slot 已被占用，请刷新后再选择。');
+      _setActionFailure('草稿位 $slot 已有内容，请刷新后再选择。');
       return false;
     }
     if (slot == 1 && state.autoSaveEnabled) _autoSaveTimer?.cancel();
@@ -139,7 +139,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       _pendingManualCreateId = null;
       _pendingManualCreateContent = null;
       _pendingManualCreateSlot = null;
-      _applySaved(saved, message: '正文已保存到槽位 ${saved.slot}。');
+      _applySaved(saved, message: '正文已保存到草稿位 ${saved.slot}。');
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
@@ -175,7 +175,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
         version: draft.version,
       );
       if (!mounted) return false;
-      _applySaved(saved, message: '槽位 ${saved.slot} 已更新。');
+      _applySaved(saved, message: '草稿位 ${saved.slot} 已更新。');
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
@@ -190,7 +190,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
         );
       }
       if (draft.slot == 1 && state.autoSaveEnabled) {
-        _stopAutoSave(_asFailure(error, '槽位 1 没有更新成功，自动保存已关闭，请重新开启。'));
+        _stopAutoSave(_asFailure(error, '草稿位 1 没有更新成功，自动保存已关闭，请重新开启。'));
       }
       return false;
     }
@@ -247,7 +247,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
         usage: _usageFor(drafts, state.usage.maxSlots),
         pendingSlot: null,
         pendingDraftId: null,
-        successMessage: '槽位 ${draft.slot} 的正文草稿已删除。',
+        successMessage: '草稿位 ${draft.slot} 的正文已删除。',
       );
       if (draft.slot == 1 && state.autoSaveEnabled) {
         disableAutoSave();
@@ -289,7 +289,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
       if (!mounted || epoch != _loadEpoch) return false;
       state = state.copyWith(
         pendingDraftId: null,
-        actionFailure: _asFailure(error, '开启自动保存前未能刷新槽位 1，请重试。'),
+        actionFailure: _asFailure(error, '开启自动保存前未能刷新草稿位 1，请重试。'),
       );
       return false;
     }
@@ -457,7 +457,7 @@ class ContentDraftsController extends StateNotifier<ContentDraftsState> {
               latest.version == expected.version;
     if (!unchanged) {
       _stopAutoSave(
-        const ApiFailure(userMessage: '槽位 1 已在其他位置发生变化，自动保存已关闭，请重新开启。'),
+        const ApiFailure(userMessage: '草稿位 1 已在其他位置发生变化，自动保存已关闭，请重新开启。'),
       );
       return;
     }

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_page_failure_state.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_unread_indicator.dart';
@@ -104,26 +106,38 @@ class _DirectMessageViewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouContentTabs<DirectConversationView>(
-      key: const Key('direct-message-view-tabs'),
-      keyPrefix: 'direct-message-view',
-      semanticsLabel: '私聊会话栏目',
-      placement: WenyouTabPlacement.page,
-      enabled: enabled,
-      options: [
-        for (final view in DirectConversationView.values)
-          WenyouFilterOption(
-            value: view,
-            keyValue: view.name,
-            label:
-                view == DirectConversationView.requests &&
-                    unread.pendingRequests > 0
-                ? '${view.label} ${unread.pendingRequests}'
-                : view.label,
-          ),
-      ],
-      selected: selected,
-      onSelected: onSelected,
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: wenyouHorizontalPagePadding(context),
+      ),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: WenyouDropdownFilter<DirectConversationView>(
+          key: const Key('direct-message-view-menu'),
+          optionKeyPrefix: 'direct-message-view',
+          tooltip: '切换私聊列表',
+          icon: WenyouIconIds.actionFilter,
+          appearance: WenyouDropdownFilterAppearance.quiet,
+          enabled: enabled,
+          selectedLabel: unread.pendingRequests > 0
+              ? '${selected.label} · 请求 ${unread.pendingRequests}'
+              : selected.label,
+          options: [
+            for (final view in DirectConversationView.values)
+              WenyouFilterOption(
+                value: view,
+                keyValue: view.name,
+                label:
+                    view == DirectConversationView.requests &&
+                        unread.pendingRequests > 0
+                    ? '${view.label} ${unread.pendingRequests}'
+                    : view.label,
+              ),
+          ],
+          selected: selected,
+          onSelected: onSelected,
+        ),
+      ),
     );
   }
 }
@@ -172,9 +186,7 @@ class _DirectConversationList extends StatelessWidget {
         addAutomaticKeepAlives: false,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: _pagePadding(context),
-        itemCount:
-            state.items.length +
-            (state.transientFailure != null || state.hasMore ? 1 : 0),
+        itemCount: state.items.length + 1,
         separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, index) {
           if (index < state.items.length) {
@@ -184,31 +196,14 @@ class _DirectConversationList extends StatelessWidget {
               onTap: () => onOpen(item),
             );
           }
-          if (state.transientFailure != null) {
-            return WenyouStatusBanner(
-              tone: WenyouStatusTone.error,
-              message: state.transientFailure!.userMessage,
-              detail: state.transientFailure!.requestId == null
-                  ? null
-                  : '问题编号：${state.transientFailure!.requestId}',
-              action: TextButton.icon(
-                key: const Key('direct-messages-load-more-retry'),
-                onPressed: onLoadMore,
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重试'),
-              ),
-            );
-          }
-          return OutlinedButton.icon(
-            key: const Key('direct-messages-load-more'),
-            onPressed: state.isLoadingMore ? null : onLoadMore,
-            icon: state.isLoadingMore
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const WenyouIcon(WenyouIconIds.navigationExpand),
-            label: Text(state.isLoadingMore ? '正在加载' : '加载更多'),
+          return WenyouPaginationFooter(
+            hasMore: state.hasMore,
+            isLoading: state.isLoadingMore,
+            failure: state.transientFailure,
+            onLoadMore: onLoadMore,
+            loadMoreKey: const Key('direct-messages-load-more'),
+            retryKey: const Key('direct-messages-load-more-retry'),
+            endLabel: '已经看到全部会话',
           );
         },
       ),
@@ -321,24 +316,12 @@ class _DirectListFailure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPageBody(
+    return WenyouPageFailureState(
+      title: '私聊会话加载失败',
+      failure: state.failure,
+      onRetry: onRetry,
       maxWidth: 600,
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.statusOffline,
-          title: '私聊会话加载失败',
-          message: state.failure?.userMessage ?? '请稍后重试。',
-          detail: state.failure?.requestId == null
-              ? null
-              : '问题编号：${state.failure!.requestId}',
-          action: OutlinedButton.icon(
-            key: const Key('direct-messages-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
-          ),
-        ),
-      ),
+      retryKey: const Key('direct-messages-retry'),
     );
   }
 }

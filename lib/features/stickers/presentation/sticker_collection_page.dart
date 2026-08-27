@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -285,25 +286,15 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   }
 
   Future<void> _confirmRemove(UserSticker sticker) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('移除这个表情？'),
-        content: const Text('移除后不会影响已经发送或发布的内容。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('stickers-remove-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认移除'),
-          ),
-        ],
-      ),
+      title: '移除这个表情？',
+      message: '移除后不会影响已经发送或发布的内容。',
+      confirmLabel: '确认移除',
+      confirmKey: const Key('stickers-remove-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     await ref
         .read(stickerCollectionControllerProvider.notifier)
         .remove(sticker.id);

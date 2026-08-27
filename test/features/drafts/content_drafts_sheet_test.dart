@@ -13,7 +13,7 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
-  testWidgets('360dp 窄屏完整展示用量和五个槽位且无横向溢出', (tester) async {
+  testWidgets('360dp 窄屏完整展示用量和五个草稿位且无横向溢出', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -28,6 +28,7 @@ void main() {
     expect(find.text('只保存当前正文 · 已用 2/5'), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-1')), findsOneWidget);
     expect(find.byKey(const Key('content-draft-slot-2')), findsOneWidget);
+    expect(find.text('草稿位 1'), findsOneWidget);
     await expectLater(
       find.byKey(const Key('content-drafts-auto-save')),
       matchesGoldenFile('goldens/content_drafts_auto_save_off_360.png'),
@@ -50,10 +51,10 @@ void main() {
 
     expect(repository.createdSlots, [2]);
     expect(controller.state.draftAt(2)?.content, '当前编辑器正文');
-    expect(find.text('正文已保存到槽位 2。'), findsOneWidget);
+    expect(find.text('正文已保存到草稿位 2。'), findsOneWidget);
   });
 
-  testWidgets('槽位 1 已有内容时确认后开启并显示自动保存状态', (tester) async {
+  testWidgets('草稿位 1 已有内容时确认后开启并显示自动保存状态', (tester) async {
     final repository = _FakeRepository([_draft(slot: 1)]);
     final controller = ContentDraftsController(
       repository,
@@ -83,7 +84,7 @@ void main() {
     expect(repository.updateVersions, isEmpty);
     expect(controller.state.autoSaveEnabled, isTrue);
     expect(find.text('已开启'), findsOneWidget);
-    expect(find.text('已开启，编辑后自动更新到槽位 1'), findsOneWidget);
+    expect(find.text('已开启，编辑后自动更新到草稿位 1'), findsOneWidget);
   });
 
   testWidgets('恢复最新版前明确确认，且回调只返回正文', (tester) async {
@@ -101,9 +102,9 @@ void main() {
     await tester.tap(restore);
     await tester.pumpAndSettle();
 
-    expect(find.text('恢复槽位 1？'), findsOneWidget);
+    expect(find.text('恢复草稿位 1？'), findsOneWidget);
     expect(restored, isNull);
-    await tester.tap(find.text('覆盖并恢复'));
+    await tester.tap(find.text('替换并恢复'));
     await tester.pumpAndSettle();
 
     expect(restored, '云端最新版');
@@ -120,12 +121,14 @@ void main() {
       currentContent: '本机正文',
       onRestore: (_) => restored = true,
     );
-    final delete = find.byKey(const Key('content-draft-delete-1'));
-    await tester.ensureVisible(delete);
+    final more = find.byKey(const Key('content-draft-more-1'));
+    await tester.ensureVisible(more);
 
-    await tester.tap(delete);
+    await tester.tap(more);
     await tester.pumpAndSettle();
-    expect(find.text('删除槽位 1？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('content-draft-delete-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('删除草稿位 1 的内容？'), findsOneWidget);
     await tester.tap(find.text('删除').last);
     await tester.pumpAndSettle();
 
@@ -144,7 +147,7 @@ void main() {
 
     await tester.tap(overwrite);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('覆盖').last);
+    await tester.tap(find.text('确认保存'));
     await tester.pumpAndSettle();
 
     expect(repository.updateVersions, [3]);
@@ -154,7 +157,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('content-drafts-retry-conflict')));
     await tester.pumpAndSettle();
-    expect(find.text('覆盖槽位 1 的最新版？'), findsOneWidget);
+    expect(find.text('覆盖草稿位 1 的最新版？'), findsOneWidget);
     expect(controller.state.conflict?.pendingContent, '本机待保存正文');
 
     await tester.tap(find.text('仍然覆盖'));

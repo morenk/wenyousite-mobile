@@ -120,7 +120,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('概览'), findsOneWidget);
     expect(find.text('动态'), findsOneWidget);
-    expect(find.text('帖子'), findsOneWidget);
+    expect(find.text('创建'), findsOneWidget);
+    expect(find.text('参与'), findsOneWidget);
+    expect(find.text('帖子'), findsNothing);
     expect(find.text('创作概览'), findsOneWidget);
     expect(find.text('发布动态'), findsOneWidget);
     expect(find.text('创建主题'), findsOneWidget);
@@ -247,7 +249,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('41 L'), findsOneWidget);
+    expect(find.text('41 升'), findsOneWidget);
     expect(find.byKey(const Key('me-open-wallet')), findsOneWidget);
     expect(find.text('钱包余额'), findsNothing);
     expect(find.textContaining('同一份实时余额'), findsNothing);
@@ -259,17 +261,19 @@ void main() {
     expect(publicRepository.activityCalls, 1);
     expect(publicRepository.createdCalls, 0);
 
-    await tester.tap(find.text('帖子'));
+    await tester.tap(
+      find.byKey(const ValueKey('me-content-MeContentTab.createdThreads')),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('创建的'), findsOneWidget);
-    expect(find.text('参与的'), findsOneWidget);
+    expect(find.text('创建的'), findsNothing);
+    expect(find.text('参与的'), findsNothing);
     expect(find.text('我创建的星海主题'), findsOneWidget);
     expect(
       find.byKey(const Key('home-thread-card-thread-mine')),
       findsOneWidget,
     );
-    expect(find.text('18 L'), findsNothing);
+    expect(find.text('18 升'), findsNothing);
     expect(publicRepository.createdCalls, 1);
     expect(publicRepository.fetchUserCalls, 0);
     expect(walletRepository.walletCalls, 1);
@@ -644,7 +648,7 @@ void main() {
     repository.deferNextFetch(reload);
     container.invalidate(meProfileControllerProvider);
     await tester.pump();
-    expect(find.text('正在读取资料'), findsOneWidget);
+    expect(find.byKey(const Key('wenyou-detail-skeleton')), findsOneWidget);
 
     reload.complete(repository.profile);
     await tester.pumpAndSettle();
@@ -688,7 +692,7 @@ void main() {
     repository.deferNextFetch(reload);
     container.invalidate(meProfileControllerProvider);
     await tester.pump();
-    expect(find.text('正在读取资料'), findsOneWidget);
+    expect(find.byKey(const Key('wenyou-detail-skeleton')), findsOneWidget);
 
     reload.complete(repository.profile);
     await tester.pumpAndSettle();
@@ -834,6 +838,27 @@ void main() {
     expect(repository.updateCalls, 0);
   });
 
+  testWidgets('账号设置不依赖个人资料读取即可使用安全入口', (tester) async {
+    final repository = _FakeMeProfileRepository(failFetchOnce: true);
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeSettingsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.fetchCalls, 0);
+    expect(find.text('账号设置'), findsOneWidget);
+    expect(find.text('登录终端'), findsOneWidget);
+    expect(find.text('修改密码'), findsOneWidget);
+    expect(find.text('更换邮箱'), findsOneWidget);
+    expect(find.byKey(const Key('logout-submit')), findsOneWidget);
+    expect(find.text('账号状态加载失败'), findsNothing);
+  });
+
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 个人中心、资料编辑和账号设置无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -857,28 +882,27 @@ void main() {
       );
       await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
       await tester.pumpAndSettle();
-      final threadsTab = find.byKey(
-        const ValueKey('me-content-MeContentTab.threads'),
+      final createdTab = find.byKey(
+        const ValueKey('me-content-MeContentTab.createdThreads'),
       );
-      await tester.ensureVisible(threadsTab);
+      final overviewTab = find.byKey(
+        const ValueKey('me-content-MeContentTab.overview'),
+      );
+      final playedTab = find.byKey(
+        const ValueKey('me-content-MeContentTab.playedThreads'),
+      );
+      await tester.ensureVisible(createdTab);
       await tester.pumpAndSettle();
       final mainTabGroup = Rect.fromLTRB(
-        tester.getRect(find.text('概览')).left,
-        tester.getRect(find.text('概览')).top,
-        tester.getRect(find.text('帖子')).right,
-        tester.getRect(find.text('帖子')).bottom,
+        tester.getRect(overviewTab).left,
+        tester.getRect(overviewTab).top,
+        tester.getRect(playedTab).right,
+        tester.getRect(playedTab).bottom,
       );
       expect(mainTabGroup.center.dx, closeTo(width / 2, 0.01));
 
-      await tester.tap(threadsTab);
+      await tester.tap(createdTab);
       await tester.pumpAndSettle();
-      final threadTabGroup = Rect.fromLTRB(
-        tester.getRect(find.text('创建的')).left,
-        tester.getRect(find.text('创建的')).top,
-        tester.getRect(find.text('参与的')).right,
-        tester.getRect(find.text('参与的')).bottom,
-      );
-      expect(threadTabGroup.center.dx, closeTo(width / 2, 0.01));
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(

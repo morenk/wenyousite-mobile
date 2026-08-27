@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 
 import '../../support/foundation_test_fonts.dart';
 
@@ -39,38 +38,6 @@ void main() {
     expect(find.textContaining('正文一', findRichText: true), findsOneWidget);
     expect(find.textContaining('正文二', findRichText: true), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('空段高度参与长正文折叠并在展开后完整保留', (tester) async {
-    await tester.pumpWidget(
-      _testApp(
-        Builder(
-          builder: (context) => WenyouCollapsibleContent(
-            contentIdentity: 'blank-paragraphs',
-            triggerHeight: 180,
-            collapsedHeight: 120,
-            fadeColor: Theme.of(context).colorScheme.surface,
-            actionKey: const Key('blank-paragraphs-action'),
-            collapsedKey: const Key('blank-paragraphs-collapsed'),
-            child: const WenyouMarkdown(
-              data: '开头\n<br />\n<br />\n<br />\n<br />\n<br />\n<br />\n结尾',
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(_emptyParagraphs(), findsNWidgets(6));
-    expect(find.byKey(const Key('blank-paragraphs-collapsed')), findsOneWidget);
-    expect(find.text('展开全文'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('blank-paragraphs-action')));
-    await tester.pumpAndSettle();
-
-    expect(_emptyParagraphs(), findsNWidgets(6));
-    expect(find.byKey(const Key('blank-paragraphs-collapsed')), findsNothing);
-    expect(find.text('收起'), findsOneWidget);
   });
 
   testWidgets('360dp 空段落阅读基线', (tester) async {

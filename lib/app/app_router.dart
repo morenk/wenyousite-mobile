@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_access.dart';
@@ -8,6 +9,7 @@ import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/bookmark_folder_catalog_page.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/message_center_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/forgot_password_page.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/login_page.dart';
@@ -34,7 +36,6 @@ import 'package:wenyousite_mobile/features/settings/presentation/change_password
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
-import 'package:wenyousite_mobile/features/social/presentation/bookmark_folder_catalog_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/user_relation_list_page.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_collection_page.dart';
@@ -383,21 +384,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.meBookmarks,
         name: AppRouteNames.meBookmarks,
-        builder: (context, state) => const BookmarkFolderCatalogPage(),
+        builder: (context, state) => BookmarkFolderCatalogPage(
+          initialKind: state.uri.queryParameters['kind'] == 'moment'
+              ? BookmarkFolderContentKind.moment
+              : BookmarkFolderContentKind.thread,
+          contentBuilder: (context, kind, folder, refreshCatalog) =>
+              switch (kind) {
+                BookmarkFolderContentKind.thread => BookmarkListView(
+                  key: ValueKey('thread-bookmarks-${folder.id}'),
+                  folderId: folder.id,
+                  additionalRefresh: refreshCatalog,
+                  onCatalogChanged: refreshCatalog,
+                ),
+                BookmarkFolderContentKind.moment => MomentBookmarkFolderPage(
+                  key: ValueKey('moment-bookmarks-${folder.id}'),
+                  folderId: folder.id,
+                  initialFolderName: folder.name,
+                  embedded: true,
+                ),
+              },
+        ),
       ),
       GoRoute(
         path: AppRoutePaths.meBookmarkThreads,
         name: AppRouteNames.meBookmarkThreads,
-        builder: (context, state) => const BookmarkFolderDirectoryPage(
-          kind: BookmarkFolderContentKind.thread,
-        ),
+        redirect: (context, state) => AppRouteLocations.meBookmarks,
       ),
       GoRoute(
         path: AppRoutePaths.meBookmarkMoments,
         name: AppRouteNames.meBookmarkMoments,
-        builder: (context, state) => const BookmarkFolderDirectoryPage(
-          kind: BookmarkFolderContentKind.moment,
-        ),
+        redirect: (context, state) =>
+            '${AppRouteLocations.meBookmarks}?kind=moment',
       ),
       GoRoute(
         path: AppRoutePaths.meThreadBookmarkFolder,

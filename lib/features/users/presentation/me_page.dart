@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -169,20 +170,10 @@ class MeEditPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('编辑资料')),
       body: switch (state.phase) {
         MeProfilePhase.loading => const _MePageList(
-          children: [
-            _AppearanceSettingsPanel(),
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.identityMember,
-                title: '正在读取资料',
-                action: CircularProgressIndicator(),
-              ),
-            ),
-          ],
+          children: [WenyouDetailSkeleton(label: '正在读取资料')],
         ),
         MeProfilePhase.failed => _MePageList(
           children: [
-            const _AppearanceSettingsPanel(),
             WenyouPanel(
               child: WenyouEmptyState(
                 icon: WenyouIconIds.statusOffline,
@@ -215,60 +206,20 @@ class MeEditPage extends ConsumerWidget {
   }
 }
 
-class MeSettingsPage extends ConsumerWidget {
+class MeSettingsPage extends StatelessWidget {
   const MeSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(meProfileControllerProvider);
-    final notifier = ref.read(meProfileControllerProvider.notifier);
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
-      body: switch (state.phase) {
-        MeProfilePhase.loading => const _MePageList(
-          children: [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.actionSettings,
-                title: '正在读取账号状态',
-                action: CircularProgressIndicator(),
-              ),
-            ),
-            _LogoutPanel(),
-          ],
-        ),
-        MeProfilePhase.failed => _MePageList(
-          children: [
-            WenyouPanel(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusOffline,
-                title: '账号状态加载失败',
-                message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: state.failure?.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
-                action: OutlinedButton.icon(
-                  key: const Key('me-settings-retry'),
-                  onPressed: notifier.load,
-                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                  label: const Text('重新加载'),
-                ),
-              ),
-            ),
-            const _LogoutPanel(),
-          ],
-        ),
-        MeProfilePhase.ready => RefreshIndicator(
-          onRefresh: state.isSubmitting ? () async {} : notifier.load,
-          child: _MePageList(
-            children: [
-              const _AppearanceSettingsPanel(),
-              _AccountSecurityPanel(disabled: state.isSubmitting),
-              const _LogoutPanel(),
-            ],
-          ),
-        ),
-      },
+      body: const _MePageList(
+        children: [
+          _AppearanceSettingsPanel(),
+          _AccountSecurityPanel(disabled: false),
+          _LogoutPanel(),
+        ],
+      ),
     );
   }
 }
@@ -471,7 +422,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
               .refreshOverview(),
         MeContentTab.moments =>
           widget.userMoments?.refresh(widget.profile.id) ?? Future.value(),
-        MeContentTab.threads =>
+        MeContentTab.createdThreads || MeContentTab.playedThreads =>
           ref
               .read(meUserContentControllerProvider(widget.profile.id).notifier)
               .refreshActive(),
@@ -532,7 +483,7 @@ class _AccountSecurityPanel extends StatelessWidget {
           ListTile(
             key: const Key('me-open-change-email'),
             enabled: !disabled,
-            leading: const WenyouIcon(WenyouIconIds.actionMention),
+            leading: const WenyouIcon(WenyouIconIds.statusMail),
             title: const Text('更换邮箱'),
             trailing: const WenyouIcon(WenyouIconIds.navigationNext),
             onTap: disabled ? null : () => context.pushNamed('change-email'),
@@ -640,7 +591,7 @@ class _ProfileOverview extends StatelessWidget {
           label: '温油',
           value: walletState.summary == null
               ? '—'
-              : '${WenyouAmount.format(walletState.summary!.balance)} L',
+              : '${WenyouAmount.format(walletState.summary!.balance)} 升',
           onTap: () => context.pushNamed('wallet'),
         ),
       ],
@@ -712,24 +663,13 @@ class _LogoutAction extends ConsumerWidget {
   }
 
   Future<void> _confirmAndLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('退出当前账号？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('logout-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认退出'),
-          ),
-        ],
-      ),
+      title: '退出当前账号？',
+      confirmLabel: '确认退出',
+      confirmKey: const Key('logout-confirm'),
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     final succeeded = await ref
         .read(logoutControllerProvider.notifier)
         .submit();
@@ -740,25 +680,16 @@ class _LogoutAction extends ConsumerWidget {
   }
 
   Future<void> _confirmLocalLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('仅清除这台设备的登录？'),
-        content: const Text('账号安全退出失败。清除这台设备的登录后，请稍后重新登录并在终端管理中检查。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('返回重试'),
-          ),
-          FilledButton(
-            key: const Key('logout-local-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('清除这台设备的登录'),
-          ),
-        ],
-      ),
+      title: '仅清除这台设备的登录？',
+      message: '账号安全退出失败。清除这台设备的登录后，请稍后重新登录并在终端管理中检查。',
+      cancelLabel: '返回重试',
+      confirmLabel: '清除这台设备的登录',
+      confirmKey: const Key('logout-local-confirm'),
+      tone: WenyouConfirmationTone.destructive,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await ref.read(logoutControllerProvider.notifier).forceLocalLogout();
     if (context.mounted) {
       context.go(AppRouteLocations.me);

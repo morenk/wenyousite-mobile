@@ -7,9 +7,22 @@ class ApiFailure implements Exception {
     this.businessCode,
     this.requestId,
     this.contractVersion,
+    this.diagnosticCode,
     this.retryAfter,
     this.cause,
   });
+
+  factory ApiFailure.contractViolation({
+    required String userMessage,
+    required String diagnosticCode,
+    Object? cause,
+  }) {
+    return ApiFailure(
+      userMessage: userMessage,
+      diagnosticCode: diagnosticCode,
+      cause: cause,
+    );
+  }
 
   factory ApiFailure.fromDio(
     DioException exception, {
@@ -51,6 +64,11 @@ class ApiFailure implements Exception {
   final int? businessCode;
   final String? requestId;
   final String? contractVersion;
+
+  /// Stable, non-sensitive code for diagnosing rejected response data.
+  ///
+  /// Presentation code must never show this value to users.
+  final String? diagnosticCode;
   final Duration? retryAfter;
   final String userMessage;
   final Object? cause;
@@ -150,7 +168,8 @@ class ApiFailure implements Exception {
   @override
   String toString() {
     return 'ApiFailure(httpStatus: $httpStatus, businessCode: $businessCode, '
-        'requestId: $requestId, retryAfter: $retryAfter, '
+        'requestId: $requestId, diagnosticCode: $diagnosticCode, '
+        'retryAfter: $retryAfter, '
         'message: $userMessage)';
   }
 }

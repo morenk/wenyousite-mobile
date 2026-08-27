@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/user_relation_controller.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_models.dart';
@@ -98,27 +99,15 @@ class UserRelationActions extends ConsumerWidget {
     bool isBlocked,
   ) async {
     if (!isBlocked) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWenyouConfirmationDialog(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('拉黑用户？'),
-          content: Text(
-            '拉黑 ${target.username} 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              key: const Key('user-relation-block-confirm'),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('确认拉黑'),
-            ),
-          ],
-        ),
+        title: '拉黑用户？',
+        message: '拉黑 ${target.username} 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。',
+        confirmLabel: '确认拉黑',
+        confirmKey: const Key('user-relation-block-confirm'),
+        tone: WenyouConfirmationTone.destructive,
       );
-      if (confirmed != true) return;
+      if (!confirmed) return;
     }
     final succeeded = await notifier.toggleBlock();
     if (!context.mounted || !succeeded) return;

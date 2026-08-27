@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -146,25 +147,14 @@ class MeProfileCoverEditor extends ConsumerWidget {
   }
 
   Future<void> _confirmRemove(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('移除当前主页背景？'),
-        content: const Text('网页端与手机端背景会同时移除，之后仍可重新上传。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('me-profile-cover-remove-confirm'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('确认移除'),
-          ),
-        ],
-      ),
+      title: '移除当前主页背景？',
+      message: '网页端与手机端背景会同时移除，之后仍可重新上传。',
+      confirmLabel: '确认移除',
+      confirmKey: const Key('me-profile-cover-remove-confirm'),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
     final result = await ref
         .read(profileCoverControllerProvider.notifier)
         .remove();

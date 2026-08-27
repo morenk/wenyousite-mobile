@@ -383,7 +383,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         .map((dto) {
           final item = _conversation(dto);
           if (!ids.add(item.id)) {
-            throw const ApiFailure(userMessage: '私聊会话暂时无法显示，请重新加载。');
+            _contractViolation('DM_DUPLICATE_CONVERSATION');
           }
           return item;
         })
@@ -402,28 +402,28 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     final user = _user(dto.otherUser);
     final unread = _nonNegativeInteger(dto.unreadCount, '会话未读数');
     if (status != DirectConversationStatus.accepted && unread != 0) {
-      throw const ApiFailure(userMessage: '消息请求包含异常未读数，请重新加载。');
+      _contractViolation('DM_REQUEST_UNREAD_COUNT');
     }
     if (status == DirectConversationStatus.pending &&
         direction == DirectRequestDirection.none) {
-      throw const ApiFailure(userMessage: '消息请求方向缺失，请重新加载。');
+      _contractViolation('DM_REQUEST_DIRECTION_MISSING');
     }
     if (status != DirectConversationStatus.pending &&
         direction != DirectRequestDirection.none &&
         direction != DirectRequestDirection.unknown) {
-      throw const ApiFailure(userMessage: '私聊状态与请求方向不一致，请重新加载。');
+      _contractViolation('DM_STATUS_DIRECTION_MISMATCH');
     }
     if (dto.canSend && status != DirectConversationStatus.accepted) {
-      throw const ApiFailure(userMessage: '私聊发送权限与会话状态不一致，请重新加载。');
+      _contractViolation('DM_SEND_PERMISSION_MISMATCH');
     }
     if (dto.canAccept &&
         (status != DirectConversationStatus.pending ||
             direction != DirectRequestDirection.incoming)) {
-      throw const ApiFailure(userMessage: '消息请求接受权限异常，请重新加载。');
+      _contractViolation('DM_ACCEPT_PERMISSION_MISMATCH');
     }
     final preview = dto.lastMessage == null ? null : _preview(dto.lastMessage!);
     if (dto.lastMessageAt == null && preview != null) {
-      throw const ApiFailure(userMessage: '会话最近消息时间缺失，请重新加载。');
+      _contractViolation('DM_LAST_MESSAGE_TIME_MISSING');
     }
     return DirectConversation(
       id: id,
@@ -457,10 +457,10 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         content == null &&
         !dto.hasImage &&
         !dto.hasSticker) {
-      throw const ApiFailure(userMessage: '会话消息预览缺少内容，请重新加载。');
+      _contractViolation('DM_PREVIEW_CONTENT_MISSING');
     }
     if (dto.hasSticker && !dto.hasImage) {
-      throw const ApiFailure(userMessage: '会话表情预览格式异常，请重新加载。');
+      _contractViolation('DM_PREVIEW_STICKER_MISMATCH');
     }
     return DirectMessagePreview(
       id: _requiredText(dto.id, '预览消息 ID'),
@@ -479,7 +479,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     final senderId = _requiredText(dto.senderId, '消息发送者 ID');
     final recipientId = _requiredText(dto.recipientId, '消息接收者 ID');
     if (senderId == recipientId) {
-      throw const ApiFailure(userMessage: '消息加载失败，请重新打开会话。');
+      _contractViolation('DM_PARTICIPANT_MISMATCH');
     }
     final content = _optionalText(dto.content);
     final sticker = dto.sticker;
@@ -489,17 +489,17 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         ? null
         : _media(dto.media!);
     if (sticker != null && dto.media != null && dto.media!.id != sticker.id) {
-      throw const ApiFailure(userMessage: '这条表情消息暂时无法显示，请重新加载。');
+      _contractViolation('DM_STICKER_MEDIA_MISMATCH');
     }
     if (dto.recalledAt != null &&
         (content != null || dto.media != null || sticker != null)) {
-      throw const ApiFailure(userMessage: '已撤回消息仍包含私密内容，请重新加载。');
+      _contractViolation('DM_RECALLED_CONTENT_PRESENT');
     }
     if (dto.recalledAt == null && content == null && media == null) {
-      throw const ApiFailure(userMessage: '私聊消息缺少可显示内容，请重新加载。');
+      _contractViolation('DM_MESSAGE_CONTENT_MISSING');
     }
     if (media?.isSticker == true && content != null) {
-      throw const ApiFailure(userMessage: '私聊表情消息格式异常，请重新加载。');
+      _contractViolation('DM_STICKER_CONTENT_MISMATCH');
     }
     return DirectMessage(
       id: id,
@@ -619,14 +619,14 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
         message.conversationId != conversation.id ||
         message.recipientId != targetUserId ||
         message.senderId == targetUserId) {
-      throw const ApiFailure(userMessage: '首条消息已经发生变化，请重新加载。');
+      _contractViolation('DM_START_TARGET_MISMATCH', userMessage: '发送失败，请重试。');
     }
   }
 
   String? _pageCursor(String? value, bool hasMore) {
     final normalized = _optionalText(value);
     if (hasMore && normalized == null) {
-      throw const ApiFailure(userMessage: '会话位置已失效，请重新加载。');
+      _contractViolation('DM_CURSOR_MISSING');
     }
     return normalized;
   }
@@ -638,7 +638,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
 
   int _nonNegativeInteger(num value, String field) {
     if (!value.isFinite || value < 0 || value.toInt() != value) {
-      throw ApiFailure(userMessage: '$field 格式异常，请重新加载。');
+      _contractViolation('DM_INVALID_NON_NEGATIVE_INTEGER');
     }
     return value.toInt();
   }
@@ -646,7 +646,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
   int? _optionalPositiveInteger(num? value, String field) {
     if (value == null) return null;
     if (!value.isFinite || value <= 0 || value.toInt() != value) {
-      throw ApiFailure(userMessage: '$field 格式异常，请重新加载。');
+      _contractViolation('DM_INVALID_POSITIVE_INTEGER');
     }
     return value.toInt();
   }
@@ -654,7 +654,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
   String _requiredText(String? value, String field) {
     final normalized = value?.trim() ?? '';
     if (normalized.isEmpty) {
-      throw ApiFailure(userMessage: '$field暂时无法显示，请重新加载。');
+      _contractViolation('DM_REQUIRED_TEXT_MISSING');
     }
     return normalized;
   }
@@ -667,7 +667,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
   String _requiredSafeUrl(String value, String field) {
     final result = _safeUrl(value, field);
     if (result == null) {
-      throw ApiFailure(userMessage: '$field 地址为空，请重新加载。');
+      _contractViolation('DM_REQUIRED_URL_MISSING');
     }
     return result;
   }
@@ -679,9 +679,19 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
     if (uri == null ||
         !uri.hasScheme ||
         (uri.scheme != 'https' && uri.scheme != 'http')) {
-      throw ApiFailure(userMessage: '$field 地址不安全，已停止展示。');
+      _contractViolation('DM_UNSAFE_URL');
     }
     return uri.toString();
+  }
+
+  Never _contractViolation(
+    String diagnosticCode, {
+    String userMessage = '私聊加载失败，请重新加载。',
+  }) {
+    throw ApiFailure.contractViolation(
+      userMessage: userMessage,
+      diagnosticCode: diagnosticCode,
+    );
   }
 }
 

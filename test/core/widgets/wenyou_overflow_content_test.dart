@@ -78,55 +78,6 @@ void main() {
     expect(find.text('展开全部 6 条回复'), findsOneWidget);
   });
 
-  testWidgets('可展开正文收起后恢复锚点且内容身份变化会重置状态', (tester) async {
-    final content = ValueNotifier((id: 'first', height: 260.0));
-    addTearDown(content.dispose);
-
-    await tester.pumpWidget(
-      _testApp(
-        SingleChildScrollView(
-          child: ValueListenableBuilder<({double height, String id})>(
-            valueListenable: content,
-            builder: (context, value, child) => WenyouCollapsibleContent(
-              key: const Key('collapsible'),
-              contentIdentity: value.id,
-              triggerHeight: 200,
-              collapsedHeight: 120,
-              fadeColor: Theme.of(context).colorScheme.surface,
-              actionKey: const Key('collapsible-action'),
-              collapsedKey: const Key('collapsible-collapsed'),
-              child: SizedBox(height: value.height),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('collapsible-collapsed')), findsOneWidget);
-    expect(tester.getSize(find.byKey(const Key('collapsible'))).height, 120);
-    expect(find.text('展开全文'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('collapsible-action')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('collapsible-collapsed')), findsNothing);
-    expect(find.text('收起'), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const Key('collapsible'))).height,
-      greaterThan(260),
-    );
-
-    content.value = (id: 'second', height: 260.0);
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('collapsible-collapsed')), findsOneWidget);
-    expect(find.text('展开全文'), findsOneWidget);
-
-    content.value = (id: 'short', height: 180.0);
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('collapsible-collapsed')), findsNothing);
-    expect(find.byKey(const Key('collapsible-action')), findsNothing);
-    expect(tester.getSize(find.byKey(const Key('collapsible'))).height, 180);
-  });
 }
 
 Widget _testApp(Widget child) {

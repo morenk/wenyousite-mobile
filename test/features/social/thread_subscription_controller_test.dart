@@ -169,7 +169,7 @@ void main() {
     expect(await future, isTrue);
 
     expect(controller.state.threadSubscription?.id, 'official-after-timeout');
-    expect(controller.takeSuccessMessage(), '已订阅帖子官方更新。');
+    expect(controller.takeSuccessMessage(), '已订阅主题官方更新。');
     expect(repository.createCalls, 1);
   });
 

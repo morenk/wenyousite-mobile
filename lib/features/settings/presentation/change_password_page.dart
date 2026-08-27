@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/credential_security_controllers.dart';
@@ -78,7 +79,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     enabled: !state.isSubmitting,
                     autofillHints: const [AutofillHints.password],
                     textInputAction: TextInputAction.next,
-                    validator: _validateCurrentPassword,
+                    validator: CredentialInputPolicy.validateCurrentPassword,
                   ),
                   SizedBox(height: tokens.space16),
                   WenyouPasswordField(
@@ -90,7 +91,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     autofillHints: const [AutofillHints.newPassword],
                     textInputAction: TextInputAction.next,
                     validator: (value) {
-                      final message = _validateNewPassword(value);
+                      final message = CredentialInputPolicy.validateNewPassword(
+                        value,
+                      );
                       if (message != null) return message;
                       return value == _oldPasswordController.text
                           ? '新密码不能与当前密码相同'
@@ -133,23 +136,4 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       ),
     );
   }
-}
-
-String? _validateCurrentPassword(String? value) {
-  final password = value ?? '';
-  if (password.isEmpty) return '请输入当前密码';
-  if (password.length > 100) return '密码不能超过 100 位';
-  return null;
-}
-
-String? _validateNewPassword(String? value) {
-  final password = value ?? '';
-  if (password.length < 8 || password.length > 100) {
-    return '密码需要 8–100 位';
-  }
-  if (!RegExp(r'[A-Za-z]').hasMatch(password) ||
-      !RegExp(r'[0-9]').hasMatch(password)) {
-    return '密码必须同时包含字母和数字';
-  }
-  return null;
 }

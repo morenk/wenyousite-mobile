@@ -36,8 +36,8 @@ class _NewDirectConversationPageState
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('发起私聊')),
       body: switch (state.phase) {
-        DirectConversationTargetPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        DirectConversationTargetPhase.loading => const WenyouPageBody(
+          child: WenyouDetailSkeleton(label: '正在加载私聊对象'),
         ),
         DirectConversationTargetPhase.failed => _TargetFailure(
           state: state,
@@ -182,39 +182,25 @@ class _TargetReady extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(tokens.space24),
-              child: WenyouConstrainedWidth(
-                maxWidth: 520,
-                child: WenyouPanel(
-                  child: Column(
-                    children: [
-                      WenyouIcon(
-                        WenyouIconIds.statusGreeting,
-                        size: 36,
-                        color: tokens.brandForeground,
-                      ),
-                      SizedBox(height: tokens.space12),
-                      Text(
-                        copy.title,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      SizedBox(height: tokens.space8),
-                      Text(
-                        copy.description,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
+        const Spacer(),
+        if (!user.isMutualFollow ||
+            lookup.contactState == DirectContactState.declined)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.space16,
+              tokens.space8,
+              tokens.space16,
+              tokens.space8,
+            ),
+            child: WenyouConstrainedWidth(
+              maxWidth: 600,
+              child: WenyouStatusBanner(
+                key: const Key('direct-message-new-notice'),
+                message: copy.title,
+                detail: copy.description,
               ),
             ),
           ),
-        ),
         DirectMessageComposer(
           disabled: state.isSending,
           submitLabel: copy.submitLabel!,

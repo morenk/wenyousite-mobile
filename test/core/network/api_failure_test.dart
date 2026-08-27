@@ -6,6 +6,17 @@ import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.
 import 'package:wenyousite_mobile/features/wallet/data/wallet_failure_messages.dart';
 
 void main() {
+  test('响应契约异常只向用户暴露安全结果文案', () {
+    final failure = ApiFailure.contractViolation(
+      userMessage: '私聊加载失败，请重新加载。',
+      diagnosticCode: 'DM_REQUEST_DIRECTION_MISSING',
+    );
+
+    expect(failure.userMessage, '私聊加载失败，请重新加载。');
+    expect(failure.diagnosticCode, 'DM_REQUEST_DIRECTION_MISSING');
+    expect(failure.userMessage, isNot(contains('方向')));
+  });
+
   test('从错误 envelope 提取业务码、请求 ID 和契约版本', () {
     final options = RequestOptions(
       path: '/api/v1/threads',

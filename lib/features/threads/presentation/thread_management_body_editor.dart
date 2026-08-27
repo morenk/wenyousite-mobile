@@ -8,8 +8,8 @@ import 'package:wenyousite_mobile/features/drafts/application/content_drafts_con
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
 import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
-import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
+import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
 
@@ -213,36 +213,17 @@ class _ThreadManagementBodyEditorState
               detail: '这些内容会原样保留。',
             ),
           ),
-        if (uploadState.failure != null)
+        if (uploadState.failure != null || uploadState.isBusy)
           Padding(
             padding: EdgeInsets.only(bottom: tokens.space8),
-            child: WenyouStatusBanner(
-              tone: WenyouStatusTone.error,
-              message: uploadState.failure!.userMessage,
-              detail: uploadState.failure!.requestId == null
-                  ? null
-                  : '问题编号：${uploadState.failure!.requestId}',
-              action: uploadState.failure!.canRetry
-                  ? TextButton(
-                      onPressed: _retryImageUpload,
-                      child: const Text('重试上传'),
-                    )
-                  : null,
-            ),
-          ),
-        if (uploadState.isBusy)
-          Padding(
-            padding: EdgeInsets.only(bottom: tokens.space8),
-            child: WenyouStatusBanner(
-              message: _uploadLabel(uploadState.progress),
-              action: TextButton(
-                onPressed: () => ref
-                    .read(
-                      mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
-                    )
-                    .cancel(),
-                child: const Text('取消上传'),
-              ),
+            child: MediaUploadStatusBanner(
+              state: uploadState,
+              onCancel: () => ref
+                  .read(
+                    mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+                  )
+                  .cancel(),
+              onRetry: _retryImageUpload,
             ),
           ),
         Expanded(
@@ -415,11 +396,3 @@ class _ThreadManagementBodyEditorState
     );
   }
 }
-
-String _uploadLabel(MediaUploadProgress? progress) => switch (progress?.stage) {
-  MediaUploadStage.preparing => '正在准备图片…',
-  MediaUploadStage.uploading => '正在上传图片…',
-  MediaUploadStage.confirming => '正在确认上传…',
-  MediaUploadStage.processing => '图片处理中…',
-  null => '正在准备图片…',
-};

@@ -144,7 +144,6 @@ class MomentCommentBody extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           excludeFromSemantics: true,
           onTap: canReply ? onReply : null,
-          onLongPress: openActions,
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: tokens.space4,

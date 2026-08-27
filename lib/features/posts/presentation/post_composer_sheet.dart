@@ -7,6 +7,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/presentation/content_drafts_sheet.dart';
@@ -14,6 +15,7 @@ import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
+import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -30,15 +32,8 @@ Future<PostItem?> showPostComposerSheet({
   PostComposerDraft? initialDraft,
   ValueChanged<PostComposerDraft?>? onDraftChanged,
 }) {
-  return showModalBottomSheet<PostItem>(
+  return showWenyouComposerSheet<PostItem>(
     context: context,
-    isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: false,
-    useSafeArea: false,
-    sheetAnimationStyle: AnimationStyle.noAnimation,
-    backgroundColor: Colors.transparent,
-    constraints: const BoxConstraints(maxWidth: double.infinity),
     builder: (context) => PostComposerOpening(
       target: target,
       initialDraft: initialDraft,
@@ -454,7 +449,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
               detail: '这些内容会原样保留。',
             ),
           ),
-        if (uploadState.failure != null)
+        if (uploadState.failure != null || uploadState.isBusy)
           Padding(
             padding: EdgeInsets.fromLTRB(
               tokens.space12,
@@ -462,34 +457,15 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
               tokens.space12,
               0,
             ),
-            child: WenyouStatusBanner(
-              message: uploadState.failure!.userMessage,
-              detail: _uploadRequestDetail(uploadState.failure),
-              tone: WenyouStatusTone.error,
-              action: uploadState.failure!.canRetry
-                  ? TextButton(
-                      key: const Key('post-composer-retry-upload'),
-                      onPressed: _retryImageUpload,
-                      child: const Text('重试上传'),
-                    )
-                  : null,
-            ),
-          ),
-        if (uploadState.isBusy)
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.space12,
-              tokens.space12,
-              tokens.space12,
-              0,
-            ),
-            child: _UploadStatus(
-              progress: uploadState.progress,
+            child: MediaUploadStatusBanner(
+              state: uploadState,
               onCancel: () => ref
                   .read(
                     mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
                   )
                   .cancel(),
+              onRetry: _retryImageUpload,
+              retryKey: const Key('post-composer-retry-upload'),
             ),
           ),
         Expanded(
@@ -775,37 +751,6 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   }
 }
 
-class _UploadStatus extends StatelessWidget {
-  const _UploadStatus({required this.progress, required this.onCancel});
-
-  final MediaUploadProgress? progress;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = switch (progress?.stage) {
-      MediaUploadStage.preparing => '正在准备图片…',
-      MediaUploadStage.uploading => '正在上传图片…',
-      MediaUploadStage.confirming => '正在确认上传…',
-      MediaUploadStage.processing => '图片处理中…',
-      null => '正在准备图片…',
-    };
-    return WenyouStatusBanner(
-      message: label,
-      action: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LinearProgressIndicator(value: progress?.fraction),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(onPressed: onCancel, child: const Text('取消上传')),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 String _placeholder(PostComposerKind kind) => switch (kind) {
   PostComposerKind.createFloor => '输入楼层正文…',
   PostComposerKind.createReply => '输入回复内容…',
@@ -820,11 +765,6 @@ String _submitLabel(PostComposerKind kind) => switch (kind) {
 };
 
 String? _requestDetail(ApiFailure? failure) {
-  final requestId = failure?.requestId;
-  return requestId == null ? null : '问题编号：$requestId';
-}
-
-String? _uploadRequestDetail(MediaUploadFailure? failure) {
   final requestId = failure?.requestId;
   return requestId == null ? null : '问题编号：$requestId';
 }

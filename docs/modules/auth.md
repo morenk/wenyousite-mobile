@@ -24,7 +24,7 @@
 
 登录表单校验账号与密码，防止重复提交；`authLogin` 显式发送 mobile 头，响应必须同时含 access/refresh token 才原子保存并恢复目标。并发 `40101` 共享一次 `authRefresh`，双 Token 原子轮转后原请求只重放一次；再次过期进入失效登录页。
 
-忘记密码先规范化邮箱并调用 `authForgotPassword`，无论邮箱是否注册都只展示相同的安全提示；明确成功或发码结果不明都进入重置页并开始固定 60 秒重发冷却，后者保留请求 ID 并使用中性“可能已发出”文案。重置页本地校验邮箱、6 位数字验证码和 8–100 位字母数字密码，调用 `authResetPassword`；后端确认后所有 refresh 会话均被撤销，客户端不建立会话，只返回登录页提示使用新密码。失效会话可进入找回和重置公开路由，不会被守卫循环送回登录。
+忘记密码先规范化邮箱并调用 `authForgotPassword`，无论邮箱是否注册都只展示相同的安全提示；明确成功或发码结果不明都进入重置页并开始固定 60 秒重发冷却，后者保留请求 ID 并使用中性“可能已发出”文案。重置页默认以脱敏摘要展示刚发送的邮箱，并提供“修改邮箱”和紧凑重发入口；只有明确成功或结果不明时才收起邮箱编辑，明确失败继续保留当前编辑字段，且不会把旧邮箱的投递成功状态误显示给新邮箱。页面本地校验邮箱、6 位数字验证码和 8–100 位字母数字密码，调用 `authResetPassword`；后端确认后所有 refresh 会话均被撤销，客户端不建立会话，只返回登录页提示使用新密码。失效会话可进入找回和重置公开路由，不会被守卫循环送回登录。
 
 修改密码调用 `authChangePassword`；更换邮箱先调用 `authRequestChangeEmailCode`，再用 6 位验证码调用 `authVerifyChangeEmail`。两类凭据变更成功后后端都会撤销全部 refresh 会话，移动端随即原子清除本机双 Token 并进入带 `/me` 回跳的登录页。登录终端页调用 `authListSessions`，当前终端不可远程撤销，其他终端确认后调用 `authRevokeSession`。用户从“我的”确认退出后调用 `authLogout` 撤销当前 refresh token，Access Token 已过期时先刷新再重试一次。
 
@@ -58,7 +58,7 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录和注册复用品牌头、面板、区块标题、状态提示和异步主按钮，业务页不得复制表单错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -66,14 +66,14 @@
 - [x] 重启恢复和当前终端服务端退出闭环通过，失败可重试或明确选择本机退出。
 - [x] 并发 `40101` 只发起一次刷新并轮转双 Token，原请求最多重放一次。
 - [x] 邮箱验证码注册显式发送 mobile 头，双 Token 原子写入并恢复受保护目标。
-- [x] 登录、注册在 360、400、600dp 宽度无溢出，输入框语义图标保持默认 20dp 并在 48dp 前缀区域居中，同时保留 Widget Key、无障碍错误语义和 48dp 主操作。
+- [x] 登录、注册、找回与重置在 320、360、400、600dp 宽度无溢出，输入框语义图标保持默认 20dp 并在 48dp 前缀区域居中，同时保留 Widget Key、无障碍错误语义和 48dp 主操作。
 - [x] 登录与注册复用 Foundation 48dp 装饰品牌标识和可见名称，TalkBack 不重复朗读标识。
 - [x] 契约 4.14 移除 `emailVerified`、登录后验证端点和 `EMAIL_NOT_VERIFIED` 分支；注册完成后直接按统一注册用户身份恢复原目标。
 - [ ] 撤销与锁定进入正确状态。
 - [x] 注销要求固定短语和二次确认，远端成功后清除本机双 Token，局部清理失败不会重放破坏性端点。
 - [x] 终端查看、隐私降级、当前终端保护、其他终端确认撤销和失败恢复可操作。
 - [x] 改密和改邮箱可操作，失败保留会话与请求 ID，成功后清除本机双 Token 并要求重新登录。
-- [x] 找回及重置密码可操作，反枚举、重发冷却、错误恢复、全端退出提示及原目标回跳均固定。
+- [x] 找回及重置密码可操作，反枚举、脱敏邮箱摘要、修改邮箱、重发冷却、明确失败保留编辑态、错误恢复、全端退出提示及原目标回跳均固定。
 
 - [x] 登录页对暂停/封禁账号提供公开申诉入口，`40108/40109` 与 `40120` 使用稳定且不混淆普通会话的提示。
 
@@ -83,8 +83,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `011eaf46954e204d492f3e17d887026fb4cf32d9`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `897a152c34ca6707e333790639b68a739f2ec19f`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.4.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.4.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

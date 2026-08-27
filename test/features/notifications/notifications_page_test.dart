@@ -49,10 +49,10 @@ void main() {
     await _pumpAuthenticated(tester, container, router);
 
     expect(find.text('全部'), findsOneWidget);
-    expect(find.text('互动'), findsOneWidget);
-    expect(find.text('订阅'), findsOneWidget);
-    expect(find.text('系统'), findsOneWidget);
-    expect(find.byKey(const Key('notification-filter-tabs')), findsOneWidget);
+    expect(find.text('互动'), findsNothing);
+    expect(find.text('订阅'), findsNothing);
+    expect(find.text('系统'), findsNothing);
+    expect(find.byKey(const Key('notification-filter-menu')), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNothing);
     expect(find.text('回复与提及'), findsNothing);
     expect(find.text('骰子猫 回复了你', findRichText: true), findsOneWidget);
@@ -78,7 +78,7 @@ void main() {
     expect(repository.readIds, ['notification-1']);
   });
 
-  testWidgets('消息中心与通知分类页签视觉保持一致', (tester) async {
+  testWidgets('消息中心主栏目与紧凑通知筛选无布局溢出', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 640);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -198,6 +198,8 @@ void main() {
     addTearDown(container.dispose);
     await _pumpAuthenticated(tester, container, router);
 
+    await tester.tap(find.byKey(const Key('notification-filter-menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('notification-filter-subscription')));
     await tester.pumpAndSettle();
     expect(repository.filters.last, NotificationFilters.byId('subscription'));

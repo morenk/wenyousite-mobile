@@ -5,6 +5,8 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_page_failure_state.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_pagination.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_threads_controller.dart';
@@ -38,7 +40,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
 
   void _loadMoreNearEnd() {
     if (!_scrollController.hasClients ||
-        _scrollController.position.extentAfter > 480) {
+        !wenyouShouldPrefetch(_scrollController.position)) {
       return;
     }
     ref.read(tagThreadsControllerProvider(widget.tagId).notifier).loadMore();
@@ -53,8 +55,8 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
         title: Text(state.tag == null ? '标签主题' : '#${state.tag!.name}'),
       ),
       body: switch (state.phase) {
-        TagThreadsPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        TagThreadsPhase.loading => const WenyouPageBody(
+          child: WenyouListSkeleton(label: '正在加载标签主题'),
         ),
         TagThreadsPhase.failed => _TagFatalState(
           failure: state.failure,
@@ -91,7 +93,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
         itemBuilder: (context, index) {
           var cursor = index;
           if (cursor == 0) {
-            return _CenteredTagContent(
+            return WenyouConstrainedWidth(
               child: WenyouPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,14 +124,10 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
             if (cursor == 0) {
               return Padding(
                 padding: EdgeInsets.only(top: tokens.space12),
-                child: _CenteredTagContent(
-                  child: WenyouStatusBanner(
+                child: WenyouConstrainedWidth(
+                  child: WenyouFailureBanner(
                     key: const Key('tag-threads-transient-failure'),
-                    tone: WenyouStatusTone.error,
-                    message: state.transientFailure!.userMessage,
-                    detail: state.transientFailure!.requestId == null
-                        ? null
-                        : '问题编号：${state.transientFailure!.requestId}',
+                    failure: state.transientFailure!,
                     action: TextButton(
                       onPressed:
                           state.transientRetryAction ==
@@ -147,7 +145,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
           if (state.items.isEmpty) {
             return Padding(
               padding: EdgeInsets.only(top: tokens.space12),
-              child: const _CenteredTagContent(
+              child: const WenyouConstrainedWidth(
                 child: WenyouPanel(
                   child: WenyouEmptyState(
                     icon: WenyouIconIds.actionAddReaction,
@@ -161,7 +159,7 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
             final thread = state.items[cursor];
             return Padding(
               padding: EdgeInsets.only(top: tokens.space12),
-              child: _CenteredTagContent(
+              child: WenyouConstrainedWidth(
                 child: HomeThreadCard(
                   key: Key('tag-thread-${thread.id}'),
                   thread: thread,
@@ -183,40 +181,19 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
           }
           return Padding(
             padding: EdgeInsets.only(top: tokens.space16),
-            child: _CenteredTagContent(
-              child: Center(
-                child: state.isLoadingMore
-                    ? const CircularProgressIndicator()
-                    : state.hasMore
-                    ? OutlinedButton.icon(
-                        key: const Key('tag-threads-load-more'),
-                        onPressed: () => ref.read(provider.notifier).loadMore(),
-                        icon: const WenyouIcon(WenyouIconIds.navigationExpand),
-                        label: const Text('加载更多'),
-                      )
-                    : Text(
-                        '已经看到这个标签下的全部主题',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
-                      ),
+            child: WenyouConstrainedWidth(
+              child: WenyouPaginationFooter(
+                hasMore: state.hasMore,
+                isLoading: state.isLoadingMore,
+                onLoadMore: () => ref.read(provider.notifier).loadMore(),
+                loadMoreKey: const Key('tag-threads-load-more'),
+                endLabel: '已经看到这个标签下的全部主题',
               ),
             ),
           );
         },
       ),
     );
-  }
-}
-
-class _CenteredTagContent extends StatelessWidget {
-  const _CenteredTagContent({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouConstrainedWidth(child: child);
   }
 }
 
@@ -228,26 +205,16 @@ class _TagFatalState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WenyouPageBody(
+    final missing = failure?.httpStatus == 404;
+    return WenyouPageFailureState(
+      title: missing ? '标签不存在或已停用' : '标签主题加载失败',
+      failure: failure,
+      onRetry: onRetry,
       maxWidth: 520,
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: failure?.httpStatus == 404
-              ? WenyouIconIds.actionRemoveTag
-              : WenyouIconIds.statusOffline,
-          title: failure?.httpStatus == 404 ? '标签不存在或已停用' : '标签主题加载失败',
-          message: failure?.userMessage ?? '请检查网络后重试。',
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
-          action: OutlinedButton.icon(
-            key: const Key('tag-threads-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
-          ),
-        ),
-      ),
+      icon: missing
+          ? WenyouIconIds.actionRemoveTag
+          : WenyouIconIds.statusOffline,
+      retryKey: const Key('tag-threads-retry'),
     );
   }
 }

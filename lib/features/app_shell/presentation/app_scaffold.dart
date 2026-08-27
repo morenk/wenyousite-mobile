@@ -117,7 +117,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               value: AppRouteLocations.composeThread,
               icon: WenyouIconIds.contentArticle,
               label: '主题',
-              semanticsLabel: '发布主题帖',
+              semanticsLabel: '发布主题',
               key: Key('global-publish-thread'),
             ),
             WenyouPopoverAction(

@@ -84,21 +84,14 @@ class _MeProfileEditorState extends ConsumerState<MeProfileEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const WenyouSectionHeader(title: '头像'),
+              const WenyouSectionHeader(title: '资料图片'),
               SizedBox(height: tokens.space16),
               MeAvatarEditor(
                 profile: _profile,
                 profileWriteDisabled: profileWriteDisabled,
               ),
-            ],
-          ),
-        ),
-        SizedBox(height: tokens.space12),
-        WenyouPanel(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const WenyouSectionHeader(title: '主页背景'),
+              SizedBox(height: tokens.space16),
+              const Divider(height: 1),
               SizedBox(height: tokens.space16),
               MeProfileCoverEditor(
                 profile: _profile,

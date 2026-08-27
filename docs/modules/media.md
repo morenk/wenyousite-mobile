@@ -32,7 +32,7 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 
 ## 6. 状态模型和数据流
 
-`MediaUploadInput` 只在当前进程持有文件名、声明类型、字节和强类型业务用途；`CropImageSource` 额外持有低分辨率预览、原图尺寸和是否允许裁剪，`NormalizedCropRect` 只表达 0..1 范围内的取景区域。`MediaUploadProgress` 分为 preparing、uploading、confirming、processing，并可携带已发送/总字节；`UploadedEditorImage` 暴露媒体 ID、安全主 URL、可选 thumbnail/feed/medium URL、内容类型、动画标记和尺寸。上传 adapter 在申请地址前通过 native 编码器归一化静态图；进程级工作协调器把 CPU/内存密集准备限制为单路、网络传输限制为双路。同一输入成功归一化后由进程内缓存复用于明确重试，编码失败则清除缓存并允许重新处理，绝不退回上传未归一化原图。Debug 构建以固定字段记录输入检查、WebP 编码、输出检查、上传地址申请、对象存储 PUT、确认、远端处理与全流程耗时；记录只含用途、阶段、结果、毫秒数和可选输入/输出字节数，不接受文件名、URL、媒体 ID、正文或异常详情，Release 构建关闭。主题、帖子、动态发布、动态评论、新私聊、表情包管理页、头像与背景流程按页面或业务实例创建 autoDispose 上传任务；已有私聊会话在气泡 application 状态内直接消费上传端口。任务在 `media/application` 统一管理状态、进度、失败信息和当前上传操作。
+`MediaUploadInput` 只在当前进程持有文件名、声明类型、字节和强类型业务用途；`CropImageSource` 额外持有低分辨率预览、原图尺寸和是否允许裁剪，`NormalizedCropRect` 只表达 0..1 范围内的取景区域。`MediaUploadTaskState` 统一表达打开相册、准备、上传、确认、处理与失败，进度和用户文案由同一状态生成；正文、帖子、主题管理与动态评论复用同一状态横幅，不再各自解释阶段。`UploadedEditorImage` 暴露媒体 ID、安全主 URL、可选 thumbnail/feed/medium URL、内容类型、动画标记和尺寸。上传 adapter 在申请地址前通过 native 编码器归一化静态图；进程级工作协调器把 CPU/内存密集准备限制为单路、网络传输限制为双路。同一输入成功归一化后由进程内缓存复用于明确重试，编码失败则清除缓存并允许重新处理，绝不退回上传未归一化原图。Debug 构建只记录非敏感阶段耗时。各业务入口按页面或实例创建 autoDispose 上传任务；已有私聊会话在气泡 application 状态内直接消费上传端口。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -79,7 +79,7 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `011eaf46954e204d492f3e17d887026fb4cf32d9`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `897a152c34ca6707e333790639b68a739f2ec19f`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 

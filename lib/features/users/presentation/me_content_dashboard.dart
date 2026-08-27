@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
@@ -24,33 +23,21 @@ class MeUserMomentsIntegration {
   final MeUserMomentsRefresher refresh;
 }
 
-enum MeContentTab { overview, moments, threads }
+enum MeContentTab { overview, moments, createdThreads, playedThreads }
 
 extension MeContentTabPresentation on MeContentTab {
   String get label => switch (this) {
     MeContentTab.overview => '概览',
     MeContentTab.moments => '动态',
-    MeContentTab.threads => '帖子',
+    MeContentTab.createdThreads => '创建',
+    MeContentTab.playedThreads => '参与',
   };
 
   PublicUserContentTab? get publicUserTab => switch (this) {
     MeContentTab.overview => PublicUserContentTab.replies,
     MeContentTab.moments => null,
-    MeContentTab.threads => PublicUserContentTab.created,
-  };
-}
-
-enum _MeThreadTab { created, played }
-
-extension on _MeThreadTab {
-  String get label => switch (this) {
-    _MeThreadTab.created => '创建的',
-    _MeThreadTab.played => '参与的',
-  };
-
-  PublicUserContentTab get publicUserTab => switch (this) {
-    _MeThreadTab.created => PublicUserContentTab.created,
-    _MeThreadTab.played => PublicUserContentTab.played,
+    MeContentTab.createdThreads => PublicUserContentTab.created,
+    MeContentTab.playedThreads => PublicUserContentTab.played,
   };
 }
 
@@ -72,8 +59,6 @@ class MeContentTabBody extends ConsumerStatefulWidget {
 
 class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     with AutomaticKeepAliveClientMixin {
-  var _threadTab = _MeThreadTab.created;
-
   @override
   bool get wantKeepAlive => true;
 
@@ -94,38 +79,15 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
                 pathParameters: {'userId': widget.userId},
               ),
             ),
-      MeContentTab.threads => _buildThreads(context),
+      MeContentTab.createdThreads => _buildUserContent(
+        context,
+        PublicUserContentTab.created,
+      ),
+      MeContentTab.playedThreads => _buildUserContent(
+        context,
+        PublicUserContentTab.played,
+      ),
     };
-  }
-
-  Widget _buildThreads(BuildContext context) {
-    return Column(
-      children: [
-        WenyouContentTabs<_MeThreadTab>(
-          key: const Key('me-thread-filter'),
-          keyPrefix: 'me-thread',
-          semanticsLabel: '我的帖子',
-          placement: WenyouTabPlacement.page,
-          options: [
-            for (final tab in _MeThreadTab.values)
-              WenyouFilterOption(
-                value: tab,
-                label: tab.label,
-                keyValue: tab.name,
-              ),
-          ],
-          selected: _threadTab,
-          onSelected: (tab) {
-            if (_threadTab == tab) return;
-            setState(() => _threadTab = tab);
-            ref
-                .read(meUserContentControllerProvider(widget.userId).notifier)
-                .selectTab(tab.publicUserTab);
-          },
-        ),
-        Expanded(child: _buildUserContent(context, _threadTab.publicUserTab)),
-      ],
-    );
   }
 
   Widget _buildUserContent(BuildContext context, PublicUserContentTab tab) {

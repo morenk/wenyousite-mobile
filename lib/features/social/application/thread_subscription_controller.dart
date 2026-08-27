@@ -83,7 +83,7 @@ class ThreadSubscriptionController
     return _toggle(
       type: ThreadSubscriptionType.thread,
       existing: existing,
-      completedMessage: existing == null ? '已订阅帖子官方更新。' : '已取消官方更新订阅。',
+      completedMessage: existing == null ? '已订阅主题官方更新。' : '已取消官方更新订阅。',
       failureMessage: '官方更新订阅失败，请稍后重试。',
     );
   }

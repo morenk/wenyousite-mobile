@@ -40,8 +40,8 @@ class _ThreadTagManagementPageState
     return Scaffold(
       appBar: AppBar(title: const Text('管理主题标签')),
       body: switch (state.phase) {
-        ThreadTagManagementPhase.loading => const Center(
-          child: CircularProgressIndicator(),
+        ThreadTagManagementPhase.loading => const WenyouPageBody(
+          child: WenyouListSkeleton(label: '正在加载主题标签'),
         ),
         ThreadTagManagementPhase.failed => _TagManagementFatalState(
           failure: state.failure,

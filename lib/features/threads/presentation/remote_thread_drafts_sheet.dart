@@ -196,7 +196,7 @@ class _DraftCard extends ConsumerWidget {
       ?category?.label,
       draft.visibility.label,
       '${draft.subthreadCount} 个子贴',
-      '${draft.postCount} 个帖子',
+      '${draft.postCount} 条内容',
     ];
     return WenyouPanel(
       padding: EdgeInsets.all(tokens.space16),

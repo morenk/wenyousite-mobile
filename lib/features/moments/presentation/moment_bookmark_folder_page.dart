@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,11 +19,13 @@ class MomentBookmarkFolderPage extends ConsumerStatefulWidget {
   const MomentBookmarkFolderPage({
     required this.folderId,
     this.initialFolderName,
+    this.embedded = false,
     super.key,
   });
 
   final String folderId;
   final String? initialFolderName;
+  final bool embedded;
 
   @override
   ConsumerState<MomentBookmarkFolderPage> createState() =>
@@ -59,22 +63,24 @@ class _MomentBookmarkFolderPageState
         );
       }
     });
+    final body = RefreshIndicator(
+      onRefresh: () => _refresh(provider),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) =>
+            _loadMoreNearEnd(notification, provider),
+        child: CustomScrollView(
+          key: PageStorageKey('moment-bookmark-folder-${widget.folderId}'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: _slivers(context, state, provider, folderName),
+        ),
+      ),
+    );
+    if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(
         title: Text(folderName ?? widget.initialFolderName ?? '动态收藏夹'),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => _refresh(provider),
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (notification) =>
-              _loadMoreNearEnd(notification, provider),
-          child: CustomScrollView(
-            key: PageStorageKey('moment-bookmark-folder-${widget.folderId}'),
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: _slivers(context, state, provider, folderName),
-          ),
-        ),
-      ),
+      body: body,
     );
   }
 
@@ -333,8 +339,14 @@ class _MomentBookmarkFolderPageState
   }
 
   void _refreshCatalog() {
-    ref.invalidate(
-      bookmarkFolderCatalogControllerProvider(BookmarkFolderContentKind.moment),
+    unawaited(
+      ref
+          .read(
+            bookmarkFolderCatalogControllerProvider(
+              BookmarkFolderContentKind.moment,
+            ).notifier,
+          )
+          .refresh(),
     );
   }
 

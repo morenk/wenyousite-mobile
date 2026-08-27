@@ -118,6 +118,8 @@ class _TipDialog extends ConsumerStatefulWidget {
 
 class _TipDialogState extends ConsumerState<_TipDialog> {
   late final TextEditingController _amountController;
+  final FocusNode _amountFocusNode = FocusNode();
+  var _customAmount = false;
 
   @override
   void initState() {
@@ -128,6 +130,7 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
   @override
   void dispose() {
     _amountController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
@@ -146,19 +149,54 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                key: const Key('tip-amount'),
-                controller: _amountController,
-                enabled: !state.isSubmitting,
-                autofocus: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: '投入升数',
-                  suffixText: '升',
-                ),
-                onSubmitted: state.isSubmitting ? null : (_) => _submit(),
+              Wrap(
+                spacing: tokens.space8,
+                runSpacing: tokens.space8,
+                children: [
+                  for (final amount in const [2, 5, 10])
+                    _TipAmountButton(
+                      amount: amount,
+                      selected:
+                          !_customAmount &&
+                          _amountController.text == amount.toString(),
+                      enabled: !state.isSubmitting,
+                      onPressed: () => setState(() {
+                        _customAmount = false;
+                        _amountController.text = amount.toString();
+                      }),
+                    ),
+                  _TipAmountButton(
+                    selected: _customAmount,
+                    enabled: !state.isSubmitting,
+                    onPressed: () {
+                      setState(() {
+                        if (!_customAmount) _amountController.clear();
+                        _customAmount = true;
+                      });
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _amountFocusNode.requestFocus();
+                      });
+                    },
+                  ),
+                ],
               ),
+              if (_customAmount) ...[
+                SizedBox(height: tokens.space12),
+                TextField(
+                  key: const Key('tip-amount'),
+                  controller: _amountController,
+                  focusNode: _amountFocusNode,
+                  enabled: !state.isSubmitting,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    labelText: '其他升数',
+                    suffixText: '升',
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: state.isSubmitting ? null : (_) => _submit(),
+                ),
+              ],
               if (state.failure != null) ...[
                 SizedBox(height: tokens.space12),
                 WenyouStatusBanner(
@@ -177,15 +215,14 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
             onPressed: state.isSubmitting ? null : () => Navigator.pop(context),
             child: const Text('取消'),
           ),
-          FilledButton(
+          WenyouAsyncButton(
             key: const Key('tip-submit'),
+            label: _amountController.text.isEmpty
+                ? '确认加油'
+                : '确认加油 ${_amountController.text} 升',
+            loadingLabel: '正在加油',
+            isLoading: state.isSubmitting,
             onPressed: state.isSubmitting ? null : _submit,
-            child: state.isSubmitting
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('确认加油'),
           ),
         ],
       ),
@@ -197,5 +234,40 @@ class _TipDialogState extends ConsumerState<_TipDialog> {
         .read(tipControllerProvider(widget.target).notifier)
         .submit(_amountController.text);
     if (result != null && mounted) Navigator.pop(context, result);
+  }
+}
+
+class _TipAmountButton extends StatelessWidget {
+  const _TipAmountButton({
+    required this.selected,
+    required this.enabled,
+    required this.onPressed,
+    this.amount,
+  });
+
+  final int? amount;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = amount == null ? '其他' : '$amount 升';
+    return Semantics(
+      selected: selected,
+      child: OutlinedButton(
+        key: Key(amount == null ? 'tip-amount-other' : 'tip-amount-$amount'),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: selected
+              ? context.wenyouTokens.accentedBackground
+              : null,
+          foregroundColor: selected
+              ? context.wenyouTokens.brandForeground
+              : null,
+        ),
+        onPressed: enabled ? onPressed : null,
+        child: Text(label),
+      ),
+    );
   }
 }

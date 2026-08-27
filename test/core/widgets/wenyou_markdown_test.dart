@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
@@ -720,6 +721,75 @@ $diceNode
     tester.view.resetPhysicalSize();
   });
 
+  testWidgets('普通正文图片保持内容宽度左对齐且每张独占一行', (tester) async {
+    const firstUrl = 'https://cdn.example.com/narrow-first.png';
+    const secondUrl = 'https://cdn.example.com/narrow-second.png';
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    for (final width in const [320.0, 360.0, 400.0, 600.0]) {
+      tester.view.physicalSize = Size(width, 640);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(
+            body: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: WenyouMarkdown(
+                data:
+                    '前文![窄图一]($firstUrl)![窄图二]($secondUrl)后文',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final firstRow = find.byKey(
+        const ValueKey('markdown-block-image-row-$firstUrl'),
+      );
+      final secondRow = find.byKey(
+        const ValueKey('markdown-block-image-row-$secondUrl'),
+      );
+      final before = find.text('前文', findRichText: true);
+      final after = find.text('后文', findRichText: true);
+
+      expect(firstRow, findsOneWidget);
+      expect(secondRow, findsOneWidget);
+      expect(tester.getSize(firstRow).width, closeTo(width - 40, 0.01));
+      expect(tester.getSize(secondRow).width, closeTo(width - 40, 0.01));
+      for (final row in [firstRow, secondRow]) {
+        final slot = tester.widget<SizedBox>(row);
+        expect(
+          (slot.child! as Align).alignment,
+          AlignmentDirectional.centerStart,
+        );
+      }
+      expect(
+        tester.getBottomLeft(before).dy,
+        lessThanOrEqualTo(tester.getTopLeft(firstRow).dy),
+      );
+      expect(
+        tester.getBottomLeft(firstRow).dy,
+        lessThanOrEqualTo(tester.getTopLeft(secondRow).dy),
+      );
+      expect(
+        tester.getBottomLeft(secondRow).dy,
+        lessThanOrEqualTo(tester.getTopLeft(after).dy),
+      );
+      final images = tester
+          .widgetList<WenyouCachedImage>(find.byType(WenyouCachedImage))
+          .toList();
+      expect(images, hasLength(2));
+      for (final image in images) {
+        expect(image.width, isNull);
+        expect(image.fit, BoxFit.contain);
+      }
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('正文内的收藏表情保持原子展示且不伪装成普通插图', (tester) async {
     const url = 'https://cdn.example.com/sticker.gif';
     await tester.pumpWidget(
@@ -727,7 +797,7 @@ $diceNode
         theme: AppTheme.light,
         home: const Scaffold(
           body: WenyouMarkdown(
-            data: '![挥手]($url "wenyousite-sticker:asset-1")',
+            data: '前文![挥手]($url "wenyousite-sticker:asset-1")后文',
           ),
         ),
       ),
@@ -735,8 +805,21 @@ $diceNode
     await tester.pump();
 
     expect(find.byKey(const ValueKey('markdown-image-$url')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('markdown-block-image-row-$url')),
+      findsNothing,
+    );
     expect(find.byKey(const Key('content-image-viewer')), findsNothing);
     expect(find.bySemanticsLabel('挥手'), findsOneWidget);
+    final stickerCenter = tester.getCenter(find.bySemanticsLabel('挥手'));
+    expect(
+      tester.getCenter(find.text('前文', findRichText: true)).dy,
+      closeTo(stickerCenter.dy, 0.01),
+    );
+    expect(
+      tester.getCenter(find.text('后文', findRichText: true)).dy,
+      closeTo(stickerCenter.dy, 0.01),
+    );
     expect(tester.takeException(), isNull);
   });
 }

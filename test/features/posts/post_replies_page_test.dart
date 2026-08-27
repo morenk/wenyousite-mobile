@@ -1262,7 +1262,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('editor-image')));
     await _confirmImageCrop(tester);
-    expect(find.textContaining('正在上传图片'), findsOneWidget);
+    expect(find.textContaining('正在上传'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     expect(uploadGateway.operation.cancelled, isTrue);

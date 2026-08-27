@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_selection.dart';
+import 'package:wenyousite_mobile/features/media/presentation/media_upload_status_banner.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 import 'package:wenyousite_mobile/features/stickers/presentation/sticker_widgets.dart';
@@ -138,42 +139,19 @@ class _MomentCommentComposerState extends ConsumerState<MomentCommentComposer> {
             ),
             SizedBox(height: tokens.space8),
           ],
-          if (uploadState.isBusy) ...[
-            LinearProgressIndicator(value: uploadState.progress?.fraction),
-            SizedBox(height: tokens.space4),
-            Row(
-              children: [
-                Expanded(child: Text(uploadState.progressLabel)),
-                TextButton(
-                  key: const Key('moment-comment-cancel-upload'),
-                  onPressed: () => ref
-                      .read(
-                        mediaUploadTaskControllerProvider(
-                          _uploadTaskId,
-                        ).notifier,
-                      )
-                      .cancel(),
-                  child: const Text('取消'),
-                ),
-              ],
-            ),
-            SizedBox(height: tokens.space8),
-          ],
-          if (uploadState.failure case final failure?) ...[
-            WenyouStatusBanner(
+          if (uploadState.isBusy || uploadState.failure != null) ...[
+            MediaUploadStatusBanner(
               key: const Key('moment-comment-upload-failure'),
-              message: failure.userMessage,
-              detail: failure.requestId == null
-                  ? null
-                  : '问题编号：${failure.requestId}',
-              tone: WenyouStatusTone.error,
-              action: failure.canRetry
-                  ? TextButton(
-                      key: const Key('moment-comment-retry-upload'),
-                      onPressed: _retryImage,
-                      child: const Text('重试上传'),
-                    )
-                  : null,
+              state: uploadState,
+              onCancel: () => ref
+                  .read(
+                    mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
+                  )
+                  .cancel(),
+              onRetry: _retryImage,
+              cancelLabel: '取消',
+              cancelKey: const Key('moment-comment-cancel-upload'),
+              retryKey: const Key('moment-comment-retry-upload'),
             ),
             SizedBox(height: tokens.space8),
           ],

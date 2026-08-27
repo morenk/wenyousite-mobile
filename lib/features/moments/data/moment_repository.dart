@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_comment_context_mapper.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_failure_messages.dart';
+import 'package:wenyousite_mobile/features/moments/data/moment_response_contract_validator.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
 export 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart'
@@ -18,6 +19,7 @@ class ApiMomentRepository implements MomentRepository {
   ApiMomentRepository(this._api);
 
   final MomentsApi _api;
+  static const _contract = MomentResponseContractValidator();
 
   @override
   Future<CursorPage<MomentCard>> fetchFeed({
@@ -504,16 +506,16 @@ class ApiMomentRepository implements MomentRepository {
       updatedAt: dto.updatedAt,
     );
     if (expectedId != null && card.id != expectedId) {
-      throw const ApiFailure(userMessage: '动态已经发生变化，请重新加载。');
+      _contractViolation('MOMENT_ID_MISMATCH');
     }
     final images = dto.images.map(_media).toList(growable: false);
     _validateUnique(images.map((item) => item.id), '动态图片');
     if (images.length != card.imageCount || images.length > 9) {
-      throw const ApiFailure(userMessage: '动态图片数量与详情不一致，请重新加载。');
+      _contractViolation('MOMENT_IMAGE_COUNT_MISMATCH');
     }
     if (card.coverMedia != null &&
         !images.any((image) => image.id == card.coverMedia!.id)) {
-      throw const ApiFailure(userMessage: '动态封面不属于当前图片，请重新加载。');
+      _contractViolation('MOMENT_COVER_NOT_IN_IMAGES');
     }
     return MomentDetail(
       card: card,
@@ -549,19 +551,19 @@ class ApiMomentRepository implements MomentRepository {
     final safeId = _requiredText(id, '动态 ID');
     final mappedAuthor = _author(author);
     if (_requiredText(authorId, '动态作者 ID') != mappedAuthor.id) {
-      throw const ApiFailure(userMessage: '动态作者信息不一致，请重新加载。');
+      _contractViolation('MOMENT_AUTHOR_MISMATCH');
     }
     final mappedCoverType = switch (coverType) {
       'IMAGE' => MomentCoverType.image,
       'TEXT' => MomentCoverType.text,
-      _ => throw const ApiFailure(userMessage: '这张动态封面暂时无法显示。'),
+      _ => _contractViolation('MOMENT_COVER_TYPE_UNKNOWN'),
     };
     final mappedTheme = switch (textCoverTheme) {
       'ROSE' => MomentTextCoverTheme.rose,
       'LILAC' => MomentTextCoverTheme.lilac,
       'MINT' => MomentTextCoverTheme.mint,
       'AMBER' => MomentTextCoverTheme.amber,
-      _ => throw const ApiFailure(userMessage: '这张动态封面暂时无法显示。'),
+      _ => _contractViolation('MOMENT_TEXT_COVER_THEME_UNKNOWN'),
     };
     final safeImageCount = _nonNegativeInteger(imageCount, '动态图片数量');
     final mappedCover = coverMedia == null ? null : _media(coverMedia);
@@ -569,14 +571,14 @@ class ApiMomentRepository implements MomentRepository {
         (mappedCoverType == MomentCoverType.text && mappedCover != null) ||
         (mappedCover != null && safeImageCount < 1) ||
         safeImageCount > 9) {
-      throw const ApiFailure(userMessage: '动态封面加载失败，请重试。');
+      _contractViolation('MOMENT_COVER_STATE_MISMATCH');
     }
     if (!RegExp(r'^(?:0|[1-9]\d*)$').hasMatch(tipTotal)) {
-      throw const ApiFailure(userMessage: '动态加油数值无效，请重新加载。');
+      _contractViolation('MOMENT_TIP_TOTAL_INVALID');
     }
     final safeTitle = _requiredText(title, '动态标题');
     if (safeTitle.length < 2 || safeTitle.length > 40) {
-      throw const ApiFailure(userMessage: '动态标题长度无效，请重新加载。');
+      _contractViolation('MOMENT_TITLE_LENGTH_INVALID');
     }
     return MomentCard(
       id: safeId,
@@ -605,7 +607,10 @@ class ApiMomentRepository implements MomentRepository {
     required String expectedMomentId,
   }) {
     if (dto.parentCommentId != null || dto.replyToComment != null) {
-      throw const ApiFailure(userMessage: '主评论层级无效，请重新加载。');
+      _contractViolation(
+        'MOMENT_ROOT_COMMENT_LEVEL_INVALID',
+        userMessage: '评论加载失败，请重新加载。',
+      );
     }
     final replies = dto.replies
         .map(
@@ -619,7 +624,10 @@ class ApiMomentRepository implements MomentRepository {
     _validateUnique(replies.map((item) => item.id), '评论回复');
     final replyCount = _nonNegativeInteger(dto.replyCount, '评论回复数');
     if (replies.length > replyCount) {
-      throw const ApiFailure(userMessage: '评论回复数量不一致，请重新加载。');
+      _contractViolation(
+        'MOMENT_REPLY_COUNT_MISMATCH',
+        userMessage: '评论加载失败，请重新加载。',
+      );
     }
     final base = _commentFields(
       id: dto.id,
@@ -670,7 +678,10 @@ class ApiMomentRepository implements MomentRepository {
       expectedMomentId: expectedMomentId,
     );
     if (expectedRootId != null && comment.parentCommentId != expectedRootId) {
-      throw const ApiFailure(userMessage: '回复已经发生变化，请重新加载。');
+      _contractViolation(
+        'MOMENT_REPLY_ROOT_MISMATCH',
+        userMessage: '回复加载失败，请重新加载。',
+      );
     }
     return comment;
   }
@@ -691,17 +702,26 @@ class ApiMomentRepository implements MomentRepository {
   }) {
     final safeMomentId = _requiredText(momentId, '评论动态 ID');
     if (safeMomentId != expectedMomentId) {
-      throw const ApiFailure(userMessage: '评论已经发生变化，请重新加载。');
+      _contractViolation(
+        'MOMENT_COMMENT_TARGET_MISMATCH',
+        userMessage: '评论加载失败，请重新加载。',
+      );
     }
     final text = _optionalText(content);
     final mappedMedia = media == null ? null : _media(media);
     final mappedSticker = sticker == null ? null : _sticker(sticker);
     if (mappedMedia != null && mappedSticker != null) {
-      throw const ApiFailure(userMessage: '评论图片和表情不能同时存在，请重新加载。');
+      _contractViolation(
+        'MOMENT_COMMENT_MEDIA_STICKER_MISMATCH',
+        userMessage: '评论加载失败，请重新加载。',
+      );
     }
     if (deleted &&
         (text != null || mappedMedia != null || mappedSticker != null)) {
-      throw const ApiFailure(userMessage: '已删除评论仍包含内容，请重新加载。');
+      _contractViolation(
+        'MOMENT_DELETED_COMMENT_CONTENT_PRESENT',
+        userMessage: '评论加载失败，请重新加载。',
+      );
     }
     if (!deleted &&
         text == null &&
@@ -717,7 +737,10 @@ class ApiMomentRepository implements MomentRepository {
             author: _author(replyToComment.author),
           );
     if (parentId == null && replyTarget != null) {
-      throw const ApiFailure(userMessage: '评论回复层级无效，请重新加载。');
+      _contractViolation(
+        'MOMENT_REPLY_LEVEL_INVALID',
+        userMessage: '评论加载失败，请重新加载。',
+      );
     }
     return MomentComment(
       id: _requiredText(id, '评论 ID'),
@@ -747,7 +770,10 @@ class ApiMomentRepository implements MomentRepository {
     final width = _optionalPositiveInteger(dto.width, '图片宽度');
     final height = _optionalPositiveInteger(dto.height, '图片高度');
     if ((width == null) != (height == null)) {
-      throw const ApiFailure(userMessage: '图片加载失败，请重试。');
+      _contractViolation(
+        'MOMENT_MEDIA_DIMENSION_MISMATCH',
+        userMessage: '图片加载失败，请重新加载。',
+      );
     }
     return MomentMedia(
       id: _requiredText(dto.id, '图片 ID'),
@@ -766,7 +792,10 @@ class ApiMomentRepository implements MomentRepository {
     final width = _optionalPositiveInteger(dto.width, '表情宽度');
     final height = _optionalPositiveInteger(dto.height, '表情高度');
     if ((width == null) != (height == null)) {
-      throw const ApiFailure(userMessage: '表情加载失败，请重试。');
+      _contractViolation(
+        'MOMENT_STICKER_DIMENSION_MISMATCH',
+        userMessage: '表情加载失败，请重新加载。',
+      );
     }
     return MomentSticker(
       id: _requiredText(dto.id, '表情 ID'),
@@ -788,7 +817,10 @@ class ApiMomentRepository implements MomentRepository {
   }) {
     final id = _requiredText(dto.momentId, '动态操作 ID');
     if (id != expectedId || dto.active != expectedActive) {
-      throw const ApiFailure(userMessage: '动态操作状态与当前请求不一致，请重新加载。');
+      _contractViolation(
+        'MOMENT_ACTION_RESULT_MISMATCH',
+        userMessage: '操作失败，请重新加载后重试。',
+      );
     }
     return MomentActionResult(
       momentId: id,
@@ -801,78 +833,38 @@ class ApiMomentRepository implements MomentRepository {
     return order == MomentCommentOrder.newest ? 'NEWEST' : 'OLDEST';
   }
 
-  void _validatePage(int limit) {
-    if (limit < 1 || limit > 50) {
-      throw const ApiFailure(userMessage: '更多内容加载失败，请重新加载。');
-    }
-  }
+  void _validatePage(int limit) => _contract.validatePage(limit);
 
-  String? _pageCursor(String? cursor, bool hasMore) {
-    final safe = _optionalText(cursor);
-    if (hasMore && safe == null) {
-      throw const ApiFailure(userMessage: '列表位置已失效，请刷新。');
-    }
-    return safe;
-  }
+  String? _pageCursor(String? cursor, bool hasMore) =>
+      _contract.pageCursor(cursor, hasMore);
 
-  void _validateUnique(Iterable<String> ids, String label) {
-    final list = ids.toList(growable: false);
-    if (list.toSet().length != list.length) {
-      throw ApiFailure(userMessage: '$label暂时无法显示，请重新加载。');
-    }
-  }
+  void _validateUnique(Iterable<String> ids, String label) =>
+      _contract.validateUnique(ids, label);
 
-  String _requiredText(String value, String label) {
-    final normalized = value.trim();
-    if (normalized.isEmpty) throw ApiFailure(userMessage: '$label不能为空。');
-    return normalized;
-  }
+  String _requiredText(String value, String label) =>
+      _contract.requiredText(value, label);
 
-  String? _optionalText(String? value) {
-    final normalized = value?.trim();
-    return normalized == null || normalized.isEmpty ? null : normalized;
-  }
+  String? _optionalText(String? value) => _contract.optionalText(value);
 
-  String _requiredHttpUri(String value, String label) {
-    return _safeHttpUri(value, label).toString();
-  }
+  String _requiredHttpUri(String value, String label) =>
+      _contract.requiredHttpUri(value, label);
 
-  String? _optionalHttpUri(String? value, String label) {
-    final normalized = _optionalText(value);
-    return normalized == null
-        ? null
-        : _safeHttpUri(normalized, label).toString();
-  }
+  String? _optionalHttpUri(String? value, String label) =>
+      _contract.optionalHttpUri(value, label);
 
-  Uri _safeHttpUri(String value, String label) {
-    final uri = Uri.tryParse(value.trim());
-    if (uri == null ||
-        !uri.hasScheme ||
-        (uri.scheme != 'https' && uri.scheme != 'http')) {
-      throw ApiFailure(userMessage: '$label不安全，请重新加载。');
-    }
-    return uri;
-  }
+  int _positiveInteger(num value, String label) =>
+      _contract.positiveInteger(value, label);
 
-  int _positiveInteger(num value, String label) {
-    final integer = value.toInt();
-    if (!value.isFinite || integer != value || integer < 1) {
-      throw ApiFailure(userMessage: '$label无效，请重新加载。');
-    }
-    return integer;
-  }
+  int _nonNegativeInteger(num value, String label) =>
+      _contract.nonNegativeInteger(value, label);
 
-  int _nonNegativeInteger(num value, String label) {
-    final integer = value.toInt();
-    if (!value.isFinite || integer != value || integer < 0) {
-      throw ApiFailure(userMessage: '$label无效，请重新加载。');
-    }
-    return integer;
-  }
+  int? _optionalPositiveInteger(num? value, String label) =>
+      _contract.optionalPositiveInteger(value, label);
 
-  int? _optionalPositiveInteger(num? value, String label) {
-    return value == null ? null : _positiveInteger(value, label);
-  }
+  Never _contractViolation(
+    String diagnosticCode, {
+    String userMessage = '动态加载失败，请重新加载。',
+  }) => _contract.violation(diagnosticCode, userMessage: userMessage);
 }
 
 final apiMomentRepositoryProvider = Provider<MomentRepository>((ref) {

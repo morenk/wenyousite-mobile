@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/internal_location.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_verification_code_field.dart';
 import 'package:wenyousite_mobile/features/auth/application/registration_controller.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/auth_brand_header.dart';
 
@@ -109,7 +110,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               labelText: '邮箱',
               prefixIcon: WenyouIcon(WenyouIconIds.statusMail),
             ),
-            validator: _validateEmail,
+            validator: CredentialInputPolicy.validateEmail,
           ),
           if (state.failure != null) ...[
             SizedBox(height: tokens.space16),
@@ -182,23 +183,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               ),
             ),
             SizedBox(height: tokens.space8),
-            TextFormField(
-              key: const Key('register-code'),
+            WenyouVerificationCodeField(
+              textFieldKey: const Key('register-code'),
               controller: _codeController,
               enabled: !state.isBusy,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
-              decoration: const InputDecoration(
-                labelText: '6 位验证码',
-                prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
-                counterText: '',
-              ),
-              maxLength: 6,
               textInputAction: TextInputAction.next,
-              validator: (value) => value?.length == 6 ? null : '请输入 6 位数字验证码',
             ),
             SizedBox(height: tokens.space16),
             TextFormField(
@@ -223,7 +212,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               label: '密码',
               helperText: '8–100 位，至少包含一个字母和一个数字',
               textInputAction: TextInputAction.next,
-              validator: _validatePassword,
+              validator: CredentialInputPolicy.validateNewPassword,
             ),
             SizedBox(height: tokens.space16),
             WenyouPasswordField(
@@ -278,15 +267,6 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   }
 }
 
-String? _validateEmail(String? value) {
-  final email = value?.trim() ?? '';
-  if (email.isEmpty) return '请输入邮箱';
-  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-    return '请输入有效的邮箱地址';
-  }
-  return null;
-}
-
 String? _validateUsername(String? value) {
   final username = value?.trim() ?? '';
   if (username.length < 2 || username.length > 24) {
@@ -294,18 +274,6 @@ String? _validateUsername(String? value) {
   }
   if (!RegExp(r'^[A-Za-z0-9\u4E00-\u9FFF]+$').hasMatch(username)) {
     return '用户名只能包含字母、数字或中文';
-  }
-  return null;
-}
-
-String? _validatePassword(String? value) {
-  final password = value ?? '';
-  if (password.length < 8 || password.length > 100) {
-    return '密码需要 8–100 位';
-  }
-  if (!RegExp(r'[A-Za-z]').hasMatch(password) ||
-      !RegExp(r'[0-9]').hasMatch(password)) {
-    return '密码必须同时包含字母和数字';
   }
   return null;
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/auth/application/password_recovery_controller.dart';
 import 'package:wenyousite_mobile/features/auth/presentation/reset_password_page.dart';
@@ -83,9 +84,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   onFieldSubmitted: state.isBusy ? null : (_) => _requestCode(),
                   decoration: const InputDecoration(
                     labelText: '注册邮箱',
-                    prefixIcon: WenyouIcon(WenyouIconIds.actionMention),
+                    prefixIcon: WenyouIcon(WenyouIconIds.statusMail),
                   ),
-                  validator: _validateEmail,
+                  validator: (value) => CredentialInputPolicy.validateEmail(
+                    value,
+                    emptyMessage: '请输入注册邮箱',
+                  ),
                 ),
                 if (state.failure != null) ...[
                   SizedBox(height: tokens.space16),
@@ -138,13 +142,4 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           : {'returnTo': widget.returnTo!},
     );
   }
-}
-
-String? _validateEmail(String? value) {
-  final email = value?.trim() ?? '';
-  if (email.isEmpty) return '请输入注册邮箱';
-  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-    return '请输入有效的邮箱地址';
-  }
-  return null;
 }

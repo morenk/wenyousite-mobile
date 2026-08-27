@@ -2,10 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
@@ -61,34 +63,38 @@ class MomentCardTile extends StatelessWidget {
                           ),
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    tokens.space16,
-                    tokens.space16,
-                    tokens.space16,
-                    tokens.space12,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        moment.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      if (moment.contentExcerpt.isNotEmpty) ...[
-                        SizedBox(height: tokens.space8),
-                        Text(
-                          moment.contentExcerpt,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
+                if (moment.coverType == MomentCoverType.image ||
+                    moment.contentExcerpt.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      tokens.space16,
+                      tokens.space16,
+                      tokens.space16,
+                      tokens.space12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (moment.coverType == MomentCoverType.image)
+                          Text(
+                            moment.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        if (moment.contentExcerpt.isNotEmpty) ...[
+                          if (moment.coverType == MomentCoverType.image)
+                            SizedBox(height: tokens.space8),
+                          Text(
+                            moment.contentExcerpt,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -156,38 +162,29 @@ class MomentTextCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     final (background, foreground) = switch (theme) {
       MomentTextCoverTheme.rose => (
-        WenyouFoundationPalette.accent,
-        WenyouFoundationPalette.onAccent,
+        tokens.accentedBackground,
+        tokens.onAccentedBackground,
       ),
-      MomentTextCoverTheme.lilac => (
-        WenyouFoundationPalette.infoSoft,
-        WenyouFoundationPalette.info,
-      ),
-      MomentTextCoverTheme.mint => (
-        WenyouFoundationPalette.successSoft,
-        WenyouFoundationPalette.success,
-      ),
-      MomentTextCoverTheme.amber => (
-        WenyouFoundationPalette.warningSoft,
-        WenyouFoundationPalette.warning,
-      ),
+      MomentTextCoverTheme.lilac => (tokens.infoSoft, tokens.info),
+      MomentTextCoverTheme.mint => (tokens.successSoft, tokens.success),
+      MomentTextCoverTheme.amber => (tokens.warningSoft, tokens.warning),
     };
     return ColoredBox(
       color: background,
       child: Padding(
-        padding: EdgeInsets.all(context.wenyouTokens.space24),
+        padding: EdgeInsets.all(tokens.space24),
         child: Center(
           child: Text(
             title,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.wenyouPageTitle.copyWith(color: foreground),
           ),
         ),
       ),
@@ -526,167 +523,22 @@ Future<void> openMomentGallery(
 ) {
   return pushWenyouFullscreenPage<void>(
     context: context,
-    builder: (_) =>
-        _MomentGalleryViewer(images: images, initialIndex: initialIndex),
-  );
-}
-
-class _MomentGalleryViewer extends StatefulWidget {
-  const _MomentGalleryViewer({
-    required this.images,
-    required this.initialIndex,
-  });
-
-  final List<MomentMedia> images;
-  final int initialIndex;
-
-  @override
-  State<_MomentGalleryViewer> createState() => _MomentGalleryViewerState();
-}
-
-class _MomentGalleryViewerState extends State<_MomentGalleryViewer> {
-  late final PageController _pageController;
-  late int _index;
-  var _dragDistance = 0.0;
-  var _zoomed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.initialIndex;
-    _pageController = PageController(initialPage: _index);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return Scaffold(
-      backgroundColor: tokens.imageViewerBackground,
-      appBar: AppBar(
-        backgroundColor: tokens.imageViewerBackground,
-        foregroundColor: tokens.onImageViewerBackground,
-        title: Text('${_index + 1} / ${widget.images.length}'),
-        leading: IconButton(
-          key: const Key('moment-gallery-close'),
-          onPressed: () => Navigator.pop(context),
-          tooltip: '关闭图片预览',
-          icon: const WenyouIcon(WenyouIconIds.actionClose),
-        ),
-      ),
-      body: GestureDetector(
-        onVerticalDragUpdate: _zoomed
-            ? null
-            : (details) => _dragDistance += details.delta.dy,
-        onVerticalDragEnd: _zoomed
-            ? null
-            : (_) {
-                if (_dragDistance > 120) Navigator.pop(context);
-                _dragDistance = 0;
-              },
-        child: PageView.builder(
-          controller: _pageController,
-          physics: _zoomed ? const NeverScrollableScrollPhysics() : null,
-          onPageChanged: (index) => setState(() {
-            _index = index;
-            _zoomed = false;
-          }),
-          itemCount: widget.images.length,
-          itemBuilder: (context, index) {
-            return _ZoomableMomentImage(
-              key: ValueKey(widget.images[index].id),
-              image: widget.images[index],
-              onZoomChanged: (zoomed) {
-                if (mounted && _zoomed != zoomed) {
-                  setState(() => _zoomed = zoomed);
-                }
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _ZoomableMomentImage extends StatefulWidget {
-  const _ZoomableMomentImage({
-    required this.image,
-    required this.onZoomChanged,
-    super.key,
-  });
-
-  final MomentMedia image;
-  final ValueChanged<bool> onZoomChanged;
-
-  @override
-  State<_ZoomableMomentImage> createState() => _ZoomableMomentImageState();
-}
-
-class _ZoomableMomentImageState extends State<_ZoomableMomentImage> {
-  final _transformationController = TransformationController();
-
-  @override
-  void initState() {
-    super.initState();
-    _transformationController.addListener(_reportZoom);
-  }
-
-  @override
-  void dispose() {
-    _transformationController
-      ..removeListener(_reportZoom)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _reportZoom() {
-    widget.onZoomChanged(
-      _transformationController.value.getMaxScaleOnAxis() > 1.01,
-    );
-  }
-
-  void _toggleZoom() {
-    final zoomed = _transformationController.value.getMaxScaleOnAxis() > 1.01;
-    _transformationController.value = zoomed
-        ? Matrix4.identity()
-        : (Matrix4.identity()..scaleByDouble(2.5, 2.5, 1, 1));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    return GestureDetector(
-      onDoubleTap: _toggleZoom,
-      child: InteractiveViewer(
-        transformationController: _transformationController,
-        minScale: 1,
-        maxScale: 4,
-        child: Center(
-          child: WenyouCachedImage(
-            imageUrl: widget.image.url,
-            fallbackImageUrls: widget.image.contentUrls
-                .where((url) => url != widget.image.url)
+    builder: (_) => WenyouImageViewerPage(
+      items: [
+        for (final image in images)
+          WenyouImageViewerItem(
+            id: image.id,
+            url: image.url,
+            fallbackUrls: image.contentUrls
+                .where((url) => url != image.url)
                 .toList(growable: false),
-            fit: BoxFit.contain,
-            placeholder: (_, _) => CircularProgressIndicator(
-              color: tokens.onImageViewerBackground,
-            ),
-            errorWidget: (_, _, _) => WenyouIcon(
-              WenyouIconIds.statusImageUnavailable,
-              color: tokens.onImageViewerBackground.withValues(alpha: 0.7),
-              size: 48,
-            ),
+            semanticLabel: '动态图片',
           ),
-        ),
-      ),
-    );
-  }
+      ],
+      initialIndex: initialIndex,
+      closeKey: const Key('moment-gallery-close'),
+    ),
+  );
 }
 
 class MomentCoverImage extends StatelessWidget {

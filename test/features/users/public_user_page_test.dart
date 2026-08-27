@@ -42,7 +42,7 @@ void main() {
     expect(find.text('一起写下温柔的故事。'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
-    expect(find.text('18L'), findsOneWidget);
+    expect(find.text('18 升'), findsOneWidget);
     expect(find.text('创作概览'), findsOneWidget);
     expect(find.text('发布动态'), findsOneWidget);
     expect(find.text('创建主题'), findsWidgets);

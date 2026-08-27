@@ -128,24 +128,23 @@ class _ActivitySummaryItem extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: tokens.space4),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             WenyouIcon(icon, size: 20, color: tokens.mutedText),
             SizedBox(width: tokens.space8),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayValue,
-                    style: value == null
-                        ? Theme.of(context).textTheme.labelLarge
-                        : Theme.of(context).textTheme.titleLarge,
-                  ),
-                  SizedBox(height: tokens.space4),
-                  Text(label, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayValue,
+                  style: value == null
+                      ? Theme.of(context).textTheme.labelLarge
+                      : Theme.of(context).textTheme.titleLarge,
+                ),
+                SizedBox(height: tokens.space4),
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
+              ],
             ),
           ],
         ),
@@ -194,6 +193,7 @@ class _ActivitySummarySkeletonItem extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: tokens.space4),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             width: 20,
@@ -204,7 +204,8 @@ class _ActivitySummarySkeletonItem extends StatelessWidget {
             ),
           ),
           SizedBox(width: tokens.space8),
-          Expanded(
+          SizedBox(
+            width: 72,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

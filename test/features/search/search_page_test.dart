@@ -43,7 +43,7 @@ void main() {
 
     await tester.tap(find.text('动态'));
     await tester.pumpAndSettle();
-    expect(find.text('星海动态'), findsNWidgets(2));
+    expect(find.text('星海动态'), findsOneWidget);
     expect(repository.momentCalls, 1);
 
     await tester.tap(find.text('用户'));

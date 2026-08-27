@@ -7,9 +7,9 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/app_shell/presentation/bookmark_folder_catalog_page.dart';
 import 'package:wenyousite_mobile/features/social/data/bookmark_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
-import 'package:wenyousite_mobile/features/social/presentation/bookmark_folder_catalog_page.dart';
 import 'package:wenyousite_mobile/features/social/presentation/bookmark_list_page.dart';
 
 import '../../support/fake_thread_category_catalog.dart';
@@ -44,7 +44,7 @@ void main() {
     expect(repository.removedIds, ['bookmark-1']);
   });
 
-  testWidgets('收藏总览只展示两类入口并分别进入主题帖目录', (tester) async {
+  testWidgets('收藏页直接展示默认夹并可原地切换收藏夹', (tester) async {
     final repository = _FakeRepository(
       items: [
         _item('bookmark-1', folderId: 'folder-default'),
@@ -57,37 +57,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ChoiceChip), findsNothing);
-    expect(find.byKey(const Key('bookmark-overview-list')), findsOneWidget);
-    expect(find.byKey(const Key('bookmark-catalog-threads')), findsOneWidget);
-    expect(find.byKey(const Key('bookmark-catalog-moments')), findsOneWidget);
-    expect(
-      find.byKey(const Key('bookmark-catalog-folder-folder-default')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('bookmark-kind-tabs')), findsOneWidget);
+    expect(find.byKey(const Key('bookmark-folder-menu')), findsOneWidget);
+    expect(find.text('雾港来信'), findsOneWidget);
+    expect(find.text('收藏 bookmark-2'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('bookmark-catalog-threads')));
+    await tester.tap(find.byKey(const Key('bookmark-folder-menu')));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('bookmark-catalog-folder-folder-default')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('bookmark-catalog-folder-folder-custom')),
-      findsOneWidget,
-    );
-
-    await tester.tap(
-      find.byKey(const Key('bookmark-catalog-folder-folder-custom')),
-    );
+    await tester.tap(find.byKey(const Key('bookmark-folder-folder-custom')));
     await tester.pumpAndSettle();
 
     expect(repository.requestedFolders.last, 'folder-custom');
     expect(find.text('收藏 bookmark-2'), findsOneWidget);
-    expect(find.text('收藏 bookmark-1'), findsNothing);
+    expect(find.text('雾港来信'), findsNothing);
     expect(find.text('灵感'), findsWidgets);
   });
 
-  testWidgets('收藏夹很多时可纵向滚动到最后一项', (tester) async {
+  testWidgets('统一收藏页取消收藏后同步刷新外层计数', (tester) async {
+    final repository = _FakeRepository(items: [_item('bookmark-1')]);
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(_app(repository, router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('bookmark-remove-bookmark-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bookmark-folder-menu')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('bookmark-folder-folder-default')),
+        matching: find.text('0 条收藏'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('统一收藏页刷新目录失败保留列表并显示局部错误', (tester) async {
+    final repository = _FakeRepository(items: [_item('bookmark-1')]);
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(_app(repository, router));
+    await tester.pumpAndSettle();
+
+    repository.failFolders = true;
+    await tester.drag(find.byType(ListView).first, const Offset(0, 300));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('bookmark-folder-refresh-failure')),
+      findsOneWidget,
+    );
+    expect(find.text('问题编号：bookmark-folders-request'), findsWidgets);
+    expect(find.text('雾港来信'), findsOneWidget);
+  });
+
+  testWidgets('收藏夹很多时选择器可滚动到最后一项', (tester) async {
     final folders = [
       for (var index = 0; index < 30; index++)
         _folder('folder-$index', '收藏夹 $index'),
@@ -98,21 +124,14 @@ void main() {
     await tester.pumpWidget(_app(repository, router));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('bookmark-catalog-threads')));
+    await tester.tap(find.byKey(const Key('bookmark-folder-menu')));
     await tester.pumpAndSettle();
 
-    final last = find.byKey(const Key('bookmark-catalog-folder-folder-29'));
-    final viewportHeight =
-        tester.view.physicalSize.height / tester.view.devicePixelRatio;
-    expect(tester.getTopLeft(last).dy, greaterThan(viewportHeight));
-    for (var index = 0; index < 6; index++) {
-      await tester.drag(
-        find.byKey(const Key('bookmark-folder-directory-thread')),
-        const Offset(0, -500),
-      );
-      await tester.pump();
-    }
-    expect(tester.getTopLeft(last).dy, lessThan(viewportHeight));
+    final last = find.byKey(const Key('bookmark-folder-folder-29'));
+    await tester.ensureVisible(last);
+    await tester.tap(last);
+    await tester.pumpAndSettle();
+    expect(repository.requestedFolders.last, 'folder-29');
   });
 
   testWidgets('新建收藏夹校验空名称并在成功后进入新收藏夹', (tester) async {
@@ -122,8 +141,6 @@ void main() {
     await tester.pumpWidget(_app(repository, router));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('bookmark-catalog-threads')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('bookmark-folder-create-thread')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('bookmark-folder-submit')));
@@ -184,15 +201,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('主题帖收藏夹，1 条收藏'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('bookmark-catalog-threads')));
-    await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('默认收藏夹，1 条收藏'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const Key('bookmark-catalog-folder-folder-default')),
-    );
-    await tester.pumpAndSettle();
+    expect(find.byTooltip('切换收藏夹'), findsOneWidget);
     expect(find.bySemanticsLabel('打开主题：雾港来信，作者 骰子猫'), findsOneWidget);
     expect(find.bySemanticsLabel('移动“雾港来信”到收藏夹'), findsOneWidget);
     expect(find.bySemanticsLabel('取消收藏“雾港来信”'), findsOneWidget);
@@ -220,16 +229,19 @@ void main() {
     expect(find.text('问题编号：bookmark-load-request'), findsOneWidget);
   });
 
-  testWidgets('动态收藏从总览进入独立列表页', (tester) async {
+  testWidgets('动态收藏在同一页面切换并直接选择默认夹', (tester) async {
     final router = _router();
     addTearDown(router.dispose);
     await tester.pumpWidget(_app(_FakeRepository(), router));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('bookmark-catalog-moments')));
+    await tester.tap(find.byKey(const Key('bookmark-kind-moment')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('moment-bookmarks-page')), findsOneWidget);
+    expect(
+      find.byKey(const Key('moment-bookmarks-folder-default')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('收藏夹分类失败不遮断收藏列表并提供独立重试', (tester) async {
@@ -300,13 +312,27 @@ GoRouter _router({String initialLocation = '/'}) {
   return GoRouter(
     initialLocation: initialLocation,
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const BookmarkFolderCatalogPage()),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => BookmarkFolderCatalogPage(
+          contentBuilder: (context, kind, folder, refreshCatalog) =>
+              switch (kind) {
+                BookmarkFolderContentKind.thread => BookmarkListView(
+                  key: ValueKey('thread-bookmarks-${folder.id}'),
+                  folderId: folder.id,
+                  additionalRefresh: refreshCatalog,
+                  onCatalogChanged: refreshCatalog,
+                ),
+                BookmarkFolderContentKind.moment => SizedBox.expand(
+                  key: ValueKey('moment-bookmarks-${folder.id}'),
+                ),
+              },
+        ),
+      ),
       GoRoute(
         path: '/bookmarks/threads',
         name: 'me-bookmark-threads',
-        builder: (_, _) => const BookmarkFolderDirectoryPage(
-          kind: BookmarkFolderContentKind.thread,
-        ),
+        redirect: (_, _) => '/',
       ),
       GoRoute(
         path: '/bookmarks/threads/folders/:folderId',
@@ -384,7 +410,7 @@ class _FakeRepository implements BookmarkListRepository {
   final bool failLoad;
   final bool failLoadMore;
   final bool failRemove;
-  final bool failFolders;
+  bool failFolders;
   final List<String> removedIds = [];
   final List<String?> requestedFolders = [];
   final List<String> createdNames = [];

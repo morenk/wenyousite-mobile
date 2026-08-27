@@ -85,9 +85,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('你们已互相关注'), findsWidgets);
+    expect(find.text('已互相关注'), findsOneWidget);
     expect(find.text('这会先作为消息请求'), findsNothing);
-    expect(find.textContaining('不会作为消息请求'), findsOneWidget);
+    expect(find.byKey(const Key('direct-message-new-notice')), findsNothing);
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {

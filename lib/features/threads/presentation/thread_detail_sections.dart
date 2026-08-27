@@ -371,7 +371,6 @@ class ThreadFloorCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
-    final viewportHeight = MediaQuery.sizeOf(context).height;
     return PostCardActionMenu(
       canCopyText: !floor.isDeleted,
       canEdit: !floor.isDeleted && canEdit,
@@ -442,32 +441,18 @@ class ThreadFloorCard extends ConsumerWidget {
                       ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
                     )
                   else
-                    WenyouCollapsibleContent(
-                      contentIdentity: Object.hash(
-                        floor.id,
-                        floor.version,
-                        floor.body.markdown,
+                    StickerPostMarkdown(
+                      postId: floor.id,
+                      data: floor.body.markdown,
+                      diceLabels: threadDiceLabels(floor.body.diceRolls),
+                      diceSemantics: threadDiceSemantics(
+                        floor.body.diceRolls,
                       ),
-                      triggerHeight: viewportHeight * 1.2,
-                      collapsedHeight: viewportHeight * .8,
-                      fadeColor: tokens.panel,
-                      actionKey: Key('thread-floor-body-toggle-${floor.id}'),
-                      collapsedKey: Key(
-                        'thread-floor-body-collapsed-${floor.id}',
-                      ),
-                      child: StickerPostMarkdown(
-                        postId: floor.id,
-                        data: floor.body.markdown,
-                        diceLabels: threadDiceLabels(floor.body.diceRolls),
-                        diceSemantics: threadDiceSemantics(
-                          floor.body.diceRolls,
-                        ),
-                        diceDetails: threadDiceDetails(floor.body.diceRolls),
-                        onInternalLink: (uri) =>
-                            _showInternalLinkNotice(context, uri),
-                        onTapText: pending ? null : onReply,
-                        onLongPressNonText: handle.open,
-                      ),
+                      diceDetails: threadDiceDetails(floor.body.diceRolls),
+                      onInternalLink: (uri) =>
+                          _showInternalLinkNotice(context, uri),
+                      onTapText: pending ? null : onReply,
+                      onLongPressNonText: handle.open,
                     ),
                   if (floor.replyCount > 0) ...[
                     SizedBox(height: tokens.space8),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class ContentImageViewerPage extends StatefulWidget {
@@ -23,123 +24,69 @@ class ContentImageViewerPage extends StatefulWidget {
 }
 
 class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
-  final TransformationController _transformationController =
-      TransformationController();
-  double _verticalDrag = 0;
   bool _saving = false;
   ApiFailure? _saveFailure;
-
-  @override
-  void dispose() {
-    _transformationController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final alt = widget.alt.trim();
     final tokens = context.wenyouTokens;
-    return Scaffold(
-      key: const Key('content-image-viewer'),
-      backgroundColor: tokens.imageViewerBackground,
-      appBar: AppBar(
-        backgroundColor: tokens.imageViewerBackground,
-        foregroundColor: tokens.onImageViewerBackground,
-        title: Text(alt.isEmpty ? '正文插图' : alt),
-        actions: [
-          if (widget.onSaveImage != null)
-            PopupMenuButton<_ContentImageAction>(
-              key: const Key('content-image-actions'),
-              tooltip: '图片操作',
-              enabled: !_saving,
-              onSelected: (action) {
-                if (action == _ContentImageAction.saveSticker) {
-                  unawaited(_saveImage());
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: _ContentImageAction.saveSticker,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: WenyouIcon(WenyouIconIds.actionAddReaction),
-                    title: Text('添加到表情收藏'),
-                  ),
-                ),
-              ],
-            ),
-          if (_saving)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Center(
-                child: SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: tokens.onImageViewerBackground,
-                  ),
+    return WenyouImageViewerPage(
+      viewerKey: const Key('content-image-viewer'),
+      closeTooltip: '关闭原图',
+      items: [
+        WenyouImageViewerItem(
+          url: widget.url,
+          semanticLabel: alt.isEmpty ? '正文插图原图' : alt,
+        ),
+      ],
+      titleBuilder: (_, _) => alt.isEmpty ? '正文插图' : alt,
+      actions: [
+        if (widget.onSaveImage != null)
+          PopupMenuButton<_ContentImageAction>(
+            key: const Key('content-image-actions'),
+            tooltip: '图片操作',
+            enabled: !_saving,
+            onSelected: (action) {
+              if (action == _ContentImageAction.saveSticker) {
+                unawaited(_saveImage());
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: _ContentImageAction.saveSticker,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: WenyouIcon(WenyouIconIds.actionAddReaction),
+                  title: Text('添加到表情收藏'),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              onDoubleTap: () {
-                final zoomed =
-                    _transformationController.value.getMaxScaleOnAxis() > 1.01;
-                _transformationController.value = zoomed
-                    ? Matrix4.identity()
-                    : Matrix4.diagonal3Values(2, 2, 1);
-              },
-              onVerticalDragUpdate: (details) {
-                if (_transformationController.value.getMaxScaleOnAxis() <=
-                    1.01) {
-                  _verticalDrag += details.delta.dy;
-                }
-              },
-              onVerticalDragEnd: (_) {
-                if (_verticalDrag > 80 && Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
-                _verticalDrag = 0;
-              },
-              child: InteractiveViewer(
-                transformationController: _transformationController,
-                minScale: 1,
-                maxScale: 5,
-                child: Center(
-                  child: Image.network(
-                    widget.url,
-                    fit: BoxFit.contain,
-                    semanticLabel: alt.isEmpty ? '正文插图原图' : alt,
-                    errorBuilder: (_, _, _) => const _UnavailableContentImage(),
-                  ),
+            ],
+          ),
+        if (_saving)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Center(
+              child: SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: tokens.onImageViewerBackground,
                 ),
               ),
             ),
           ),
-          if (_saveFailure case final failure?)
-            Positioned(
-              right: tokens.space16,
-              bottom: tokens.space16,
-              left: tokens.space16,
-              child: SafeArea(
-                top: false,
-                child: WenyouFailureBanner(
-                  failure: failure,
-                  action: TextButton(
-                    key: const Key('content-image-save-retry'),
-                    onPressed: _saving ? null : _saveImage,
-                    child: const Text('重试收藏'),
-                  ),
-                ),
+      ],
+      bottomOverlay: _saveFailure == null
+          ? null
+          : WenyouFailureBanner(
+              failure: _saveFailure!,
+              action: TextButton(
+                key: const Key('content-image-save-retry'),
+                onPressed: _saving ? null : _saveImage,
+                child: const Text('重试收藏'),
               ),
             ),
-        ],
-      ),
     );
   }
 
@@ -167,25 +114,3 @@ class _ContentImageViewerPageState extends State<ContentImageViewerPage> {
 }
 
 enum _ContentImageAction { saveSticker }
-
-class _UnavailableContentImage extends StatelessWidget {
-  const _UnavailableContentImage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 120),
-      color: context.wenyouTokens.softPanel,
-      padding: EdgeInsets.all(context.wenyouTokens.space16),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          WenyouIcon(WenyouIconIds.statusImageUnavailable),
-          SizedBox(height: 8),
-          Text('原图加载失败，请检查网络后返回重试', textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
-}

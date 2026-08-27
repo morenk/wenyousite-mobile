@@ -5,6 +5,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/drafts/domain/content_draft_models.dart';
@@ -110,8 +111,9 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
         const Divider(height: 1),
         Expanded(
           child: switch (state.phase) {
-            ContentDraftsPhase.loading => const Center(
-              child: CircularProgressIndicator(),
+            ContentDraftsPhase.loading => const Padding(
+              padding: EdgeInsets.all(12),
+              child: WenyouListSkeleton(label: '正在加载正文草稿', showAvatar: false),
             ),
             ContentDraftsPhase.failed => _LoadFailure(
               state: state,
@@ -174,7 +176,7 @@ class _ReadyDrafts extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '槽位 1 自动保存',
+                      '自动保存到草稿位 1',
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     SizedBox(height: tokens.space4),
@@ -199,22 +201,16 @@ class _ReadyDrafts extends ConsumerWidget {
         ),
         if (state.autoSaveFailure != null) ...[
           SizedBox(height: tokens.space12),
-          WenyouStatusBanner(
+          WenyouFailureBanner(
             key: const Key('content-drafts-auto-save-failure'),
-            message: state.autoSaveFailure!.userMessage,
-            detail: state.autoSaveFailure!.requestId == null
-                ? null
-                : '问题编号：${state.autoSaveFailure!.requestId}',
-            tone: WenyouStatusTone.error,
+            failure: state.autoSaveFailure!,
           ),
         ],
         SizedBox(height: tokens.space12),
         if (state.actionFailure != null) ...[
-          WenyouStatusBanner(
+          WenyouFailureBanner(
             key: const Key('content-drafts-action-failure'),
-            message: state.actionFailure!.userMessage,
-            detail: _requestDetail(state),
-            tone: WenyouStatusTone.error,
+            failure: state.actionFailure!,
             action: state.conflict == null
                 ? null
                 : TextButton.icon(
@@ -244,7 +240,7 @@ class _ReadyDrafts extends ConsumerWidget {
             children: [
               if (state.usage.isFull) ...[
                 Text(
-                  '槽位已满，请先覆盖或删除旧草稿。',
+                  '五个草稿位都已有内容。你仍可选择任一位置保存并确认覆盖。',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 SizedBox(height: tokens.space8),
@@ -262,7 +258,7 @@ class _ReadyDrafts extends ConsumerWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const WenyouIcon(WenyouIconIds.actionSave),
-                  label: const Text('保存到下一空位'),
+                  label: const Text('保存到空闲位'),
                 ),
               ),
             ],
@@ -297,25 +293,14 @@ class _ReadyDrafts extends ConsumerWidget {
     if (!await controller.refreshForAutoSave() || !context.mounted) return;
     final slotOne = controller.draftAt(1);
     if (slotOne != null) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWenyouConfirmationDialog(
         context: context,
         useRootNavigator: false,
-        builder: (context) => AlertDialog(
-          title: const Text('开启自动保存？'),
-          content: const Text('开启后，当前编辑器正文会持续覆盖槽位 1。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('开启'),
-            ),
-          ],
-        ),
+        title: '开启自动保存？',
+        message: '开启后，当前编辑器正文会持续保存到草稿位 1，并覆盖该位置的已有内容。',
+        confirmLabel: '开启',
       );
-      if (confirmed != true || !context.mounted) return;
+      if (!confirmed || !context.mounted) return;
     }
     controller.enableAutoSave(currentContent);
   }
@@ -326,25 +311,15 @@ class _ReadyDrafts extends ConsumerWidget {
   ) async {
     final conflict = state.conflict;
     if (conflict == null) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
       useRootNavigator: false,
-      builder: (context) => AlertDialog(
-        title: Text('覆盖槽位 ${conflict.latest.slot} 的最新版？'),
-        content: const Text('云端内容已被其他设备修改。继续会以当前编辑器正文覆盖刚读取的最新版。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('保留云端'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('仍然覆盖'),
-          ),
-        ],
-      ),
+      title: '覆盖草稿位 ${conflict.latest.slot} 的最新版？',
+      message: '这份草稿已在其他设备更新。继续会用当前正文覆盖刚读取的最新版。',
+      cancelLabel: '保留云端',
+      confirmLabel: '仍然覆盖',
     );
-    if (confirmed == true) await controller.retryConflict();
+    if (confirmed) await controller.retryConflict();
   }
 }
 
@@ -443,11 +418,21 @@ class _DraftSlotCard extends ConsumerWidget {
                 _SlotNumber(slot: slot, occupied: false),
                 SizedBox(width: tokens.space12),
                 Expanded(
-                  child: Text(
-                    '空闲槽位',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '草稿位 $slot',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      SizedBox(height: tokens.space4),
+                      Text(
+                        slot == 1 ? '空闲 · 自动保存位置' : '空闲',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens.mutedText,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 TextButton(
@@ -466,7 +451,7 @@ class _DraftSlotCard extends ConsumerWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('保存'),
+                      : const Text('保存到这里'),
                 ),
               ],
             )
@@ -483,6 +468,11 @@ class _DraftSlotCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            '草稿位 $slot',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          SizedBox(height: tokens.space4),
+                          Text(
                             MarkdownContent.toPlainTextPreview(
                               item.content,
                               maxLength: 100,
@@ -492,7 +482,8 @@ class _DraftSlotCard extends ConsumerWidget {
                           ),
                           SizedBox(height: tokens.space8),
                           Text(
-                            '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(item.updatedAt.toLocal())} · v${item.version}',
+                            '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(item.updatedAt.toLocal())}'
+                            '${slot == 1 ? ' · 自动保存位置' : ''}',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: tokens.mutedText),
                           ),
@@ -506,6 +497,25 @@ class _DraftSlotCard extends ConsumerWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
+                      )
+                    else
+                      PopupMenuButton<void>(
+                        key: Key('content-draft-more-$slot'),
+                        tooltip: '草稿位 $slot 更多操作',
+                        icon: const WenyouIcon(WenyouIconIds.actionMore),
+                        itemBuilder: (context) => [
+                          PopupMenuItem<void>(
+                            key: Key('content-draft-delete-$slot'),
+                            onTap: () => _delete(context, ref, item),
+                            child: Row(
+                              children: [
+                                const WenyouIcon(WenyouIconIds.actionDelete),
+                                SizedBox(width: tokens.space8),
+                                const Text('删除草稿'),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                   ],
                 ),
@@ -529,15 +539,7 @@ class _DraftSlotCard extends ConsumerWidget {
                           ? null
                           : () => _overwrite(context, ref, item),
                       icon: const WenyouIcon(WenyouIconIds.actionSaveAll),
-                      label: const Text('覆盖'),
-                    ),
-                    TextButton.icon(
-                      key: Key('content-draft-delete-$slot'),
-                      onPressed: state.isBusy
-                          ? null
-                          : () => _delete(context, ref, item),
-                      icon: const WenyouIcon(WenyouIconIds.actionDelete),
-                      label: const Text('删除'),
+                      label: const Text('保存到这里'),
                     ),
                   ],
                 ),
@@ -559,25 +561,14 @@ class _DraftSlotCard extends ConsumerWidget {
         MarkdownContent.hasVisibleContent(currentContent) &&
         currentContent != fresh.content;
     if (needsConfirmation) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWenyouConfirmationDialog(
         context: context,
         useRootNavigator: false,
-        builder: (context) => AlertDialog(
-          title: Text('恢复槽位 ${fresh.slot}？'),
-          content: const Text('恢复会替换当前编辑器正文；标题、分类和标签不会改变。是否继续？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('覆盖并恢复'),
-            ),
-          ],
-        ),
+        title: '恢复草稿位 ${fresh.slot}？',
+        message: '恢复会替换当前编辑器正文；标题、分类和标签不会改变。',
+        confirmLabel: '替换并恢复',
       );
-      if (confirmed != true || !context.mounted) return;
+      if (!confirmed || !context.mounted) return;
     }
     onRestore(fresh.content);
     Navigator.pop(context);
@@ -588,25 +579,14 @@ class _DraftSlotCard extends ConsumerWidget {
     WidgetRef ref,
     ContentDraft item,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
       useRootNavigator: false,
-      builder: (context) => AlertDialog(
-        title: Text('覆盖槽位 ${item.slot}？'),
-        content: const Text('此槽位的云端正文会被当前编辑器正文替换。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('覆盖'),
-          ),
-        ],
-      ),
+      title: '保存到草稿位 ${item.slot}？',
+      message: '该位置已有草稿。继续会用当前编辑器正文替换已有内容。',
+      confirmLabel: '确认保存',
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await ref
           .read(contentDraftsControllerProvider(draftSessionKey).notifier)
           .overwrite(item, currentContent);
@@ -618,29 +598,17 @@ class _DraftSlotCard extends ConsumerWidget {
     WidgetRef ref,
     ContentDraft item,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
       useRootNavigator: false,
-      builder: (context) => AlertDialog(
-        title: Text('删除槽位 ${item.slot}？'),
-        content: Text(
-          item.slot == 1 && state.autoSaveEnabled
-              ? '删除后无法恢复，并会同时关闭当前编辑器的自动保存。当前编辑器内容不会受影响。'
-              : '这条正文草稿删除后无法恢复。当前编辑器内容不会受影响。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      title: '删除草稿位 ${item.slot} 的内容？',
+      message: item.slot == 1 && state.autoSaveEnabled
+          ? '删除后无法恢复，并会同时关闭当前编辑器的自动保存。当前编辑器正文不会受影响。'
+          : '删除后无法恢复。当前编辑器正文不会受影响。',
+      confirmLabel: '删除',
+      tone: WenyouConfirmationTone.destructive,
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await ref
           .read(contentDraftsControllerProvider(draftSessionKey).notifier)
           .remove(item);
@@ -667,7 +635,7 @@ class _SlotNumber extends StatelessWidget {
         border: Border.all(color: tokens.border),
       ),
       child: Text(
-        slot.toString().padLeft(2, '0'),
+        slot.toString(),
         style: Theme.of(context).textTheme.titleMedium,
       ),
     );
@@ -699,15 +667,10 @@ class _LoadFailure extends StatelessWidget {
   }
 }
 
-String? _requestDetail(ContentDraftsState state) {
-  final requestId = state.actionFailure?.requestId;
-  return requestId == null ? null : '问题编号：$requestId';
-}
-
 String _autoSaveDescription(ContentDraftsState state) {
   return switch (state.autoSaveStatus) {
-    ContentDraftAutoSaveStatus.idle => '开启后，当前编辑器正文会自动更新到槽位 1',
-    ContentDraftAutoSaveStatus.waiting => '已开启，编辑后自动更新到槽位 1',
+    ContentDraftAutoSaveStatus.idle => '开启后，当前编辑器正文会自动更新到草稿位 1',
+    ContentDraftAutoSaveStatus.waiting => '已开启，编辑后自动更新到草稿位 1',
     ContentDraftAutoSaveStatus.saving => '正在保存到云端…',
     ContentDraftAutoSaveStatus.saved => '当前正文已自动保存',
     ContentDraftAutoSaveStatus.error => '自动保存失败并已关闭，请重新开启',

@@ -88,13 +88,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('平台保留'), findsNothing);
     expect(find.textContaining('85%'), findsNothing);
+    expect(find.byKey(const Key('tip-amount')), findsNothing);
+    expect(
+      tester
+          .widget<Semantics>(
+            find
+                .ancestor(
+                  of: find.byKey(const Key('tip-amount-2')),
+                  matching: find.byType(Semantics),
+                )
+                .first,
+          )
+          .properties
+          .selected,
+      isTrue,
+    );
+    await tester.tap(find.byKey(const Key('tip-amount-other')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('tip-amount')))
+          .controller
+          ?.text,
+      isEmpty,
+    );
+    expect(find.text('确认加油'), findsOneWidget);
     await tester.enterText(find.byKey(const Key('tip-amount')), '1');
+    await tester.pump();
+    expect(find.text('确认加油 1 升'), findsOneWidget);
     await tester.tap(find.byKey(const Key('tip-submit')));
     await tester.pumpAndSettle();
     expect(find.textContaining('最低投入 2 升'), findsOneWidget);
     expect(repository.tipCalls, 0);
 
-    await tester.enterText(find.byKey(const Key('tip-amount')), '10');
+    await tester.tap(find.byKey(const Key('tip-amount-10')));
     await tester.tap(find.byKey(const Key('tip-submit')));
     await tester.pumpAndSettle();
     expect(repository.tipCalls, 1);
@@ -112,14 +139,19 @@ void main() {
     await tester.pumpWidget(_tipApp(container));
     await tester.tap(find.text('加油'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('tip-amount')), '10');
+    await tester.tap(find.byKey(const Key('tip-amount-10')));
     await tester.tap(find.byKey(const Key('tip-submit')));
     await tester.pump();
 
     expect(repository.requests, hasLength(1));
     expect(
       tester
-          .widget<FilledButton>(find.byKey(const Key('tip-submit')))
+          .widget<FilledButton>(
+            find.descendant(
+              of: find.byKey(const Key('tip-submit')),
+              matching: find.byType(FilledButton),
+            ),
+          )
           .onPressed,
       isNull,
     );
@@ -143,7 +175,7 @@ void main() {
     await tester.pumpWidget(_tipApp(container));
     await tester.tap(find.text('加油'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('tip-amount')), '10');
+    await tester.tap(find.byKey(const Key('tip-amount-10')));
     await tester.tap(find.byKey(const Key('tip-submit')));
     await tester.pumpAndSettle();
 

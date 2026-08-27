@@ -149,7 +149,7 @@ void main() {
     await _confirmImageCrop(tester);
     await tester.pump();
 
-    expect(find.text('正在上传 50%'), findsOneWidget);
+    expect(find.text('正在上传图片 50%'), findsOneWidget);
     expect(
       tester
           .widget<FilledButton>(find.byKey(const Key('stickers-add-gallery')))
@@ -162,7 +162,7 @@ void main() {
     await tester.pump();
 
     expect(gateway.operation.cancelled, isTrue);
-    expect(find.text('正在上传 50%'), findsNothing);
+    expect(find.text('正在上传图片 50%'), findsNothing);
     expect(find.byKey(const Key('stickers-upload-failure')), findsNothing);
     expect(repository.importedSources, isEmpty);
     expect(

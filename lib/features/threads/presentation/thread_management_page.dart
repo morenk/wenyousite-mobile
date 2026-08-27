@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/subthread_manage
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_controls.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_body_editor.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_management_settings_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_member_management_page.dart';
 
 enum ThreadManagementSection { settings, subthreads, members }
@@ -128,8 +129,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             ),
             Expanded(
               child: switch (state.phase) {
-                ThreadManagementPhase.loading => const Center(
-                  child: CircularProgressIndicator(),
+                ThreadManagementPhase.loading => const WenyouPageBody(
+                  child: WenyouDetailSkeleton(label: '正在加载主题管理'),
                 ),
                 ThreadManagementPhase.failed => _ManagementFatalState(
                   failureMessage: state.failure?.userMessage,
@@ -169,160 +170,54 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextFormField(
-              key: const Key('thread-management-title'),
-              controller: _titleController,
-              focusNode: _titleFocusNode,
+            ThreadManagementBasicsPanel(
+              titleController: _titleController,
+              titleFocusNode: _titleFocusNode,
+              categories: bootstrap.categories,
+              categorySlug: _categorySlug,
               enabled: !locked,
-              maxLength: 100,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: '标题',
-                hintText: '一句话说明这个主题',
-              ),
-              onChanged: (_) => _autosave.schedule(),
-              validator: (value) {
-                final title = value?.trim() ?? '';
-                if (title.isEmpty) return '请输入主题标题';
-                if (title.length > 100) return '标题不能超过 100 个字符';
-                return null;
+              version: thread.version,
+              onTitleChanged: (_) => _autosave.schedule(),
+              onCategoryChanged: (value) {
+                setState(() => _categorySlug = value);
+                unawaited(_autosave.saveNow());
               },
             ),
             SizedBox(height: tokens.space12),
-            WenyouDropdownFormField<String>(
-              key: ValueKey('thread-management-category-${thread.version}'),
-              initialValue: _categorySlug,
-              decoration: const InputDecoration(labelText: '分区'),
-              hint: const Text('请选择分区'),
-              items: bootstrap.categories
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category.slug,
-                      child: Text(
-                        category.isSelectable
-                            ? category.name
-                            : '${category.name}（已停用）',
-                      ),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: locked
-                  ? null
-                  : (value) {
-                      setState(() => _categorySlug = value);
-                      unawaited(_autosave.saveNow());
-                    },
-              validator: (value) => value == null ? '请选择主题分区' : null,
+            ThreadManagementPublishingPanel(
+              status: _status,
+              visibility: _visibility,
+              enabled: !locked,
+              canChangeVisibility: thread.isOwner,
+              onStatusChanged: (value) {
+                setState(() => _status = value);
+                unawaited(_autosave.saveNow());
+              },
+              onVisibilityChanged: (value) {
+                setState(() => _visibility = value);
+                unawaited(_autosave.saveNow());
+              },
             ),
             SizedBox(height: tokens.space12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: WenyouDropdownFormField<ThreadManagementStatus>(
-                    key: ValueKey('thread-management-status-${thread.version}'),
-                    initialValue: _status,
-                    decoration: const InputDecoration(labelText: '主题状态'),
-                    items: ThreadManagementStatus.values
-                        .map(
-                          (status) => DropdownMenuItem(
-                            value: status,
-                            child: Text(status.label),
-                          ),
-                        )
-                        .toList(growable: false),
-                    onChanged: locked
-                        ? null
-                        : (value) {
-                            if (value == null) return;
-                            setState(() => _status = value);
-                            unawaited(_autosave.saveNow());
-                          },
+            ThreadManagementTagsPanel(
+              tags: _tagNames,
+              enabled: !locked,
+              onEdit: _editTags,
+              onDeleteTag: (tag) {
+                setState(
+                  () => _tagNames = List.unmodifiable(
+                    _tagNames.where((value) => value != tag),
                   ),
-                ),
-                SizedBox(width: tokens.space12),
-                Expanded(
-                  child: KeyedSubtree(
-                    key: const Key('thread-management-visibility'),
-                    child: WenyouDropdownFormField<ThreadManagementVisibility>(
-                      key: ValueKey(
-                        'thread-management-visibility-${thread.version}',
-                      ),
-                      initialValue: _visibility,
-                      decoration: const InputDecoration(labelText: '可见范围'),
-                      items: ThreadManagementVisibility.values
-                          .map(
-                            (visibility) => DropdownMenuItem(
-                              value: visibility,
-                              child: Text(visibility.label),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: locked || !thread.isOwner
-                          ? null
-                          : (value) {
-                              if (value != null) {
-                                setState(() => _visibility = value);
-                                unawaited(_autosave.saveNow());
-                              }
-                            },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: tokens.space8),
-            Text(
-              thread.isOwner ? _visibility.description : '仅楼主可修改可见范围。',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                );
+                unawaited(_autosave.saveNow());
+              },
             ),
             SizedBox(height: tokens.space20),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '主题标签 ${_tagNames.length}/5',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                TextButton.icon(
-                  key: const Key('thread-management-edit-tags'),
-                  onPressed: locked ? null : _editTags,
-                  icon: const WenyouIcon(WenyouIconIds.contentTag),
-                  label: const Text('编辑'),
-                ),
-              ],
+            const WenyouSectionHeader(
+              title: '主正文',
+              subtitle: '这里的内容会显示在默认子贴顶部。',
             ),
-            if (_tagNames.isNotEmpty)
-              Wrap(
-                spacing: tokens.space8,
-                runSpacing: tokens.space8,
-                children: [
-                  for (final tag in _tagNames)
-                    InputChip(
-                      label: Text(tag),
-                      onDeleted: locked
-                          ? null
-                          : () {
-                              setState(
-                                () => _tagNames = List.unmodifiable(
-                                  _tagNames.where((value) => value != tag),
-                                ),
-                              );
-                              unawaited(_autosave.saveNow());
-                            },
-                      deleteIcon: const WenyouIcon(
-                        WenyouIconIds.actionClose,
-                        size: 16,
-                      ),
-                    ),
-                ],
-              ),
-            SizedBox(height: tokens.space20),
-            Text('主正文', style: Theme.of(context).textTheme.titleMedium),
-            SizedBox(height: tokens.space8),
+            SizedBox(height: tokens.space12),
             DecoratedBox(
               decoration: BoxDecoration(
                 color: tokens.panel,

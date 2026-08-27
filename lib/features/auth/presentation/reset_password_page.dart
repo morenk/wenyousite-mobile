@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_verification_code_field.dart';
 import 'package:wenyousite_mobile/features/auth/application/password_recovery_controller.dart';
 
 class PasswordResetRouteData {
@@ -54,12 +56,14 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   late final PasswordRecoverySeed _providerSeed;
+  late bool _editingEmail;
 
   @override
   void initState() {
     super.initState();
     final initialEmail = widget.initialEmail?.trim().toLowerCase();
     _emailController.text = initialEmail ?? '';
+    _editingEmail = initialEmail == null || initialEmail.isEmpty;
     _providerSeed = PasswordRecoverySeed(
       initialEmail: initialEmail,
       codeRecentlySent:
@@ -79,11 +83,16 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   }
 
   Future<void> _requestCode() async {
-    if (!(_emailFieldKey.currentState?.validate() ?? false)) return;
+    if (_editingEmail && !(_emailFieldKey.currentState?.validate() ?? false)) {
+      return;
+    }
     FocusScope.of(context).unfocus();
-    await ref
+    final codeMayHaveBeenSent = await ref
         .read(passwordRecoveryControllerProvider(_providerSeed).notifier)
         .requestCode(_emailController.text);
+    if (mounted && codeMayHaveBeenSent) {
+      setState(() => _editingEmail = false);
+    }
   }
 
   Future<void> _resetPassword() async {
@@ -112,6 +121,11 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     final tokens = context.wenyouTokens;
     final state = ref.watch(passwordRecoveryControllerProvider(_providerSeed));
     final requestedEmail = state.lastRequestedEmail;
+    final currentEmail = _emailController.text.trim().toLowerCase();
+    final showDeliveryState =
+        requestedEmail != null &&
+        requestedEmail.isNotEmpty &&
+        (!_editingEmail || requestedEmail == currentEmail);
     return Scaffold(
       appBar: AppBar(title: const Text('重置密码')),
       body: WenyouPageBody(
@@ -127,7 +141,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     title: '设置新的登录密码',
                     subtitle: '重置成功后，账号会在所有设备上退出。',
                   ),
-                  if (requestedEmail != null && requestedEmail.isNotEmpty) ...[
+                  if (showDeliveryState) ...[
                     SizedBox(height: tokens.space20),
                     WenyouStatusBanner(
                       key: const Key('reset-password-code-sent'),
@@ -136,7 +150,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                           : WenyouStatusTone.accent,
                       message: state.codeDeliveryUncertain
                           ? '邮件可能已经发出'
-                          : '如果该邮箱已注册，验证码会发送到 $requestedEmail。',
+                          : '验证码已发送',
                       detail: state.codeDeliveryUncertain
                           ? state.codeDeliveryRequestId == null
                                 ? '请保留当前验证码输入；为避免重复邮件，60 秒内不会重发。'
@@ -145,59 +159,75 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     ),
                   ],
                   SizedBox(height: tokens.space24),
-                  TextFormField(
-                    key: _emailFieldKey,
-                    controller: _emailController,
-                    enabled: !state.isBusy,
-                    autofillHints: const [AutofillHints.email],
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: '注册邮箱',
-                      prefixIcon: WenyouIcon(WenyouIconIds.actionMention),
+                  if (_editingEmail)
+                    TextFormField(
+                      key: _emailFieldKey,
+                      controller: _emailController,
+                      enabled: !state.isBusy,
+                      autofillHints: const [AutofillHints.email],
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: '注册邮箱',
+                        prefixIcon: WenyouIcon(WenyouIconIds.statusMail),
+                      ),
+                      validator: (value) => CredentialInputPolicy.validateEmail(
+                        value,
+                        emptyMessage: '请输入注册邮箱',
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    )
+                  else
+                    Row(
+                      children: [
+                        const WenyouIcon(WenyouIconIds.statusMail),
+                        SizedBox(width: tokens.space12),
+                        Expanded(
+                          child: Text(
+                            _maskedEmail(_emailController.text),
+                            key: const Key('reset-password-email-summary'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                        TextButton(
+                          key: const Key('reset-password-edit-email'),
+                          onPressed: state.isBusy
+                              ? null
+                              : () => setState(() => _editingEmail = true),
+                          child: const Text('修改邮箱'),
+                        ),
+                      ],
                     ),
-                    validator: _validateEmail,
-                  ),
                   SizedBox(height: tokens.space12),
-                  OutlinedButton.icon(
-                    key: const Key('reset-password-request-code'),
-                    onPressed: state.isBusy || state.resendSecondsRemaining > 0
-                        ? null
-                        : _requestCode,
-                    icon: state.isRequestingCode
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const WenyouIcon(WenyouIconIds.actionSend),
-                    label: Text(
-                      state.isRequestingCode
-                          ? '正在发送验证码'
-                          : state.resendSecondsRemaining > 0
-                          ? '${state.resendSecondsRemaining} 秒后可重发'
-                          : '发送或重新发送验证码',
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      key: const Key('reset-password-request-code'),
+                      onPressed:
+                          state.isBusy || state.resendSecondsRemaining > 0
+                          ? null
+                          : _requestCode,
+                      icon: state.isRequestingCode
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const WenyouIcon(WenyouIconIds.actionSend),
+                      label: Text(
+                        state.isRequestingCode
+                            ? '正在发送验证码'
+                            : state.resendSecondsRemaining > 0
+                            ? '${state.resendSecondsRemaining} 秒后可重发'
+                            : '发送或重新发送验证码',
+                      ),
                     ),
                   ),
                   SizedBox(height: tokens.space20),
-                  TextFormField(
-                    key: const Key('reset-password-code'),
+                  WenyouVerificationCodeField(
+                    textFieldKey: const Key('reset-password-code'),
                     controller: _codeController,
                     enabled: !state.isBusy,
-                    autofillHints: const [AutofillHints.oneTimeCode],
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    maxLength: 6,
                     textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        value?.length == 6 ? null : '请输入 6 位数字验证码',
-                    decoration: const InputDecoration(
-                      labelText: '6 位验证码',
-                      counterText: '',
-                      prefixIcon: WenyouIcon(WenyouIconIds.statusVerified),
-                    ),
                   ),
                   SizedBox(height: tokens.space16),
                   WenyouPasswordField(
@@ -208,7 +238,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     label: '新密码',
                     helperText: '8–100 位，至少包含一个字母和一个数字',
                     textInputAction: TextInputAction.next,
-                    validator: _validateNewPassword,
+                    validator: CredentialInputPolicy.validateNewPassword,
                   ),
                   SizedBox(height: tokens.space16),
                   WenyouPasswordField(
@@ -278,23 +308,10 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   }
 }
 
-String? _validateEmail(String? value) {
-  final email = value?.trim() ?? '';
-  if (email.isEmpty) return '请输入注册邮箱';
-  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-    return '请输入有效的邮箱地址';
-  }
-  return null;
-}
-
-String? _validateNewPassword(String? value) {
-  final password = value ?? '';
-  if (password.length < 8 || password.length > 100) {
-    return '密码需要 8–100 位';
-  }
-  if (!RegExp(r'[A-Za-z]').hasMatch(password) ||
-      !RegExp(r'[0-9]').hasMatch(password)) {
-    return '密码必须同时包含字母和数字';
-  }
-  return null;
+String _maskedEmail(String email) {
+  final separator = email.indexOf('@');
+  if (separator <= 0 || separator == email.length - 1) return email;
+  final local = email.substring(0, separator);
+  final visible = local.substring(0, 1);
+  return '$visible***${email.substring(separator)}';
 }

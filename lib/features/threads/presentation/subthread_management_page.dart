@@ -36,8 +36,8 @@ class SubthreadManagementContent extends ConsumerWidget {
     final provider = subthreadManagementControllerProvider(threadId);
     final state = ref.watch(provider);
     return switch (state.phase) {
-      SubthreadManagementPhase.loading => const Center(
-        child: CircularProgressIndicator(),
+      SubthreadManagementPhase.loading => const WenyouPageBody(
+        child: WenyouListSkeleton(label: '正在加载子贴'),
       ),
       SubthreadManagementPhase.failed => _SubthreadsFatalState(
         failure: state.failure,

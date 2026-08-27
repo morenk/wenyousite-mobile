@@ -698,17 +698,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('楼层正文按真实视口高度折叠且展开后可从正文区域滚动', (tester) async {
+  testWidgets('楼层长正文不按视口高度折叠并可直接读到末段', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    final paragraphs = List.generate(
+      36,
+      (index) => '第 ${index + 1} 段，这是用于验证楼层正文完整排版的文字。',
+    );
     final floor = ThreadFloorModel(
       id: 'floor-tall-body',
       floorNumber: 1,
       author: _author,
       body: ThreadBodyModel(
-        markdown: List.filled(36, '这是用于验证楼层正文真实布局高度的一段文字。').join('\n\n'),
+        markdown: paragraphs.join('\n\n'),
       ),
       createdAt: DateTime.utc(2026, 8, 9, 12, 10),
       isDeleted: false,
@@ -720,44 +724,35 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final collapsed = find.byKey(
-      const Key('thread-floor-body-collapsed-floor-tall-body'),
+    final floorCard = find.byKey(
+      const Key('thread-floor-card-floor-tall-body'),
     );
-    final toggle = find.byKey(
-      const Key('thread-floor-body-toggle-floor-tall-body'),
+    final markdown = find.descendant(
+      of: floorCard,
+      matching: find.byType(WenyouMarkdown),
     );
+    expect(markdown, findsOneWidget);
+    expect(tester.getSize(markdown).height, greaterThan(800 * 1.2));
+    expect(
+      find.byKey(const Key('thread-floor-body-collapsed-floor-tall-body')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('thread-floor-body-toggle-floor-tall-body')),
+      findsNothing,
+    );
+    expect(find.text('展开全文'), findsNothing);
+    expect(find.text('收起'), findsNothing);
+
+    final lastParagraph = find.text(paragraphs.last, findRichText: true);
+    expect(lastParagraph, findsOneWidget);
     await tester.scrollUntilVisible(
-      toggle,
-      180,
+      lastParagraph,
+      240,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(collapsed, findsOneWidget);
-    expect(tester.getSize(collapsed).height, 640);
-    expect(find.text('展开全文'), findsOneWidget);
-
-    await tester.ensureVisible(toggle);
     await tester.pumpAndSettle();
-    await tester.tap(toggle);
-    await tester.pumpAndSettle();
-    expect(collapsed, findsNothing);
-    expect(find.text('收起'), findsOneWidget);
-
-    final scrollController = tester
-        .widget<CustomScrollView>(find.byType(CustomScrollView))
-        .controller!;
-    final offsetBeforeBodyDrag = scrollController.offset;
-    final visibleBodyText = find.text('这是用于验证楼层正文真实布局高度的一段文字。').hitTestable();
-    expect(visibleBodyText, findsWidgets);
-    await tester.drag(visibleBodyText.first, const Offset(0, -180));
-    await tester.pumpAndSettle();
-    expect(scrollController.offset, greaterThan(offsetBeforeBodyDrag));
-
-    await tester.ensureVisible(toggle);
-    await tester.pumpAndSettle();
-    await tester.tap(toggle);
-    await tester.pumpAndSettle();
-    expect(collapsed, findsOneWidget);
-    expect(find.text('展开全文'), findsOneWidget);
+    expect(lastParagraph.hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

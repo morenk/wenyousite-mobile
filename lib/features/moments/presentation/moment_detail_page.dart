@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart'
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
@@ -159,6 +160,20 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                       child: _MomentDetailPanel(
                         detail: state.detail!,
                         pendingAction: state.pendingMomentAction,
+                        tipAction: state.detail!.canEdit
+                            ? null
+                            : WenyouTipButton(
+                                key: const Key('moment-detail-tip'),
+                                target: TipTarget.moment(
+                                  id: state.detail!.card.id,
+                                  recipientUserId: state.detail!.card.author.id,
+                                ),
+                                recipientName:
+                                    state.detail!.card.author.username,
+                                returnTo: _location,
+                                onSuccess: (_) =>
+                                    ref.read(provider.notifier).load(),
+                              ),
                         onLike: () => _authenticated(
                           () => ref.read(provider.notifier).toggleLike(),
                         ),
@@ -353,18 +368,6 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
   ) {
     return [
       if (state.detail case final detail? when !detail.canEdit)
-        WenyouTipButton(
-          key: const Key('moment-detail-tip'),
-          target: TipTarget.moment(
-            id: detail.card.id,
-            recipientUserId: detail.card.author.id,
-          ),
-          recipientName: detail.card.author.username,
-          returnTo: _location,
-          iconOnly: true,
-          onSuccess: (_) => ref.read(provider.notifier).load(),
-        ),
-      if (state.detail case final detail? when !detail.canEdit)
         WenyouReportButton(
           key: const Key('moment-detail-report'),
           target: ReportTarget.moment(detail.card.id),
@@ -437,15 +440,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     var currentReplyTo = replyTo ?? _commentDraftReplyTo;
     setState(() => _commentComposerOpen = true);
     try {
-      await showModalBottomSheet<void>(
+      await showWenyouComposerSheet<void>(
         context: context,
-        isScrollControlled: true,
-        isDismissible: true,
-        enableDrag: false,
-        useSafeArea: false,
-        backgroundColor: Colors.transparent,
-        constraints: const BoxConstraints(maxWidth: double.infinity),
-        sheetAnimationStyle: AnimationStyle.noAnimation,
         builder: (sheetContext) => StatefulBuilder(
           builder: (context, setSheetState) => Consumer(
             builder: (context, sheetRef, _) {
@@ -541,12 +537,14 @@ class _MomentDetailPanel extends StatelessWidget {
   const _MomentDetailPanel({
     required this.detail,
     required this.pendingAction,
+    required this.tipAction,
     required this.onLike,
     required this.onBookmark,
   });
 
   final MomentDetail detail;
   final MomentInteractionAction? pendingAction;
+  final Widget? tipAction;
   final VoidCallback onLike;
   final VoidCallback onBookmark;
 
@@ -640,6 +638,10 @@ class _MomentDetailPanel extends StatelessWidget {
             ),
           ],
         ),
+        if (tipAction != null) ...[
+          SizedBox(height: tokens.space8),
+          Center(child: tipAction),
+        ],
         if (card.tipTotal != '0') ...[
           SizedBox(height: tokens.space8),
           Text(

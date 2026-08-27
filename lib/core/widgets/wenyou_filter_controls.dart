@@ -176,18 +176,29 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final optionCount = widget.options.length;
+            final horizontalPadding = optionCount == 4
+                ? tokens.space8
+                : tokens.space12;
             final canFill =
                 optionCount >= 2 &&
                 optionCount <= 4 &&
                 constraints.maxWidth.isFinite &&
-                buttonWidths.every(
-                  (width) => width <= constraints.maxWidth / optionCount,
+                labelWidths.every(
+                  (width) =>
+                      width + horizontalPadding * 2 <=
+                      constraints.maxWidth / optionCount,
                 );
             if (canFill) {
               return Row(
                 children: [
                   for (var index = 0; index < optionCount; index++)
-                    Expanded(child: _buildButton(index, labelWidths[index])),
+                    Expanded(
+                      child: _buildButton(
+                        index,
+                        labelWidths[index],
+                        horizontalPadding,
+                      ),
+                    ),
                 ],
               );
             }
@@ -201,7 +212,11 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
                   for (var index = 0; index < optionCount; index++)
                     SizedBox(
                       width: buttonWidths[index],
-                      child: _buildButton(index, labelWidths[index]),
+                      child: _buildButton(
+                        index,
+                        labelWidths[index],
+                        tokens.space12,
+                      ),
                     ),
                 ],
               ),
@@ -212,12 +227,13 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
     );
   }
 
-  Widget _buildButton(int index, double labelWidth) {
+  Widget _buildButton(int index, double labelWidth, double horizontalPadding) {
     final option = widget.options[index];
     return _ContentTabButton<T>(
       key: ValueKey('${widget.keyPrefix}-${option.keyValue ?? option.value}'),
       option: option,
       labelWidth: labelWidth,
+      horizontalPadding: horizontalPadding,
       selected: option.value == widget.selected,
       onSelected: widget.onSelected,
       enabled: widget.enabled,
@@ -266,6 +282,7 @@ class _ContentTabButton<T> extends StatelessWidget {
   const _ContentTabButton({
     required this.option,
     required this.labelWidth,
+    required this.horizontalPadding,
     required this.selected,
     required this.onSelected,
     required this.enabled,
@@ -274,6 +291,7 @@ class _ContentTabButton<T> extends StatelessWidget {
 
   final WenyouFilterOption<T> option;
   final double labelWidth;
+  final double horizontalPadding;
   final bool selected;
   final ValueChanged<T> onSelected;
   final bool enabled;
@@ -302,7 +320,9 @@ class _ContentTabButton<T> extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: tokens.space12),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
                     child: Text(
                       option.label,
                       maxLines: 1,
@@ -352,6 +372,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
     this.enabled = true,
     this.appearance = WenyouDropdownFilterAppearance.outlined,
     this.optionKeyPrefix,
+    this.selectedLabel,
     super.key,
   });
 
@@ -363,13 +384,14 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
   final bool enabled;
   final WenyouDropdownFilterAppearance appearance;
   final String? optionKeyPrefix;
+  final String? selectedLabel;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final selectedLabel = options
-        .firstWhere((option) => option.value == selected)
-        .label;
+    final resolvedSelectedLabel =
+        selectedLabel ??
+        options.firstWhere((option) => option.value == selected).label;
     final showLeadingIcon =
         appearance == WenyouDropdownFilterAppearance.outlined &&
         MediaQuery.sizeOf(context).width >= 480;
@@ -446,7 +468,7 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
           ],
           child: _DropdownFilterAnchor(
             appearance: appearance,
-            selectedLabel: selectedLabel,
+            selectedLabel: resolvedSelectedLabel,
             icon: icon,
             showLeadingIcon: showLeadingIcon,
           ),
