@@ -183,7 +183,10 @@ class ApiPublicUserRepository implements PublicUserRepository {
       ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
-      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      lastActivityAt: latestThreadActivityAt(
+        updatedAt: dto.updatedAt,
+        defaultSubthreadLastPostAt: dto.defaultSubthread?.lastPostAt,
+      ),
       preview: _optionalText(dto.preview),
       tags: dto.topicTags
           .map(
@@ -214,7 +217,10 @@ class ApiPublicUserRepository implements PublicUserRepository {
       ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
-      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      lastActivityAt: latestThreadActivityAt(
+        updatedAt: dto.updatedAt,
+        defaultSubthreadLastPostAt: dto.defaultSubthread?.lastPostAt,
+      ),
       preview: _optionalText(dto.preview),
       tags: dto.topicTags
           .map(

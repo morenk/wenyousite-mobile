@@ -36,7 +36,10 @@ HomeThreadCardModel mapHomeThreadCardResponse(
     playerCount: item.count.players.toInt(),
     postCount: item.count.posts.toInt(),
     tipTotal: item.tipTotal,
-    lastActivityAt: item.defaultSubthread?.lastPostAt ?? item.updatedAt,
+    lastActivityAt: latestThreadActivityAt(
+      updatedAt: item.updatedAt,
+      defaultSubthreadLastPostAt: item.defaultSubthread?.lastPostAt,
+    ),
   );
 }
 

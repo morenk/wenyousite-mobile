@@ -172,7 +172,10 @@ class ApiSearchRepository implements SearchRepository {
       ownerAvatarUrl: _safeHttpUrl(dto.owner.avatar),
       ownerLevel: dto.owner.level.toInt(),
       createdAt: dto.createdAt,
-      lastActivityAt: dto.defaultSubthread?.lastPostAt ?? dto.updatedAt,
+      lastActivityAt: latestThreadActivityAt(
+        updatedAt: dto.updatedAt,
+        defaultSubthreadLastPostAt: dto.defaultSubthread?.lastPostAt,
+      ),
       preview: preview.isEmpty ? null : preview,
       tags: dto.topicTags
           .map(

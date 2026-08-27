@@ -89,6 +89,30 @@ void main() {
 
     expect(page.items.single.ownerAvatarUrl, isNull);
   });
+
+  test('其他子贴有较新回复时主题卡显示主题级最新活动时间', () async {
+    final threadsApi = _MockThreadsApi();
+    final categoriesApi = _MockThreadCategoriesApi();
+    final latestActivityAt = DateTime.utc(2026, 8, 10, 13);
+    when(
+      () => threadsApi.threadsFindAll(
+        cursor: null,
+        limit: 20,
+        filter: 'all',
+        category: null,
+        sort: 'recommended',
+        status: null,
+        tagId: null,
+      ),
+    ).thenAnswer((_) async => _threadsResponse(updatedAt: latestActivityAt));
+
+    final page = await ApiHomeRepository(
+      threadsApi,
+      categoriesApi,
+    ).fetchThreads(query: const HomeFeedQuery());
+
+    expect(page.items.single.lastActivityAt, latestActivityAt);
+  });
 }
 
 class _MockThreadsApi extends Mock implements ThreadsApi {}
@@ -142,6 +166,7 @@ Response<ThreadCategoriesList200Response> _categoriesResponse() {
 
 Response<ThreadsFindAll200Response> _threadsResponse({
   String? avatar = 'https://cdn.example.com/avatar.webp',
+  DateTime? updatedAt,
 }) {
   final now = DateTime.utc(2026, 8, 9, 12);
   return Response(
@@ -167,7 +192,7 @@ Response<ThreadsFindAll200Response> _threadsResponse({
               ..pinned = false
               ..tipTotal = '8'
               ..createdAt = now.subtract(const Duration(days: 2))
-              ..updatedAt = now
+              ..updatedAt = updatedAt ?? now
               ..owner.update(
                 (owner) => owner
                   ..id = 'user-1'

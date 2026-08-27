@@ -68,3 +68,14 @@ class ThreadFeedCardModel {
 }
 
 typedef HomeThreadCardModel = ThreadFeedCardModel;
+
+DateTime latestThreadActivityAt({
+  required DateTime updatedAt,
+  DateTime? defaultSubthreadLastPostAt,
+}) {
+  if (defaultSubthreadLastPostAt != null &&
+      defaultSubthreadLastPostAt.isAfter(updatedAt)) {
+    return defaultSubthreadLastPostAt;
+  }
+  return updatedAt;
+}
