@@ -11,11 +11,13 @@ class UserRelationActions extends ConsumerWidget {
   const UserRelationActions({
     required this.target,
     this.additionalActions = const [],
+    this.showBlockAction = true,
     super.key,
   });
 
   final UserRelationTarget target;
   final List<WenyouIconLabelAction> additionalActions;
+  final bool showBlockAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,20 +43,26 @@ class UserRelationActions extends ConsumerWidget {
                   ? null
                   : () => _toggleFollow(context, notifier),
             ),
-            WenyouIconLabelAction(
-              key: const Key('user-relation-block'),
-              icon: state.isBlocked
-                  ? WenyouIconIds.actionUnlock
-                  : WenyouIconIds.actionBlock,
-              label: state.isBlocked ? '取消拉黑' : '拉黑',
-              semanticsLabel: state.isBlocked ? '取消拉黑' : '拉黑',
-              selected: state.isBlocked,
-              loading: state.pendingAction == UserRelationAction.block,
-              foregroundColor: Theme.of(context).colorScheme.error,
-              onPressed: state.isPending
-                  ? null
-                  : () => _toggleBlock(context, notifier, state.isBlocked),
-            ),
+            if (showBlockAction)
+              WenyouIconLabelAction(
+                key: const Key('user-relation-block'),
+                icon: state.isBlocked
+                    ? WenyouIconIds.actionUnlock
+                    : WenyouIconIds.actionBlock,
+                label: state.isBlocked ? '取消拉黑' : '拉黑',
+                semanticsLabel: state.isBlocked ? '取消拉黑' : '拉黑',
+                selected: state.isBlocked,
+                loading: state.pendingAction == UserRelationAction.block,
+                foregroundColor: Theme.of(context).colorScheme.error,
+                onPressed: state.isPending
+                    ? null
+                    : () => _toggleUserBlock(
+                        context,
+                        notifier,
+                        target,
+                        state.isBlocked,
+                      ),
+              ),
             ...additionalActions,
           ],
         ),
@@ -90,33 +98,74 @@ class UserRelationActions extends ConsumerWidget {
   ) async {
     final succeeded = await notifier.toggleFollow();
     if (!context.mounted || !succeeded) return;
-    _showSuccess(context, notifier);
+    _showUserRelationSuccess(context, notifier);
   }
+}
 
-  Future<void> _toggleBlock(
-    BuildContext context,
-    UserRelationController notifier,
-    bool isBlocked,
-  ) async {
-    if (!isBlocked) {
-      final confirmed = await showWenyouConfirmationDialog(
-        context: context,
-        title: '拉黑用户？',
-        message: '拉黑 ${target.username} 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。',
-        confirmLabel: '确认拉黑',
-        confirmKey: const Key('user-relation-block-confirm'),
-        tone: WenyouConfirmationTone.destructive,
-      );
-      if (!confirmed) return;
-    }
-    final succeeded = await notifier.toggleBlock();
-    if (!context.mounted || !succeeded) return;
-    _showSuccess(context, notifier);
-  }
+class UserRelationBlockIconButton extends ConsumerWidget {
+  const UserRelationBlockIconButton({required this.target, super.key});
 
-  void _showSuccess(BuildContext context, UserRelationController notifier) {
-    final message = notifier.takeSuccessMessage();
-    if (message == null) return;
-    showWenyouSnackBar(context, message);
+  final UserRelationTarget target;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = userRelationControllerProvider(target);
+    final state = ref.watch(provider);
+    final isLoading = state.pendingAction == UserRelationAction.block;
+    final color = Theme.of(context).colorScheme.error;
+    return IconButton(
+      key: const Key('user-relation-block'),
+      tooltip: state.isBlocked ? '取消拉黑' : '拉黑',
+      color: color,
+      onPressed: state.isPending
+          ? null
+          : () => _toggleUserBlock(
+              context,
+              ref.read(provider.notifier),
+              target,
+              state.isBlocked,
+            ),
+      icon: isLoading
+          ? SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
+            )
+          : WenyouIcon(
+              state.isBlocked
+                  ? WenyouIconIds.actionUnlock
+                  : WenyouIconIds.actionBlock,
+            ),
+    );
   }
+}
+
+Future<void> _toggleUserBlock(
+  BuildContext context,
+  UserRelationController notifier,
+  UserRelationTarget target,
+  bool isBlocked,
+) async {
+  if (!isBlocked) {
+    final confirmed = await showWenyouConfirmationDialog(
+      context: context,
+      title: '拉黑用户？',
+      message: '拉黑 ${target.username} 后，将屏蔽对方的回复与通知；已有私聊记录保留，但不能继续发送。',
+      confirmLabel: '确认拉黑',
+      confirmKey: const Key('user-relation-block-confirm'),
+      tone: WenyouConfirmationTone.destructive,
+    );
+    if (!confirmed) return;
+  }
+  final succeeded = await notifier.toggleBlock();
+  if (!context.mounted || !succeeded) return;
+  _showUserRelationSuccess(context, notifier);
+}
+
+void _showUserRelationSuccess(
+  BuildContext context,
+  UserRelationController notifier,
+) {
+  final message = notifier.takeSuccessMessage();
+  if (message == null) return;
+  showWenyouSnackBar(context, message);
 }

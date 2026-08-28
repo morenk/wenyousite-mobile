@@ -34,6 +34,10 @@ class PublicUserPage extends ConsumerWidget {
     final meState = session.isAuthenticated
         ? ref.watch(meProfileControllerProvider)
         : null;
+    final profile = state.phase == PublicUserPhase.ready ? state.profile : null;
+    final relationTarget = profile == null
+        ? null
+        : _relationTarget(profile, meState);
     final canTip =
         state.phase == PublicUserPhase.ready &&
         !state.profile!.isDeactivated &&
@@ -44,6 +48,8 @@ class PublicUserPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('用户主页'),
         actions: [
+          if (relationTarget != null)
+            UserRelationBlockIconButton(target: relationTarget),
           if (canTip)
             WenyouReportButton(
               key: const Key('public-user-report'),
@@ -82,10 +88,7 @@ class PublicUserPage extends ConsumerWidget {
                           _UserProfileContent(
                             profile: state.profile!,
                             canTip: canTip,
-                            relationTarget: _relationTarget(
-                              state.profile!,
-                              meState,
-                            ),
+                            relationTarget: relationTarget,
                             isCurrentUser:
                                 meState?.phase == MeProfilePhase.ready &&
                                 meState!.profile!.id == state.profile!.id,
@@ -285,6 +288,7 @@ class _UserProfileContent extends ConsumerWidget {
             )
           : UserRelationActions(
               target: relationTarget!,
+              showBlockAction: false,
               additionalActions: destinationActions,
             ),
     );

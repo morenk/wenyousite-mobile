@@ -74,7 +74,17 @@ void main() {
       find.byKey(const ValueKey('target-frame-root-target')),
       findsNothing,
     );
-    expect(find.text('查看全部 7 条回复'), findsOneWidget);
+    expect(find.text('展开楼中楼（7 条）'), findsOneWidget);
+    final expandAction = tester.widget<TextButton>(
+      find.ancestor(
+        of: find.text('展开楼中楼（7 条）'),
+        matching: find.byType(TextButton),
+      ),
+    );
+    expect(
+      expandAction.style?.textStyle?.resolve(const <WidgetState>{})?.fontWeight,
+      FontWeight.w400,
+    );
   });
 
   testWidgets('目标评论不可见时保留动态与普通评论且不提供重试', (tester) async {

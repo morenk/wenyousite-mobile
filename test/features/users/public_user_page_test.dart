@@ -103,6 +103,20 @@ void main() {
     expect(find.byKey(const Key('user-relation-follow')), findsOneWidget);
     expect(find.byKey(const Key('user-relation-block')), findsOneWidget);
     expect(find.byKey(const Key('public-user-report')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byKey(const Key('user-relation-block')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('public-user-profile-header')),
+        matching: find.byKey(const Key('user-relation-block')),
+      ),
+      findsNothing,
+    );
     expect(find.text('9'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('user-relation-follow')));
     await tester.pumpAndSettle();
@@ -111,6 +125,14 @@ void main() {
 
     expect(relationRepository.unfollowCalls, 1);
     expect(find.text('8'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('user-relation-block')));
+    await tester.pumpAndSettle();
+    expect(find.text('拉黑用户？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('user-relation-block-confirm')));
+    await tester.pumpAndSettle();
+    expect(relationRepository.blockCalls, 1);
+    expect(find.byTooltip('取消拉黑'), findsOneWidget);
   });
 
   testWidgets('公开页目标是本人时不显示关注和拉黑操作', (tester) async {
@@ -197,13 +219,19 @@ void main() {
     final profileHeader = find.byKey(const Key('public-user-profile-header'));
     final actionKeys = [
       const Key('user-relation-follow'),
-      const Key('user-relation-block'),
       const Key('public-user-open-direct-message'),
       const Key('public-user-open-moments'),
     ];
     expect(
       actionKeys.map((key) => tester.getSize(find.byKey(key)).width).toSet(),
       hasLength(1),
+    );
+    expect(
+      find.descendant(
+        of: profileHeader,
+        matching: find.byKey(const Key('user-relation-block')),
+      ),
+      findsNothing,
     );
     expect(
       find.descendant(of: profileHeader, matching: find.byType(FilledButton)),

@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
@@ -815,16 +816,14 @@ class _MomentRootCommentPanel extends StatelessWidget {
           SizedBox(height: tokens.space8),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(
+            child: WenyouOverflowAction(
               key: Key('moment-replies-${root.id}'),
+              label: '展开楼中楼（${root.replyCount} 条）',
+              icon: WenyouIconIds.navigationNext,
+              backgroundColor: tokens.panel,
+              appearance: WenyouOverflowActionAppearance.quiet,
+              loading: replyPage?.isLoading ?? false,
               onPressed: replyPage?.isLoading ?? false ? null : onLoadReplies,
-              icon: replyPage?.isLoading ?? false
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const WenyouIcon(WenyouIconIds.actionReply),
-              label: Text('查看全部 ${root.replyCount} 条回复'),
             ),
           ),
         ],

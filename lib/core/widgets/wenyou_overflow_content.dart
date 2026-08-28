@@ -94,6 +94,7 @@ class WenyouOverflowAction extends StatelessWidget {
     this.icon,
     this.expanded,
     this.focusNode,
+    this.loading = false,
     this.appearance = WenyouOverflowActionAppearance.outlined,
     super.key,
   });
@@ -104,6 +105,7 @@ class WenyouOverflowAction extends StatelessWidget {
   final String? icon;
   final bool? expanded;
   final FocusNode? focusNode;
+  final bool loading;
   final WenyouOverflowActionAppearance appearance;
 
   @override
@@ -137,7 +139,7 @@ class WenyouOverflowAction extends StatelessWidget {
           focusNode: focusNode,
           onPressed: onPressed,
           style: outlinedStyle,
-          icon: WenyouIcon(icon, size: 16),
+          icon: _ActionIcon(icon: icon, loading: loading),
           label: Text(label),
         ),
       (WenyouOverflowActionAppearance.quiet, null) => TextButton(
@@ -150,7 +152,7 @@ class WenyouOverflowAction extends StatelessWidget {
         focusNode: focusNode,
         onPressed: onPressed,
         style: textStyle,
-        icon: WenyouIcon(icon, size: 16),
+        icon: _ActionIcon(icon: icon, loading: loading),
         label: Text(label),
       ),
     };
@@ -159,6 +161,22 @@ class WenyouOverflowAction extends StatelessWidget {
 }
 
 enum WenyouOverflowActionAppearance { outlined, quiet }
+
+class _ActionIcon extends StatelessWidget {
+  const _ActionIcon({required this.icon, required this.loading});
+
+  final String icon;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!loading) return WenyouIcon(icon, size: 16);
+    return const SizedBox.square(
+      dimension: 16,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    );
+  }
+}
 
 class _WenyouBottomFade extends StatelessWidget {
   const _WenyouBottomFade({required this.color});
