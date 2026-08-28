@@ -91,7 +91,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.13.0-dev.20260826.1`；Markdown v3；后端 `897a152c34ca6707e333790639b68a739f2ec19f`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.13.1-dev.20260827.1`；Markdown v3；后端 `afd19ea640cf9d2288f6bfefe28bc6a2f88559eb`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 
