@@ -11,7 +11,7 @@ void main() {
   final editorRoundTripContract =
       jsonDecode(
             File(
-              'contracts/markdown-editor-roundtrip-v4-fixtures.json',
+              'contracts/markdown-editor-roundtrip-v5-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -19,8 +19,8 @@ void main() {
       (editorRoundTripContract['cases'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
-  test('消费后端编辑器往返黄金语料 v4', () {
-    expect(editorRoundTripContract['version'], 4);
+  test('消费后端编辑器往返黄金语料 v5', () {
+    expect(editorRoundTripContract['version'], 5);
     expect(editorRoundTripContract['markdownContractVersion'], 3);
     expect(editorRoundTripCases, isNotEmpty);
   });
@@ -33,6 +33,15 @@ void main() {
     test('$id 编辑器黄金语料往返不改写', () {
       final document = MarkdownDeltaCodec.decode(markdown);
       expect(MarkdownDeltaCodec.encode(document.delta), serialized);
+      final expectedInlineSemantics =
+          (fixture['inlineSemantics'] as List<dynamic>?)?.cast<String>();
+      if (expectedInlineSemantics != null) {
+        expect(
+          _inlineSemantics(document.delta),
+          expectedInlineSemantics,
+          reason: fixture['id'] as String,
+        );
+      }
       final expectedSemantics = (fixture['blockSemantics'] as List<dynamic>?)
           ?.cast<String>();
       if (expectedSemantics != null) {
@@ -628,6 +637,19 @@ void main() {
       throwsA(isA<MarkdownCodecException>()),
     );
   });
+}
+
+List<String> _inlineSemantics(Delta delta) {
+  final semantics = <String>{};
+  for (final operation in delta.operations) {
+    final attributes = operation.attributes;
+    if (attributes == null) continue;
+    if (attributes['italic'] == true) semantics.add('emphasis');
+    if (attributes['bold'] == true) semantics.add('strong');
+    if (attributes['strike'] == true) semantics.add('strikethrough');
+    if (attributes['code'] == true) semantics.add('inline-code');
+  }
+  return semantics.toList(growable: false);
 }
 
 String _blockSemantic(MarkdownEditorBlockKind kind) => switch (kind) {

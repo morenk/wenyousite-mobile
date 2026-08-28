@@ -971,7 +971,7 @@ void main() {
     );
 
     expect(await session.copySelection(), isTrue);
-    expect(clipboardText, markdown);
+    expect(clipboardText, '1d20 = ?');
     expect(await session.copySelection(cut: true), isFalse);
     session.controller.updateSelection(
       TextSelection.collapsed(offset: session.controller.document.length - 1),

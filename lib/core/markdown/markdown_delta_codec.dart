@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_validator.d
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
@@ -483,7 +484,8 @@ class MarkdownDeltaCodec {
       sourceBreakAttribute: false,
     });
     try {
-      if (_encode(candidate, sanitizeUnsupported: false) != source) {
+      if (_encode(candidate, sanitizeUnsupported: false) !=
+          MarkdownInlineBoundary.canonicalize(source)) {
         return null;
       }
     } on MarkdownCodecException {
@@ -628,6 +630,8 @@ class MarkdownDeltaCodec {
       return '<br />';
     }
 
+    final canonicalContent = MarkdownInlineBoundary.canonicalize(content);
+
     final indentValue = attributes['indent'];
     final indent = switch (indentValue) {
       null => 0,
@@ -643,30 +647,30 @@ class MarkdownDeltaCodec {
       throw const MarkdownCodecException('同一行不能组合标题、列表和引用');
     }
     final hasUnsafeWhitespace =
-        content.startsWith('    ') ||
-        content.startsWith('\t') ||
-        RegExp(r' {2,}$').hasMatch(content);
+        canonicalContent.startsWith('    ') ||
+        canonicalContent.startsWith('\t') ||
+        RegExp(r' {2,}$').hasMatch(canonicalContent);
     if (hasUnsafeWhitespace && blockStyleCount == 0 && containsLiteralText) {
-      return MarkdownContent.protectUnsafeWhitespace(content);
+      return MarkdownContent.protectUnsafeWhitespace(canonicalContent);
     }
     if (header != null) {
       if (header != 2 && header != 3) {
         throw const MarkdownCodecException('编辑器只支持二级与三级标题');
       }
-      return '${'#' * (header as int)} $content';
+      return '${'#' * (header as int)} $canonicalContent';
     }
     if (list != null) {
       if (list != 'bullet' && list != 'ordered') {
         throw const MarkdownCodecException('编辑器列表类型不受支持');
       }
       final prefix = list == 'ordered' ? '1. ' : '- ';
-      return '${'  ' * indent}$prefix$content';
+      return '${'  ' * indent}$prefix$canonicalContent';
     }
-    if (quote) return '> $content';
+    if (quote) return '> $canonicalContent';
     if (indent != 0) {
       throw const MarkdownCodecException('只有列表行可以携带缩进');
     }
-    return content;
+    return canonicalContent;
   }
 
   static String _inlineCode(String value) {

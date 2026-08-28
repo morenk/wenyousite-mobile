@@ -1,5 +1,6 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 class MarkdownRichLine {
@@ -50,6 +51,8 @@ class MarkdownRichLineDecoder {
       if (spaces > 0) lineAttributes['indent'] = spaces ~/ 2;
       inlineSource = content;
     }
+
+    inlineSource = MarkdownInlineBoundary.canonicalize(inlineSource);
 
     final spans = <MarkdownRichSpan>[];
     final nodes = md.Document(

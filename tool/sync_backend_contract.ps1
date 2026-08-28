@@ -119,6 +119,9 @@ if ($markdownFixtureSource -notin $backendContractPaths) {
 $markdownEditorSource = Resolve-UniqueBackendContract `
   '^contracts/markdown-editor-roundtrip-v[0-9]+-fixtures\.json$' `
   'Markdown editor round-trip'
+$editorClipboardSource = Resolve-UniqueBackendContract `
+  '^contracts/editor-clipboard-v[0-9]+-fixtures\.json$' `
+  'editor clipboard'
 $threadCategorySource = Resolve-UniqueBackendContract `
   '^contracts/thread-category-v[0-9]+-fixtures\.json$' `
   'thread category'
@@ -128,6 +131,7 @@ $contractFiles = @(
   @{ Source = $markdownFixtureSource; Destination = (Split-Path -Leaf $markdownFixtureSource) },
   @{ Source = $markdownNodesSource; Destination = (Split-Path -Leaf $markdownNodesSource) },
   @{ Source = $markdownEditorSource; Destination = (Split-Path -Leaf $markdownEditorSource) },
+  @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
   @{ Source = 'contracts/mobile-push-v1-fixtures.json'; Destination = 'mobile-push-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1.schema.json'; Destination = 'mobile-push-v1.schema.json' },
   @{ Source = 'contracts/mobile-v1-golden-fixtures.json'; Destination = 'mobile-v1-golden-fixtures.json' },
@@ -151,6 +155,12 @@ Get-ChildItem -LiteralPath $contractDirectory -File |
   } |
   Remove-Item -Force
 $desiredThreadCategoryFile = Split-Path -Leaf $threadCategorySource
+Get-ChildItem -LiteralPath $contractDirectory -File |
+  Where-Object {
+    $_.Name -match '^editor-clipboard-v[0-9]+-fixtures\.json$' -and
+    $_.Name -ne (Split-Path -Leaf $editorClipboardSource)
+  } |
+  Remove-Item -Force
 Get-ChildItem -LiteralPath $contractDirectory -File |
   Where-Object {
     $_.Name -match '^thread-category-v[0-9]+-fixtures\.json$' -and

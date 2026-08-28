@@ -1,5 +1,6 @@
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 
@@ -33,6 +34,9 @@ class WenyouEditorClipboardStore {
   final Duration maximumAge;
   _EditorClipboardPayload? _payload;
 
+  static String visibleText(Delta delta) =>
+      MarkdownClipboardText.projectDelta(delta);
+
   void clear() => _payload = null;
 
   String capture({
@@ -43,12 +47,9 @@ class WenyouEditorClipboardStore {
     Object? scope,
   }) {
     final cloned = Delta.fromJson(delta.toJson());
-    var fallback = plainTextFallback;
-    try {
-      fallback = MarkdownDeltaCodec.encode(cloned);
-    } on Object {
-      // Plain text is still a safe interoperable fallback for a partial Delta.
-    }
+    final fallback = plainTextFallback
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
     _payload = _EditorClipboardPayload(
       delta: cloned,
       fallback: fallback,

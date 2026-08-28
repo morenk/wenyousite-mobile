@@ -218,7 +218,7 @@ class RichEditorSession extends ChangeNotifier {
     final marker = const Uuid().v4();
     final fallback = _clipboardStore.capture(
       delta: delta,
-      plainTextFallback: controller.document.getPlainText(start, length),
+      plainTextFallback: WenyouEditorClipboardStore.visibleText(delta),
       operation: cut
           ? WenyouEditorClipboardOperation.cut
           : WenyouEditorClipboardOperation.copy,

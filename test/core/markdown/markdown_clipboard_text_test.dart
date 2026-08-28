@@ -1,75 +1,94 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 
 void main() {
-  const threadId = 'cmsewdo0h000x7qv6aa77ll1v';
-  const diceId = '550e8400-e29b-41d4-a716-446655440000';
-  const diceNode = '[[dice:v1:$diceId:1d20]]';
-  const stickerAssetId = 'cm1234567890123456789012';
-  const sticker =
-      '![表情](https://cdn.wenyou.site/sticker.webp '
-      '"wenyousite-sticker:v1:$stickerAssetId")';
+  final contract =
+      jsonDecode(
+            File(
+              'contracts/editor-clipboard-v1-fixtures.json',
+            ).readAsStringSync(),
+          )
+          as Map<String, dynamic>;
+  final goldenCases = (contract['goldenCases'] as List<dynamic>)
+      .cast<Map<String, dynamic>>();
 
-  test('只把受支持的行内原子投影为阅读态 label', () {
-    const source =
-        '**检定** [官网](https://example.com)；'
-        '[设定 A](/threads/$threadId)，'
-        'https://wenyou.site/threads/$threadId。'
-        '[@张三](/users/user-zhang) 与 @全体玩家：$diceNode $sticker';
-
+  test('消费 clipboard v1 的移动端入口、传输和节点规则', () {
+    expect(contract['version'], 1);
+    expect(contract['markdownContractVersion'], 3);
+    final entryPoints = (contract['entryPoints'] as List<dynamic>)
+        .cast<Map<String, dynamic>>();
     expect(
-      MarkdownClipboardText.project(
-        source,
-        diceLabels: const {diceId: '1d20 = 19'},
-      ),
-      '**检定** [官网](https://example.com)；'
-      '设定 A，传送门。@张三 与 @全体玩家：1d20 = 19 [表情]',
+      entryPoints
+          .where((entry) => entry['platform'] == 'mobile')
+          .map((entry) => entry['id']),
+      containsAll(<String>[
+        'mobile-reader-selection',
+        'mobile-reader-menu',
+        'mobile-editor',
+      ]),
+    );
+    expect(
+      (contract['mobileTransport']
+          as Map<String, dynamic>)['maximumAgeSeconds'],
+      600,
+    );
+    final nodeRules = (contract['nodeRules'] as List<dynamic>)
+        .cast<Map<String, dynamic>>();
+    expect(
+      nodeRules.map((rule) => rule['nodeType']),
+      containsAll(<String>[
+        'internal_reference',
+        'mention',
+        'mention_all_players',
+        'dice',
+        'image',
+        'sticker',
+      ]),
     );
   });
 
-  test('骰子没有结果时仍复制稳定可见占位 label', () {
-    expect(MarkdownClipboardText.project(diceNode), '1d20 = ?');
-  });
+  for (final fixture in goldenCases.where(
+    (fixture) => fixture['kind'] == 'reader-copy',
+  )) {
+    test('${fixture['id']} 阅读态复制只写可见文本', () {
+      final diceLabels = <String, String>{};
+      for (final rawRoll
+          in fixture['diceRolls'] as List<dynamic>? ?? const []) {
+        final roll = Map<String, dynamic>.from(rawRoll as Map);
+        diceLabels[(roll['nodeId'] as String).toLowerCase()] =
+            '${roll['notation']} = ${roll['total']}';
+      }
+      expect(
+        MarkdownClipboardText.project(
+          fixture['markdown'] as String,
+          diceLabels: diceLabels,
+        ),
+        fixture['expectedPlainText'],
+      );
+    });
+  }
 
-  test('代码、转义、普通链接图片和未知节点保持源文本', () {
-    const unknownDice = '[[dice:v2:$diceId:1d20]]';
-    const invalidDice = '[[dice:v1:$diceId:1d1]]';
-    const ordinaryImage = '![入口](/threads/$threadId)';
-    const emptyLink = '[](/threads/$threadId)';
-    const source =
-        '`[入口](/threads/$threadId) $diceNode $sticker`\n'
-        '\\[入口](/threads/$threadId) \\$diceNode \\$sticker\n'
-        '[外链](https://example.com) $ordinaryImage $emptyLink\n'
-        '$unknownDice $invalidDice\n'
-        '```md\n'
-        '[入口](/threads/$threadId) $diceNode $sticker\n'
-        '```';
-
+  test('纯文本换行统一为 LF，字面 Markdown 字符保持可见', () {
     expect(
       MarkdownClipboardText.project(
-        source,
-        diceLabels: const {diceId: '1d20 = 19'},
-      ),
-      source,
-    );
-  });
-
-  test('保留原有换行符、空白和未闭合代码前缀', () {
-    const source =
-        '  前文\r\n'
-        '未闭合 ` 后文 $diceNode  \r\n'
+        r'\*字面星号\*'
         '\r\n'
-        '[入口](/threads/$threadId)';
+        r'\# 字面井号',
+      ),
+      '*字面星号*\n# 字面井号',
+    );
+  });
 
+  test('历史 URL 自标签复制为阅读态展示的传送门名称', () {
     expect(
       MarkdownClipboardText.project(
-        source,
-        diceLabels: const {diceId: '1d20 = 19'},
+        '入口 [https://wenyou.site/join/AbCdEfGh_123-XYZ]'
+        '(/join/AbCdEfGh_123-XYZ)',
       ),
-      '  前文\r\n'
-      '未闭合 ` 后文 1d20 = 19  \r\n'
-      '\r\n'
-      '入口',
+      '入口 传送门',
     );
   });
 }
