@@ -1,6 +1,7 @@
 package site.wenyou.app
 
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.PersistableBundle
@@ -55,8 +56,22 @@ class EditorClipboardChannel(private val context: Context) {
         }
         return mapOf(
             "text" to values.takeIf { it.isNotEmpty() }?.joinToString("\n"),
+            "html" to readSingleHtmlItem(clip, description),
             "marker" to description.extras?.getString(MARKER_KEY),
         )
+    }
+
+    private fun readSingleHtmlItem(
+        clip: ClipData,
+        description: ClipDescription,
+    ): String? {
+        if (!description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)) return null
+        val values = buildList {
+            for (index in 0 until clip.itemCount) {
+                clip.getItemAt(index).htmlText?.let(::add)
+            }
+        }
+        return values.singleOrNull()
     }
 
     private fun writeText(text: String, marker: String) {

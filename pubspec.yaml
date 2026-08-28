@@ -56,6 +56,7 @@ dependencies:
   mime: ^2.0.0
   flutter_markdown_plus: ^1.0.12
   markdown: ^7.3.1
+  html: ^0.15.6
   wenyousite_foundation:
     git:
       url: https://github.com/morenk/wenyousite-foundation.git

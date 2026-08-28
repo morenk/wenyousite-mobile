@@ -10,9 +10,10 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
-import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
 
@@ -48,12 +49,15 @@ class RichEditorSession extends ChangeNotifier {
     Future<String?> Function()? readClipboardText,
     Future<void> Function(String text)? writeClipboardText,
     WenyouEditorClipboardStore? clipboardStore,
+    WenyouSiteClipboardParser? siteClipboardParser,
     RichEditorSelectionPlacement initialSelection =
         RichEditorSelectionPlacement.start,
   }) : _clipboardGateway =
            clipboardGateway ??
            _legacyClipboardGateway(readClipboardText, writeClipboardText),
        _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
+    _siteClipboardParser =
+        siteClipboardParser ?? const WenyouSiteClipboardParser();
     final decoded = MarkdownDeltaCodec.decode(initialMarkdown);
     _issues = decoded.issues;
     _lastMarkdown = initialMarkdown;
@@ -78,6 +82,7 @@ class RichEditorSession extends ChangeNotifier {
   final ValueChanged<String> onMarkdownChanged;
   final EditorClipboardGateway _clipboardGateway;
   final WenyouEditorClipboardStore _clipboardStore;
+  late final WenyouSiteClipboardParser _siteClipboardParser;
 
   late final QuillController controller;
   final FocusNode focusNode = FocusNode();
@@ -478,6 +483,7 @@ class RichEditorSession extends ChangeNotifier {
     final documentEnd = controller.document.length - 1;
     final start = selection.start.clamp(0, documentEnd).toInt();
     final end = selection.end.clamp(start, documentEnd).toInt();
+    final plainText = controller.document.toPlainText();
     final selectedText = end == start
         ? ''
         : controller.document.getPlainText(start, end - start);
@@ -506,15 +512,11 @@ class RichEditorSession extends ChangeNotifier {
       return false;
     }
 
-    final clipboardText = _normalizeClipboardText(snapshot.text);
-    if (clipboardText == null || clipboardText.isEmpty) {
-      _setOperationFailure(
-        RichEditorOperationFailureKind.clipboardEmpty,
-        '剪贴板中没有可粘贴的文字。',
-      );
-      return false;
-    }
-    if (clipboardText.length > maximumSerializedLength) {
+    final clipboardText = WenyouEditorClipboardPastePlanner.normalizeText(
+      snapshot.text,
+    );
+    if (clipboardText != null &&
+        clipboardText.length > maximumSerializedLength) {
       _setOperationFailure(
         RichEditorOperationFailureKind.contentTooLong,
         '粘贴后正文过长，请删减后重试。',
@@ -522,34 +524,38 @@ class RichEditorSession extends ChangeNotifier {
       return false;
     }
 
-    final resolution = _clipboardStore.resolve(
-      clipboardText,
+    final candidateBefore = controller.document.toDelta();
+    final pastePlan = WenyouEditorClipboardPastePlanner.resolve(
+      clipboardText: clipboardText,
+      clipboardHtml: snapshot.html,
       marker: snapshot.marker,
       scope: clipboardScope,
+      store: _clipboardStore,
+      siteParser: _siteClipboardParser,
+      selectedText: selectedText,
+      document: candidateBefore,
+      documentPlainText: plainText,
+      start: start,
+      end: end,
     );
-    final insert = switch (resolution.delta) {
-      final Delta delta => delta,
-      null when !resolution.usePlainText => _internalReferenceDelta(
-        clipboardText,
-        selectedText,
-      ),
-      _ => null,
-    };
-    final delta =
-        insert ??
-        (Delta()..insert(clipboardText, {
-          MarkdownDeltaCodec.literalTextAttribute: true,
-        }));
+    if (pastePlan == null) {
+      _setOperationFailure(
+        RichEditorOperationFailureKind.clipboardEmpty,
+        '剪贴板中没有可粘贴的文字。',
+      );
+      return false;
+    }
+    final delta = pastePlan.delta;
+    final replacementEnd = pastePlan.replacementEnd;
 
-    final candidateBefore = controller.document.toDelta();
     final candidate = Document.fromDelta(candidateBefore);
-    candidate.replace(start, end - start, Delta.from(delta));
+    candidate.replace(start, replacementEnd - start, Delta.from(delta));
     final candidateMetadataPatch =
         MarkdownDeltaLineMetadata.sourceSeparatorPatch(
           before: candidateBefore,
           after: candidate.toDelta(),
           index: start,
-          replacedLength: end - start,
+          replacedLength: replacementEnd - start,
           insertedLength: MarkdownDeltaLineMetadata.documentLength(delta),
           insertedDelta: delta,
         );
@@ -575,7 +581,7 @@ class RichEditorSession extends ChangeNotifier {
 
     controller.replaceText(
       start,
-      end - start,
+      replacementEnd - start,
       delta,
       TextSelection.collapsed(
         offset: start + MarkdownDeltaLineMetadata.documentLength(delta),
@@ -589,35 +595,6 @@ class RichEditorSession extends ChangeNotifier {
     if (_disposed || generation != _documentGeneration) return false;
     _flushCurrentDelta();
     return true;
-  }
-
-  static Delta? _internalReferenceDelta(
-    String clipboardText,
-    String selectedText,
-  ) {
-    final paste = resolveInternalReferencePaste(
-      clipboardText: clipboardText,
-      selectedText: selectedText,
-    );
-    if (paste == null) return null;
-    return Delta()..insert({
-      MarkdownDeltaCodec.internalReferenceEmbed: {
-        'version': 1,
-        'label': paste.label,
-        'location': paste.reference.location.toString(),
-      },
-    });
-  }
-
-  static String? _normalizeClipboardText(String? value) {
-    if (value == null) return null;
-    return value
-        .replaceAll(RegExp(r'\r\n?'), '\n')
-        .replaceAll(RegExp('[\u2028\u2029]'), '\n')
-        .replaceAll(
-          RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]'),
-          '',
-        );
   }
 
   void _replaceSelectionWithBlockEmbed(Embeddable embed) {
@@ -787,7 +764,7 @@ class _LiteralTextQuillController extends QuillController {
   }) {
     final before = document.toDelta();
     final internalReference = data is String
-        ? RichEditorSession._internalReferenceDelta(
+        ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
             data,
             len == 0 ? '' : document.getPlainText(index, len),
           )

@@ -35,6 +35,19 @@ void main() {
           as Map<String, dynamic>)['maximumAgeSeconds'],
       600,
     );
+    expect(
+      contract['webEnvelope'],
+      containsPair('validation', 'strict-allowlist'),
+    );
+    expect(
+      (contract['pasteRules'] as List<dynamic>).cast<Map<String, dynamic>>(),
+      contains(
+        allOf(
+          containsPair('source', 'site-fragment-v1'),
+          containsPair('result', 'structured'),
+        ),
+      ),
+    );
     final nodeRules = (contract['nodeRules'] as List<dynamic>)
         .cast<Map<String, dynamic>>();
     expect(

@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 class EditorClipboardSnapshot {
-  const EditorClipboardSnapshot({required this.text, this.marker});
+  const EditorClipboardSnapshot({required this.text, this.html, this.marker});
 
   final String? text;
+  final String? html;
   final String? marker;
 }
 
@@ -30,6 +31,7 @@ class PlatformEditorClipboardGateway implements EditorClipboardGateway {
       final raw = await _channel.invokeMapMethod<Object?, Object?>('readText');
       return EditorClipboardSnapshot(
         text: raw?['text'] as String?,
+        html: raw?['html'] as String?,
         marker: raw?['marker'] as String?,
       );
     } on MissingPluginException {
