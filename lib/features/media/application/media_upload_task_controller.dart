@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -17,16 +18,32 @@ enum MediaUploadTaskPhase {
 
 class MediaUploadFailure {
   const MediaUploadFailure({
-    required this.userMessage,
+    this.presentation,
+    String? userMessage,
     required this.canRetry,
     this.businessCode,
     this.requestId,
-  });
+  }) : assert(presentation != null || userMessage != null),
+       _legacyUserMessage = userMessage;
 
-  final String userMessage;
+  final UserFacingFailure? presentation;
+  final String? _legacyUserMessage;
   final bool canRetry;
   final int? businessCode;
   final String? requestId;
+
+  UserFacingFailure get resolvedPresentation =>
+      presentation ??
+      UserFacingFailure(
+        title: '图片上传失败',
+        message: _legacyUserMessage!,
+        recoveryAction: FailureRecoveryAction.retry,
+        placement: FailurePresentationPlacement.inline,
+        retainContent: true,
+        actionLabel: '重试',
+      );
+
+  String get userMessage => resolvedPresentation.message;
 }
 
 class MediaUploadTaskState {
@@ -192,6 +209,16 @@ class MediaUploadTaskController
         phase: MediaUploadTaskPhase.preparing,
         progress: preparing,
       );
+      if (!selected.isMaterialized) {
+        final materialized = await _untilCancelled(
+          selected.materialize(),
+          cancelSignal,
+        );
+        if (identical(materialized, _cancelled)) return null;
+        selected = materialized as MediaUploadInput;
+        if (!_isCurrent(runId)) return null;
+        _retryInput = selected;
+      }
       final operation = ref
           .read(mediaUploadGatewayPortProvider)
           .startImageUpload(
@@ -248,13 +275,30 @@ class MediaUploadTaskController
   MediaUploadFailure _failureFor(Object error, {required bool canRetry}) {
     if (error is ApiFailure) {
       return MediaUploadFailure(
-        userMessage: error.userMessage,
+        presentation: UserFacingFailure.fromApi(
+          error,
+          title: '图片上传失败',
+          objectName: '图片',
+          operationName: '上传图片',
+          retainContent: true,
+          treatAsWrite: true,
+        ),
         canRetry: canRetry,
         businessCode: error.businessCode,
         requestId: error.requestId,
       );
     }
-    return MediaUploadFailure(userMessage: '图片没有上传成功，请重试。', canRetry: canRetry);
+    return MediaUploadFailure(
+      presentation: const UserFacingFailure(
+        title: '图片上传失败',
+        message: '图片没有上传成功，请重试。',
+        recoveryAction: FailureRecoveryAction.retry,
+        placement: FailurePresentationPlacement.inline,
+        retainContent: true,
+        actionLabel: '重试',
+      ),
+      canRetry: canRetry,
+    );
   }
 
   MediaUploadTaskPhase _phaseFor(MediaUploadStage stage) => switch (stage) {

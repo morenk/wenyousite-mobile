@@ -53,7 +53,7 @@ class _WenyouMaterialApp extends ConsumerWidget {
       themeMode: appearance.themeMode,
       themeAnimationStyle: AnimationStyle.noAnimation,
       locale: const Locale('zh', 'CN'),
-      supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+      supportedLocales: const [Locale('zh', 'CN')],
       localizationsDelegates: wenyouLocalizationsDelegates,
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) {

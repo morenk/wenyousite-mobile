@@ -240,7 +240,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-subscription-official')));
     await tester.pumpAndSettle();
 
-    expect(find.text('订阅结果暂时无法确定，请稍后刷新查看。'), findsOneWidget);
+    expect(find.text('现在无法继续订阅操作。请先刷新主题查看是否已生效；应用不会自动重复提交。'), findsOneWidget);
     expect(find.text('问题编号：uncertain-request-id'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-subscription-refresh-result')),

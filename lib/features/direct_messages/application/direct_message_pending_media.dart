@@ -53,28 +53,39 @@ class DirectMessagePendingMediaJobs {
     final active = job.active;
     if (active != null) return active;
 
+    Future<String> startUpload(MediaUploadInput input) {
+      if (!identical(_jobs[messageId], job)) {
+        return Future.error(StateError('待发送图片已经取消。'));
+      }
+      job.input = input;
+      final operation = _gateway.startImageUpload(
+        input,
+        onProgress: (progress) {
+          if (!identical(_jobs[messageId], job)) return;
+          job.progress = progress;
+          onProgress(job.snapshot);
+        },
+      );
+      job.operation = operation;
+      return operation.result.then((image) {
+        if (!identical(_jobs[messageId], job)) {
+          throw StateError('待发送图片已经取消。');
+        }
+        job.uploadedMediaId = image.mediaId;
+        return image.mediaId;
+      });
+    }
+
     late final Future<String> future;
-    final operation = _gateway.startImageUpload(
-      job.input,
-      onProgress: (progress) {
-        if (!identical(_jobs[messageId], job)) return;
-        job.progress = progress;
-        onProgress(job.snapshot);
-      },
-    );
-    job.operation = operation;
-    future = operation.result
-        .then((image) {
-          if (!identical(_jobs[messageId], job)) {
-            throw StateError('待发送图片已经取消。');
-          }
-          job.uploadedMediaId = image.mediaId;
-          return image.mediaId;
-        })
-        .whenComplete(() {
-          if (identical(job.active, future)) job.active = null;
-          if (identical(job.operation, operation)) job.operation = null;
-        });
+    final input = job.input;
+    future =
+        (input.isMaterialized
+                ? startUpload(input)
+                : input.materialize().then(startUpload))
+            .whenComplete(() {
+              if (identical(job.active, future)) job.active = null;
+              job.operation = null;
+            });
     job.active = future;
     return future;
   }
@@ -94,7 +105,7 @@ class DirectMessagePendingMediaJobs {
 class _PendingMediaJob {
   _PendingMediaJob(this.input);
 
-  final MediaUploadInput input;
+  MediaUploadInput input;
   MediaUploadProgress? progress;
   String? uploadedMediaId;
   MediaUploadOperation<UploadedEditorImage>? operation;

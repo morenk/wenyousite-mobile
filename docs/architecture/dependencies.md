@@ -12,6 +12,8 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 
 新异步代码优先使用小状态和 `Notifier` / `AsyncNotifier`；暂不一次性迁移既有 `StateNotifier`。`RequestEpoch` 统一丢弃筛选、刷新后的过期响应，`mergeUniqueBy` 统一游标页按稳定 ID 合并。迁移按热点模块逐步发生，并保持既有 provider、仓储和路由接口不变。
 
+存量迁移采用非增长基线：`StateNotifier` 声明 59 处、跨 feature 内部层导入 41 处、feature presentation 直接创建 `CircularProgressIndicator` 77 处。新代码不得扩大基线；后续切片按业务边界改为 `Notifier` / `AsyncNotifier`、feature facade 和共享加载组件，每次减少后同步收紧数值。超过 700 行的非生成文件会在架构检查中列出复审提示，900 行仍是硬门禁。
+
 ## 自动门禁
 
 `npm run architecture:check` 在本地和 CI 检查：
@@ -21,6 +23,7 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 - 不新增未审核的跨 feature 边或循环依赖，并对参与循环的每条有向边单独建账；
 - presentation 不新增 data 依赖，application 不新增 data/presentation 依赖，domain 不新增外层依赖；data 只能导入 application 的 `*_ports.dart` 实现端口，不能反向读取 controller/state 或 presentation；
 - 非生成 Dart 文件不得超过 900 行；现有超限债务以精确行数为基线，只能收紧；
+- 不得增加存量 `StateNotifier`、跨 feature 内部层导入或 presentation 原始加载圆环；超过 700 行的文件纳入复审提示；
 - 页面不新增字面量路径导航；
 - 页面不独立构造路由转场；普通页、瞬时兜底和全屏媒体统一走 `core/navigation` 共享策略，仅帖子编辑器的嵌套 Navigator 初始路由是精确例外；
 - 生产代码不直接使用 `Icons.*`、`IconData` 或 `Icon(...)`，业务含义统一映射到 Foundation 语义图标；

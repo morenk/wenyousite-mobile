@@ -337,12 +337,12 @@ class ApiTagRepository implements TagRepository {
     if (_requiredText(id, '标签 ID').isEmpty ||
         validateTagName(normalizedName) != null ||
         !isActive) {
-      throw const ApiFailure(userMessage: '标签信息格式异常，请重新加载。');
+      throw const ApiFailure(userMessage: '标签信息暂时无法显示，请重新加载。');
     }
     final normalizedColor = _optionalText(color);
     if (normalizedColor != null &&
         !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(normalizedColor)) {
-      throw const ApiFailure(userMessage: '标签颜色格式异常，请重新加载。');
+      throw const ApiFailure(userMessage: '标签信息暂时无法显示，请重新加载。');
     }
     return TopicTagModel(
       id: id,

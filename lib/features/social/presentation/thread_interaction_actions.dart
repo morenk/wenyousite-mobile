@@ -141,7 +141,7 @@ class ThreadInteractionActions extends ConsumerWidget {
             key: const Key('thread-interaction-write-outcome'),
             status: state.outcomeStatus!,
             confirmingMessage: '正在确认主题互动状态…',
-            indeterminateMessage: '主题互动结果暂时无法确定，请稍后刷新查看。',
+            indeterminateMessage: '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。',
             requestId: state.outcomeRequestId,
             onRefresh: notifier.refresh,
             refreshKey: const Key('thread-interaction-refresh-result'),

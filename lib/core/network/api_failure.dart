@@ -1,8 +1,36 @@
 import 'package:dio/dio.dart';
 
+enum FailureReason {
+  offline,
+  timeout,
+  rateLimited,
+  unauthenticated,
+  sessionInvalid,
+  permissionDenied,
+  notFound,
+  conflict,
+  validation,
+  contractViolation,
+  localPersistence,
+  indeterminateWrite,
+  unknown,
+}
+
+enum FailureRecoveryAction {
+  retry,
+  refresh,
+  reopen,
+  login,
+  appeal,
+  keepDraft,
+  none,
+}
+
 class ApiFailure implements Exception {
   const ApiFailure({
-    required this.userMessage,
+    String? userMessage,
+    this.reason = FailureReason.unknown,
+    this.recoveryAction = FailureRecoveryAction.retry,
     this.httpStatus,
     this.businessCode,
     this.requestId,
@@ -10,7 +38,7 @@ class ApiFailure implements Exception {
     this.diagnosticCode,
     this.retryAfter,
     this.cause,
-  });
+  }) : legacyUserMessage = userMessage;
 
   factory ApiFailure.contractViolation({
     required String userMessage,
@@ -19,6 +47,8 @@ class ApiFailure implements Exception {
   }) {
     return ApiFailure(
       userMessage: userMessage,
+      reason: FailureReason.contractViolation,
+      recoveryAction: FailureRecoveryAction.refresh,
       diagnosticCode: diagnosticCode,
       cause: cause,
     );
@@ -46,7 +76,10 @@ class ApiFailure implements Exception {
       response?.headers.value('retry-after') ?? '',
     );
 
+    final reason = _reasonFor(exception, businessCode);
     return ApiFailure(
+      reason: reason,
+      recoveryAction: _recoveryFor(reason, businessCode),
       httpStatus: response?.statusCode,
       businessCode: businessCode,
       requestId: requestId,
@@ -64,14 +97,25 @@ class ApiFailure implements Exception {
   final int? businessCode;
   final String? requestId;
   final String? contractVersion;
+  final FailureReason reason;
+  final FailureRecoveryAction recoveryAction;
 
   /// Stable, non-sensitive code for diagnosing rejected response data.
   ///
   /// Presentation code must never show this value to users.
   final String? diagnosticCode;
   final Duration? retryAfter;
-  final String userMessage;
+
+  /// Temporary compatibility text for call sites that have not moved their
+  /// object-specific wording into the feature presentation mapper yet.
+  ///
+  /// New transport failures should set [reason] and [recoveryAction] instead.
+  @Deprecated('Resolve user-facing copy through UserFacingFailure instead.')
+  final String? legacyUserMessage;
   final Object? cause;
+
+  @Deprecated('Resolve user-facing copy through UserFacingFailure instead.')
+  String get userMessage => legacyUserMessage ?? defaultFailureMessage(reason);
 
   bool get isExpiredAccessToken => businessCode == 40101;
 
@@ -165,11 +209,99 @@ class ApiFailure implements Exception {
     return '请求失败，请稍后重试。';
   }
 
+  static FailureReason _reasonFor(DioException exception, int? businessCode) {
+    if (businessCode == 40101) return FailureReason.unauthenticated;
+    if (businessCode != null &&
+        businessCode >= 40103 &&
+        businessCode <= 40106) {
+      return FailureReason.sessionInvalid;
+    }
+    if (businessCode == 40108 || businessCode == 40109) {
+      return FailureReason.permissionDenied;
+    }
+    if (businessCode != null && businessCode >= 40300 && businessCode < 40400) {
+      return FailureReason.permissionDenied;
+    }
+    if (businessCode != null && businessCode >= 40400 && businessCode < 40500) {
+      return FailureReason.notFound;
+    }
+    if (businessCode == 40002 ||
+        businessCode == 40007 ||
+        (businessCode != null &&
+            businessCode >= 40900 &&
+            businessCode < 41000)) {
+      return FailureReason.conflict;
+    }
+    if (businessCode == 42900 || exception.response?.statusCode == 429) {
+      return FailureReason.rateLimited;
+    }
+    if (businessCode != null && businessCode >= 40000 && businessCode < 40200) {
+      return FailureReason.validation;
+    }
+    if (exception.response?.statusCode == 401) {
+      return FailureReason.unauthenticated;
+    }
+    if (exception.response?.statusCode == 403) {
+      return FailureReason.permissionDenied;
+    }
+    if (exception.response?.statusCode == 404) return FailureReason.notFound;
+    if (exception.response?.statusCode == 409) return FailureReason.conflict;
+    if (exception.type == DioExceptionType.connectionTimeout ||
+        exception.type == DioExceptionType.sendTimeout ||
+        exception.type == DioExceptionType.receiveTimeout) {
+      return FailureReason.timeout;
+    }
+    if (exception.type == DioExceptionType.connectionError) {
+      return FailureReason.offline;
+    }
+    return FailureReason.unknown;
+  }
+
+  static FailureRecoveryAction _recoveryFor(
+    FailureReason reason,
+    int? businessCode,
+  ) {
+    if (businessCode == 40108 || businessCode == 40109) {
+      return FailureRecoveryAction.appeal;
+    }
+    return switch (reason) {
+      FailureReason.sessionInvalid ||
+      FailureReason.unauthenticated => FailureRecoveryAction.login,
+      FailureReason.conflict ||
+      FailureReason.notFound => FailureRecoveryAction.refresh,
+      FailureReason.permissionDenied ||
+      FailureReason.validation => FailureRecoveryAction.none,
+      FailureReason.contractViolation => FailureRecoveryAction.refresh,
+      FailureReason.localPersistence => FailureRecoveryAction.reopen,
+      FailureReason.indeterminateWrite => FailureRecoveryAction.keepDraft,
+      FailureReason.offline ||
+      FailureReason.timeout ||
+      FailureReason.rateLimited ||
+      FailureReason.unknown => FailureRecoveryAction.retry,
+    };
+  }
+
   @override
   String toString() {
     return 'ApiFailure(httpStatus: $httpStatus, businessCode: $businessCode, '
-        'requestId: $requestId, diagnosticCode: $diagnosticCode, '
-        'retryAfter: $retryAfter, '
-        'message: $userMessage)';
+        'requestId: $requestId, reason: $reason, '
+        'recoveryAction: $recoveryAction, diagnosticCode: $diagnosticCode, '
+        'retryAfter: $retryAfter)';
   }
 }
+
+String defaultFailureMessage(FailureReason reason) => switch (reason) {
+  FailureReason.offline => '暂时无法连接温油站，请检查网络后重试。',
+  FailureReason.timeout => '等待时间过长，请检查网络后重试。',
+  FailureReason.rateLimited => '操作太频繁，请稍后再试。',
+  FailureReason.unauthenticated ||
+  FailureReason.sessionInvalid => '登录已失效，请重新登录。',
+  FailureReason.permissionDenied => '当前账号不能执行这项操作。',
+  FailureReason.notFound => '要查看的内容已不存在。',
+  FailureReason.conflict => '内容已有更新，请刷新后重试。',
+  FailureReason.validation => '请检查填写的内容后重试。',
+  FailureReason.contractViolation => '当前内容暂时无法显示，请重新加载。',
+  FailureReason.localPersistence => '本地内容暂时无法读取，请重新打开。',
+  FailureReason.indeterminateWrite => '现在无法继续这项操作。请先刷新当前内容查看是否已生效；应用不会自动重复提交。',
+  FailureReason.unknown => '操作失败，请稍后重试。',
+};

@@ -60,4 +60,29 @@ void main() {
       isTrue,
     );
   });
+
+  test('Android 系统备份与设备迁移不会复制账号数据', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final legacyRules = File(
+      'android/app/src/main/res/xml/backup_rules.xml',
+    ).readAsStringSync();
+    final extractionRules = File(
+      'android/app/src/main/res/xml/data_extraction_rules.xml',
+    ).readAsStringSync();
+
+    expect(manifest, contains('android:allowBackup="false"'));
+    expect(manifest, contains('android:fullBackupContent="@xml/backup_rules"'));
+    expect(
+      manifest,
+      contains('android:dataExtractionRules="@xml/data_extraction_rules"'),
+    );
+    for (final domain in ['root', 'file', 'database', 'sharedpref']) {
+      expect(legacyRules, contains('domain="$domain" path="."'));
+      expect(extractionRules, contains('domain="$domain" path="."'));
+    }
+    expect(extractionRules, contains('<cloud-backup>'));
+    expect(extractionRules, contains('<device-transfer>'));
+  });
 }

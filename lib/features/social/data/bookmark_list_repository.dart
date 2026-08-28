@@ -115,7 +115,11 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
   BookmarkListItem _mapItem(OwnBookmarkThreadResponseDto dto) {
     final bookmarkId = dto.bookmarkId.trim();
     if (bookmarkId.isEmpty) {
-      throw const ApiFailure(userMessage: '收藏记录缺少管理 ID，请稍后重试。');
+      throw const ApiFailure(
+        userMessage: '这条收藏记录暂时无法管理，请刷新后重试。',
+        reason: FailureReason.contractViolation,
+        recoveryAction: FailureRecoveryAction.refresh,
+      );
     }
     final title = dto.title.trim();
     final folderId = dto.bookmarkFolderId.trim();

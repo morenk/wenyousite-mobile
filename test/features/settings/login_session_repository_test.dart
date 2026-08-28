@@ -34,11 +34,22 @@ void main() {
     await expectLater(
       ApiLoginSessionRepository(api).fetchSessions(),
       throwsA(
-        isA<ApiFailure>().having(
-          (failure) => failure.userMessage,
-          'message',
-          contains('管理 ID'),
-        ),
+        isA<ApiFailure>()
+            .having(
+              (failure) => failure.reason,
+              'reason',
+              FailureReason.contractViolation,
+            )
+            .having(
+              (failure) => failure.recoveryAction,
+              'recoveryAction',
+              FailureRecoveryAction.refresh,
+            )
+            .having(
+              (failure) => failure.userMessage,
+              'message',
+              contains('刷新'),
+            ),
       ),
     );
   });

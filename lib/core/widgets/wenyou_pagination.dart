@@ -34,6 +34,52 @@ class WenyouPaginationFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: tokens.space16),
+      child: Center(
+        child: WenyouLoadMoreControl(
+          hasMore: hasMore,
+          isLoading: isLoading,
+          onLoadMore: onLoadMore,
+          failure: failure,
+          loadMoreLabel: loadMoreLabel,
+          loadingLabel: loadingLabel,
+          endLabel: endLabel,
+          loadMoreKey: loadMoreKey,
+          retryKey: retryKey,
+        ),
+      ),
+    );
+  }
+}
+
+class WenyouLoadMoreControl extends StatelessWidget {
+  const WenyouLoadMoreControl({
+    required this.hasMore,
+    required this.isLoading,
+    required this.onLoadMore,
+    this.failure,
+    this.loadMoreLabel = '加载更多',
+    this.loadingLabel = '正在加载更多',
+    this.endLabel = '已经到底了',
+    this.loadMoreKey,
+    this.retryKey,
+    super.key,
+  });
+
+  final bool hasMore;
+  final bool isLoading;
+  final VoidCallback? onLoadMore;
+  final ApiFailure? failure;
+  final String loadMoreLabel;
+  final String loadingLabel;
+  final String endLabel;
+  final Key? loadMoreKey;
+  final Key? retryKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     final Widget child;
     if (failure case final currentFailure?) {
       child = WenyouFailureBanner(
@@ -75,9 +121,6 @@ class WenyouPaginationFooter extends StatelessWidget {
         ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
       );
     }
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: tokens.space16),
-      child: Center(child: child),
-    );
+    return child;
   }
 }

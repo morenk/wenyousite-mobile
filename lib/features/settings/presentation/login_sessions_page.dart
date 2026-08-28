@@ -127,7 +127,7 @@ class _ReadyLoginSessions extends StatelessWidget {
                 key: const Key('login-session-write-outcome'),
                 status: state.actionOutcome!,
                 confirmingMessage: '正在确认终端退出状态…',
-                indeterminateMessage: '终端退出结果暂时无法确定，请稍后刷新查看。',
+                indeterminateMessage: '现在无法继续退出终端。请先刷新终端列表查看是否已生效；应用不会自动重复提交。',
                 requestId: state.actionRequestId,
                 onRefresh: onRefresh,
                 refreshKey: const Key('login-session-refresh-result'),

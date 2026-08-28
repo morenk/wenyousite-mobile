@@ -92,7 +92,7 @@ class _SubthreadDirectory extends ConsumerWidget {
               key: const Key('subthread-management-write-outcome'),
               status: state.actionOutcome!,
               confirmingMessage: '正在确认子贴状态…',
-              indeterminateMessage: '子贴操作结果暂时无法确定，请稍后刷新查看。',
+              indeterminateMessage: '现在无法继续子贴操作。请先刷新子贴列表查看是否已生效；应用不会自动重复提交。',
               requestId: state.actionRequestId,
               onRefresh: () => ref.read(provider.notifier).load(),
             ),

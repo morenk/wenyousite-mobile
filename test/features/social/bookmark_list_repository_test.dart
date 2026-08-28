@@ -165,11 +165,22 @@ void main() {
     await expectLater(
       ApiBookmarkListRepository(api).fetchPage(),
       throwsA(
-        isA<ApiFailure>().having(
-          (failure) => failure.userMessage,
-          'message',
-          contains('管理 ID'),
-        ),
+        isA<ApiFailure>()
+            .having(
+              (failure) => failure.reason,
+              'reason',
+              FailureReason.contractViolation,
+            )
+            .having(
+              (failure) => failure.recoveryAction,
+              'recoveryAction',
+              FailureRecoveryAction.refresh,
+            )
+            .having(
+              (failure) => failure.userMessage,
+              'message',
+              contains('刷新'),
+            ),
       ),
     );
   });

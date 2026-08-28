@@ -471,7 +471,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       );
       if (restored == null ||
           restored.clientRequestId != state.clientRequestId) {
-        throw const ApiFailure(userMessage: '待确认创建记录无法安全恢复，请保留本地草稿并联系维护者。');
+        throw const ApiFailure(userMessage: '这份草稿暂时无法继续发布，请保留草稿后重新打开编辑页。');
       }
       payload = restored;
     } else {

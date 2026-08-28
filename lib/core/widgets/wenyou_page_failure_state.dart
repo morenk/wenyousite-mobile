@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
@@ -27,14 +28,18 @@ class WenyouPageFailureState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final presentation = UserFacingFailure.fromApi(
+      failure,
+      title: title,
+      message: message,
+      placement: FailurePresentationPlacement.page,
+    );
     return WenyouPageBody(
       maxWidth: maxWidth,
       child: WenyouPanel(
-        child: WenyouEmptyState(
+        child: WenyouFailureView(
+          failure: presentation,
           icon: icon,
-          title: title,
-          message: message ?? failure?.userMessage ?? '请稍后重试。',
-          detail: wenyouRequestDetail(failure),
           action: OutlinedButton.icon(
             key: retryKey,
             onPressed: onRetry,

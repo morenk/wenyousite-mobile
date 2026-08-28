@@ -79,7 +79,12 @@ void main() {
     expect(await controller.toggleBookmark(folderId: 'folder-custom'), isFalse);
 
     expect(controller.state.isBookmarked, isTrue);
-    expect(controller.state.failure?.userMessage, contains('记录 ID'));
+    expect(controller.state.failure?.reason, FailureReason.contractViolation);
+    expect(
+      controller.state.failure?.recoveryAction,
+      FailureRecoveryAction.refresh,
+    );
+    expect(controller.state.failure?.userMessage, contains('刷新'));
     expect(repository.removedBookmarkIds, isEmpty);
   });
 

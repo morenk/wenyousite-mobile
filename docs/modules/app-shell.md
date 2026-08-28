@@ -18,6 +18,8 @@
 
 首页、动态与消息的相邻栏目内容统一按 Foundation standard 180ms 沿切换方向轻量入场，减少动态效果时瞬时完成；页签保持稳定，动态与消息按需构建并保留已访问栏目，避免切换时整页闪烁或重复读取。
 
+手机 iOS 共享实现固定竖屏，iPad 保留系统多方向声明；当前只做应用名、相册用途文案、方向和本地化的静态兼容校验，不声称 iOS 签名或真机验收。
+
 ## 4. 用户操作流程
 
 冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 4 与 Markdown v3、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
@@ -40,6 +42,8 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 现场诊断由编译期 `WENYOU_ENABLE_FIELD_DIAGNOSTICS` 控制且默认关闭；普通用户 Debug 与 Release 包不安装异常捕获、不显示右上角入口，也不调度帖子渲染事件或真实几何探针。需要异地排障时，从同一提交使用 `--dart-define=WENYOU_ENABLE_FIELD_DIAGNOSTICS=true` 生成专用 Debug 包，不维护会与主线漂移的诊断分支。启用后入口独立于具体业务页面和 Navigator；打开可复制原始物理窗口指标、逻辑 `MediaQuery`、帖子渲染事件、真实渲染树几何、Flutter/平台异常类型与最多 120 行堆栈。几何事件只使用固定节点名并记录尺寸、约束、屏幕坐标、可见比例、变换矩阵及滚动范围；非有限约束以字符串导出，保证 JSON 可复制。异常消息正文不会写入缓冲区；导出文本明确排除正文、内容 ID、账号、Token、私聊和请求 URL。缓冲区仅在当前诊断 Debug 进程内保留最近 40 条。Android Manifest 默认明确启用 Impeller，仅诊断构建可通过受校验的 Gradle 参数覆写为 Skia/OpenGLES，导出的 `renderer` 与 `rendererVariant` 可区分 A/B 包。
 
 ## 7. 鉴权、权限和隐私规则
+
+Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 备份/设备迁移规则均排除应用文件、数据库、SharedPreferences 和外部文件；会话、本地草稿与偏好不通过系统备份跨设备复制。
 
 壳层不假定游客有写权限。升级与错误页不得展示 Token、响应正文或完整下载 URL。更新地址及重定向终点只接受 HTTPS。下载前 HEAD 与下载响应都必须具有 Android APK 类型、合理且一致的长度、`.apk` 附件名、`site.wenyou.app` 应用 ID、目标 `versionCode`、非空 `versionName` 和 64 位 SHA-256；文件字节再按声明哈希校验。Android 原生通道只接受应用 cache 的 `wenyou_updates/` 内 `.apk`，并在授权或打开安装器前通过系统 PackageManager 再校验包名、目标构建高于当前构建且签名与已安装应用相容；通过不可导出的 `FileProvider` 临时授予系统安装器只读权限，安装未知应用权限由系统设置页确认。
 
@@ -79,6 +83,7 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
 - [x] Android adaptive/monochrome/legacy 图标与 iOS AppIcon 均与 Foundation v6.4.0 哈希一致；Android 12+、旧版 Android 和 iOS 系统启动层只显示纯白底色，Flutter 品牌首帧的整体居中、尺寸、文案、字体、实际可见最短停留时间、零尺寸预热帧和快速就绪切换均有回归。
+- [x] Android 全量备份与设备迁移明确关闭；iOS 应用名、相册用途文案、iPhone 竖屏和应用本地化声明有静态回归。
 - [ ] Android 8+ 模拟器通过启动冒烟。
 
 ## 12. 已知限制和后续功能
@@ -90,5 +95,7 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 契约 `5.13.2-dev.20260828.1`；Markdown v3；后端 `51be1b9894949d4914e2df1bf8d40828bc595b58`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
+
+根 router 与生命周期位于 `lib/app/app_router.dart`，主壳、认证、内容和账号路由组位于 `lib/app/routes/`。
 
 代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

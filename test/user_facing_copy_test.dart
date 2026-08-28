@@ -11,6 +11,15 @@ void main() {
       '尚未确认',
       '暂未确认',
       '不完整',
+      '结果暂时无法确定',
+      '结果不明确',
+      '缺少管理 ID',
+      '缺少记录 ID',
+      '缺少主题上下文',
+      '格式异常',
+      '请求已经发生变化',
+      '无法安全恢复',
+      '联系维护者',
       '服务端草稿',
       '服务端暂未启用此能力',
       '同一份实时余额',
@@ -38,6 +47,42 @@ void main() {
       reason:
           '请将以下文案改为用户可理解的对象、动作或失败结果：\n'
           '${violations.join('\n')}',
+    );
+  });
+
+  test('展示层旧失败文案访问与网络层文案构造只能收敛', () {
+    var presentationUserMessageUses = 0;
+    var legacyApiFailureConstructors = 0;
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final source = entity.readAsStringSync();
+      legacyApiFailureConstructors += RegExp(
+        r'ApiFailure\s*\(',
+      ).allMatches(source).length;
+      final isPresentation = entity.path.contains(
+        '${Platform.pathSeparator}presentation${Platform.pathSeparator}',
+      );
+      final isCoreWidget = entity.path.contains(
+        '${Platform.pathSeparator}core${Platform.pathSeparator}'
+        'widgets${Platform.pathSeparator}',
+      );
+      if (isPresentation || isCoreWidget) {
+        presentationUserMessageUses += RegExp(
+          r'\.userMessage\b',
+        ).allMatches(source).length;
+      }
+    }
+
+    expect(
+      presentationUserMessageUses,
+      lessThanOrEqualTo(105),
+      reason: '展示层不得新增 ApiFailure.userMessage；请改用 UserFacingFailure。',
+    );
+    expect(
+      legacyApiFailureConstructors,
+      lessThanOrEqualTo(418),
+      reason: '不得新增带展示文案的网络失败；请改用 FailureReason 与展示映射。',
     );
   });
 

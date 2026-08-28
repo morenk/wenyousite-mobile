@@ -464,7 +464,7 @@ class _ActionOutcome extends StatelessWidget {
       ),
       status: outcome,
       confirmingMessage: '正在确认订阅状态…',
-      indeterminateMessage: '订阅结果暂时无法确定，请稍后刷新查看。',
+      indeterminateMessage: '现在无法继续订阅操作。请先刷新主题查看是否已生效；应用不会自动重复提交。',
       requestId: requestId,
       onRefresh: onRefresh,
       refreshKey: const Key('thread-subscription-refresh-result'),

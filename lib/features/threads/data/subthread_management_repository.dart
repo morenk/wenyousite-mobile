@@ -129,7 +129,9 @@ class ApiSubthreadManagementRepository
         }),
       )).data;
       if (envelope == null) {
-        throw const ApiFailure(userMessage: '子贴创建结果不明确，请保留当前表单后重试。');
+        throw const ApiFailure(
+          userMessage: '现在无法继续创建子贴。请先刷新子贴列表查看是否已生效；应用不会自动重复提交。',
+        );
       }
       return _mapItem(
         envelope.data,

@@ -180,7 +180,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
               key: const Key('subthread-form-indeterminate'),
               status: WriteOutcomeStatus.indeterminate,
               confirmingMessage: '正在确认子贴状态…',
-              indeterminateMessage: '保存结果暂时无法确定；再次保存会先确认原操作，不会重复创建。',
+              indeterminateMessage: '现在无法继续保存。请先刷新子贴查看是否已生效；应用不会自动重复提交。',
               requestId: _indeterminateRequestId,
             )
           : WenyouStatusBanner(

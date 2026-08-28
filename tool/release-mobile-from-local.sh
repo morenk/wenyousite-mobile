@@ -182,6 +182,56 @@ find_android_tool() {
   return 1
 }
 
+verify_android_elf_page_alignment() {
+  local apk_path=$1
+  local android_sdk=$2
+  local ndk_dir
+  local host_dir
+  local readelf
+  local extract_dir
+  local library
+  local load_alignment
+  local library_count=0
+
+  ndk_dir=$(find "$android_sdk/ndk" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)
+  if [ -z "$ndk_dir" ]; then
+    echo "Android SDK 没有可用的 NDK，无法检查 ELF 页面对齐: $android_sdk" >&2
+    return 1
+  fi
+  host_dir=$(find "$ndk_dir/toolchains/llvm/prebuilt" -mindepth 1 -maxdepth 1 -type d -print | head -n 1)
+  if [ -z "$host_dir" ]; then
+    echo "Android NDK 缺少 LLVM host tools: $ndk_dir" >&2
+    return 1
+  fi
+  readelf=$(find_android_tool "$host_dir/bin" llvm-readelf)
+  extract_dir=$(mktemp -d)
+  if ! unzip -qq "$apk_path" 'lib/*/*.so' -d "$extract_dir"; then
+    rm -rf -- "$extract_dir"
+    echo "无法从 APK 提取原生库以检查 16 KB 页面支持" >&2
+    return 1
+  fi
+
+  while IFS= read -r library; do
+    library_count=$((library_count + 1))
+    while IFS= read -r load_alignment; do
+      if ((load_alignment < 0x4000)); then
+        rm -rf -- "$extract_dir"
+        echo "原生库 LOAD 段未按 16 KB 对齐: ${library#"$extract_dir"/} align=$load_alignment" >&2
+        return 1
+      fi
+    done < <(
+      "$readelf" --program-headers --wide "$library" \
+        | awk '$1 == "LOAD" { print $NF }'
+    )
+  done < <(find "$extract_dir/lib" -type f -name '*.so' -print)
+
+  rm -rf -- "$extract_dir"
+  if ((library_count == 0)); then
+    echo "APK 中没有可检查的原生库" >&2
+    return 1
+  fi
+}
+
 build_android() {
   local apk_path
   local android_sdk
@@ -232,6 +282,7 @@ build_android() {
   aapt=$(find_android_tool "$build_tools_dir" aapt)
 
   "$zipalign" -c -P 16 4 "$apk_path" >/dev/null
+  verify_android_elf_page_alignment "$apk_path" "$android_sdk"
   certificate_output=$("$apksigner" verify --verbose --print-certs "$apk_path")
   certificate_sha256=$(
     printf '%s\n' "$certificate_output" \

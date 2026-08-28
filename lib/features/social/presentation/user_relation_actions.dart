@@ -82,7 +82,7 @@ class UserRelationActions extends ConsumerWidget {
             key: const Key('user-relation-write-outcome'),
             status: state.outcomeStatus!,
             confirmingMessage: '正在确认关系状态…',
-            indeterminateMessage: '关系操作结果暂时无法确定，请稍后刷新查看。',
+            indeterminateMessage: '现在无法继续关系操作。请先刷新用户资料查看是否已生效；应用不会自动重复提交。',
             requestId: state.outcomeRequestId,
             onRefresh: notifier.refresh,
             refreshKey: const Key('user-relation-refresh-result'),

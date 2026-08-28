@@ -289,7 +289,7 @@ class ApiDirectMessageRepository implements DirectMessageRepository {
               (accept
                   ? DirectConversationStatus.accepted
                   : DirectConversationStatus.declined)) {
-        throw const ApiFailure(userMessage: '消息请求已经发生变化，请重新加载。');
+        throw const ApiFailure(userMessage: '会话内容已有更新，请重新加载。');
       }
       return result;
     } on DioException catch (error) {

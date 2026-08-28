@@ -93,7 +93,7 @@ class _MembersReadyState extends ConsumerWidget {
               key: const Key('thread-members-write-outcome'),
               status: state.actionOutcome!,
               confirmingMessage: '正在确认成员设置…',
-              indeterminateMessage: '成员设置结果暂时无法确定，请稍后刷新查看。',
+              indeterminateMessage: '现在无法继续设置成员。请先刷新成员列表查看是否已生效；应用不会自动重复提交。',
               requestId: state.actionRequestId,
               onRefresh: () => ref
                   .read(

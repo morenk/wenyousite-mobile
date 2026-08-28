@@ -7,6 +7,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 
 class MomentComposeImageStrip extends StatelessWidget {
   const MomentComposeImageStrip({
@@ -250,8 +251,8 @@ class _PendingComposeThumbnail extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.memory(
-                  pending.input.bytes,
+                MediaUploadInputImage(
+                  input: pending.input,
                   key: ValueKey('moment-local-thumbnail-$index'),
                   fit: BoxFit.cover,
                   cacheWidth: 264,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -102,6 +103,40 @@ void main() {
       ]),
     );
   });
+
+  test(
+    'materializes a file-backed selection immediately before upload',
+    () async {
+      final directory = await Directory.systemTemp.createTemp('wenyou-task-');
+      addTearDown(() => directory.delete(recursive: true));
+      final file = File('${directory.path}${Platform.pathSeparator}picked.png');
+      await file.writeAsBytes(const [137, 80, 78, 71]);
+      final sourceInput = MediaUploadInput.fromPickedSource(
+        PickedMediaSource.file(
+          filename: 'picked.png',
+          path: file.path,
+          length: await file.length(),
+          declaredContentType: 'image/png',
+        ),
+      );
+      final gateway = _FakeGateway()..completeOnStart = _image;
+      final container = _container(
+        picker: _FakePicker(sourceInput),
+        gateway: gateway,
+      );
+      addTearDown(container.dispose);
+      final provider = mediaUploadTaskControllerProvider(Object());
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      expect(sourceInput.isMaterialized, isFalse);
+      final result = await container.read(provider.notifier).pickAndUpload();
+
+      expect(result, same(_image));
+      expect(gateway.inputs.single.isMaterialized, isTrue);
+      expect(gateway.inputs.single.bytes, const [137, 80, 78, 71]);
+    },
+  );
 
   test('ignores progress that arrives after a successful result', () async {
     final gateway = _FakeGateway();

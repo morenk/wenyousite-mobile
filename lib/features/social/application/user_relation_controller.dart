@@ -143,7 +143,9 @@ class UserRelationController extends StateNotifier<UserRelationState> {
         target.userId,
       );
     }
-    return Future.error(const ApiFailure(userMessage: '关系结果暂时无法确定，请稍后刷新查看。'));
+    return Future.error(
+      const ApiFailure(userMessage: '现在无法继续关系操作。请先刷新用户资料查看是否已生效；应用不会自动重复提交。'),
+    );
   }
 
   Future<void> refresh() async {

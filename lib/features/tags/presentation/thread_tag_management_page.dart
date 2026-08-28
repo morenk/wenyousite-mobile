@@ -244,7 +244,7 @@ class _ThreadTagManagementPageState
               key: const Key('thread-tag-write-outcome'),
               status: state.actionOutcome!,
               confirmingMessage: '正在确认标签状态…',
-              indeterminateMessage: '标签操作结果暂时无法确定，请稍后刷新查看。',
+              indeterminateMessage: '现在无法继续标签操作。请先刷新标签列表查看是否已生效；应用不会自动重复提交。',
               requestId: state.actionRequestId,
               onRefresh: () => ref.read(provider.notifier).load(),
               refreshKey: const Key('thread-tag-refresh-result'),

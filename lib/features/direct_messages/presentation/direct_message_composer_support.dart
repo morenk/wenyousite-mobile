@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 
 class DirectMessageComposerStatusLine extends StatelessWidget {
   const DirectMessageComposerStatusLine({
@@ -89,8 +90,8 @@ class DirectMessageImagePreview extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(tokens.radius12),
-            child: Image.memory(
-              image.bytes,
+            child: MediaUploadInputImage(
+              input: image,
               width: 64,
               height: 64,
               fit: BoxFit.cover,

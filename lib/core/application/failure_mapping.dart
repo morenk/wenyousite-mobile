@@ -6,8 +6,15 @@ ApiFailure mapApplicationFailure(Object error, String fallbackMessage) {
     ApiFailure failure => failure,
     DomainValidationException validation => ApiFailure(
       userMessage: validation.message,
+      reason: FailureReason.validation,
+      recoveryAction: FailureRecoveryAction.none,
       cause: validation,
     ),
-    _ => ApiFailure(userMessage: fallbackMessage, cause: error),
+    _ => ApiFailure(
+      userMessage: fallbackMessage,
+      reason: FailureReason.unknown,
+      recoveryAction: FailureRecoveryAction.retry,
+      cause: error,
+    ),
   };
 }

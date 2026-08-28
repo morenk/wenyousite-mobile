@@ -44,6 +44,17 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      if (from == to) return;
+      throw StateError(
+        'Missing AppDatabase migration path from schema $from to $to.',
+      );
+    },
+  );
+
   Future<LocalEditorSnapshot?> findEditorSnapshot(String id) async {
     final row = await (select(
       localEditorSnapshots,

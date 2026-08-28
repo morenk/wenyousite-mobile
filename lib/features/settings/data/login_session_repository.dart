@@ -47,7 +47,11 @@ class ApiLoginSessionRepository implements LoginSessionRepository {
   LoginSessionModel _mapSession(SessionResponseDto dto) {
     final id = dto.id.trim();
     if (id.isEmpty) {
-      throw const ApiFailure(userMessage: '登录终端缺少管理 ID，请稍后重试。');
+      throw const ApiFailure(
+        userMessage: '当前终端记录暂时无法管理，请刷新后重试。',
+        reason: FailureReason.contractViolation,
+        recoveryAction: FailureRecoveryAction.refresh,
+      );
     }
     return LoginSessionModel(
       id: id,

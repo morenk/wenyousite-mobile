@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
+import 'package:wenyousite_mobile/features/media/application/recovered_media_selection.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 Future<UploadedEditorImage?> pickAndUploadEditorImage(
@@ -26,13 +27,53 @@ Future<List<MediaUploadInput>?> pickEditorImages(
 }) async {
   assert(maximumSelection > 0);
   final picker = ref.read(editorImagePickerPortProvider);
+  final recoveredStore = ref.read(recoveredMediaSelectionStoreProvider);
+  if (recoveredStore.hasSelection(purpose)) {
+    final useRecovered = await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('恢复上次选择的图片？'),
+        content: const Text('应用在相册打开时被系统关闭了。你可以继续使用上次选中的图片。'),
+        actions: [
+          TextButton(
+            key: const Key('recovered-image-selection-discard'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('放弃'),
+          ),
+          FilledButton(
+            key: const Key('recovered-image-selection-use'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('继续使用'),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted) return null;
+    if (useRecovered == true) {
+      return recoveredStore
+          .take(purpose)
+          .take(maximumSelection)
+          .map((input) => input.withPurpose(purpose))
+          .toList(growable: false);
+    }
+    recoveredStore.discard(purpose);
+  }
   while (context.mounted) {
     try {
       final List<MediaUploadInput> inputs;
-      if (maximumSelection > 1 && picker is MultiEditorImagePicker) {
+      if (maximumSelection > 1 && picker is RecoveryAwareEditorImagePicker) {
+        inputs = await (picker as RecoveryAwareEditorImagePicker)
+            .pickManyFromGalleryFor(limit: maximumSelection, purpose: purpose);
+      } else if (maximumSelection > 1 && picker is MultiEditorImagePicker) {
         inputs = await (picker as MultiEditorImagePicker).pickManyFromGallery(
           limit: maximumSelection,
         );
+      } else if (picker is RecoveryAwareEditorImagePicker) {
+        final input = await (picker as RecoveryAwareEditorImagePicker)
+            .pickFromGalleryFor(purpose);
+        inputs = input == null ? const [] : [input];
       } else {
         final input = await picker.pickFromGallery();
         inputs = input == null ? const [] : [input];

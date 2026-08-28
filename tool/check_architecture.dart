@@ -18,6 +18,10 @@ const _idempotentOperations = <String>{
 };
 
 const _maximumDartFileLines = 900;
+const _reviewDartFileLines = 700;
+const _legacyStateNotifierBaseline = 59;
+const _crossFeatureInternalImportBaseline = 41;
+const _featurePresentationSpinnerBaseline = 77;
 
 void main() {
   final failures = collectArchitectureFailures(Directory.current);
@@ -29,6 +33,13 @@ void main() {
     }
     exitCode = 1;
     return;
+  }
+  final reviewNotices = collectArchitectureReviewNotices(Directory.current);
+  if (reviewNotices.isNotEmpty) {
+    stdout.writeln('Architecture review budget (${reviewNotices.length}):');
+    for (final notice in reviewNotices) {
+      stdout.writeln('- $notice');
+    }
   }
   stdout.writeln(
     'Architecture checks passed: request policies, domain boundaries, '
@@ -66,6 +77,9 @@ List<String> collectArchitectureFailures(Directory root) {
     failures,
     root,
   );
+  _checkCrossFeatureInternalImports(dartFiles, failures, root);
+  _checkLegacyStateNotifierBudget(dartFiles, failures, root);
+  _checkFeatureSpinnerBudget(dartFiles, failures, root);
   _checkEditorPublicSurface(dartFiles, failures, root);
   _checkFoundationIconBoundary(dartFiles, failures, root);
   _checkSharedTabBoundary(dartFiles, failures, root);
@@ -80,6 +94,99 @@ List<String> collectArchitectureFailures(Directory root) {
 
   failures.sort();
   return failures;
+}
+
+void _checkFeatureSpinnerBudget(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  final pattern = RegExp(r'\bCircularProgressIndicator\s*\(');
+  var count = 0;
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (!path.startsWith('lib/features/') || !path.contains('/presentation/')) {
+      continue;
+    }
+    count += pattern.allMatches(file.readAsStringSync()).length;
+  }
+  if (count > _featurePresentationSpinnerBaseline) {
+    failures.add(
+      'feature presentation spinners grew from '
+      '$_featurePresentationSpinnerBaseline to $count; use a shared loading '
+      'primitive',
+    );
+  }
+}
+
+List<String> collectArchitectureReviewNotices(Directory root) {
+  final notices = <String>[];
+  for (final file in _dartFiles(
+    Directory('${root.path}/lib'),
+  ).where((file) => !file.path.replaceAll('\\', '/').endsWith('.g.dart'))) {
+    final lineCount = _lineCount(file.readAsStringSync());
+    if (lineCount <= _reviewDartFileLines ||
+        lineCount > _maximumDartFileLines) {
+      continue;
+    }
+    notices.add(
+      '${_relative(file.path, root)} has $lineCount lines; review a focused '
+      'split when this file is next changed',
+    );
+  }
+  notices.sort();
+  return notices;
+}
+
+void _checkLegacyStateNotifierBudget(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  final declarations = <String>[];
+  final pattern = RegExp(r'\bextends\s+StateNotifier\s*<');
+  for (final file in files) {
+    final count = pattern.allMatches(file.readAsStringSync()).length;
+    declarations.addAll(
+      List.filled(count, _relative(file.path, root), growable: false),
+    );
+  }
+  if (declarations.length > _legacyStateNotifierBaseline) {
+    failures.add(
+      'legacy StateNotifier declarations grew from '
+      '$_legacyStateNotifierBaseline to ${declarations.length}; use '
+      'Notifier or AsyncNotifier for new state',
+    );
+  }
+}
+
+void _checkCrossFeatureInternalImports(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  final dependencies = <String>[];
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (!path.startsWith('lib/features/')) continue;
+    final from = path.split('/')[2];
+    for (final target in _dependencyTargets(file, root)) {
+      final parts = target.split('/');
+      if (parts.length < 5 || !target.startsWith('lib/features/')) continue;
+      final to = parts[2];
+      final layer = parts[3];
+      if (from != to && (layer == 'data' || layer == 'presentation')) {
+        dependencies.add('$path->$target');
+      }
+    }
+  }
+  if (dependencies.length > _crossFeatureInternalImportBaseline) {
+    failures.add(
+      'cross-feature data/presentation imports grew from '
+      '$_crossFeatureInternalImportBaseline to ${dependencies.length}; '
+      'publish and use a feature facade instead',
+    );
+  }
 }
 
 void _checkSnackBarBoundary(
@@ -666,7 +773,10 @@ void _checkRawRouteDefinitions(
 ) {
   for (final file in files) {
     final path = _relative(file.path, root);
-    if (path != 'lib/app/app_router.dart') continue;
+    if (path != 'lib/app/app_router.dart' &&
+        !path.startsWith('lib/app/routes/')) {
+      continue;
+    }
     final source = file.readAsStringSync();
     if (RegExp(r'''\bpath:\s*["']''').hasMatch(source)) {
       failures.add(

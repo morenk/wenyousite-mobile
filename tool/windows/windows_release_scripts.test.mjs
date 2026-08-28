@@ -93,6 +93,17 @@ test('正式发布在构建前运行唯一完整门禁', async () => {
   assert.match(source, /npm run check/);
 });
 
+test('Android 发布同时检查 APK ZIP 与 ELF 的 16 KB 对齐', async () => {
+  const source = await readFile(
+    path.resolve(directory, '../release-mobile-from-local.sh'),
+    'utf8',
+  );
+  assert.match(source, /zipalign.+-P 16 4/);
+  assert.match(source, /verify_android_elf_page_alignment/);
+  assert.match(source, /llvm-readelf/);
+  assert.match(source, /load_alignment < 0x4000/);
+});
+
 test('发布包装器仅在进程环境解密凭据并始终清理', async () => {
   const source = await read('Invoke-WenyouAndroidRelease.ps1');
   assert.match(source, /Unprotect-DpapiString/);

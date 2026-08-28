@@ -11,6 +11,17 @@ abstract interface class MultiEditorImagePicker {
   Future<List<MediaUploadInput>> pickManyFromGallery({required int limit});
 }
 
+/// Optional platform capability that records which editor flow launched the
+/// system picker so Android can restore a result after Activity destruction.
+abstract interface class RecoveryAwareEditorImagePicker {
+  Future<MediaUploadInput?> pickFromGalleryFor(MediaUploadPurpose purpose);
+
+  Future<List<MediaUploadInput>> pickManyFromGalleryFor({
+    required int limit,
+    required MediaUploadPurpose purpose,
+  });
+}
+
 abstract interface class MediaUploadGateway {
   MediaUploadOperation<UploadedEditorImage> startImageUpload(
     MediaUploadInput input, {

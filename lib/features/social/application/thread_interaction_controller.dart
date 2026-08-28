@@ -81,7 +81,11 @@ class ThreadInteractionController
     final oldBookmarkId = before.bookmarkId;
     if (wasBookmarked && oldBookmarkId == null) {
       state = state.copyWith(
-        failure: const ApiFailure(userMessage: '收藏状态缺少记录 ID，请下拉刷新后重试。'),
+        failure: const ApiFailure(
+          userMessage: '这条收藏暂时无法管理，请下拉刷新后重试。',
+          reason: FailureReason.contractViolation,
+          recoveryAction: FailureRecoveryAction.refresh,
+        ),
         clearPending: true,
       );
       return false;
@@ -154,7 +158,9 @@ class ThreadInteractionController
         target.threadId,
       );
     }
-    return Future.error(const ApiFailure(userMessage: '互动结果暂时无法确定，请稍后刷新查看。'));
+    return Future.error(
+      const ApiFailure(userMessage: '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。'),
+    );
   }
 
   Future<void> refresh() async {
@@ -261,8 +267,8 @@ class ThreadInteractionController
     final requestId = state.outcomeRequestId;
     clearFeedback();
     return requestId == null
-        ? '主题互动结果暂时无法确定，请稍后刷新查看。'
-        : '主题互动结果暂时无法确定，请稍后刷新查看。（问题编号：$requestId）';
+        ? '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。'
+        : '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。（问题编号：$requestId）';
   }
 }
 

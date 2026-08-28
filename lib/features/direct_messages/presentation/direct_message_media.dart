@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/media/media_ui.dart';
 
 const _directMessageImageMaxDimension = 280.0;
 
@@ -29,8 +30,8 @@ class DirectMessagePendingImage extends StatelessWidget {
             maxWidth: _directMessageImageMaxDimension,
             maxHeight: _directMessageImageMaxDimension,
           ),
-          child: Image.memory(
-            input.bytes,
+          child: MediaUploadInputImage(
+            input: input,
             key: const Key('direct-message-pending-local-image'),
             fit: BoxFit.contain,
             cacheWidth: 840,

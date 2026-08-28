@@ -5,12 +5,17 @@ import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_appearance_store.dart';
+import 'package:wenyousite_mobile/features/media/application/recovered_media_selection.dart';
+import 'package:wenyousite_mobile/features/media/data/media_picker_recovery.dart';
 import 'package:wenyousite_mobile/features/media/data/system_image_picker_configuration.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (wenyouFieldDiagnosticsEnabled) installWenyouDebugDiagnostics();
   configureSystemImagePicker();
+  final recoveredMediaSelection = RecoveredMediaSelectionStore.fromResult(
+    await recoverLostEditorMediaSelection(),
+  );
   const appearanceStore = SharedPreferencesAppearanceStore();
   final initialAppearance = await loadInitialAppearancePreference(
     appearanceStore,
@@ -20,6 +25,9 @@ Future<void> main() async {
       overrides: [
         ...productionProviderOverrides(),
         appearancePreferenceStoreProvider.overrideWithValue(appearanceStore),
+        recoveredMediaSelectionStoreProvider.overrideWithValue(
+          recoveredMediaSelection,
+        ),
         initialAppearancePreferenceStateProvider.overrideWithValue(
           initialAppearance,
         ),

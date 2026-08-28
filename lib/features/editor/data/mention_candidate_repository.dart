@@ -25,7 +25,7 @@ class ApiMentionCandidateRepository implements MentionCandidateRepository {
     final normalizedThreadId = threadId.trim();
     final normalizedQuery = query.trim();
     if (normalizedThreadId.isEmpty) {
-      throw const ApiFailure(userMessage: '缺少主题上下文，暂时无法加载可提及用户。');
+      throw const ApiFailure(userMessage: '当前无法读取可提及用户，请重新打开编辑页。');
     }
     try {
       final response = await _api.usersMentionCandidates(
