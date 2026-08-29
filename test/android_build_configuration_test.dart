@@ -51,8 +51,21 @@ void main() {
 
     expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     expect(manifest, isNot(contains('android.permission.FOREGROUND_SERVICE')));
+    expect(manifest, isNot(contains('android.permission.WAKE_LOCK')));
+    expect(
+      manifest,
+      isNot(contains('android.permission.RECEIVE_BOOT_COMPLETED')),
+    );
+    expect(
+      manifest,
+      isNot(contains('android.permission.SCHEDULE_EXACT_ALARM')),
+    );
+    expect(manifest, isNot(contains('android.permission.USE_EXACT_ALARM')));
     expect(manifest, isNot(contains('ForegroundService')));
     expect(manifest, isNot(contains('android:foregroundServiceType')));
+    expect(manifest, isNot(contains('<service')));
+    expect(manifest, isNot(contains('<receiver')));
+    expect(manifest, isNot(contains('WorkManager')));
     expect(gradle, contains('isCoreLibraryDesugaringEnabled = true'));
     expect(gradle, contains('coreLibraryDesugaring('));
     expect(

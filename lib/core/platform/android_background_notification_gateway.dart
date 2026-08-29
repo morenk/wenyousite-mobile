@@ -14,12 +14,21 @@ class AndroidBackgroundNotificationGateway
     implements BackgroundNotificationGateway {
   AndroidBackgroundNotificationGateway({
     FlutterLocalNotificationsPlugin? plugin,
-  }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    this.androidPlugin,
+  }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
+       super();
 
   static const _messageChannelId = 'wenyou_messages_v1';
   static const _groupKey = 'site.wenyou.app.messages';
+  static const _messageChannel = AndroidNotificationChannel(
+    _messageChannelId,
+    '新消息提醒',
+    description: '温油站通知和私聊的新消息提醒',
+    importance: Importance.high,
+  );
 
   final FlutterLocalNotificationsPlugin _plugin;
+  final AndroidFlutterLocalNotificationsPlugin? androidPlugin;
   final _tapController = StreamController<String>.broadcast();
   Future<void>? _initialization;
   String? _launchPayload;
@@ -32,10 +41,12 @@ class AndroidBackgroundNotificationGateway
   @override
   Stream<String> get notificationTaps => _tapController.stream;
 
-  AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >();
+  AndroidFlutterLocalNotificationsPlugin? get _android =>
+      androidPlugin ??
+      _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
   @override
   Future<void> initialize() {
@@ -55,6 +66,7 @@ class AndroidBackgroundNotificationGateway
         }
       },
     );
+    await _android?.createNotificationChannel(_messageChannel);
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp ?? false) {
       _launchPayload = details?.notificationResponse?.payload?.trim();
@@ -65,14 +77,26 @@ class AndroidBackgroundNotificationGateway
   Future<bool> canNotify() async {
     if (!isSupported) return false;
     await initialize();
-    return await _android?.areNotificationsEnabled() ?? false;
+    final android = _android;
+    if (android == null) return false;
+    final notificationsEnabled = await android.areNotificationsEnabled();
+    if (notificationsEnabled != true) return false;
+    final channels = await android.getNotificationChannels();
+    if (channels == null) return false;
+    for (final channel in channels) {
+      if (channel.id == _messageChannelId) {
+        return channel.importance != Importance.none;
+      }
+    }
+    return false;
   }
 
   @override
   Future<bool> requestPermission() async {
     if (!isSupported) return false;
     await initialize();
-    return await _android?.requestNotificationsPermission() ?? false;
+    final granted = await _android?.requestNotificationsPermission() ?? false;
+    return granted && await canNotify();
   }
 
   @override
@@ -88,8 +112,8 @@ class AndroidBackgroundNotificationGateway
         notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _messageChannelId,
-            '新消息提醒',
-            channelDescription: '温油站通知和私聊的新消息提醒',
+            _messageChannel.name,
+            channelDescription: _messageChannel.description,
             icon: 'ic_stat_wenyou',
             importance: Importance.high,
             priority: Priority.high,

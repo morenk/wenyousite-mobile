@@ -30,12 +30,14 @@ void main() {
     final poller = BackgroundOnlinePoller(notifications, directMessages);
 
     expect(await poller.ensureBaseline(includeDirectMessages: false), isTrue);
-    final alerts = await poller.poll(includeDirectMessages: false);
+    final batch = await poller.poll(includeDirectMessages: false);
+    final alerts = batch!.alerts;
 
     expect(alerts, hasLength(1));
     expect(alerts.single.title, '温油站');
     expect(alerts.single.body, contains('赞了你的内容'));
     expect(alerts.single.body, isNot(contains('![')));
+    expect(batch.commit(), isTrue);
   });
 
   test('私聊未读增长仅显示用户名和通用提示，不泄露消息正文', () async {
@@ -69,7 +71,8 @@ void main() {
     final poller = BackgroundOnlinePoller(notifications, directMessages);
 
     await poller.ensureBaseline(includeDirectMessages: true);
-    final alerts = await poller.poll(includeDirectMessages: true);
+    final batch = await poller.poll(includeDirectMessages: true);
+    final alerts = batch!.alerts;
 
     expect(alerts, hasLength(1));
     expect(alerts.single.title, '小温');
@@ -82,6 +85,7 @@ void main() {
       BackgroundNotificationPayload.tryParse(alerts.single.payload)?.location,
       '/messages/conversation-1',
     );
+    expect(batch.commit(), isTrue);
   });
 
   test('超过三条新通知时只显示一条消息中心汇总', () async {
@@ -100,7 +104,8 @@ void main() {
     final poller = BackgroundOnlinePoller(notifications, directMessages);
 
     await poller.ensureBaseline(includeDirectMessages: false);
-    final alerts = await poller.poll(includeDirectMessages: false);
+    final batch = await poller.poll(includeDirectMessages: false);
+    final alerts = batch!.alerts;
 
     expect(alerts, hasLength(1));
     expect(alerts.single.body, '你有 4 条新消息');
@@ -108,6 +113,102 @@ void main() {
       BackgroundNotificationPayload.tryParse(alerts.single.payload)?.location,
       '/notifications',
     );
+    expect(batch.commit(), isTrue);
+  });
+
+  test('系统通知未确认展示时不提交指纹并在下一轮重试', () async {
+    final pages = [
+      _notificationPage([_notification(totalCount: 1)]),
+      for (var index = 0; index < 3; index++)
+        _notificationPage([_notification(totalCount: 2)]),
+    ];
+    when(
+      () => notifications.fetchPage(),
+    ).thenAnswer((_) async => pages.removeAt(0));
+    when(() => notifications.fetchUnreadCount()).thenAnswer((_) async => 1);
+    _stubDirectBaseline(directMessages);
+    final poller = BackgroundOnlinePoller(notifications, directMessages);
+
+    await poller.ensureBaseline(includeDirectMessages: false);
+    final uncommitted = await poller.poll(includeDirectMessages: false);
+    final retry = await poller.poll(includeDirectMessages: false);
+
+    expect(uncommitted!.alerts, hasLength(1));
+    expect(retry!.alerts, hasLength(1));
+    expect(retry.alerts.single.id, uncommitted.alerts.single.id);
+    expect(retry.commit(), isTrue);
+
+    final settled = await poller.poll(includeDirectMessages: false);
+    expect(settled!.alerts, isEmpty);
+    expect(settled.commit(), isTrue);
+  });
+
+  test('私聊详情读取失败时不推进未读基线并在恢复后提醒', () async {
+    when(
+      () => notifications.fetchPage(),
+    ).thenAnswer((_) async => _notificationPage(const []));
+    when(() => notifications.fetchUnreadCount()).thenAnswer((_) async => 0);
+    final countResults = [
+      const DirectUnreadCounts(unreadMessages: 0, pendingRequests: 0),
+      const DirectUnreadCounts(unreadMessages: 1, pendingRequests: 0),
+      const DirectUnreadCounts(unreadMessages: 1, pendingRequests: 0),
+    ];
+    when(
+      () => directMessages.fetchUnreadCounts(),
+    ).thenAnswer((_) async => countResults.removeAt(0));
+    var inboxCalls = 0;
+    when(
+      () => directMessages.fetchConversations(
+        view: DirectConversationView.inbox,
+        limit: 20,
+      ),
+    ).thenAnswer((_) async {
+      inboxCalls++;
+      if (inboxCalls == 1) return _conversationPage(const []);
+      if (inboxCalls == 2) throw StateError('transient detail failure');
+      return _conversationPage([_conversation(secret: '不能进入系统卡片')]);
+    });
+    when(
+      () => directMessages.fetchConversations(
+        view: DirectConversationView.requests,
+        limit: 20,
+      ),
+    ).thenAnswer((_) async => _conversationPage(const []));
+    final poller = BackgroundOnlinePoller(notifications, directMessages);
+
+    await poller.ensureBaseline(includeDirectMessages: true);
+    await expectLater(
+      poller.poll(includeDirectMessages: true),
+      throwsA(anything),
+    );
+
+    final recovered = await poller.poll(includeDirectMessages: true);
+    expect(recovered!.alerts, hasLength(1));
+    expect(recovered.alerts.single.body, '发来一条新私聊');
+    expect(recovered.commit(), isTrue);
+  });
+
+  test('基线读取失败后可重试且首次成功仍压住历史通知', () async {
+    var pageCalls = 0;
+    when(() => notifications.fetchPage()).thenAnswer((_) async {
+      pageCalls++;
+      if (pageCalls == 1) throw StateError('transient baseline failure');
+      return _notificationPage([_notification()]);
+    });
+    when(() => notifications.fetchUnreadCount()).thenAnswer((_) async => 1);
+    _stubDirectBaseline(directMessages);
+    final poller = BackgroundOnlinePoller(notifications, directMessages);
+
+    await expectLater(
+      poller.ensureBaseline(includeDirectMessages: false),
+      throwsA(anything),
+    );
+    expect(poller.hasBaseline, isFalse);
+    expect(await poller.ensureBaseline(includeDirectMessages: false), isTrue);
+
+    final batch = await poller.poll(includeDirectMessages: false);
+    expect(batch!.alerts, isEmpty);
+    expect(batch.commit(), isTrue);
   });
 }
 
