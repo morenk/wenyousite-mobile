@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -94,6 +95,56 @@ void main() {
     expect(find.text('第三段', findRichText: true), findsOneWidget);
   });
 
+  testWidgets('发布态短文本实际几何位置分别落在左、中、右', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouMarkdown(
+            data:
+                '左侧短句\n\n'
+                '[wenyousite-align-v1-center]: #\n居中短句\n\n'
+                '[wenyousite-align-v1-right]: #\n居右短句',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final leftSegment = tester.getRect(
+      find.byKey(const ValueKey('wenyou-markdown-segment-0-left')),
+    );
+    final centerSegment = tester.getRect(
+      find.byKey(const ValueKey('wenyou-markdown-segment-1-center')),
+    );
+    final rightSegment = tester.getRect(
+      find.byKey(const ValueKey('wenyou-markdown-segment-2-right')),
+    );
+    final leftFinder = find.text('左侧短句', findRichText: true);
+    final centerFinder = find.text('居中短句', findRichText: true);
+    final rightFinder = find.text('居右短句', findRichText: true);
+    final leftText = tester.getRect(leftFinder);
+    final centerText = tester.getRect(centerFinder);
+    final rightText = tester.getRect(rightFinder);
+    final leftGlyphs = _glyphRect(tester, leftFinder, '左侧短句'.length);
+    final centerGlyphs = _glyphRect(tester, centerFinder, '居中短句'.length);
+    final rightGlyphs = _glyphRect(tester, rightFinder, '居右短句'.length);
+
+    expect(leftText.left, closeTo(leftSegment.left, 1));
+    expect(centerText.center.dx, closeTo(centerSegment.center.dx, 1));
+    expect(rightText.right, closeTo(rightSegment.right, 1));
+    expect(leftGlyphs.left, closeTo(leftSegment.left, 1));
+    expect(centerGlyphs.center.dx, closeTo(centerSegment.center.dx, 1));
+    expect(rightGlyphs.right, closeTo(rightSegment.right, 1));
+    expect(tester.widget<RichText>(leftFinder).textAlign, TextAlign.start);
+    expect(tester.widget<RichText>(centerFinder).textAlign, TextAlign.center);
+    expect(tester.widget<RichText>(rightFinder).textAlign, TextAlign.end);
+  });
+
   testWidgets('非法保留 marker 必须作为可见正文降级，不能静默隐藏', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -121,3 +172,21 @@ MarkdownBody _body(WidgetTester tester, int index, String alignment) =>
         matching: find.byType(MarkdownBody),
       ),
     );
+
+Rect _glyphRect(WidgetTester tester, Finder finder, int textLength) {
+  final paragraph = tester.renderObject<RenderParagraph>(finder);
+  final boxes = paragraph.getBoxesForSelection(
+    TextSelection(baseOffset: 0, extentOffset: textLength),
+  );
+  expect(boxes, isNotEmpty);
+  Rect? result;
+  for (final box in boxes) {
+    final local = box.toRect();
+    final global = Rect.fromPoints(
+      paragraph.localToGlobal(local.topLeft),
+      paragraph.localToGlobal(local.bottomRight),
+    );
+    result = result?.expandToInclude(global) ?? global;
+  }
+  return result!;
+}

@@ -18,9 +18,11 @@ abstract final class WenyouEditorFormatPolicy {
     return current != null && current.value == attribute.value;
   }
 
-  static WenyouTextAlignment selectedAlignment(QuillController controller) {
+  static MarkdownAlignmentSelectionState alignmentSelection(
+    QuillController controller,
+  ) {
     final selection = controller.selection;
-    return MarkdownDeltaAlignment.selectionAlignment(
+    return MarkdownDeltaAlignment.selectionState(
       controller.document.toDelta(),
       start: selection.start,
       end: selection.end,
@@ -29,12 +31,16 @@ abstract final class WenyouEditorFormatPolicy {
     );
   }
 
-  static void cycleAlignment(QuillController controller) {
+  static void applyAlignment(
+    QuillController controller,
+    WenyouTextAlignment alignment,
+  ) {
     final selection = controller.selection;
-    final patch = MarkdownDeltaAlignment.cycleSelection(
+    final patch = MarkdownDeltaAlignment.applySelection(
       controller.document.toDelta(),
       start: selection.start,
       end: selection.end,
+      alignment: alignment,
       imageEmbed: MarkdownDeltaCodec.imageEmbed,
       horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
     );

@@ -35,7 +35,7 @@ class EditorTaskTray extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(maxHeight: maximumHeight),
       decoration: BoxDecoration(
-        color: tokens.accentedBackground,
+        color: tokens.panel,
         border: Border(top: BorderSide(color: tokens.border)),
       ),
       child: Column(

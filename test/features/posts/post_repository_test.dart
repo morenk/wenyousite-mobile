@@ -10,6 +10,8 @@ import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 const _clientRequestId = '123e4567-e89b-42d3-a456-426614174000';
 const _replyClientRequestId = '123e4567-e89b-42d3-a456-426614174001';
 const _otherClientRequestId = '123e4567-e89b-42d3-a456-426614174003';
+const _centerMarkdown = '[wenyousite-align-v1-center]: #\n居中正文';
+const _rightMarkdown = '[wenyousite-align-v1-right]: #\n居右正文';
 
 void main() {
   setUpAll(() {
@@ -211,6 +213,63 @@ void main() {
       '550e8400-e29b-41d4-a716-446655440002',
     );
     verify(() => api.postsRemove(id: 'created')).called(1);
+  });
+
+  test('对齐 marker 在创建 DTO、创建结果、详情和回复映射中原样透传', () async {
+    final api = _MockPostsApi();
+    late CreatePostDto createPayload;
+    when(() => api.postsFindById(id: 'floor')).thenAnswer(
+      (_) async => _postDetailResponse(_detailDto(content: _centerMarkdown)),
+    );
+    when(
+      () => api.postsFindReplies(
+        id: 'floor',
+        cursor: null,
+        limit: 20,
+        order: 'OLDEST',
+        authorId: null,
+      ),
+    ).thenAnswer(
+      (_) async => _response(
+        '/replies',
+        _repliesEnvelope(replies: [_replyDto(content: _rightMarkdown)]),
+      ),
+    );
+    when(
+      () => api.postsCreate(
+        subthreadId: 'subthread',
+        extra: ApiRequestPolicy.idempotentCreate.extra,
+        createPostDto: any(named: 'createPostDto'),
+      ),
+    ).thenAnswer((invocation) async {
+      createPayload =
+          invocation.namedArguments[#createPostDto]! as CreatePostDto;
+      return _response(
+        '/posts',
+        PostsCreate201Response(
+          (builder) => builder
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.replace(_postDto(id: 'created', content: _rightMarkdown)),
+        ),
+      );
+    });
+    final repository = ApiPostRepository(api);
+
+    final detail = await repository.fetchPost('floor');
+    final replies = await repository.fetchReplies(rootPostId: 'floor');
+    final created = await repository.create(
+      const PostCreateInput(
+        subthreadId: 'subthread',
+        content: _rightMarkdown,
+        clientRequestId: _clientRequestId,
+      ),
+    );
+
+    expect(detail.content, _centerMarkdown);
+    expect(replies.items.single.content, _rightMarkdown);
+    expect(createPayload.content, _rightMarkdown);
+    expect(created.content, _rightMarkdown);
   });
 
   test('详情与创建允许顶层楼层携带 replyToPostId', () async {
@@ -522,6 +581,7 @@ PostResponseDto _postDto({
   required String id,
   int version = 3,
   bool body = false,
+  String? content,
   String? parentPostId,
   String? replyToPostId,
   String? clientRequestId,
@@ -539,7 +599,7 @@ PostResponseDto _postDto({
       ..parentPostId = parentPostId
       ..replyToPostId = replyToPostId
       ..clientRequestId = body ? null : clientRequestId ?? _clientRequestId
-      ..content = body ? '子贴正文' : '楼层内容'
+      ..content = content ?? (body ? '子贴正文' : '楼层内容')
       ..version = version
       ..createdAt = DateTime.utc(2026, 8, 10)
       ..updatedAt = DateTime.utc(2026, 8, 10)
@@ -558,7 +618,11 @@ PostResponseDto _postDto({
   );
 }
 
-PostDetailResponseDto _detailDto({String id = 'floor', String? replyToPostId}) {
+PostDetailResponseDto _detailDto({
+  String id = 'floor',
+  String? replyToPostId,
+  String content = '楼层内容',
+}) {
   return PostDetailResponseDto(
     (builder) => builder
       ..id = id
@@ -569,7 +633,7 @@ PostDetailResponseDto _detailDto({String id = 'floor', String? replyToPostId}) {
       ..floorNumber = 1
       ..replyToPostId = replyToPostId
       ..clientRequestId = _clientRequestId
-      ..content = '楼层内容'
+      ..content = content
       ..version = 3
       ..createdAt = DateTime.utc(2026, 8, 10)
       ..updatedAt = DateTime.utc(2026, 8, 10)
@@ -605,6 +669,7 @@ ReplyResponseDto _replyDto({
   ReplyResponseDtoKindEnum kind = ReplyResponseDtoKindEnum.FLOOR,
   String replyToPostId = 'floor',
   String? replyTargetId,
+  String content = '回复内容',
 }) {
   return ReplyResponseDto(
     (builder) => builder
@@ -616,7 +681,7 @@ ReplyResponseDto _replyDto({
       ..parentPostId = parentPostId
       ..replyToPostId = replyToPostId
       ..clientRequestId = _replyClientRequestId
-      ..content = '回复内容'
+      ..content = content
       ..version = 2
       ..createdAt = DateTime.utc(2026, 8, 10, 1)
       ..updatedAt = DateTime.utc(2026, 8, 10, 1)

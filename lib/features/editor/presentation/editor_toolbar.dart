@@ -6,13 +6,13 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_capabilities.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_more_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
@@ -365,11 +365,12 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
       key: const Key('editor-heading-tray'),
       padding: EdgeInsets.all(tokens.space8),
       decoration: BoxDecoration(
-        color: tokens.accentedBackground,
+        color: tokens.panel,
         border: Border(top: BorderSide(color: tokens.border)),
       ),
       child: SegmentedButton<int>(
         showSelectedIcon: false,
+        style: wenyouEditorSegmentedButtonStyle(context),
         segments: const [
           ButtonSegment(value: 0, label: Text('正文')),
           ButtonSegment(value: 2, label: Text('H2')),
@@ -390,142 +391,71 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
   }
 
   Widget _buildMoreTray(BuildContext context, Style style) {
-    final tokens = context.wenyouTokens;
-    return Container(
-      key: const Key('editor-more-tray'),
-      constraints: const BoxConstraints(maxHeight: 152),
-      padding: EdgeInsets.symmetric(vertical: tokens.space4),
-      decoration: BoxDecoration(
-        color: tokens.accentedBackground,
-        border: Border(top: BorderSide(color: tokens.border)),
-      ),
-      child: SingleChildScrollView(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final toolbarAvailableWidth =
-                constraints.maxWidth -
-                WenyouEditorContract.toolbarHorizontalPadding * 2;
-            final draftInline = _draftFitsInToolbarRow(toolbarAvailableWidth);
-            final promoted = _promotedActionsForWidth(
-              toolbarAvailableWidth,
-              reserveDraft: draftInline,
-            );
-            final items = <Widget>[
-              if (widget.capabilities.links)
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorLink,
-                  label: '链接',
-                  onPressed: _openLinkTray,
-                ),
-              if (widget.capabilities.inlineStyles)
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorInlineCode,
-                  label: '行内代码',
-                  selected: style.attributes.containsKey(
-                    Attribute.inlineCode.key,
-                  ),
-                  onPressed: () =>
-                      _runTrayAction(() => _toggle(Attribute.inlineCode)),
-                ),
-              if (widget.capabilities.blockStyles) ...[
-                if (!promoted.contains(_EditorAction.quote))
-                  WenyouEditorTrayButton(
-                    icon: WenyouIconIds.editorQuote,
-                    label: '引用',
-                    selected: style.attributes.containsKey(
-                      Attribute.blockQuote.key,
-                    ),
-                    onPressed: () =>
-                        _runTrayAction(() => _toggle(Attribute.blockQuote)),
-                  ),
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorBulletList,
-                  label: '无序列表',
-                  selected: WenyouEditorFormatPolicy.isActive(
-                    style,
-                    Attribute.ul,
-                  ),
-                  onPressed: () => _runTrayAction(() => _toggle(Attribute.ul)),
-                ),
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorOrderedList,
-                  label: '有序列表',
-                  selected: WenyouEditorFormatPolicy.isActive(
-                    style,
-                    Attribute.ol,
-                  ),
-                  onPressed: () => _runTrayAction(() => _toggle(Attribute.ol)),
-                ),
-                WenyouEditorTrayButton(
-                  key: const Key('editor-horizontal-rule'),
-                  icon: WenyouIconIds.editorHorizontalRule,
-                  label: '分隔线',
-                  onPressed: () => _runTrayAction(_insertHorizontalRule),
-                ),
-              ],
-              if (widget.capabilities.alignment) _buildAlignmentButton(),
-              if (widget.capabilities.dice)
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorDice,
-                  label: '骰子',
-                  onPressed: _openDiceTray,
-                ),
-              if (widget.capabilities.stickers &&
-                  widget.onInsertSticker != null &&
-                  !promoted.contains(_EditorAction.sticker))
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorSticker,
-                  label: '表情包',
-                  onPressed: () =>
-                      _runSelectionExternal(widget.onInsertSticker!),
-                ),
-              if (widget.capabilities.inlineStyles)
-                WenyouEditorTrayButton(
-                  icon: WenyouIconIds.editorStrikethrough,
-                  label: '删除线',
-                  selected: style.attributes.containsKey(
-                    Attribute.strikeThrough.key,
-                  ),
-                  onPressed: () =>
-                      _runTrayAction(() => _toggle(Attribute.strikeThrough)),
-                ),
-            ];
-            final columns = (constraints.maxWidth / 64).floor().clamp(4, 8);
-            final width = constraints.maxWidth / columns;
-            return Wrap(
-              children: [
-                for (final item in items) SizedBox(width: width, child: item),
-              ],
-            );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final toolbarAvailableWidth =
+            constraints.maxWidth -
+            WenyouEditorContract.toolbarHorizontalPadding * 2;
+        final draftInline = _draftFitsInToolbarRow(toolbarAvailableWidth);
+        final promoted = _promotedActionsForWidth(
+          toolbarAvailableWidth,
+          reserveDraft: draftInline,
+        );
+        return WenyouEditorMoreTray(
+          enabled: widget.enabled,
+          showLink: widget.capabilities.links,
+          showInlineStyles: widget.capabilities.inlineStyles,
+          showBlockStyles: widget.capabilities.blockStyles,
+          showQuote:
+              widget.capabilities.blockStyles &&
+              !promoted.contains(_EditorAction.quote),
+          showAlignment: widget.capabilities.alignment,
+          showDice: widget.capabilities.dice,
+          showSticker:
+              widget.capabilities.stickers &&
+              widget.onInsertSticker != null &&
+              !promoted.contains(_EditorAction.sticker),
+          inlineCodeSelected: style.attributes.containsKey(
+            Attribute.inlineCode.key,
+          ),
+          quoteSelected: style.attributes.containsKey(Attribute.blockQuote.key),
+          bulletListSelected: WenyouEditorFormatPolicy.isActive(
+            style,
+            Attribute.ul,
+          ),
+          orderedListSelected: WenyouEditorFormatPolicy.isActive(
+            style,
+            Attribute.ol,
+          ),
+          strikethroughSelected: style.attributes.containsKey(
+            Attribute.strikeThrough.key,
+          ),
+          alignmentSelection: WenyouEditorFormatPolicy.alignmentSelection(
+            widget.controller,
+          ),
+          onLink: _openLinkTray,
+          onInlineCode: () =>
+              _runFormattingAction(() => _toggle(Attribute.inlineCode)),
+          onQuote: () =>
+              _runFormattingAction(() => _toggle(Attribute.blockQuote)),
+          onBulletList: () => _runFormattingAction(() => _toggle(Attribute.ul)),
+          onOrderedList: () =>
+              _runFormattingAction(() => _toggle(Attribute.ol)),
+          onAlignmentChanged: (alignment) => _runFormattingAction(
+            () => WenyouEditorFormatPolicy.applyAlignment(
+              widget.controller,
+              alignment,
+            ),
+          ),
+          onHorizontalRule: () => _runInsertionAction(_insertHorizontalRule),
+          onDice: _openDiceTray,
+          onSticker: () {
+            unawaited(_runSelectionExternal(widget.onInsertSticker!));
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAlignmentButton() {
-    final alignment = WenyouEditorFormatPolicy.selectedAlignment(
-      widget.controller,
-    );
-    final (icon, label) = switch (alignment) {
-      WenyouTextAlignment.left => (WenyouIconIds.editorAlignLeft, '左对齐（点击切换）'),
-      WenyouTextAlignment.center => (
-        WenyouIconIds.editorAlignCenter,
-        '居中（点击切换）',
-      ),
-      WenyouTextAlignment.right => (
-        WenyouIconIds.editorAlignRight,
-        '右对齐（点击切换）',
-      ),
-    };
-    return WenyouEditorTrayButton(
-      key: const Key('editor-alignment'),
-      icon: icon,
-      label: label,
-      selected: alignment != WenyouTextAlignment.left,
-      onPressed: () => _runTrayAction(
-        () => WenyouEditorFormatPolicy.cycleAlignment(widget.controller),
-      ),
+          onStrikethrough: () =>
+              _runFormattingAction(() => _toggle(Attribute.strikeThrough)),
+        );
+      },
     );
   }
 
@@ -696,7 +626,13 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
     widget.editorFocusNode?.requestFocus();
   }
 
-  void _runTrayAction(FutureOr<void> Function() action) {
+  void _runFormattingAction(VoidCallback action) {
+    action();
+    if (mounted) setState(() {});
+    widget.editorFocusNode?.requestFocus();
+  }
+
+  void _runInsertionAction(VoidCallback action) {
     action();
     _setTray(_EditorTray.none);
   }

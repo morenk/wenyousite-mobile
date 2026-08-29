@@ -8,6 +8,9 @@ import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_compose_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
 
+const _centerMarkdown = '[wenyousite-align-v1-center]: #\n第一行\n第二行';
+const _rightMarkdown = '[wenyousite-align-v1-right]: #\n发布正文\n第二行';
+
 void main() {
   setUpAll(() {
     registerFallbackValue(_FakeCreateThreadDto());
@@ -21,14 +24,14 @@ void main() {
       version: 2,
       subthreadVersion: 3,
       bodyVersion: 4,
-      content: '创建后的正文',
+      content: _centerMarkdown,
     );
     final publishedDto = _threadDetail(
       published: true,
       version: 8,
       subthreadVersion: 9,
       bodyVersion: 10,
-      content: '发布后的正文',
+      content: _rightMarkdown,
     );
     when(
       () => threadsApi.threadsCreate(
@@ -55,7 +58,7 @@ void main() {
         categorySlug: ' TRPG ',
         visibility: ThreadComposeVisibility.private,
         tags: [' 跑团 ', '跑团', '奇幻'],
-        body: '第一行\r\n第二行',
+        body: '[wenyousite-align-v1-center]: #\r\n第一行\r\n第二行',
       ),
     );
     final createRequest =
@@ -75,10 +78,11 @@ void main() {
     expect(createRequest.category, 'TRPG');
     expect(createRequest.visibility, CreateThreadDtoVisibilityEnum.PRIVATE);
     expect(createRequest.tagNames!.toList(), ['跑团', '奇幻']);
-    expect(createRequest.content, '第一行\n第二行');
+    expect(createRequest.content, _centerMarkdown);
     expect(created.version, 2);
     expect(created.defaultSubthreadVersion, 3);
     expect(created.bodyVersion, 4);
+    expect(created.body, _centerMarkdown);
 
     final published = await repository.saveAggregate(
       remoteDraft: ThreadRemoteDraft(
@@ -97,7 +101,7 @@ void main() {
       categorySlug: ' TRPG ',
       visibility: ThreadComposeVisibility.public,
       tags: const ['奇幻'],
-      body: '发布正文\r\n第二行',
+      body: '[wenyousite-align-v1-right]: #\r\n发布正文\r\n第二行',
       publish: true,
     );
     final aggregateRequest =
@@ -121,10 +125,10 @@ void main() {
       SaveThreadAggregateDtoVisibilityEnum.PUBLIC,
     );
     expect(aggregateRequest.tagNames.toList(), ['奇幻']);
-    expect(aggregateRequest.content, '发布正文\n第二行');
+    expect(aggregateRequest.content, _rightMarkdown);
     expect(aggregateRequest.published, isTrue);
     expect(published.version, 8);
-    expect(published.body, '发布后的正文');
+    expect(published.body, _rightMarkdown);
   });
 
   test('草稿箱列表、详情恢复与删除均使用服务端权威事实', () async {

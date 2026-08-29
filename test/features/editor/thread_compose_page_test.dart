@@ -3,12 +3,15 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/models/editor_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
@@ -176,6 +179,73 @@ void main() {
     );
     expect(find.text('上文'), findsOneWidget);
     expect(find.text('下文'), findsOneWidget);
+  });
+
+  testWidgets('页面点击居中后立即发布仍把 marker 写入创建和聚合载荷', (tester) async {
+    const expected = '[wenyousite-align-v1-center]: #\n居中发布正文';
+    final repository = _FakeRepository();
+    final controller =
+        await _readyController(_MemorySnapshotStore(), repository: repository)
+          ..updateTitle('居中发布主题')
+          ..updateCategory('TRPG')
+          ..updateBody('居中发布正文');
+    await _pumpPage(
+      tester,
+      controller,
+      markdownAlignment: true,
+      withThreadRoute: true,
+    );
+    final editorController = tester
+        .widget<QuillEditor>(find.byKey(const Key('compose-body')))
+        .controller;
+    editorController.updateSelection(
+      const TextSelection.collapsed(offset: 2),
+      ChangeSource.local,
+    );
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editor-align-center')));
+    await tester.pump();
+    expect(
+      MarkdownDeltaCodec.encode(editorController.document.toDelta()),
+      expected,
+    );
+    expect(controller.state.body, '居中发布正文');
+
+    await tester.tap(find.byKey(const Key('compose-publish')));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPayload?.body, expected);
+    expect(repository.savedBody, expected);
+    expect(find.byKey(const Key('published-thread-route')), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouMarkdown(
+            data: repository.savedBody!,
+            enablePlainTextFastPath: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<MarkdownBody>(
+            find.descendant(
+              of: find.byKey(
+                const ValueKey('wenyou-markdown-segment-0-center'),
+              ),
+              matching: find.byType(MarkdownBody),
+            ),
+          )
+          .styleSheet!
+          .textAlign,
+      WrapAlignment.center,
+    );
   });
 
   testWidgets('主题正文和原子表情共同进入创建及聚合保存载荷', (tester) async {
@@ -621,9 +691,11 @@ Future<void> _pumpPage(
   MediaUploadGateway? mediaGateway,
   ContentDraftsController? contentDraftsController,
   _ComposeStickerRepository? stickerRepository,
+  bool markdownAlignment = false,
+  bool withThreadRoute = false,
 }) async {
   late final Widget app;
-  if (stickerRepository == null) {
+  if (stickerRepository == null && !withThreadRoute) {
     app = MaterialApp(
       theme: AppTheme.light,
       home: const RepaintBoundary(
@@ -646,6 +718,12 @@ Future<void> _pumpPage(
           name: 'me-stickers',
           builder: (context, state) => const SizedBox.shrink(),
         ),
+        if (withThreadRoute)
+          GoRoute(
+            path: '/threads/:id',
+            builder: (context, state) =>
+                const SizedBox(key: Key('published-thread-route')),
+          ),
       ],
     );
     addTearDown(router.dispose);
@@ -654,6 +732,9 @@ Future<void> _pumpPage(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        appCapabilitiesProvider.overrideWithValue(
+          AppCapabilities(markdownAlignment: markdownAlignment),
+        ),
         stickersEnabledProvider.overrideWithValue(stickerRepository != null),
         if (stickerRepository != null) ...[
           stickerRepositoryProvider.overrideWithValue(stickerRepository),

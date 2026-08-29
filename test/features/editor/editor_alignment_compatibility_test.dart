@@ -13,7 +13,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_sessi
 
 void main() {
   group('编辑格式操作兼容性', () {
-    test('对齐循环可单步撤销、重做并在保存重开后保持', () {
+    test('直接设置对齐可单步撤销、重做并在保存重开后保持', () {
       final controller = QuillController(
         document: Document.fromDelta(
           MarkdownDeltaCodec.decode(
@@ -24,7 +24,10 @@ void main() {
       );
       addTearDown(controller.dispose);
 
-      WenyouEditorFormatPolicy.cycleAlignment(controller);
+      WenyouEditorFormatPolicy.applyAlignment(
+        controller,
+        WenyouTextAlignment.right,
+      );
       expect(controller.hasUndo, isTrue);
       expect(
         MarkdownDeltaCodec.encode(controller.document.toDelta()),
@@ -46,7 +49,7 @@ void main() {
       );
       addTearDown(reopened.dispose);
       expect(
-        WenyouEditorFormatPolicy.selectedAlignment(reopened),
+        WenyouEditorFormatPolicy.alignmentSelection(reopened).alignment,
         WenyouTextAlignment.right,
       );
     });
@@ -58,7 +61,7 @@ void main() {
 
         WenyouEditorFormatPolicy.applyHeading(controller, target);
         expect(
-          WenyouEditorFormatPolicy.selectedAlignment(controller),
+          WenyouEditorFormatPolicy.alignmentSelection(controller).alignment,
           WenyouTextAlignment.right,
         );
         expect(
@@ -77,8 +80,8 @@ void main() {
 
         WenyouEditorFormatPolicy.toggle(controller, attribute);
         expect(
-          WenyouEditorFormatPolicy.selectedAlignment(controller),
-          WenyouTextAlignment.left,
+          WenyouEditorFormatPolicy.alignmentSelection(controller).canApply,
+          isFalse,
         );
         expect(
           MarkdownDeltaCodec.encode(controller.document.toDelta()),

@@ -4,11 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   test('骰子三字段生成 canonical 表达式并省略零修正', () {
     expect(
       canonicalDiceNotation(quantity: '02', sides: '006', modifier: '+03'),
@@ -294,10 +300,13 @@ void main() {
     Map<String, dynamic> blockAttributes() =>
         controller.document.toDelta().operations.last.attributes ?? const {};
     Future<void> tapMore(String tooltip) async {
-      await tester.tap(find.byKey(const Key('editor-more')));
-      await tester.pumpAndSettle();
+      if (find.byKey(const Key('editor-more-tray')).evaluate().isEmpty) {
+        await tester.tap(find.byKey(const Key('editor-more')));
+        await tester.pumpAndSettle();
+      }
       await tester.tap(find.byTooltip(tooltip));
       await tester.pumpAndSettle();
+      expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
     }
 
     Future<void> tapQuote() async {
@@ -313,6 +322,17 @@ void main() {
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes()['bold'], true);
+    final tokens = AppTheme.light.extension<WenyouThemeTokens>()!;
+    final boldButton = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byKey(const Key('editor-bold')),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(
+      boldButton.style!.backgroundColor!.resolve({WidgetState.selected}),
+      tokens.actionSurface,
+    );
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes(), isNot(contains('bold')));
@@ -354,6 +374,16 @@ void main() {
 
     await tapMore('行内代码');
     expect(inlineAttributes()['code'], true);
+    final inlineCodeButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('行内代码'),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(
+      inlineCodeButton.style!.backgroundColor!.resolve({WidgetState.selected}),
+      tokens.actionSurface,
+    );
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes(), isNot(contains('code')));
@@ -931,7 +961,7 @@ void main() {
     expect(find.byKey(const Key('editor-submit')), findsOneWidget);
   });
 
-  testWidgets('对齐能力开启后在更多面板循环左、居中和右对齐', (tester) async {
+  testWidgets('更多面板使用中性表面并直接设置左、居中和右对齐', (tester) async {
     final controller = QuillController(
       document: Document()..insert(0, '正文'),
       selection: const TextSelection.collapsed(offset: 1),
@@ -963,28 +993,90 @@ void main() {
       ),
     );
 
-    Future<void> cycle(String tooltip) async {
-      await tester.tap(find.byKey(const Key('editor-more')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('editor-alignment')), findsOneWidget);
-      await tester.tap(find.byTooltip(tooltip));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('editor-more-tray')), findsNothing);
-    }
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-alignment')), findsOneWidget);
+    expect(find.byKey(const Key('editor-align-left')), findsOneWidget);
+    expect(find.byKey(const Key('editor-align-center')), findsOneWidget);
+    expect(find.byKey(const Key('editor-align-right')), findsOneWidget);
+    final tray = tester.widget<Container>(
+      find.byKey(const Key('editor-more-tray')),
+    );
+    final tokens = AppTheme.light.extension<WenyouThemeTokens>()!;
+    expect((tray.decoration! as BoxDecoration).color, tokens.panel);
 
-    await cycle('左对齐（点击切换）');
+    await tester.tap(find.byTooltip('居中'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       '[wenyousite-align-v1-center]: #\n正文',
     );
-    await cycle('居中（点击切换）');
+    var alignment = tester.widget<SegmentedButton<WenyouTextAlignment>>(
+      find.byKey(const Key('editor-alignment')),
+    );
+    expect(alignment.selected, {WenyouTextAlignment.center});
+    expect(
+      alignment.style!.backgroundColor!.resolve({WidgetState.selected}),
+      tokens.actionSurface,
+    );
+
+    await tester.tap(find.byTooltip('右对齐'));
+    await tester.pumpAndSettle();
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       '[wenyousite-align-v1-right]: #\n正文',
     );
-    await cycle('右对齐（点击切换）');
+    await tester.tap(find.byTooltip('左对齐'));
+    await tester.pumpAndSettle();
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
+    alignment = tester.widget<SegmentedButton<WenyouTextAlignment>>(
+      find.byKey(const Key('editor-alignment')),
+    );
+    expect(alignment.selected, {WenyouTextAlignment.left});
   });
+
+  for (final scenario in [
+    (name: 'light', theme: AppTheme.light),
+    (name: 'dark', theme: AppTheme.dark),
+  ]) {
+    testWidgets('360dp ${scenario.name} 更多纯图标托盘保持视觉基线', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 320);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final controller = QuillController(
+        document: Document()..insert(0, '正文'),
+        selection: const TextSelection.collapsed(offset: 1),
+      );
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: scenario.theme,
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: WenyouEditorToolbar(
+                controller: controller,
+                enabled: true,
+                capabilities:
+                    WenyouEditorCapabilities.richMarkdownWithAlignment,
+                onInsertImage: () async {},
+                onSaveDraft: () async {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byKey(const Key('editor-more-tray')),
+        matchesGoldenFile('goldens/editor_more_tray_360_${scenario.name}.png'),
+      );
+    });
+  }
 }
 
 String _diceMarkdown(int count) => List.generate(count, (index) {

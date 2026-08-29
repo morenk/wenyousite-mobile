@@ -23,6 +23,7 @@ class WenyouEditorToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     return IconButton(
       constraints: const BoxConstraints.tightFor(
         width: WenyouEditorContract.minimumActionExtent,
@@ -30,11 +31,9 @@ class WenyouEditorToolbarButton extends StatelessWidget {
       ),
       onPressed: enabled ? () => onPressed() : null,
       isSelected: selected,
-      selectedIcon: WenyouIcon(
-        icon,
-        color: context.wenyouTokens.brandForeground,
-      ),
-      icon: WenyouIcon(icon),
+      style: _editorIconButtonStyle(tokens, selected: selected),
+      selectedIcon: WenyouIcon(icon, color: tokens.onActionSurface),
+      icon: WenyouIcon(icon, color: tokens.text),
       tooltip: label,
     );
   }
@@ -72,6 +71,7 @@ class WenyouEditorTrayButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.selected = false,
+    this.enabled = true,
     super.key,
   });
 
@@ -79,9 +79,11 @@ class WenyouEditorTrayButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool selected;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.wenyouTokens;
     return IconButton(
       constraints: const BoxConstraints(
         minWidth: WenyouEditorContract.minimumActionExtent,
@@ -89,12 +91,57 @@ class WenyouEditorTrayButton extends StatelessWidget {
       ),
       tooltip: label,
       isSelected: selected,
-      selectedIcon: WenyouIcon(
-        icon,
-        color: context.wenyouTokens.brandForeground,
-      ),
-      onPressed: onPressed,
-      icon: WenyouIcon(icon),
+      style: _editorIconButtonStyle(tokens, selected: selected),
+      selectedIcon: WenyouIcon(icon, color: tokens.onActionSurface),
+      onPressed: enabled ? onPressed : null,
+      icon: WenyouIcon(icon, color: tokens.text),
     );
   }
+}
+
+ButtonStyle wenyouEditorSegmentedButtonStyle(BuildContext context) {
+  final tokens = context.wenyouTokens;
+  return ButtonStyle(
+    minimumSize: WidgetStatePropertyAll(
+      Size.square(WenyouEditorContract.minimumActionExtent),
+    ),
+    padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+    backgroundColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.selected)
+          ? tokens.actionSurface
+          : tokens.panel,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.disabled)
+          ? tokens.mutedText
+          : states.contains(WidgetState.selected)
+          ? tokens.onActionSurface
+          : tokens.text,
+    ),
+    side: WidgetStateProperty.resolveWith(
+      (states) => BorderSide(
+        color: states.contains(WidgetState.selected)
+            ? tokens.actionSurface
+            : tokens.border,
+      ),
+    ),
+  );
+}
+
+ButtonStyle _editorIconButtonStyle(
+  WenyouThemeTokens tokens, {
+  required bool selected,
+}) {
+  return ButtonStyle(
+    backgroundColor: WidgetStatePropertyAll(
+      selected ? tokens.actionSurface : Colors.transparent,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.disabled)
+          ? tokens.mutedText
+          : selected
+          ? tokens.onActionSurface
+          : tokens.text,
+    ),
+  );
 }

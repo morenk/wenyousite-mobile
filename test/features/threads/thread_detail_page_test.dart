@@ -2617,8 +2617,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('编辑子贴正文'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('post-composer-close')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-close')), findsNothing);
+    final viewportHeight =
+        tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-viewport'))).height,
+      closeTo(viewportHeight * .52, 1),
+    );
+    await _dismissPostComposerFromOutside(tester);
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
@@ -2634,8 +2640,11 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-floor-compose')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('post-composer-close')));
-    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-viewport'))).height,
+      closeTo(viewportHeight * .30, 1),
+    );
+    await _dismissPostComposerFromOutside(tester);
 
     expect(find.byKey(const Key('thread-body-edit')), findsNothing);
     await tester.tap(find.byKey(const Key('thread-detail-more')));
@@ -2643,8 +2652,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-detail-edit-body')));
     await tester.pumpAndSettle();
     expect(find.text('编辑子贴正文'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('post-composer-close')));
-    await tester.pumpAndSettle();
+    await _dismissPostComposerFromOutside(tester);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
     await tester.pumpAndSettle();
@@ -3247,6 +3255,16 @@ Widget _detailRouterApp(
     ],
     child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
   );
+}
+
+Future<void> _dismissPostComposerFromOutside(WidgetTester tester) async {
+  expect(find.byKey(const Key('post-composer-dismiss-region')), findsOneWidget);
+  final sheetTop = tester
+      .getTopLeft(find.byKey(const Key('post-composer-viewport')))
+      .dy;
+  expect(sheetTop, greaterThan(0));
+  await tester.tapAt(Offset(12, sheetTop / 2));
+  await tester.pumpAndSettle();
 }
 
 class _FakeThreadDetailRepository implements ThreadDetailRepository {

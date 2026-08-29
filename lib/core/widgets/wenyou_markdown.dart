@@ -213,6 +213,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
             child: _buildMarkdownBody(
               _renderSegments[index].markdown,
               _alignedStyleSheet(_renderSegments[index].alignment),
+              expandBlockWidth: _renderSegments[index].isAligned,
             ),
           ),
         ],
@@ -237,10 +238,16 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
 
   MarkdownBody _buildMarkdownBody(
     String data,
-    MarkdownStyleSheet? styleSheet,
-  ) => MarkdownBody(
+    MarkdownStyleSheet? styleSheet, {
+    bool expandBlockWidth = false,
+  }) => MarkdownBody(
     data: data,
     selectable: false,
+    // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
+    // paragraph Wrap. A centered/right-aligned TextAlign then has no spare
+    // width and still paints at the left edge. Alignment segments must stretch
+    // their block before the style-sheet alignment can affect geometry.
+    fitContent: !expandBlockWidth,
     softLineBreak: true,
     styleSheet: styleSheet,
     blockSyntaxes: [_EmptyParagraphBlockSyntax()],

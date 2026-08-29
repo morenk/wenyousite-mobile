@@ -4,7 +4,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 abstract final class MarkdownDeltaAlignment {
   static const attribute = 'align';
 
-  static WenyouTextAlignment selectionAlignment(
+  static MarkdownAlignmentSelectionState selectionState(
     Delta delta, {
     required int start,
     required int end,
@@ -18,17 +18,41 @@ abstract final class MarkdownDeltaAlignment {
       imageEmbed: imageEmbed,
       horizontalRuleEmbed: horizontalRuleEmbed,
     );
-    if (blocks.isEmpty) return WenyouTextAlignment.left;
-    final first = blocks.first.alignment;
-    return blocks.every((block) => block.alignment == first)
-        ? first
-        : WenyouTextAlignment.left;
+    if (blocks.isEmpty) {
+      return const MarkdownAlignmentSelectionState.unavailable();
+    }
+    final alignments = {
+      for (final block in blocks)
+        for (final line in block.lines) line.alignment,
+    };
+    return MarkdownAlignmentSelectionState(
+      canApply: true,
+      alignment: alignments.length == 1 ? alignments.single : null,
+    );
   }
 
-  static Delta cycleSelection(
+  static WenyouTextAlignment selectionAlignment(
     Delta delta, {
     required int start,
     required int end,
+    required String imageEmbed,
+    required String horizontalRuleEmbed,
+  }) {
+    return selectionState(
+          delta,
+          start: start,
+          end: end,
+          imageEmbed: imageEmbed,
+          horizontalRuleEmbed: horizontalRuleEmbed,
+        ).alignment ??
+        WenyouTextAlignment.left;
+  }
+
+  static Delta applySelection(
+    Delta delta, {
+    required int start,
+    required int end,
+    required WenyouTextAlignment alignment,
     required String imageEmbed,
     required String horizontalRuleEmbed,
   }) {
@@ -40,16 +64,40 @@ abstract final class MarkdownDeltaAlignment {
       horizontalRuleEmbed: horizontalRuleEmbed,
     );
     if (blocks.isEmpty) return Delta();
-    final current =
-        blocks.every((block) => block.alignment == blocks.first.alignment)
-        ? blocks.first.alignment
-        : WenyouTextAlignment.left;
+    return _attributePatch([
+      for (final block in blocks) ...block.lines,
+    ], alignment);
+  }
+
+  static Delta cycleSelection(
+    Delta delta, {
+    required int start,
+    required int end,
+    required String imageEmbed,
+    required String horizontalRuleEmbed,
+  }) {
+    final state = selectionState(
+      delta,
+      start: start,
+      end: end,
+      imageEmbed: imageEmbed,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
+    if (!state.canApply) return Delta();
+    final current = state.alignment ?? WenyouTextAlignment.left;
     final next = switch (current) {
       WenyouTextAlignment.left => WenyouTextAlignment.center,
       WenyouTextAlignment.center => WenyouTextAlignment.right,
       WenyouTextAlignment.right => WenyouTextAlignment.left,
     };
-    return _attributePatch([for (final block in blocks) ...block.lines], next);
+    return applySelection(
+      delta,
+      start: start,
+      end: end,
+      alignment: next,
+      imageEmbed: imageEmbed,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
   }
 
   /// Removes inherited or malformed alignment and keeps every physical line
@@ -236,6 +284,20 @@ abstract final class MarkdownDeltaAlignment {
     }
     return List.unmodifiable(lines);
   }
+}
+
+final class MarkdownAlignmentSelectionState {
+  const MarkdownAlignmentSelectionState({
+    required this.canApply,
+    required this.alignment,
+  });
+
+  const MarkdownAlignmentSelectionState.unavailable()
+    : canApply = false,
+      alignment = null;
+
+  final bool canApply;
+  final WenyouTextAlignment? alignment;
 }
 
 final class _DeltaLine {

@@ -4,10 +4,12 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
@@ -24,11 +26,13 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_ports.
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
+import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_discussion_author.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_repository_ports.dart';
@@ -289,6 +293,107 @@ void main() {
     );
   });
 
+  for (final scenario in const [
+    (
+      label: '左对齐',
+      content: '左对齐发布正文',
+      alignmentKeys: [Key('editor-align-center'), Key('editor-align-left')],
+      expected: '左对齐发布正文',
+      segment: 'left',
+    ),
+    (
+      label: '居中',
+      content: '居中发布正文',
+      alignmentKeys: [Key('editor-align-center')],
+      expected: '[wenyousite-align-v1-center]: #\n居中发布正文',
+      segment: 'center',
+    ),
+    (
+      label: '居右',
+      content: '居右发布正文',
+      alignmentKeys: [Key('editor-align-right')],
+      expected: '[wenyousite-align-v1-right]: #\n居右发布正文',
+      segment: 'right',
+    ),
+  ]) {
+    testWidgets('页面选择${scenario.label}后立即发布，载荷和字形位置一致', (tester) async {
+      final repository = _FakePostRepository();
+      final container = await _postContainer(
+        repository,
+        userId: 'author-1',
+        markdownAlignment: true,
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_postRepliesApp(container));
+      await _pumpUi(tester);
+      await tester.tap(find.byKey(const Key('post-reply-compose')));
+      await _pumpUi(tester);
+      await _replaceComposerText(tester, scenario.content);
+      final sheet = tester.widget<PostComposerSheet>(
+        find.byType(PostComposerSheet),
+      );
+      final editorController = tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .controller;
+      editorController.updateSelection(
+        const TextSelection.collapsed(offset: 2),
+        ChangeSource.local,
+      );
+
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pump();
+      for (final key in scenario.alignmentKeys) {
+        await tester.tap(find.byKey(key));
+        await tester.pump();
+      }
+
+      expect(
+        MarkdownDeltaCodec.encode(editorController.document.toDelta()),
+        scenario.expected,
+      );
+      expect(
+        container.read(postComposerControllerProvider(sheet.target)).content,
+        isNot(contains('wenyousite-align')),
+      );
+
+      await tester.tap(find.byKey(const Key('editor-submit')));
+      await _pumpUi(tester);
+
+      expect(repository.createInputs, hasLength(1));
+      expect(repository.createInputs.single.content, scenario.expected);
+      expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+      final card = find.byKey(const Key('post-card-created'));
+      final textFinder = find.descendant(
+        of: card,
+        matching: find.text(scenario.content, findRichText: true),
+      );
+      final areaFinder = scenario.segment == 'left'
+          ? find.descendant(
+              of: card,
+              matching: find.byKey(const Key('wenyou-markdown-plain-text')),
+            )
+          : find.descendant(
+              of: card,
+              matching: find.byKey(
+                ValueKey('wenyou-markdown-segment-0-${scenario.segment}'),
+              ),
+            );
+      expect(textFinder, findsOneWidget);
+      expect(areaFinder, findsOneWidget);
+      final area = tester.getRect(areaFinder);
+      final glyphs = _glyphRect(tester, textFinder, scenario.content.length);
+      switch (scenario.segment) {
+        case 'left':
+          expect(glyphs.left, closeTo(area.left, 1));
+        case 'center':
+          expect(glyphs.center.dx, closeTo(area.center.dx, 1));
+        case 'right':
+          expect(glyphs.right, closeTo(area.right, 1));
+      }
+    });
+  }
+
   testWidgets('删除回复失败保留原内容并展示可诊断错误', (tester) async {
     final repository = _FakePostRepository(
       onRemove: (postId) async => throw const ApiFailure(
@@ -420,6 +525,12 @@ void main() {
     await _pumpUi(tester);
     await tester.tap(find.byKey(const Key('post-card-action-reply-own-edit')));
     await _pumpUi(tester);
+    final viewportHeight =
+        tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-viewport'))).height,
+      closeTo(viewportHeight * .52, 1),
+    );
     await _replaceComposerText(tester, '编辑失败后保留的内容');
     await tester.tap(find.byKey(const Key('editor-submit')));
     await _pumpUi(tester);
@@ -733,14 +844,15 @@ void main() {
     expect(find.text('回复会平级挂在当前主楼层下。'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('post-composer-sheet'))).height,
-      inInclusiveRange(400, 600),
+      closeTo(300, 1),
     );
     expect(
       tester.getSize(find.byKey(const Key('post-composer-canvas'))).height,
-      greaterThan(240),
+      greaterThan(160),
     );
+    expect(find.byKey(const Key('post-composer-close')), findsNothing);
     expect(
-      tester.getSize(find.byKey(const Key('post-composer-close'))).height,
+      tester.getSize(find.byKey(const Key('post-composer-expand'))).height,
       greaterThanOrEqualTo(48),
     );
     expect(
@@ -769,12 +881,18 @@ void main() {
       'thread',
     );
     await _replaceComposerText(tester, '新发表的回复');
-    await tester.tap(find.byKey(const Key('post-composer-close')));
+    await tester.tap(find.byKey(const Key('editor-more')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-more-tray')), findsOneWidget);
+    await _dismissPostComposerFromOutside(tester);
     expect(find.byKey(const Key('post-composer-body')), findsNothing);
 
     await tester.tap(find.byKey(const Key('post-reply-compose')));
     await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const Key('post-composer-viewport'))).height,
+      closeTo(300, 1),
+    );
     expect(
       tester
           .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
@@ -832,6 +950,67 @@ void main() {
     expect(find.text('编辑后的新回复'), findsNothing);
     expect(authorDirectory.replyCalls, 3);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('新回复从百分之三十起步，工具托盘按需扩展且手动拖动优先', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = await _postContainer(
+      _FakePostRepository(),
+      userId: 'author-1',
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+    await tester.tap(find.byKey(const Key('post-reply-compose')));
+    await tester.pumpAndSettle();
+
+    double sheetHeight() =>
+        tester.getSize(find.byKey(const Key('post-composer-viewport'))).height;
+
+    final initialHeight = sheetHeight();
+    expect(initialHeight, closeTo(240, 1));
+    await tester.tap(find.byKey(const Key('post-composer-expand')));
+    await tester.pumpAndSettle();
+    expect(sheetHeight(), closeTo(752, 1));
+    await tester.tap(find.byKey(const Key('post-composer-expand')));
+    await tester.pumpAndSettle();
+    expect(sheetHeight(), closeTo(initialHeight, 1));
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    final moreHeight = sheetHeight();
+    expect(moreHeight, greaterThan(initialHeight));
+
+    await tester.tap(find.byTooltip('骰子'));
+    await tester.pumpAndSettle();
+    expect(sheetHeight(), greaterThanOrEqualTo(moreHeight));
+    await tester.tap(find.byTooltip('返回格式工具'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    expect(sheetHeight(), closeTo(initialHeight, 1));
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const Key('post-composer-header')),
+      const Offset(0, -80),
+    );
+    await tester.pumpAndSettle();
+    final manualHeight = sheetHeight();
+    expect(manualHeight, greaterThan(moreHeight));
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    expect(sheetHeight(), closeTo(manualHeight, 1));
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('editor-more-tray')), findsNothing);
   });
 
   testWidgets('独立讨论中的头像进入个人主页且不会打开回复栏', (tester) async {
@@ -1224,7 +1403,7 @@ void main() {
     expect(find.byKey(const Key('post-composer-retry-upload')), findsNothing);
   });
 
-  testWidgets('上传中系统返回会在关闭 Sheet 前取消任务', (tester) async {
+  testWidgets('上传中点击编辑器外部会在关闭 Sheet 前取消任务', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -1265,7 +1444,7 @@ void main() {
     await _confirmImageCrop(tester);
     expect(find.textContaining('正在上传'), findsOneWidget);
 
-    await tester.binding.handlePopRoute();
+    await _dismissPostComposerFromOutside(tester);
     expect(uploadGateway.operation.cancelled, isTrue);
     uploadGateway.operation.complete(
       const UploadedEditorImage(
@@ -1323,6 +1502,12 @@ void main() {
       contains('等待服务端确认的回复'),
     );
     expect(editor.controller.readOnly, isTrue);
+    final sheetTop = tester
+        .getTopLeft(find.byKey(const Key('post-composer-viewport')))
+        .dy;
+    await tester.tapAt(Offset(12, sheetTop / 2));
+    await tester.pump();
+    expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
 
     pendingCreate.complete(_reply('created-pending', '等待服务端确认的回复', _author));
     await tester.pumpAndSettle();
@@ -1661,9 +1846,13 @@ Future<ProviderContainer> _postContainer(
   String? userId,
   _FakeStickerRepository? stickerRepository,
   ReaderMarkdownClipboardWriter? clipboardWriter,
+  bool markdownAlignment = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
+      appCapabilitiesProvider.overrideWithValue(
+        AppCapabilities(markdownAlignment: markdownAlignment),
+      ),
       tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
       sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
       stickersEnabledProvider.overrideWithValue(stickerRepository != null),
@@ -1712,6 +1901,34 @@ Future<void> _pumpUi(WidgetTester tester, [int frames = 6]) async {
   for (var frame = 0; frame < frames; frame += 1) {
     await tester.pump(const Duration(milliseconds: 80));
   }
+}
+
+Future<void> _dismissPostComposerFromOutside(WidgetTester tester) async {
+  expect(find.byKey(const Key('post-composer-dismiss-region')), findsOneWidget);
+  final sheetTop = tester
+      .getTopLeft(find.byKey(const Key('post-composer-viewport')))
+      .dy;
+  expect(sheetTop, greaterThan(0));
+  await tester.tapAt(Offset(12, sheetTop / 2));
+  await tester.pumpAndSettle();
+}
+
+Rect _glyphRect(WidgetTester tester, Finder finder, int textLength) {
+  final paragraph = tester.renderObject<RenderParagraph>(finder);
+  final boxes = paragraph.getBoxesForSelection(
+    TextSelection(baseOffset: 0, extentOffset: textLength),
+  );
+  expect(boxes, isNotEmpty);
+  Rect? result;
+  for (final box in boxes) {
+    final local = box.toRect();
+    final global = Rect.fromPoints(
+      paragraph.localToGlobal(local.topLeft),
+      paragraph.localToGlobal(local.bottomRight),
+    );
+    result = result?.expandToInclude(global) ?? global;
+  }
+  return result!;
 }
 
 Future<void> _longPressPostMetadata(WidgetTester tester, String postId) async {

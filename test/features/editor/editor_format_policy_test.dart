@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
@@ -180,7 +181,7 @@ void main() {
     );
   });
 
-  test('合法正文和标题按左、居中、右循环并无损保存', () {
+  test('合法正文和标题可直接设置左、居中和右并无损保存', () {
     final controller = QuillController(
       document: Document.fromDelta(
         MarkdownDeltaCodec.decode('[wenyousite-align-v1-center]: #\n正文').delta,
@@ -189,18 +190,26 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    expect(
-      WenyouEditorFormatPolicy.selectedAlignment(controller),
-      WenyouTextAlignment.center,
+    final initial = WenyouEditorFormatPolicy.alignmentSelection(controller);
+    expect(initial.canApply, isTrue);
+    expect(initial.alignment, WenyouTextAlignment.center);
+    WenyouEditorFormatPolicy.applyAlignment(
+      controller,
+      WenyouTextAlignment.right,
     );
-    WenyouEditorFormatPolicy.cycleAlignment(controller);
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       '[wenyousite-align-v1-right]: #\n正文',
     );
-    WenyouEditorFormatPolicy.cycleAlignment(controller);
+    WenyouEditorFormatPolicy.applyAlignment(
+      controller,
+      WenyouTextAlignment.left,
+    );
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
-    WenyouEditorFormatPolicy.cycleAlignment(controller);
+    WenyouEditorFormatPolicy.applyAlignment(
+      controller,
+      WenyouTextAlignment.center,
+    );
     WenyouEditorFormatPolicy.applyHeading(controller, 2);
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
@@ -211,7 +220,10 @@ void main() {
   test('列表转换清除对齐，普通图片块不响应对齐切换', () {
     final paragraph = _selectedController();
     addTearDown(paragraph.dispose);
-    WenyouEditorFormatPolicy.cycleAlignment(paragraph);
+    WenyouEditorFormatPolicy.applyAlignment(
+      paragraph,
+      WenyouTextAlignment.center,
+    );
     WenyouEditorFormatPolicy.toggle(paragraph, Attribute.ul);
     expect(_lineAttributes(paragraph), isNot(contains('align')));
     expect(MarkdownDeltaCodec.encode(paragraph.document.toDelta()), '- 正文');
@@ -226,8 +238,35 @@ void main() {
     );
     addTearDown(image.dispose);
     final before = image.document.toDelta().toJson();
-    WenyouEditorFormatPolicy.cycleAlignment(image);
+    final imageSelection = WenyouEditorFormatPolicy.alignmentSelection(image);
+    expect(imageSelection.canApply, isFalse);
+    expect(imageSelection.alignment, isNull);
+    WenyouEditorFormatPolicy.applyAlignment(image, WenyouTextAlignment.center);
     expect(image.document.toDelta().toJson(), before);
+  });
+
+  test('混合对齐选区不预选分段但仍可直接统一目标方向', () {
+    final controller = QuillController(
+      document: Document.fromDelta(
+        Delta()
+          ..insert('第一行')
+          ..insert('\n')
+          ..insert('第二行')
+          ..insert('\n', {'align': 'right'}),
+      ),
+      selection: const TextSelection(baseOffset: 0, extentOffset: 8),
+    );
+    addTearDown(controller.dispose);
+
+    final mixed = WenyouEditorFormatPolicy.alignmentSelection(controller);
+    expect(mixed.canApply, isTrue);
+    expect(mixed.alignment, isNull);
+    WenyouEditorFormatPolicy.applyAlignment(
+      controller,
+      WenyouTextAlignment.center,
+    );
+    final unified = WenyouEditorFormatPolicy.alignmentSelection(controller);
+    expect(unified.alignment, WenyouTextAlignment.center);
   });
 }
 
