@@ -406,7 +406,8 @@ void main() {
     const source =
         '> *斜体开头 `inline code` 斜体结尾*\n'
         '>\n'
-        '> **粗体开头 `second code` 粗体结尾**';
+        '> **粗体开头 `second code` 粗体结尾**\n\n'
+        '> 独立引用';
     const scope = SessionScope(accountId: 'reader-account', generation: 11);
     final store = WenyouEditorClipboardStore();
     final gateway = _RoundTripClipboardGateway();
@@ -416,6 +417,12 @@ void main() {
       scope: scope,
       clipboardGateway: gateway,
       clipboardStore: store,
+    );
+    expect(
+      gateway.snapshot.text,
+      '斜体开头 inline code 斜体结尾\n'
+      '粗体开头 second code 粗体结尾\n\n'
+      '独立引用',
     );
 
     final session = RichEditorSession(
@@ -450,8 +457,8 @@ void main() {
     expect(
       MarkdownDeltaCodec.encode(delta),
       '> *斜体开头* `inline code` *斜体结尾*\n'
-      '> \n'
-      '> **粗体开头** `second code` **粗体结尾**',
+      '> **粗体开头** `second code` **粗体结尾**\n\n'
+      '> 独立引用',
     );
   });
 
@@ -470,6 +477,12 @@ void main() {
       scope: scope,
       clipboardGateway: gateway,
       clipboardStore: store,
+    );
+    expect(
+      gateway.snapshot.text,
+      '• 星号项目入口\n'
+      '• 加号项目\n\n'
+      '1. 有序项目',
     );
 
     final session = RichEditorSession(
@@ -494,9 +507,54 @@ void main() {
     ]);
     expect(
       MarkdownDeltaCodec.encode(delta),
-      '- **星号项目**[入口](/threads/$threadId)\n\n'
+      '- **星号项目**[入口](/threads/$threadId)\n'
       '- 加号项目\n\n'
       '1. 有序项目',
+    );
+  });
+
+  testWidgets('移动阅读菜单不把松散列表分隔当成空段', (tester) async {
+    const threadId = 'cmsewdo0h000x7qv6aa77ll1v';
+    const firstPostId = 'cmsewdqcr001a7qv6cy0y38bd';
+    const secondPostId = 'cmsewdt0w001n7qv6f6ttylff';
+    const source =
+        '设定目录占位\n\n'
+        '* **第一项**[传送门](/threads/$threadId?post=$firstPostId)\n\n'
+        '* **第二项**[传送门](/threads/$threadId?post=$secondPostId)\n\n'
+        '<br />';
+    const scope = SessionScope(accountId: 'reader-account', generation: 16);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: source,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    expect(
+      gateway.snapshot.text,
+      '设定目录占位\n\n'
+      '• 第一项传送门\n'
+      '• 第二项传送门',
+    );
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      '设定目录占位\n\n'
+      '- **第一项**[传送门](/threads/$threadId?post=$firstPostId)\n'
+      '- **第二项**[传送门](/threads/$threadId?post=$secondPostId)\n'
+      '<br />',
     );
   });
 

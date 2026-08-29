@@ -9,7 +9,9 @@ import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 Delta decodeReaderMarkdownClipboard(String markdown) {
   final masked = _maskReaderAtoms(markdown);
   final decoded = MarkdownDeltaCodec.decodeReaderClipboard(masked.markdown);
-  if (masked.atoms.isEmpty) return decoded.delta;
+  if (masked.atoms.isEmpty) {
+    return _normalizeReaderBlockSpacing(decoded.delta);
+  }
 
   final output = Delta();
   for (final operation in decoded.delta.operations) {
@@ -32,7 +34,76 @@ Delta decodeReaderMarkdownClipboard(String markdown) {
     }
     _insertStyledText(output, data.substring(start), operation.attributes);
   }
-  return output;
+  return _normalizeReaderBlockSpacing(output);
+}
+
+/// Removes Markdown-only spacing that is not an empty paragraph in the reader.
+///
+/// Loose lists use one blank source line between items, while multiple
+/// paragraphs inside one blockquote use empty `>` lines. Quill would otherwise
+/// expose both forms as editable blank paragraphs. Explicit `<br />` lines use
+/// separate metadata and are deliberately left untouched.
+Delta _normalizeReaderBlockSpacing(Delta source) {
+  final document = _ReaderClipboardDocument.split(source);
+  final output = <_ReaderClipboardLine>[];
+
+  for (var index = 0; index < document.lines.length;) {
+    final line = document.lines[index];
+    if (line.isSourceSeparator) {
+      var end = index + 1;
+      while (end < document.lines.length &&
+          document.lines[end].isSourceSeparator) {
+        end += 1;
+      }
+      final left = output.isEmpty ? null : output.last;
+      final right = end < document.lines.length ? document.lines[end] : null;
+      final isSingleLooseListSeparator =
+          end == index + 1 && _continuesSemanticList(left, right);
+      if (!isSingleLooseListSeparator) {
+        output.addAll(document.lines.sublist(index, end));
+      }
+      index = end;
+      continue;
+    }
+
+    if (line.isEmptyQuoteDelimiter) {
+      var end = index + 1;
+      while (end < document.lines.length &&
+          document.lines[end].isEmptyQuoteDelimiter) {
+        end += 1;
+      }
+      final left = output.isEmpty ? null : output.last;
+      final right = end < document.lines.length ? document.lines[end] : null;
+      if (left?.isQuoteContent != true || right?.isQuoteContent != true) {
+        output.addAll(document.lines.sublist(index, end));
+      }
+      index = end;
+      continue;
+    }
+
+    output.add(line);
+    index += 1;
+  }
+
+  final normalized = Delta();
+  for (final line in output) {
+    line.appendTo(normalized);
+  }
+  for (final operation in document.trailing.operations) {
+    normalized.insert(operation.data, operation.attributes);
+  }
+  return normalized;
+}
+
+bool _continuesSemanticList(
+  _ReaderClipboardLine? left,
+  _ReaderClipboardLine? right,
+) {
+  final leftKind = left?.listKind;
+  final rightKind = right?.listKind;
+  if (leftKind == null || rightKind == null) return false;
+  if (leftKind == rightKind) return true;
+  return left!.listIndent != right!.listIndent;
 }
 
 void _insertReaderAtom(
@@ -216,4 +287,79 @@ class _ReaderAtom {
 
   final int length;
   final Delta delta;
+}
+
+class _ReaderClipboardDocument {
+  const _ReaderClipboardDocument(this.lines, this.trailing);
+
+  final List<_ReaderClipboardLine> lines;
+  final Delta trailing;
+
+  static _ReaderClipboardDocument split(Delta source) {
+    final lines = <_ReaderClipboardLine>[];
+    var content = Delta();
+
+    for (final operation in source.operations) {
+      final data = operation.data;
+      if (data is! String) {
+        content.insert(data, operation.attributes);
+        continue;
+      }
+
+      var start = 0;
+      for (var index = 0; index < data.length; index++) {
+        if (data[index] != '\n') continue;
+        if (index > start) {
+          content.insert(data.substring(start, index), operation.attributes);
+        }
+        lines.add(
+          _ReaderClipboardLine(
+            content,
+            Map<String, dynamic>.from(operation.attributes ?? const {}),
+          ),
+        );
+        content = Delta();
+        start = index + 1;
+      }
+      if (start < data.length) {
+        content.insert(data.substring(start), operation.attributes);
+      }
+    }
+
+    return _ReaderClipboardDocument(List.unmodifiable(lines), content);
+  }
+}
+
+class _ReaderClipboardLine {
+  const _ReaderClipboardLine(this.content, this.attributes);
+
+  final Delta content;
+  final Map<String, dynamic> attributes;
+
+  bool get hasContent => content.operations.isNotEmpty;
+
+  bool get isSourceSeparator =>
+      !hasContent &&
+      attributes[MarkdownDeltaLineMetadata.sourceSeparatorAttribute] == true;
+
+  bool get isEmptyQuoteDelimiter =>
+      !hasContent &&
+      attributes['blockquote'] == true &&
+      attributes[MarkdownDeltaCodec.emptyParagraphAttribute] != true;
+
+  bool get isQuoteContent => hasContent && attributes['blockquote'] == true;
+
+  String? get listKind => hasContent && attributes['list'] is String
+      ? attributes['list']! as String
+      : null;
+
+  int get listIndent =>
+      attributes['indent'] is int ? attributes['indent']! as int : 0;
+
+  void appendTo(Delta target) {
+    for (final operation in content.operations) {
+      target.insert(operation.data, operation.attributes);
+    }
+    target.insert('\n', attributes.isEmpty ? null : attributes);
+  }
 }
