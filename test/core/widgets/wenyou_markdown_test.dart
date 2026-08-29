@@ -75,6 +75,30 @@ void main() {
     );
   });
 
+  testWidgets('引用中的斜体行内代码合并外层强调样式', (tester) async {
+    const source = '> *`璃氏已勘破长生之妙……青春不老。`*';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouMarkdown(data: source, enablePlainTextFastPath: false),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const Key('wenyou-markdown-plain-text')), findsNothing);
+    final inlineCode = find.byType(WenyouInlineCodeSurface);
+    expect(inlineCode, findsOneWidget);
+    final codeText = tester.widget<Text>(
+      find.descendant(of: inlineCode, matching: find.text('璃氏已勘破长生之妙……青春不老。')),
+    );
+    expect(codeText.style?.fontStyle, FontStyle.italic);
+    expect(codeText.style?.fontFamily, 'monospace');
+    expect(codeText.style?.backgroundColor, Colors.transparent);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('已结算骰子打开安全区明细并只在明细逐项朗读', (tester) async {
     const settledDiceNode = '[[dice:v1:$nodeId:3d6+2]]';
     await tester.pumpWidget(

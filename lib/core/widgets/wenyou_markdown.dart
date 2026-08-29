@@ -445,9 +445,12 @@ class _InlineCodeMarkdownBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
+    final mergedStyle = parentStyle?.merge(preferredStyle) ?? preferredStyle;
     return WenyouInlineCodeSurface(
       text: element.textContent,
-      style: preferredStyle ?? parentStyle,
+      style: mergedStyle?.copyWith(
+        fontStyle: parentStyle?.fontStyle ?? mergedStyle.fontStyle,
+      ),
     );
   }
 }
