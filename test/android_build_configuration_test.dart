@@ -48,6 +48,9 @@ void main() {
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+    final resourceKeepRules = File(
+      'android/app/src/main/res/raw/keep.xml',
+    ).readAsStringSync();
 
     expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     expect(manifest, isNot(contains('android.permission.FOREGROUND_SERVICE')));
@@ -71,6 +74,11 @@ void main() {
     expect(
       File('android/app/src/main/res/drawable/ic_stat_wenyou.xml').existsSync(),
       isTrue,
+    );
+    expect(
+      resourceKeepRules,
+      contains(r'tools:keep="@drawable/ic_stat_wenyou"'),
+      reason: '通知图标只由 Dart 动态引用，正式构建必须阻止资源压缩删除它。',
     );
   });
 
