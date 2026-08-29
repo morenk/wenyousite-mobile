@@ -65,7 +65,7 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 - 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v4 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。
 - 分隔线覆盖文首、文尾、文字中间、当前行上方/下方、单步撤销、重开、真实发布载荷和非法混合 Delta；阅读态与编辑态都断言 `border` 语义色、1px/1dp 且无装饰。
 - 工具栏格式策略覆盖全部可创建命令、15 种兼容行内组合、行内代码互斥和块格式转换；同一份 Markdown 在编辑态与发布态共享样式规格，并维护亮暗色、宽屏及 2× 字号配对 Golden。
-- 对齐回归覆盖左 → 居中 → 右循环、标题转换保持、列表/引用清除、普通图片与空块拒绝、多物理行一致性、阅读分段渲染、clipboard v1 降级与 v2 往返。
+- 对齐回归覆盖精确/畸形 marker、代码保护区与兼容文本拒绝、左 → 居中 → 右循环、选择边界与混合块清洗、撤销/重做、标题转换保持、列表/引用清除、普通图片与空块拒绝、多物理行一致性、整块复制/剪切、段内结构粘贴、320～600dp 与 1×/2× 字号阅读分段、clipboard v1 降级与 v2 往返。
 - Flutter Quill 升级必须独立 `chore`，重新运行全部 Codec 黄金语料并人工冒烟 Android 输入、选择、撤销/重做和粘贴。
 
 参考：[Flutter Quill](https://pub.dev/packages/flutter_quill)、[markdown_quill 限制](https://pub.dev/packages/markdown_quill)、[编辑器模块](../modules/editor.md)。

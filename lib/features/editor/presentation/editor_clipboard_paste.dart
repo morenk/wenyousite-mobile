@@ -153,6 +153,7 @@ class WenyouEditorClipboardPastePlanner {
                 'list',
                 'blockquote',
                 'indent',
+                MarkdownDeltaCodec.alignmentAttribute,
                 MarkdownDeltaCodec.literalLineAttribute,
               ])
                 if (source.containsKey(key)) key: source[key],

@@ -220,7 +220,16 @@ class RichEditorSession extends ChangeNotifier {
     final start = selection.start;
     final length = selection.end - start;
     final documentSignature = _documentSignature();
-    final delta = controller.document.toDelta().slice(start, selection.end);
+    final sourceDelta = controller.document.toDelta();
+    final plainText = controller.document.toPlainText();
+    final copiesCompleteBlocks =
+        (start == 0 || plainText[start - 1] == '\n') &&
+        selection.end < plainText.length &&
+        plainText[selection.end] == '\n';
+    final delta = sourceDelta.slice(
+      start,
+      selection.end + (copiesCompleteBlocks ? 1 : 0),
+    );
     final marker = const Uuid().v4();
     final fallback = _clipboardStore.capture(
       delta: delta,

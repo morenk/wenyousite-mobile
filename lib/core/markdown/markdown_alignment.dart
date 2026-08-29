@@ -1,4 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 
 enum WenyouTextAlignment { left, center, right }
 
@@ -82,6 +83,11 @@ abstract final class MarkdownAlignmentContract {
     r'\[wenyousite-align-v\d+-[a-z][a-z-]*\]:',
     caseSensitive: false,
   );
+  static final RegExp _unknownProtocol = RegExp(
+    r'\[\[([a-z][a-z0-9_-]*):v(\d+):',
+    caseSensitive: false,
+  );
+  static final RegExp _htmlToken = RegExp(r'<[^>]*>');
   static final RegExp _heading = RegExp(r'^(#{2,3})[\t ]+(.+)$');
   static final RegExp _anyHeading = RegExp(r'^ {0,3}#{1,6}(?:[\t ]|$)');
   static final RegExp _list = RegExp(r'^ {0,6}(?:[-+*]|\d+[.)])[\t ]+');
@@ -92,7 +98,10 @@ abstract final class MarkdownAlignmentContract {
     r'^ {0,3}<br\s*/?>[\t ]*$',
     caseSensitive: false,
   );
+  static final RegExp _openingFence = RegExp(r'^ {0,3}(`{3,}|~{3,})');
+  static final RegExp _closingFence = RegExp(r'^ {0,3}(`{3,}|~{3,})[\t ]*$');
   static const _stickerTitlePrefix = 'wenyousite-sticker:v1:';
+  static final RegExp _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
 
   static MarkdownAlignmentAnalysis analyze(String markdown) =>
       analyzeLines(markdown.split('\n'));
@@ -101,12 +110,30 @@ abstract final class MarkdownAlignmentContract {
     final lines = List<String>.unmodifiable(sourceLines);
     final blocks = <MarkdownAlignmentBlock>[];
     final invalid = <int>{};
+    _AlignmentFence? fence;
 
     for (var index = 0; index < lines.length; index++) {
       final line = lines[index];
+      if (fence != null) {
+        final closing = _closingFence.firstMatch(line)?.group(1);
+        if (closing != null &&
+            closing[0] == fence.marker &&
+            closing.length >= fence.length) {
+          fence = null;
+        }
+        continue;
+      }
+      final opening = _openingFence.firstMatch(line)?.group(1);
+      if (opening != null) {
+        fence = _AlignmentFence(opening[0], opening.length);
+        continue;
+      }
+      if (line.startsWith('    ') || line.startsWith('\t')) continue;
       final marker = _storedMarker.firstMatch(line);
       if (marker == null) {
-        if (_hasUnescapedProtocol(line)) invalid.add(index);
+        if (isMarkerLine(line) || _hasUnescapedProtocol(line)) {
+          invalid.add(index);
+        }
         continue;
       }
       if (index + 1 >= lines.length) {
@@ -209,6 +236,7 @@ abstract final class MarkdownAlignmentContract {
 
     final heading = _heading.firstMatch(first);
     if (heading != null) {
+      if (_hasUnsupportedParagraphSource(first)) return null;
       final node = _parseSingleBlock([first]);
       return _AlignmentTarget(
         endLine: start,
@@ -222,6 +250,7 @@ abstract final class MarkdownAlignmentContract {
 
     if (start + 1 < lines.length &&
         _isSetextHeading(lines[start], lines[start + 1])) {
+      if (_hasUnsupportedParagraphSource(lines[start])) return null;
       final node = _parseSingleBlock([lines[start], lines[start + 1]]);
       return _AlignmentTarget(
         endLine: start + 1,
@@ -240,7 +269,10 @@ abstract final class MarkdownAlignmentContract {
         !_isSetextHeading(lines[end], lines[end + 1])) {
       end += 1;
     }
-    final node = _parseSingleBlock(lines.sublist(start, end + 1));
+    final paragraphLines = lines.sublist(start, end + 1);
+    if (paragraphLines.any(_hasUnsupportedParagraphSource)) return null;
+    final node = _parseSingleBlock(paragraphLines);
+    if (node is! md.Element || node.tag != 'p') return null;
     return _AlignmentTarget(
       endLine: end,
       kind: MarkdownAlignedBlockKind.paragraph,
@@ -263,6 +295,60 @@ abstract final class MarkdownAlignmentContract {
     final masked = _maskInlineCode(line);
     for (final match in _protocol.allMatches(masked)) {
       if (!_isEscaped(line, match.start)) return true;
+    }
+    return false;
+  }
+
+  static bool _hasUnsupportedParagraphSource(String line) =>
+      _hasHardBreak(line) ||
+      _hasRawHtml(line) ||
+      _hasUnsupportedInlineProtocol(line);
+
+  static bool _hasHardBreak(String line) {
+    final spaces = RegExp(r' +$').firstMatch(line)?.group(0)?.length ?? 0;
+    final slashes = RegExp(r'\\+$').firstMatch(line)?.group(0)?.length ?? 0;
+    return spaces >= 2 || slashes.isOdd;
+  }
+
+  static bool _hasRawHtml(String line) {
+    final masked = _maskInlineCode(line);
+    for (final match in _htmlToken.allMatches(masked)) {
+      if (_isEscaped(line, match.start)) continue;
+      if (RegExp(
+        r'^<https?://[^\s<>]+>$',
+        caseSensitive: false,
+      ).hasMatch(match.group(0)!)) {
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  static bool _hasUnsupportedInlineProtocol(String line) {
+    final masked = _maskInlineCode(line);
+    for (final match in _unknownProtocol.allMatches(masked)) {
+      if (_isEscaped(line, match.start)) continue;
+      if (match.group(1)!.toLowerCase() != 'dice' || match.group(2) != '1') {
+        return true;
+      }
+    }
+
+    var index = 0;
+    final lower = masked.toLowerCase();
+    while ((index = lower.indexOf('[[dice:', index)) >= 0) {
+      if (_isEscaped(line, index)) {
+        index += 2;
+        continue;
+      }
+      final match = MarkdownDiceContract.nodeAtStart.firstMatch(
+        line.substring(index),
+      );
+      if (match == null ||
+          MarkdownDiceContract.normalizeNotation(match.group(2)!) == null) {
+        return true;
+      }
+      index += match.group(0)!.length;
     }
     return false;
   }
@@ -325,15 +411,32 @@ abstract final class MarkdownAlignmentContract {
   }
 
   static bool _hasMeaningfulContent(md.Node? node) =>
-      node != null && node.textContent.trim().isNotEmpty;
+      node != null &&
+      (node.textContent.trim().isNotEmpty || _hasValidSticker(node));
 
   static bool _hasRegularImage(md.Node? node) {
     if (node is! md.Element) return false;
-    if (node.tag == 'img') {
-      final title = node.attributes['title'];
-      return title == null || !title.startsWith(_stickerTitlePrefix);
-    }
+    if (node.tag == 'img') return !_isValidStickerImage(node);
     return node.children?.any(_hasRegularImage) ?? false;
+  }
+
+  static bool _hasValidSticker(md.Node node) {
+    if (node is! md.Element) return false;
+    if (_isValidStickerImage(node)) return true;
+    return node.children?.any(_hasValidSticker) ?? false;
+  }
+
+  static bool _isValidStickerImage(md.Element node) {
+    if (node.tag != 'img') return false;
+    final title = node.attributes['title'];
+    if (title == null || !title.startsWith(_stickerTitlePrefix)) return false;
+    final assetId = title.substring(_stickerTitlePrefix.length);
+    final source = node.attributes['src'];
+    final uri = source == null ? null : Uri.tryParse(source);
+    return _stickerAssetId.hasMatch(assetId) &&
+        uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == 'https' || uri.scheme == 'http');
   }
 }
 
@@ -349,4 +452,11 @@ final class _AlignmentTarget {
   final MarkdownAlignedBlockKind kind;
   final bool hasContent;
   final bool hasRegularImage;
+}
+
+final class _AlignmentFence {
+  const _AlignmentFence(this.marker, this.length);
+
+  final String marker;
+  final int length;
 }
