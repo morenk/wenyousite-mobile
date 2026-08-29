@@ -4,7 +4,7 @@
 
 ## 当前基线
 
-- 客户端：`0.6.0+90` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
+- 客户端：`0.7.0+91` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
 - 后端契约：`5.14.1-dev.20260829.1`，revision `f16d6478764d205b2eea139819db2830f4a0c679`；Markdown v4、编辑器往返黄金契约 v6、剪贴板契约 v2。公网 `/meta` 已声明 Markdown v4，移动端对齐入口按既有 capability 门控正式开放。
 - 正文契约：Markdown v4；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.8.0`。
