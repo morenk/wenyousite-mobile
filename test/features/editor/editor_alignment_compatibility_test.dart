@@ -200,6 +200,66 @@ void main() {
         '[wenyousite-align-v1-center]: #\n第一行\n第二行',
       );
     });
+
+    testWidgets('居中空行再次回车时光标与后续输入保持同一方向', (tester) async {
+      final session = RichEditorSession(
+        initialMarkdown: '',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+
+      session.controller.replaceText(
+        0,
+        0,
+        '第一行',
+        const TextSelection.collapsed(offset: 3),
+      );
+      WenyouEditorFormatPolicy.applyAlignment(
+        session.controller,
+        WenyouTextAlignment.center,
+      );
+      session.controller.replaceText(
+        3,
+        0,
+        '\n',
+        const TextSelection.collapsed(offset: 4),
+      );
+      await tester.pump();
+      session.controller.replaceText(
+        4,
+        0,
+        '\n',
+        const TextSelection.collapsed(offset: 5),
+      );
+      await tester.pump();
+
+      expect(
+        WenyouEditorFormatPolicy.alignmentSelection(
+          session.controller,
+        ).alignment,
+        isNull,
+      );
+
+      final typingOffset = session.controller.selection.extentOffset;
+      session.controller.replaceText(
+        typingOffset,
+        0,
+        '第三行',
+        TextSelection.collapsed(offset: typingOffset + 3),
+      );
+      await tester.pump();
+      expect(
+        WenyouEditorFormatPolicy.alignmentSelection(
+          session.controller,
+        ).alignment,
+        WenyouTextAlignment.left,
+      );
+      expect(await session.flush(), isTrue);
+      expect(
+        MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+        '[wenyousite-align-v1-center]: #\n第一行\n<br />\n第三行',
+      );
+    });
   });
 
   group('移动编辑器结构复制保持块对齐', () {

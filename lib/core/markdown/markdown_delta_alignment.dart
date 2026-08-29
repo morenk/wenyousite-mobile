@@ -100,60 +100,13 @@ abstract final class MarkdownDeltaAlignment {
     );
   }
 
-  /// Restores the paragraph alignment when Quill inserts the first text into
-  /// a new trailing line without carrying over the previous newline style.
+  /// Normalizes Enter at the end of an aligned paragraph.
   ///
-  /// A bare Enter and the following IME/text insertion arrive as separate
-  /// document changes. Between those events the trailing empty line has no
-  /// alignment attribute, so the normal paragraph sanitizer would otherwise
-  /// interpret the completed line as a malformed mixed-alignment paragraph
-  /// and clear the original line as well.
-  static Delta inheritTrailingLineAlignment({
-    required Delta before,
-    required Delta after,
-    required Delta change,
-    required String imageEmbed,
-    required String horizontalRuleEmbed,
-  }) {
-    final insertion = _plainTextInsertion(change);
-    if (insertion == null) return Delta();
-    final beforeLines = _readLines(
-      before,
-      imageEmbed: imageEmbed,
-      horizontalRuleEmbed: horizontalRuleEmbed,
-    );
-    if (beforeLines.length < 2) return Delta();
-    final pendingLine = beforeLines.last;
-    final previousLine = beforeLines[beforeLines.length - 2];
-    if (pendingLine.startOffset != insertion.start ||
-        pendingLine.newlineOffset != insertion.start ||
-        !pendingLine.isPlainEmptyLine ||
-        !previousLine.isEligibleParagraphLine ||
-        previousLine.alignment == WenyouTextAlignment.left) {
-      return Delta();
-    }
-
-    final afterLines = _readLines(
-      after,
-      imageEmbed: imageEmbed,
-      horizontalRuleEmbed: horizontalRuleEmbed,
-    );
-    final completedLine = afterLines.last;
-    if (completedLine.startOffset != insertion.start ||
-        completedLine.newlineOffset != insertion.start + insertion.length ||
-        !completedLine.isEligibleParagraphLine ||
-        completedLine.alignment != WenyouTextAlignment.left) {
-      return Delta();
-    }
-    return _changesPatch([
-      _LineAlignmentChange(completedLine.newlineOffset, previousLine.alignment),
-    ]);
-  }
-
-  /// Carries an aligned trailing paragraph onto the empty line created by a
-  /// standalone Enter so the caret and toolbar do not jump back to the left
-  /// before the user types the next character.
-  static Delta inheritTrailingEmptyLineAlignment({
+  /// The first Enter carries the alignment onto the new empty line. Quill's
+  /// block auto-exit rule consumes a second Enter by only clearing alignment;
+  /// turn that event into an actual empty paragraph so the following left
+  /// aligned input cannot be merged back into the preceding aligned paragraph.
+  static Delta repairTrailingNewlineAlignment({
     required Delta before,
     required Delta after,
     required String imageEmbed,
@@ -169,9 +122,25 @@ abstract final class MarkdownDeltaAlignment {
       imageEmbed: imageEmbed,
       horizontalRuleEmbed: horizontalRuleEmbed,
     );
-    if (beforeLines.isEmpty || afterLines.length != beforeLines.length + 1) {
+    if (beforeLines.isEmpty) {
       return Delta();
     }
+    if (afterLines.length == beforeLines.length) {
+      final previousPendingLine = beforeLines.last;
+      final exitedLine = afterLines.last;
+      if (previousPendingLine.isTrailingEmptyLine &&
+          previousPendingLine.alignment != WenyouTextAlignment.left &&
+          exitedLine.isTrailingEmptyLine &&
+          exitedLine.alignment == WenyouTextAlignment.left &&
+          exitedLine.startOffset == previousPendingLine.startOffset &&
+          exitedLine.newlineOffset == previousPendingLine.newlineOffset) {
+        return Delta()
+          ..retain(exitedLine.newlineOffset)
+          ..insert('\n');
+      }
+      return Delta();
+    }
+    if (afterLines.length != beforeLines.length + 1) return Delta();
     final previousLine = afterLines[afterLines.length - 2];
     final pendingLine = afterLines.last;
     if (!beforeLines.last.isEligibleParagraphLine ||
@@ -326,36 +295,6 @@ abstract final class MarkdownDeltaAlignment {
       cursor = change.offset + 1;
     }
     return patch;
-  }
-
-  static ({int start, int length})? _plainTextInsertion(Delta change) {
-    int? insertionStart;
-    var insertionLength = 0;
-    var sourceOffset = 0;
-    var insertionEnded = false;
-    var hasMeaningfulText = false;
-    for (final operation in change.operations) {
-      if (operation.isDelete) return null;
-      if (operation.isRetain) {
-        if (insertionStart != null) insertionEnded = true;
-        sourceOffset += operation.length ?? 0;
-        continue;
-      }
-      final data = operation.data;
-      if (!operation.isInsert ||
-          data is! String ||
-          data.contains('\n') ||
-          insertionEnded) {
-        return null;
-      }
-      insertionStart ??= sourceOffset;
-      insertionLength += data.length;
-      hasMeaningfulText = hasMeaningfulText || data.trim().isNotEmpty;
-    }
-    if (insertionStart == null || insertionLength == 0 || !hasMeaningfulText) {
-      return null;
-    }
-    return (start: insertionStart, length: insertionLength);
   }
 
   static List<_DeltaLine> _readLines(

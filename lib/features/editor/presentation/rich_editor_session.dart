@@ -675,7 +675,7 @@ class RichEditorSession extends ChangeNotifier {
     if (_applyingDocument || _disposed) return;
     _applyingDocument = true;
     try {
-      normalizeEditorDocumentAlignment(controller, change);
+      normalizeEditorDocumentAlignment(controller);
     } finally {
       _applyingDocument = false;
     }
@@ -821,11 +821,12 @@ class _LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
-    inheritEditorTrailingEmptyLineAlignment(
-      document: document,
+    repairEditorTrailingNewlineAlignment(
+      controller: this,
       before: before,
       insertedData: effectiveData,
       replacedLength: len,
+      selection: effectiveSelection,
     );
     if (effectiveData is! String || effectiveData.isEmpty) return;
 
