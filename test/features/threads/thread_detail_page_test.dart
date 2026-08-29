@@ -2642,7 +2642,7 @@ void main() {
     expect(find.byKey(const Key('post-composer-body')), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const Key('post-composer-viewport'))).height,
-      closeTo(viewportHeight * .30, 1),
+      closeTo(viewportHeight * .40, 1),
     );
     await _dismissPostComposerFromOutside(tester);
 

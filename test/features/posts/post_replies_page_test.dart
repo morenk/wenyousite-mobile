@@ -844,7 +844,7 @@ void main() {
     expect(find.text('回复会平级挂在当前主楼层下。'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('post-composer-sheet'))).height,
-      closeTo(300, 1),
+      closeTo(400, 1),
     );
     expect(
       tester.getSize(find.byKey(const Key('post-composer-canvas'))).height,
@@ -891,7 +891,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.getSize(find.byKey(const Key('post-composer-viewport'))).height,
-      closeTo(300, 1),
+      closeTo(400, 1),
     );
     expect(
       tester
@@ -952,7 +952,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('新回复从百分之三十起步，工具托盘按需扩展且手动拖动优先', (tester) async {
+  testWidgets('新回复从百分之四十起步，工具托盘按需扩展且手动拖动优先', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -971,7 +971,7 @@ void main() {
         tester.getSize(find.byKey(const Key('post-composer-viewport'))).height;
 
     final initialHeight = sheetHeight();
-    expect(initialHeight, closeTo(240, 1));
+    expect(initialHeight, closeTo(320, 1));
     await tester.tap(find.byKey(const Key('post-composer-expand')));
     await tester.pumpAndSettle();
     expect(sheetHeight(), closeTo(752, 1));
@@ -981,7 +981,7 @@ void main() {
     await tester.tap(find.byKey(const Key('editor-more')));
     await tester.pumpAndSettle();
     final moreHeight = sheetHeight();
-    expect(moreHeight, greaterThan(initialHeight));
+    expect(moreHeight, greaterThanOrEqualTo(initialHeight));
 
     await tester.tap(find.byTooltip('骰子'));
     await tester.pumpAndSettle();

@@ -995,7 +995,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('editor-more')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('editor-alignment')), findsOneWidget);
+    expect(find.byType(SegmentedButton<WenyouTextAlignment>), findsNothing);
     expect(find.byKey(const Key('editor-align-left')), findsOneWidget);
     expect(find.byKey(const Key('editor-align-center')), findsOneWidget);
     expect(find.byKey(const Key('editor-align-right')), findsOneWidget);
@@ -1012,10 +1012,13 @@ void main() {
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       '[wenyousite-align-v1-center]: #\n正文',
     );
-    var alignment = tester.widget<SegmentedButton<WenyouTextAlignment>>(
-      find.byKey(const Key('editor-alignment')),
+    var alignment = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byKey(const Key('editor-align-center')),
+        matching: find.byType(IconButton),
+      ),
     );
-    expect(alignment.selected, {WenyouTextAlignment.center});
+    expect(alignment.isSelected, isTrue);
     expect(
       alignment.style!.backgroundColor!.resolve({WidgetState.selected}),
       tokens.actionSurface,
@@ -1030,10 +1033,13 @@ void main() {
     await tester.tap(find.byTooltip('左对齐'));
     await tester.pumpAndSettle();
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
-    alignment = tester.widget<SegmentedButton<WenyouTextAlignment>>(
-      find.byKey(const Key('editor-alignment')),
+    alignment = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byKey(const Key('editor-align-left')),
+        matching: find.byType(IconButton),
+      ),
     );
-    expect(alignment.selected, {WenyouTextAlignment.left});
+    expect(alignment.isSelected, isTrue);
   });
 
   for (final scenario in [
@@ -1070,6 +1076,19 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('editor-more')));
       await tester.pumpAndSettle();
+
+      final firstRow = find.byKey(const Key('editor-more-row-0'));
+      final secondRow = find.byKey(const Key('editor-more-row-1'));
+      expect(firstRow, findsOneWidget);
+      expect(secondRow, findsOneWidget);
+      expect(
+        find.descendant(of: firstRow, matching: find.byType(IconButton)),
+        findsNWidgets(5),
+      );
+      expect(
+        find.descendant(of: secondRow, matching: find.byType(IconButton)),
+        findsNWidgets(5),
+      );
 
       await expectLater(
         find.byKey(const Key('editor-more-tray')),

@@ -62,93 +62,85 @@ class WenyouEditorMoreTray extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final entries = <_MoreTrayEntry>[
+    final entries = <Widget>[
       if (showLink)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorLink,
-            label: '链接',
-            onPressed: onLink,
-          ),
-        ),
+        _button(icon: WenyouIconIds.editorLink, label: '链接', onPressed: onLink),
       if (showInlineStyles)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorInlineCode,
-            label: '行内代码',
-            selected: inlineCodeSelected,
-            onPressed: onInlineCode,
-          ),
+        _button(
+          icon: WenyouIconIds.editorInlineCode,
+          label: '行内代码',
+          selected: inlineCodeSelected,
+          onPressed: onInlineCode,
         ),
       if (showQuote)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorQuote,
-            label: '引用',
-            selected: quoteSelected,
-            onPressed: onQuote,
-          ),
+        _button(
+          icon: WenyouIconIds.editorQuote,
+          label: '引用',
+          selected: quoteSelected,
+          onPressed: onQuote,
         ),
       if (showBlockStyles)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorBulletList,
-            label: '无序列表',
-            selected: bulletListSelected,
-            onPressed: onBulletList,
-          ),
+        _button(
+          icon: WenyouIconIds.editorBulletList,
+          label: '无序列表',
+          selected: bulletListSelected,
+          onPressed: onBulletList,
         ),
       if (showBlockStyles)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorOrderedList,
-            label: '有序列表',
-            selected: orderedListSelected,
-            onPressed: onOrderedList,
-          ),
+        _button(
+          icon: WenyouIconIds.editorOrderedList,
+          label: '有序列表',
+          selected: orderedListSelected,
+          onPressed: onOrderedList,
         ),
       if (showAlignment)
-        _MoreTrayEntry(
-          slots: 3,
-          child: WenyouEditorAlignmentControl(
-            enabled: enabled,
-            selection: alignmentSelection,
-            onChanged: onAlignmentChanged,
-          ),
+        _button(
+          key: const Key('editor-align-left'),
+          icon: WenyouIconIds.editorAlignLeft,
+          label: '左对齐',
+          selected: alignmentSelection.alignment == WenyouTextAlignment.left,
+          buttonEnabled: alignmentSelection.canApply,
+          onPressed: () => onAlignmentChanged(WenyouTextAlignment.left),
+        ),
+      if (showAlignment)
+        _button(
+          key: const Key('editor-align-center'),
+          icon: WenyouIconIds.editorAlignCenter,
+          label: '居中',
+          selected: alignmentSelection.alignment == WenyouTextAlignment.center,
+          buttonEnabled: alignmentSelection.canApply,
+          onPressed: () => onAlignmentChanged(WenyouTextAlignment.center),
+        ),
+      if (showAlignment)
+        _button(
+          key: const Key('editor-align-right'),
+          icon: WenyouIconIds.editorAlignRight,
+          label: '右对齐',
+          selected: alignmentSelection.alignment == WenyouTextAlignment.right,
+          buttonEnabled: alignmentSelection.canApply,
+          onPressed: () => onAlignmentChanged(WenyouTextAlignment.right),
         ),
       if (showBlockStyles)
-        _MoreTrayEntry(
-          child: _button(
-            key: const Key('editor-horizontal-rule'),
-            icon: WenyouIconIds.editorHorizontalRule,
-            label: '分隔线',
-            onPressed: onHorizontalRule,
-          ),
+        _button(
+          key: const Key('editor-horizontal-rule'),
+          icon: WenyouIconIds.editorHorizontalRule,
+          label: '分隔线',
+          onPressed: onHorizontalRule,
         ),
       if (showDice)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorDice,
-            label: '骰子',
-            onPressed: onDice,
-          ),
-        ),
+        _button(icon: WenyouIconIds.editorDice, label: '骰子', onPressed: onDice),
       if (showSticker)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorSticker,
-            label: '表情包',
-            onPressed: onSticker,
-          ),
+        _button(
+          icon: WenyouIconIds.editorSticker,
+          label: '表情包',
+          onPressed: onSticker,
         ),
       if (showInlineStyles)
-        _MoreTrayEntry(
-          child: _button(
-            icon: WenyouIconIds.editorStrikethrough,
-            label: '删除线',
-            selected: strikethroughSelected,
-            onPressed: onStrikethrough,
-          ),
+        _button(
+          icon: WenyouIconIds.editorStrikethrough,
+          label: '删除线',
+          selected: strikethroughSelected,
+          onPressed: onStrikethrough,
         ),
     ];
     return Container(
@@ -166,17 +158,39 @@ class WenyouEditorMoreTray extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final columns = (constraints.maxWidth / 64).floor().clamp(4, 8);
-            final cellWidth = constraints.maxWidth / columns;
-            return Wrap(
+            final maximumColumns =
+                (constraints.maxWidth /
+                        WenyouEditorContract.minimumActionExtent)
+                    .floor()
+                    .clamp(1, 6);
+            final rowCount = (entries.length / maximumColumns).ceil();
+            final minimumRowLength = entries.length ~/ rowCount;
+            final longerRows = entries.length % rowCount;
+            final rows = <List<Widget>>[];
+            var entryIndex = 0;
+            for (var rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+              final rowLength =
+                  minimumRowLength + (rowIndex < longerRows ? 1 : 0);
+              rows.add(entries.sublist(entryIndex, entryIndex += rowLength));
+            }
+            return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                for (final entry in entries)
-                  SizedBox(
-                    width: (cellWidth * entry.slots).clamp(
-                      cellWidth,
-                      constraints.maxWidth,
-                    ),
-                    child: entry.child,
+                for (final (rowIndex, rowEntries) in rows.indexed)
+                  Row(
+                    key: Key('editor-more-row-$rowIndex'),
+                    children: [
+                      for (final entry in rowEntries)
+                        Expanded(
+                          child: Center(
+                            child: SizedBox.square(
+                              dimension:
+                                  WenyouEditorContract.minimumActionExtent,
+                              child: entry,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
               ],
             );
@@ -192,86 +206,15 @@ class WenyouEditorMoreTray extends StatelessWidget {
     required String label,
     required VoidCallback onPressed,
     bool selected = false,
+    bool buttonEnabled = true,
   }) {
     return WenyouEditorTrayButton(
       key: key,
       icon: icon,
       label: label,
       selected: selected,
-      enabled: enabled,
+      enabled: enabled && buttonEnabled,
       onPressed: onPressed,
     );
   }
-}
-
-class WenyouEditorAlignmentControl extends StatelessWidget {
-  const WenyouEditorAlignmentControl({
-    required this.enabled,
-    required this.selection,
-    required this.onChanged,
-    super.key,
-  });
-
-  final bool enabled;
-  final MarkdownAlignmentSelectionState selection;
-  final ValueChanged<WenyouTextAlignment> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final selected = selection.alignment == null
-        ? <WenyouTextAlignment>{}
-        : {selection.alignment!};
-    final canApply = enabled && selection.canApply;
-    return Semantics(
-      container: true,
-      label: '段落对齐',
-      enabled: canApply,
-      child: SegmentedButton<WenyouTextAlignment>(
-        key: const Key('editor-alignment'),
-        showSelectedIcon: false,
-        emptySelectionAllowed: true,
-        expandedInsets: EdgeInsets.zero,
-        style: wenyouEditorSegmentedButtonStyle(context),
-        segments: const [
-          ButtonSegment(
-            value: WenyouTextAlignment.left,
-            tooltip: '左对齐',
-            icon: WenyouIcon(
-              WenyouIconIds.editorAlignLeft,
-              key: Key('editor-align-left'),
-            ),
-          ),
-          ButtonSegment(
-            value: WenyouTextAlignment.center,
-            tooltip: '居中',
-            icon: WenyouIcon(
-              WenyouIconIds.editorAlignCenter,
-              key: Key('editor-align-center'),
-            ),
-          ),
-          ButtonSegment(
-            value: WenyouTextAlignment.right,
-            tooltip: '右对齐',
-            icon: WenyouIcon(
-              WenyouIconIds.editorAlignRight,
-              key: Key('editor-align-right'),
-            ),
-          ),
-        ],
-        selected: selected,
-        onSelectionChanged: canApply
-            ? (value) {
-                if (value.isNotEmpty) onChanged(value.single);
-              }
-            : null,
-      ),
-    );
-  }
-}
-
-final class _MoreTrayEntry {
-  const _MoreTrayEntry({required this.child, this.slots = 1});
-
-  final Widget child;
-  final int slots;
 }

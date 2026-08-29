@@ -159,7 +159,7 @@ class _ExpandablePostComposerState extends State<_ExpandablePostComposer> {
   void initState() {
     super.initState();
     _restingExtent = switch (widget.target.kind) {
-      PostComposerKind.createFloor || PostComposerKind.createReply => .30,
+      PostComposerKind.createFloor || PostComposerKind.createReply => .40,
       PostComposerKind.editPost || PostComposerKind.upsertBody => .52,
     };
     _extent = _restingExtent;
