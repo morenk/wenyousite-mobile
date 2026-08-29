@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：`0.6.0+90` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
-- 后端契约：`5.13.2-dev.20260828.1`，revision `51be1b9894949d4914e2df1bf8d40828bc595b58`；Markdown v3、编辑器往返黄金契约 v5、剪贴板契约 v1。
+- 后端契约：`5.14.0-dev.20260829.1`，revision `c7ade12aa3348e9a79661184478812806a23f6e6`；Markdown v3、编辑器往返黄金契约 v5、剪贴板契约 v1。
 - 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.6.1`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
@@ -25,6 +25,7 @@
 - 动态卡片与详情的可选 `canInteract` 已在收藏主链按“字段缺失视为允许”消费：`false` 禁止新增收藏与移动但允许取消；点赞、评论和加油仍需独立接入该权限投影。
 - 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。
 - `searchSearchThreads` 已支持 cursor/limit 分页，但移动端仍走不传参数的兼容调用，单次最多读取 50 条；完成移动端分页前搜索模块保持 `in_progress`。
+- `postsFindLatestInThread` 已提供主题全部存活子贴内最新有效楼层/回复的稳定坐标；生成客户端已同步，移动端尚未提供消费入口，接入时应直接复用主题楼层或独立讨论路由，不扫描子贴分页。
 - 本人动态收藏已按独立目录与必填 folderId 分页；公开用户页仍需接入公开动态收藏分页。
 - 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v3 安全字面文本；这不是原始不支持结构的无损提交。
 - 主题详情的每个子贴已提供必填 `postingCapability`，本人协作主题分页与协作者任免通知也已稳定；移动端尚未消费这些投影，当前仍需在写入后采用服务端权限结果，也不会展示独立的协作主题列表或处理任免后的页面退出与刷新。

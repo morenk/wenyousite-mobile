@@ -208,6 +208,7 @@ import 'package:wenyou_api/src/model/invite_thread_preview_response_dto.dart';
 import 'package:wenyou_api/src/model/issue_appeal_token_dto.dart';
 import 'package:wenyou_api/src/model/joined_thread_member_response_dto.dart';
 import 'package:wenyou_api/src/model/joined_thread_reference_response_dto.dart';
+import 'package:wenyou_api/src/model/latest_thread_post_response_dto.dart';
 import 'package:wenyou_api/src/model/login_dto.dart';
 import 'package:wenyou_api/src/model/logout_dto.dart';
 import 'package:wenyou_api/src/model/mark_direct_conversation_read_dto.dart';
@@ -302,6 +303,7 @@ import 'package:wenyou_api/src/model/posts_create201_response.dart';
 import 'package:wenyou_api/src/model/posts_find_by_id200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floor_authors200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_floors200_response.dart';
+import 'package:wenyou_api/src/model/posts_find_latest_in_thread200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_replies200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_reply_authors200_response.dart';
 import 'package:wenyou_api/src/model/posts_remove200_response.dart';
@@ -676,6 +678,7 @@ part 'serializers.g.dart';
   IssueAppealTokenDto,
   JoinedThreadMemberResponseDto,
   JoinedThreadReferenceResponseDto,
+  LatestThreadPostResponseDto,
   LoginDto,
   LogoutDto,
   MarkDirectConversationReadDto,
@@ -770,6 +773,7 @@ part 'serializers.g.dart';
   PostsFindById200Response,
   PostsFindFloorAuthors200Response,
   PostsFindFloors200Response,
+  PostsFindLatestInThread200Response,
   PostsFindReplies200Response,
   PostsFindReplyAuthors200Response,
   PostsRemove200Response,

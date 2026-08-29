@@ -238,6 +238,7 @@ lib/src/model/invite_thread_preview_response_dto.dart
 lib/src/model/issue_appeal_token_dto.dart
 lib/src/model/joined_thread_member_response_dto.dart
 lib/src/model/joined_thread_reference_response_dto.dart
+lib/src/model/latest_thread_post_response_dto.dart
 lib/src/model/login_dto.dart
 lib/src/model/logout_dto.dart
 lib/src/model/mark_direct_conversation_read_dto.dart
@@ -332,6 +333,7 @@ lib/src/model/posts_create201_response.dart
 lib/src/model/posts_find_by_id200_response.dart
 lib/src/model/posts_find_floor_authors200_response.dart
 lib/src/model/posts_find_floors200_response.dart
+lib/src/model/posts_find_latest_in_thread200_response.dart
 lib/src/model/posts_find_replies200_response.dart
 lib/src/model/posts_find_reply_authors200_response.dart
 lib/src/model/posts_remove200_response.dart

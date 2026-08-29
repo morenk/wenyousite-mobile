@@ -38,9 +38,9 @@
 
 ## 5. API operationId 与生成类型
 
-- 阅读：`postsFindFloors` 使用查询参数 order 与可选 authorId 读取主楼层，`postsFindById` 定位目标，`postsFindReplies` 读取独立讨论；`postsFindFloorAuthors` 按子贴返回实际主楼作者，`postsFindReplyAuthors` 按根楼层返回实际回复作者。
+- 阅读：`postsFindFloors` 使用查询参数 order 与可选 authorId 读取主楼层，`postsFindById` 定位目标，`postsFindReplies` 读取独立讨论；`postsFindFloorAuthors` 按子贴返回实际主楼作者，`postsFindReplyAuthors` 按根楼层返回实际回复作者。契约已提供 `postsFindLatestInThread` 直接返回主题全部存活子贴内最新有效主楼层或回复的稳定坐标，当前生成客户端已包含但移动端尚未调用。
 - 写入：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`；提及候选复用 editor 的 `usersMentionCandidates`；社区举报复用 reports 的 `reportsCreate`。
-- 主要生成类型：`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto`、`PostResponseDto`、`CreatePostDto`、`UpdatePostDto`、`UpsertBodyDto`、`ApiPaginationMeta`。
+- 主要生成类型：`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto`、`PostResponseDto`、`LatestThreadPostResponseDto`、`CreatePostDto`、`UpdatePostDto`、`UpsertBodyDto`、`ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
 
@@ -95,7 +95,7 @@
 - [x] 360×800、键盘 inset 300 的回复编辑器打开骰子任务无 overflow，常用面数横向栏不进入键盘覆盖区；子贴正文、楼层和楼中楼回复分别执行 20 个上限，楼层/回复允许骰子-only，子贴正文拒绝骰子-only。
 - [x] 楼层、回复和正文编辑在打开前读取最新版并携带当前版本；页面草稿记录基线版本，真实分叉才选择，冲突回读已等于待保存正文时按成功收敛，内容不同且二次确认后才覆盖。
 - [x] 作者编辑/删除、管理者删除普通楼层与独立回复、重复删除收敛、BODY 禁止普通删除和游客登录门槛均有状态或页面测试。
-- [x] 生成 API 仓储测试覆盖全部七个帖子 operationId 的筛选、版本和写入载荷。
+- [x] 生成 API 仓储测试覆盖当前已接入的七个帖子 operationId 的筛选、版本和写入载荷；`postsFindLatestInThread` 的生成方法与 DTO 由契约再生成一致性门禁固定。
 - [x] 帖子读取/写入响应在映射前校验请求 ID、主题/子贴摘要、BODY/FLOOR 层级、父楼层、回复目标、作者、骰子、`clientRequestId` 和续页 cursor；空 envelope 与错配回包 fail-closed，同时保留后端允许的顶层楼层 `replyToPostId` 语义。
 - [x] 真实生成客户端 + Dio 组合测试证明楼层筛选保留不透明 cursor，楼中楼创建携带精确 `parentPostId`、`replyToPostId` 和稳定幂等键。
 - [x] 楼层、回复、正文创建和编辑器均传递真实主题上下文，提及候选失败可恢复且原子节点可安全提交。
@@ -116,11 +116,11 @@
 
 ## 12. 已知限制和后续功能
 
-帖子待确认创建只在当前不可随意关闭的编辑会话内保留，应用进程被系统终止后不自动恢复或发送；槽位 1 自动保存也不会在页面或进程释放后继续运行。讨论筛选作者目录只包含当前范围内存在有效内容的楼主、协作者和已标记玩家；提及继续使用独立的主题候选接口，不与讨论筛选目录混用。图片密集正文的解码性能与更完整的已有 Markdown 富文本还原仍需后续专项处理。
+帖子待确认创建只在当前不可随意关闭的编辑会话内保留，应用进程被系统终止后不自动恢复或发送；槽位 1 自动保存也不会在页面或进程释放后继续运行。讨论筛选作者目录只包含当前范围内存在有效内容的楼主、协作者和已标记玩家；提及继续使用独立的主题候选接口，不与讨论筛选目录混用。`postsFindLatestInThread` 已进入生成客户端，但移动端尚无“前往最新发言”入口；后续接入必须复用返回坐标进入主题楼层或独立讨论，不扫描子贴与帖子分页。图片密集正文的解码性能与更完整的已有 Markdown 富文本还原仍需后续专项处理。
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.13.2-dev.20260828.1`；Markdown v3；后端 `51be1b9894949d4914e2df1bf8d40828bc595b58`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.14.0-dev.20260829.1`；Markdown v3；后端 `c7ade12aa3348e9a79661184478812806a23f6e6`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 
