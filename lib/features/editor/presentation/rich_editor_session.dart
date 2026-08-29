@@ -8,12 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_delta_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
 
 enum RichEditorSelectionPlacement { preserve, start, end }
@@ -673,18 +673,11 @@ class RichEditorSession extends ChangeNotifier {
 
   void _onDocumentChange(DocChange change) {
     if (_applyingDocument || _disposed) return;
-    final alignmentPatch = MarkdownDeltaAlignment.sanitize(
-      controller.document.toDelta(),
-      imageEmbed: MarkdownDeltaCodec.imageEmbed,
-      horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
-    );
-    if (alignmentPatch.isNotEmpty) {
-      _applyingDocument = true;
-      try {
-        controller.document.compose(alignmentPatch, ChangeSource.local);
-      } finally {
-        _applyingDocument = false;
-      }
+    _applyingDocument = true;
+    try {
+      normalizeEditorDocumentAlignment(controller, change);
+    } finally {
+      _applyingDocument = false;
     }
     _dirty = true;
     _operationFailure = null;
@@ -828,6 +821,12 @@ class _LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
+    inheritEditorTrailingEmptyLineAlignment(
+      document: document,
+      before: before,
+      insertedData: effectiveData,
+      replacedLength: len,
+    );
     if (effectiveData is! String || effectiveData.isEmpty) return;
 
     final formatting = Delta();

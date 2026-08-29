@@ -113,6 +113,93 @@ void main() {
         );
       });
     }
+
+    testWidgets('居中段尾回车并继续输入不会把原段清回左对齐', (tester) async {
+      final session = RichEditorSession(
+        initialMarkdown: '',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+
+      session.controller.replaceText(
+        0,
+        0,
+        '第一行',
+        const TextSelection.collapsed(offset: 3),
+      );
+      WenyouEditorFormatPolicy.applyAlignment(
+        session.controller,
+        WenyouTextAlignment.center,
+      );
+      session.controller.replaceText(
+        3,
+        0,
+        '\n',
+        const TextSelection.collapsed(offset: 4),
+      );
+      await tester.pump();
+      expect(
+        WenyouEditorFormatPolicy.alignmentSelection(
+          session.controller,
+        ).alignment,
+        WenyouTextAlignment.center,
+      );
+      expect(
+        MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+        '[wenyousite-align-v1-center]: #\n第一行\n<br />',
+      );
+      session.controller.replaceText(
+        4,
+        0,
+        '第二行',
+        const TextSelection.collapsed(offset: 7),
+      );
+      await tester.pump();
+
+      expect(await session.flush(), isTrue);
+      expect(
+        MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+        '[wenyousite-align-v1-center]: #\n第一行\n第二行',
+      );
+    });
+
+    testWidgets('居中段尾回车后立即输入也保持整个段落方向', (tester) async {
+      final session = RichEditorSession(
+        initialMarkdown: '',
+        onMarkdownChanged: (_) {},
+      );
+      addTearDown(session.dispose);
+
+      session.controller.replaceText(
+        0,
+        0,
+        '第一行',
+        const TextSelection.collapsed(offset: 3),
+      );
+      WenyouEditorFormatPolicy.applyAlignment(
+        session.controller,
+        WenyouTextAlignment.center,
+      );
+      session.controller.replaceText(
+        3,
+        0,
+        '\n',
+        const TextSelection.collapsed(offset: 4),
+      );
+      session.controller.replaceText(
+        4,
+        0,
+        '第二行',
+        const TextSelection.collapsed(offset: 7),
+      );
+      await tester.pump();
+
+      expect(await session.flush(), isTrue);
+      expect(
+        MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+        '[wenyousite-align-v1-center]: #\n第一行\n第二行',
+      );
+    });
   });
 
   group('移动编辑器结构复制保持块对齐', () {

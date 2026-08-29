@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
@@ -331,8 +332,9 @@ void main() {
     );
     expect(
       boldButton.style!.backgroundColor!.resolve({WidgetState.selected}),
-      tokens.actionSurface,
+      Colors.transparent,
     );
+    expect((boldButton.selectedIcon! as WenyouIcon).color, tokens.like);
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes(), isNot(contains('bold')));
@@ -382,8 +384,9 @@ void main() {
     );
     expect(
       inlineCodeButton.style!.backgroundColor!.resolve({WidgetState.selected}),
-      tokens.actionSurface,
+      Colors.transparent,
     );
+    expect((inlineCodeButton.selectedIcon! as WenyouIcon).color, tokens.like);
     await tester.tap(find.byKey(const Key('editor-bold')));
     await tester.pump();
     expect(inlineAttributes(), isNot(contains('code')));
@@ -1021,8 +1024,9 @@ void main() {
     expect(alignment.isSelected, isTrue);
     expect(
       alignment.style!.backgroundColor!.resolve({WidgetState.selected}),
-      tokens.actionSurface,
+      Colors.transparent,
     );
+    expect((alignment.selectedIcon! as WenyouIcon).color, tokens.like);
 
     await tester.tap(find.byTooltip('右对齐'));
     await tester.pumpAndSettle();

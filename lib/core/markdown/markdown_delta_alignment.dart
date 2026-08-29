@@ -100,6 +100,93 @@ abstract final class MarkdownDeltaAlignment {
     );
   }
 
+  /// Restores the paragraph alignment when Quill inserts the first text into
+  /// a new trailing line without carrying over the previous newline style.
+  ///
+  /// A bare Enter and the following IME/text insertion arrive as separate
+  /// document changes. Between those events the trailing empty line has no
+  /// alignment attribute, so the normal paragraph sanitizer would otherwise
+  /// interpret the completed line as a malformed mixed-alignment paragraph
+  /// and clear the original line as well.
+  static Delta inheritTrailingLineAlignment({
+    required Delta before,
+    required Delta after,
+    required Delta change,
+    required String imageEmbed,
+    required String horizontalRuleEmbed,
+  }) {
+    final insertion = _plainTextInsertion(change);
+    if (insertion == null) return Delta();
+    final beforeLines = _readLines(
+      before,
+      imageEmbed: imageEmbed,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
+    if (beforeLines.length < 2) return Delta();
+    final pendingLine = beforeLines.last;
+    final previousLine = beforeLines[beforeLines.length - 2];
+    if (pendingLine.startOffset != insertion.start ||
+        pendingLine.newlineOffset != insertion.start ||
+        !pendingLine.isPlainEmptyLine ||
+        !previousLine.isEligibleParagraphLine ||
+        previousLine.alignment == WenyouTextAlignment.left) {
+      return Delta();
+    }
+
+    final afterLines = _readLines(
+      after,
+      imageEmbed: imageEmbed,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
+    final completedLine = afterLines.last;
+    if (completedLine.startOffset != insertion.start ||
+        completedLine.newlineOffset != insertion.start + insertion.length ||
+        !completedLine.isEligibleParagraphLine ||
+        completedLine.alignment != WenyouTextAlignment.left) {
+      return Delta();
+    }
+    return _changesPatch([
+      _LineAlignmentChange(completedLine.newlineOffset, previousLine.alignment),
+    ]);
+  }
+
+  /// Carries an aligned trailing paragraph onto the empty line created by a
+  /// standalone Enter so the caret and toolbar do not jump back to the left
+  /// before the user types the next character.
+  static Delta inheritTrailingEmptyLineAlignment({
+    required Delta before,
+    required Delta after,
+    required String imageEmbed,
+    required String horizontalRuleEmbed,
+  }) {
+    final beforeLines = _readLines(
+      before,
+      imageEmbed: imageEmbed,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
+    final afterLines = _readLines(
+      after,
+      imageEmbed: imageEmbed,
+      horizontalRuleEmbed: horizontalRuleEmbed,
+    );
+    if (beforeLines.isEmpty || afterLines.length != beforeLines.length + 1) {
+      return Delta();
+    }
+    final previousLine = afterLines[afterLines.length - 2];
+    final pendingLine = afterLines.last;
+    if (!beforeLines.last.isEligibleParagraphLine ||
+        beforeLines.last.alignment == WenyouTextAlignment.left ||
+        !previousLine.isEligibleParagraphLine ||
+        previousLine.alignment != beforeLines.last.alignment ||
+        !pendingLine.isTrailingEmptyLine ||
+        pendingLine.alignment != WenyouTextAlignment.left) {
+      return Delta();
+    }
+    return _changesPatch([
+      _LineAlignmentChange(pendingLine.newlineOffset, previousLine.alignment),
+    ]);
+  }
+
   /// Removes inherited or malformed alignment and keeps every physical line
   /// in one Markdown paragraph on the same alignment value.
   static Delta sanitize(
@@ -117,7 +204,12 @@ abstract final class MarkdownDeltaAlignment {
 
     void flushParagraph() {
       if (paragraph.isEmpty) return;
-      final valid = paragraph.every((line) => line.isEligibleParagraphLine);
+      final last = paragraph.last;
+      final valid = paragraph.every(
+        (line) =>
+            line.isEligibleParagraphLine ||
+            (identical(line, last) && line.isTrailingEmptyLine),
+      );
       final stored = paragraph.map((line) => line.alignment).toSet();
       final alignment = valid && stored.length == 1
           ? stored.single
@@ -129,7 +221,12 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
-      if (line.isParagraphShape) {
+      final joinsTrailingEmptyLine =
+          line.isTrailingEmptyLine &&
+          paragraph.isNotEmpty &&
+          line.alignment != WenyouTextAlignment.left &&
+          line.alignment == paragraph.last.alignment;
+      if (line.isParagraphShape || joinsTrailingEmptyLine) {
         paragraph.add(line);
         continue;
       }
@@ -169,14 +266,24 @@ abstract final class MarkdownDeltaAlignment {
 
     void flushParagraph() {
       if (paragraph.isEmpty) return;
-      if (paragraph.every((line) => line.isEligibleParagraphLine)) {
+      final last = paragraph.last;
+      if (paragraph.every(
+        (line) =>
+            line.isEligibleParagraphLine ||
+            (identical(line, last) && line.isTrailingEmptyLine),
+      )) {
         blocks.add(_AlignmentBlock(List.unmodifiable(paragraph)));
       }
       paragraph.clear();
     }
 
     for (final line in lines) {
-      if (line.isParagraphShape) {
+      final joinsTrailingEmptyLine =
+          line.isTrailingEmptyLine &&
+          paragraph.isNotEmpty &&
+          line.alignment != WenyouTextAlignment.left &&
+          line.alignment == paragraph.last.alignment;
+      if (line.isParagraphShape || joinsTrailingEmptyLine) {
         paragraph.add(line);
         continue;
       }
@@ -219,6 +326,36 @@ abstract final class MarkdownDeltaAlignment {
       cursor = change.offset + 1;
     }
     return patch;
+  }
+
+  static ({int start, int length})? _plainTextInsertion(Delta change) {
+    int? insertionStart;
+    var insertionLength = 0;
+    var sourceOffset = 0;
+    var insertionEnded = false;
+    var hasMeaningfulText = false;
+    for (final operation in change.operations) {
+      if (operation.isDelete) return null;
+      if (operation.isRetain) {
+        if (insertionStart != null) insertionEnded = true;
+        sourceOffset += operation.length ?? 0;
+        continue;
+      }
+      final data = operation.data;
+      if (!operation.isInsert ||
+          data is! String ||
+          data.contains('\n') ||
+          insertionEnded) {
+        return null;
+      }
+      insertionStart ??= sourceOffset;
+      insertionLength += data.length;
+      hasMeaningfulText = hasMeaningfulText || data.trim().isNotEmpty;
+    }
+    if (insertionStart == null || insertionLength == 0 || !hasMeaningfulText) {
+      return null;
+    }
+    return (start: insertionStart, length: insertionLength);
   }
 
   static List<_DeltaLine> _readLines(
@@ -345,6 +482,17 @@ final class _DeltaLine {
       hasMeaningfulContent &&
       !hasRegularImage &&
       !hasHorizontalRule;
+
+  bool get isPlainEmptyLine =>
+      attributes['header'] == null &&
+      !_hasExcludedAttributes &&
+      attributes['wenyou_source_separator'] != true &&
+      !hasMeaningfulContent &&
+      !hasRegularImage &&
+      !hasHorizontalRule;
+
+  bool get isTrailingEmptyLine =>
+      isPlainEmptyLine && attributes['wenyou_source_break'] == false;
 }
 
 final class _AlignmentBlock {

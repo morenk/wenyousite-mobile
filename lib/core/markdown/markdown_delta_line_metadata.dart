@@ -163,6 +163,13 @@ class MarkdownDeltaLineMetadata {
       ..remove(sourceSeparatorAttribute);
     final isSourceSeparator =
         source?[sourceSeparatorAttribute] == true && !lineHasContent;
+    final onlyPendingAlignment =
+        !lineHasContent &&
+        isFinalNewline &&
+        attributes.keys
+            .where(_blockAttributes.contains)
+            .every((key) => key == 'align');
+    if (onlyPendingAlignment) attributes.remove('align');
     final hasBlockStyle =
         attributes.keys.any(_blockAttributes.contains) ||
         attributes[literalLineKey] == true;
