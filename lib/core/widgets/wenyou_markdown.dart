@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
@@ -181,7 +182,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     final normalized = MarkdownContent.literalizeUnsupported(
       MarkdownEmptyParagraphs.recoverLegacy(widget.data),
     );
-    final prepared = _prepareInternalReferences(normalized);
+    final prepared = _prepareInternalReferences(
+      MarkdownInlineBoundary.canonicalizeDocument(normalized),
+    );
     _normalizedData = prepared.data;
     _renderSegments = MarkdownAlignmentContract.renderSegments(prepared.data);
     _internalReferences = prepared.references;
