@@ -6,7 +6,6 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
@@ -18,6 +17,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_thread_context_ports.dart';
@@ -717,13 +717,14 @@ class _PostCard extends ConsumerWidget {
   ) async {
     switch (action) {
       case PostCardAction.copyText:
-        await copyPostCardValue(
+        await copyPostCardContent(
           context,
-          MarkdownClipboardText.project(
-            post.content,
-            diceLabels: _postDiceLabels(post.diceRolls),
-          ),
           '内容已复制',
+          write: () => ref.read(readerMarkdownClipboardWriterProvider)(
+            markdown: post.content,
+            diceLabels: _postDiceLabels(post.diceRolls),
+            scope: ref.read(sessionScopeProvider),
+          ),
         );
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');

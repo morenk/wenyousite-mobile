@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
@@ -18,6 +18,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -109,7 +110,7 @@ class ThreadDetailTransientFailure extends StatelessWidget {
   }
 }
 
-class ThreadSubthreadBody extends StatelessWidget {
+class ThreadSubthreadBody extends ConsumerWidget {
   const ThreadSubthreadBody(
     this.detail,
     this.subthread, {
@@ -127,7 +128,7 @@ class ThreadSubthreadBody extends StatelessWidget {
   bool get canManage => detail.canManageThread;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     final body = subthread.body;
     Widget buildContent(VoidCallback? openActions) => Padding(
@@ -205,13 +206,14 @@ class ThreadSubthreadBody extends StatelessWidget {
         switch (action) {
           case PostCardAction.copyText:
             unawaited(
-              copyPostCardValue(
+              copyPostCardContent(
                 context,
-                MarkdownClipboardText.project(
-                  body.markdown,
-                  diceLabels: threadDiceLabels(body.diceRolls),
-                ),
                 '正文已复制。',
+                write: () => ref.read(readerMarkdownClipboardWriterProvider)(
+                  markdown: body.markdown,
+                  diceLabels: threadDiceLabels(body.diceRolls),
+                  scope: ref.read(sessionScopeProvider),
+                ),
               ),
             );
           case PostCardAction.copyLink:
@@ -479,13 +481,14 @@ class ThreadFloorCard extends ConsumerWidget {
   ) async {
     switch (action) {
       case PostCardAction.copyText:
-        await copyPostCardValue(
+        await copyPostCardContent(
           context,
-          MarkdownClipboardText.project(
-            floor.body.markdown,
-            diceLabels: threadDiceLabels(floor.body.diceRolls),
-          ),
           '内容已复制',
+          write: () => ref.read(readerMarkdownClipboardWriterProvider)(
+            markdown: floor.body.markdown,
+            diceLabels: threadDiceLabels(floor.body.diceRolls),
+            scope: ref.read(sessionScopeProvider),
+          ),
         );
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');

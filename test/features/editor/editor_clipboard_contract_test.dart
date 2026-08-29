@@ -7,8 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_reader_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
@@ -22,6 +24,8 @@ void main() {
           as Map<String, dynamic>;
   final goldenCases = (contract['goldenCases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
+  Map<String, dynamic> readerFixture(String id) =>
+      goldenCases.singleWhere((fixture) => fixture['id'] == id);
 
   for (final fixture in goldenCases.where(
     (fixture) => fixture['kind'] != 'reader-copy',
@@ -251,6 +255,193 @@ void main() {
     );
   });
 
+  testWidgets('clipboard v1 富文本 fixture 经移动阅读菜单恢复完整样式', (tester) async {
+    final fixture = readerFixture('reader-rich-structure');
+    const scope = SessionScope(accountId: 'reader-account', generation: 7);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: fixture['markdown'] as String,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+
+    expect(gateway.snapshot.text, fixture['expectedPlainText']);
+    expect(gateway.snapshot.html, isNull);
+    expect(gateway.snapshot.marker, isNotNull);
+    expect(gateway.snapshot.text, isNot(contains('**')));
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      fixture['markdown'],
+    );
+
+    final delta = session.controller.document.toDelta();
+    final attributes = delta.operations
+        .map((operation) => operation.attributes ?? const <String, dynamic>{})
+        .toList(growable: false);
+    expect(attributes, contains(containsPair('header', 2)));
+    expect(attributes, contains(containsPair('bold', true)));
+    expect(attributes, contains(containsPair('italic', true)));
+    expect(attributes, contains(containsPair('strike', true)));
+    expect(attributes, contains(containsPair('code', true)));
+    expect(attributes, contains(containsPair('blockquote', true)));
+    expect(attributes, contains(containsPair('list', 'bullet')));
+    expect(
+      delta.operations.any((operation) {
+        final data = operation.data;
+        return data is Map &&
+            data.containsKey(MarkdownDeltaCodec.horizontalRuleEmbed);
+      }),
+      isTrue,
+    );
+  });
+
+  testWidgets('移动阅读菜单保留协议原子并把图片表情降为标签', (tester) async {
+    final fixture = readerFixture('reader-atoms-and-media');
+    const oldDiceId = '550e8400-e29b-41d4-a716-446655440000';
+    const scope = SessionScope(accountId: 'reader-account', generation: 8);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: fixture['markdown'] as String,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+
+    expect(gateway.snapshot.text, fixture['expectedPlainText']);
+    expect(gateway.snapshot.html, isNull);
+    expect(gateway.snapshot.text, isNot(contains('cdn.example.com')));
+    expect(gateway.snapshot.text, isNot(contains('cm1234567890123456789012')));
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+    final delta = session.controller.document.toDelta();
+    final nodes = MarkdownDeltaCodec.extractExtensionNodes(delta);
+    final markdown = MarkdownDeltaCodec.encode(delta);
+    expect(
+      nodes.map((node) => node['type']),
+      containsAll(['mention', 'mention_all_players', 'dice']),
+    );
+    expect(nodes.map((node) => node['type']), isNot(contains('image')));
+    expect(nodes.map((node) => node['type']), isNot(contains('sticker')));
+    expect(
+      nodes.singleWhere((node) => node['type'] == 'mention'),
+      containsPair('userId', 'user-zhang'),
+    );
+    expect(markdown, contains('[传送门](/threads/cmsewdo0h000x7qv6aa77ll1v)'));
+    expect(
+      nodes.singleWhere((node) => node['type'] == 'dice')['nodeId'],
+      isNot(oldDiceId),
+    );
+    expect(markdown, contains('@全体玩家'));
+    expect(markdown, contains(r'\[表情\] \[图片\]'));
+    expect(markdown, isNot(contains('cdn.example.com')));
+    expect(markdown, isNot(contains('cm1234567890123456789012')));
+  });
+
+  testWidgets('移动阅读菜单复制已结算骰子时只恢复未结算新节点', (tester) async {
+    final fixture = readerFixture(
+      'reader-settled-dice-discards-result-on-paste',
+    );
+    final roll =
+        (fixture['diceRolls'] as List<dynamic>).single as Map<String, dynamic>;
+    final oldDiceId = roll['nodeId'] as String;
+    const scope = SessionScope(accountId: 'reader-account', generation: 9);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: fixture['markdown'] as String,
+      diceLabels: {oldDiceId: '2d6+1 = 11'},
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    expect(gateway.snapshot.text, fixture['expectedPlainText']);
+    expect(gateway.snapshot.html, isNull);
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final delta = session.controller.document.toDelta();
+    final dice = MarkdownDeltaCodec.extractExtensionNodes(
+      delta,
+    ).singleWhere((node) => node['type'] == 'dice');
+    expect(dice['nodeId'], isNot(oldDiceId));
+    expect(dice['notation'], '2d6+1');
+    expect(MarkdownDeltaCodec.encode(delta), isNot(contains('= 11')));
+  });
+
+  test('移动阅读菜单写入失败会清除旧载荷和本次捕获', () async {
+    const scope = SessionScope(accountId: 'reader-account', generation: 10);
+    final store = WenyouEditorClipboardStore();
+    store.capture(
+      delta: MarkdownDeltaCodec.decode('旧结构').delta,
+      plainTextFallback: '旧结构',
+      operation: WenyouEditorClipboardOperation.copy,
+      marker: 'old-marker',
+      scope: scope,
+    );
+    final gateway = _RoundTripClipboardGateway()..failWrites = true;
+
+    await expectLater(
+      copyReaderMarkdownToClipboard(
+        markdown: '**新结构**',
+        scope: scope,
+        clipboardGateway: gateway,
+        clipboardStore: store,
+      ),
+      throwsA(isA<PlatformException>()),
+    );
+
+    expect(gateway.writeAttempts, 1);
+    expect(gateway.snapshot.marker, isNotNull);
+    expect(
+      store
+          .resolve(
+            gateway.snapshot.text!,
+            marker: gateway.snapshot.marker,
+            scope: scope,
+          )
+          .delta,
+      isNull,
+    );
+    expect(
+      store.resolve('旧结构', marker: 'old-marker', scope: scope).delta,
+      isNull,
+    );
+  });
+
   test('Web envelope 重新执行白名单并拒绝未知版本或重复载荷', () {
     const parser = WenyouSiteClipboardParser();
 
@@ -298,4 +489,22 @@ class _ContractClipboardGateway implements EditorClipboardGateway {
 
   @override
   Future<void> write({required String text, required String marker}) async {}
+}
+
+class _RoundTripClipboardGateway implements EditorClipboardGateway {
+  EditorClipboardSnapshot snapshot = const EditorClipboardSnapshot(text: null);
+  bool failWrites = false;
+  int writeAttempts = 0;
+
+  @override
+  Future<EditorClipboardSnapshot> read() async => snapshot;
+
+  @override
+  Future<void> write({required String text, required String marker}) async {
+    writeAttempts += 1;
+    snapshot = EditorClipboardSnapshot(text: text, marker: marker);
+    if (failWrites) {
+      throw PlatformException(code: 'clipboard-unavailable');
+    }
+  }
 }

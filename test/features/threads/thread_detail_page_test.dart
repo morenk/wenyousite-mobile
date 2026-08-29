@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/editor/editor.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/home/presentation/home_page.dart';
@@ -2713,6 +2714,50 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('添加子贴正文'), findsOneWidget);
   });
+
+  testWidgets('子贴正文和主题楼层复制菜单把原始 Markdown 交给结构化写入器', (tester) async {
+    final copiedMarkdown = <String>[];
+    await tester.pumpWidget(
+      _detailApp(
+        _FakeThreadDetailRepository(),
+        clipboardWriter:
+            ({required markdown, required diceLabels, required scope}) async {
+              copiedMarkdown.add(markdown);
+            },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final body = find.byKey(const Key('thread-body-container-subthread-1'));
+    await tester.scrollUntilVisible(
+      body,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    final bodyRect = tester.getRect(body);
+    await tester.longPressAt(Offset(bodyRect.right - 12, bodyRect.top + 12));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('thread-body-action-subthread-1-copy')),
+    );
+    await tester.pumpAndSettle();
+
+    final floor = find.byKey(const Key('thread-floor-card-floor-1'));
+    await tester.scrollUntilVisible(
+      floor,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.longPressAt(tester.getTopLeft(floor) + const Offset(8, 8));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-floor-action-floor-1-copy')));
+    await tester.pumpAndSettle();
+
+    expect(copiedMarkdown, [
+      _detail.subthreads.first.body!.markdown,
+      _mainFloor.body.markdown,
+    ]);
+  });
 }
 
 Future<void> _replacePostComposerText(WidgetTester tester, String text) async {
@@ -2916,6 +2961,7 @@ Widget _detailApp(
   PostDiscussionAuthorDirectory? authorDirectory,
   double? textScale,
   bool enableRenderDiagnostics = false,
+  ReaderMarkdownClipboardWriter? clipboardWriter,
 }) {
   final page = ThreadDetailPage(
     threadId: 'thread-1',
@@ -2932,6 +2978,10 @@ Widget _detailApp(
       postDiscussionAuthorDirectoryProvider.overrideWithValue(
         authorDirectory ?? _FakePostDiscussionAuthorDirectory(),
       ),
+      if (clipboardWriter != null)
+        readerMarkdownClipboardWriterProvider.overrideWithValue(
+          clipboardWriter,
+        ),
     ],
     child: MaterialApp(
       debugShowCheckedModeBanner: false,

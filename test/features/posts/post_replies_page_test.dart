@@ -16,6 +16,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_reader_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/mention_suggestions.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
@@ -1619,12 +1620,47 @@ void main() {
     expect(find.text('远行主题').hitTestable(), findsOneWidget);
     expect(find.byKey(const Key('post-reply-compose')), findsOneWidget);
   });
+
+  testWidgets('独立讨论楼层和回复复制菜单把原始 Markdown 交给结构化写入器', (tester) async {
+    final root = _rootWithContent('**原楼层粗体**');
+    final reply = _reply('reply-markdown', '> 回复引用', _otherAuthor);
+    final repository = _FakePostRepository(
+      onFetchPost: (_) async => root,
+      initialReplies: [reply],
+    );
+    final copiedMarkdown = <String>[];
+    final container = await _postContainer(
+      repository,
+      clipboardWriter:
+          ({required markdown, required diceLabels, required scope}) async {
+            copiedMarkdown.add(markdown);
+          },
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_postRepliesApp(container));
+    await _pumpUi(tester);
+
+    await _longPressPostMetadata(tester, 'root');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('post-card-action-root-copy')));
+    await tester.pumpAndSettle();
+
+    await _longPressPostMetadata(tester, 'reply-markdown');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('post-card-action-reply-markdown-copy')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(copiedMarkdown, [root.content, reply.content]);
+  });
 }
 
 Future<ProviderContainer> _postContainer(
   PostRepository repository, {
   String? userId,
   _FakeStickerRepository? stickerRepository,
+  ReaderMarkdownClipboardWriter? clipboardWriter,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -1648,6 +1684,10 @@ Future<ProviderContainer> _postContainer(
         (_) async =>
             const PostThreadContext(isPrivate: false, canManageThread: false),
       ),
+      if (clipboardWriter != null)
+        readerMarkdownClipboardWriterProvider.overrideWithValue(
+          clipboardWriter,
+        ),
     ],
   );
   if (userId != null) {

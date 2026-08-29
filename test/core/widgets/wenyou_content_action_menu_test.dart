@@ -4,7 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_reader_clipboard.dart';
 
 import '../../support/foundation_test_fonts.dart';
 
@@ -55,6 +60,56 @@ void main() {
     expect(attempts, 2);
     expect(find.text('复制失败'), findsNothing);
     expect(find.text('已复制'), findsOneWidget);
+  });
+
+  testWidgets('结构化复制失败后重试会重新捕获并写入新 marker', (tester) async {
+    const scope = SessionScope(accountId: 'reader-account', generation: 3);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RetryClipboardGateway();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () => unawaited(
+                copyPostCardContent(
+                  context,
+                  '结构已复制',
+                  write: () => copyReaderMarkdownToClipboard(
+                    markdown: '**粗体**',
+                    scope: scope,
+                    clipboardGateway: gateway,
+                    clipboardStore: store,
+                  ),
+                ),
+              ),
+              child: const Text('结构化复制'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('结构化复制'));
+    await tester.pumpAndSettle();
+    expect(gateway.markers, hasLength(1));
+    expect(find.text('复制失败'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('copy-failure-retry')));
+    await tester.pumpAndSettle();
+    expect(gateway.markers, hasLength(2));
+    expect(gateway.markers[1], isNot(gateway.markers[0]));
+    expect(find.text('结构已复制'), findsOneWidget);
+
+    final resolution = store.resolve(
+      gateway.text!,
+      marker: gateway.markers.last,
+      scope: scope,
+    );
+    expect(resolution.delta, isNotNull);
+    expect(MarkdownDeltaCodec.encode(resolution.delta!), '**粗体**');
   });
 
   testWidgets('从中央操作窗复制只写入一次并显示成功提示', (tester) async {
@@ -189,4 +244,24 @@ void main() {
     expect(find.text('回复'), findsNothing);
     expect(find.byKey(const Key('content-action-test-reply')), findsNothing);
   });
+}
+
+class _RetryClipboardGateway implements EditorClipboardGateway {
+  final markers = <String>[];
+  String? text;
+
+  @override
+  Future<EditorClipboardSnapshot> read() async => EditorClipboardSnapshot(
+    text: text,
+    marker: markers.isEmpty ? null : markers.last,
+  );
+
+  @override
+  Future<void> write({required String text, required String marker}) async {
+    this.text = text;
+    markers.add(marker);
+    if (markers.length == 1) {
+      throw PlatformException(code: 'clipboard-unavailable');
+    }
+  }
 }

@@ -109,11 +109,21 @@ Future<void> copyPostCardValue(
   BuildContext context,
   String value,
   String successMessage,
-) async {
+) => copyPostCardContent(
+  context,
+  successMessage,
+  write: () => Clipboard.setData(ClipboardData(text: value)),
+);
+
+Future<void> copyPostCardContent(
+  BuildContext context,
+  String successMessage, {
+  required Future<void> Function() write,
+}) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   while (context.mounted) {
     try {
-      await Clipboard.setData(ClipboardData(text: value));
+      await write();
     } on Object {
       await WidgetsBinding.instance.endOfFrame;
       if (!context.mounted) return;

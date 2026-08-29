@@ -3,6 +3,11 @@
 library;
 
 export 'presentation/editor_embed_builders.dart' show wenyouEditorEmbedBuilders;
+export 'presentation/editor_reader_clipboard.dart'
+    show
+        ReaderMarkdownClipboardWriter,
+        copyReaderMarkdownToClipboard,
+        readerMarkdownClipboardWriterProvider;
 export 'presentation/editor_text_styles.dart'
     show wenyouEditorLeadingBlockBuilder, wenyouEditorTextStyles;
 export 'presentation/editor_toolbar.dart'

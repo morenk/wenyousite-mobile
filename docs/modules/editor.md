@@ -34,6 +34,8 @@
 
 分隔线由工具栏经 `RichEditorSession` 的单次 Delta 事务插入独占块，撤销只回退该事务；canonical Markdown 固定为 `正文\n\n---\n\n正文`。`MarkdownEditorDocument` 统一描述段落软换行、H2/H3、引用、列表、分隔线、协议空段和兼容文本，保存时重新解析并比较块结构；结构不等价会保留当前正文并阻止本地快照、云草稿和发布覆盖。历史 `正文\n---` 继续按 Setext H2 显示，只在用户编辑保存后自然规范为 `## 正文`。编辑态与成稿态分隔线都使用正文可用宽度 50% 的居中短线圆点：线条为 Foundation `border` 1dp，中央圆点为 `brandStrong` 5dp，上下各保留 1.75em，不使用渐变、阴影、文字或动画。
 
+移动端阅读菜单同样接入上述 clipboard v1 进程载荷，但入口必须先用 `MarkdownDeltaCodec` 解码原始 Markdown，不能先投影可见文本：子贴正文、主题楼层及独立讨论楼层/回复因此可在本站编辑器内恢复标题、强调、删除线、代码、引用、列表、分隔线、传送门、提及和骰子。阅读态图片与表情会在捕获 Delta 时直接替换成字面 `[图片]` / `[表情]`，不保留 URL、资产 ID 或可恢复媒体节点；复制失败清除旧载荷，显式重试重新捕获并写入新 marker。原生文字选区复制仍是纯文本；Web 跨设备复制、进程重启和其他只转移 `text/plain` 的路径没有当前进程 marker，marker/会话不匹配或超过十分钟时也都按普通文本粘贴。
+
 ## 5. API operationId 与生成类型
 
 - 页面引导：`usersGetMe`、`threadCategoriesList`。
