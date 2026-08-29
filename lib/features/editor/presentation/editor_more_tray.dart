@@ -63,6 +63,33 @@ class WenyouEditorMoreTray extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final entries = <Widget>[
+      if (showAlignment)
+        _button(
+          key: const Key('editor-align-left'),
+          icon: WenyouIconIds.editorAlignLeft,
+          label: '左对齐',
+          selected: alignmentSelection.alignment == WenyouTextAlignment.left,
+          buttonEnabled: alignmentSelection.canApply,
+          onPressed: () => onAlignmentChanged(WenyouTextAlignment.left),
+        ),
+      if (showAlignment)
+        _button(
+          key: const Key('editor-align-center'),
+          icon: WenyouIconIds.editorAlignCenter,
+          label: '居中',
+          selected: alignmentSelection.alignment == WenyouTextAlignment.center,
+          buttonEnabled: alignmentSelection.canApply,
+          onPressed: () => onAlignmentChanged(WenyouTextAlignment.center),
+        ),
+      if (showAlignment)
+        _button(
+          key: const Key('editor-align-right'),
+          icon: WenyouIconIds.editorAlignRight,
+          label: '右对齐',
+          selected: alignmentSelection.alignment == WenyouTextAlignment.right,
+          buttonEnabled: alignmentSelection.canApply,
+          onPressed: () => onAlignmentChanged(WenyouTextAlignment.right),
+        ),
       if (showLink)
         _button(icon: WenyouIconIds.editorLink, label: '链接', onPressed: onLink),
       if (showInlineStyles)
@@ -92,33 +119,6 @@ class WenyouEditorMoreTray extends StatelessWidget {
           label: '有序列表',
           selected: orderedListSelected,
           onPressed: onOrderedList,
-        ),
-      if (showAlignment)
-        _button(
-          key: const Key('editor-align-left'),
-          icon: WenyouIconIds.editorAlignLeft,
-          label: '左对齐',
-          selected: alignmentSelection.alignment == WenyouTextAlignment.left,
-          buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => onAlignmentChanged(WenyouTextAlignment.left),
-        ),
-      if (showAlignment)
-        _button(
-          key: const Key('editor-align-center'),
-          icon: WenyouIconIds.editorAlignCenter,
-          label: '居中',
-          selected: alignmentSelection.alignment == WenyouTextAlignment.center,
-          buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => onAlignmentChanged(WenyouTextAlignment.center),
-        ),
-      if (showAlignment)
-        _button(
-          key: const Key('editor-align-right'),
-          icon: WenyouIconIds.editorAlignRight,
-          label: '右对齐',
-          selected: alignmentSelection.alignment == WenyouTextAlignment.right,
-          buttonEnabled: alignmentSelection.canApply,
-          onPressed: () => onAlignmentChanged(WenyouTextAlignment.right),
         ),
       if (showBlockStyles)
         _button(

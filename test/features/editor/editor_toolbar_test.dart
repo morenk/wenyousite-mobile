@@ -1081,6 +1081,16 @@ void main() {
       final secondRow = find.byKey(const Key('editor-more-row-1'));
       expect(firstRow, findsOneWidget);
       expect(secondRow, findsOneWidget);
+      for (final key in const [
+        Key('editor-align-left'),
+        Key('editor-align-center'),
+        Key('editor-align-right'),
+      ]) {
+        expect(
+          find.descendant(of: firstRow, matching: find.byKey(key)),
+          findsOneWidget,
+        );
+      }
       expect(
         find.descendant(of: firstRow, matching: find.byType(IconButton)),
         findsNWidgets(5),
