@@ -2,6 +2,8 @@
 
 ## 0.6.0+90 — 2026-08-28
 
+- Foundation 固定依赖升级至最新正式版 `v6.8.0`（`196deaf`）；本版本只调整 Web 工具栏优先级，Flutter Token、语义图标、品牌资源与移动编辑器契约保持兼容。
+
 - 同步后端契约 `5.14.1-dev.20260829.1`（revision `f16d6478764d205b2eea139819db2830f4a0c679`）：公网 `/meta.markdownContractVersion` 已从 3 激活为 4，既有移动端 v3/v4 兼容门控现正式开放普通段落和 H2/H3 对齐入口；Markdown v4、编辑器往返 v6、clipboard v2 fixture 与 API 形状均未变化，生成客户端仅更新版本标识。
 
 - 同步后端契约 `5.14.0-dev.20260829.1`（revision `b653263f383f570879a169132fbe478fc41ecb13`）：正文升级为 Markdown v4、编辑器往返 v6、clipboard v2；OpenAPI 生成客户端零漂移。升级 Foundation 至 `v6.7.0`，消费同源对齐图标与移动编辑器能力契约。

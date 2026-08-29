@@ -63,7 +63,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 10. 跨模块约束
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.7.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.7.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 
@@ -95,10 +95,10 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.14.1-dev.20260829.1`；Markdown v4；后端 `f16d6478764d205b2eea139819db2830f4a0c679`；Foundation `v6.7.0`（`431f156`）。
+契约 `5.14.1-dev.20260829.1`；Markdown v4；后端 `f16d6478764d205b2eea139819db2830f4a0c679`；Foundation `v6.8.0`（`196deaf`）。
 
 ## 14. 相关代码与架构文档
 
 根 router 与生命周期位于 `lib/app/app_router.dart`，主壳、认证、内容和账号路由组位于 `lib/app/routes/`。
 
-代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.7.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.7.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
