@@ -11,8 +11,9 @@ class IsolateImageCropProcessor implements ImageCropProcessor {
   const IsolateImageCropProcessor();
 
   @override
-  Future<CropImageSource> prepare(MediaUploadInput input) {
-    return compute(_prepareCropSource, input);
+  Future<CropImageSource> prepare(MediaUploadInput input) async {
+    final materialized = await input.materialize();
+    return compute(_prepareCropSource, materialized);
   }
 
   @override

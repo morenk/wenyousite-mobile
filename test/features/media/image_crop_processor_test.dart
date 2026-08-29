@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -61,6 +62,31 @@ void main() {
     expect(output.filename, 'cropped-image.jpg');
     expect(output.declaredContentType, 'image/jpeg');
     expect(output.bytes.length, lessThanOrEqualTo(maxMediaImageBytes));
+  });
+
+  test('通用图片处理会在解码前读取延迟加载的相册文件', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'wenyou-crop-source-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}${Platform.pathSeparator}source.png');
+    final bytes = _sourceInput().bytes;
+    await file.writeAsBytes(bytes);
+    final input = MediaUploadInput.fromPickedSource(
+      PickedMediaSource.file(
+        filename: 'source.png',
+        path: file.path,
+        length: bytes.length,
+        declaredContentType: 'image/png',
+      ),
+    );
+
+    final source = await processor.prepare(input);
+
+    expect(input.isMaterialized, isFalse);
+    expect(source.original.isMaterialized, isTrue);
+    expect(source.original.bytes, orderedEquals(bytes));
+    expect((source.width, source.height), (180, 90));
   });
 
   test('GIF 动图保留原始字节且不应用裁剪', () async {
