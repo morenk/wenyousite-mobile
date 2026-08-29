@@ -10,12 +10,20 @@ class UserActivitySummaryPanel extends StatelessWidget {
     required this.state,
     required this.onRetry,
     this.keyPrefix = 'user-activity',
+    this.onMomentsPressed,
+    this.onCreatedThreadsPressed,
+    this.onPlayedThreadsPressed,
+    this.onRepliesPressed,
     super.key,
   });
 
   final PublicUserState state;
   final VoidCallback onRetry;
   final String keyPrefix;
+  final VoidCallback? onMomentsPressed;
+  final VoidCallback? onCreatedThreadsPressed;
+  final VoidCallback? onPlayedThreadsPressed;
+  final VoidCallback? onRepliesPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +52,12 @@ class UserActivitySummaryPanel extends StatelessWidget {
               ),
             ),
             PublicUserActivityPhase.ready => _ActivitySummaryGrid(
+              keyPrefix: keyPrefix,
               summary: state.activitySummary!,
+              onMomentsPressed: onMomentsPressed,
+              onCreatedThreadsPressed: onCreatedThreadsPressed,
+              onPlayedThreadsPressed: onPlayedThreadsPressed,
+              onRepliesPressed: onRepliesPressed,
             ),
           },
         ],
@@ -54,33 +67,53 @@ class UserActivitySummaryPanel extends StatelessWidget {
 }
 
 class _ActivitySummaryGrid extends StatelessWidget {
-  const _ActivitySummaryGrid({required this.summary});
+  const _ActivitySummaryGrid({
+    required this.keyPrefix,
+    required this.summary,
+    required this.onMomentsPressed,
+    required this.onCreatedThreadsPressed,
+    required this.onPlayedThreadsPressed,
+    required this.onRepliesPressed,
+  });
 
+  final String keyPrefix;
   final PublicUserActivitySummary summary;
+  final VoidCallback? onMomentsPressed;
+  final VoidCallback? onCreatedThreadsPressed;
+  final VoidCallback? onPlayedThreadsPressed;
+  final VoidCallback? onRepliesPressed;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final items = [
       _ActivitySummaryItem(
+        key: Key('$keyPrefix-moments'),
         icon: WenyouIconIds.contentMoment,
         label: '发布动态',
         value: summary.momentCount,
+        onPressed: onMomentsPressed,
       ),
       _ActivitySummaryItem(
+        key: Key('$keyPrefix-created-threads'),
         icon: WenyouIconIds.contentThread,
         label: '创建主题',
         value: summary.createdThreadCount,
+        onPressed: onCreatedThreadsPressed,
       ),
       _ActivitySummaryItem(
+        key: Key('$keyPrefix-played-threads'),
         icon: WenyouIconIds.metricPlayers,
         label: '参与主题',
         value: summary.playedThreadCount,
+        onPressed: onPlayedThreadsPressed,
       ),
       _ActivitySummaryItem(
+        key: Key('$keyPrefix-replies'),
         icon: WenyouIconIds.actionReply,
         label: '累计回复',
         value: summary.replyCount,
+        onPressed: onRepliesPressed,
       ),
     ];
     return Column(
@@ -110,11 +143,14 @@ class _ActivitySummaryItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.onPressed,
+    super.key,
   });
 
   final String icon;
   final String label;
   final int? value;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -122,9 +158,8 @@ class _ActivitySummaryItem extends StatelessWidget {
     final displayValue = value == null
         ? '未公开'
         : formatWenyouCompactCount(value!);
-    return Semantics(
-      label: '$label，$displayValue',
-      excludeSemantics: true,
+    final content = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: tokens.space4),
         child: Row(
@@ -148,6 +183,27 @@ class _ActivitySummaryItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+    final action = value == null ? null : onPressed;
+    if (action == null) {
+      return Semantics(
+        container: true,
+        label: '$label，$displayValue',
+        excludeSemantics: true,
+        child: content,
+      );
+    }
+    return Semantics(
+      container: true,
+      button: true,
+      label: '查看$label，$displayValue',
+      onTap: action,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: action,
+        borderRadius: BorderRadius.circular(tokens.radius12),
+        child: content,
       ),
     );
   }

@@ -293,6 +293,62 @@ void main() {
     expect(repository.bookmarkCalls, 1);
   });
 
+  testWidgets('公开创作概览可进入用户动态与对应内容栏目', (tester) async {
+    final repository = _FakePublicUserRepository();
+    final router = GoRouter(
+      initialLocation: '/users/user-1',
+      routes: [
+        GoRoute(
+          path: '/users/:userId',
+          builder: (_, state) =>
+              PublicUserPage(userId: state.pathParameters['userId']!),
+        ),
+        GoRoute(
+          path: '/users/:userId/moments',
+          name: 'user-moments',
+          builder: (_, state) => Text('动态列表=${state.pathParameters['userId']}'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appCapabilitiesProvider.overrideWithValue(const AppCapabilities()),
+          publicUserRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final played = find.byKey(const Key('public-user-activity-played-threads'));
+    await tester.ensureVisible(played);
+    await tester.pumpAndSettle();
+    await tester.tap(played);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('home-thread-card-thread-played')),
+      findsOneWidget,
+    );
+    expect(repository.playedCalls, 1);
+
+    final replies = find.byKey(const Key('public-user-activity-replies'));
+    await tester.ensureVisible(replies);
+    await tester.pumpAndSettle();
+    await tester.tap(replies);
+    await tester.pumpAndSettle();
+    expect(find.text('回复正文预览'), findsOneWidget);
+    expect(repository.replyCalls, 1);
+
+    final moments = find.byKey(const Key('public-user-activity-moments'));
+    await tester.ensureVisible(moments);
+    await tester.pumpAndSettle();
+    await tester.tap(moments);
+    await tester.pumpAndSettle();
+    expect(find.text('动态列表=user-1'), findsOneWidget);
+  });
+
   testWidgets('关闭的隐私内容不显示页签也不触发请求', (tester) async {
     final repository = _FakePublicUserRepository(showPrivateContent: false);
     await tester.pumpWidget(_userApp(repository));

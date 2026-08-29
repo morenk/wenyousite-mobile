@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/users/application/public_user_controller.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
@@ -46,12 +49,14 @@ class MeContentTabBody extends ConsumerStatefulWidget {
     required this.tab,
     required this.userId,
     required this.userMomentsBuilder,
+    required this.onSelectTab,
     super.key,
   });
 
   final MeContentTab tab;
   final String userId;
   final MeUserMomentsBuilder? userMomentsBuilder;
+  final ValueChanged<MeContentTab> onSelectTab;
 
   @override
   ConsumerState<MeContentTabBody> createState() => _MeContentTabBodyState();
@@ -59,6 +64,8 @@ class MeContentTabBody extends ConsumerStatefulWidget {
 
 class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     with AutomaticKeepAliveClientMixin {
+  final GlobalKey _recentRepliesKey = GlobalKey();
+
   @override
   bool get wantKeepAlive => true;
 
@@ -115,9 +122,22 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
                   keyPrefix: 'me-activity',
                   state: state,
                   onRetry: notifier.retryActivitySummary,
+                  onMomentsPressed: () =>
+                      widget.onSelectTab(MeContentTab.moments),
+                  onCreatedThreadsPressed: () =>
+                      widget.onSelectTab(MeContentTab.createdThreads),
+                  onPlayedThreadsPressed: () =>
+                      widget.onSelectTab(MeContentTab.playedThreads),
+                  onRepliesPressed: _revealRecentReplies,
                 ),
                 SizedBox(height: context.wenyouTokens.space20),
-                const WenyouSectionHeader(title: '最近回复'),
+                KeyedSubtree(
+                  key: _recentRepliesKey,
+                  child: const WenyouSectionHeader(
+                    key: Key('me-recent-replies'),
+                    title: '最近回复',
+                  ),
+                ),
                 SizedBox(height: context.wenyouTokens.space8),
               ],
               PublicUserContentSectionView(
@@ -131,6 +151,21 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
           ),
         ),
       ],
+    );
+  }
+
+  void _revealRecentReplies() {
+    final targetContext = _recentRepliesKey.currentContext;
+    if (targetContext == null) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        targetContext,
+        alignment: 0,
+        duration: wenyouAnimationsDisabled(context)
+            ? Duration.zero
+            : context.wenyouTokens.feedbackDuration,
+        curve: wenyouStandardMotionCurve,
+      ),
     );
   }
 }

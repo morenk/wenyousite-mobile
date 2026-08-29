@@ -383,6 +383,7 @@ class _MeDashboardState extends ConsumerState<_MeDashboard> {
                       tab: MeContentTab.values[index],
                       userId: widget.profile.id,
                       userMomentsBuilder: widget.userMoments?.builder,
+                      onSelectTab: _selectTab,
                     )
                   : const SizedBox.expand(),
           ],

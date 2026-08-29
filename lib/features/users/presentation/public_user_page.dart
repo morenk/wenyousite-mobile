@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
@@ -21,14 +24,21 @@ import 'package:wenyousite_mobile/features/users/presentation/user_profile_heade
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
-class PublicUserPage extends ConsumerWidget {
+class PublicUserPage extends ConsumerStatefulWidget {
   const PublicUserPage({required this.userId, super.key});
 
   final String userId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = publicUserControllerProvider(userId);
+  ConsumerState<PublicUserPage> createState() => _PublicUserPageState();
+}
+
+class _PublicUserPageState extends ConsumerState<PublicUserPage> {
+  final GlobalKey _contentAreaTargetKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = publicUserControllerProvider(widget.userId);
     final state = ref.watch(provider);
     final session = ref.watch(sessionControllerProvider);
     final meState = session.isAuthenticated
@@ -101,12 +111,25 @@ class PublicUserPage extends ConsumerWidget {
                             onRetry: () => ref
                                 .read(provider.notifier)
                                 .retryActivitySummary(),
+                            onMomentsPressed: () => context.pushNamed(
+                              'user-moments',
+                              pathParameters: {'userId': widget.userId},
+                            ),
+                            onCreatedThreadsPressed: () =>
+                                _selectContentTab(PublicUserContentTab.created),
+                            onPlayedThreadsPressed: () =>
+                                _selectContentTab(PublicUserContentTab.played),
+                            onRepliesPressed: () =>
+                                _selectContentTab(PublicUserContentTab.replies),
                           ),
                           SizedBox(height: context.wenyouTokens.space12),
-                          PublicUserContentArea(
-                            key: const Key('public-user-content-area'),
-                            userId: userId,
-                            state: state,
+                          KeyedSubtree(
+                            key: _contentAreaTargetKey,
+                            child: PublicUserContentArea(
+                              key: const Key('public-user-content-area'),
+                              userId: widget.userId,
+                              state: state,
+                            ),
                           ),
                         ],
                       ),
@@ -115,6 +138,31 @@ class PublicUserPage extends ConsumerWidget {
           ),
         ),
       },
+    );
+  }
+
+  void _selectContentTab(PublicUserContentTab tab) {
+    unawaited(
+      ref
+          .read(publicUserControllerProvider(widget.userId).notifier)
+          .selectTab(tab),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revealContentArea());
+  }
+
+  void _revealContentArea() {
+    if (!mounted) return;
+    final targetContext = _contentAreaTargetKey.currentContext;
+    if (targetContext == null) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        targetContext,
+        alignment: 0,
+        duration: wenyouAnimationsDisabled(context)
+            ? Duration.zero
+            : context.wenyouTokens.feedbackDuration,
+        curve: wenyouStandardMotionCurve,
+      ),
     );
   }
 

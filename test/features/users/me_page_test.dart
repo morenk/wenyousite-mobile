@@ -137,6 +137,57 @@ void main() {
     expect(repository.fetchCalls, 1);
   });
 
+  testWidgets('本人创作概览可切换对应内容页签并定位最近回复', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final publicRepository = _FakePublicUserRepository();
+    final container = await _authenticatedContainer(
+      _FakeMeProfileRepository(),
+      publicUserRepository: publicRepository,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(NestedScrollView), const Offset(0, -240));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-activity-created-threads')));
+    await tester.pumpAndSettle();
+    expect(find.text('我创建的星海主题'), findsOneWidget);
+    expect(publicRepository.createdCalls, 1);
+
+    await tester.tap(
+      find.byKey(const ValueKey('me-content-MeContentTab.overview')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('me-activity-played-threads')));
+    await tester.pumpAndSettle();
+    expect(publicRepository.playedCalls, 1);
+
+    await tester.tap(
+      find.byKey(const ValueKey('me-content-MeContentTab.overview')),
+    );
+    await tester.pumpAndSettle();
+    final recentReplies = find.byKey(const Key('me-recent-replies'));
+    final repliesTopBefore = tester.getTopLeft(recentReplies).dy;
+    await tester.tap(find.byKey(const Key('me-activity-replies')));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(recentReplies).dy, lessThan(repliesTopBefore));
+
+    await tester.ensureVisible(find.byKey(const Key('me-activity-moments')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('me-activity-moments')));
+    await tester.pumpAndSettle();
+    expect(find.text('我的动态'), findsOneWidget);
+  });
+
   testWidgets('动态列表回到顶部后继续展开资料头并只从整页顶部刷新', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 900);

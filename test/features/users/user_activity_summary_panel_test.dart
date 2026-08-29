@@ -87,6 +87,46 @@ void main() {
     );
   });
 
+  testWidgets('创作概览的可见统计可点击且未公开项保持只读', (tester) async {
+    final opened = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: UserActivitySummaryPanel(
+            keyPrefix: 'activity-entry',
+            state: const PublicUserState(
+              activityPhase: PublicUserActivityPhase.ready,
+              activitySummary: PublicUserActivitySummary(
+                momentCount: 7,
+                createdThreadCount: 3,
+                playedThreadCount: null,
+                replyCount: 28,
+              ),
+            ),
+            onRetry: _noop,
+            onMomentsPressed: () => opened.add('moments'),
+            onCreatedThreadsPressed: () => opened.add('created'),
+            onPlayedThreadsPressed: () => opened.add('played'),
+            onRepliesPressed: () => opened.add('replies'),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('查看发布动态，7'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看创建主题，3'), findsOneWidget);
+    expect(find.bySemanticsLabel('参与主题，未公开'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看参与主题，未公开'), findsNothing);
+    expect(find.bySemanticsLabel('查看累计回复，28'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('activity-entry-moments')));
+    await tester.tap(find.byKey(const Key('activity-entry-created-threads')));
+    await tester.tap(find.byKey(const Key('activity-entry-replies')));
+
+    expect(opened, ['moments', 'created', 'replies']);
+  });
+
   testWidgets('创作概览失败保留问题编号和原地重试', (tester) async {
     var retried = false;
     await tester.pumpWidget(
