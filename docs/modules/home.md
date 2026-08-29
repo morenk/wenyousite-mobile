@@ -47,7 +47,7 @@
 
 主题卡作者头像缺图时复用共享首字符降级，活跃时间使用 Foundation 短时间并向辅助技术提供完整时间；玩家和回复计数达到阈值后紧凑显示，完整值保留在语义标签中。
 
-主题卡片、行内 `#标签` 链接与映射复用 threads/core 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
+主题卡片、纯文字 `#标签` 链接与映射复用 threads/core 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签以 Foundation `brandStrong` 呈现并进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
 
 ## 11. 测试场景与验收条件
 
@@ -56,7 +56,7 @@
 - [x] 分类复用全局共享线性页签并按数量和字号自动选择等宽或横滑，排序与状态使用锚点下拉框；选中反馈和 48dp 触控目标一致，320/360/400/600dp 不产生布局溢出。
 - [x] 主题流内容区左右滑动只切换相邻分类，并以 Foundation standard 180ms 提供方向反馈；切换期间分类页签位置不变且仅内容区展示骨架，短滑、首尾越界、纵向滚动和下拉刷新不受影响，减少动态效果时不播放位移。
 - [x] 主题卡分类只显示用户 label，已知、未知和缺失分类都有回归测试，不显示 `DEDUCTION` 或其他 slug。
-- [x] 320/360/400/600dp 固定独立卡片不会溢出；标题先于作者与上下文元信息，作者头像、可收缩作者名、等级与活跃时间在窄屏保持同一元信息行，头像缺失/非法/加载失败均安全降级；360dp 视觉基线覆盖无图卡片与整宽 16:9 单封面卡片，超契约多图响应也只渲染首图，无图不出现图片占位；页脚高度固定 48dp，标签可见高度为 32dp 且命中区为 48dp，内宽 `≤300 / 301～400 / >400dp` 分别最多显示一、二、三个标签，隐藏标签只显示不可点击 `+N`。
+- [x] 320/360/400/600dp 固定独立卡片不会溢出；标题先于作者与上下文元信息，作者头像、可收缩作者名、等级与活跃时间在窄屏保持同一元信息行，头像缺失/非法/加载失败均安全降级；360dp 视觉基线覆盖无图卡片与整宽 16:9 单封面卡片，超契约多图响应也只渲染首图，无图不出现图片占位；页脚高度固定 48dp，标签以无底色、描边或胶囊轮廓的纯文字入口保留 48dp 命中区，内宽 `≤300 / 301～400 / >400dp` 分别最多显示一、二、三个标签，隐藏标签只显示不可点击 `+N`。
 - [x] 加载、空、错、重试、到底、去重和无效 cursor 状态完整。
 - [x] 页面切换后 Riverpod 保留筛选，`PageStorageKey` 保留滚动位置。
 - [x] 主题卡片整卡进入正确的公开主题详情，系统返回后筛选、已加载数据与滚动分支不丢失。
@@ -68,8 +68,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.14.0-dev.20260829.1`；Markdown v3；后端 `c7ade12aa3348e9a79661184478812806a23f6e6`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.14.0-dev.20260829.1`；Markdown v3；后端 `c7ade12aa3348e9a79661184478812806a23f6e6`；Foundation `v6.6.2`（`eee4926`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.6.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.6.2/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。

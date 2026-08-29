@@ -45,23 +45,16 @@ class WenyouTagLink extends StatelessWidget {
       return Semantics(
         label: label,
         excludeSemantics: true,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: tokens.accentedBackground,
-            border: Border.all(color: tokens.brandSurface),
-            borderRadius: BorderRadius.circular(tokens.radiusPill),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.space4,
+            vertical: tokens.space4,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.space4,
-              vertical: tokens.space4,
-            ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textStyle,
-            ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textStyle,
           ),
         ),
       );
@@ -73,20 +66,36 @@ class WenyouTagLink extends StatelessWidget {
       excludeSemantics: true,
       child: TextButton(
         onPressed: onPressed,
-        style: TextButton.styleFrom(
-          foregroundColor: tokens.onAccentedBackground,
-          backgroundColor: tokens.accentedBackground,
-          minimumSize: Size(
-            tokens.minimumTouchTarget,
-            tokens.minimumTouchTarget,
+        style: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll(tokens.brandForeground),
+          backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          minimumSize: WidgetStatePropertyAll(
+            Size(tokens.minimumTouchTarget, tokens.minimumTouchTarget),
           ),
-          padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-          side: BorderSide(color: tokens.brandSurface),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusPill),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: tokens.space4),
+          ),
+          side: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.focused)
+                ? BorderSide(color: tokens.focus, width: 2)
+                : BorderSide.none,
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(tokens.radius12),
+            ),
           ),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: textStyle,
+          textStyle: WidgetStateProperty.resolveWith(
+            (states) => textStyle?.copyWith(
+              decoration: states.contains(WidgetState.hovered)
+                  ? TextDecoration.underline
+                  : TextDecoration.none,
+              decorationColor: tokens.brandForeground,
+            ),
+          ),
+          animationDuration: tokens.feedbackDuration,
         ),
         child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
@@ -96,6 +105,6 @@ class WenyouTagLink extends StatelessWidget {
 
 TextStyle? _textStyle(BuildContext context) =>
     Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: context.wenyouTokens.onAccentedBackground,
+      color: context.wenyouTokens.brandForeground,
       fontWeight: FontWeight.w600,
     );

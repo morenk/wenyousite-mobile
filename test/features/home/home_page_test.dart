@@ -355,6 +355,7 @@ void main() {
 
     await tester.pumpWidget(_homeApp(_FakeHomeRepository()));
     await tester.pumpAndSettle();
+    await _settleHomeBrandMark(tester);
 
     await expectLater(
       find.byKey(const Key('home-text-first-visual')),
@@ -372,6 +373,7 @@ void main() {
       _homeApp(_FakeHomeRepository(items: [_threadWithCover])),
     );
     await tester.pumpAndSettle();
+    await _settleHomeBrandMark(tester);
 
     await expectLater(
       find.byKey(const Key('home-text-first-visual')),
@@ -391,6 +393,15 @@ Widget _homeApp(HomeRepository repository) {
       ),
     ),
   );
+}
+
+Future<void> _settleHomeBrandMark(WidgetTester tester) async {
+  final mark = find.byKey(const Key('home-brand-mark'));
+  final image = tester.widget<Image>(
+    find.descendant(of: mark, matching: find.byType(Image)),
+  );
+  await precacheImage(image.image, tester.element(mark));
+  await tester.pump();
 }
 
 class _FakeHomeRepository implements HomeRepository {
@@ -456,7 +467,7 @@ final _thread = HomeThreadCardModel(
   playerCount: 2,
   postCount: 12,
   tipTotal: '8',
-  lastActivityAt: DateTime.now().subtract(const Duration(minutes: 5)),
+  lastActivityAt: DateTime.now().subtract(const Duration(hours: 5)),
 );
 
 final _deductionThread = HomeThreadCardModel(

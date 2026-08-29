@@ -108,12 +108,12 @@
 - [x] 首页与标签共享卡片映射只保留安全的作者头像与首张整宽 16:9 封面；具名头像缺失或加载失败时使用用户名首字符，空封面数组不预留图片区，320/360/400/600dp 两行元信息、两行摘要与固定 48dp 页脚不溢出，标签按内宽显示一至三个且剩余项只展示不可点击 `+N`。
 - [x] 楼主/协作者在 360/400/600dp 阅读区不常驻子贴正文编辑控件；已有正文与空正文都能从顶栏更多菜单进入正确编辑器，并有独立管理者首屏视觉基线。
 - [x] 默认子贴选择正确；题头选择器展开纵向完整目录并展示楼层数，相邻目录项有 1dp 轻分隔线，左右按钮可循环切换；当前子贴标题最多两行，任一入口都同步切换 Markdown 正文和对应楼层页。多子贴选择器在 320/360/400/600dp 下占满内容行，中央胶囊使用两侧 48dp 浮标之外的剩余宽度且高 36dp、普通态整栏 56dp、滚动冻结态 48dp，从冻结栏切换会回到新正文开头；单子贴不冻结，360dp 两倍字号仍保持双行标题和至少 48dp 操作区。
-- [x] 顶栏不显示“主题详情”；扁平题头保留最多两行的主题标题、单行横滑标签栏和子贴选择器，分类、状态、作者与统计不占题头高度；详情标签使用 Foundation accent/onAccent、primary 描边和 600 字重的 `#名称` 入口，外围与喜欢、收藏、订阅、发表入口在 360/400/600dp 都保持 48dp 命中区。
+- [x] 顶栏不显示“主题详情”；扁平题头保留最多两行的主题标题、单行横滑标签栏和子贴选择器，分类、状态、作者与统计不占题头高度；详情标签使用 Foundation `brandStrong`、600 字重的纯文字 `#名称` 入口，不带常驻底色、描边或胶囊轮廓，外围与喜欢、收藏、订阅、发表入口在 360/400/600dp 都保持 48dp 命中区。
 - [x] 共享等级徽标始终按内容宽度收缩；主题主阅读流固定最多展示前三条楼中楼，不按预览高度裁切或显示渐变；只要存在回复，即使只有一条也始终提供“展开楼中楼”入口进入独立讨论。
 - [x] 子贴正文直接位于阅读画布且没有嵌套 Card；楼层作者信息在紧凑单行内完成，头像以独立 48dp 入口进入作者主页且不触发回复，整层其余区域暴露“回复第 N 楼”点击动作；楼层不常驻回复数入口，短楼中楼点按后直接回复该条，楼层正文不论长度都直接全文显示。
 - [x] `subthread` 站内坐标直接打开指定子贴；`post` 坐标由服务端帖子归属事实定位，普通楼层留在主题上下文，具体回复直接进入独立讨论且返回后不循环打开；入口坐标只执行一次初始子贴定位，目标已是当前子贴也会完成消费，前后按钮与目录均可自由切换。帖子定位迟到时用户选择优先，无效子贴坐标不会在后续刷新中突然生效；坐标或登录会话变化可重新定位，显式失败重试会重新武装当前坐标。纵向拖动会释放楼层坐标吸附，后续布局变化不会拉回目标楼层。
-- [x] Markdown 内合法站内坐标复用 Foundation v6.6.1 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
-- [x] 提及、引用、行内代码、分隔线和主题标签按 Foundation v6.6.1 在阅读/编辑态统一；真实“引用 → 斜体 → 行内代码”正文保持斜体与代码视觉，50% 居中短线圆点和主题流 17sp/1.8 有组件、Codec、布局和 Golden 回归。
+- [x] Markdown 内合法站内坐标复用 Foundation v6.6.2 传送门胶囊；门图标、换行不截断、48dp 命中区、与前后文字同行、内部导航及代码内坐标保持原文有 Widget 与视觉回归。
+- [x] 提及、引用、行内代码、分隔线和主题标签按 Foundation v6.6.2 在阅读/编辑态统一；真实“引用 → 斜体 → 行内代码”正文保持斜体与代码视觉，50% 居中短线圆点、纯文字标签和主题流 17sp/1.8 有组件、Codec、布局和 Golden 回归。
 - [x] 普通正文图片在 320/360/400/600dp 下保持内容宽度、左对齐并独占一行，连续图片逐行排列；收藏表情仍与前后文字保持行内混排。
 - [x] 完整标题、作者、分类、状态、标签与统计事实仍安全映射；详情题头直接展示全部主题标签入口，其他辅助元数据不重复。骰子节点使用 Foundation 已结算/待掷语义色的无图标内联标签，异步结果只刷新自身，未知结果降级为 `表达式 = ?`，已结算结果可打开逐骰明细且 TalkBack 不重复朗读。
 - [x] 加载、重试、楼层错误和 404/无权限状态完整且不泄露私密信息。
@@ -168,8 +168,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.14.0-dev.20260829.1`；Markdown v3；后端 `c7ade12aa3348e9a79661184478812806a23f6e6`；Foundation `v6.6.1`（`d92a508`）。
+契约 `5.14.0-dev.20260829.1`；Markdown v3；后端 `c7ade12aa3348e9a79661184478812806a23f6e6`；Foundation `v6.6.2`（`eee4926`）。
 
 ## 14. 相关代码与架构文档
 
-主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.6.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.6.1/docs/platforms/mobile.md)。
+主题创建、阅读、管理端口与状态：`lib/features/threads/application/`；API 适配器：`lib/features/threads/data/`；页面：`lib/features/threads/presentation/`；通用编辑会话与工具栏：`lib/features/editor/`；标签代码：`lib/features/tags/`。参见[编辑器](editor.md)、[Foundation 实现审计](../architecture/foundation-compliance-audit.md)、[主题帖测试审计](../architecture/thread-detail-test-audit.md)、[草稿](drafts.md)、[楼层与回复](posts.md)、[标签](tags.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)、[Foundation v6.6.2 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.6.2/docs/platforms/mobile.md)。

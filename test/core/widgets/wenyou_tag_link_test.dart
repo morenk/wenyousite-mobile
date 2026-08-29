@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 
 void main() {
-  testWidgets('阅读态标签使用 Foundation 品牌色对并保留移动端命中区', (tester) async {
+  testWidgets('阅读态标签使用 Foundation 纯文字入口并保留移动端命中区', (tester) async {
     var tapped = false;
     await tester.pumpWidget(
       MaterialApp(
@@ -24,15 +24,17 @@ void main() {
     final states = <WidgetState>{};
     expect(
       button.style?.foregroundColor?.resolve(states),
-      WenyouFoundationPalette.onAccent,
+      WenyouFoundationPalette.brandStrong,
+    );
+    expect(button.style?.backgroundColor?.resolve(states), Colors.transparent);
+    expect(button.style?.side?.resolve(states), BorderSide.none);
+    expect(
+      button.style?.side?.resolve({WidgetState.focused})?.color,
+      WenyouFoundationPalette.brandStrong,
     );
     expect(
-      button.style?.backgroundColor?.resolve(states),
-      WenyouFoundationPalette.accent,
-    );
-    expect(
-      button.style?.side?.resolve(states)?.color,
-      WenyouFoundationPalette.primary,
+      button.style?.textStyle?.resolve({WidgetState.hovered})?.decoration,
+      TextDecoration.underline,
     );
     expect(button.style?.minimumSize?.resolve(states), const Size(48, 48));
     expect(
@@ -58,22 +60,28 @@ void main() {
 
     expect(find.byType(OutlinedButton), findsNothing);
     expect(find.byType(TextButton), findsNothing);
-    final surface = tester.widget<DecoratedBox>(
-      find.descendant(
-        of: find.byType(WenyouTagLink),
-        matching: find.byType(DecoratedBox),
-      ),
-    );
-    final decoration = surface.decoration as BoxDecoration;
-    expect(decoration.color, WenyouFoundationPalette.accent);
-    expect(
-      (decoration.border! as Border).top.color,
-      WenyouFoundationPalette.primary,
-    );
+    expect(find.byType(DecoratedBox), findsNothing);
     expect(tester.getSize(find.byType(WenyouTagLink)).height, lessThan(32));
     final text = tester.widget<Text>(find.text('#太空歌剧'));
     expect(text.style?.fontSize, 12);
     expect(text.style?.fontWeight, FontWeight.w600);
-    expect(text.style?.color, WenyouFoundationPalette.onAccent);
+    expect(text.style?.color, WenyouFoundationPalette.brandStrong);
+  });
+
+  testWidgets('黑夜模式标签使用对应品牌文字色', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: Scaffold(
+          body: WenyouTagLink(name: '太空歌剧', onPressed: () {}),
+        ),
+      ),
+    );
+
+    final button = tester.widget<TextButton>(find.byType(TextButton));
+    expect(
+      button.style?.foregroundColor?.resolve({}),
+      WenyouFoundationDarkPalette.brandStrong,
+    );
   });
 }
