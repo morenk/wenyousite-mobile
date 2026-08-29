@@ -1348,6 +1348,126 @@ void main() {
     expect(repository.requestedSubthreads.last, 'subthread-2');
   });
 
+  testWidgets('最新发言按钮位于搜索与更多之间并可重复定位主楼层', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      latestPost: _latestFloorPost,
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-2',
+        floor: _targetFloor,
+      ),
+    );
+    await tester.pumpWidget(_detailRouterApp(repository));
+    await tester.pumpAndSettle();
+
+    final search = find.byKey(const Key('thread-detail-search'));
+    final latest = find.byKey(const Key('thread-detail-latest'));
+    final more = find.byKey(const Key('thread-detail-more'));
+    expect(latest, findsOneWidget);
+    expect(tester.getCenter(search).dx, lessThan(tester.getCenter(latest).dx));
+    expect(tester.getCenter(latest).dx, lessThan(tester.getCenter(more).dx));
+
+    await tester.tap(latest);
+    await tester.pumpAndSettle();
+
+    expect(repository.latestThreadIds, ['thread-1']);
+    expect(repository.targetPostIds, ['floor-target']);
+    expect(find.text('目标楼层内容'), findsOneWidget);
+    expect(find.text('支线正文'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('thread-detail-latest')));
+    await tester.pumpAndSettle();
+
+    expect(repository.latestThreadIds, ['thread-1', 'thread-1']);
+    expect(repository.targetPostIds, ['floor-target', 'floor-target']);
+  });
+
+  testWidgets('最新发言为楼中楼时直接进入父楼层讨论并聚焦回复', (tester) async {
+    final repository = _FakeThreadDetailRepository(
+      latestPost: ThreadLatestPostModel(
+        id: 'reply-latest',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-1',
+        parentPostId: 'floor-1',
+        createdAt: _recentFixtureTime,
+      ),
+    );
+    await tester.pumpWidget(_detailRouterApp(repository));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('thread-detail-latest')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('thread-1/floor-1/reply-latest'), findsOneWidget);
+    expect(repository.latestThreadIds, ['thread-1']);
+    expect(repository.targetPostIds, isEmpty);
+  });
+
+  testWidgets('最新发言定位期间禁用重复请求', (tester) async {
+    final completer = Completer<ThreadLatestPostModel>();
+    final repository = _FakeThreadDetailRepository(
+      latestPostFuture: completer.future,
+      postTarget: ThreadPostTargetModel(
+        requestedPostId: 'floor-target',
+        threadId: 'thread-1',
+        subthreadId: 'subthread-2',
+        floor: _targetFloor,
+      ),
+    );
+    await tester.pumpWidget(_detailRouterApp(repository));
+    await tester.pumpAndSettle();
+
+    final latest = find.byKey(const Key('thread-detail-latest'));
+    await tester.tap(latest);
+    await tester.pump();
+    final iconButton = tester.widget<IconButton>(
+      find.descendant(of: latest, matching: find.byType(IconButton)),
+    );
+    expect(iconButton.onPressed, isNull);
+    await tester.tap(latest);
+    expect(repository.latestThreadIds, ['thread-1']);
+
+    completer.complete(_latestFloorPost);
+    await tester.pumpAndSettle();
+    expect(repository.latestThreadIds, ['thread-1']);
+  });
+
+  testWidgets('空主题禁用最新发言且删除竞态显示明确提示', (tester) async {
+    final emptyRepository = _FakeThreadDetailRepository(
+      detail: _copyThreadDetail(
+        _detail,
+        subthreads: _detail.subthreads,
+        postCount: 0,
+      ),
+      mainFloors: const [],
+    );
+    await tester.pumpWidget(_detailRouterApp(emptyRepository));
+    await tester.pumpAndSettle();
+
+    final emptyButton = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byKey(const Key('thread-detail-latest')),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(emptyButton.onPressed, isNull);
+
+    final raceRepository = _FakeThreadDetailRepository(
+      latestFailure: const ApiFailure(
+        userMessage: '目标不存在',
+        reason: FailureReason.notFound,
+        businessCode: 40403,
+      ),
+    );
+    await tester.pumpWidget(_detailRouterApp(raceRepository));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('thread-detail-latest')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('当前主题还没有楼层或回复。'), findsOneWidget);
+  });
+
   testWidgets('帖子入口尚在定位时用户切换子贴，迟到结果不再覆盖用户选择', (tester) async {
     final completer = Completer<ThreadPostTargetModel>();
     final repository = _FakeThreadDetailRepository(
@@ -3136,6 +3256,9 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     this.loadMoreFailure,
     this.postTarget,
     this.postTargetFuture,
+    this.latestPost,
+    this.latestPostFuture,
+    this.latestFailure,
     ThreadDetailModel? detail,
     ThreadFloorModel? mainFloor,
     List<ThreadFloorModel>? mainFloors,
@@ -3148,6 +3271,9 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final ApiFailure? loadMoreFailure;
   final ThreadPostTargetModel? postTarget;
   final Future<ThreadPostTargetModel>? postTargetFuture;
+  final ThreadLatestPostModel? latestPost;
+  final Future<ThreadLatestPostModel>? latestPostFuture;
+  final ApiFailure? latestFailure;
   final ThreadDetailModel detail;
   final List<ThreadFloorModel> mainFloors;
   final List<ThreadFloorModel>? nextFloors;
@@ -3155,6 +3281,7 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
   final List<ThreadFloorOrder> requestedOrders = [];
   final List<String?> requestedAuthors = [];
   final List<String> targetPostIds = [];
+  final List<String> latestThreadIds = [];
   int threadCalls = 0;
 
   @override
@@ -3169,6 +3296,14 @@ class _FakeThreadDetailRepository implements ThreadDetailRepository {
     targetPostIds.add(postId);
     if (postTargetFuture case final future?) return future;
     return postTarget!;
+  }
+
+  @override
+  Future<ThreadLatestPostModel> fetchLatestPost(String threadId) async {
+    latestThreadIds.add(threadId);
+    if (latestFailure case final failure?) throw failure;
+    if (latestPostFuture case final future?) return future;
+    return latestPost ?? _latestFloorPost;
   }
 
   @override
@@ -3375,6 +3510,7 @@ ThreadDetailModel _copyThreadDetail(
   bool? isCurrentUserOwner,
   String? currentUserId,
   int? likeCount,
+  int? postCount,
 }) {
   return ThreadDetailModel(
     id: source.id,
@@ -3397,7 +3533,7 @@ ThreadDetailModel _copyThreadDetail(
     tipTotal: source.tipTotal,
     memberCount: source.memberCount,
     playerCount: source.playerCount,
-    postCount: source.postCount,
+    postCount: postCount ?? source.postCount,
     tags: source.tags,
     subthreads: subthreads,
     defaultSubthreadId: subthreads.firstOrNull?.id,
@@ -3732,6 +3868,13 @@ final _targetFloor = ThreadFloorModel(
   isDeleted: false,
   replyCount: 0,
   replies: const [],
+);
+
+final _latestFloorPost = ThreadLatestPostModel(
+  id: 'floor-target',
+  threadId: 'thread-1',
+  subthreadId: 'subthread-2',
+  createdAt: _recentFixtureTime,
 );
 
 final _homeThread = HomeThreadCardModel(

@@ -7,6 +7,8 @@ abstract interface class ThreadDetailRepository {
 
   Future<ThreadPostTargetModel> fetchPostTarget(String postId);
 
+  Future<ThreadLatestPostModel> fetchLatestPost(String threadId);
+
   Future<CursorPage<ThreadFloorModel>> fetchFloors({
     required String subthreadId,
     String? cursor,
@@ -30,6 +32,11 @@ class _UnboundThreadDetailRepository implements ThreadDetailRepository {
 
   @override
   Future<ThreadPostTargetModel> fetchPostTarget(String postId) {
+    return Future.error(_error());
+  }
+
+  @override
+  Future<ThreadLatestPostModel> fetchLatestPost(String threadId) {
     return Future.error(_error());
   }
 

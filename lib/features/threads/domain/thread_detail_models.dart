@@ -210,6 +210,22 @@ class ThreadPostTargetModel {
   final String? focusedReplyId;
 }
 
+class ThreadLatestPostModel {
+  const ThreadLatestPostModel({
+    required this.id,
+    required this.threadId,
+    required this.subthreadId,
+    required this.createdAt,
+    this.parentPostId,
+  });
+
+  final String id;
+  final String threadId;
+  final String subthreadId;
+  final String? parentPostId;
+  final DateTime createdAt;
+}
+
 enum ThreadFloorOrder {
   oldest('OLDEST', '最早在前'),
   newest('NEWEST', '最新在前');

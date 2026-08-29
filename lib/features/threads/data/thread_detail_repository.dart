@@ -78,6 +78,32 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
   }
 
   @override
+  Future<ThreadLatestPostModel> fetchLatestPost(String threadId) async {
+    try {
+      final response = await _postsApi.postsFindLatestInThread(
+        threadId: threadId,
+      );
+      final dto = response.data?.data;
+      if (dto == null) {
+        throw ApiFailure.contractViolation(
+          userMessage: '最新发言加载失败，请稍后重试。',
+          diagnosticCode: 'THREAD_LATEST_POST_MISSING',
+        );
+      }
+      _validateLatestPost(dto, expectedThreadId: threadId);
+      return ThreadLatestPostModel(
+        id: dto.id,
+        threadId: dto.threadId,
+        subthreadId: dto.subthreadId,
+        parentPostId: dto.parentPostId,
+        createdAt: dto.createdAt,
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
   Future<CursorPage<ThreadFloorModel>> fetchFloors({
     required String subthreadId,
     String? cursor,
@@ -212,6 +238,26 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
                 parent.id != dto.parentPostId ||
                 parent.floorNumber == null))) {
       throw const ApiFailure(userMessage: message);
+    }
+  }
+
+  void _validateLatestPost(
+    LatestThreadPostResponseDto dto, {
+    required String expectedThreadId,
+  }) {
+    const message = '最新发言已经发生变化，请刷新主题后重试。';
+    final id = dto.id.trim();
+    final subthreadId = dto.subthreadId.trim();
+    final parentPostId = dto.parentPostId?.trim();
+    if (id.isEmpty ||
+        dto.threadId != expectedThreadId ||
+        subthreadId.isEmpty ||
+        (dto.parentPostId != null &&
+            (parentPostId!.isEmpty || parentPostId == id))) {
+      throw ApiFailure.contractViolation(
+        userMessage: message,
+        diagnosticCode: 'THREAD_LATEST_POST_MISMATCH',
+      );
     }
   }
 

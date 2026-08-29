@@ -7,7 +7,6 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -22,6 +21,7 @@ import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.d
 import 'package:wenyousite_mobile/features/social/application/thread_subscription_controller.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_app_bar_actions.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_bottom_bar.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_overview.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_render_diagnostics.dart';
@@ -196,7 +196,21 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           key: const Key('thread-detail-back'),
           onPressed: _leaveDetail,
         ),
-        actions: _threadAppBarActions(state, provider),
+        actions: buildThreadDetailAppBarActions(
+          threadId: widget.threadId,
+          state: state,
+          onSearch: () => context.pushNamed(
+            'thread-post-search',
+            pathParameters: {'threadId': widget.threadId},
+          ),
+          onLatestTarget: _openLatestPost,
+          onSelected: (action) => _handleThreadAction(
+            action,
+            state.detail!,
+            provider,
+            selectedSubthread: state.selectedSubthread,
+          ),
+        ),
       ),
       body: switch (state.phase) {
         ThreadDetailPhase.loading => const ThreadDetailLoadingState(),
@@ -281,92 +295,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     subthreadId: widget.entryTarget.subthreadId,
   );
 
-  List<Widget> _threadAppBarActions(
-    ThreadDetailState state,
-    AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
-    provider,
-  ) {
-    return [
-      IconButton(
-        key: const Key('thread-detail-search'),
-        tooltip: '搜索主题内容',
-        onPressed: () => context.pushNamed(
-          'thread-post-search',
-          pathParameters: {'threadId': widget.threadId},
-        ),
-        icon: const WenyouIcon(WenyouIconIds.actionSearch),
-      ),
-      if (state.detail case final detail?
-          when !detail.isCurrentUserOwner || detail.canManageThread)
-        WenyouAnchoredActionBubble<_ThreadDetailAction>(
-          actions: [
-            if (detail.canManageThread)
-              WenyouPopoverAction(
-                value: _ThreadDetailAction.editBody,
-                icon: state.selectedSubthread?.body == null
-                    ? WenyouIconIds.contentDraft
-                    : WenyouIconIds.actionEdit,
-                label: state.selectedSubthread?.body == null ? '添加正文' : '编辑正文',
-                semanticsLabel: state.selectedSubthread?.body == null
-                    ? '添加当前子贴正文'
-                    : '编辑当前子贴正文',
-                enabled: state.selectedSubthread != null,
-                key: const Key('thread-detail-edit-body'),
-              ),
-            if (detail.canManageThread)
-              const WenyouPopoverAction(
-                value: _ThreadDetailAction.manage,
-                icon: WenyouIconIds.actionFilter,
-                label: '管理',
-                semanticsLabel: '管理主题',
-                key: Key('thread-detail-manage'),
-              ),
-            if (!detail.isCurrentUserOwner)
-              const WenyouPopoverAction(
-                value: _ThreadDetailAction.tip,
-                icon: WenyouIconIds.actionTip,
-                label: '加油',
-                semanticsLabel: '为创作者加油',
-                key: Key('thread-detail-tip'),
-              ),
-            if (!detail.isPrivate && !detail.isCurrentUserOwner)
-              const WenyouPopoverAction(
-                value: _ThreadDetailAction.report,
-                icon: WenyouIconIds.actionReport,
-                label: '举报',
-                semanticsLabel: '举报主题',
-                tone: WenyouPopoverActionTone.destructive,
-                key: Key('thread-detail-report'),
-              ),
-            if (detail.isCurrentUserPlayer && !detail.isCurrentUserOwner)
-              const WenyouPopoverAction(
-                value: _ThreadDetailAction.exitPlayer,
-                icon: WenyouIconIds.actionLogout,
-                label: '退出玩家身份',
-                semanticsLabel: '退出当前主题的玩家身份',
-                tone: WenyouPopoverActionTone.destructive,
-                key: Key('thread-detail-exit-player'),
-              ),
-          ],
-          placement: WenyouPopoverPlacement.below,
-          alignment: WenyouPopoverAlignment.end,
-          semanticLabel: '主题操作',
-          onSelected: (action) => _handleThreadAction(
-            action,
-            detail,
-            provider,
-            selectedSubthread: state.selectedSubthread,
-          ),
-          anchorBuilder: (context, handle) => IconButton(
-            key: const Key('thread-detail-more'),
-            tooltip: '更多主题操作',
-            onPressed: handle.toggle,
-            icon: const WenyouIcon(WenyouIconIds.actionMore),
-          ),
-        ),
-    ];
-  }
-
   void _leaveDetail() {
     final navigator = Navigator.maybeOf(context);
     if (navigator?.canPop() ?? false) {
@@ -386,20 +314,20 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }
 
   Future<void> _handleThreadAction(
-    _ThreadDetailAction action,
+    ThreadDetailAppBarAction action,
     ThreadDetailModel detail,
     AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
     provider, {
     required ThreadSubthreadModel? selectedSubthread,
   }) async {
     switch (action) {
-      case _ThreadDetailAction.editBody:
+      case ThreadDetailAppBarAction.editBody:
         if (selectedSubthread != null) {
           await _compose(threadDetailBodyTarget(detail, selectedSubthread));
         }
-      case _ThreadDetailAction.manage:
+      case ThreadDetailAppBarAction.manage:
         await _openManagement();
-      case _ThreadDetailAction.tip:
+      case ThreadDetailAppBarAction.tip:
         await showWenyouTipFlow(
           context: context,
           ref: ref,
@@ -411,7 +339,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           returnTo: _location,
           onSuccess: (_) => ref.read(provider.notifier).refresh(),
         );
-      case _ThreadDetailAction.report:
+      case ThreadDetailAppBarAction.report:
         await showWenyouReportFlow(
           context: context,
           ref: ref,
@@ -419,7 +347,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           targetLabel: '这个主题',
           returnTo: _location,
         );
-      case _ThreadDetailAction.exitPlayer:
+      case ThreadDetailAppBarAction.exitPlayer:
         await showThreadPlayerExitSheet(
           context: context,
           threadId: detail.id,
@@ -862,6 +790,29 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     );
   }
 
+  void _openLatestPost(ThreadLatestPostModel target) {
+    final parentPostId = target.parentPostId;
+    if (parentPostId != null) {
+      context.pushNamed(
+        'post-replies',
+        pathParameters: {'threadId': widget.threadId, 'postId': parentPostId},
+        queryParameters: {'post': target.id},
+      );
+      return;
+    }
+    if (widget.entryTarget.postId == target.id) {
+      _targetReveal.reset();
+      _targetFilterRestore.reset();
+      _entryTargetCoordinator.rearmForRetry();
+      ref.invalidate(threadPostTargetProvider(target.id));
+      setState(() {});
+      return;
+    }
+    context.replace(
+      AppRouteLocations.thread(widget.threadId, postId: target.id),
+    );
+  }
+
   Future<void> _deleteFloor(ThreadFloorModel floor) async {
     final state = ref.read(_detailProvider);
     final detail = state.detail;
@@ -894,5 +845,3 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     await ref.read(_detailProvider.notifier).refresh();
   }
 }
-
-enum _ThreadDetailAction { editBody, manage, tip, report, exitPlayer }

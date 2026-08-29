@@ -219,6 +219,55 @@ void main() {
     expect(target.floor.replies.single.body.markdown, '目标回复');
   });
 
+  test('主题最新发言坐标映射主楼层与楼中楼回复', () async {
+    for (final parentPostId in <String?>[null, 'floor-7']) {
+      final postsApi = _MockPostsApi();
+      when(
+        () => postsApi.postsFindLatestInThread(threadId: 'thread-1'),
+      ).thenAnswer(
+        (_) async => _latestPostResponse(parentPostId: parentPostId),
+      );
+
+      final target = await ApiThreadDetailRepository(
+        _MockThreadsApi(),
+        postsApi,
+      ).fetchLatestPost('thread-1');
+
+      verify(
+        () => postsApi.postsFindLatestInThread(threadId: 'thread-1'),
+      ).called(1);
+      expect(target.id, parentPostId == null ? 'floor-8' : 'reply-8');
+      expect(target.threadId, 'thread-1');
+      expect(target.subthreadId, 'subthread-early');
+      expect(target.parentPostId, parentPostId);
+      expect(target.createdAt, DateTime.utc(2026, 8, 29, 12));
+    }
+  });
+
+  test('主题最新发言拒绝空响应与错主题或无效父坐标', () async {
+    final responses = <Response<PostsFindLatestInThread200Response>>[
+      Response(requestOptions: RequestOptions(path: '/latest')),
+      _latestPostResponse(threadId: 'other-thread'),
+      _latestPostResponse(subthreadId: ' '),
+      _latestPostResponse(parentPostId: 'reply-8'),
+    ];
+
+    for (final response in responses) {
+      final postsApi = _MockPostsApi();
+      when(
+        () => postsApi.postsFindLatestInThread(threadId: 'thread-1'),
+      ).thenAnswer((_) async => response);
+
+      await expectLater(
+        ApiThreadDetailRepository(
+          _MockThreadsApi(),
+          postsApi,
+        ).fetchLatestPost('thread-1'),
+        throwsA(isA<ApiFailure>()),
+      );
+    }
+  });
+
   test('主题详情拒绝空响应、错主题和跨主题子贴', () async {
     final responses = <Response<ThreadsFindById200Response>>[
       Response(requestOptions: RequestOptions(path: '/threads/thread-1')),
@@ -433,6 +482,32 @@ Response<ThreadsFindById200Response> _threadDetailResponse({
         ..code = ApiSuccessEnvelopeCodeEnum.number0
         ..message = 'ok'
         ..data.replace(detail ?? _threadDetail()),
+    ),
+  );
+}
+
+Response<PostsFindLatestInThread200Response> _latestPostResponse({
+  String threadId = 'thread-1',
+  String subthreadId = 'subthread-early',
+  String? parentPostId,
+}) {
+  final id = parentPostId == null ? 'floor-8' : 'reply-8';
+  return Response<PostsFindLatestInThread200Response>(
+    requestOptions: RequestOptions(
+      path: '/api/v1/threads/thread-1/posts/latest',
+    ),
+    data: PostsFindLatestInThread200Response(
+      (response) => response
+        ..code = ApiSuccessEnvelopeCodeEnum.number0
+        ..message = 'ok'
+        ..data.update(
+          (data) => data
+            ..id = id
+            ..threadId = threadId
+            ..subthreadId = subthreadId
+            ..parentPostId = parentPostId
+            ..createdAt = DateTime.utc(2026, 8, 29, 12),
+        ),
     ),
   );
 }
