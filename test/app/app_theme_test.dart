@@ -10,7 +10,7 @@ void main() {
   test('移动主题完整映射 Foundation 核心 Token', () {
     const tokens = WenyouThemeTokens.light;
 
-    expect(WenyouFoundationVersion.value, '6.6.2');
+    expect(WenyouFoundationVersion.value, '6.7.0');
     expect(WenyouFoundationVersion.schema, 2);
     expect(WenyouEditorContract.surfaces, [
       'page',

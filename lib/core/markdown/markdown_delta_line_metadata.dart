@@ -12,7 +12,13 @@ class MarkdownDeltaLineMetadata {
   static const literalLineKey = 'wenyou_literal_line';
   static const sourceSeparatorAttribute = 'wenyou_source_separator';
 
-  static const _blockAttributes = {'header', 'list', 'blockquote', 'indent'};
+  static const _blockAttributes = {
+    'header',
+    'list',
+    'blockquote',
+    'indent',
+    'align',
+  };
 
   static int documentLength(Delta delta) => delta.operations.fold(
     0,

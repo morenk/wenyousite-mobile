@@ -6,43 +6,20 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_capabilities.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_dice_input_tray.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_buttons.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_toolbar_input_tray.dart';
 
+export 'package:wenyousite_mobile/features/editor/presentation/editor_capabilities.dart'
+    show WenyouEditorCapabilities;
+
 enum WenyouComposerSurface { page, expandableSheet, inline }
-
-@immutable
-class WenyouEditorCapabilities {
-  const WenyouEditorCapabilities({
-    this.headings = true,
-    this.inlineStyles = true,
-    this.images = true,
-    this.links = true,
-    this.blockStyles = true,
-    this.dice = true,
-    this.stickers = true,
-    this.drafts = true,
-  });
-
-  static const richMarkdown = WenyouEditorCapabilities();
-
-  final bool headings;
-  final bool inlineStyles;
-  final bool images;
-  final bool links;
-  final bool blockStyles;
-  final bool dice;
-  final bool stickers;
-  final bool drafts;
-
-  bool get hasMoreActions =>
-      inlineStyles || links || blockStyles || dice || stickers;
-}
 
 typedef WenyouComposerDock = WenyouEditorToolbar;
 
@@ -486,6 +463,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
                   onPressed: () => _runTrayAction(_insertHorizontalRule),
                 ),
               ],
+              if (widget.capabilities.alignment) _buildAlignmentButton(),
               if (widget.capabilities.dice)
                 WenyouEditorTrayButton(
                   icon: WenyouIconIds.editorDice,
@@ -521,6 +499,32 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildAlignmentButton() {
+    final alignment = WenyouEditorFormatPolicy.selectedAlignment(
+      widget.controller,
+    );
+    final (icon, label) = switch (alignment) {
+      WenyouTextAlignment.left => (WenyouIconIds.editorAlignLeft, '左对齐（点击切换）'),
+      WenyouTextAlignment.center => (
+        WenyouIconIds.editorAlignCenter,
+        '居中（点击切换）',
+      ),
+      WenyouTextAlignment.right => (
+        WenyouIconIds.editorAlignRight,
+        '右对齐（点击切换）',
+      ),
+    };
+    return WenyouEditorTrayButton(
+      key: const Key('editor-alignment'),
+      icon: icon,
+      label: label,
+      selected: alignment != WenyouTextAlignment.left,
+      onPressed: () => _runTrayAction(
+        () => WenyouEditorFormatPolicy.cycleAlignment(widget.controller),
       ),
     );
   }

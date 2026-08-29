@@ -212,6 +212,45 @@ void main() {
     expect(find.text('首页'), findsNothing);
   });
 
+  testWidgets('Markdown v4 可启动，未知 Markdown 版本显示升级页', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.14.0',
+              markdownContractVersion: 4,
+            ),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.14.0',
+              markdownContractVersion: 5,
+            ),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('需要升级温油站'), findsOneWidget);
+    expect(find.text('首页'), findsNothing);
+  });
+
   testWidgets('启动失败展示请求 ID 并可重试', (tester) async {
     final repository = _RetryMetaRepository();
     await tester.pumpWidget(
@@ -761,11 +800,13 @@ final _meProfile = MeProfileModel(
 class _FixedMetaRepository implements MetaRepository {
   _FixedMetaRepository({
     required this.contractVersion,
+    this.markdownContractVersion = 3,
     this.android = const MobilePlatformPolicy(),
     this.ios = const MobilePlatformPolicy(),
   });
 
   final String contractVersion;
+  final int markdownContractVersion;
   final MobilePlatformPolicy android;
   final MobilePlatformPolicy ios;
 
@@ -773,7 +814,7 @@ class _FixedMetaRepository implements MetaRepository {
   Future<ContractInfo> fetch() async {
     return ContractInfo(
       contractVersion: contractVersion,
-      markdownContractVersion: 3,
+      markdownContractVersion: markdownContractVersion,
       android: android,
       ios: ios,
     );

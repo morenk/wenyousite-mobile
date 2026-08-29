@@ -14,7 +14,13 @@ class MarkdownDeltaBlockValidator {
           if (data[index] == '\n') {
             if (lineHasHorizontalRule &&
                 operation.attributes?.keys.any(
-                      const {'header', 'list', 'blockquote', 'indent'}.contains,
+                      const {
+                        'header',
+                        'list',
+                        'blockquote',
+                        'indent',
+                        'align',
+                      }.contains,
                     ) ==
                     true) {
               throw const MarkdownCodecException('分隔线不能同时作为标题、列表或引用');

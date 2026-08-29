@@ -30,13 +30,13 @@ V1 包含认证、公开浏览、搜索、动态、主题/子贴/楼层、创作
 
 V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、离线自动发帖、阅读进度、子贴标签和 Android App Links。
 
-共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v6.6.2。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
+共享审美与跨端体验事实源只存在于 `wenyousite-foundation` 的远端最新正式发布版本；当前由 `pubspec.yaml` 锁定 Foundation v6.7.0。移动端仓库不维护平行审美规范，只记录模块行为与代码入口。页面必须复用 `WenyouThemeTokens`、Foundation 语义图标、全局 `ColorScheme` 与共享组件，禁止在页面内创建近似 Token 或直接使用 Material 图标。功能阶段不得顺手引入大范围插画、粒子或复杂换皮。
 
 ## 3. 事实源与契约优先级
 
 1. 后端运行时代码与 DTO 定义真实行为。
 2. `contracts/openapi.json` 是 Flutter API/model 生成的固定机器契约。
-3. `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v5-fixtures.json` 与 `contracts/editor-clipboard-v1-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点、编辑器往返和跨端剪贴板语义。
+3. `contracts/markdown-v4-fixtures.json`、`contracts/markdown-v4-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v6-fixtures.json` 与 `contracts/editor-clipboard-v2-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点、编辑器往返和跨端剪贴板语义。
 4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
 5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
@@ -48,10 +48,10 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 
 - `contracts/openapi.json`
 - `contracts/CHANGELOG.md`
-- `contracts/markdown-v3-fixtures.json`
-- `contracts/markdown-v3-nodes-fixtures.json`
-- `contracts/markdown-editor-roundtrip-v5-fixtures.json`
-- `contracts/editor-clipboard-v1-fixtures.json`
+- `contracts/markdown-v4-fixtures.json`
+- `contracts/markdown-v4-nodes-fixtures.json`
+- `contracts/markdown-editor-roundtrip-v6-fixtures.json`
+- `contracts/editor-clipboard-v2-fixtures.json`
 - `contracts/mobile-push-v1.schema.json`
 - `contracts/mobile-push-v1-fixtures.json`
 - `docs/mobile-client-guide.md`
@@ -79,7 +79,7 @@ lib/
     config/             # AppEnvironment
     network/            # Dio、错误、请求追踪、刷新锁
     storage/            # Token 与本地数据库
-    markdown/           # Markdown v3、Quill Delta Codec 与协议节点
+    markdown/           # Markdown v4、Quill Delta Codec 与协议节点
     widgets/            # 无业务归属的通用组件
   features/
     app_shell/
@@ -114,7 +114,7 @@ packages/
 - 页面结构已能表达含义时，不再用“将显示在这里”“与某页共用数据”等文案重复解释界面。只保留用户做决定所需的输入约束、权限/隐私影响、不可逆风险和恢复方式。
 - 面向用户的错误统一使用“加载失败 / 操作失败”等明确结果，不使用“响应不完整”“结果尚未确认”等开发语义；需要诊断时仅次要展示“问题编号”。
 - 用户可见的业务状态使用产品语义而非存储枚举直译；主题 `CLOSED` 固定显示为“已停招”。
-- 编辑器使用 Flutter Quill；Delta 只存在于编辑会话内存。后端、云草稿和 Drift 快照始终保存完整 Markdown v3。
+- 编辑器使用 Flutter Quill；Delta 只存在于编辑会话内存。后端、云草稿和 Drift 快照始终保存完整 Markdown v4。
 - Markdown ↔ Delta 使用自研可测试 Codec；不得依赖 `markdown_quill` 充当事实转换层，mention/dice/sticker/image/独占 `<br />` 必须无损往返。
 - 优先使用 Dart 语言能力，避免为简单状态额外引入代码生成框架。
 - 注释解释权限、重试、生命周期和兼容原因，不复述显然代码。

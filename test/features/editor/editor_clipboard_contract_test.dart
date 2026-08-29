@@ -18,7 +18,7 @@ void main() {
   final contract =
       jsonDecode(
             File(
-              'contracts/editor-clipboard-v1-fixtures.json',
+              'contracts/editor-clipboard-v2-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -30,7 +30,7 @@ void main() {
   for (final fixture in goldenCases.where(
     (fixture) => fixture['kind'] != 'reader-copy',
   )) {
-    testWidgets('${fixture['id']} 编辑器粘贴遵循 clipboard v1', (tester) async {
+    testWidgets('${fixture['id']} 编辑器粘贴遵循 clipboard v2', (tester) async {
       final gateway = _ContractClipboardGateway(
         text: fixture['plainText'] as String,
       );
@@ -255,7 +255,7 @@ void main() {
     );
   });
 
-  testWidgets('clipboard v1 富文本 fixture 经移动阅读菜单恢复完整样式', (tester) async {
+  testWidgets('clipboard v2 富文本 fixture 经移动阅读菜单恢复完整样式', (tester) async {
     final fixture = readerFixture('reader-rich-structure');
     const scope = SessionScope(accountId: 'reader-account', generation: 7);
     final store = WenyouEditorClipboardStore();
@@ -760,12 +760,19 @@ void main() {
     );
   });
 
-  test('Web envelope 重新执行白名单并拒绝未知版本或重复载荷', () {
+  test('Web envelope 接受 v1/v2 并拒绝未知版本或重复载荷', () {
     const parser = WenyouSiteClipboardParser();
 
     expect(
       parser.parse(
         '<div data-wenyou-clipboard="2" '
+        'data-wenyou-clipboard-source="reader">内容</div>',
+      ),
+      isNotNull,
+    );
+    expect(
+      parser.parse(
+        '<div data-wenyou-clipboard="999" '
         'data-wenyou-clipboard-source="reader">内容</div>',
       ),
       isNull,
@@ -792,6 +799,80 @@ void main() {
     expect(markdown, contains('**安全**危险链接文字'));
     expect(markdown, isNot(contains('javascript')));
     expect(markdown, isNot(contains('不可见脚本')));
+  });
+
+  test('clipboard v2 仅恢复顶层合法块对齐，v1 强制移除对齐', () {
+    const parser = WenyouSiteClipboardParser();
+    const body =
+        '<p data-wenyou-align="center">居中正文</p>'
+        '<h2 data-wenyou-align="right">居右标题</h2>';
+
+    final v2 = parser.parse(
+      '<div data-wenyou-clipboard="2" '
+      'data-wenyou-clipboard-source="editor">$body</div>',
+    );
+    final v1 = parser.parse(
+      '<div data-wenyou-clipboard="1" '
+      'data-wenyou-clipboard-source="editor">$body</div>',
+    );
+
+    expect(
+      MarkdownDeltaCodec.encode(v2!),
+      '[wenyousite-align-v1-center]: #\n居中正文\n\n'
+      '[wenyousite-align-v1-right]: #\n## 居右标题',
+    );
+    expect(MarkdownDeltaCodec.encode(v1!), '居中正文\n\n## 居右标题');
+  });
+
+  test('clipboard v2 不从嵌套、空块、普通图片或样式推断对齐', () {
+    const parser = WenyouSiteClipboardParser();
+    final delta = parser.parse(
+      '<div data-wenyou-clipboard="2" '
+      'data-wenyou-clipboard-source="reader">'
+      '<div><p data-wenyou-align="center">嵌套正文</p></div>'
+      '<p data-wenyou-align="right"><br></p>'
+      '<p data-wenyou-align="center">正文'
+      '<span data-wenyou-clipboard-media="image">[图片]</span></p>'
+      '<p style="text-align:right" align="right">样式正文</p>'
+      '</div>',
+    );
+
+    final markdown = MarkdownDeltaCodec.encode(delta!);
+    expect(markdown, isNot(contains('wenyousite-align')));
+    expect(markdown, contains('嵌套正文'));
+    expect(markdown, contains(r'\[图片\]'));
+    expect(markdown, contains('样式正文'));
+  });
+
+  testWidgets('移动阅读菜单通过进程内 Delta 保留 v4 块对齐', (tester) async {
+    final fixture = readerFixture('reader-aligned-blocks');
+    const scope = SessionScope(accountId: 'reader-account', generation: 11);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: fixture['markdown'] as String,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    expect(gateway.snapshot.text, fixture['expectedPlainText']);
+    expect(gateway.snapshot.text, isNot(contains('wenyousite-align')));
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+
+    expect(await session.controller.clipboardPaste(), isTrue);
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      fixture['markdown'],
+    );
   });
 }
 

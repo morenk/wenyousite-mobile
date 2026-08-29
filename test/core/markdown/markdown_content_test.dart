@@ -7,13 +7,13 @@ import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 
 void main() {
   final contract =
-      jsonDecode(File('contracts/markdown-v3-fixtures.json').readAsStringSync())
+      jsonDecode(File('contracts/markdown-v4-fixtures.json').readAsStringSync())
           as Map<String, dynamic>;
   final cases = (contract['cases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
 
-  test('加载的是 Markdown v3 黄金语料', () {
-    expect(contract['version'], 3);
+  test('加载的是 Markdown v4 黄金语料', () {
+    expect(contract['version'], 4);
     expect(cases, isNotEmpty);
   });
 
@@ -128,6 +128,27 @@ void main() {
     expect(
       MarkdownContent.toPlainTextPreview('第一段\n\n\n\n第二段\n<br />\n<br />\n第三段'),
       '第一段 第二段 第三段',
+    );
+  });
+
+  test('对齐协议只在精确 marker 位置生效，代码与转义保持字面文本', () {
+    expect(
+      MarkdownContent.unsupportedLineIndexes(
+        '前文 [wenyousite-align-v1-center]: 非法后缀',
+      ),
+      {0},
+    );
+    expect(
+      MarkdownContent.unsupportedLineIndexes(
+        '`[wenyousite-align-v2-center]: #`',
+      ),
+      isEmpty,
+    );
+    expect(
+      MarkdownContent.unsupportedLineIndexes(
+        r'\[wenyousite-align-v1-center]: #',
+      ),
+      isEmpty,
     );
   });
 }

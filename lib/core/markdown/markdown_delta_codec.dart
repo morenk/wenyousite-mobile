@@ -1,8 +1,11 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_validator.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_encoding_buffer.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_extension_nodes.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
@@ -12,7 +15,7 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 export 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 
-/// Markdown v3 扩展节点与 Quill Delta 之间的无损协议层。
+/// Markdown v4 扩展节点与 Quill Delta 之间的无损协议层。
 ///
 /// 受支持的普通 Markdown 先解析为中立富文本行模型，再映射为 Quill 属性；
 /// 需要稳定身份的扩展节点提升为原子 embed。无法证明精确往返的语法继续保留
@@ -32,6 +35,7 @@ class MarkdownDeltaCodec {
   static const sourceBreakAttribute = MarkdownDeltaLineMetadata.sourceBreakKey;
   static const literalLineAttribute = MarkdownDeltaLineMetadata.literalLineKey;
   static const literalTextAttribute = 'wenyou_literal_text';
+  static const alignmentAttribute = 'align';
 
   static const _allPlayersLabel = '@全体玩家';
   static const _stickerPrefix = 'wenyousite-sticker:v1:';
@@ -71,10 +75,13 @@ class MarkdownDeltaCodec {
     final diceNodeIds = <String>{};
     final lines = source.split('\n');
     final literalLines = MarkdownContent.unsupportedLineIndexes(source);
+    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(lines);
+    final validAlignmentMarkers = alignmentAnalysis.validMarkerLines;
     _Fence? fence;
 
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
+      if (validAlignmentMarkers.contains(lineIndex)) continue;
       final opening = _openingFence.firstMatch(line)?.group(1);
       var isProtocolEmptyParagraph = false;
       Map<String, dynamic>? richLineAttributes;
@@ -163,6 +170,9 @@ class MarkdownDeltaCodec {
       final isLastLine = lineIndex == lines.length - 1;
       final attributes = <String, dynamic>{
         ...?richLineAttributes,
+        if (alignmentAnalysis.alignmentForLine(lineIndex) case final alignment
+            when alignment != WenyouTextAlignment.left)
+          alignmentAttribute: alignment.name,
         if (isProtocolEmptyParagraph) emptyParagraphAttribute: true,
         if (line.isEmpty && lines.length > 1)
           MarkdownDeltaLineMetadata.sourceSeparatorAttribute: true,
@@ -187,7 +197,7 @@ class MarkdownDeltaCodec {
       delta,
       horizontalRuleEmbed: horizontalRuleEmbed,
     );
-    final output = StringBuffer();
+    final encodingBuffer = MarkdownDeltaEncodingBuffer();
     final line = StringBuffer();
     var lineHasLiteralText = false;
     for (final operation in delta.operations) {
@@ -200,7 +210,7 @@ class MarkdownDeltaCodec {
           data,
           operation.attributes,
           line,
-          output,
+          encodingBuffer,
           lineHasLiteralText: lineHasLiteralText,
         );
         continue;
@@ -213,10 +223,12 @@ class MarkdownDeltaCodec {
       }
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
-    if (line.isNotEmpty) output.write(line);
+    if (line.isNotEmpty) encodingBuffer.output.write(line);
     final encoded = sanitizeUnsupported
-        ? MarkdownContent.literalizeUnsupported(output.toString())
-        : MarkdownContent.normalize(output.toString());
+        ? MarkdownContent.literalizeUnsupported(
+            encodingBuffer.output.toString(),
+          )
+        : MarkdownContent.normalize(encodingBuffer.output.toString());
     final document = MarkdownEditorDocument.parsePrepared(encoded);
     final serialized = document.toMarkdown();
     final reparsed = MarkdownEditorDocument.parsePrepared(serialized);
@@ -227,51 +239,14 @@ class MarkdownDeltaCodec {
   }
 
   static List<Map<String, Object?>> extractExtensionNodes(Delta delta) {
-    final nodes = <Map<String, Object?>>[];
-    for (final operation in delta.operations) {
-      final data = operation.data;
-      if (!operation.isInsert || data is! Map || data.length != 1) continue;
-      final embed = Map<String, dynamic>.from(data);
-      final type = embed.keys.single;
-      final payload = _payload(embed[type], type);
-      switch (type) {
-        case mentionEmbed:
-          final kind = payload['kind'];
-          if (kind == 'all_players') {
-            nodes.add(const {
-              'type': 'mention_all_players',
-              'label': _allPlayersLabel,
-            });
-          } else if (kind == 'user') {
-            nodes.add({
-              'type': 'mention',
-              'userId': payload['userId'],
-              'label': payload['label'],
-            });
-          }
-        case diceEmbed:
-          nodes.add({
-            'type': 'dice',
-            'nodeId': payload['nodeId'],
-            'notation': payload['notation'],
-          });
-        case stickerEmbed:
-          nodes.add({
-            'type': 'sticker',
-            'assetId': payload['assetId'],
-            'url': payload['url'],
-            'alt': payload['alt'],
-          });
-        case imageEmbed:
-          nodes.add({
-            'type': 'image',
-            'url': payload['url'],
-            'alt': payload['alt'],
-            'title': payload['title'],
-          });
-      }
-    }
-    return nodes;
+    return MarkdownDeltaExtensionNodes.extract(
+      delta,
+      mentionEmbed: mentionEmbed,
+      diceEmbed: diceEmbed,
+      stickerEmbed: stickerEmbed,
+      imageEmbed: imageEmbed,
+      allPlayersLabel: _allPlayersLabel,
+    );
   }
 
   static void _decodeInlineLine(
@@ -517,7 +492,7 @@ class MarkdownDeltaCodec {
     String value,
     Map<String, dynamic>? attributes,
     StringBuffer line,
-    StringBuffer output, {
+    MarkdownDeltaEncodingBuffer encodingBuffer, {
     required bool lineHasLiteralText,
   }) {
     var start = 0;
@@ -537,18 +512,15 @@ class MarkdownDeltaCodec {
         attributes,
         containsLiteralText: lineHasLiteralText,
       );
-      final isLiteral = attributes?[literalLineAttribute] == true;
-      if (isLiteral &&
-          output.isNotEmpty &&
-          !output.toString().endsWith('\n\n')) {
-        output.write('\n');
-      }
-      output.write(encodedLine);
+      encodingBuffer.writeLine(
+        encodedLine,
+        attributes,
+        sourceBreakAttribute: sourceBreakAttribute,
+        literalLineAttribute: literalLineAttribute,
+        emptyParagraphAttribute: emptyParagraphAttribute,
+      );
       line.clear();
       lineHasLiteralText = false;
-      if (attributes?[sourceBreakAttribute] != false) {
-        output.write(isLiteral ? '\n\n' : '\n');
-      }
       start = index + 1;
     }
     return lineHasLiteralText;
@@ -569,6 +541,7 @@ class MarkdownDeltaCodec {
       sourceBreakAttribute,
       literalLineAttribute,
       literalTextAttribute,
+      alignmentAttribute,
       'header',
       'list',
       'blockquote',
@@ -628,6 +601,7 @@ class MarkdownDeltaCodec {
       sourceBreakAttribute,
       literalLineAttribute,
       literalTextAttribute,
+      alignmentAttribute,
       'header',
       'list',
       'blockquote',

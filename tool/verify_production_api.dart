@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:wenyousite_mobile/core/config/app_environment.dart';
+
 const _defaultBaseUrl = 'https://wenyou.site/api/v1';
 
 Future<void> main(List<String> arguments) async {
@@ -18,6 +20,12 @@ Future<void> main(List<String> arguments) async {
       'contracts/backend-contract.properties 缺少 backendRevision、'
       'contractVersion 或 markdownContractVersion。',
     );
+    exitCode = 2;
+    return;
+  }
+  const environment = AppEnvironment(apiBaseUrl: _defaultBaseUrl);
+  if (!environment.supportsMarkdown(expectedMarkdown)) {
+    stderr.writeln('客户端未声明支持本地 Markdown 契约 v$expectedMarkdown。');
     exitCode = 2;
     return;
   }
@@ -52,12 +60,14 @@ Future<void> main(List<String> arguments) async {
     final actualMarkdown = metaData['markdownContractVersion'];
     if (actualContract != expectedContract ||
         actualRevision != expectedRevision ||
-        actualMarkdown != expectedMarkdown) {
+        actualMarkdown is! int ||
+        !environment.supportsMarkdown(actualMarkdown)) {
       throw FormatException(
-        '生产 API 与本地契约来源不一致：'
+        '生产 API 与本地契约来源或客户端兼容范围不一致：'
         'expected api=$expectedContract bundle=$expectedBundle '
         'build=$expectedRevision '
-        'markdown=$expectedMarkdown; '
+        'sourceMarkdown=$expectedMarkdown '
+        'supportedMarkdown=${environment.supportedMarkdownContractVersions}; '
         'actual api=$actualContract build=$actualRevision '
         'markdown=$actualMarkdown',
       );
@@ -93,7 +103,8 @@ Future<void> main(List<String> arguments) async {
 
     stdout.writeln(
       'Production API verified: api=$actualContract bundle=$expectedBundle '
-      'build=$actualRevision markdown=$actualMarkdown; '
+      'build=$actualRevision sourceMarkdown=$expectedMarkdown '
+      'deployedMarkdown=$actualMarkdown; '
       'GET /threads schema compatible.',
     );
   } on Object catch (error) {

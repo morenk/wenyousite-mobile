@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 
@@ -177,6 +178,56 @@ void main() {
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
       '**粗体**正文',
     );
+  });
+
+  test('合法正文和标题按左、居中、右循环并无损保存', () {
+    final controller = QuillController(
+      document: Document.fromDelta(
+        MarkdownDeltaCodec.decode('[wenyousite-align-v1-center]: #\n正文').delta,
+      ),
+      selection: const TextSelection.collapsed(offset: 1),
+    );
+    addTearDown(controller.dispose);
+
+    expect(
+      WenyouEditorFormatPolicy.selectedAlignment(controller),
+      WenyouTextAlignment.center,
+    );
+    WenyouEditorFormatPolicy.cycleAlignment(controller);
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      '[wenyousite-align-v1-right]: #\n正文',
+    );
+    WenyouEditorFormatPolicy.cycleAlignment(controller);
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
+    WenyouEditorFormatPolicy.cycleAlignment(controller);
+    WenyouEditorFormatPolicy.applyHeading(controller, 2);
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      '[wenyousite-align-v1-center]: #\n## 正文',
+    );
+  });
+
+  test('列表转换清除对齐，普通图片块不响应对齐切换', () {
+    final paragraph = _selectedController();
+    addTearDown(paragraph.dispose);
+    WenyouEditorFormatPolicy.cycleAlignment(paragraph);
+    WenyouEditorFormatPolicy.toggle(paragraph, Attribute.ul);
+    expect(_lineAttributes(paragraph), isNot(contains('align')));
+    expect(MarkdownDeltaCodec.encode(paragraph.document.toDelta()), '- 正文');
+
+    final image = QuillController(
+      document: Document.fromDelta(
+        MarkdownDeltaCodec.decode(
+          '![图片](https://cdn.example.com/images/a.png)',
+        ).delta,
+      ),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    addTearDown(image.dispose);
+    final before = image.document.toDelta().toJson();
+    WenyouEditorFormatPolicy.cycleAlignment(image);
+    expect(image.document.toDelta().toJson(), before);
   });
 }
 

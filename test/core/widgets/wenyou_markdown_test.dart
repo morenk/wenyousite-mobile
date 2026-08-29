@@ -869,6 +869,40 @@ $diceNode
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Markdown v4 对齐标记按顶层块渲染且不进入可见正文', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouMarkdown(
+            data:
+                '[wenyousite-align-v1-center]: #\n## 居中标题\n\n'
+                '[wenyousite-align-v1-right]: #\n居右正文',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final centered = tester.widget<MarkdownBody>(
+      find.descendant(
+        of: find.byKey(const ValueKey('wenyou-markdown-segment-0-center')),
+        matching: find.byType(MarkdownBody),
+      ),
+    );
+    final right = tester.widget<MarkdownBody>(
+      find.descendant(
+        of: find.byKey(const ValueKey('wenyou-markdown-segment-1-right')),
+        matching: find.byType(MarkdownBody),
+      ),
+    );
+    expect(centered.styleSheet!.h2Align, WrapAlignment.center);
+    expect(right.styleSheet!.textAlign, WrapAlignment.end);
+    expect(find.textContaining('wenyousite-align'), findsNothing);
+    expect(find.text('居中标题', findRichText: true), findsOneWidget);
+    expect(find.text('居右正文', findRichText: true), findsOneWidget);
+  });
 }
 
 Iterable<WidgetSpan> _widgetSpans(InlineSpan root) sync* {

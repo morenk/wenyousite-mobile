@@ -1,4 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 
@@ -15,18 +16,23 @@ enum MarkdownEditorBlockKind {
 }
 
 sealed class MarkdownEditorBlock {
-  const MarkdownEditorBlock({required this.blankLinesBefore});
+  const MarkdownEditorBlock({
+    required this.blankLinesBefore,
+    this.alignment = WenyouTextAlignment.left,
+  });
 
   final int blankLinesBefore;
+  final WenyouTextAlignment alignment;
   MarkdownEditorBlockKind get kind;
   List<String> get sourceLines;
-  String get structuralKey => kind.name;
+  String get structuralKey => '${kind.name}:${alignment.name}';
 }
 
 final class MarkdownParagraphBlock extends MarkdownEditorBlock {
   const MarkdownParagraphBlock({
     required this.softLines,
     required super.blankLinesBefore,
+    super.alignment,
   });
 
   final List<String> softLines;
@@ -35,10 +41,11 @@ final class MarkdownParagraphBlock extends MarkdownEditorBlock {
   MarkdownEditorBlockKind get kind => MarkdownEditorBlockKind.paragraph;
 
   @override
-  List<String> get sourceLines => softLines;
+  List<String> get sourceLines => _withAlignmentMarker(softLines, alignment);
 
   @override
-  String get structuralKey => '${kind.name}:${softLines.length}';
+  String get structuralKey =>
+      '${kind.name}:${alignment.name}:${softLines.length}';
 }
 
 final class MarkdownHeadingBlock extends MarkdownEditorBlock {
@@ -46,6 +53,7 @@ final class MarkdownHeadingBlock extends MarkdownEditorBlock {
     required this.level,
     required this.content,
     required super.blankLinesBefore,
+    super.alignment,
   });
 
   final int level;
@@ -57,7 +65,8 @@ final class MarkdownHeadingBlock extends MarkdownEditorBlock {
       : MarkdownEditorBlockKind.heading3;
 
   @override
-  List<String> get sourceLines => ['${'#' * level} $content'];
+  List<String> get sourceLines =>
+      _withAlignmentMarker(['${'#' * level} $content'], alignment);
 }
 
 final class MarkdownQuoteBlock extends MarkdownEditorBlock {
@@ -172,6 +181,8 @@ class MarkdownEditorDocument {
     }
     final lines = source.split('\n');
     final literalLines = MarkdownContent.unsupportedLineIndexes(source);
+    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(lines);
+    final validAlignmentMarkers = alignmentAnalysis.validMarkerLines;
     final blocks = <MarkdownEditorBlock>[];
     var pendingBlankLines = 0;
     var index = 0;
@@ -184,6 +195,16 @@ class MarkdownEditorDocument {
       }
       final blankLinesBefore = pendingBlankLines;
       pendingBlankLines = 0;
+
+      if (validAlignmentMarkers.contains(index)) {
+        index += 1;
+        pendingBlankLines = blankLinesBefore;
+        continue;
+      }
+
+      final blockAlignment =
+          alignmentAnalysis.blockStartingAt(index)?.alignment ??
+          WenyouTextAlignment.left;
 
       if (literalLines.contains(index)) {
         final compatibilityLines = <String>[];
@@ -207,12 +228,17 @@ class MarkdownEditorDocument {
             level: 2,
             content: line,
             blankLinesBefore: blankLinesBefore,
+            alignment: blockAlignment,
           ),
         );
         index += 2;
         continue;
       }
-      final single = _singleLineBlock(line, blankLinesBefore);
+      final single = _singleLineBlock(
+        line,
+        blankLinesBefore,
+        alignment: blockAlignment,
+      );
       if (single != null) {
         blocks.add(single);
         index += 1;
@@ -225,7 +251,8 @@ class MarkdownEditorDocument {
           lines[index].isNotEmpty &&
           !literalLines.contains(index) &&
           !_isSetextHeading(lines, literalLines, index) &&
-          _singleLineBlock(lines[index], 0) == null) {
+          _singleLineBlock(lines[index], 0) == null &&
+          !MarkdownAlignmentContract.isMarkerLine(lines[index])) {
         softLines.add(lines[index]);
         index += 1;
       }
@@ -233,6 +260,7 @@ class MarkdownEditorDocument {
         MarkdownParagraphBlock(
           softLines: List.unmodifiable(softLines),
           blankLinesBefore: blankLinesBefore,
+          alignment: blockAlignment,
         ),
       );
     }
@@ -298,8 +326,9 @@ class MarkdownEditorDocument {
 
   static MarkdownEditorBlock? _singleLineBlock(
     String line,
-    int blankLinesBefore,
-  ) {
+    int blankLinesBefore, {
+    WenyouTextAlignment alignment = WenyouTextAlignment.left,
+  }) {
     if (line == '---' || line == horizontalRuleMarker) {
       return MarkdownHorizontalRuleBlock(blankLinesBefore: blankLinesBefore);
     }
@@ -312,6 +341,7 @@ class MarkdownEditorDocument {
         level: heading.group(1)!.length,
         content: heading.group(2)!,
         blankLinesBefore: blankLinesBefore,
+        alignment: alignment,
       );
     }
     final quote = RegExp(r'^> (.+)$').firstMatch(line);
@@ -351,4 +381,12 @@ class MarkdownEditorDocument {
         nodes.single is md.Element &&
         (nodes.single as md.Element).tag == 'h2';
   }
+}
+
+List<String> _withAlignmentMarker(
+  List<String> lines,
+  WenyouTextAlignment alignment,
+) {
+  final marker = MarkdownAlignmentContract.markerFor(alignment);
+  return marker.isEmpty ? lines : [marker, ...lines];
 }

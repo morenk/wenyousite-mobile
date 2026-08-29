@@ -8,16 +8,16 @@ void main() {
   final contract =
       jsonDecode(
             File(
-              'contracts/editor-clipboard-v1-fixtures.json',
+              'contracts/editor-clipboard-v2-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
   final goldenCases = (contract['goldenCases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
 
-  test('消费 clipboard v1 的移动端入口、传输和节点规则', () {
-    expect(contract['version'], 1);
-    expect(contract['markdownContractVersion'], 3);
+  test('消费 clipboard v2 的移动端入口、传输和节点规则', () {
+    expect(contract['version'], 2);
+    expect(contract['markdownContractVersion'], 4);
     final entryPoints = (contract['entryPoints'] as List<dynamic>)
         .cast<Map<String, dynamic>>();
     expect(
@@ -44,7 +44,7 @@ void main() {
       contains(
         allOf(
           containsPair('source', 'site-fragment-v1'),
-          containsPair('result', 'structured'),
+          containsPair('result', 'structured-without-alignment'),
         ),
       ),
     );

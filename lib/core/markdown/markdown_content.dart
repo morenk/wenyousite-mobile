@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 
 class MarkdownContent {
@@ -223,7 +224,7 @@ class MarkdownContent {
     return lines.join('\n');
   }
 
-  /// Converts Markdown v3 structures outside the product capability whitelist
+  /// Converts Markdown v4 structures outside the product capability whitelist
   /// into visible literal text. This mirrors the backend migration contract:
   /// unsupported source remains readable but cannot be reinterpreted as an
   /// unsupported node when the editor serializes it again.
@@ -259,6 +260,9 @@ class MarkdownContent {
     final affected = <int>{};
     _markFencedCode(lines, affected);
     _markTables(lines, affected);
+    affected.addAll(
+      MarkdownAlignmentContract.analyzeLines(lines).invalidMarkerLines,
+    );
 
     for (var index = 0; index < lines.length; index++) {
       if (affected.contains(index)) continue;
@@ -454,6 +458,7 @@ class MarkdownContent {
         continue;
       }
       if (line.isEmpty || _thematicBreak.hasMatch(rawLine)) continue;
+      if (MarkdownAlignmentContract.isMarkerLine(rawLine)) continue;
       if (_image.hasMatch(line) || _httpAutolink.hasMatch(line)) return true;
 
       final visible = line
@@ -485,20 +490,21 @@ class MarkdownContent {
 
   static String toPlainTextPreview(String markdown, {int maxLength = 180}) {
     if (maxLength <= 0) return '';
-    final visible = normalize(markdown)
-        .replaceAllMapped(
-          _previewDice,
-          (match) => '[${match.group(1)!.trim()}]',
-        )
-        .replaceAll(_previewImage, '[图片]')
-        .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
-        .replaceAll(_httpAutolink, '[链接]')
-        .replaceAll(_previewUrl, '[链接]')
-        .replaceAll(_html, ' ')
-        .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
-        .replaceAll(RegExp(r'[`*_~|]'), '')
-        .replaceAll(RegExp(r'\s+', unicode: true), ' ')
-        .trim();
+    final visible =
+        MarkdownAlignmentContract.removeMarkerLines(normalize(markdown))
+            .replaceAllMapped(
+              _previewDice,
+              (match) => '[${match.group(1)!.trim()}]',
+            )
+            .replaceAll(_previewImage, '[图片]')
+            .replaceAllMapped(_link, (match) => match.group(1) ?? '[链接]')
+            .replaceAll(_httpAutolink, '[链接]')
+            .replaceAll(_previewUrl, '[链接]')
+            .replaceAll(_html, ' ')
+            .replaceAll(RegExp(r'(^|\n)\s{0,3}(?:[#>+\-]|\d+[.)])\s*'), ' ')
+            .replaceAll(RegExp(r'[`*_~|]'), '')
+            .replaceAll(RegExp(r'\s+', unicode: true), ' ')
+            .trim();
     final runes = visible.runes.toList(growable: false);
     if (runes.length <= maxLength) return visible;
     return '${String.fromCharCodes(runes.take(maxLength - 1))}…';

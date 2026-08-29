@@ -8,6 +8,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
@@ -71,6 +72,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   late final ValueNotifier<Map<String, String>> _diceSemantics;
   late final ValueNotifier<Map<String, WenyouDiceRollDetail>> _diceDetails;
   late String _normalizedData;
+  List<MarkdownRenderSegment> _renderSegments = const [];
   List<InternalReferencePortal> _internalReferences = const [];
   MarkdownStyleSheet? _styleSheet;
   Widget? _renderedBody;
@@ -156,54 +158,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       body = GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onTapText == null ? null : _handleTapText,
-        child: MarkdownBody(
-          data: _normalizedData,
-          selectable: false,
-          softLineBreak: true,
-          styleSheet: _styleSheet,
-          blockSyntaxes: [_EmptyParagraphBlockSyntax()],
-          inlineSyntaxes: [
-            _InternalReferenceInlineSyntax(),
-            _UserMentionInlineSyntax(),
-            _AllPlayersMentionInlineSyntax(),
-            _DiceInlineSyntax(),
-          ],
-          builders: {
-            _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
-              lineHeight: widget.bodyFontSize * widget.bodyHeight,
-            ),
-            'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
-              _internalReferences,
-              (reference) => _openInternalReference(context, reference),
-              onLongPress: widget.onLongPressNonText == null
-                  ? null
-                  : _handleNonTextLongPress,
-            ),
-            'wenyou-dice': _DiceMarkdownBuilder(
-              _diceLabels,
-              _diceSemantics,
-              _diceDetails,
-              onLongPress: widget.onLongPressNonText == null
-                  ? null
-                  : _handleNonTextLongPress,
-            ),
-            'wenyou-mention': _MentionMarkdownBuilder(
-              (location) => _openInternalLocation(context, location),
-            ),
-            'code': _InlineCodeMarkdownBuilder(),
-            'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
-          },
-          onTapLink: (_, href, _) => _openLink(context, href),
-          imageBuilder: (uri, title, alt) => _MarkdownImage(
-            uri: uri,
-            title: title,
-            alt: alt,
-            onSave: widget.onSaveImage == null ? null : _saveImage,
-            onLongPress: widget.onLongPressNonText == null
-                ? null
-                : _handleNonTextLongPress,
-          ),
-        ),
+        child: _buildMarkdownSegments(),
       );
     }
     return KeyedSubtree(
@@ -228,13 +183,106 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     );
     final prepared = _prepareInternalReferences(normalized);
     _normalizedData = prepared.data;
+    _renderSegments = MarkdownAlignmentContract.renderSegments(prepared.data);
     _internalReferences = prepared.references;
     _usesPlainTextFastPath =
         widget.enablePlainTextFastPath &&
         prepared.references.isEmpty &&
+        _renderSegments.every((segment) => !segment.isAligned) &&
         _isUnambiguousPlainText(prepared.data);
     _renderedBody = null;
   }
+
+  Widget _buildMarkdownSegments() {
+    if (_renderSegments.length == 1 && !_renderSegments.single.isAligned) {
+      return _buildMarkdownBody(_normalizedData, _styleSheet);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < _renderSegments.length; index++) ...[
+          if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
+          KeyedSubtree(
+            key: ValueKey(
+              'wenyou-markdown-segment-$index-'
+              '${_renderSegments[index].alignment.name}',
+            ),
+            child: _buildMarkdownBody(
+              _renderSegments[index].markdown,
+              _alignedStyleSheet(_renderSegments[index].alignment),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  MarkdownStyleSheet? _alignedStyleSheet(WenyouTextAlignment alignment) {
+    final styleSheet = _styleSheet;
+    if (styleSheet == null || alignment == WenyouTextAlignment.left) {
+      return styleSheet;
+    }
+    final wrapAlignment = alignment == WenyouTextAlignment.center
+        ? WrapAlignment.center
+        : WrapAlignment.end;
+    return styleSheet.copyWith(
+      textAlign: wrapAlignment,
+      h2Align: wrapAlignment,
+      h3Align: wrapAlignment,
+    );
+  }
+
+  MarkdownBody _buildMarkdownBody(
+    String data,
+    MarkdownStyleSheet? styleSheet,
+  ) => MarkdownBody(
+    data: data,
+    selectable: false,
+    softLineBreak: true,
+    styleSheet: styleSheet,
+    blockSyntaxes: [_EmptyParagraphBlockSyntax()],
+    inlineSyntaxes: [
+      _InternalReferenceInlineSyntax(),
+      _UserMentionInlineSyntax(),
+      _AllPlayersMentionInlineSyntax(),
+      _DiceInlineSyntax(),
+    ],
+    builders: {
+      _emptyParagraphTag: _EmptyParagraphMarkdownBuilder(
+        lineHeight: widget.bodyFontSize * widget.bodyHeight,
+      ),
+      'wenyou-internal-reference': _InternalReferenceMarkdownBuilder(
+        _internalReferences,
+        (reference) => _openInternalReference(context, reference),
+        onLongPress: widget.onLongPressNonText == null
+            ? null
+            : _handleNonTextLongPress,
+      ),
+      'wenyou-dice': _DiceMarkdownBuilder(
+        _diceLabels,
+        _diceSemantics,
+        _diceDetails,
+        onLongPress: widget.onLongPressNonText == null
+            ? null
+            : _handleNonTextLongPress,
+      ),
+      'wenyou-mention': _MentionMarkdownBuilder(
+        (location) => _openInternalLocation(context, location),
+      ),
+      'code': _InlineCodeMarkdownBuilder(),
+      'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
+    },
+    onTapLink: (_, href, _) => _openLink(context, href),
+    imageBuilder: (uri, title, alt) => _MarkdownImage(
+      uri: uri,
+      title: title,
+      alt: alt,
+      onSave: widget.onSaveImage == null ? null : _saveImage,
+      onLongPress: widget.onLongPressNonText == null
+          ? null
+          : _handleNonTextLongPress,
+    ),
+  );
 
   void _handleTapText() {
     if (_hasSelection) {

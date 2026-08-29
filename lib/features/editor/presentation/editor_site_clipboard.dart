@@ -12,7 +12,7 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 ///
 /// The envelope is an interoperability hint rather than proof of origin. Every
 /// element and attribute is rebuilt into the mobile Delta model, and the
-/// result must survive the Markdown v3 codec before it can reach the editor.
+/// result must survive the Markdown v4 codec before it can reach the editor.
 class WenyouSiteClipboardParser {
   const WenyouSiteClipboardParser();
 
@@ -34,10 +34,13 @@ class WenyouSiteClipboardParser {
         'editor' => _SiteClipboardSource.editor,
         _ => null,
       };
-      if (envelope.attributes[_versionAttribute] != '1' || source == null) {
+      final version = int.tryParse(
+        envelope.attributes[_versionAttribute] ?? '',
+      );
+      if ((version != 1 && version != 2) || source == null) {
         return null;
       }
-      return _SiteClipboardDeltaBuilder(source).build(envelope);
+      return _SiteClipboardDeltaBuilder(source, version!).build(envelope);
     } on Object {
       return null;
     }
@@ -47,7 +50,7 @@ class WenyouSiteClipboardParser {
 enum _SiteClipboardSource { reader, editor }
 
 class _SiteClipboardDeltaBuilder {
-  _SiteClipboardDeltaBuilder(this.source);
+  _SiteClipboardDeltaBuilder(this.source, this.version);
 
   static const _blockTags = {'blockquote', 'h2', 'h3', 'hr', 'ol', 'p', 'ul'};
   static const _droppedTags = {
@@ -65,10 +68,11 @@ class _SiteClipboardDeltaBuilder {
   };
 
   final _SiteClipboardSource source;
+  final int version;
 
   Delta? build(dom.Element envelope) {
     if (envelope.nodes.any(_beginsBlock)) {
-      final collector = _ClipboardBlockCollector(source, _beginsBlock)
+      final collector = _ClipboardBlockCollector(source, version, _beginsBlock)
         ..appendChildren(envelope.nodes);
       return _canonicalizeBlocks(collector.groups);
     }
@@ -143,13 +147,17 @@ class _SiteClipboardDeltaBuilder {
 }
 
 class _ClipboardBlockCollector {
-  _ClipboardBlockCollector(this.source, this.beginsBlock);
+  _ClipboardBlockCollector(this.source, this.version, this.beginsBlock);
 
   final _SiteClipboardSource source;
+  final int version;
   final bool Function(dom.Node node) beginsBlock;
   final List<_ClipboardBlockGroup> groups = [];
 
-  void appendChildren(Iterable<dom.Node> nodes) {
+  void appendChildren(
+    Iterable<dom.Node> nodes, {
+    bool alignmentEligible = true,
+  }) {
     final inline = <dom.Node>[];
     void flushInline() {
       if (inline.isEmpty) return;
@@ -165,25 +173,39 @@ class _ClipboardBlockCollector {
         continue;
       }
       flushInline();
-      _appendBlock(node as dom.Element);
+      _appendBlock(node as dom.Element, alignmentEligible: alignmentEligible);
     }
     flushInline();
   }
 
-  void _appendBlock(dom.Element element) {
+  void _appendBlock(dom.Element element, {required bool alignmentEligible}) {
     final tag = element.localName;
     switch (tag) {
       case 'p':
+        final contents = _ClipboardInlineBuilder(source).build(element.nodes);
         _appendInlineGroup(
-          _ClipboardInlineBuilder(source).build(element.nodes),
+          contents,
+          lineAttributes: _alignmentAttributes(
+            element,
+            contents,
+            alignmentEligible: alignmentEligible,
+          ),
           preserveEmpty: true,
         );
       case 'h2':
       case 'h3':
         final level = tag == 'h2' ? 2 : 3;
+        final contents = _ClipboardInlineBuilder(source).build(element.nodes);
         _appendInlineGroup(
-          _ClipboardInlineBuilder(source).build(element.nodes),
-          lineAttributes: {'header': level},
+          contents,
+          lineAttributes: {
+            'header': level,
+            ..._alignmentAttributes(
+              element,
+              contents,
+              alignmentEligible: alignmentEligible,
+            ),
+          },
           preserveEmpty: true,
         );
       case 'blockquote':
@@ -228,8 +250,38 @@ class _ClipboardBlockCollector {
           _appendInlineGroup(lines);
         }
       default:
-        appendChildren(element.nodes);
+        appendChildren(element.nodes, alignmentEligible: false);
     }
+  }
+
+  Map<String, dynamic> _alignmentAttributes(
+    dom.Element element,
+    List<Delta> contents, {
+    required bool alignmentEligible,
+  }) {
+    if (version != 2 ||
+        !alignmentEligible ||
+        contents.every(_isVisiblyEmpty) ||
+        _containsRegularImage(element)) {
+      return const {};
+    }
+    return switch (element.attributes['data-wenyou-align']) {
+      'center' => const {MarkdownDeltaCodec.alignmentAttribute: 'center'},
+      'right' => const {MarkdownDeltaCodec.alignmentAttribute: 'right'},
+      _ => const {},
+    };
+  }
+
+  static bool _containsRegularImage(dom.Element element) {
+    for (final media in element.querySelectorAll(
+      'img, [data-wenyou-clipboard-media]',
+    )) {
+      final isSticker =
+          media.attributes['data-wenyou-clipboard-media'] == 'sticker' ||
+          media.attributes['data-type'] == 'sticker-inline';
+      if (!isSticker) return true;
+    }
+    return false;
   }
 
   void _appendListLines(

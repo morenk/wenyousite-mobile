@@ -11,7 +11,7 @@ void main() {
   final editorRoundTripContract =
       jsonDecode(
             File(
-              'contracts/markdown-editor-roundtrip-v5-fixtures.json',
+              'contracts/markdown-editor-roundtrip-v6-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -19,9 +19,9 @@ void main() {
       (editorRoundTripContract['cases'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
-  test('消费后端编辑器往返黄金语料 v5', () {
-    expect(editorRoundTripContract['version'], 5);
-    expect(editorRoundTripContract['markdownContractVersion'], 3);
+  test('消费后端编辑器往返黄金语料 v6', () {
+    expect(editorRoundTripContract['version'], 6);
+    expect(editorRoundTripContract['markdownContractVersion'], 4);
     expect(editorRoundTripCases, isNotEmpty);
   });
 
@@ -51,6 +51,15 @@ void main() {
           reason: fixture['id'] as String,
         );
       }
+      final expectedAlignments = (fixture['blockAlignments'] as List<dynamic>?)
+          ?.cast<String>();
+      if (expectedAlignments != null) {
+        expect(
+          document.editorDocument.blocks.map((block) => block.alignment.name),
+          expectedAlignments,
+          reason: fixture['id'] as String,
+        );
+      }
       expect(
         MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(serialized).delta),
         serialized,
@@ -61,16 +70,16 @@ void main() {
   final nodeContract =
       jsonDecode(
             File(
-              'contracts/markdown-v3-nodes-fixtures.json',
+              'contracts/markdown-v4-nodes-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
   final nodeCases = (nodeContract['cases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
 
-  test('加载的是 Markdown v3 扩展节点黄金语料', () {
+  test('加载的是 Markdown v4 扩展节点黄金语料', () {
     expect(nodeContract['version'], 1);
-    expect(nodeContract['markdownContractVersion'], 3);
+    expect(nodeContract['markdownContractVersion'], 4);
     expect(nodeCases, isNotEmpty);
   });
 
@@ -99,7 +108,7 @@ void main() {
   }
 
   final markdownContract =
-      jsonDecode(File('contracts/markdown-v3-fixtures.json').readAsStringSync())
+      jsonDecode(File('contracts/markdown-v4-fixtures.json').readAsStringSync())
           as Map<String, dynamic>;
   final markdownCases = (markdownContract['cases'] as List<dynamic>)
       .cast<Map<String, dynamic>>();
@@ -110,7 +119,7 @@ void main() {
     final supported = fixture['supported'] as bool;
     final expected = supported ? canonical : fixture['literal'] as String;
 
-    test('$id canonical Markdown 经 Delta 按 v3 能力白名单往返', () {
+    test('$id canonical Markdown 经 Delta 按 v4 能力白名单往返', () {
       final document = MarkdownDeltaCodec.decode(canonical);
 
       expect(MarkdownDeltaCodec.encode(document.delta), expected);
@@ -130,7 +139,7 @@ void main() {
     }
   }
 
-  test('独占 br 映射为空段元数据且内联 br 按 v3 字面降级', () {
+  test('独占 br 映射为空段元数据且内联 br 按 v4 字面降级', () {
     final document = MarkdownDeltaCodec.decode('第一段\n<br />\n正文 <br> 示例');
 
     expect(
@@ -266,7 +275,7 @@ void main() {
     expect(MarkdownDeltaCodec.encode(document.delta), source);
   });
 
-  test('未知协议所在行按 v3 整行字面降级且不激活扩展节点', () {
+  test('未知协议所在行按 v4 整行字面降级且不激活扩展节点', () {
     const source =
         '[[dice:v2:raw-node:1d20]] '
         '[[dice:v1:550e8400-e29b-41d4-a716-446655440000:1d1]] '
@@ -634,6 +643,29 @@ void main() {
     );
     expect(
       () => MarkdownDeltaCodec.encode(conflictingBlocks),
+      throwsA(isA<MarkdownCodecException>()),
+    );
+  });
+
+  test('同一软换行段落混入普通图片时不能绕过对齐白名单', () {
+    final imageBeforeAlignedText = Delta()
+      ..insert({
+        MarkdownDeltaCodec.imageEmbed: const {
+          'version': 1,
+          'url': 'https://cdn.example.com/images/a.png',
+          'alt': '图片',
+          'title': null,
+        },
+      })
+      ..insert('\n')
+      ..insert('正文')
+      ..insert('\n', {
+        MarkdownDeltaCodec.alignmentAttribute: 'center',
+        MarkdownDeltaCodec.sourceBreakAttribute: false,
+      });
+
+    expect(
+      () => MarkdownDeltaCodec.encode(imageBeforeAlignedText),
       throwsA(isA<MarkdownCodecException>()),
     );
   });

@@ -2,13 +2,13 @@
 
 ## 边界
 
-后端 Markdown v3 是唯一持久化格式，Flutter Quill Delta 只存在于编辑会话内存。打开编辑器时由自研 Codec 按 `Markdown → MarkdownEditorDocument → Delta` 将完整快照解析为编辑状态；自动快照、云草稿、显式保存和提交前统一按 `Delta → MarkdownEditorDocument → Markdown` 重新序列化，再执行 Markdown v3 规范化、块结构等价与可见性检查。独立正文预览不是该链路的一部分，Quill 编辑态本身按阅读态等价规格呈现。
+后端 Markdown v4 是唯一持久化格式，Flutter Quill Delta 只存在于编辑会话内存。打开编辑器时由自研 Codec 按 `Markdown → MarkdownEditorDocument → Delta` 将完整快照解析为编辑状态；自动快照、云草稿、显式保存和提交前统一按 `Delta → MarkdownEditorDocument → Markdown` 重新序列化，再执行 Markdown v4 规范化、块结构等价与可见性检查。独立正文预览不是该链路的一部分，Quill 编辑态本身按阅读态等价规格呈现。
 
 不把 Delta JSON写入后端或云草稿，不把 `markdown_quill` 作为往返转换事实层。Flutter Quill 官方原生模型是 Delta 并推荐直接保存 Delta；温油站有既存 Markdown 契约，因此这种转换风险必须由本项目的黄金测试吸收。`markdown_quill` 当前不保留图片 alt，且输出转换仍有限，不能满足表情 title marker 和图片元数据无损往返。
 
 ## 协议映射
 
-| Markdown v3 | Delta 内存节点 |
+| Markdown v4 | Delta 内存节点 |
 | --- | --- |
 | 普通 Markdown | Quill 文本与受支持的行级/行内属性 |
 | `[@名称](/users/id)` | 原子 `mention` inline embed；兼容模式可读为受保护 link span |
@@ -18,6 +18,7 @@
 | 普通图片 | `wenyou_image` embed，保留 alt、URL 和可选 title |
 | 独占 `<br />` | 空 Quill Paragraph；不得当作 HTML |
 | 与相邻正文各隔一个空行的独占 `---` | 块级 `wenyou_horizontal_rule` embed；历史 `正文\n---` 是 Setext H2，其他 thematic break 写法继续保留源码 |
+| 紧邻普通段落或 H2/H3 的 `[wenyousite-align-v1-center\|right]: #` | 目标块每个物理行换行符的 `align` 属性；左对齐不保存属性 |
 
 Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定字段。未知版本在编辑器中显示不可编辑的兼容占位，序列化时保留原始 token，禁止静默丢弃。
 
@@ -25,7 +26,7 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 `MarkdownEditorDocument` 类型化描述段落软换行、H2/H3、引用、列表项、分隔线、协议空段和兼容文本，并集中分配块边界。canonical writer 强制分隔线两侧各一个结构空行、段内软换行保持单 LF、用户空段保持独占 `<br />`；写出后重新解析并比较块结构，分隔线混入文字行、叠加标题/列表/引用或缺少终止换行时直接阻止保存。工具栏通过 `RichEditorSession` 的一次 Delta compose 插入分隔线，撤销只回退该事务。历史 `正文\n---` 由上下文解析为 H2 并在用户编辑保存后写成 `## 正文`，不批量迁移未编辑正文。
 
-`MarkdownDeltaCodec` 已接入主题和帖子编辑器。`MarkdownRichLineDecoder` 先把可精确往返的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和 0～3 级列表解析为不依赖 Quill 的中立行模型，Codec 再用未净化的候选编码结果验证其能回到完全相同的 canonical 输入后映射为 Delta 属性；出口净化不能参与这项能力证明。任务列表、表格、围栏代码、历史标题级别等尚未支持的结构在编辑会话中显示为可解释的源码文字；序列化时 `wenyou_literal_line` 会转义 Markdown 标点并提交为 Markdown v3 安全字面文本，因此它们不会作为原始不支持结构继续生效，也不属于源码无损提交。外部粘贴、键盘和 IME 写入的普通字符携带 `wenyou_literal_text`，Codec 先转义全部 ASCII Markdown 标点，再由完整 `encode` 出口统一识别并字面化漏网的不支持结构；只有已有受支持 Markdown 解码结果、工具栏属性和协议 embed 可以生成语义。已保存的安全转义在 decode 时拆成可见字符与最小 literal span，编辑器不显示反斜杠和 whitespace guard，重新 encode 仍得到相同安全表示。用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 提升为稳定 embed 或行属性。未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed；未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作会阻止序列化。
+`MarkdownDeltaCodec` 已接入主题和帖子编辑器。`MarkdownRichLineDecoder` 先把可精确往返的粗体、斜体、删除线、行内代码、安全链接、二三级标题、引用和 0～3 级列表解析为不依赖 Quill 的中立行模型，Codec 再用未净化的候选编码结果验证其能回到完全相同的 canonical 输入后映射为 Delta 属性；出口净化不能参与这项能力证明。任务列表、表格、围栏代码、历史标题级别等尚未支持的结构在编辑会话中显示为可解释的源码文字；序列化时 `wenyou_literal_line` 会转义 Markdown 标点并提交为 Markdown v4 安全字面文本，因此它们不会作为原始不支持结构继续生效，也不属于源码无损提交。外部粘贴、键盘和 IME 写入的普通字符携带 `wenyou_literal_text`，Codec 先转义全部 ASCII Markdown 标点，再由完整 `encode` 出口统一识别并字面化漏网的不支持结构；只有已有受支持 Markdown 解码结果、工具栏属性和协议 embed 可以生成语义。已保存的安全转义在 decode 时拆成可见字符与最小 literal span，编辑器不显示反斜杠和 whitespace guard，重新 encode 仍得到相同安全表示。用户提及、全体玩家、骰子、表情、普通图片、独占 `<br />` 和精确 `---` 提升为稳定 embed 或行属性。未知骰子版本、非法/重复骰子、非法表情与非 HTTP(S) 图片使用保存原 token 的 `wenyou_compatibility` embed；未知/损坏 embed、未知属性、冲突块样式、危险链接或 retain/delete 操作会阻止序列化。
 
 源码换行由 `wenyou_source_break` 区分 Quill 必需的末尾换行，空段由 `wenyou_empty_paragraph` 区分普通空行，确保 `<br />` 不被当作 HTML。解码时另用仅存在于会话内存的 `wenyou_source_separator` 标记已有 Markdown 的结构分隔；键盘、IME 或外部粘贴产生的新空行不得继承该标记。编码出口在 Delta 副本上按真实字符位置重组行元数据：已有结构分隔继续写普通空行，其余无块样式的空 Quill Paragraph 逐个写为独占 `<br />`，包括首部、尾部和连续空段；只有文档最后一个 Quill 换行按位置视为终止符，不信任换行规则复制的 `wenyou_source_break=false`。编辑页提供工具栏及 mention、dice、sticker、image、compatibility、horizontal-rule builder；分隔线只位于“更多”。编辑器剪贴板只在进程内保存结构化选区，系统剪贴板始终写渲染后的可见纯文本，不写 Markdown 定界符、媒体 URL 或隐藏 ID；Android `ClipDescription.extras` 同时保存随机 UUID marker。只有 marker、可见纯文本、十分钟时效和 `SessionScope` 全部匹配才恢复 Delta。匹配的复制载荷在每次粘贴时重建骰子 UUID，剪切载荷仅首次保留原 UUID；任一条件失配或载荷无法通过 Codec 安全编码时只按普通文本插入。所有外部文本粘贴都由 `RichEditorSession` 消费并统一换行，不读取外部 HTML，也不再把普通文本、富剪贴板或无文本结果交回 Quill 默认路径。读取剪贴板前固定文档 generation、Delta 签名和选区；异步返回时任何一项变化都会拒绝旧操作。会话先在克隆 Document 上完成替换、编码和 10000 字符预检，通过后才一次写入真实文档，因此超限不会留下部分正文。系统剪贴板写入失败同步清除内部载荷；只读会话允许复制，但明确拦截剪切和粘贴。显式 `flush` 等待在途粘贴并每次从当前 Delta 编码，即使会话未标脏也不得复用旧 Markdown；主题发布、主题/子贴/帖子保存、五槽位云草稿和本地快照由此共用同一出口。仅上述明确支持且通过精确回编码验证的既有 Markdown 进入 WYSIWYG；外部或新输入文本始终保持字面语义。
 
@@ -35,7 +36,7 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 ## 往返不变量
 
-1. 对白名单内结构，`decode(markdown) → encode(delta)` 经 Markdown v3 规范化后必须与 canonical 输入一致；对白名单外但可读取的结构，输出必须等于契约规定的安全字面化结果。
+1. 对白名单内结构，`decode(markdown) → encode(delta)` 经 Markdown v4 规范化后必须与 canonical 输入一致；对白名单外但可读取的结构，输出必须等于契约规定的安全字面化结果。
 2. `encode(decode(canonical))` 必须幂等。
 3. 提及 ID、显示名、骰子 nodeId/notation、图片 alt/title/URL 和表情 asset ID 必须逐字段无损；骰子前后文字与 Markdown 换行边界也必须保持原位。
 4. 围栏代码、行内代码和反斜杠转义中的协议样式文字保持普通文本。
@@ -51,17 +52,20 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 14. 新建的普通空 Quill Paragraph 必须在键盘、IME、粘贴、草稿和发布共用的编码出口逐段转为 canonical `<br />`；已有 Markdown 的单个结构分隔保持原样，只有阅读菜单捕获的同一松散列表与同一引用内部语法分隔可以在生成剪贴板载荷前移除；换行继承的末行属性不得吞掉中间或尾部空段。
 15. 分隔线必须是独占块，canonical Markdown 两侧各保留一个结构空行；`正文\n---` 必须保持 H2 语义并写为 `## 正文`，结构重新解析不等价时不得覆盖任何草稿或发布正文。
 16. `* / _ / ~~` 在标点或符号边界紧邻正文时必须恢复既有强调语义；写回仅用数字字符引用保护相邻字符，不增加可见空格，下划线别名统一规范为星号。转义、代码、空白边界和普通单词内下划线保持字面文本。
+17. 对齐标记只允许紧邻有可见内容且不含普通图片的普通段落或 H2/H3；同一 Markdown 段落的物理行必须保持一致。列表、引用、普通图片、分隔线、空段、兼容文本和未知标记不得继承或创建对齐属性。
+18. clipboard v2 只读取本站 envelope 顶层合法块的 `data-wenyou-align="center|right"`，v1 继续恢复原有结构但不恢复对齐；CSS、`align` 属性、嵌套包装和外部 HTML 不得推断对齐。
 
 ## 测试门禁
 
-- `contracts/markdown-v3-fixtures.json`、`contracts/markdown-v3-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v5-fixtures.json` 与 `contracts/editor-clipboard-v1-fixtures.json` 的 canonical、visible、块/行内语义、传输回退和幂等用例全部通过，并固定粗体后普通软换行不被提升为段落分隔。
+- `contracts/markdown-v4-fixtures.json`、`contracts/markdown-v4-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v6-fixtures.json` 与 `contracts/editor-clipboard-v2-fixtures.json` 的 canonical、visible、块/行内语义、传输回退和幂等用例全部通过，并固定粗体后普通软换行不被提升为段落分隔。
 - 为普通 Markdown、用户提及、全体玩家、骰子、表情、普通图片、空段和代码转义维护双向 Codec 黄金用例。
 - 历史空段覆盖首部、中部、尾部、CRLF、显式标记幂等及围栏/缩进代码/原始 HTML 保护；编辑后重开必须保持逐段计数。新建空段另覆盖连续回车、首尾空段、继承末行属性、外部粘贴、已有结构分隔编辑和实际帖子发布载荷。
 - 每种自定义 embed 至少覆盖解析、编辑后序列化、未知版本保留和恶意 URL降级。
-- 剪贴板逐条消费 clipboard v1 的入口、节点、传输与黄金用例，覆盖同编辑器、跨编辑器、Android marker/会话匹配、多骰子、剪切后重复粘贴、可见纯文本回退、松散列表/引用段落分隔、显式空段、媒体标签、外部文本/HTML、其他协议节点保持、只读拦截和系统写入失败清理。
-- 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v3 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。
+- 剪贴板逐条消费 clipboard v2 的入口、节点、传输与黄金用例，覆盖同编辑器、跨编辑器、Android marker/会话匹配、多骰子、剪切后重复粘贴、可见纯文本回退、松散列表/引用段落分隔、显式空段、媒体标签、外部文本/HTML、其他协议节点保持、只读拦截和系统写入失败清理。
+- 外部普通文本覆盖 CRLF、受支持 Markdown、表格、HTML、任务列表及全部 Markdown v4 不支持 fixture；另覆盖手输/IME、历史转义显示、粘贴竞态、序列化超限、在途保存、H2/H3、加粗、未标脏和同一帧立即 flush。
 - 分隔线覆盖文首、文尾、文字中间、当前行上方/下方、单步撤销、重开、真实发布载荷和非法混合 Delta；阅读态与编辑态都断言 `border` 语义色、1px/1dp 且无装饰。
 - 工具栏格式策略覆盖全部可创建命令、15 种兼容行内组合、行内代码互斥和块格式转换；同一份 Markdown 在编辑态与发布态共享样式规格，并维护亮暗色、宽屏及 2× 字号配对 Golden。
+- 对齐回归覆盖左 → 居中 → 右循环、标题转换保持、列表/引用清除、普通图片与空块拒绝、多物理行一致性、阅读分段渲染、clipboard v1 降级与 v2 往返。
 - Flutter Quill 升级必须独立 `chore`，重新运行全部 Codec 黄金语料并人工冒烟 Android 输入、选择、撤销/重做和粘贴。
 
 参考：[Flutter Quill](https://pub.dev/packages/flutter_quill)、[markdown_quill 限制](https://pub.dev/packages/markdown_quill)、[编辑器模块](../modules/editor.md)。

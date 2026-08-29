@@ -5,9 +5,9 @@
 ## 当前基线
 
 - 客户端：`0.6.0+90` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
-- 后端契约：`5.14.0-dev.20260829.1`，revision `c7ade12aa3348e9a79661184478812806a23f6e6`；Markdown v3、编辑器往返黄金契约 v5、剪贴板契约 v1。
-- 正文契约：Markdown v3；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v6.6.2`。
+- 后端契约：`5.14.0-dev.20260829.1`，revision `b653263f383f570879a169132fbe478fc41ecb13`；Markdown v4、编辑器往返黄金契约 v6、剪贴板契约 v2。公网 `/meta` 暂时继续声明 Markdown v3，待移动端升级完成后独立激活。
+- 正文契约：Markdown v4；站内引用契约：`wenyousite-internal-reference` v1。
+- 视觉依赖：Foundation `v6.7.0`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
 
@@ -26,7 +26,7 @@
 - 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。
 - `searchSearchThreads` 已支持 cursor/limit 分页，但移动端仍走不传参数的兼容调用，单次最多读取 50 条；完成移动端分页前搜索模块保持 `in_progress`。
 - 本人动态收藏已按独立目录与必填 folderId 分页；公开用户页仍需接入公开动态收藏分页。
-- 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v3 安全字面文本；这不是原始不支持结构的无损提交。
+- 不支持的 Markdown 结构在编辑器中以可解释源码显示，提交时会转成 Markdown v4 安全字面文本；这不是原始不支持结构的无损提交。
 - 主题详情的每个子贴已提供必填 `postingCapability`，本人协作主题分页与协作者任免通知也已稳定；移动端尚未消费这些投影，当前仍需在写入后采用服务端权限结果，也不会展示独立的协作主题列表或处理任免后的页面退出与刷新。
 - 订阅列表尚无按主题/类型筛选和分页参数，移动端当前读取本人完整订阅后过滤；数据规模增长前需要补齐稳定契约并迁移客户端。
 

@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
@@ -329,6 +330,13 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
               WenyouComposerDock(
                 key: const Key('compose-toolbar'),
                 controller: _editorSession.controller,
+                capabilities: WenyouEditorCapabilities.forAlignment(
+                  ref.watch(
+                    appCapabilitiesProvider.select(
+                      (capabilities) => capabilities.markdownAlignment,
+                    ),
+                  ),
+                ),
                 surface: WenyouComposerSurface.page,
                 enabled: enabled,
                 editorFocusNode: _editorSession.focusNode,

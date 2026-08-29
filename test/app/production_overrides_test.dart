@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/production_overrides.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/direct_messages/application/direct_message_repository_ports.dart';
 import 'package:wenyousite_mobile/features/drafts/application/content_draft_repository_ports.dart';
@@ -41,5 +42,24 @@ void main() {
     for (final provider in mandatoryPorts) {
       expect(() => container.read(provider), returnsNormally);
     }
+  });
+
+  test('Markdown v4 单独启用块对齐，v3 保持旧编辑能力', () {
+    const v3 = ContractInfo(
+      contractVersion: '5.14.0',
+      markdownContractVersion: 3,
+      stickersEnabled: true,
+    );
+    const v4 = ContractInfo(
+      contractVersion: '5.14.0',
+      markdownContractVersion: 4,
+      directMessagesEnabled: true,
+    );
+
+    expect(appCapabilitiesForContract(v3).markdownAlignment, isFalse);
+    expect(appCapabilitiesForContract(v3).stickers, isTrue);
+    expect(appCapabilitiesForContract(v4).markdownAlignment, isTrue);
+    expect(appCapabilitiesForContract(v4).directMessages, isTrue);
+    expect(appCapabilitiesForContract(null).markdownAlignment, isFalse);
   });
 }

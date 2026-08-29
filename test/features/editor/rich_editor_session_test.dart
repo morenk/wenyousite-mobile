@@ -1019,6 +1019,63 @@ void main() {
     );
     expect(emitted, isEmpty);
   });
+
+  testWidgets('编辑器自动清除列表继承的非法对齐属性', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '正文',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 2),
+      ChangeSource.local,
+    );
+
+    session.controller.formatSelection(Attribute.ul);
+    session.controller.formatSelection(Attribute.centerAlignment);
+    await tester.pump();
+
+    expect(
+      session.controller.document.toDelta().operations.last.attributes,
+      isNot(contains('align')),
+    );
+    expect(await session.flush(), isTrue);
+    expect(emitted.last, '- 正文');
+  });
+
+  testWidgets('同一 Markdown 段落出现混合对齐时统一清回左对齐', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '第一行\n第二行',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    session.controller.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 3),
+      ChangeSource.local,
+    );
+
+    session.controller.formatSelection(Attribute.centerAlignment);
+    await tester.pump();
+
+    final newlineOperations = session.controller.document
+        .toDelta()
+        .operations
+        .where((operation) => operation.data == '\n');
+    expect(
+      newlineOperations.every(
+        (operation) => !(operation.attributes?.containsKey('align') ?? false),
+      ),
+      isTrue,
+    );
+    expect(await session.flush(), isTrue);
+    expect(
+      MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
+      '第一行\n第二行',
+    );
+    expect(emitted, isEmpty);
+  });
 }
 
 List<String> _diceNodeIds(String markdown) => RegExp(

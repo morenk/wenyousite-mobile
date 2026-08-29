@@ -930,6 +930,61 @@ void main() {
     expect(find.byKey(const Key('editor-more')), findsNothing);
     expect(find.byKey(const Key('editor-submit')), findsOneWidget);
   });
+
+  testWidgets('对齐能力开启后在更多面板循环左、居中和右对齐', (tester) async {
+    final controller = QuillController(
+      document: Document()..insert(0, '正文'),
+      selection: const TextSelection.collapsed(offset: 1),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouEditorToolbar(
+            controller: controller,
+            enabled: true,
+            capabilities: const WenyouEditorCapabilities(
+              headings: false,
+              inlineStyles: false,
+              images: false,
+              links: false,
+              blockStyles: false,
+              alignment: true,
+              dice: false,
+              stickers: false,
+              drafts: false,
+            ),
+            onInsertImage: () async {},
+            onSaveDraft: () async {},
+          ),
+        ),
+      ),
+    );
+
+    Future<void> cycle(String tooltip) async {
+      await tester.tap(find.byKey(const Key('editor-more')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('editor-alignment')), findsOneWidget);
+      await tester.tap(find.byTooltip(tooltip));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('editor-more-tray')), findsNothing);
+    }
+
+    await cycle('左对齐（点击切换）');
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      '[wenyousite-align-v1-center]: #\n正文',
+    );
+    await cycle('居中（点击切换）');
+    expect(
+      MarkdownDeltaCodec.encode(controller.document.toDelta()),
+      '[wenyousite-align-v1-right]: #\n正文',
+    );
+    await cycle('右对齐（点击切换）');
+    expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), '正文');
+  });
 }
 
 String _diceMarkdown(int count) => List.generate(count, (index) {

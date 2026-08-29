@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/features/app_shell/application/startup_control
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/mobile_update_service.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/recommended_update_dismiss_store.dart';
+import 'package:wenyousite_mobile/features/app_shell/domain/contract_info.dart';
 import 'package:wenyousite_mobile/features/auth/application/auth_ports.dart';
 import 'package:wenyousite_mobile/features/auth/data/auth_repository.dart';
 import 'package:wenyousite_mobile/features/auth/data/password_recovery_repository.dart';
@@ -229,11 +230,7 @@ List<Override> productionProviderOverrides() => [
     final contract = ref.watch(
       startupControllerProvider.select((state) => state.contract),
     );
-    return AppCapabilities(
-      stickers: contract?.stickersEnabled ?? false,
-      directMessages: contract?.directMessagesEnabled ?? false,
-      pushNotifications: contract?.pushNotificationsEnabled ?? false,
-    );
+    return appCapabilitiesForContract(contract);
   }),
   profileCacheInvalidatorProvider.overrideWith((ref) {
     return (userId) {
@@ -244,3 +241,12 @@ List<Override> productionProviderOverrides() => [
     };
   }),
 ];
+
+AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
+  return AppCapabilities(
+    stickers: contract?.stickersEnabled ?? false,
+    directMessages: contract?.directMessagesEnabled ?? false,
+    pushNotifications: contract?.pushNotificationsEnabled ?? false,
+    markdownAlignment: contract?.markdownContractVersion == 4,
+  );
+}

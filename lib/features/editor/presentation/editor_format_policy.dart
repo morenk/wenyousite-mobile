@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_alignment.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
 /// Keeps toolbar-created Delta inside the Markdown editor contract.
 abstract final class WenyouEditorFormatPolicy {
@@ -13,6 +16,31 @@ abstract final class WenyouEditorFormatPolicy {
   static bool isActive(Style style, Attribute attribute) {
     final current = style.attributes[attribute.key];
     return current != null && current.value == attribute.value;
+  }
+
+  static WenyouTextAlignment selectedAlignment(QuillController controller) {
+    final selection = controller.selection;
+    return MarkdownDeltaAlignment.selectionAlignment(
+      controller.document.toDelta(),
+      start: selection.start,
+      end: selection.end,
+      imageEmbed: MarkdownDeltaCodec.imageEmbed,
+      horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
+    );
+  }
+
+  static void cycleAlignment(QuillController controller) {
+    final selection = controller.selection;
+    final patch = MarkdownDeltaAlignment.cycleSelection(
+      controller.document.toDelta(),
+      start: selection.start,
+      end: selection.end,
+      imageEmbed: MarkdownDeltaCodec.imageEmbed,
+      horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
+    );
+    if (patch.isNotEmpty) {
+      controller.document.compose(patch, ChangeSource.local);
+    }
   }
 
   static void applyHeading(QuillController controller, int level) {
@@ -85,6 +113,7 @@ abstract final class WenyouEditorFormatPolicy {
     _clearBlockAttributes(
       controller,
       clearIndent: attribute.key != Attribute.list.key,
+      clearAlignment: true,
     );
     controller.formatSelection(attribute);
     if (attribute.key == Attribute.list.key &&
@@ -97,6 +126,7 @@ abstract final class WenyouEditorFormatPolicy {
   static void _clearBlockAttributes(
     QuillController controller, {
     required bool clearIndent,
+    bool clearAlignment = false,
   }) {
     for (final attribute in const <Attribute>[
       Attribute.header,
@@ -107,6 +137,9 @@ abstract final class WenyouEditorFormatPolicy {
     }
     if (clearIndent) {
       controller.formatSelection(Attribute.clone(Attribute.indent, null));
+    }
+    if (clearAlignment) {
+      controller.formatSelection(Attribute.clone(Attribute.align, null));
     }
   }
 }

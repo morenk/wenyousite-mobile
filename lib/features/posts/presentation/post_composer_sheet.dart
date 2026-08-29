@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -522,6 +523,13 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 WenyouComposerDock(
                   key: const Key('post-composer-toolbar'),
                   controller: _editorSession.controller,
+                  capabilities: WenyouEditorCapabilities.forAlignment(
+                    ref.watch(
+                      appCapabilitiesProvider.select(
+                        (capabilities) => capabilities.markdownAlignment,
+                      ),
+                    ),
+                  ),
                   surface: WenyouComposerSurface.expandableSheet,
                   enabled: !locked && _editorSession.codecFailure == null,
                   editorFocusNode: _editorSession.focusNode,
