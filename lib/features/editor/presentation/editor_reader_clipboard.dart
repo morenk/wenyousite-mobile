@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/reader_markdown_clipboard_decoder.dart';
 
 typedef ReaderMarkdownClipboardWriter =
     Future<void> Function({
@@ -44,7 +45,7 @@ Future<void> copyReaderMarkdownToClipboard({
   store.clear();
   try {
     final delta = _readerClipboardDelta(
-      MarkdownDeltaCodec.decode(markdown).delta,
+      decodeReaderMarkdownClipboard(markdown),
     );
     final marker = const Uuid().v4();
     final fallback = store.capture(

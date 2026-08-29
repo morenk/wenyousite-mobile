@@ -402,6 +402,266 @@ void main() {
     expect(MarkdownDeltaCodec.encode(delta), isNot(contains('= 11')));
   });
 
+  testWidgets('移动阅读菜单把引用中的强调与代码归一为可编辑样式', (tester) async {
+    const source =
+        '> *斜体开头 `inline code` 斜体结尾*\n'
+        '>\n'
+        '> **粗体开头 `second code` 粗体结尾**';
+    const scope = SessionScope(accountId: 'reader-account', generation: 11);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: source,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final delta = session.controller.document.toDelta();
+    final attributes = delta.operations
+        .map((operation) => operation.attributes ?? const <String, dynamic>{})
+        .toList(growable: false);
+    expect(attributes, contains(containsPair('blockquote', true)));
+    expect(attributes, contains(containsPair('italic', true)));
+    expect(attributes, contains(containsPair('bold', true)));
+    expect(attributes, contains(containsPair('code', true)));
+    expect(
+      attributes,
+      isNot(
+        contains(
+          allOf(
+            containsPair('code', true),
+            anyOf(contains('italic'), contains('bold')),
+          ),
+        ),
+      ),
+    );
+    expect(
+      MarkdownDeltaCodec.encode(delta),
+      '> *斜体开头* `inline code` *斜体结尾*\n'
+      '> \n'
+      '> **粗体开头** `second code` **粗体结尾**',
+    );
+  });
+
+  testWidgets('移动阅读菜单把 Web 列表标记归一为编辑器列表', (tester) async {
+    const threadId = 'cmsewdo0h000x7qv6aa77ll1v';
+    const source =
+        '* **星号项目**[入口](/threads/$threadId)\n\n'
+        '+ 加号项目\n\n'
+        '2) 有序项目';
+    const scope = SessionScope(accountId: 'reader-account', generation: 12);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: source,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final delta = session.controller.document.toDelta();
+    final lineAttributes = delta.operations
+        .where((operation) => operation.data is String)
+        .map((operation) => operation.attributes ?? const <String, dynamic>{})
+        .where((attributes) => attributes.containsKey('list'));
+    expect(lineAttributes.map((attributes) => attributes['list']), [
+      'bullet',
+      'bullet',
+      'ordered',
+    ]);
+    expect(
+      MarkdownDeltaCodec.encode(delta),
+      '- **星号项目**[入口](/threads/$threadId)\n\n'
+      '- 加号项目\n\n'
+      '1. 有序项目',
+    );
+  });
+
+  testWidgets('移动阅读菜单归一无歧义的 CommonMark 块写法', (tester) async {
+    const scope = SessionScope(accountId: 'reader-account', generation: 14);
+    const source =
+        '## 标题 ##\n\n'
+        '>\t制表符引用\n\n'
+        '-   多空格项目\n'
+        '3)\t有序项目\n\n'
+        '***\n\n'
+        '___\n\n'
+        '- - -\n\n'
+        '----';
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+    await copyReaderMarkdownToClipboard(
+      markdown: source,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final delta = session.controller.document.toDelta();
+    final attributes = delta.operations
+        .map((operation) => operation.attributes ?? const <String, dynamic>{})
+        .toList(growable: false);
+    expect(attributes, contains(containsPair('header', 2)));
+    expect(attributes, contains(containsPair('blockquote', true)));
+    expect(attributes, contains(containsPair('list', 'bullet')));
+    expect(attributes, contains(containsPair('list', 'ordered')));
+    expect(
+      delta.operations
+          .where(
+            (operation) =>
+                operation.data is Map &&
+                (operation.data as Map).containsKey(
+                  MarkdownDeltaCodec.horizontalRuleEmbed,
+                ),
+          )
+          .length,
+      4,
+    );
+    expect(
+      MarkdownDeltaCodec.encode(delta),
+      '## 标题\n\n> 制表符引用\n\n- 多空格项目\n1. 有序项目\n\n'
+      '---\n\n---\n\n---\n\n---',
+    );
+  });
+
+  testWidgets('移动阅读菜单保留样式内协议节点并继续标签化媒体', (tester) async {
+    const diceId = '550e8400-e29b-41d4-a716-446655440000';
+    const scope = SessionScope(accountId: 'reader-account', generation: 13);
+    const source =
+        '> **前 [传送门](/threads/cmsewdo0h000x7qv6aa77ll1v) '
+        '[@张三](/users/user-zhang) @全体玩家 '
+        '[[dice:v1:$diceId:1d20]] '
+        '![表情](https://cdn.example.com/stickers/a.webp '
+        '"wenyousite-sticker:v1:cm1234567890123456789012") '
+        '![图片](https://cdn.example.com/images/a.png) 后**';
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+
+    await copyReaderMarkdownToClipboard(
+      markdown: source,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final delta = session.controller.document.toDelta();
+    final attributes = delta.operations
+        .map((operation) => operation.attributes ?? const <String, dynamic>{})
+        .toList(growable: false);
+    final nodes = MarkdownDeltaCodec.extractExtensionNodes(delta);
+    final encoded = MarkdownDeltaCodec.encode(delta);
+    expect(attributes, contains(containsPair('blockquote', true)));
+    expect(attributes, contains(containsPair('bold', true)));
+    expect(
+      nodes.map((node) => node['type']),
+      containsAll(['mention', 'mention_all_players', 'dice']),
+    );
+    expect(
+      delta.operations.any(
+        (operation) =>
+            operation.data is Map &&
+            (operation.data as Map).containsKey(
+              MarkdownDeltaCodec.internalReferenceEmbed,
+            ),
+      ),
+      isTrue,
+    );
+    expect(nodes.map((node) => node['type']), isNot(contains('image')));
+    expect(nodes.map((node) => node['type']), isNot(contains('sticker')));
+    expect(encoded, contains(r'\[表情\]'));
+    expect(encoded, contains(r'\[图片\]'));
+    expect(encoded, isNot(contains('cdn.example.com')));
+    expect(
+      nodes.singleWhere((node) => node['type'] == 'dice')['nodeId'],
+      isNot(diceId),
+    );
+  });
+
+  testWidgets('阅读复制不把代码、转义或不支持块中的语法升级为节点', (tester) async {
+    const source =
+        '`[@代码](/users/user-code)`\n\n'
+        r'\[@转义](/users/user-escaped)'
+        '\n\n```md\n'
+        '[@围栏](/users/user-fence)\n'
+        '```\n\n'
+        '- [ ] [任务](/threads/cmsewdo0h000x7qv6aa77ll1v)';
+    const scope = SessionScope(accountId: 'reader-account', generation: 15);
+    final store = WenyouEditorClipboardStore();
+    final gateway = _RoundTripClipboardGateway();
+    await copyReaderMarkdownToClipboard(
+      markdown: source,
+      scope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    final session = RichEditorSession(
+      initialMarkdown: '',
+      onMarkdownChanged: (_) {},
+      clipboardScope: scope,
+      clipboardGateway: gateway,
+      clipboardStore: store,
+    );
+    addTearDown(session.dispose);
+    expect(await session.controller.clipboardPaste(), isTrue);
+
+    final delta = session.controller.document.toDelta();
+    expect(delta.operations.any((operation) => operation.data is Map), isFalse);
+    expect(
+      delta.operations.any(
+        (operation) => operation.attributes?['link'] != null,
+      ),
+      isFalse,
+    );
+    expect(
+      delta.operations.any(
+        (operation) => operation.attributes?['code'] == true,
+      ),
+      isTrue,
+    );
+  });
+
   test('移动阅读菜单写入失败会清除旧载荷和本次捕获', () async {
     const scope = SessionScope(accountId: 'reader-account', generation: 10);
     final store = WenyouEditorClipboardStore();

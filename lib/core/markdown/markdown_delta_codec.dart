@@ -55,7 +55,15 @@ class MarkdownDeltaCodec {
   static final _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
   static final _mentionWord = RegExp(r'[a-zA-Z0-9_\u4e00-\u9fff]');
 
-  static MarkdownDeltaDocument decode(String markdown) {
+  static MarkdownDeltaDocument decode(String markdown) =>
+      _decode(markdown, readerClipboard: false);
+  static MarkdownDeltaDocument decodeReaderClipboard(String markdown) =>
+      _decode(markdown, readerClipboard: true);
+
+  static MarkdownDeltaDocument _decode(
+    String markdown, {
+    required bool readerClipboard,
+  }) {
     final editorDocument = MarkdownEditorDocument.parse(markdown);
     final source = editorDocument.toMarkdown();
     final delta = Delta();
@@ -84,10 +92,14 @@ class MarkdownDeltaCodec {
       } else if (opening != null) {
         fence = _Fence(opening[0], opening.length);
         delta.insert(line);
+      } else if (readerClipboard && RegExp(r'^>[\t ]*$').hasMatch(line)) {
+        richLineAttributes = const {'blockquote': true};
       } else if (_emptyParagraph.hasMatch(line)) {
         // 独占 <br /> 是协议空段，不进入可编辑文本。
         isProtocolEmptyParagraph = true;
-      } else if (line == '---') {
+      } else if (line == '---' ||
+          (readerClipboard &&
+              MarkdownRichLineDecoder.isReaderThematicBreak(line))) {
         delta.insert({
           horizontalRuleEmbed: const {'version': 1},
         });
@@ -119,7 +131,14 @@ class MarkdownDeltaCodec {
           richLineAttributes = decoded.lineAttributes;
         }
       } else {
-        final richLine = _tryDecodeRichLine(line);
+        final richSource = readerClipboard
+            ? MarkdownRichLineDecoder.canonicalizeReaderBlockPrefix(line)
+            : line;
+        final richLine =
+            _tryDecodeRichLine(richSource) ??
+            (readerClipboard
+                ? MarkdownRichLineDecoder.decodeEditable(richSource)
+                : null);
         if (richLine == null) {
           _decodeInlineLine(line, delta, issues, diceNodeIds);
         } else {
