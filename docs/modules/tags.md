@@ -44,7 +44,7 @@
 
 ## 10. 跨模块约束
 
-主题条目复用 threads 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。公开主题列表与详情的导航标签统一使用无图标、中性前景和 `#` 前缀，不消费服务端局部颜色表达状态，也不绘制常驻背景、边框或圆角气泡；管理表单中的可移除标签仍保留编辑控件语义。列表优先显示最多三个标签，只有三个按真实宽度放不下时才减少可见项，并把超过上限或因宽度隐藏的项汇总到不可点击的 `+N`；详情标签栏保持单行并随标题滚出，不吸顶、不用 `+N` 隐藏任何标签。导航标签的外围仍保留至少 48dp 触控区，非交互标签按内容收缩。
+主题条目复用 threads 的公开读模型与发现卡片组件：每项是占满内容列的独立细边框圆角卡片，唯一安全首图在卡片内以整宽 16:9 展示，无图不预留图片舞台；tags 不反向依赖 home。详情和管理入口由 threads 模块提供，验证恢复复用 auth/settings 路由。公开主题列表与详情的导航标签统一使用无图标、`#` 前缀、Foundation `accent/onAccent` 色对、`primary` 描边和 600 字重，不消费服务端局部颜色表达状态，也不借用点赞专色；管理表单中的可移除标签消费相同标签色对并保留编辑控件语义。列表优先显示最多三个标签，只有三个按真实宽度放不下时才减少可见项，并把超过上限或因宽度隐藏的项汇总到不可点击的 `+N`；详情标签栏保持单行并随标题滚出，不吸顶、不用 `+N` 隐藏任何标签。导航标签的外围仍保留至少 48dp 触控区，非交互标签按内容收缩。
 
 ## 11. 测试场景与验收条件
 
@@ -53,7 +53,7 @@
 - [x] 主题设置读取已有标签名称，新增名称随聚合保存且同名标签自动复用；旧标签管理地址直接打开统一编辑器。
 - [x] 五标签上限在网络前阻止第六次添加；移除失败保留原关系和请求 ID。
 - [x] 添加、移除、离页防丢、聚合冲突处理和 360/400/600dp 页面布局通过 Widget 测试。
-- [x] 公开阅读标签固定为中性 `#名称` 文字且无常驻背景、边框或圆角气泡；服务端颜色不会改变标签对比度。48dp 导航命中区、列表三标签真实宽度折叠、详情单标签导航、五标签单行横滑、无标签收缩与非交互尺寸分别有 Widget 回归。
+- [x] 公开阅读与管理标签固定为 Foundation `#名称`、accent/onAccent 色对、primary 描边和 600 字重；服务端颜色不会改变标签对比度。48dp 导航命中区、列表三标签真实宽度折叠、详情单标签导航、五标签单行横滑、无标签收缩与非交互尺寸分别有 Widget 回归。
 - [x] 卡片分类元信息显示“演绎”等用户 label，回归测试禁止渲染 `DEDUCTION` 等 slug。
 
 ## 12. 已知限制和后续功能
@@ -62,8 +62,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.13.2-dev.20260828.1`；Markdown v3；后端 `51be1b9894949d4914e2df1bf8d40828bc595b58`；Foundation `v6.4.0`（`0297a99`）。
+契约 `5.13.2-dev.20260828.1`；Markdown v3；后端 `51be1b9894949d4914e2df1bf8d40828bc595b58`；Foundation `v6.6.1`（`d92a508`）。
 
 ## 14. 相关代码与架构文档
 
-端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v6.4.0](https://github.com/morenk/wenyousite-foundation/tree/v6.4.0)。
+端口与控制器：`lib/features/tags/application/`；API 适配器：`lib/features/tags/data/`；页面：`lib/features/tags/presentation/`。参见[首页](home.md)、[主题与子贴](threads.md)、[认证](auth.md)、[导航](../architecture/navigation.md)、[语义图标](../architecture/icons.md)及 [Foundation v6.6.1](https://github.com/morenk/wenyousite-foundation/tree/v6.6.1)。

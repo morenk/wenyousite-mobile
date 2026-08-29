@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 
 void main() {
-  testWidgets('阅读态标签使用无气泡文字入口并保留移动端命中区', (tester) async {
+  testWidgets('阅读态标签使用 Foundation 品牌色对并保留移动端命中区', (tester) async {
     var tapped = false;
     await tester.pumpWidget(
       MaterialApp(
@@ -24,10 +24,16 @@ void main() {
     final states = <WidgetState>{};
     expect(
       button.style?.foregroundColor?.resolve(states),
-      WenyouFoundationPalette.mutedForeground,
+      WenyouFoundationPalette.onAccent,
     );
-    expect(button.style?.backgroundColor?.resolve(states), Colors.transparent);
-    expect(button.style?.side?.resolve(states), isNull);
+    expect(
+      button.style?.backgroundColor?.resolve(states),
+      WenyouFoundationPalette.accent,
+    );
+    expect(
+      button.style?.side?.resolve(states)?.color,
+      WenyouFoundationPalette.primary,
+    );
     expect(button.style?.minimumSize?.resolve(states), const Size(48, 48));
     expect(
       button.style?.padding?.resolve(states),
@@ -52,17 +58,22 @@ void main() {
 
     expect(find.byType(OutlinedButton), findsNothing);
     expect(find.byType(TextButton), findsNothing);
-    expect(
+    final surface = tester.widget<DecoratedBox>(
       find.descendant(
         of: find.byType(WenyouTagLink),
         matching: find.byType(DecoratedBox),
       ),
-      findsNothing,
+    );
+    final decoration = surface.decoration as BoxDecoration;
+    expect(decoration.color, WenyouFoundationPalette.accent);
+    expect(
+      (decoration.border! as Border).top.color,
+      WenyouFoundationPalette.primary,
     );
     expect(tester.getSize(find.byType(WenyouTagLink)).height, lessThan(32));
     final text = tester.widget<Text>(find.text('#太空歌剧'));
     expect(text.style?.fontSize, 12);
-    expect(text.style?.fontWeight, FontWeight.w500);
-    expect(text.style?.color, WenyouFoundationPalette.mutedForeground);
+    expect(text.style?.fontWeight, FontWeight.w600);
+    expect(text.style?.color, WenyouFoundationPalette.onAccent);
   });
 }

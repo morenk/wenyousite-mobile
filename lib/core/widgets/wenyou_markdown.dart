@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
@@ -190,6 +191,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
               (location) => _openInternalLocation(context, location),
             ),
             'code': _InlineCodeMarkdownBuilder(),
+            'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
           },
           onTapLink: (_, href, _) => _openLink(context, href),
           imageBuilder: (uri, title, alt) => _MarkdownImage(
@@ -448,6 +450,23 @@ class _InlineCodeMarkdownBuilder extends MarkdownElementBuilder {
       style: preferredStyle ?? parentStyle,
     );
   }
+}
+
+class _HorizontalRuleMarkdownBuilder extends MarkdownElementBuilder {
+  _HorizontalRuleMarkdownBuilder({required this.fontSize});
+
+  final double fontSize;
+
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) => WenyouBodyDivider(fontSize: fontSize);
 }
 
 final _markdownCodePattern = RegExp(

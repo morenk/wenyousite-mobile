@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 /// Lightweight topic-tag navigation for public reading surfaces.
 ///
-/// The visible affordance stays text-only while interactive instances retain
-/// Foundation's 48dp mobile target and explicit link semantics.
+/// Interactive instances retain Foundation's 48dp mobile target and explicit
+/// link semantics.
 class WenyouTagLink extends StatelessWidget {
   const WenyouTagLink({required this.name, required this.onPressed, super.key});
 
@@ -20,7 +21,10 @@ class WenyouTagLink extends StatelessWidget {
   }) {
     final tokens = context.wenyouTokens;
     final painter = TextPainter(
-      text: TextSpan(text: '#$name', style: _textStyle(context)),
+      text: TextSpan(
+        text: '${WenyouElementContract.topicTagPrefix}$name',
+        style: _textStyle(context),
+      ),
       maxLines: 1,
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
@@ -35,19 +39,29 @@ class WenyouTagLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final textStyle = _textStyle(context);
-    final label = '#$name';
+    final label = '${WenyouElementContract.topicTagPrefix}$name';
 
     if (onPressed == null) {
       return Semantics(
         label: label,
         excludeSemantics: true,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textStyle,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: tokens.accentedBackground,
+            border: Border.all(color: tokens.brandSurface),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.space4,
+              vertical: tokens.space4,
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textStyle,
+            ),
           ),
         ),
       );
@@ -60,13 +74,17 @@ class WenyouTagLink extends StatelessWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          foregroundColor: tokens.mutedText,
-          backgroundColor: Colors.transparent,
+          foregroundColor: tokens.onAccentedBackground,
+          backgroundColor: tokens.accentedBackground,
           minimumSize: Size(
             tokens.minimumTouchTarget,
             tokens.minimumTouchTarget,
           ),
           padding: EdgeInsets.symmetric(horizontal: tokens.space4),
+          side: BorderSide(color: tokens.brandSurface),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
+          ),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           textStyle: textStyle,
         ),
@@ -78,6 +96,6 @@ class WenyouTagLink extends StatelessWidget {
 
 TextStyle? _textStyle(BuildContext context) =>
     Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: context.wenyouTokens.mutedText,
-      fontWeight: FontWeight.w500,
+      color: context.wenyouTokens.onAccentedBackground,
+      fontWeight: FontWeight.w600,
     );

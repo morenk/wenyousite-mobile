@@ -121,7 +121,12 @@ class WenyouRichTextStyleSpec {
         ),
       ),
       horizontalRuleDecoration: BoxDecoration(
-        border: Border(top: BorderSide(color: tokens.border)),
+        border: Border(
+          top: BorderSide(
+            color: tokens.border,
+            width: WenyouElementContract.dividerLineThickness,
+          ),
+        ),
       ),
       blockSpacing: tokens.space12,
     );

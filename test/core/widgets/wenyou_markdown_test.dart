@@ -561,16 +561,38 @@ $diceNode
       (quote.borderRadius! as BorderRadiusDirectional).topEnd.x,
       WenyouFoundationMobile.radiusCompact,
     );
-    final rule = style.horizontalRuleDecoration! as BoxDecoration;
-    expect((rule.border! as Border).top.width, 1);
-    expect((rule.border! as Border).top.color, WenyouFoundationPalette.border);
+    final bodyDivider = find.byKey(const Key('wenyou-body-divider'));
+    final dividerLine = find.byKey(const Key('wenyou-body-divider-line'));
+    final dividerMarker = find.byKey(const Key('wenyou-body-divider-marker'));
+    expect(bodyDivider, findsOneWidget);
     expect(
-      (rule.border! as Border).top.color,
-      isNot(WenyouFoundationPalette.input),
+      tester.getSize(bodyDivider).width,
+      closeTo(
+        tester.getSize(find.byType(MarkdownBody)).width *
+            WenyouElementContract.dividerInlineSizeFraction,
+        0.01,
+      ),
     );
-    expect(rule.color, isNull);
-    expect(rule.gradient, isNull);
-    expect(rule.boxShadow, isNull);
+    expect(
+      tester.getSize(dividerLine).height,
+      WenyouElementContract.dividerLineThickness,
+    );
+    expect(
+      tester.getSize(dividerMarker),
+      const Size.square(WenyouElementContract.dividerMarkerDiameter),
+    );
+    final line = tester.widget<ColoredBox>(
+      find.descendant(of: dividerLine, matching: find.byType(ColoredBox)),
+    );
+    final marker = tester.widget<DecoratedBox>(
+      find.descendant(of: dividerMarker, matching: find.byType(DecoratedBox)),
+    );
+    expect(line.color, WenyouFoundationPalette.border);
+    expect(
+      (marker.decoration as BoxDecoration).color,
+      WenyouFoundationPalette.brandStrong,
+    );
+    expect(find.bySemanticsLabel('分隔线'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await expectLater(

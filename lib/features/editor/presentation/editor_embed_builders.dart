@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_body_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
@@ -269,17 +270,7 @@ class _HorizontalRuleEmbedBuilder extends EmbedBuilder {
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
-    return Semantics(
-      label: '分隔线',
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: context.wenyouTokens.space8),
-        child: Divider(
-          height: 1,
-          thickness: 1,
-          color: context.wenyouTokens.border,
-        ),
-      ),
-    );
+    return WenyouBodyDivider(fontSize: embedContext.textStyle.fontSize ?? 17);
   }
 }
 

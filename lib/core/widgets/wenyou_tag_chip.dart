@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class WenyouTagChip extends StatelessWidget {
@@ -20,15 +21,18 @@ class WenyouTagChip extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return InputChip(
       label: Text(
-        '#$name',
-        style: TextStyle(color: tokens.mutedText, fontWeight: FontWeight.w500),
+        '${WenyouElementContract.topicTagPrefix}$name',
+        style: TextStyle(
+          color: tokens.onAccentedBackground,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       tooltip: onPressed == null ? null : '查看 #$name 标签下的主题',
       deleteButtonTooltipMessage: deleteTooltip,
       onPressed: onPressed,
       onDeleted: onDeleted,
-      backgroundColor: Colors.transparent,
-      side: BorderSide(color: tokens.border),
+      backgroundColor: tokens.accentedBackground,
+      side: BorderSide(color: tokens.brandSurface),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(tokens.radius12),
       ),

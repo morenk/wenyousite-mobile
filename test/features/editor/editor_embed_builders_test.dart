@@ -108,7 +108,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('编辑态分隔线使用 Foundation border 的 1dp 实线', (tester) async {
+  testWidgets('编辑态分隔线使用 Foundation 居中短线与圆点', (tester) async {
     const source = '上文\n\n---\n\n下文';
     final controller = QuillController(
       document: Document.fromDelta(MarkdownDeltaCodec.decode(source).delta),
@@ -139,10 +139,29 @@ void main() {
     );
     await tester.pump();
 
-    final divider = tester.widget<Divider>(find.byType(Divider));
-    expect(divider.height, 1);
-    expect(divider.thickness, 1);
-    expect(divider.color, WenyouFoundationPalette.border);
+    final divider = find.byKey(const Key('wenyou-body-divider'));
+    final line = find.byKey(const Key('wenyou-body-divider-line'));
+    final marker = find.byKey(const Key('wenyou-body-divider-marker'));
+    expect(divider, findsOneWidget);
+    expect(
+      tester.getSize(line).height,
+      WenyouElementContract.dividerLineThickness,
+    );
+    expect(
+      tester.getSize(marker),
+      const Size.square(WenyouElementContract.dividerMarkerDiameter),
+    );
+    final lineSurface = tester.widget<ColoredBox>(
+      find.descendant(of: line, matching: find.byType(ColoredBox)),
+    );
+    final markerSurface = tester.widget<DecoratedBox>(
+      find.descendant(of: marker, matching: find.byType(DecoratedBox)),
+    );
+    expect(lineSurface.color, WenyouFoundationPalette.border);
+    expect(
+      (markerSurface.decoration as BoxDecoration).color,
+      WenyouFoundationPalette.brandStrong,
+    );
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
     expect(tester.takeException(), isNull);
   });
