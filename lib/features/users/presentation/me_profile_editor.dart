@@ -390,7 +390,7 @@ class _SubmissionFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: message,
-      detail: wenyouRequestDetail(failure),
+      detail: wenyouFailureDetail(failure, treatAsWrite: true),
     );
   }
 }

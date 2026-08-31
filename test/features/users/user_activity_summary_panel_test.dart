@@ -147,7 +147,7 @@ void main() {
       ),
     );
 
-    expect(find.text('问题编号：activity-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：activity-request'), findsOneWidget);
     await tester.tap(find.text('重试'));
     expect(retried, isTrue);
   });

@@ -682,9 +682,7 @@ class _SearchErrorState extends StatelessWidget {
         icon: WenyouIconIds.statusOffline,
         title: '搜索失败',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: failure?.requestId == null
-            ? null
-            : '问题编号：${failure!.requestId}',
+        detail: wenyouFailureDetail(failure),
         action: OutlinedButton.icon(
           key: const Key('search-retry'),
           onPressed: onRetry,
@@ -707,7 +705,7 @@ class _SearchInlineError extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
+      detail: wenyouFailureDetail(failure),
       action: TextButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),

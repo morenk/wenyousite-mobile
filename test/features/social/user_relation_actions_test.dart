@@ -64,7 +64,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('关注'), findsOneWidget);
-    expect(find.text('问题编号：follow-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：follow-request-id'), findsOneWidget);
   });
 }
 

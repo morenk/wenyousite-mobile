@@ -1791,7 +1791,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('楼层暂时无法加载。'), findsOneWidget);
-    expect(find.text('问题编号：floors-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：floors-request-id'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-detail-transient-retry')),
       findsOneWidget,
@@ -1813,7 +1813,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('加载更多楼层失败。'), findsOneWidget);
-    expect(find.text('问题编号：load-more-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：load-more-request-id'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-detail-transient-retry')),
       findsOneWidget,
@@ -1877,7 +1877,7 @@ void main() {
 
     expect(find.text('这个主题暂时不可见'), findsOneWidget);
     expect(find.textContaining('删除、设为私密'), findsOneWidget);
-    expect(find.text('问题编号：missing-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：missing-request-id'), findsNothing);
   });
 
   for (final fixture in _threadDetailViewportFixtures) {

@@ -227,9 +227,7 @@ class _ThreadTagManagementPageState
               key: const Key('thread-tag-failure'),
               tone: WenyouStatusTone.error,
               message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               action: TextButton(
                 onPressed: state.isMutating
                     ? null
@@ -245,6 +243,7 @@ class _ThreadTagManagementPageState
               status: state.actionOutcome!,
               confirmingMessage: '正在确认标签状态…',
               indeterminateMessage: '现在无法继续标签操作。请先刷新标签列表查看是否已生效；应用不会自动重复提交。',
+              failure: state.actionOutcomeFailure,
               requestId: state.actionRequestId,
               onRefresh: () => ref.read(provider.notifier).load(),
               refreshKey: const Key('thread-tag-refresh-result'),
@@ -348,9 +347,7 @@ class _TagManagementFatalState extends StatelessWidget {
               : WenyouIconIds.statusOffline,
           title: failure?.httpStatus == 403 ? '无法管理这个主题' : '主题标签加载失败',
           message: failure?.userMessage ?? '请检查网络后重试。',
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
+          detail: wenyouFailureDetail(failure),
           action: failure?.httpStatus == 403
               ? null
               : OutlinedButton.icon(

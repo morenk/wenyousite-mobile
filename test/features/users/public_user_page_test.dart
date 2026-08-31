@@ -67,7 +67,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('用户资料加载失败'), findsOneWidget);
-    expect(find.text('问题编号：user-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：user-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('public-user-retry')));
     await tester.pumpAndSettle();
 

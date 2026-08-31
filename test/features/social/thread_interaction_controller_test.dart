@@ -143,6 +143,10 @@ void main() {
     expect(controller.state.failure, isNull);
     expect(controller.state.outcomeStatus, WriteOutcomeStatus.indeterminate);
     expect(controller.state.outcomeRequestId, 'bookmark-timeout');
+    expect(
+      controller.state.outcomeFailure?.effectiveSource,
+      FailureSource.network,
+    );
     expect(controller.state.likeCount, 13);
   });
 }

@@ -164,6 +164,7 @@ class ThreadSubscriptionController
               pendingTargetUserId: targetUserId,
               actionOutcome: WriteOutcomeStatus.confirming,
               actionRequestId: progress.requestId,
+              actionOutcomeFailure: progress.failure,
             );
           },
         );
@@ -197,6 +198,7 @@ class ThreadSubscriptionController
           candidateFailure: state.candidateFailure,
           actionOutcome: WriteOutcomeStatus.indeterminate,
           actionRequestId: outcome.requestId,
+          actionOutcomeFailure: outcome.failure,
         );
         return false;
       case WriteOutcomeStatus.confirming:
@@ -236,6 +238,7 @@ class ThreadSubscriptionController
       actionFailure: state.actionFailure,
       actionOutcome: state.actionOutcome,
       actionRequestId: state.actionRequestId,
+      actionOutcomeFailure: state.actionOutcomeFailure,
     );
     return message;
   }
@@ -314,6 +317,7 @@ class ThreadSubscriptionController
       actionFailure: state.actionFailure,
       actionOutcome: state.actionOutcome,
       actionRequestId: state.actionRequestId,
+      actionOutcomeFailure: state.actionOutcomeFailure,
       successMessage: state.successMessage,
     );
   }

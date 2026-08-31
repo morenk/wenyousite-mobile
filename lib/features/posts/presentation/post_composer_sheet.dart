@@ -846,6 +846,5 @@ String _submitLabel(PostComposerKind kind) => switch (kind) {
 };
 
 String? _requestDetail(ApiFailure? failure) {
-  final requestId = failure?.requestId;
-  return requestId == null ? null : '问题编号：$requestId';
+  return wenyouFailureDetail(failure, treatAsWrite: true);
 }

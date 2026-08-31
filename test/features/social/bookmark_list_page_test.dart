@@ -109,7 +109,7 @@ void main() {
       find.byKey(const Key('bookmark-folder-refresh-failure')),
       findsOneWidget,
     );
-    expect(find.text('问题编号：bookmark-folders-request'), findsWidgets);
+    expect(find.textContaining('问题编号：bookmark-folders-request'), findsWidgets);
     expect(find.text('雾港来信'), findsOneWidget);
   });
 
@@ -226,7 +226,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('bookmark-list-retry')), findsOneWidget);
-    expect(find.text('问题编号：bookmark-load-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：bookmark-load-request'), findsOneWidget);
   });
 
   testWidgets('动态收藏在同一页面切换并直接选择默认夹', (tester) async {
@@ -258,7 +258,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('bookmark-folders-retry')), findsOneWidget);
-    expect(find.text('问题编号：bookmark-folders-request'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：bookmark-folders-request'),
+      findsOneWidget,
+    );
     await tester.drag(find.byType(ListView).first, const Offset(0, -300));
     await tester.pumpAndSettle();
     expect(find.text('雾港来信'), findsOneWidget);
@@ -280,12 +283,12 @@ void main() {
 
     await tester.tap(find.byKey(const Key('bookmark-list-load-more')));
     await tester.pumpAndSettle();
-    expect(find.text('问题编号：bookmark-more-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：bookmark-more-request'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('bookmark-remove-bookmark-1')));
     await tester.pumpAndSettle();
     expect(find.text('雾港来信'), findsOneWidget);
-    expect(find.text('问题编号：bookmark-remove-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：bookmark-remove-request'), findsOneWidget);
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {

@@ -209,9 +209,7 @@ class _DirectMessageTimelineState extends State<DirectMessageTimeline> {
                   child: WenyouStatusBanner(
                     tone: WenyouStatusTone.error,
                     message: state.transientFailure!.userMessage,
-                    detail: state.transientFailure!.requestId == null
-                        ? null
-                        : '问题编号：${state.transientFailure!.requestId}',
+                    detail: wenyouFailureDetail(state.transientFailure),
                     action: TextButton(
                       key: const Key('direct-conversation-load-older-retry'),
                       onPressed: widget.onLoadOlder,

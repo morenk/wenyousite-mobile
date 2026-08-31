@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
 
 Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
   required BuildContext context,
@@ -11,7 +12,7 @@ Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
   var folderName = '';
   var submitting = false;
   String? submissionError;
-  String? requestId;
+  String? failureDetail;
   return showDialog<BookmarkFolderItem>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
@@ -31,7 +32,7 @@ Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
           setState(() {
             submitting = false;
             submissionError = failure?.userMessage ?? '新建收藏夹失败，请稍后重试。';
-            requestId = failure?.requestId;
+            failureDetail = wenyouFailureDetail(failure, treatAsWrite: true);
           });
         }
 
@@ -62,7 +63,7 @@ Future<BookmarkFolderItem?> showWenyouBookmarkFolderCreateDialog({
                 if (submissionError != null) ...[
                   const SizedBox(height: 8),
                   Text(submissionError!),
-                  if (requestId != null) Text('问题编号：$requestId'),
+                  if (failureDetail != null) Text(failureDetail!),
                 ],
               ],
             ),

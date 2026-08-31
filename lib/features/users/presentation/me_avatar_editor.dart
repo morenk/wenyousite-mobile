@@ -246,7 +246,7 @@ class _AvatarFailureNoticeState extends State<_AvatarFailureNotice> {
       key: const Key('me-avatar-failure'),
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
+      detail: wenyouFailureDetail(failure, treatAsWrite: true),
       action: widget.action,
     );
   }

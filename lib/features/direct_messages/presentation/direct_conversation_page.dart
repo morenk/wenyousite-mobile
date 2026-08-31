@@ -327,9 +327,10 @@ class _ReadyConversation extends StatelessWidget {
               key: const Key('direct-conversation-action-failure'),
               tone: WenyouStatusTone.error,
               message: state.transientFailure!.userMessage,
-              detail: state.transientFailure!.requestId == null
-                  ? null
-                  : '问题编号：${state.transientFailure!.requestId}',
+              detail: wenyouFailureDetail(
+                state.transientFailure,
+                treatAsWrite: true,
+              ),
             ),
           ),
         Expanded(
@@ -468,9 +469,7 @@ class _ConversationFailure extends StatelessWidget {
               : WenyouIconIds.statusOffline,
           title: state.failure?.httpStatus == 404 ? '会话不可访问' : '私聊会话加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
-          detail: state.failure?.requestId == null
-              ? null
-              : '问题编号：${state.failure!.requestId}',
+          detail: wenyouFailureDetail(state.failure),
           action: OutlinedButton.icon(
             key: const Key('direct-conversation-retry'),
             onPressed: onRetry,

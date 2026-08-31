@@ -183,7 +183,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
       if (state.bootstrapFailure != null)
         WenyouStatusBanner(
           message: state.bootstrapFailure!.userMessage,
-          detail: wenyouRequestDetail(state.bootstrapFailure),
+          detail: wenyouFailureDetail(state.bootstrapFailure),
           tone: WenyouStatusTone.error,
           action: TextButton(
             onPressed: state.bootstrapLoading ? null : onRefreshBootstrap,
@@ -210,7 +210,7 @@ class ThreadComposeStatusArea extends StatelessWidget {
         WenyouStatusBanner(
           key: const Key('compose-action-failure'),
           message: state.actionFailure!.userMessage,
-          detail: wenyouRequestDetail(state.actionFailure),
+          detail: wenyouFailureDetail(state.actionFailure, treatAsWrite: true),
           tone: WenyouStatusTone.error,
         ),
       if (state.successMessage != null)
@@ -275,7 +275,7 @@ class ThreadComposeLoadFailure extends StatelessWidget {
           icon: WenyouIconIds.actionDisableEdit,
           title: '打开创作空间失败',
           message: failure?.userMessage ?? '请重试；原有本地数据不会被覆盖。',
-          detail: wenyouRequestDetail(failure),
+          detail: wenyouFailureDetail(failure),
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
         ),
       ),

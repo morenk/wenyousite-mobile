@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -124,15 +125,26 @@ class RequestContextInterceptor extends Interceptor {
     final uri = sanitizeNetworkLogUri(options.uri);
     final summary =
         '${options.method} $uri failed '
-        'type=${error.type.name} status=${failure.httpStatus ?? '-'} '
-        'code=${failure.businessCode ?? '-'} requestId=${failure.requestId ?? '-'}';
+        'source=${failure.effectiveSource.name} '
+        'requestId=${failure.requestId ?? '-'}';
     developer.log(
       summary,
       name: 'wenyou.network',
-      error: error.error,
       stackTrace: error.stackTrace,
     );
-    if (kDebugMode) debugPrint('$summary error=${error.error}');
+    if (wenyouFieldDiagnosticsEnabled) {
+      DebugDiagnosticBuffer.instance.record('network_failure', {
+        'source': failure.effectiveSource.name,
+        'reason': failure.reason.name,
+        'dioType': error.type.name,
+        'httpStatus': failure.httpStatus,
+        'businessCode': failure.businessCode,
+        'businessName': failure.businessCodeName,
+        'requestId': failure.requestId,
+        'contractVersion': failure.contractVersion,
+      }, stackTrace: error.stackTrace);
+    }
+    if (kDebugMode) debugPrint(summary);
   }
 
   SessionInvalidationReason _reasonFor(int? code) {

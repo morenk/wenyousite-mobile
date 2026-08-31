@@ -28,7 +28,7 @@ class MediaUploadStatusBanner extends StatelessWidget {
     if (currentFailure != null) {
       return WenyouStatusBanner(
         message: currentFailure.userMessage,
-        detail: wenyouRequestDetailFromId(currentFailure.requestId),
+        detail: currentFailure.resolvedPresentation.problemDetail,
         tone: WenyouStatusTone.error,
         action: currentFailure.canRetry && onRetry != null
             ? TextButton(

@@ -69,9 +69,7 @@ class _MembersReadyState extends ConsumerWidget {
               key: const Key('thread-members-action-failure'),
               tone: WenyouStatusTone.error,
               message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               action: TextButton(
                 key: const Key('thread-members-dismiss-failure'),
                 onPressed: state.isUpdating
@@ -94,6 +92,7 @@ class _MembersReadyState extends ConsumerWidget {
               status: state.actionOutcome!,
               confirmingMessage: '正在确认成员设置…',
               indeterminateMessage: '现在无法继续设置成员。请先刷新成员列表查看是否已生效；应用不会自动重复提交。',
+              failure: state.actionOutcomeFailure,
               requestId: state.actionRequestId,
               onRefresh: () => ref
                   .read(
@@ -351,9 +350,7 @@ class _MembersFatalState extends StatelessWidget {
         icon: WenyouIconIds.statusGroupUnavailable,
         title: '成员列表加载失败',
         message: failure?.userMessage ?? '请检查网络或管理权限后重试。',
-        detail: failure?.requestId == null
-            ? null
-            : '问题编号：${failure!.requestId}',
+        detail: wenyouFailureDetail(failure),
         action: OutlinedButton.icon(
           key: const Key('thread-members-load-retry'),
           onPressed: onRetry,

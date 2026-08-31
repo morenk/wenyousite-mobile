@@ -84,6 +84,7 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkFoundationIconBoundary(dartFiles, failures, root);
   _checkSharedTabBoundary(dartFiles, failures, root);
   _checkSnackBarBoundary(dartFiles, failures, root);
+  _checkFailurePresentationBoundary(dartFiles, failures, root);
   _checkRouteTransitionBoundary(dartFiles, failures, root);
   _checkVersionConsistency(failures, root);
   _checkDirectDependencies(dartFiles, failures, root);
@@ -94,6 +95,43 @@ List<String> collectArchitectureFailures(Directory root) {
 
   failures.sort();
   return failures;
+}
+
+void _checkFailurePresentationBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const allowedFiles = <String>{
+    'lib/core/application/user_facing_failure.dart',
+    'lib/core/network/api_failure.dart',
+    'lib/core/network/api_interceptors.dart',
+    'lib/core/widgets/wenyou_feedback.dart',
+  };
+  final rawProblemNumber = RegExp(r'''['"]问题编号：''');
+  final interpolatedTechnicalCode = RegExp(
+    r'''['"][^'"\n]*\$\{?[^'"\n]*(?:businessCode|httpStatus|diagnosticCode)''',
+  );
+
+  for (final file in files) {
+    final path = _relative(file.path, root);
+    if (allowedFiles.contains(path) ||
+        path.startsWith('lib/core/diagnostics/') ||
+        path.endsWith('_diagnostics.dart')) {
+      continue;
+    }
+    final source = file.readAsStringSync();
+    if (rawProblemNumber.hasMatch(source)) {
+      failures.add(
+        '$path formats a problem number outside the shared failure policy',
+      );
+    }
+    if (interpolatedTechnicalCode.hasMatch(source)) {
+      failures.add(
+        '$path interpolates a technical error code outside diagnostics',
+      );
+    }
+  }
 }
 
 void _checkFeatureSpinnerBudget(

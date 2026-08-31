@@ -113,6 +113,10 @@ void main() {
     );
     expect(controller.state.failure, isNull);
     expect(controller.state.actionOutcome, WriteOutcomeStatus.indeterminate);
+    expect(
+      controller.state.actionOutcomeFailure?.effectiveSource,
+      FailureSource.service,
+    );
 
     expect(
       await controller.create(draft),

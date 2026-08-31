@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
@@ -40,11 +41,7 @@ class ThreadInteractionController
       targetReached: (projection) => projection.isLiked != wasLiked,
       failureMessage: '点赞失败，请稍后重试。',
       isCurrent: () => mounted && epoch == _actionEpoch,
-      onProgress: (progress) => _showConfirming(
-        epoch,
-        WriteOutcomeStatus.confirming,
-        progress.requestId,
-      ),
+      onProgress: (progress) => _showConfirming(epoch, progress.failure),
     );
     if (outcome.isDiscarded || !mounted || epoch != _actionEpoch) return false;
     switch (outcome.status) {
@@ -117,11 +114,7 @@ class ThreadInteractionController
       failureMessage: '收藏失败，请稍后重试。',
       convergentBusinessCodes: wasBookmarked ? const {40400} : const {40900},
       isCurrent: () => mounted && epoch == _actionEpoch,
-      onProgress: (progress) => _showConfirming(
-        epoch,
-        WriteOutcomeStatus.confirming,
-        progress.requestId,
-      ),
+      onProgress: (progress) => _showConfirming(epoch, progress.failure),
     );
     if (outcome.isDiscarded || !mounted || epoch != _actionEpoch) return false;
     switch (outcome.status) {
@@ -180,13 +173,13 @@ class ThreadInteractionController
     }
   }
 
-  void _showConfirming(
-    int epoch,
-    WriteOutcomeStatus status,
-    String? requestId,
-  ) {
+  void _showConfirming(int epoch, ApiFailure? failure) {
     if (!mounted || epoch != _actionEpoch) return;
-    state = state.copyWith(outcomeStatus: status, outcomeRequestId: requestId);
+    state = state.copyWith(
+      outcomeStatus: WriteOutcomeStatus.confirming,
+      outcomeRequestId: failure?.requestId,
+      outcomeFailure: failure,
+    );
   }
 
   ThreadInteractionState _fromProjection(
@@ -194,6 +187,7 @@ class ThreadInteractionController
     String? successMessage,
     WriteOutcomeStatus? outcomeStatus,
     String? outcomeRequestId,
+    ApiFailure? outcomeFailure,
   }) {
     return ThreadInteractionState(
       isLiked: projection.isLiked,
@@ -203,6 +197,7 @@ class ThreadInteractionController
       successMessage: successMessage,
       outcomeStatus: outcomeStatus,
       outcomeRequestId: outcomeRequestId,
+      outcomeFailure: outcomeFailure,
     );
   }
 
@@ -229,6 +224,7 @@ class ThreadInteractionController
         projection,
         outcomeStatus: WriteOutcomeStatus.indeterminate,
         outcomeRequestId: outcome.requestId,
+        outcomeFailure: outcome.failure,
       );
     }
     return ThreadInteractionState(
@@ -238,6 +234,7 @@ class ThreadInteractionController
       bookmarkId: before.bookmarkId,
       outcomeStatus: WriteOutcomeStatus.indeterminate,
       outcomeRequestId: outcome.requestId,
+      outcomeFailure: outcome.failure,
     );
   }
 
@@ -264,11 +261,12 @@ class ThreadInteractionController
 
   String? takeIndeterminateNotice() {
     if (state.outcomeStatus != WriteOutcomeStatus.indeterminate) return null;
-    final requestId = state.outcomeRequestId;
+    final failure = state.outcomeFailure;
+    final detail = failure == null
+        ? null
+        : UserFacingFailure.fromApi(failure, treatAsWrite: true).problemDetail;
     clearFeedback();
-    return requestId == null
-        ? '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。'
-        : '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。（问题编号：$requestId）';
+    return ['现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。', ?detail].join('\n');
   }
 }
 

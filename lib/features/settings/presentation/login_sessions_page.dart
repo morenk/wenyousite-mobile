@@ -28,9 +28,7 @@ class LoginSessionsPage extends ConsumerWidget {
               icon: WenyouIconIds.actionDevices,
               title: '登录终端加载失败',
               message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: state.failure?.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure),
               action: OutlinedButton.icon(
                 key: const Key('login-sessions-retry'),
                 onPressed: notifier.load,
@@ -128,6 +126,7 @@ class _ReadyLoginSessions extends StatelessWidget {
                 status: state.actionOutcome!,
                 confirmingMessage: '正在确认终端退出状态…',
                 indeterminateMessage: '现在无法继续退出终端。请先刷新终端列表查看是否已生效；应用不会自动重复提交。',
+                failure: state.actionOutcomeFailure,
                 requestId: state.actionRequestId,
                 onRefresh: onRefresh,
                 refreshKey: const Key('login-session-refresh-result'),

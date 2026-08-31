@@ -213,6 +213,10 @@ void main() {
     expect(controller.state.actionOutcome, WriteOutcomeStatus.indeterminate);
     expect(controller.state.actionFailure, isNull);
     expect(controller.state.actionRequestId, 'unknown-request-id');
+    expect(
+      controller.state.actionOutcomeFailure?.effectiveSource,
+      FailureSource.network,
+    );
     expect(repository.createCalls, 1);
   });
 

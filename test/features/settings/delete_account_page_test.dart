@@ -54,7 +54,7 @@ void main() {
     await _confirmDeletion(tester);
 
     expect(find.text('账号注销失败，请稍后重试。'), findsOneWidget);
-    expect(find.text('问题编号：delete-account-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：delete-account-id'), findsOneWidget);
     expect(
       tester
           .widget<TextFormField>(find.byKey(const Key('delete-account-phrase')))

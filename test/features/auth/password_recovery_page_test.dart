@@ -131,7 +131,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('验证码不正确，请检查后重试。'), findsOneWidget);
-    expect(find.text('问题编号：reset-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：reset-request-id'), findsNothing);
     expect(find.text('000000'), findsOneWidget);
     expect(find.text('设置新的登录密码'), findsOneWidget);
     await _disposeFlow(tester, container);
@@ -180,7 +180,7 @@ void main() {
     expect(find.text('second@example.com'), findsOneWidget);
     expect(find.text('f***@example.com'), findsNothing);
     expect(find.byKey(const Key('reset-password-code-sent')), findsNothing);
-    expect(find.text('问题编号：request-code-failed'), findsOneWidget);
+    expect(find.textContaining('问题编号：request-code-failed'), findsOneWidget);
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {

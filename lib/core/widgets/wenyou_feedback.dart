@@ -1,16 +1,44 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
+import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 
-String? wenyouRequestDetail(ApiFailure? failure) {
-  return wenyouRequestDetailFromId(failure?.requestId);
+String? wenyouFailureDetail(ApiFailure? failure, {bool treatAsWrite = false}) {
+  return UserFacingFailure.fromApi(
+    failure,
+    treatAsWrite: treatAsWrite,
+  ).problemDetail;
 }
 
-String? wenyouRequestDetailFromId(String? requestId) {
+String? wenyouFailureMessage(
+  ApiFailure? failure, {
+  String fallback = '操作失败，请稍后重试。',
+  bool treatAsWrite = false,
+  String objectName = '内容',
+  String operationName = '操作',
+}) {
+  final hasUnknownWriteOutcome =
+      treatAsWrite && (failure?.hasUnknownWriteOutcome ?? false);
+  final presentation = UserFacingFailure.fromApi(
+    failure,
+    message: hasUnknownWriteOutcome ? null : failure?.userMessage ?? fallback,
+    treatAsWrite: treatAsWrite,
+    objectName: objectName,
+    operationName: operationName,
+  );
+  if (!presentation.shouldDisplay) return null;
+  final detail = presentation.problemDetail;
+  return detail == null
+      ? presentation.message
+      : '${presentation.message}\n$detail';
+}
+
+String? wenyouProblemDetailFromId(String? requestId) {
   return requestId == null ? null : '问题编号：$requestId';
 }
 
@@ -115,6 +143,14 @@ class WenyouFailureView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!failure.shouldDisplay) return const SizedBox.shrink();
+    final detail = <String>[
+      if (failure.problemDetail != null) failure.problemDetail!,
+      if (kDebugMode &&
+          wenyouFieldDiagnosticsEnabled &&
+          failure.diagnosticDetail != null)
+        '诊断信息：${failure.diagnosticDetail}',
+    ].join('\n');
     final resolvedAction =
         action ??
         (onAction == null || failure.actionLabel == null
@@ -129,13 +165,13 @@ class WenyouFailureView extends StatelessWidget {
         icon: icon,
         title: failure.title,
         message: failure.message,
-        detail: failure.problemDetail,
+        detail: detail.isEmpty ? null : detail,
         action: resolvedAction,
       );
     }
     return WenyouStatusBanner(
       message: failure.message,
-      detail: failure.problemDetail,
+      detail: detail.isEmpty ? null : detail,
       tone: WenyouStatusTone.error,
       action: resolvedAction,
     );
@@ -162,6 +198,7 @@ class WenyouWriteOutcomeBanner extends StatelessWidget {
     required this.status,
     required this.confirmingMessage,
     required this.indeterminateMessage,
+    this.failure,
     this.requestId,
     this.onRefresh,
     this.refreshKey,
@@ -174,6 +211,7 @@ class WenyouWriteOutcomeBanner extends StatelessWidget {
   final WriteOutcomeStatus status;
   final String confirmingMessage;
   final String indeterminateMessage;
+  final ApiFailure? failure;
   final String? requestId;
   final VoidCallback? onRefresh;
   final Key? refreshKey;
@@ -184,7 +222,9 @@ class WenyouWriteOutcomeBanner extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.neutral,
       message: confirming ? confirmingMessage : indeterminateMessage,
-      detail: wenyouRequestDetailFromId(requestId),
+      detail: failure == null
+          ? wenyouProblemDetailFromId(requestId)
+          : wenyouFailureDetail(failure, treatAsWrite: true),
       action: confirming || onRefresh == null
           ? null
           : TextButton(

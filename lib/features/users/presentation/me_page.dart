@@ -28,11 +28,10 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 void _showRefreshFailure(BuildContext context, ApiFailure failure) {
-  final requestId = failure.requestId;
-  final message = requestId == null
-      ? failure.userMessage
-      : '${failure.userMessage}（问题编号：$requestId）';
-  showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
+  final message = wenyouFailureMessage(failure);
+  if (message != null) {
+    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
+  }
 }
 
 class MePage extends ConsumerWidget {
@@ -134,9 +133,7 @@ class _AuthenticatedMePage extends ConsumerWidget {
                 icon: WenyouIconIds.statusOffline,
                 title: '本人资料加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: state.failure?.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
+                detail: wenyouFailureDetail(state.failure),
                 action: OutlinedButton.icon(
                   key: const Key('me-profile-retry'),
                   onPressed: notifier.load,
@@ -179,9 +176,7 @@ class MeEditPage extends ConsumerWidget {
                 icon: WenyouIconIds.statusOffline,
                 title: '资料加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: state.failure?.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
+                detail: wenyouFailureDetail(state.failure),
                 action: OutlinedButton.icon(
                   key: const Key('me-edit-retry'),
                   onPressed: notifier.load,
@@ -631,9 +626,7 @@ class _LogoutAction extends ConsumerWidget {
         if (logout.failure != null) ...[
           WenyouStatusBanner(
             message: logout.failure!.userMessage,
-            detail: logout.failure!.requestId == null
-                ? null
-                : '问题编号：${logout.failure!.requestId}',
+            detail: wenyouFailureDetail(logout.failure, treatAsWrite: true),
             tone: WenyouStatusTone.error,
           ),
           SizedBox(height: context.wenyouTokens.space8),

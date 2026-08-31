@@ -32,9 +32,7 @@ class UserRelationListPage extends ConsumerWidget {
               icon: WenyouIconIds.statusOffline,
               title: '${_title(target.kind)}加载失败',
               message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: state.failure?.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure),
               action: OutlinedButton.icon(
                 key: const Key('user-relation-list-retry'),
                 onPressed: notifier.load,
@@ -98,9 +96,10 @@ class _ReadyRelationList extends StatelessWidget {
             WenyouConstrainedWidth(
               child: WenyouStatusBanner(
                 message: state.actionFailure!.userMessage,
-                detail: state.actionFailure!.requestId == null
-                    ? null
-                    : '问题编号：${state.actionFailure!.requestId}',
+                detail: wenyouFailureDetail(
+                  state.actionFailure,
+                  treatAsWrite: true,
+                ),
                 tone: WenyouStatusTone.error,
                 action: TextButton(
                   key: const Key('user-relation-action-error-dismiss'),

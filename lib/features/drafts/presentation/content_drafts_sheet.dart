@@ -657,9 +657,7 @@ class _LoadFailure extends StatelessWidget {
           icon: WenyouIconIds.statusOffline,
           title: '正文草稿加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
-          detail: state.failure?.requestId == null
-              ? null
-              : '问题编号：${state.failure!.requestId}',
+          detail: wenyouFailureDetail(state.failure),
           action: FilledButton(onPressed: onRetry, child: const Text('重试')),
         ),
       ),

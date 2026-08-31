@@ -18,6 +18,7 @@ class UserRelationState {
     this.failure,
     this.outcomeStatus,
     this.outcomeRequestId,
+    this.outcomeFailure,
     this.successMessage,
   });
 
@@ -38,6 +39,7 @@ class UserRelationState {
   final ApiFailure? failure;
   final WriteOutcomeStatus? outcomeStatus;
   final String? outcomeRequestId;
+  final ApiFailure? outcomeFailure;
   final String? successMessage;
 
   bool get isPending => pendingAction != null;
@@ -51,6 +53,7 @@ class UserRelationState {
     ApiFailure? failure,
     WriteOutcomeStatus? outcomeStatus,
     String? outcomeRequestId,
+    ApiFailure? outcomeFailure,
     String? successMessage,
     bool clearPending = false,
     bool clearFeedback = false,
@@ -70,6 +73,9 @@ class UserRelationState {
       outcomeRequestId: clearFeedback
           ? null
           : (outcomeRequestId ?? this.outcomeRequestId),
+      outcomeFailure: clearFeedback
+          ? null
+          : (outcomeFailure ?? this.outcomeFailure),
       successMessage: clearFeedback
           ? null
           : (successMessage ?? this.successMessage),
@@ -134,6 +140,7 @@ class ThreadInteractionState {
     this.failure,
     this.outcomeStatus,
     this.outcomeRequestId,
+    this.outcomeFailure,
     this.successMessage,
   });
 
@@ -154,6 +161,7 @@ class ThreadInteractionState {
   final ApiFailure? failure;
   final WriteOutcomeStatus? outcomeStatus;
   final String? outcomeRequestId;
+  final ApiFailure? outcomeFailure;
   final String? successMessage;
 
   bool get isPending => pendingAction != null;
@@ -167,6 +175,7 @@ class ThreadInteractionState {
     ApiFailure? failure,
     WriteOutcomeStatus? outcomeStatus,
     String? outcomeRequestId,
+    ApiFailure? outcomeFailure,
     String? successMessage,
     bool clearPending = false,
     bool clearFeedback = false,
@@ -188,6 +197,9 @@ class ThreadInteractionState {
       outcomeRequestId: clearFeedback
           ? null
           : (outcomeRequestId ?? this.outcomeRequestId),
+      outcomeFailure: clearFeedback
+          ? null
+          : (outcomeFailure ?? this.outcomeFailure),
       successMessage: clearFeedback
           ? null
           : (successMessage ?? this.successMessage),
@@ -210,6 +222,7 @@ class ThreadSubscriptionState {
     this.actionFailure,
     this.actionOutcome,
     this.actionRequestId,
+    this.actionOutcomeFailure,
     this.successMessage,
   });
 
@@ -227,6 +240,7 @@ class ThreadSubscriptionState {
   final ApiFailure? actionFailure;
   final WriteOutcomeStatus? actionOutcome;
   final String? actionRequestId;
+  final ApiFailure? actionOutcomeFailure;
   final String? successMessage;
 
   bool get isPending => pendingType != null;

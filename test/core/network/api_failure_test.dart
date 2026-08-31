@@ -41,8 +41,76 @@ void main() {
     expect(failure.requestId, 'server-request-id');
     expect(failure.contractVersion, '3.0.0');
     expect(failure.invalidatesSession, isTrue);
+    expect(failure.effectiveSource, FailureSource.expected);
+    expect(failure.businessCodeName, 'ACCOUNT_LOCKED');
     expect(failure.userMessage, contains('锁定'));
     expect(failure.userMessage, isNot(contains('sensitive')));
+  });
+
+  test('服务异常保留问题编号并归类为温油站服务', () {
+    final options = RequestOptions(path: '/api/v1/threads');
+    final failure = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        response: Response<Object?>(
+          requestOptions: options,
+          statusCode: 503,
+          data: {'code': 50000, 'message': 'private server detail'},
+          headers: Headers.fromMap({
+            'x-request-id': ['service-request-id'],
+          }),
+        ),
+      ),
+    );
+
+    expect(failure.effectiveSource, FailureSource.service);
+    expect(failure.shouldExposeRequestId(), isTrue);
+    expect(failure.userMessage, isNot(contains('private server detail')));
+  });
+
+  test('未知业务码按内容处理异常归类并保留安全诊断摘要', () {
+    final options = RequestOptions(path: '/api/v1/threads');
+    final failure = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        response: Response<Object?>(
+          requestOptions: options,
+          statusCode: 400,
+          data: {'code': 49999, 'message': 'private response body'},
+          headers: Headers.fromMap({
+            'x-request-id': ['content-request-id'],
+          }),
+        ),
+      ),
+    );
+
+    expect(failure.effectiveSource, FailureSource.content);
+    expect(failure.reason, FailureReason.contractViolation);
+    expect(failure.shouldExposeRequestId(), isTrue);
+    expect(failure.safeDiagnosticSummary, contains('businessCode=49999'));
+    expect(
+      failure.safeDiagnosticSummary,
+      isNot(contains('private response body')),
+    );
+    expect(failure.safeDiagnosticSummary, isNot(contains('/api/v1/threads')));
+  });
+
+  test('断网和取消分别归类为网络连接与无需展示', () {
+    final options = RequestOptions(path: '/api/v1/threads');
+    final offline = ApiFailure.fromDio(
+      DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+      ),
+    );
+    final cancelled = ApiFailure.fromDio(
+      DioException(requestOptions: options, type: DioExceptionType.cancel),
+    );
+
+    expect(offline.effectiveSource, FailureSource.network);
+    expect(offline.shouldExposeRequestId(), isFalse);
+    expect(cancelled.isCancellation, isTrue);
+    expect(cancelled.effectiveSource, FailureSource.expected);
   });
 
   test('登录凭据错误按业务码展示稳定提示', () {

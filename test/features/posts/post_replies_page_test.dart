@@ -67,7 +67,10 @@ void main() {
 
     expect(find.text('楼中楼讨论加载失败'), findsOneWidget);
     expect(find.text('楼中楼暂时不可用。'), findsOneWidget);
-    expect(find.text('问题编号：discussion-initial-request'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：discussion-initial-request'),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('post-replies-list')), findsNothing);
 
     await tester.tap(find.widgetWithText(FilledButton, '重试'));
@@ -114,7 +117,7 @@ void main() {
 
     expect(find.text('已加载的回复'), findsOneWidget);
     expect(find.text('更多回复加载失败。'), findsOneWidget);
-    expect(find.text('问题编号：discussion-page-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：discussion-page-request'), findsOneWidget);
     expect(cursors, [null, 'next-page']);
 
     await tester.tap(find.widgetWithText(TextButton, '重试'));
@@ -153,7 +156,7 @@ void main() {
     await _pumpUi(tester);
 
     expect(find.text('回复没有发布成功。'), findsOneWidget);
-    expect(find.text('问题编号：discussion-create-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：discussion-create-request'), findsNothing);
     expect(repository.createInputs, hasLength(1));
     expect(
       repository.replies.where((post) => post.id == 'created-after-retry'),
@@ -419,7 +422,10 @@ void main() {
     expect(repository.removedIds, isEmpty);
     expect(find.text('自己的回复'), findsOneWidget);
     expect(find.text('回复没有删除成功。'), findsOneWidget);
-    expect(find.text('问题编号：discussion-delete-request'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：discussion-delete-request'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('已删除的原楼层和回复都不暴露举报入口', (tester) async {
@@ -536,7 +542,10 @@ void main() {
     await _pumpUi(tester);
 
     expect(find.text('回复没有更新成功。'), findsOneWidget);
-    expect(find.text('问题编号：discussion-update-request'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：discussion-update-request'),
+      findsOneWidget,
+    );
     expect(
       repository.replies.singleWhere((post) => post.id == 'reply-own').content,
       '自己的回复',
@@ -1367,7 +1376,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('图片处理失败'), findsOneWidget);
-    expect(find.text('问题编号：request-one'), findsOneWidget);
+    expect(find.textContaining('问题编号：request-one'), findsOneWidget);
     expect(find.byKey(const Key('post-composer-retry-upload')), findsOneWidget);
     var editor = tester.widget<QuillEditor>(
       find.byKey(const Key('post-composer-body')),

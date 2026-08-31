@@ -160,9 +160,10 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               WenyouStatusBanner(
                 key: const Key('register-code-delivery-uncertain'),
                 message: '邮件可能已经发出',
-                detail: state.failure?.requestId == null
-                    ? '请检查收件箱和垃圾邮件；为避免重复邮件，60 秒内不会自动或手动重发。'
-                    : '请检查收件箱和垃圾邮件；问题编号：${state.failure!.requestId}',
+                detail: [
+                  '请检查收件箱和垃圾邮件；为避免重复邮件，60 秒内不会自动或手动重发。',
+                  ?wenyouFailureDetail(state.failure, treatAsWrite: true),
+                ].join('\n'),
               ),
             ],
             Align(

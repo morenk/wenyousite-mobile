@@ -191,7 +191,7 @@ void main() {
     await tester.pumpWidget(_app(loadContainer));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-subscription-retry')), findsOneWidget);
-    expect(find.text('问题编号：load-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：load-request-id'), findsOneWidget);
   });
 
   testWidgets('玩家列表失败时官方订阅仍可操作并提供独立重试', (tester) async {
@@ -227,7 +227,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-subscription-official')));
     await tester.pumpAndSettle();
     expect(find.text('订阅官方更新'), findsOneWidget);
-    expect(find.text('问题编号：write-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：write-request-id'), findsOneWidget);
   });
 
   testWidgets('订阅结果无法确认时使用中性提示并只提供刷新查看', (tester) async {
@@ -241,7 +241,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('现在无法继续订阅操作。请先刷新主题查看是否已生效；应用不会自动重复提交。'), findsOneWidget);
-    expect(find.text('问题编号：uncertain-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：uncertain-request-id'), findsOneWidget);
     expect(
       find.byKey(const Key('thread-subscription-refresh-result')),
       findsOneWidget,

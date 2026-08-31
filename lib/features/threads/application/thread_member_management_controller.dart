@@ -108,6 +108,7 @@ class ThreadMemberManagementController
             state = state.copyWith(
               actionOutcome: WriteOutcomeStatus.confirming,
               actionRequestId: progress.requestId,
+              actionOutcomeFailure: progress.failure,
             );
           },
         );
@@ -142,6 +143,7 @@ class ThreadMemberManagementController
           failure: null,
           actionOutcome: WriteOutcomeStatus.indeterminate,
           actionRequestId: outcome.requestId,
+          actionOutcomeFailure: outcome.failure,
         );
         return false;
       case WriteOutcomeStatus.confirming:

@@ -74,9 +74,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                     icon: WenyouIconIds.statusOffline,
                     title: '钱包余额加载失败',
                     message: state.summaryFailure?.userMessage ?? '请稍后重试。',
-                    detail: state.summaryFailure?.requestId == null
-                        ? null
-                        : '问题编号：${state.summaryFailure!.requestId}',
+                    detail: wenyouFailureDetail(state.summaryFailure),
                     action: OutlinedButton.icon(
                       key: const Key('wallet-summary-retry'),
                       onPressed: onRetry,
@@ -171,9 +169,7 @@ class _WalletSummaryPanel extends StatelessWidget {
                   WenyouStatusBanner(
                     tone: WenyouStatusTone.error,
                     message: '余额刷新失败，当前仍显示上次结果。',
-                    detail: state.summaryFailure!.requestId == null
-                        ? null
-                        : '问题编号：${state.summaryFailure!.requestId}',
+                    detail: wenyouFailureDetail(state.summaryFailure),
                     action: TextButton(
                       onPressed: onRetry,
                       child: const Text('重新刷新'),
@@ -241,9 +237,7 @@ class _WalletTransactionsPanel extends StatelessWidget {
               icon: WenyouIconIds.statusOffline,
               title: '温油流水加载失败',
               message: state.transactionsFailure!.userMessage,
-              detail: state.transactionsFailure!.requestId == null
-                  ? null
-                  : '问题编号：${state.transactionsFailure!.requestId}',
+              detail: wenyouFailureDetail(state.transactionsFailure),
               action: OutlinedButton.icon(
                 key: const Key('wallet-transactions-retry'),
                 onPressed: onRetry,
@@ -266,9 +260,7 @@ class _WalletTransactionsPanel extends StatelessWidget {
               WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
                 message: state.loadMoreFailure!.userMessage,
-                detail: state.loadMoreFailure!.requestId == null
-                    ? null
-                    : '问题编号：${state.loadMoreFailure!.requestId}',
+                detail: wenyouFailureDetail(state.loadMoreFailure),
                 action: TextButton(
                   key: const Key('wallet-load-more-retry'),
                   onPressed: onLoadMore,

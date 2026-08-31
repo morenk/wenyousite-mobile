@@ -130,7 +130,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 ),
                 ThreadManagementPhase.failed => _ManagementFatalState(
                   failureMessage: state.failure?.userMessage,
-                  requestId: state.failure?.requestId,
+                  detail: wenyouFailureDetail(state.failure),
                   onRetry: () => ref.read(provider.notifier).load(),
                 ),
                 ThreadManagementPhase.ready => switch (_section) {
@@ -218,9 +218,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 key: const Key('thread-management-failure'),
                 tone: WenyouStatusTone.error,
                 message: state.failure!.userMessage,
-                detail: state.failure!.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
+                detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
                 action: state.conflict != null
                     ? TextButton(
                         key: const Key('thread-management-resolve-conflict'),
@@ -687,12 +685,12 @@ class _ThreadTagSelectorDialogState extends State<_ThreadTagSelectorDialog> {
 class _ManagementFatalState extends StatelessWidget {
   const _ManagementFatalState({
     required this.failureMessage,
-    required this.requestId,
+    required this.detail,
     required this.onRetry,
   });
 
   final String? failureMessage;
-  final String? requestId;
+  final String? detail;
   final VoidCallback onRetry;
 
   @override
@@ -702,7 +700,7 @@ class _ManagementFatalState extends StatelessWidget {
         icon: WenyouIconIds.actionAccount,
         title: '主题管理信息加载失败',
         message: failureMessage ?? '请检查网络或账号权限后重试。',
-        detail: requestId == null ? null : '问题编号：$requestId',
+        detail: detail,
         action: OutlinedButton.icon(
           key: const Key('thread-management-load-retry'),
           onPressed: onRetry,

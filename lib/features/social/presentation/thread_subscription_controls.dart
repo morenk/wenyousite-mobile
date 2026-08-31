@@ -86,9 +86,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
         ThreadSubscriptionPhase.failed => WenyouStatusBanner(
           tone: WenyouStatusTone.error,
           message: state.failure?.userMessage ?? '订阅状态加载失败。',
-          detail: state.failure?.requestId == null
-              ? null
-              : '问题编号：${state.failure!.requestId}',
+          detail: wenyouFailureDetail(state.failure),
           action: TextButton(
             key: const Key('thread-subscription-retry'),
             onPressed: notifier.load,
@@ -144,7 +142,10 @@ class ThreadSubscriptionControls extends ConsumerWidget {
               SizedBox(height: tokens.space12),
               _ActionFailure(
                 message: state.actionFailure!.userMessage,
-                requestId: state.actionFailure!.requestId,
+                detail: wenyouFailureDetail(
+                  state.actionFailure,
+                  treatAsWrite: true,
+                ),
                 onDismiss: notifier.clearActionFailure,
               ),
             ],
@@ -152,6 +153,7 @@ class ThreadSubscriptionControls extends ConsumerWidget {
               SizedBox(height: tokens.space12),
               _ActionOutcome(
                 outcome: state.actionOutcome!,
+                failure: state.actionOutcomeFailure,
                 requestId: state.actionRequestId,
                 onRefresh: notifier.load,
               ),
@@ -249,7 +251,10 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               SizedBox(height: tokens.space12),
               _ActionFailure(
                 message: state.actionFailure!.userMessage,
-                requestId: state.actionFailure!.requestId,
+                detail: wenyouFailureDetail(
+                  state.actionFailure,
+                  treatAsWrite: true,
+                ),
                 onDismiss: notifier.clearActionFailure,
               ),
             ],
@@ -257,6 +262,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               SizedBox(height: tokens.space12),
               _ActionOutcome(
                 outcome: state.actionOutcome!,
+                failure: state.actionOutcomeFailure,
                 requestId: state.actionRequestId,
                 onRefresh: notifier.load,
               ),
@@ -420,11 +426,11 @@ class _ActionFailure extends StatelessWidget {
   const _ActionFailure({
     required this.message,
     required this.onDismiss,
-    this.requestId,
+    this.detail,
   });
 
   final String message;
-  final String? requestId;
+  final String? detail;
   final VoidCallback onDismiss;
 
   @override
@@ -432,7 +438,7 @@ class _ActionFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: message,
-      detail: requestId == null ? null : '问题编号：$requestId',
+      detail: detail,
       action: TextButton(
         key: const Key('thread-subscription-error-dismiss'),
         onPressed: onDismiss,
@@ -446,10 +452,12 @@ class _ActionOutcome extends StatelessWidget {
   const _ActionOutcome({
     required this.outcome,
     required this.onRefresh,
+    this.failure,
     this.requestId,
   });
 
   final WriteOutcomeStatus outcome;
+  final ApiFailure? failure;
   final String? requestId;
   final VoidCallback onRefresh;
 
@@ -465,6 +473,7 @@ class _ActionOutcome extends StatelessWidget {
       status: outcome,
       confirmingMessage: '正在确认订阅状态…',
       indeterminateMessage: '现在无法继续订阅操作。请先刷新主题查看是否已生效；应用不会自动重复提交。',
+      failure: failure,
       requestId: requestId,
       onRefresh: onRefresh,
       refreshKey: const Key('thread-subscription-refresh-result'),

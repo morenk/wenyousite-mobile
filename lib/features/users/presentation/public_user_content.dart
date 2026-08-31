@@ -363,9 +363,7 @@ class _ContentFailureState extends StatelessWidget {
         message: hidden && !isSelf
             ? '隐私设置可能刚刚发生变化。'
             : (failure?.userMessage ?? '请稍后重试。'),
-        detail: failure?.requestId == null
-            ? null
-            : '问题编号：${failure!.requestId}',
+        detail: wenyouFailureDetail(failure),
         action: OutlinedButton.icon(
           key: Key('public-user-${tab.name}-retry'),
           onPressed: onRetry,
@@ -388,7 +386,7 @@ class _ContentInlineFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
+      detail: wenyouFailureDetail(failure),
       action: TextButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),

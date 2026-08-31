@@ -130,9 +130,7 @@ class ThreadInteractionActions extends ConsumerWidget {
           WenyouStatusBanner(
             tone: WenyouStatusTone.error,
             message: state.failure!.userMessage,
-            detail: state.failure!.requestId == null
-                ? null
-                : '问题编号：${state.failure!.requestId}',
+            detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
           ),
         ],
         if (state.outcomeStatus != null) ...[
@@ -142,6 +140,7 @@ class ThreadInteractionActions extends ConsumerWidget {
             status: state.outcomeStatus!,
             confirmingMessage: '正在确认主题互动状态…',
             indeterminateMessage: '现在无法继续互动。请先刷新主题查看是否已生效；应用不会自动重复提交。',
+            failure: state.outcomeFailure,
             requestId: state.outcomeRequestId,
             onRefresh: notifier.refresh,
             refreshKey: const Key('thread-interaction-refresh-result'),
@@ -215,11 +214,19 @@ class ThreadInteractionActions extends ConsumerWidget {
       }
       return;
     }
-    final requestId = failure.requestId;
-    final message = requestId == null
-        ? failure.userMessage
-        : '${failure.userMessage}（问题编号：$requestId）';
-    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
+    final message = wenyouFailureMessage(
+      failure,
+      treatAsWrite: true,
+      objectName: '主题',
+      operationName: '互动',
+    );
+    if (message != null) {
+      showWenyouSnackBar(
+        context,
+        message,
+        pacing: WenyouSnackBarPacing.extended,
+      );
+    }
   }
 
   void _showSuccess(

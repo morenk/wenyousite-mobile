@@ -84,6 +84,7 @@ class ThreadTagManagementController
       failure: null,
       actionOutcome: null,
       actionRequestId: null,
+      actionOutcomeFailure: null,
     );
     try {
       final latest = await _repository.findById(candidate.id);
@@ -121,6 +122,7 @@ class ThreadTagManagementController
       failure: null,
       actionOutcome: null,
       actionRequestId: null,
+      actionOutcomeFailure: null,
     );
     try {
       return _addWithReconciliation(
@@ -147,6 +149,7 @@ class ThreadTagManagementController
       failure: null,
       actionOutcome: null,
       actionRequestId: null,
+      actionOutcomeFailure: null,
     );
     final epoch = ++_mutationEpoch;
     final outcome = await _reconciler.run<void, ThreadTagManagementBootstrap>(
@@ -156,7 +159,7 @@ class ThreadTagManagementController
       targetReached: (latest) => !latest.tags.any((item) => item.id == tag.id),
       failureMessage: '标签移除失败，请重试。',
       isCurrent: () => mounted && epoch == _mutationEpoch,
-      onProgress: (progress) => _showConfirming(epoch, progress.requestId),
+      onProgress: (progress) => _showConfirming(epoch, progress.failure),
     );
     if (outcome.isDiscarded || !mounted || epoch != _mutationEpoch) {
       return false;
@@ -172,6 +175,7 @@ class ThreadTagManagementController
           failure: null,
           actionOutcome: null,
           actionRequestId: null,
+          actionOutcomeFailure: null,
         );
         return true;
       case WriteOutcomeStatus.failed:
@@ -180,6 +184,7 @@ class ThreadTagManagementController
           failure: outcome.failure,
           actionOutcome: null,
           actionRequestId: null,
+          actionOutcomeFailure: null,
         );
         return false;
       case WriteOutcomeStatus.indeterminate:
@@ -189,6 +194,7 @@ class ThreadTagManagementController
           failure: null,
           actionOutcome: WriteOutcomeStatus.indeterminate,
           actionRequestId: outcome.requestId,
+          actionOutcomeFailure: outcome.failure,
         );
         return false;
       case WriteOutcomeStatus.confirming:
@@ -210,7 +216,7 @@ class ThreadTagManagementController
           targetReached: (latest) => latest.tags.any(targetReached),
           failureMessage: fallback,
           isCurrent: () => mounted && epoch == _mutationEpoch,
-          onProgress: (progress) => _showConfirming(epoch, progress.requestId),
+          onProgress: (progress) => _showConfirming(epoch, progress.failure),
         );
     if (outcome.isDiscarded || !mounted || epoch != _mutationEpoch) {
       return false;
@@ -224,6 +230,7 @@ class ThreadTagManagementController
             failure: null,
             actionOutcome: null,
             actionRequestId: null,
+            actionOutcomeFailure: null,
           );
         } else {
           _commitAdded(outcome.writeValue!);
@@ -235,6 +242,7 @@ class ThreadTagManagementController
           failure: outcome.failure,
           actionOutcome: null,
           actionRequestId: null,
+          actionOutcomeFailure: null,
         );
         return false;
       case WriteOutcomeStatus.indeterminate:
@@ -244,6 +252,7 @@ class ThreadTagManagementController
           failure: null,
           actionOutcome: WriteOutcomeStatus.indeterminate,
           actionRequestId: outcome.requestId,
+          actionOutcomeFailure: outcome.failure,
         );
         return false;
       case WriteOutcomeStatus.confirming:
@@ -251,11 +260,12 @@ class ThreadTagManagementController
     }
   }
 
-  void _showConfirming(int epoch, String? requestId) {
+  void _showConfirming(int epoch, ApiFailure? failure) {
     if (!mounted || epoch != _mutationEpoch) return;
     state = state.copyWith(
       actionOutcome: WriteOutcomeStatus.confirming,
-      actionRequestId: requestId,
+      actionRequestId: failure?.requestId,
+      actionOutcomeFailure: failure,
     );
   }
 
@@ -265,6 +275,7 @@ class ThreadTagManagementController
       failure: null,
       actionOutcome: null,
       actionRequestId: null,
+      actionOutcomeFailure: null,
     );
   }
 
@@ -294,6 +305,9 @@ class ThreadTagManagementController
       ),
       mutatingTagId: null,
       failure: null,
+      actionOutcome: null,
+      actionRequestId: null,
+      actionOutcomeFailure: null,
     );
   }
 

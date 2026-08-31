@@ -527,7 +527,7 @@ void main() {
     final failure = find.byKey(const Key('me-avatar-failure'));
     expect(failure, findsOneWidget);
     expect(find.text('系统相册没有返回图片，请重试。'), findsOneWidget);
-    expect(find.text('问题编号：avatar-picker-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：avatar-picker-request'), findsOneWidget);
     expect(find.text('重新选择'), findsOneWidget);
     expect(tester.getRect(failure).top, lessThan(480));
   });
@@ -567,7 +567,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('image-crop-confirm')));
     await tester.pumpAndSettle();
-    expect(find.text('问题编号：avatar-widget-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：avatar-widget-request-id'),
+      findsOneWidget,
+    );
     expect(find.text('重试设置'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('me-avatar-retry')));
@@ -790,7 +793,7 @@ void main() {
     final failure = find.byKey(const Key('me-profile-cover-failure'));
     expect(failure, findsOneWidget);
     expect(find.text('背景图上传失败，请重试。'), findsOneWidget);
-    expect(find.text('问题编号：cover-upload-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：cover-upload-request'), findsOneWidget);
     expect(find.text('重试上传'), findsOneWidget);
     expect(tester.getRect(failure).top, lessThan(640));
   });
@@ -827,7 +830,7 @@ void main() {
     final failure = find.byKey(const Key('me-profile-cover-failure'));
     expect(failure, findsOneWidget);
     expect(find.text('系统相册没有返回背景图，请重试。'), findsOneWidget);
-    expect(find.text('问题编号：cover-picker-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：cover-picker-request'), findsOneWidget);
     expect(find.text('重新选择'), findsOneWidget);
     expect(tester.getRect(failure).top, lessThan(640));
   });

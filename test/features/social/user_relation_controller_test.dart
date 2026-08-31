@@ -100,6 +100,10 @@ void main() {
     expect(controller.state.failure, isNull);
     expect(controller.state.outcomeStatus, WriteOutcomeStatus.indeterminate);
     expect(controller.state.outcomeRequestId, 'follow-unknown');
+    expect(
+      controller.state.outcomeFailure?.effectiveSource,
+      FailureSource.network,
+    );
   });
 }
 

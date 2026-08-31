@@ -60,7 +60,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('thread-player-exit-confirm')));
     await tester.pumpAndSettle();
-    expect(find.text('问题编号：exit-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：exit-request-id'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('thread-player-exit-retry')));
     await tester.pumpAndSettle();

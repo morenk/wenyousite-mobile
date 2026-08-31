@@ -73,6 +73,7 @@ class LoginSessionsController extends StateNotifier<LoginSessionsState> {
           pendingSessionId: sessionId,
           actionOutcome: WriteOutcomeStatus.confirming,
           actionRequestId: progress.requestId,
+          actionOutcomeFailure: progress.failure,
         );
       },
     );
@@ -101,6 +102,7 @@ class LoginSessionsController extends StateNotifier<LoginSessionsState> {
           sessions: outcome.projection ?? oldSessions,
           actionOutcome: WriteOutcomeStatus.indeterminate,
           actionRequestId: outcome.requestId,
+          actionOutcomeFailure: outcome.failure,
         );
         return false;
       case WriteOutcomeStatus.confirming:

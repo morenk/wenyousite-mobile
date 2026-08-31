@@ -102,6 +102,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
           pendingAction: action,
           outcomeStatus: WriteOutcomeStatus.confirming,
           outcomeRequestId: progress.requestId,
+          outcomeFailure: progress.failure,
         );
       },
     );
@@ -124,11 +125,13 @@ class UserRelationController extends StateNotifier<UserRelationState> {
                 before,
                 outcomeStatus: WriteOutcomeStatus.indeterminate,
                 outcomeRequestId: outcome.requestId,
+                outcomeFailure: outcome.failure,
               )
             : _fromProjection(
                 outcome.projection!,
                 outcomeStatus: WriteOutcomeStatus.indeterminate,
                 outcomeRequestId: outcome.requestId,
+                outcomeFailure: outcome.failure,
               );
         return false;
       case WriteOutcomeStatus.confirming:
@@ -170,6 +173,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
     ApiFailure? failure,
     WriteOutcomeStatus? outcomeStatus,
     String? outcomeRequestId,
+    ApiFailure? outcomeFailure,
   }) {
     return UserRelationState(
       isFollowing: before.isFollowing,
@@ -179,6 +183,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
       failure: failure,
       outcomeStatus: outcomeStatus,
       outcomeRequestId: outcomeRequestId,
+      outcomeFailure: outcomeFailure,
     );
   }
 
@@ -187,6 +192,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
     String? successMessage,
     WriteOutcomeStatus? outcomeStatus,
     String? outcomeRequestId,
+    ApiFailure? outcomeFailure,
   }) {
     return UserRelationState(
       isFollowing: projection.isFollowing,
@@ -196,6 +202,7 @@ class UserRelationController extends StateNotifier<UserRelationState> {
       successMessage: successMessage,
       outcomeStatus: outcomeStatus,
       outcomeRequestId: outcomeRequestId,
+      outcomeFailure: outcomeFailure,
     );
   }
 

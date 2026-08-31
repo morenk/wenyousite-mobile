@@ -121,7 +121,7 @@ void main() {
 
     expect(find.text('动态正文'), findsOneWidget);
     expect(find.text('普通评论 0'), findsOneWidget);
-    expect(find.text('问题编号：request-503'), findsOneWidget);
+    expect(find.textContaining('问题编号：request-503'), findsOneWidget);
     final retry = find.byKey(const Key('moment-comment-target-retry'));
     expect(retry, findsOneWidget);
     await tester.tap(retry);

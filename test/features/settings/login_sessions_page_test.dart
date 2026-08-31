@@ -50,7 +50,7 @@ void main() {
     await tester.pumpWidget(_app(_FakeRepository(failLoad: true)));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('login-sessions-retry')), findsOneWidget);
-    expect(find.text('问题编号：session-load-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：session-load-request'), findsOneWidget);
 
     final repository = _FakeRepository(sessions: [_other], failRevoke: true);
     await tester.pumpWidget(_app(repository));
@@ -63,7 +63,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('网页端登录'), findsOneWidget);
-    expect(find.text('问题编号：session-revoke-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：session-revoke-request'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

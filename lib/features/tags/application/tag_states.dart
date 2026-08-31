@@ -15,6 +15,7 @@ class ThreadTagManagementState {
     this.mutatingTagId,
     this.actionOutcome,
     this.actionRequestId,
+    this.actionOutcomeFailure,
   });
 
   const ThreadTagManagementState.loading()
@@ -28,6 +29,7 @@ class ThreadTagManagementState {
   final String? mutatingTagId;
   final WriteOutcomeStatus? actionOutcome;
   final String? actionRequestId;
+  final ApiFailure? actionOutcomeFailure;
 
   bool get isMutating => mutatingTagId != null;
   bool get isBusy => isSearching || isMutating;
@@ -41,6 +43,7 @@ class ThreadTagManagementState {
     Object? mutatingTagId = _unset,
     Object? actionOutcome = _unset,
     Object? actionRequestId = _unset,
+    Object? actionOutcomeFailure = _unset,
   }) {
     return ThreadTagManagementState(
       phase: phase ?? this.phase,
@@ -61,6 +64,9 @@ class ThreadTagManagementState {
       actionRequestId: identical(actionRequestId, _unset)
           ? this.actionRequestId
           : actionRequestId as String?,
+      actionOutcomeFailure: identical(actionOutcomeFailure, _unset)
+          ? this.actionOutcomeFailure
+          : actionOutcomeFailure as ApiFailure?,
     );
   }
 }

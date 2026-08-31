@@ -91,7 +91,10 @@ void main() {
     await _pumpWorkspace(tester, repository);
 
     expect(find.text('子贴管理暂时不可用'), findsOneWidget);
-    expect(find.text('问题编号：subthread-load-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：subthread-load-request-id'),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('subthread-management-create')), findsNothing);
 
     await tester.tap(find.byKey(const Key('subthread-management-retry')));
@@ -141,7 +144,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('subthread-form-failure')), findsOneWidget);
-    expect(find.text('问题编号：subthread-save-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：subthread-save-request-id'),
+      findsOneWidget,
+    );
     expect(
       tester
           .widget<TextFormField>(find.byKey(const Key('subthread-form-title')))
@@ -184,7 +190,10 @@ void main() {
 
     expect(find.text('剧情区'), findsOneWidget);
     expect(find.text('设定区'), findsOneWidget);
-    expect(find.text('问题编号：subthread-delete-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：subthread-delete-request-id'),
+      findsOneWidget,
+    );
 
     final moved = await container
         .read(subthreadManagementControllerProvider('thread-1').notifier)
@@ -192,7 +201,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(moved, isFalse);
-    expect(find.text('问题编号：subthread-reorder-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：subthread-reorder-request-id'),
+      findsOneWidget,
+    );
     expect(
       tester
           .getTopLeft(find.byKey(const ValueKey('subthread-edit-sub-second')))

@@ -77,7 +77,7 @@ void main() {
     await tester.tap(find.byKey(const Key('direct-messages-load-more')));
     await tester.pumpAndSettle();
     expect(find.text('小油'), findsOneWidget);
-    expect(find.text('问题编号：list-more-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：list-more-request'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('direct-messages-load-more-retry')));
     await tester.pumpAndSettle();

@@ -21,7 +21,7 @@ class PostDiscussionFailure extends StatelessWidget {
           icon: WenyouIconIds.metricReplies,
           title: failure?.httpStatus == 404 ? '楼层暂时不可见' : '楼中楼讨论加载失败',
           message: failure?.userMessage ?? '请稍后重试。',
-          detail: wenyouRequestDetail(failure),
+          detail: wenyouFailureDetail(failure),
           action: onRetry == null
               ? null
               : FilledButton(onPressed: onRetry, child: const Text('重试')),

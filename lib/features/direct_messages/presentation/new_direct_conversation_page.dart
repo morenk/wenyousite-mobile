@@ -232,9 +232,7 @@ class _TargetFailure extends StatelessWidget {
               : WenyouIconIds.statusOffline,
           title: state.failure?.httpStatus == 404 ? '无法向该用户发起私聊' : '联系状态加载失败',
           message: state.failure?.userMessage ?? '请稍后重试。',
-          detail: state.failure?.requestId == null
-              ? null
-              : '问题编号：${state.failure!.requestId}',
+          detail: wenyouFailureDetail(state.failure),
           action: OutlinedButton.icon(
             key: const Key('direct-message-new-retry'),
             onPressed: onRetry,

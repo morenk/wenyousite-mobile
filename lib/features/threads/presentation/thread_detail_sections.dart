@@ -68,9 +68,7 @@ class ThreadDetailFatalState extends StatelessWidget {
             message: notFound
                 ? '它可能已经删除、设为私密，或当前账号没有访问权限。'
                 : (failure?.userMessage ?? '请检查网络后重试。'),
-            detail: failure?.requestId == null
-                ? null
-                : '问题编号：${failure!.requestId}',
+            detail: wenyouFailureDetail(failure),
             action: OutlinedButton.icon(
               key: const Key('thread-detail-retry'),
               onPressed: onRetry,
@@ -99,7 +97,7 @@ class ThreadDetailTransientFailure extends StatelessWidget {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
       message: failure.userMessage,
-      detail: failure.requestId == null ? null : '问题编号：${failure.requestId}',
+      detail: wenyouFailureDetail(failure),
       action: TextButton.icon(
         key: const Key('thread-detail-transient-retry'),
         onPressed: onRetry,
@@ -274,9 +272,7 @@ class ThreadTargetPostStatus extends StatelessWidget {
           message: failure?.httpStatus == 404
               ? '目标内容已不可见'
               : (failure?.userMessage ?? '目标内容定位失败，请重试。'),
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
+          detail: wenyouFailureDetail(failure),
           action: TextButton.icon(
             key: const Key('thread-target-retry'),
             onPressed: onRetry,

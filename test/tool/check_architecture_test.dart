@@ -325,6 +325,39 @@ void main() {
     expect(collectArchitectureFailures(root), isEmpty);
   });
 
+  test('feature UI cannot format problem numbers or technical error codes', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      "final detail = '问题编号：\$requestId';\n"
+      "final debug = '错误：\${failure.businessCode}';\n",
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path formats a problem number outside the shared failure policy',
+        '$path interpolates a technical error code outside diagnostics',
+      ]),
+    );
+  });
+
+  test('shared failure policy may format user and diagnostic details', () {
+    _write(
+      root,
+      'lib/core/widgets/wenyou_feedback.dart',
+      "final detail = '问题编号：\$requestId';\n",
+    );
+    _write(
+      root,
+      'lib/core/diagnostics/network_diagnostics.dart',
+      "final debug = 'code=\${failure.businessCode}';\n",
+    );
+
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
   test('page transitions must use the shared navigation policy', () {
     const path = 'lib/features/alpha/presentation/page.dart';
     _write(

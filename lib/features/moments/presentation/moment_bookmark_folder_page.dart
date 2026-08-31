@@ -54,13 +54,19 @@ class _MomentBookmarkFolderPageState
       next,
     ) {
       if (next != null && next != previous) {
-        showWenyouSnackBar(
-          context,
-          next.requestId == null
-              ? next.userMessage
-              : '${next.userMessage}（问题编号：${next.requestId}）',
-          pacing: WenyouSnackBarPacing.extended,
+        final message = wenyouFailureMessage(
+          next,
+          treatAsWrite: true,
+          objectName: '动态收藏',
+          operationName: '移动收藏',
         );
+        if (message != null) {
+          showWenyouSnackBar(
+            context,
+            message,
+            pacing: WenyouSnackBarPacing.extended,
+          );
+        }
       }
     });
     final body = RefreshIndicator(
@@ -153,9 +159,7 @@ class _MomentBookmarkFolderPageState
                 icon: WenyouIconIds.statusOffline,
                 title: '动态收藏加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: state.failure?.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
+                detail: wenyouFailureDetail(state.failure),
                 action: OutlinedButton.icon(
                   key: const Key('moment-bookmark-folder-retry'),
                   onPressed: ref.read(provider.notifier).load,

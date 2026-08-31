@@ -13,6 +13,7 @@ class LoginSessionsState {
     this.actionFailure,
     this.actionOutcome,
     this.actionRequestId,
+    this.actionOutcomeFailure,
   });
 
   const LoginSessionsState.loading() : this(phase: LoginSessionsPhase.loading);
@@ -24,6 +25,7 @@ class LoginSessionsState {
   final ApiFailure? actionFailure;
   final WriteOutcomeStatus? actionOutcome;
   final String? actionRequestId;
+  final ApiFailure? actionOutcomeFailure;
 
   bool get isMutating => pendingSessionId != null;
 }

@@ -65,7 +65,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-invite-join')));
     await tester.pumpAndSettle();
     expect(find.text('星海密谈'), findsOneWidget);
-    expect(find.text('问题编号：join-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：join-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-invite-dismiss-failure')));
     await tester.pumpAndSettle();
 
@@ -90,7 +90,7 @@ void main() {
     );
 
     expect(find.text('邀请链接无效或已失效'), findsOneWidget);
-    expect(find.text('问题编号：invalid-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：invalid-request-id'), findsNothing);
     expect(find.byKey(const Key('thread-invite-load-retry')), findsNothing);
     expect(find.byKey(const Key('thread-invite-back-home')), findsOneWidget);
   });
@@ -104,7 +104,7 @@ void main() {
     );
     await _pumpPage(tester, repository);
 
-    expect(find.text('问题编号：preview-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：preview-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-invite-load-retry')));
     await tester.pumpAndSettle();
     expect(find.text('星海密谈'), findsOneWidget);

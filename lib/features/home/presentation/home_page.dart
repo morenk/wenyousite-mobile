@@ -265,7 +265,7 @@ class _HomeErrorState extends StatelessWidget {
         icon: WenyouIconIds.statusOffline,
         title: '主题列表加载失败',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: wenyouRequestDetail(failure),
+        detail: wenyouFailureDetail(failure),
         action: FilledButton.icon(
           key: const Key('home-retry'),
           onPressed: onRetry,

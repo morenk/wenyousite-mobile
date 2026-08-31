@@ -305,7 +305,7 @@ void main() {
 
     expect(findFoundationIcon(WenyouIconIds.statusError), findsOneWidget);
     expect(find.text('暂时无法提交'), findsOneWidget);
-    expect(find.text('问题编号：request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：request-id'), findsOneWidget);
   });
 
   testWidgets('失败提示统一从 ApiFailure 展示信息和请求 ID', (tester) async {
@@ -324,7 +324,7 @@ void main() {
     );
 
     expect(find.text('加载没有完成'), findsOneWidget);
-    expect(find.text('问题编号：failure-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：failure-request-id'), findsOneWidget);
     expect(findFoundationIcon(WenyouIconIds.statusError), findsOneWidget);
   });
 

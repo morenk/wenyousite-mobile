@@ -45,9 +45,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
               icon: WenyouIconIds.statusOffline,
               title: '表情收藏加载失败',
               message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: state.failure?.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure),
               action: OutlinedButton.icon(
                 key: const Key('stickers-retry'),
                 onPressed: notifier.load,
@@ -98,9 +96,10 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                     key: const Key('stickers-action-failure'),
                     tone: WenyouStatusTone.error,
                     message: state.transientFailure!.userMessage,
-                    detail: state.transientFailure!.requestId == null
-                        ? null
-                        : '问题编号：${state.transientFailure!.requestId}',
+                    detail: wenyouFailureDetail(
+                      state.transientFailure,
+                      treatAsWrite: true,
+                    ),
                     action: state.retrySource == null
                         ? TextButton(
                             onPressed: state.isBusy ? null : notifier.load,
@@ -121,9 +120,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                     key: const Key('stickers-upload-failure'),
                     tone: WenyouStatusTone.error,
                     message: uploadFailure.userMessage,
-                    detail: uploadFailure.requestId == null
-                        ? null
-                        : '问题编号：${uploadFailure.requestId}',
+                    detail: uploadFailure.resolvedPresentation.problemDetail,
                     action: uploadFailure.canRetry
                         ? TextButton(
                             key: const Key('stickers-retry-upload'),

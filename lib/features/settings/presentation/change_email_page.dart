@@ -162,9 +162,10 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
             WenyouStatusBanner(
               key: const Key('change-email-code-delivery-uncertain'),
               message: '邮件可能已经发出',
-              detail: state.failure?.requestId == null
-                  ? '请保留当前验证码输入；为避免重复邮件，60 秒内不会重发。'
-                  : '请保留当前输入；问题编号：${state.failure!.requestId}',
+              detail: [
+                '请保留当前验证码输入；为避免重复邮件，60 秒内不会重发。',
+                ?wenyouFailureDetail(state.failure, treatAsWrite: true),
+              ].join('\n'),
             ),
           ],
           Align(

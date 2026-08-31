@@ -35,9 +35,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
             key: const Key('thread-invite-link-failure'),
             tone: WenyouStatusTone.error,
             message: state.failure!.userMessage,
-            detail: state.failure!.requestId == null
-                ? null
-                : '问题编号：${state.failure!.requestId}',
+            detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
             action: TextButton(
               key: const Key('thread-invite-link-dismiss-failure'),
               onPressed: state.isGenerating

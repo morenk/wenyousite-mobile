@@ -185,9 +185,7 @@ class _ThreadSearchResults extends ConsumerWidget {
             WenyouStatusBanner(
               tone: WenyouStatusTone.error,
               message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure),
               action: TextButton.icon(
                 onPressed: () => ref.read(provider.notifier).loadMore(),
                 icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
@@ -281,9 +279,7 @@ class _ThreadSearchError extends StatelessWidget {
         icon: WenyouIconIds.statusOffline,
         title: '主题内搜索失败',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: failure?.requestId == null
-            ? null
-            : '问题编号：${failure!.requestId}',
+        detail: wenyouFailureDetail(failure),
         action: OutlinedButton.icon(
           key: const Key('thread-search-retry'),
           onPressed: onRetry,

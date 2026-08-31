@@ -38,7 +38,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
   bool _preparing = false;
   bool _allowPop = false;
   ApiFailure? _localFailure;
-  String? _indeterminateRequestId;
+  ApiFailure? _indeterminateFailure;
 
   @override
   void dispose() {
@@ -169,27 +169,25 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
 
   Widget _buildFeedback(SubthreadManagementState state) {
     final failure = _localFailure ?? state.failure;
-    if (failure == null && _indeterminateRequestId == null) {
+    if (failure == null && _indeterminateFailure == null) {
       return const SizedBox.shrink();
     }
     final tokens = context.wenyouTokens;
     return Padding(
       padding: EdgeInsets.only(top: tokens.space12),
-      child: _indeterminateRequestId != null
+      child: _indeterminateFailure != null
           ? WenyouWriteOutcomeBanner(
               key: const Key('subthread-form-indeterminate'),
               status: WriteOutcomeStatus.indeterminate,
               confirmingMessage: '正在确认子贴状态…',
               indeterminateMessage: '现在无法继续保存。请先刷新子贴查看是否已生效；应用不会自动重复提交。',
-              requestId: _indeterminateRequestId,
+              failure: _indeterminateFailure,
             )
           : WenyouStatusBanner(
               key: const Key('subthread-form-failure'),
               tone: WenyouStatusTone.error,
               message: failure!.userMessage,
-              detail: failure.requestId == null
-                  ? null
-                  : '问题编号：${failure.requestId}',
+              detail: wenyouFailureDetail(failure, treatAsWrite: true),
             ),
     );
   }
@@ -260,7 +258,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
     FocusScope.of(context).unfocus();
     setState(() {
       _localFailure = null;
-      _indeterminateRequestId = null;
+      _indeterminateFailure = null;
     });
     final notifier = ref.read(provider.notifier);
     final result = widget.creating
@@ -275,10 +273,8 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
         if (mounted) context.pop(true);
       case MutationSubmitFailed<SubthreadManagementItem>(:final failure):
         setState(() => _localFailure = failure);
-      case MutationSubmitIndeterminate<SubthreadManagementItem>(
-        :final requestId,
-      ):
-        setState(() => _indeterminateRequestId = requestId ?? '');
+      case MutationSubmitIndeterminate<SubthreadManagementItem>(:final failure):
+        setState(() => _indeterminateFailure = failure);
     }
   }
 

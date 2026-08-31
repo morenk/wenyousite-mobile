@@ -1,6 +1,12 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:wenyou_api/wenyou_api.dart';
+
+enum FailureSource { expected, device, network, service, content, unknown }
 
 enum FailureReason {
+  cancelled,
   offline,
   timeout,
   rateLimited,
@@ -29,6 +35,7 @@ enum FailureRecoveryAction {
 class ApiFailure implements Exception {
   const ApiFailure({
     String? userMessage,
+    this.source,
     this.reason = FailureReason.unknown,
     this.recoveryAction = FailureRecoveryAction.retry,
     this.httpStatus,
@@ -43,12 +50,17 @@ class ApiFailure implements Exception {
   factory ApiFailure.contractViolation({
     required String userMessage,
     required String diagnosticCode,
+    String? requestId,
+    String? contractVersion,
     Object? cause,
   }) {
     return ApiFailure(
       userMessage: userMessage,
+      source: FailureSource.content,
       reason: FailureReason.contractViolation,
       recoveryAction: FailureRecoveryAction.refresh,
+      requestId: requestId,
+      contractVersion: contractVersion,
       diagnosticCode: diagnosticCode,
       cause: cause,
     );
@@ -75,9 +87,16 @@ class ApiFailure implements Exception {
     final retryAfterSeconds = int.tryParse(
       response?.headers.value('retry-after') ?? '',
     );
+    final knownBusinessCode = _knownBusinessCode(businessCode);
+    final source = _sourceFor(
+      exception,
+      businessCode: businessCode,
+      knownBusinessCode: knownBusinessCode,
+    );
 
-    final reason = _reasonFor(exception, businessCode);
+    final reason = _reasonFor(exception, businessCode, source);
     return ApiFailure(
+      source: source,
       reason: reason,
       recoveryAction: _recoveryFor(reason, businessCode),
       httpStatus: response?.statusCode,
@@ -88,11 +107,13 @@ class ApiFailure implements Exception {
           ? null
           : Duration(seconds: retryAfterSeconds < 0 ? 0 : retryAfterSeconds),
       userMessage:
-          featureMessages[businessCode] ?? _messageFor(exception, businessCode),
+          featureMessages[businessCode] ??
+          _messageFor(exception, businessCode, source),
       cause: exception,
     );
   }
 
+  final FailureSource? source;
   final int? httpStatus;
   final int? businessCode;
   final String? requestId;
@@ -114,10 +135,86 @@ class ApiFailure implements Exception {
   final String? legacyUserMessage;
   final Object? cause;
 
+  FailureSource get effectiveSource {
+    final explicitSource = source;
+    if (explicitSource != null) return explicitSource;
+    if ((httpStatus ?? 0) >= 500 || businessCode == 50000) {
+      return FailureSource.service;
+    }
+    if (businessCode == 40912) return FailureSource.device;
+    final knownBusinessCode = _knownBusinessCode(businessCode);
+    if (knownBusinessCode != null &&
+        knownBusinessCode != BusinessErrorCode.unknownDefaultOpenApi) {
+      return FailureSource.expected;
+    }
+    if (businessCode != null) return FailureSource.content;
+    if ((httpStatus ?? 0) >= 400 && (httpStatus ?? 0) < 500) {
+      return FailureSource.expected;
+    }
+    final dioCause = cause;
+    if (dioCause is DioException) {
+      final inferred = _sourceFor(
+        dioCause,
+        businessCode: businessCode,
+        knownBusinessCode: knownBusinessCode,
+      );
+      if (inferred != FailureSource.unknown) return inferred;
+    }
+    return switch (reason) {
+      FailureReason.cancelled ||
+      FailureReason.rateLimited ||
+      FailureReason.unauthenticated ||
+      FailureReason.sessionInvalid ||
+      FailureReason.permissionDenied ||
+      FailureReason.notFound ||
+      FailureReason.conflict ||
+      FailureReason.validation => FailureSource.expected,
+      FailureReason.offline || FailureReason.timeout => FailureSource.network,
+      FailureReason.contractViolation => FailureSource.content,
+      FailureReason.localPersistence => FailureSource.device,
+      FailureReason.indeterminateWrite ||
+      FailureReason.unknown => FailureSource.unknown,
+    };
+  }
+
   @Deprecated('Resolve user-facing copy through UserFacingFailure instead.')
   String get userMessage => legacyUserMessage ?? defaultFailureMessage(reason);
 
   bool get isExpiredAccessToken => businessCode == 40101;
+
+  bool get isCancellation => reason == FailureReason.cancelled;
+
+  String? get businessCodeName {
+    final code = _knownBusinessCode(businessCode);
+    return code == null || code == BusinessErrorCode.unknownDefaultOpenApi
+        ? null
+        : code.name;
+  }
+
+  bool shouldExposeRequestId({bool treatAsWrite = false}) {
+    if (requestId == null) return false;
+    if (treatAsWrite && hasUnknownWriteOutcome) return true;
+    if (businessCode == 40912) return true;
+    return effectiveSource == FailureSource.service ||
+        effectiveSource == FailureSource.content ||
+        effectiveSource == FailureSource.unknown;
+  }
+
+  String get safeDiagnosticSummary {
+    final dio = cause;
+    final parts = <String>[
+      'source=${effectiveSource.name}',
+      'reason=${reason.name}',
+      if (dio is DioException) 'dioType=${dio.type.name}',
+      if (httpStatus != null) 'httpStatus=$httpStatus',
+      if (businessCode != null) 'businessCode=$businessCode',
+      if (businessCodeName != null) 'businessName=$businessCodeName',
+      if (requestId != null) 'requestId=$requestId',
+      if (contractVersion != null) 'contract=$contractVersion',
+      if (diagnosticCode != null) 'diagnosticCode=$diagnosticCode',
+    ];
+    return parts.join(' ');
+  }
 
   bool get hasUnknownWriteOutcome {
     final dio = cause;
@@ -138,7 +235,11 @@ class ApiFailure implements Exception {
 
   bool get isInvalidCursor => businessCode == 40007;
 
-  static String _messageFor(DioException exception, int? businessCode) {
+  static String _messageFor(
+    DioException exception,
+    int? businessCode,
+    FailureSource source,
+  ) {
     switch (businessCode) {
       case 40101:
         return '登录状态已续期，请手动重试这次操作。';
@@ -189,11 +290,20 @@ class ApiFailure implements Exception {
       case 40902:
         return '该用户名已被使用，请换一个。';
       case 40912:
-        return '这次操作与待确认请求冲突，请重新发起。';
+        return '这次操作无法继续，请重新打开后再试。';
       case 40914:
         return '你已提交过相同的待处理举报，无需重复提交。';
       case 42900:
         return '操作太频繁，请稍后再试。';
+    }
+    if (source == FailureSource.service) {
+      return '温油站暂时不可用，请稍后重试。';
+    }
+    if (source == FailureSource.content) {
+      return '当前内容暂时无法处理，请重新加载。';
+    }
+    if (exception.type == DioExceptionType.cancel) {
+      return '操作已取消。';
     }
     if (exception.type == DioExceptionType.connectionTimeout ||
         exception.type == DioExceptionType.sendTimeout ||
@@ -203,13 +313,23 @@ class ApiFailure implements Exception {
     if (exception.type == DioExceptionType.connectionError) {
       return '暂时无法连接温油站，请检查网络。';
     }
-    if ((exception.response?.statusCode ?? 0) >= 500) {
-      return '温油站暂时不可用，请稍后重试。';
+    if (source == FailureSource.network) {
+      return '暂时无法建立网络连接，请检查网络和系统时间。';
     }
     return '请求失败，请稍后重试。';
   }
 
-  static FailureReason _reasonFor(DioException exception, int? businessCode) {
+  static FailureReason _reasonFor(
+    DioException exception,
+    int? businessCode,
+    FailureSource source,
+  ) {
+    if (exception.type == DioExceptionType.cancel) {
+      return FailureReason.cancelled;
+    }
+    if (source == FailureSource.content) {
+      return FailureReason.contractViolation;
+    }
     if (businessCode == 40101) return FailureReason.unauthenticated;
     if (businessCode != null &&
         businessCode >= 40103 &&
@@ -254,7 +374,53 @@ class ApiFailure implements Exception {
     if (exception.type == DioExceptionType.connectionError) {
       return FailureReason.offline;
     }
+    if (source == FailureSource.network) return FailureReason.offline;
     return FailureReason.unknown;
+  }
+
+  static FailureSource _sourceFor(
+    DioException exception, {
+    required int? businessCode,
+    required BusinessErrorCode? knownBusinessCode,
+  }) {
+    if (exception.type == DioExceptionType.cancel) {
+      return FailureSource.expected;
+    }
+    final response = exception.response;
+    if (response != null) {
+      final status = response.statusCode ?? 0;
+      if (status >= 500 || businessCode == 50000) {
+        return FailureSource.service;
+      }
+      if (businessCode == 40912) return FailureSource.device;
+      if (knownBusinessCode != null &&
+          knownBusinessCode != BusinessErrorCode.unknownDefaultOpenApi) {
+        return FailureSource.expected;
+      }
+      return FailureSource.content;
+    }
+    if (exception.type == DioExceptionType.connectionTimeout ||
+        exception.type == DioExceptionType.sendTimeout ||
+        exception.type == DioExceptionType.receiveTimeout ||
+        exception.type == DioExceptionType.connectionError ||
+        exception.type == DioExceptionType.badCertificate ||
+        exception.error is SocketException ||
+        exception.error is HandshakeException) {
+      return FailureSource.network;
+    }
+    return FailureSource.unknown;
+  }
+
+  static BusinessErrorCode? _knownBusinessCode(Object? value) {
+    if (value == null) return null;
+    try {
+      return standardSerializers.deserializeWith(
+        BusinessErrorCode.serializer,
+        value,
+      );
+    } on Object {
+      return null;
+    }
   }
 
   static FailureRecoveryAction _recoveryFor(
@@ -265,6 +431,7 @@ class ApiFailure implements Exception {
       return FailureRecoveryAction.appeal;
     }
     return switch (reason) {
+      FailureReason.cancelled => FailureRecoveryAction.none,
       FailureReason.sessionInvalid ||
       FailureReason.unauthenticated => FailureRecoveryAction.login,
       FailureReason.conflict ||
@@ -283,7 +450,8 @@ class ApiFailure implements Exception {
 
   @override
   String toString() {
-    return 'ApiFailure(httpStatus: $httpStatus, businessCode: $businessCode, '
+    return 'ApiFailure(source: $effectiveSource, httpStatus: $httpStatus, '
+        'businessCode: $businessCode, '
         'requestId: $requestId, reason: $reason, '
         'recoveryAction: $recoveryAction, diagnosticCode: $diagnosticCode, '
         'retryAfter: $retryAfter)';
@@ -291,6 +459,7 @@ class ApiFailure implements Exception {
 }
 
 String defaultFailureMessage(FailureReason reason) => switch (reason) {
+  FailureReason.cancelled => '操作已取消。',
   FailureReason.offline => '暂时无法连接温油站，请检查网络后重试。',
   FailureReason.timeout => '等待时间过长，请检查网络后重试。',
   FailureReason.rateLimited => '操作太频繁，请稍后再试。',

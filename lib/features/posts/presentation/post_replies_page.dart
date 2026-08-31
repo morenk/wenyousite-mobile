@@ -415,7 +415,7 @@ class _DiscussionList extends StatelessWidget {
       if (actions.failure != null) ...[
         WenyouStatusBanner(
           message: actions.failure!.userMessage,
-          detail: wenyouRequestDetail(actions.failure),
+          detail: wenyouFailureDetail(actions.failure),
           tone: WenyouStatusTone.error,
         ),
         SizedBox(height: tokens.space12),
@@ -457,7 +457,7 @@ class _DiscussionList extends StatelessWidget {
       if (state.transientFailure != null) ...[
         WenyouStatusBanner(
           message: state.transientFailure!.userMessage,
-          detail: wenyouRequestDetail(state.transientFailure),
+          detail: wenyouFailureDetail(state.transientFailure),
           tone: WenyouStatusTone.error,
           action: TextButton(onPressed: onRetry, child: const Text('重试')),
         ),

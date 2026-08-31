@@ -103,8 +103,8 @@ class SubthreadManagementController
         MutationSubmitCompleted(value: final created) => update(created, draft),
         MutationSubmitFailed(failure: final failure) =>
           MutationSubmitResult.failed(failure),
-        MutationSubmitIndeterminate(requestId: final requestId) =>
-          MutationSubmitResult.indeterminate(requestId: requestId),
+        MutationSubmitIndeterminate(failure: final failure) =>
+          MutationSubmitResult.indeterminate(failure: failure),
       };
     }
     if (_pendingCreateFingerprint != fingerprint || _pendingCreateId == null) {
@@ -136,7 +136,7 @@ class SubthreadManagementController
       failureMessage: '子贴创建失败，请稍后刷新查看。',
     );
     if (outcome.isDiscarded || !mounted) {
-      return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+      return MutationSubmitResult.indeterminate(failure: outcome.failure);
     }
     switch (outcome.status) {
       case WriteOutcomeStatus.completed:
@@ -181,9 +181,9 @@ class SubthreadManagementController
       case WriteOutcomeStatus.indeterminate:
         _pendingCreateIndeterminate = true;
         _indeterminateMutation(outcome, bootstrap);
-        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+        return MutationSubmitResult.indeterminate(failure: outcome.failure);
       case WriteOutcomeStatus.confirming:
-        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+        return MutationSubmitResult.indeterminate(failure: outcome.failure);
     }
   }
 
@@ -218,7 +218,7 @@ class SubthreadManagementController
       failureMessage: '子贴保存失败，请稍后刷新查看。',
     );
     if (outcome.isDiscarded || !mounted) {
-      return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+      return MutationSubmitResult.indeterminate(failure: outcome.failure);
     }
     switch (outcome.status) {
       case WriteOutcomeStatus.completed:
@@ -256,9 +256,9 @@ class SubthreadManagementController
         return MutationSubmitResult.failed(state.failure ?? failure);
       case WriteOutcomeStatus.indeterminate:
         _indeterminateMutation(outcome, bootstrap);
-        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+        return MutationSubmitResult.indeterminate(failure: outcome.failure);
       case WriteOutcomeStatus.confirming:
-        return MutationSubmitResult.indeterminate(requestId: outcome.requestId);
+        return MutationSubmitResult.indeterminate(failure: outcome.failure);
     }
   }
 
@@ -423,6 +423,7 @@ class SubthreadManagementController
         state = state.copyWith(
           actionOutcome: WriteOutcomeStatus.confirming,
           actionRequestId: progress.requestId,
+          actionOutcomeFailure: progress.failure,
         );
       },
     );
@@ -470,6 +471,7 @@ class SubthreadManagementController
       pendingItemId: null,
       actionOutcome: WriteOutcomeStatus.indeterminate,
       actionRequestId: outcome.requestId,
+      actionOutcomeFailure: outcome.failure,
     );
   }
 

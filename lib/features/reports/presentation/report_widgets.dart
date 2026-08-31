@@ -171,9 +171,10 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                     WenyouStatusBanner(
                       tone: WenyouStatusTone.error,
                       message: state.failure!.userMessage,
-                      detail: state.failure!.requestId == null
-                          ? null
-                          : '问题编号：${state.failure!.requestId}',
+                      detail: wenyouFailureDetail(
+                        state.failure,
+                        treatAsWrite: true,
+                      ),
                     ),
                   ],
                 ],

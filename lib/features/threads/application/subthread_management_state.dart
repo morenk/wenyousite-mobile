@@ -21,7 +21,7 @@ sealed class MutationSubmitResult<T> {
   const factory MutationSubmitResult.failed(ApiFailure failure) =
       MutationSubmitFailed<T>;
 
-  const factory MutationSubmitResult.indeterminate({String? requestId}) =
+  const factory MutationSubmitResult.indeterminate({ApiFailure? failure}) =
       MutationSubmitIndeterminate<T>;
 }
 
@@ -38,9 +38,10 @@ final class MutationSubmitFailed<T> extends MutationSubmitResult<T> {
 }
 
 final class MutationSubmitIndeterminate<T> extends MutationSubmitResult<T> {
-  const MutationSubmitIndeterminate({this.requestId}) : super._();
+  const MutationSubmitIndeterminate({this.failure}) : super._();
 
-  final String? requestId;
+  final ApiFailure? failure;
+  String? get requestId => failure?.requestId;
 }
 
 class SubthreadManagementState {
@@ -52,6 +53,7 @@ class SubthreadManagementState {
     this.pendingItemId,
     this.actionOutcome,
     this.actionRequestId,
+    this.actionOutcomeFailure,
   });
 
   const SubthreadManagementState.loading()
@@ -64,6 +66,7 @@ class SubthreadManagementState {
   final String? pendingItemId;
   final WriteOutcomeStatus? actionOutcome;
   final String? actionRequestId;
+  final ApiFailure? actionOutcomeFailure;
 
   bool get isBusy => pendingAction != null;
 
@@ -75,6 +78,7 @@ class SubthreadManagementState {
     Object? pendingItemId = _unset,
     Object? actionOutcome = _unset,
     Object? actionRequestId = _unset,
+    Object? actionOutcomeFailure = _unset,
   }) {
     return SubthreadManagementState(
       phase: phase ?? this.phase,
@@ -96,6 +100,9 @@ class SubthreadManagementState {
       actionRequestId: identical(actionRequestId, _unset)
           ? this.actionRequestId
           : actionRequestId as String?,
+      actionOutcomeFailure: identical(actionOutcomeFailure, _unset)
+          ? this.actionOutcomeFailure
+          : actionOutcomeFailure as ApiFailure?,
     );
   }
 }

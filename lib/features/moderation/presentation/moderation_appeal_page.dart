@@ -131,9 +131,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
                 key: const Key('appeal-credential-failure'),
                 tone: WenyouStatusTone.error,
                 message: state.failure!.userMessage,
-                detail: state.failure!.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
+                detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               ),
             ],
             SizedBox(height: tokens.space20),
@@ -191,9 +189,7 @@ class _FailureState extends ConsumerWidget {
         icon: WenyouIconIds.statusOffline,
         title: '治理决定加载失败',
         message: state.failure?.userMessage ?? '请稍后重试。',
-        detail: state.failure?.requestId == null
-            ? null
-            : '问题编号：${state.failure!.requestId}',
+        detail: wenyouFailureDetail(state.failure),
         action: OutlinedButton.icon(
           key: const Key('appeal-retry'),
           onPressed: ref
@@ -240,9 +236,7 @@ class _DecisionList extends ConsumerWidget {
             key: const Key('appeal-action-failure'),
             tone: WenyouStatusTone.error,
             message: state.failure!.userMessage,
-            detail: state.failure!.requestId == null
-                ? null
-                : '问题编号：${state.failure!.requestId}',
+            detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
             action: TextButton(
               onPressed: ref
                   .read(moderationAppealControllerProvider.notifier)

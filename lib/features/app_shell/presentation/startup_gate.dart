@@ -96,7 +96,7 @@ class _StartupGateState extends ConsumerState<StartupGate>
       ),
       StartupStatus.failed => _FailurePage(
         message: state.failure?.userMessage ?? '启动检查失败。',
-        requestId: state.failure?.requestId,
+        detail: wenyouFailureDetail(state.failure),
         onRetry: ref.read(startupControllerProvider.notifier).check,
       ),
     };
@@ -433,11 +433,11 @@ class _FailurePage extends StatelessWidget {
   const _FailurePage({
     required this.message,
     required this.onRetry,
-    this.requestId,
+    this.detail,
   });
 
   final String message;
-  final String? requestId;
+  final String? detail;
   final Future<void> Function() onRetry;
 
   @override
@@ -446,7 +446,7 @@ class _FailurePage extends StatelessWidget {
       icon: WenyouIconIds.statusOffline,
       title: '暂时连不上温油站',
       message: message,
-      detail: requestId == null ? null : '问题编号：$requestId',
+      detail: detail,
       action: FilledButton.icon(
         onPressed: onRetry,
         icon: const WenyouIcon(WenyouIconIds.actionRefresh),

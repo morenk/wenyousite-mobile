@@ -167,9 +167,7 @@ class MomentComposeImageStrip extends StatelessWidget {
           WenyouStatusBanner(
             key: const Key('moment-compose-upload-failure'),
             message: failure.userMessage,
-            detail: failure.requestId == null
-                ? null
-                : '问题编号：${failure.requestId}',
+            detail: failure.resolvedPresentation.problemDetail,
             tone: WenyouStatusTone.error,
             action: Wrap(
               spacing: tokens.space8,

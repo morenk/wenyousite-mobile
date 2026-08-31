@@ -68,7 +68,7 @@ class BookmarkListView extends ConsumerWidget {
             icon: WenyouIconIds.statusOffline,
             title: '收藏列表加载失败',
             message: state.failure?.userMessage ?? '请稍后重试。',
-            detail: _requestDetail(state.failure?.requestId),
+            detail: wenyouFailureDetail(state.failure),
             action: OutlinedButton.icon(
               key: const Key('bookmark-list-retry'),
               onPressed: notifier.load,
@@ -183,7 +183,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               child: WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
                 message: state.folderFailure!.userMessage,
-                detail: _requestDetail(state.folderFailure!.requestId),
+                detail: wenyouFailureDetail(state.folderFailure),
                 action: TextButton.icon(
                   key: const Key('bookmark-folders-retry'),
                   onPressed: state.isBusy ? null : onRetryFolders,
@@ -199,7 +199,10 @@ class _ReadyBookmarkList extends StatelessWidget {
               child: WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
                 message: state.actionFailure!.userMessage,
-                detail: _requestDetail(state.actionFailure!.requestId),
+                detail: wenyouFailureDetail(
+                  state.actionFailure,
+                  treatAsWrite: true,
+                ),
                 action: TextButton(
                   key: const Key('bookmark-list-error-dismiss'),
                   onPressed: onDismissFailure,
@@ -223,7 +226,7 @@ class _ReadyBookmarkList extends StatelessWidget {
                   icon: WenyouIconIds.statusOffline,
                   title: '这个收藏夹加载失败',
                   message: state.failure!.userMessage,
-                  detail: _requestDetail(state.failure!.requestId),
+                  detail: wenyouFailureDetail(state.failure),
                   action: OutlinedButton.icon(
                     key: const Key('bookmark-selected-folder-retry'),
                     onPressed: state.isBusy ? null : onRetryList,
@@ -239,7 +242,7 @@ class _ReadyBookmarkList extends StatelessWidget {
                 child: WenyouStatusBanner(
                   tone: WenyouStatusTone.error,
                   message: state.failure!.userMessage,
-                  detail: _requestDetail(state.failure!.requestId),
+                  detail: wenyouFailureDetail(state.failure),
                   action: TextButton.icon(
                     onPressed: state.isBusy ? null : onRetryList,
                     icon: const WenyouIcon(
@@ -295,7 +298,7 @@ class _ReadyBookmarkList extends StatelessWidget {
               child: WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
                 message: state.loadMoreFailure!.userMessage,
-                detail: _requestDetail(state.loadMoreFailure!.requestId),
+                detail: wenyouFailureDetail(state.loadMoreFailure),
                 action: TextButton.icon(
                   key: const Key('bookmark-list-load-more-retry'),
                   onPressed: state.isBusy ? null : onLoadMore,
@@ -486,6 +489,3 @@ class _CenteredContent extends StatelessWidget {
     return WenyouConstrainedWidth(child: child);
   }
 }
-
-String? _requestDetail(String? requestId) =>
-    requestId == null ? null : '问题编号：$requestId';

@@ -85,7 +85,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('当前密码不正确。'), findsOneWidget);
-    expect(find.text('问题编号：password-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：password-request-id'), findsOneWidget);
     expect(find.text('修改密码'), findsOneWidget);
     expect(harness.tokenStore.value, isNotNull);
   });

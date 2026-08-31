@@ -121,9 +121,10 @@ class _InvitationReady extends ConsumerWidget {
               key: const Key('thread-invite-join-failure'),
               tone: WenyouStatusTone.error,
               message: state.joinFailure!.userMessage,
-              detail: state.joinFailure!.requestId == null
-                  ? null
-                  : '问题编号：${state.joinFailure!.requestId}',
+              detail: wenyouFailureDetail(
+                state.joinFailure,
+                treatAsWrite: true,
+              ),
               action: TextButton(
                 key: const Key('thread-invite-dismiss-failure'),
                 onPressed: state.isJoining
@@ -232,9 +233,7 @@ class _InvitationFailure extends StatelessWidget {
           message: permanent
               ? '请联系主题楼主获取新的私密邀请。'
               : failure?.userMessage ?? '请检查网络后重试。',
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
+          detail: wenyouFailureDetail(failure),
           action: permanent
               ? OutlinedButton.icon(
                   key: const Key('thread-invite-back-home'),

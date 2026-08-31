@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/remote_thread_drafts_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart';
@@ -71,7 +70,10 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
             WenyouStatusBanner(
               key: const Key('remote-drafts-remove-failure'),
               message: state.removeFailure!.userMessage,
-              detail: _requestDetail(state.removeFailure),
+              detail: wenyouFailureDetail(
+                state.removeFailure,
+                treatAsWrite: true,
+              ),
               tone: WenyouStatusTone.error,
             ),
             SizedBox(height: tokens.space12),
@@ -95,7 +97,7 @@ class RemoteThreadDraftsSheet extends ConsumerWidget {
         icon: WenyouIconIds.statusOffline,
         title: '云端草稿加载失败',
         message: state.failure?.userMessage ?? '请检查网络后重试。',
-        detail: _requestDetail(state.failure),
+        detail: wenyouFailureDetail(state.failure),
         action: FilledButton.icon(
           onPressed: () async {
             await Future.wait([
@@ -273,9 +275,4 @@ class _DraftCard extends ConsumerWidget {
       ),
     );
   }
-}
-
-String? _requestDetail(ApiFailure? failure) {
-  final requestId = failure?.requestId;
-  return requestId == null ? null : '问题编号：$requestId';
 }

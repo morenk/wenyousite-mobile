@@ -150,7 +150,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('收藏夹加载失败，请稍后重试。'), findsOneWidget);
-    expect(find.text('问题编号：folder-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：folder-request-id'), findsOneWidget);
     await tester.tap(find.byKey(const Key('bookmark-folder-picker-retry')));
     await tester.pumpAndSettle();
 
@@ -235,7 +235,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('喜欢 12'), findsOneWidget);
-    expect(find.text('问题编号：interaction-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：interaction-request-id'), findsOneWidget);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

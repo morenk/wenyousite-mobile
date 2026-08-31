@@ -71,9 +71,7 @@ class UserRelationActions extends ConsumerWidget {
           WenyouStatusBanner(
             tone: WenyouStatusTone.error,
             message: state.failure!.userMessage,
-            detail: state.failure!.requestId == null
-                ? null
-                : '问题编号：${state.failure!.requestId}',
+            detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
           ),
         ],
         if (state.outcomeStatus != null) ...[
@@ -83,6 +81,7 @@ class UserRelationActions extends ConsumerWidget {
             status: state.outcomeStatus!,
             confirmingMessage: '正在确认关系状态…',
             indeterminateMessage: '现在无法继续关系操作。请先刷新用户资料查看是否已生效；应用不会自动重复提交。',
+            failure: state.outcomeFailure,
             requestId: state.outcomeRequestId,
             onRefresh: notifier.refresh,
             refreshKey: const Key('user-relation-refresh-result'),

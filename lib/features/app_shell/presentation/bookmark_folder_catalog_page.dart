@@ -130,7 +130,7 @@ class _BookmarkFolderCatalogPageState
                 key: const Key('bookmark-folder-refresh-failure'),
                 tone: WenyouStatusTone.error,
                 message: state.failure!.userMessage,
-                detail: _requestDetail(state.failure!.requestId),
+                detail: wenyouFailureDetail(state.failure),
                 action: TextButton(
                   onPressed: state.isBusy ? null : notifier.refresh,
                   child: const Text('重新刷新'),
@@ -173,7 +173,7 @@ class _BookmarkFolderCatalogPageState
             icon: WenyouIconIds.statusOffline,
             title: '收藏加载失败',
             message: state.failure?.userMessage ?? '请稍后重试。',
-            detail: _requestDetail(state.failure?.requestId),
+            detail: wenyouFailureDetail(state.failure),
             action: OutlinedButton.icon(
               key: Key('bookmark-folder-catalog-retry-${_kind.name}'),
               onPressed: notifier.load,
@@ -232,6 +232,3 @@ class _BookmarkFolderCatalogPageState
     showWenyouSnackBar(context, '已新建“${folder.name}”。');
   }
 }
-
-String? _requestDetail(String? requestId) =>
-    requestId == null ? null : '问题编号：$requestId';

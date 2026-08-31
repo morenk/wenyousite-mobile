@@ -145,7 +145,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('主题列表加载失败'), findsOneWidget);
-    expect(find.text('问题编号：home-request-id'), findsOneWidget);
+    expect(find.textContaining('问题编号：home-request-id'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('home-retry')));
     await tester.pumpAndSettle();

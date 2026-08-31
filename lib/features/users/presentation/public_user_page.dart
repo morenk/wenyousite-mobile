@@ -75,7 +75,7 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
         PublicUserPhase.failed => _UserFailureState(
           notFound: state.failure?.httpStatus == 404,
           message: state.failure?.userMessage,
-          requestId: state.failure?.requestId,
+          detail: wenyouFailureDetail(state.failure),
           onRetry: () => ref.read(provider.notifier).load(),
         ),
         PublicUserPhase.ready => RefreshIndicator(
@@ -359,13 +359,13 @@ class _UserFailureState extends StatelessWidget {
   const _UserFailureState({
     required this.notFound,
     required this.message,
-    required this.requestId,
+    required this.detail,
     required this.onRetry,
   });
 
   final bool notFound;
   final String? message;
-  final String? requestId;
+  final String? detail;
   final VoidCallback onRetry;
 
   @override
@@ -379,7 +379,7 @@ class _UserFailureState extends StatelessWidget {
               : WenyouIconIds.statusOffline,
           title: notFound ? '用户不存在' : '用户资料加载失败',
           message: notFound ? '该用户可能已经注销，或账号不存在。' : (message ?? '请稍后重试。'),
-          detail: requestId == null ? null : '问题编号：$requestId',
+          detail: detail,
           action: OutlinedButton.icon(
             key: const Key('public-user-retry'),
             onPressed: onRetry,

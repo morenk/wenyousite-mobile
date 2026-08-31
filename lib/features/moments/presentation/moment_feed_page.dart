@@ -248,9 +248,7 @@ class _MomentFeedListState extends ConsumerState<MomentFeedList> {
                 icon: WenyouIconIds.statusOffline,
                 title: '动态列表加载失败',
                 message: state.failure?.userMessage ?? '请稍后重试。',
-                detail: state.failure?.requestId == null
-                    ? null
-                    : '问题编号：${state.failure!.requestId}',
+                detail: wenyouFailureDetail(state.failure),
                 action: OutlinedButton.icon(
                   key: const Key('moment-feed-retry'),
                   onPressed: () => ref.read(provider.notifier).loadInitial(),

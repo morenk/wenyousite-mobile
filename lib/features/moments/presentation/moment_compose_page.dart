@@ -163,9 +163,10 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                 if (state.failure != null) ...[
                   WenyouStatusBanner(
                     message: state.failure!.userMessage,
-                    detail: state.failure!.requestId == null
-                        ? null
-                        : '问题编号：${state.failure!.requestId}',
+                    detail: wenyouFailureDetail(
+                      state.failure,
+                      treatAsWrite: true,
+                    ),
                     tone: WenyouStatusTone.error,
                     action: state.failure!.businessCode == 40002
                         ? TextButton(
@@ -791,9 +792,7 @@ class _ComposeFailure extends StatelessWidget {
           icon: WenyouIconIds.statusOffline,
           title: '动态加载失败',
           message: failure?.userMessage ?? '请稍后重试。',
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
+          detail: wenyouFailureDetail(failure),
           action: OutlinedButton.icon(
             key: const Key('moment-compose-retry'),
             onPressed: onRetry,

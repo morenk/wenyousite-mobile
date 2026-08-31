@@ -128,9 +128,7 @@ class MomentCommentTargetStatus extends StatelessWidget {
         return WenyouStatusBanner(
           key: const Key('moment-comment-target-failure'),
           message: unavailable ? '目标评论已不可见' : failure.userMessage,
-          detail: failure.requestId == null
-              ? null
-              : '问题编号：${failure.requestId}',
+          detail: wenyouFailureDetail(failure),
           tone: WenyouStatusTone.error,
           action: unavailable
               ? null
@@ -175,9 +173,7 @@ class MomentDetailFailure extends StatelessWidget {
           message: notFound
               ? '这条动态可能已被删除或不可见。'
               : (failure?.userMessage ?? '请稍后重试。'),
-          detail: failure?.requestId == null
-              ? null
-              : '问题编号：${failure!.requestId}',
+          detail: wenyouFailureDetail(failure),
           action: notFound
               ? null
               : OutlinedButton.icon(

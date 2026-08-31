@@ -127,7 +127,10 @@ void main() {
     await _pumpPage(tester, repository);
 
     expect(find.text('主题管理信息加载失败'), findsOneWidget);
-    expect(find.text('问题编号：thread-management-load-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：thread-management-load-request-id'),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('thread-management-save')), findsNothing);
 
     await tester.tap(find.byKey(const Key('thread-management-load-retry')));
@@ -316,7 +319,10 @@ void main() {
     );
     final failure = find.byKey(const Key('thread-management-failure'));
     await tester.ensureVisible(failure);
-    expect(find.text('问题编号：thread-management-save-request-id'), findsOneWidget);
+    expect(
+      find.textContaining('问题编号：thread-management-save-request-id'),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const Key('thread-management-autosave-retry')),
       findsOneWidget,
@@ -406,7 +412,7 @@ void main() {
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
     expect(find.text('原主题'), findsOneWidget);
     expect(
-      find.text('问题编号：thread-management-delete-request-id'),
+      find.textContaining('问题编号：thread-management-delete-request-id'),
       findsOneWidget,
     );
     expect(

@@ -549,9 +549,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
               child: WenyouStatusBanner(
                 tone: WenyouStatusTone.error,
                 message: actions.failure!.userMessage,
-                detail: actions.failure!.requestId == null
-                    ? null
-                    : '问题编号：${actions.failure!.requestId}',
+                detail: wenyouFailureDetail(
+                  actions.failure,
+                  treatAsWrite: true,
+                ),
               ),
             ),
           ),

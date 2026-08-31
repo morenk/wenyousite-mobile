@@ -122,7 +122,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('收藏表情失败，请稍后重试。'), findsOneWidget);
-    expect(find.text('问题编号：save-image-request'), findsOneWidget);
+    expect(find.textContaining('问题编号：save-image-request'), findsOneWidget);
     expect(find.byKey(const Key('content-image-save-retry')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('content-image-save-retry')));

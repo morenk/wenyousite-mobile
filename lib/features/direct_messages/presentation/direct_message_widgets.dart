@@ -150,9 +150,10 @@ class _DirectMessageComposerState extends ConsumerState<DirectMessageComposer> {
         DirectMessageComposerStatusLine(
           key: const Key('direct-message-composer-upload-failure'),
           icon: WenyouIconIds.statusError,
-          message: uploadFailure.requestId == null
-              ? uploadFailure.userMessage
-              : '${uploadFailure.userMessage} · 问题编号：${uploadFailure.requestId}',
+          message: [
+            uploadFailure.userMessage,
+            ?uploadFailure.resolvedPresentation.problemDetail,
+          ].join('\n'),
           error: true,
           onRetry: uploadFailure.canRetry ? _retryImageUpload : null,
           onDismiss: _abandonImageUpload,

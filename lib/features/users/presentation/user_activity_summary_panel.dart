@@ -42,9 +42,7 @@ class UserActivitySummaryPanel extends StatelessWidget {
               key: Key('$keyPrefix-failure'),
               tone: WenyouStatusTone.error,
               message: state.activityFailure?.userMessage ?? '创作概览加载失败。',
-              detail: state.activityFailure?.requestId == null
-                  ? null
-                  : '问题编号：${state.activityFailure!.requestId}',
+              detail: wenyouFailureDetail(state.activityFailure),
               action: TextButton(
                 key: Key('$keyPrefix-retry'),
                 onPressed: onRetry,

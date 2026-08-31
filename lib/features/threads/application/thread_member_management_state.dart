@@ -15,6 +15,7 @@ class ThreadMemberManagementState {
     this.pendingAction,
     this.actionOutcome,
     this.actionRequestId,
+    this.actionOutcomeFailure,
   });
 
   const ThreadMemberManagementState.loading()
@@ -27,6 +28,7 @@ class ThreadMemberManagementState {
   final ThreadMemberManagementAction? pendingAction;
   final WriteOutcomeStatus? actionOutcome;
   final String? actionRequestId;
+  final ApiFailure? actionOutcomeFailure;
 
   bool get isUpdating => pendingUserId != null;
 
@@ -38,6 +40,7 @@ class ThreadMemberManagementState {
     Object? pendingAction = _unset,
     Object? actionOutcome = _unset,
     Object? actionRequestId = _unset,
+    Object? actionOutcomeFailure = _unset,
   }) {
     return ThreadMemberManagementState(
       phase: phase ?? this.phase,
@@ -59,6 +62,9 @@ class ThreadMemberManagementState {
       actionRequestId: identical(actionRequestId, _unset)
           ? this.actionRequestId
           : actionRequestId as String?,
+      actionOutcomeFailure: identical(actionOutcomeFailure, _unset)
+          ? this.actionOutcomeFailure
+          : actionOutcomeFailure as ApiFailure?,
     );
   }
 }

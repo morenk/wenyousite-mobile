@@ -95,9 +95,7 @@ class ThreadMembershipControls extends ConsumerWidget {
               key: const Key('thread-player-exit-failure'),
               tone: WenyouStatusTone.error,
               message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               action: TextButton(
                 key: const Key('thread-player-exit-retry'),
                 onPressed: state.isSubmitting

@@ -75,9 +75,7 @@ class _SubthreadDirectory extends ConsumerWidget {
               key: const Key('subthread-management-failure'),
               tone: WenyouStatusTone.error,
               message: state.failure!.userMessage,
-              detail: state.failure!.requestId == null
-                  ? null
-                  : '问题编号：${state.failure!.requestId}',
+              detail: wenyouFailureDetail(state.failure, treatAsWrite: true),
               action: TextButton(
                 onPressed: state.isBusy
                     ? null
@@ -93,6 +91,7 @@ class _SubthreadDirectory extends ConsumerWidget {
               status: state.actionOutcome!,
               confirmingMessage: '正在确认子贴状态…',
               indeterminateMessage: '现在无法继续子贴操作。请先刷新子贴列表查看是否已生效；应用不会自动重复提交。',
+              failure: state.actionOutcomeFailure,
               requestId: state.actionRequestId,
               onRefresh: () => ref.read(provider.notifier).load(),
             ),
@@ -325,9 +324,7 @@ class _SubthreadsFatalState extends StatelessWidget {
         icon: WenyouIconIds.contentList,
         title: '子贴管理暂时不可用',
         message: failure?.userMessage ?? '请检查网络后重试。',
-        detail: failure?.requestId == null
-            ? null
-            : '问题编号：${failure!.requestId}',
+        detail: wenyouFailureDetail(failure),
         action: FilledButton.icon(
           key: const Key('subthread-management-retry'),
           onPressed: onRetry,
