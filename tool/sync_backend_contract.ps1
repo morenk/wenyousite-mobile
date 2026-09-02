@@ -132,6 +132,7 @@ $contractFiles = @(
   @{ Source = $markdownNodesSource; Destination = (Split-Path -Leaf $markdownNodesSource) },
   @{ Source = $markdownEditorSource; Destination = (Split-Path -Leaf $markdownEditorSource) },
   @{ Source = $editorClipboardSource; Destination = (Split-Path -Leaf $editorClipboardSource) },
+  @{ Source = 'contracts/markdown-v5-image-alignment-fixtures.json'; Destination = 'markdown-v5-image-alignment-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1-fixtures.json'; Destination = 'mobile-push-v1-fixtures.json' },
   @{ Source = 'contracts/mobile-push-v1.schema.json'; Destination = 'mobile-push-v1.schema.json' },
   @{ Source = 'contracts/mobile-v1-golden-fixtures.json'; Destination = 'mobile-v1-golden-fixtures.json' },

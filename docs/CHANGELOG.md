@@ -2,6 +2,8 @@
 
 ## 0.7.0+91 — 2026-08-30
 
+- 同步后端 revision `3f1cbd297f832803661078b1c5193c02a89167f4` 中尚未激活的 Markdown v5 图片块对齐 fixture；公网 `/meta.markdownContractVersion` 继续为 4，API 契约继续为 `5.15.0-dev.20260902.1`，本切片不提前改变运行时能力声明。
+
 - 同步后端 revision `3f1cbd297f832803661078b1c5193c02a89167f4`：该提交仅清理未使用的后端直接依赖，契约继续为 `5.15.0-dev.20260902.1`；OpenAPI、生成客户端、Markdown、编辑器、剪贴板和推送契约内容均保持零差异，公网 `/meta` 已与该 revision 一致。
 
 - 复核并同步后端 revision `75669f22a088e1b84dea818eb1fda8682456d5fb`：该提交仅修复 Fastify URI 上游依赖漏洞，OpenAPI、Markdown、编辑器、剪贴板和推送契约内容均保持零差异；公网 `/meta` 已切换到契约 `5.15.0-dev.20260902.1` 并与本地基线一致。

@@ -36,7 +36,7 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 
 1. 后端运行时代码与 DTO 定义真实行为。
 2. `contracts/openapi.json` 是 Flutter API/model 生成的固定机器契约。
-3. `contracts/markdown-v4-fixtures.json`、`contracts/markdown-v4-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v6-fixtures.json` 与 `contracts/editor-clipboard-v2-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点、编辑器往返和跨端剪贴板语义。
+3. `contracts/markdown-v4-fixtures.json`、`contracts/markdown-v4-nodes-fixtures.json`、`contracts/markdown-editor-roundtrip-v6-fixtures.json`、`contracts/editor-clipboard-v2-fixtures.json` 与 `contracts/markdown-v5-image-alignment-fixtures.json` 分别固定 Markdown 规范化/可见性、扩展节点、编辑器往返、跨端剪贴板和 Markdown v5 图片块对齐迁移语义。
 4. `contracts/mobile-push-v1.schema.json` 与 `contracts/mobile-push-v1-fixtures.json` 固定未来推送接入边界；V1 未接入 FCM 时也必须保持同步。
 5. `docs/modules/*.md` 说明移动端产品流程、状态、权限和验收，不复制完整 Schema。
 
@@ -52,6 +52,7 @@ V1 暂不实现：FCM 系统推送、举报审核/管理后台、离线阅读、
 - `contracts/markdown-v4-nodes-fixtures.json`
 - `contracts/markdown-editor-roundtrip-v6-fixtures.json`
 - `contracts/editor-clipboard-v2-fixtures.json`
+- `contracts/markdown-v5-image-alignment-fixtures.json`
 - `contracts/mobile-push-v1.schema.json`
 - `contracts/mobile-push-v1-fixtures.json`
 - `docs/mobile-client-guide.md`
