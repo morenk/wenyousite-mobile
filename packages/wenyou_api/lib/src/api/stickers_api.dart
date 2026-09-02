@@ -12,12 +12,16 @@ import 'package:wenyou_api/src/api_util.dart';
 import 'package:wenyou_api/src/model/api_error_envelope.dart';
 import 'package:wenyou_api/src/model/import_sticker_direct_message_dto.dart';
 import 'package:wenyou_api/src/model/import_sticker_media_dto.dart';
+import 'package:wenyou_api/src/model/import_sticker_moment_comment_image_dto.dart';
+import 'package:wenyou_api/src/model/import_sticker_moment_image_dto.dart';
 import 'package:wenyou_api/src/model/import_sticker_post_image_dto.dart';
 import 'package:wenyou_api/src/model/reorder_stickers_dto.dart';
 import 'package:wenyou_api/src/model/stickers_get_collection200_response.dart';
 import 'package:wenyou_api/src/model/stickers_get_import200_response.dart';
 import 'package:wenyou_api/src/model/stickers_import_direct_message201_response.dart';
 import 'package:wenyou_api/src/model/stickers_import_media201_response.dart';
+import 'package:wenyou_api/src/model/stickers_import_moment_comment_image201_response.dart';
+import 'package:wenyou_api/src/model/stickers_import_moment_image201_response.dart';
 import 'package:wenyou_api/src/model/stickers_import_post_image201_response.dart';
 import 'package:wenyou_api/src/model/stickers_remove200_response.dart';
 import 'package:wenyou_api/src/model/stickers_reorder200_response.dart';
@@ -381,6 +385,208 @@ class StickersApi {
     }
 
     return Response<StickersImportMedia201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 收藏可访问动态评论中的指定图片
+  ///
+  ///
+  /// Parameters:
+  /// * [importStickerMomentCommentImageDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [StickersImportMomentCommentImage201Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<StickersImportMomentCommentImage201Response>> stickersImportMomentCommentImage({
+    required ImportStickerMomentCommentImageDto importStickerMomentCommentImageDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/stickers/imports/moment-comment-image';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(ImportStickerMomentCommentImageDto);
+      _bodyData = _serializers.serialize(importStickerMomentCommentImageDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    StickersImportMomentCommentImage201Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(StickersImportMomentCommentImage201Response),
+      ) as StickersImportMomentCommentImage201Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<StickersImportMomentCommentImage201Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// 收藏可访问动态正文中的指定图片
+  ///
+  ///
+  /// Parameters:
+  /// * [importStickerMomentImageDto]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [StickersImportMomentImage201Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<StickersImportMomentImage201Response>> stickersImportMomentImage({
+    required ImportStickerMomentImageDto importStickerMomentImageDto,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/stickers/imports/moment-image';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(ImportStickerMomentImageDto);
+      _bodyData = _serializers.serialize(importStickerMomentImageDto, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    StickersImportMomentImage201Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(StickersImportMomentImage201Response),
+      ) as StickersImportMomentImage201Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<StickersImportMomentImage201Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

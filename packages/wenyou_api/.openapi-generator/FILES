@@ -230,6 +230,8 @@ lib/src/model/health_check200_response_all_of_data.dart
 lib/src/model/home_thread_list_item_response_dto.dart
 lib/src/model/import_sticker_direct_message_dto.dart
 lib/src/model/import_sticker_media_dto.dart
+lib/src/model/import_sticker_moment_comment_image_dto.dart
+lib/src/model/import_sticker_moment_image_dto.dart
 lib/src/model/import_sticker_post_image_dto.dart
 lib/src/model/invite_link_response_dto.dart
 lib/src/model/invite_owner_response_dto.dart
@@ -396,6 +398,8 @@ lib/src/model/stickers_get_collection200_response.dart
 lib/src/model/stickers_get_import200_response.dart
 lib/src/model/stickers_import_direct_message201_response.dart
 lib/src/model/stickers_import_media201_response.dart
+lib/src/model/stickers_import_moment_comment_image201_response.dart
+lib/src/model/stickers_import_moment_image201_response.dart
 lib/src/model/stickers_import_post_image201_response.dart
 lib/src/model/stickers_remove200_response.dart
 lib/src/model/stickers_reorder200_response.dart

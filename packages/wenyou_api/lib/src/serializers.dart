@@ -200,6 +200,8 @@ import 'package:wenyou_api/src/model/health_check200_response_all_of_data.dart';
 import 'package:wenyou_api/src/model/home_thread_list_item_response_dto.dart';
 import 'package:wenyou_api/src/model/import_sticker_direct_message_dto.dart';
 import 'package:wenyou_api/src/model/import_sticker_media_dto.dart';
+import 'package:wenyou_api/src/model/import_sticker_moment_comment_image_dto.dart';
+import 'package:wenyou_api/src/model/import_sticker_moment_image_dto.dart';
 import 'package:wenyou_api/src/model/import_sticker_post_image_dto.dart';
 import 'package:wenyou_api/src/model/invite_link_response_dto.dart';
 import 'package:wenyou_api/src/model/invite_owner_response_dto.dart';
@@ -366,6 +368,8 @@ import 'package:wenyou_api/src/model/stickers_get_collection200_response.dart';
 import 'package:wenyou_api/src/model/stickers_get_import200_response.dart';
 import 'package:wenyou_api/src/model/stickers_import_direct_message201_response.dart';
 import 'package:wenyou_api/src/model/stickers_import_media201_response.dart';
+import 'package:wenyou_api/src/model/stickers_import_moment_comment_image201_response.dart';
+import 'package:wenyou_api/src/model/stickers_import_moment_image201_response.dart';
 import 'package:wenyou_api/src/model/stickers_import_post_image201_response.dart';
 import 'package:wenyou_api/src/model/stickers_remove200_response.dart';
 import 'package:wenyou_api/src/model/stickers_reorder200_response.dart';
@@ -670,6 +674,8 @@ part 'serializers.g.dart';
   HomeThreadListItemResponseDto,
   ImportStickerDirectMessageDto,
   ImportStickerMediaDto,
+  ImportStickerMomentCommentImageDto,
+  ImportStickerMomentImageDto,
   ImportStickerPostImageDto,
   InviteLinkResponseDto,
   InviteOwnerResponseDto,
@@ -836,6 +842,8 @@ part 'serializers.g.dart';
   StickersGetImport200Response,
   StickersImportDirectMessage201Response,
   StickersImportMedia201Response,
+  StickersImportMomentCommentImage201Response,
+  StickersImportMomentImage201Response,
   StickersImportPostImage201Response,
   StickersRemove200Response,
   StickersReorder200Response,

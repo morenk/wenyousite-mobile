@@ -77,7 +77,7 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.14.1-dev.20260829.1`；Markdown v4；后端 `7ee9b68fac553d22949b8e699ceaf723774f593e`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.15.0-dev.20260902.1`；Markdown v4；后端 `6519812efff84bafacfff28c3c2628dfcd14304e`；Foundation `v6.5.1`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 
