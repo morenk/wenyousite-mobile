@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
+import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_notification_gateway.dart';
+import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/mobile_update_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/application/startup_controller.dart';
 import 'package:wenyousite_mobile/features/app_shell/data/meta_repository.dart';
@@ -67,6 +69,9 @@ import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 List<Override> productionProviderOverrides() => [
   backgroundNotificationGatewayProvider.overrideWith(
     (ref) => ref.watch(androidBackgroundNotificationGatewayProvider),
+  ),
+  imageGalleryServiceProvider.overrideWith(
+    (ref) => ref.watch(deviceImageGalleryServiceProvider),
   ),
   metaRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiMetaRepositoryProvider),

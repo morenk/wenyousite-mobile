@@ -211,7 +211,8 @@ class _ImageEmbedBuilder extends EmbedBuilder {
         borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
         onTap: () => pushWenyouFullscreenPage<void>(
           context: context,
-          builder: (_) => ContentImageViewerPage(url: url, alt: alt ?? ''),
+          builder: (_) =>
+              ContentImageViewerPage.single(url: url, alt: alt ?? ''),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),

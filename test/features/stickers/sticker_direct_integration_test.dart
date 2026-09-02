@@ -3,7 +3,12 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/core/network/session_remote.dart';
+import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/features/direct_messages/domain/direct_message_models.dart';
+import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_media.dart';
 import 'package:wenyousite_mobile/features/direct_messages/presentation/direct_message_widgets.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
@@ -40,7 +45,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
 
     const fieldKey = Key('direct-message-composer-field');
     await tester.tap(find.byKey(fieldKey));
@@ -138,15 +144,86 @@ void main() {
       'message-1',
     );
   });
+
+  testWidgets('私聊图片原图页保留按消息收藏入口', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _FakeStickerRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: DirectMessageBubble(
+              message: _message(),
+              mine: true,
+              canRecall: false,
+              onRecall: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    await tester.tap(find.byType(DirectMessageImage));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.byKey(const Key('content-image-actions')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.ancestor(of: find.text('添加到表情收藏'), matching: find.byType(ListTile)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.sources.single, isA<StickerDirectMessageSource>());
+    expect(
+      (repository.sources.single as StickerDirectMessageSource).directMessageId,
+      'message-1',
+    );
+  });
 }
 
 List<Override> _overrides(_FakeStickerRepository repository) => [
+  sessionControllerProvider.overrideWith(
+    (ref) => _AuthenticatedSessionController(),
+  ),
   stickersEnabledProvider.overrideWithValue(true),
   stickerRepositoryProvider.overrideWithValue(repository),
   stickerCollectionControllerProvider.overrideWith((ref) {
     return StickerCollectionController(repository, pollInterval: Duration.zero);
   }),
 ];
+
+class _AuthenticatedSessionController extends SessionController {
+  _AuthenticatedSessionController() : super(_TokenStore(), _SessionRemote()) {
+    state = const SessionState.authenticated();
+  }
+}
+
+class _TokenStore implements TokenStore {
+  @override
+  Future<void> clear() async {}
+
+  @override
+  Future<SessionTokens?> read() async => null;
+
+  @override
+  Future<void> write(SessionTokens tokens) async {}
+}
+
+class _SessionRemote implements SessionRemote {
+  @override
+  Future<void> logout(SessionTokens tokens) async {}
+
+  @override
+  Future<SessionTokens> refresh(String refreshToken) =>
+      throw UnimplementedError();
+}
 
 class _FakeStickerRepository implements StickerRepository {
   final sources = <StickerImportSource>[];

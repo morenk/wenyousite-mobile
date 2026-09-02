@@ -18,7 +18,7 @@
 
 私聊图片从相册选择后不打开裁剪页，先在输入器显示本地预览且不启动图片准备或上传；已有会话点发送后立即清空本次输入并生成本地图片气泡，静态图与 GIF 再以 `DIRECT_MESSAGE` 用途进入准备和上传流程。新建首条会话因服务端尚无稳定会话目标，点发送后仍在当前输入器等待上传完成再创建会话。选图取消不改动当前文字、选区或焦点。
 
-普通私聊图片使用服务端返回的宽高在网络请求前按真实比例占位，在消息列可用宽度与 280dp 高度内完整呈现，不裁切或拉伸；不带文字的单张图片直接显示图片自身，不再套本人粉色或对方灰色的消息气泡，发送状态和长按操作仍在图片旁可用，文字与图片同时发送时保留文字消息气泡。收藏表情同样完整呈现，长边不超过 Foundation 的 128dp。预览依次使用 medium、thumbnail 和主图，每个候选真实加载失败后自动尝试下一个；点按后进入共享全屏主图页，支持系统返回、双击/捏合缩放、平移和未放大时下滑关闭，动画只在该显式原图查看中优先播放。
+普通私聊图片使用服务端返回的宽高在网络请求前按真实比例占位，在消息列可用宽度与 280dp 高度内完整呈现，不裁切或拉伸；不带文字的单张图片直接显示图片自身，不再套本人粉色或对方灰色的消息气泡，发送状态和长按操作仍在图片旁可用，文字与图片同时发送时保留文字消息气泡。收藏表情同样完整呈现，长边不超过 Foundation 的 128dp。预览依次使用 medium、thumbnail 和主图，每个候选真实加载失败后自动尝试下一个；点按后进入共享全屏主图页，支持系统返回、双击/捏合缩放、平移和未放大时下滑关闭，动画只在该显式原图查看中优先播放。原图页右上角统一提供保存到系统相册；已登录且表情能力开启时同时保留按消息 ID 收藏入口，陌生请求图片仍要先明确展示。
 
 中心按会话、请求、归档三类读取并游标分页。消息中心顶层仍保留“通知 / 私聊”线性页签，私聊内部的“会话 / 请求 / 归档”改为右对齐的紧凑筛选菜单，加载或刷新当前列表时暂时禁止重复切换。进入会话并行读取会话事实与首批消息，时间线以最新消息为反向列表起点，首次进入或重新打开都直接停在最新消息。使用最后一条已确认消息 ID 增量读取，显示到最新收到消息后标记已读。活跃会话常态每 8 秒同步，发送成功和回到前台后进入短周期追赶，退到后台暂停；轮询不伪造在线、输入中或已读回执。
 
@@ -36,6 +36,7 @@
 - `directConversationsCreate`、`directConversationsSend`、`directConversationsHandleRequest`、`directConversationsArchive`、`directConversationsMarkRead`、`directMessagesRecall`。
 - 收到消息举报复用 reports 模块的 `reportsCreate`，目标类型固定为 `DIRECT_MESSAGE`。
 - 新私聊对象资料复用 `usersGetUser`，图片选择与上传复用 media 模块的 `mediaGetUploadUrl`、`mediaConfirmUpload`、`mediaGetMedia`。
+- 私聊图片收藏复用 stickers 模块的 `stickersImportDirectMessage`，只提交可见消息 ID 与稳定幂等键。
 - 主要生成类型：`DirectConversationResponseDto`、`DirectMessageResponseDto`、`DirectConversationLookupResponseDto`、`DirectUnreadCountResponseDto`、`CreateDirectConversationDto`、`CreateDirectMessageDto`、`HandleDirectRequestDto`、`SetDirectConversationArchiveDto`、`MarkDirectConversationReadDto`、`DirectMessageRecallResponseDto`。
 
 ## 6. 状态模型和数据流
@@ -78,6 +79,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 - [x] 图片选择后不经裁剪且发送前不上传；点发送立即生成本地图片气泡并释放输入器，后台完成上传与发信，同一原图和 `clientRequestId` 可在失败气泡原地重试，裁剪页不出现且后续消息不被阻塞。
 - [x] 私聊上传固定传入 `DIRECT_MESSAGE`，消息预览按 medium、thumbnail、主图顺序消费并在真实加载失败时回退，显式原图预览优先主图。
 - [x] 私聊竖图、横图、尺寸缺失和收藏表情分别固定真实比例、单轴缓存与 128dp 表情上限；纯图片消息外层透明且无气泡内边距，800×1169 竖图在 280dp 高度上限内保持约 0.684 的宽高比，点按进入共享全屏原图页。同发送者、换发送者与跨时间组间距分别由 Widget 测试固定为 8dp、16dp、16dp，并更新视觉基线。
+- [x] 私聊原图页与其他图片入口共用“保存图片 / 添加到表情收藏”菜单，保存优先主图并按明确候选回退；气泡快捷收藏与原图页均提交同一消息来源。
 - [x] 撤回隐私、目标/参与者不匹配、重复消息、异常未读数和不安全媒体采用 fail-closed。
 - [x] 后台未读增长按需读取会话；详情或系统卡片失败不推进未读基线并可在下一节拍重试。系统卡片只含用户名和通用提示、不含正文，严格会话坐标点击后重新校准服务端未读事实。
 - [x] 会话未读计数使用 Foundation destructive/onDestructive 角标，固定 16dp、10sp、`99+` 上限，并与底栏合计角标复用同一组件。

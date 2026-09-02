@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>用于从相册选择要发布或设置的图片。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>用于将你选择的图片保存到系统相册。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

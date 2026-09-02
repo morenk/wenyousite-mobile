@@ -34,6 +34,22 @@ void main() {
       ),
     );
     registerFallbackValue(
+      ImportStickerMomentImageDto(
+        (builder) => builder
+          ..momentId = 'moment-1'
+          ..mediaId = 'moment-media-1'
+          ..clientRequestId = _requestId,
+      ),
+    );
+    registerFallbackValue(
+      ImportStickerMomentCommentImageDto(
+        (builder) => builder
+          ..momentCommentId = 'comment-1'
+          ..mediaId = 'comment-media-1'
+          ..clientRequestId = _requestId,
+      ),
+    );
+    registerFallbackValue(
       ReorderStickersDto(
         (builder) => builder
           ..version = 3
@@ -78,7 +94,7 @@ void main() {
     expect(result.favorite?.asset.animated, isFalse);
   });
 
-  test('媒体、私聊消息和帖子图片三种来源均使用稳定幂等 DTO', () async {
+  test('五种图片来源均使用稳定幂等 DTO', () async {
     final api = _MockStickersApi();
     when(
       () => api.stickersImportMedia(
@@ -100,6 +116,20 @@ void main() {
         importStickerPostImageDto: any(named: 'importStickerPostImageDto'),
       ),
     ).thenAnswer((_) async => _postImportResponse());
+    when(
+      () => api.stickersImportMomentImage(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
+        importStickerMomentImageDto: any(named: 'importStickerMomentImageDto'),
+      ),
+    ).thenAnswer((_) async => _momentImportResponse());
+    when(
+      () => api.stickersImportMomentCommentImage(
+        extra: ApiRequestPolicy.idempotentCreate.extra,
+        importStickerMomentCommentImageDto: any(
+          named: 'importStickerMomentCommentImageDto',
+        ),
+      ),
+    ).thenAnswer((_) async => _momentCommentImportResponse());
     final repository = ApiStickerRepository(api);
 
     await repository.importSource(
@@ -114,6 +144,20 @@ void main() {
       const StickerPostImageSource(
         postId: 'post-1',
         imageUrl: 'https://cdn.example.com/post.webp',
+      ),
+      clientRequestId: _requestId,
+    );
+    await repository.importSource(
+      const StickerMomentImageSource(
+        momentId: 'moment-1',
+        mediaId: 'moment-media-1',
+      ),
+      clientRequestId: _requestId,
+    );
+    await repository.importSource(
+      const StickerMomentCommentImageSource(
+        momentCommentId: 'comment-1',
+        mediaId: 'comment-media-1',
       ),
       clientRequestId: _requestId,
     );
@@ -148,6 +192,26 @@ void main() {
               ),
             ).captured.single
             as ImportStickerPostImageDto;
+    final moment =
+        verify(
+              () => api.stickersImportMomentImage(
+                extra: ApiRequestPolicy.idempotentCreate.extra,
+                importStickerMomentImageDto: captureAny(
+                  named: 'importStickerMomentImageDto',
+                ),
+              ),
+            ).captured.single
+            as ImportStickerMomentImageDto;
+    final momentComment =
+        verify(
+              () => api.stickersImportMomentCommentImage(
+                extra: ApiRequestPolicy.idempotentCreate.extra,
+                importStickerMomentCommentImageDto: captureAny(
+                  named: 'importStickerMomentCommentImageDto',
+                ),
+              ),
+            ).captured.single
+            as ImportStickerMomentCommentImageDto;
     expect(media.mediaId, 'media-1');
     expect(media.clientRequestId, _requestId);
     expect(direct.directMessageId, 'message-1');
@@ -155,6 +219,12 @@ void main() {
     expect(post.postId, 'post-1');
     expect(post.imageUrl, 'https://cdn.example.com/post.webp');
     expect(post.clientRequestId, _requestId);
+    expect(moment.momentId, 'moment-1');
+    expect(moment.mediaId, 'moment-media-1');
+    expect(moment.clientRequestId, _requestId);
+    expect(momentComment.momentCommentId, 'comment-1');
+    expect(momentComment.mediaId, 'comment-media-1');
+    expect(momentComment.clientRequestId, _requestId);
   });
 
   test('排序提交完整 ID 列表，移除使用收藏 ID，并采用服务端新版本', () async {
@@ -347,6 +417,32 @@ Response<StickersImportDirectMessage201Response> _directImportResponse() =>
 Response<StickersImportPostImage201Response> _postImportResponse() => Response(
   requestOptions: RequestOptions(path: '/api/v1/stickers/imports/post-image'),
   data: StickersImportPostImage201Response(
+    (builder) => builder
+      ..code = ApiSuccessEnvelopeCodeEnum.number0
+      ..message = 'ok'
+      ..data.replace(_completedImportDto()),
+  ),
+);
+
+Response<StickersImportMomentImage201Response> _momentImportResponse() =>
+    Response(
+      requestOptions: RequestOptions(
+        path: '/api/v1/stickers/imports/moment-image',
+      ),
+      data: StickersImportMomentImage201Response(
+        (builder) => builder
+          ..code = ApiSuccessEnvelopeCodeEnum.number0
+          ..message = 'ok'
+          ..data.replace(_completedImportDto()),
+      ),
+    );
+
+Response<StickersImportMomentCommentImage201Response>
+_momentCommentImportResponse() => Response(
+  requestOptions: RequestOptions(
+    path: '/api/v1/stickers/imports/moment-comment-image',
+  ),
+  data: StickersImportMomentCommentImage201Response(
     (builder) => builder
       ..code = ApiSuccessEnvelopeCodeEnum.number0
       ..message = 'ok'

@@ -85,6 +85,33 @@ class ApiStickerRepository implements StickerRepository {
                 ..clientRequestId = requestId,
             ),
           )).data?.data;
+        case StickerMomentImageSource(:final momentId, :final mediaId):
+          dto = (await _api.stickersImportMomentImage(
+            extra: ApiRequestPolicy.idempotentCreate.extra,
+            importStickerMomentImageDto: ImportStickerMomentImageDto(
+              (builder) => builder
+                ..momentId = _requiredText(momentId, '动态 ID')
+                ..mediaId = _requiredText(mediaId, '动态图片 ID')
+                ..clientRequestId = requestId,
+            ),
+          )).data?.data;
+        case StickerMomentCommentImageSource(
+          :final momentCommentId,
+          :final mediaId,
+        ):
+          dto = (await _api.stickersImportMomentCommentImage(
+            extra: ApiRequestPolicy.idempotentCreate.extra,
+            importStickerMomentCommentImageDto:
+                ImportStickerMomentCommentImageDto(
+                  (builder) => builder
+                    ..momentCommentId = _requiredText(
+                      momentCommentId,
+                      '动态评论 ID',
+                    )
+                    ..mediaId = _requiredText(mediaId, '动态评论图片 ID')
+                    ..clientRequestId = requestId,
+                ),
+          )).data?.data;
       }
       if (dto == null) {
         throw const ApiFailure(userMessage: '表情导入失败，请重试。');

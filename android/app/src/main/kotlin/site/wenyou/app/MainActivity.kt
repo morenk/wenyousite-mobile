@@ -30,6 +30,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private var keyboardInsetsChannel: MethodChannel? = null
+    private var imageGalleryChannel: ImageGalleryChannel? = null
     private var keyboardInsetsActive = false
     private var appliedKeyboardInsetBottom = 0
 
@@ -43,6 +44,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         EditorClipboardChannel(this).register(flutterEngine)
+        imageGalleryChannel = ImageGalleryChannel(this).also { it.register(flutterEngine) }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -98,6 +100,29 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         keyboardInsetsActive = true
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        if (
+            imageGalleryChannel?.onRequestPermissionsResult(
+                requestCode,
+                permissions,
+                grantResults,
+            ) == true
+        ) return
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        imageGalleryChannel?.dispose()
+        imageGalleryChannel = null
+        keyboardInsetsChannel?.setMethodCallHandler(null)
+        keyboardInsetsChannel = null
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     override fun onPause() {

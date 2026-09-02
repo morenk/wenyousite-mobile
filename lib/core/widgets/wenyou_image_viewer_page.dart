@@ -29,6 +29,7 @@ class WenyouImageViewerPage extends StatefulWidget {
     this.closeKey,
     this.closeTooltip = '关闭图片预览',
     this.errorLabel = '原图加载失败，请检查网络后返回重试',
+    this.onPageChanged,
     super.key,
   }) : assert(items.length > 0),
        assert(initialIndex >= 0 && initialIndex < items.length);
@@ -42,6 +43,7 @@ class WenyouImageViewerPage extends StatefulWidget {
   final Key? closeKey;
   final String closeTooltip;
   final String errorLabel;
+  final ValueChanged<int>? onPageChanged;
 
   @override
   State<WenyouImageViewerPage> createState() => _WenyouImageViewerPageState();
@@ -103,10 +105,13 @@ class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
               child: PageView.builder(
                 controller: _pageController,
                 physics: _zoomed ? const NeverScrollableScrollPhysics() : null,
-                onPageChanged: (index) => setState(() {
-                  _index = index;
-                  _zoomed = false;
-                }),
+                onPageChanged: (index) {
+                  setState(() {
+                    _index = index;
+                    _zoomed = false;
+                  });
+                  widget.onPageChanged?.call(index);
+                },
                 itemCount: widget.items.length,
                 itemBuilder: (context, index) => _ZoomableViewerImage(
                   key: ValueKey(widget.items[index].id ?? index),

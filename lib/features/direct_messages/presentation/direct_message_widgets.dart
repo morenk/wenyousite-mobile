@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_composer_dock.dart';
@@ -548,6 +549,9 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
     final tokens = context.wenyouTokens;
     final media = widget.message.media;
     final stickersEnabled = ref.watch(stickersEnabledProvider);
+    final authenticated = ref.watch(
+      sessionControllerProvider.select((session) => session.isAuthenticated),
+    );
     final stickerBusy = media == null || !stickersEnabled
         ? false
         : ref.watch(
@@ -562,7 +566,8 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
         widget.message.deliveryState == DirectMessageDeliveryState.sending;
     final failed =
         widget.message.deliveryState == DirectMessageDeliveryState.failed;
-    final canSaveSticker = stickersEnabled && media != null && _imageRevealed;
+    final canSaveSticker =
+        stickersEnabled && authenticated && media != null && _imageRevealed;
     final canReport =
         widget.onReport != null &&
         !widget.mine &&
@@ -765,7 +770,12 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                       label: const Text('点击查看陌生人图片'),
                                     )
                                   else
-                                    DirectMessageImage(media: media),
+                                    DirectMessageImage(
+                                      media: media,
+                                      onAddToStickers: canSaveSticker
+                                          ? _importMessageSticker
+                                          : null,
+                                    ),
                                 ],
                                 if (widget.pendingMedia != null) ...[
                                   if (widget.message.content != null)
@@ -845,22 +855,15 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
   }
 
   Future<void> _saveSticker() async {
-    final result = await ref
-        .read(stickerCollectionControllerProvider.notifier)
-        .importDirectMessage(widget.message.id);
+    var failed = false;
+    late final String message;
+    try {
+      message = await _importMessageSticker();
+    } on Object catch (error) {
+      failed = true;
+      message = _asFailure(error, '收藏表情失败，请稍后重试。').userMessage;
+    }
     if (!mounted) return;
-    final state = ref.read(stickerCollectionControllerProvider);
-    final failed =
-        result == null || result.status == StickerImportStatus.failed;
-    final message = result == null
-        ? state.transientFailure?.userMessage ?? '收藏表情失败，请稍后重试。'
-        : switch (result.status) {
-            StickerImportStatus.processing => '图片处理中…',
-            StickerImportStatus.completed when result.alreadySaved =>
-              '已经收藏过这个表情。',
-            StickerImportStatus.completed => '已添加到表情收藏。',
-            StickerImportStatus.failed => '表情处理失败，请换一张图片。',
-          };
     showDirectMessageNotice(
       context,
       message,
@@ -868,6 +871,12 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
           ? WenyouSnackBarPacing.extended
           : WenyouSnackBarPacing.brief,
     );
+  }
+
+  Future<String> _importMessageSticker() {
+    return ref
+        .read(stickerCollectionControllerProvider.notifier)
+        .importSourceForFeedback(StickerDirectMessageSource(widget.message.id));
   }
 }
 

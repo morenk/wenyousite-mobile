@@ -40,7 +40,7 @@ class WenyouMarkdown extends StatefulWidget {
     this.diceSemantics = const {},
     this.diceDetails = const {},
     this.onInternalLink,
-    this.onSaveImage,
+    this.onAddImageToStickers,
     this.onTapText,
     this.onLongPressNonText,
     this.bodyFontSize = 17,
@@ -55,7 +55,7 @@ class WenyouMarkdown extends StatefulWidget {
   final Map<String, String> diceSemantics;
   final Map<String, WenyouDiceRollDetail> diceDetails;
   final ValueChanged<Uri>? onInternalLink;
-  final Future<String> Function(Uri uri)? onSaveImage;
+  final Future<String> Function(Uri uri)? onAddImageToStickers;
   final VoidCallback? onTapText;
   final VoidCallback? onLongPressNonText;
   final double bodyFontSize;
@@ -118,7 +118,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       _renderedBody = null;
     }
     if ((oldWidget.onTapText == null) != (widget.onTapText == null) ||
-        (oldWidget.onSaveImage == null) != (widget.onSaveImage == null) ||
+        (oldWidget.onAddImageToStickers == null) !=
+            (widget.onAddImageToStickers == null) ||
         (oldWidget.onLongPressNonText == null) !=
             (widget.onLongPressNonText == null) ||
         oldWidget.diagnosticRenderKey != widget.diagnosticRenderKey) {
@@ -287,7 +288,9 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       uri: uri,
       title: title,
       alt: alt,
-      onSave: widget.onSaveImage == null ? null : _saveImage,
+      onAddToStickers: widget.onAddImageToStickers == null
+          ? null
+          : _addImageToStickers,
       onLongPress: widget.onLongPressNonText == null
           ? null
           : _handleNonTextLongPress,
@@ -324,7 +327,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     _hasSelection = false;
   }
 
-  Future<String> _saveImage(Uri uri) => widget.onSaveImage!(uri);
+  Future<String> _addImageToStickers(Uri uri) =>
+      widget.onAddImageToStickers!(uri);
 
   MarkdownStyleSheet _createStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
@@ -725,14 +729,14 @@ class _MarkdownImage extends StatelessWidget {
     required this.uri,
     this.title,
     this.alt,
-    this.onSave,
+    this.onAddToStickers,
     this.onLongPress,
   });
 
   final Uri uri;
   final String? title;
   final String? alt;
-  final Future<String> Function(Uri uri)? onSave;
+  final Future<String> Function(Uri uri)? onAddToStickers;
   final VoidCallback? onLongPress;
 
   @override
@@ -826,10 +830,12 @@ class _MarkdownImage extends StatelessWidget {
           onLongPress: onLongPress,
           onTap: () => pushWenyouFullscreenPage<void>(
             context: context,
-            builder: (_) => ContentImageViewerPage(
+            builder: (_) => ContentImageViewerPage.single(
               url: uri.toString(),
               alt: imageAlt,
-              onSaveImage: onSave == null ? null : () => onSave!(uri),
+              onAddToStickers: onAddToStickers == null
+                  ? null
+                  : (_) => onAddToStickers!(uri),
             ),
           ),
           child: imageContent,

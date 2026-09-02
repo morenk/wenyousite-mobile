@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
@@ -138,6 +139,8 @@ void main() {
     expect(
       tester
           .widget<ContentImageViewerPage>(find.byType(ContentImageViewerPage))
+          .items
+          .single
           .url,
       'https://cdn.example.com/original.webp',
     );
@@ -169,14 +172,16 @@ void main() {
 }
 
 Widget _app(DirectMessageMedia media) {
-  return MaterialApp(
-    theme: AppTheme.light,
-    home: Scaffold(
-      body: Align(
-        alignment: Alignment.topLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 264),
-          child: DirectMessageImage(media: media),
+  return ProviderScope(
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 264),
+            child: DirectMessageImage(media: media),
+          ),
         ),
       ),
     ),

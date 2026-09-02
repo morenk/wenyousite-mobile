@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -350,30 +349,16 @@ class StickerPostMarkdown extends ConsumerWidget {
       bodyHeight: bodyHeight,
       enablePlainTextFastPath: enablePlainTextFastPath,
       diagnosticRenderKey: diagnosticRenderKey,
-      onSaveImage: !enabled || !authenticated
+      onAddImageToStickers: !enabled || !authenticated
           ? null
-          : (uri) async {
-              final notifier = ref.read(
-                stickerCollectionControllerProvider.notifier,
-              );
-              final result = await notifier.importPostImage(
-                postId: postId,
-                imageUrl: uri.toString(),
-              );
-              if (result == null) {
-                final failure = ref
-                    .read(stickerCollectionControllerProvider)
-                    .transientFailure;
-                throw failure ?? const ApiFailure(userMessage: '收藏表情失败，请稍后重试。');
-              }
-              return switch (result.status) {
-                StickerImportStatus.processing => '图片处理中…',
-                StickerImportStatus.completed when result.alreadySaved =>
-                  '已经收藏过这个表情。',
-                StickerImportStatus.completed => '已添加到表情收藏。',
-                StickerImportStatus.failed => '表情处理失败，请换一张图片。',
-              };
-            },
+          : (uri) => ref
+                .read(stickerCollectionControllerProvider.notifier)
+                .importSourceForFeedback(
+                  StickerPostImageSource(
+                    postId: postId,
+                    imageUrl: uri.toString(),
+                  ),
+                ),
     );
   }
 }

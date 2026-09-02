@@ -88,6 +88,20 @@ class StickerCollectionController
     );
   }
 
+  Future<String> importSourceForFeedback(StickerImportSource source) async {
+    final result = await importSource(source);
+    if (result == null) {
+      throw state.transientFailure ??
+          const ApiFailure(userMessage: '收藏表情失败，请稍后重试。');
+    }
+    return switch (result.status) {
+      StickerImportStatus.processing => '图片处理中…',
+      StickerImportStatus.completed when result.alreadySaved => '已经收藏过这个表情。',
+      StickerImportStatus.completed => '已添加到表情收藏。',
+      StickerImportStatus.failed => '表情处理失败，请换一张图片。',
+    };
+  }
+
   Future<StickerImport?> importSource(StickerImportSource source) async {
     if (state.isBusy) return null;
     final requestId = _requestIds.putIfAbsent(

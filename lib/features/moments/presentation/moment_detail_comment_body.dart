@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
-class MomentCommentBody extends StatelessWidget {
+class MomentCommentBody extends ConsumerWidget {
   const MomentCommentBody({
     required this.comment,
     required this.busy,
@@ -31,9 +35,13 @@ class MomentCommentBody extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.wenyouTokens;
     final canReply = !comment.deleted && onReply != null && !busy;
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
+    final authenticated = ref.watch(
+      sessionControllerProvider.select((session) => session.isAuthenticated),
+    );
     Widget buildContent(VoidCallback openActions) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -74,7 +82,22 @@ class MomentCommentBody extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: InkWell(
-                onTap: () => openMomentGallery(context, [comment.media!], 0),
+                key: Key('moment-comment-image-${comment.id}'),
+                onTap: () => openMomentGallery(
+                  context,
+                  [comment.media!],
+                  0,
+                  onAddToStickers: !stickersEnabled || !authenticated
+                      ? null
+                      : (item) => ref
+                            .read(stickerCollectionControllerProvider.notifier)
+                            .importSourceForFeedback(
+                              StickerMomentCommentImageSource(
+                                momentCommentId: comment.id,
+                                mediaId: item.id! as String,
+                              ),
+                            ),
+                ),
                 onLongPress: openActions,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(

@@ -580,6 +580,7 @@ class _MomentDetailPanel extends StatelessWidget {
         if (detail.images.isNotEmpty) ...[
           SizedBox(height: tokens.space16),
           MomentGallery(
+            momentId: detail.card.id,
             images: detail.images,
             coverMedia: detail.card.coverMedia,
           ),

@@ -105,3 +105,29 @@ class StickerPostImageSource extends StickerImportSource {
   @override
   String get requestKey => 'post:$postId:$imageUrl';
 }
+
+class StickerMomentImageSource extends StickerImportSource {
+  const StickerMomentImageSource({
+    required this.momentId,
+    required this.mediaId,
+  });
+
+  final String momentId;
+  final String mediaId;
+
+  @override
+  String get requestKey => 'moment:$momentId:$mediaId';
+}
+
+class StickerMomentCommentImageSource extends StickerImportSource {
+  const StickerMomentCommentImageSource({
+    required this.momentCommentId,
+    required this.mediaId,
+  });
+
+  final String momentCommentId;
+  final String mediaId;
+
+  @override
+  String get requestKey => 'moment-comment:$momentCommentId:$mediaId';
+}

@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/content_image_viewer_page.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_image_viewer_page.dart';
@@ -13,6 +16,8 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
+import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
 
 class MomentCardTile extends StatelessWidget {
   const MomentCardTile({
@@ -272,17 +277,23 @@ class MomentAvatar extends StatelessWidget {
   }
 }
 
-class MomentGallery extends StatefulWidget {
-  const MomentGallery({required this.images, this.coverMedia, super.key});
+class MomentGallery extends ConsumerStatefulWidget {
+  const MomentGallery({
+    required this.momentId,
+    required this.images,
+    this.coverMedia,
+    super.key,
+  });
 
+  final String momentId;
   final List<MomentMedia> images;
   final MomentMedia? coverMedia;
 
   @override
-  State<MomentGallery> createState() => _MomentGalleryState();
+  ConsumerState<MomentGallery> createState() => _MomentGalleryState();
 }
 
-class _MomentGalleryState extends State<MomentGallery> {
+class _MomentGalleryState extends ConsumerState<MomentGallery> {
   static const _minimumAspectRatio = 3 / 4;
   static const _maximumAspectRatio = 16 / 10;
   static const _maximumStageHeight = 672.0;
@@ -326,6 +337,10 @@ class _MomentGalleryState extends State<MomentGallery> {
   Widget build(BuildContext context) {
     final images = widget.images;
     if (images.isEmpty) return const SizedBox.shrink();
+    final stickersEnabled = ref.watch(stickersEnabledProvider);
+    final authenticated = ref.watch(
+      sessionControllerProvider.select((session) => session.isAuthenticated),
+    );
     final tokens = context.wenyouTokens;
     final ratio =
         (widget.coverMedia?.aspectRatio ?? images.first.aspectRatio ?? 1)
@@ -359,7 +374,23 @@ class _MomentGalleryState extends State<MomentGallery> {
                   key: const Key('moment-detail-image'),
                   behavior: HitTestBehavior.opaque,
                   excludeFromSemantics: true,
-                  onTap: () => openMomentGallery(context, images, _index),
+                  onTap: () => openMomentGallery(
+                    context,
+                    images,
+                    _index,
+                    onAddToStickers: !stickersEnabled || !authenticated
+                        ? null
+                        : (item) => ref
+                              .read(
+                                stickerCollectionControllerProvider.notifier,
+                              )
+                              .importSourceForFeedback(
+                                StickerMomentImageSource(
+                                  momentId: widget.momentId,
+                                  mediaId: item.id! as String,
+                                ),
+                              ),
+                  ),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -519,11 +550,12 @@ class _MomentImageStatus extends StatelessWidget {
 Future<void> openMomentGallery(
   BuildContext context,
   List<MomentMedia> images,
-  int initialIndex,
-) {
+  int initialIndex, {
+  Future<String> Function(WenyouImageViewerItem item)? onAddToStickers,
+}) {
   return pushWenyouFullscreenPage<void>(
     context: context,
-    builder: (_) => WenyouImageViewerPage(
+    builder: (_) => ContentImageViewerPage(
       items: [
         for (final image in images)
           WenyouImageViewerItem(
@@ -537,6 +569,7 @@ Future<void> openMomentGallery(
       ],
       initialIndex: initialIndex,
       closeKey: const Key('moment-gallery-close'),
+      onAddToStickers: onAddToStickers,
     ),
   );
 }

@@ -73,9 +73,14 @@ class DirectMessageOptimisticMediaPlaceholder extends StatelessWidget {
 }
 
 class DirectMessageImage extends StatelessWidget {
-  const DirectMessageImage({required this.media, super.key});
+  const DirectMessageImage({
+    required this.media,
+    this.onAddToStickers,
+    super.key,
+  });
 
   final DirectMessageMedia media;
+  final Future<String> Function()? onAddToStickers;
 
   @override
   Widget build(BuildContext context) {
@@ -141,9 +146,16 @@ class DirectMessageImage extends StatelessWidget {
   Future<void> _showImage(BuildContext context) async {
     await pushWenyouFullscreenPage<void>(
       context: context,
-      builder: (_) => ContentImageViewerPage(
+      builder: (_) => ContentImageViewerPage.single(
         url: media.url,
+        fallbackUrls: media.displayUrls
+            .where((url) => url != media.url)
+            .toList(growable: false),
         alt: media.isSticker ? '私聊表情' : '私聊图片',
+        id: media.id,
+        onAddToStickers: onAddToStickers == null
+            ? null
+            : (_) => onAddToStickers!(),
       ),
     );
   }
