@@ -22,7 +22,7 @@
 
 ## 4. 用户操作流程
 
-冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 5 与 Markdown v3/v4、恢复会话并进入目标页。登录会话就绪后由 wallet 在本次进程内自动触发一次北京时间签到，只有本次真实领取才显示非阻断提示。回到前台时静默重查，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
+冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 5 与 Markdown v3/v4、恢复会话并进入目标页。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
 
 Android 登录会话固定开启后台尽力提醒，并在前台主动申请系统通知权限，不提供应用内开关。应用离开前台时先记录通知与私聊基线，再由仍存活且仍获系统调度的 Flutter 进程全程每 30 秒尽力检查，不创建前台服务或常驻运行通知。前一轮未完成时跳过当前节拍，不并发或排队；返回前台立即取消后台定时器并丢弃迟到结果，退出登录、任务被划掉或进程被系统回收后自然停止。系统通知权限或消息频道被关闭时不拉取消息，并在回到前台后明确提示到系统设置开启。
 
@@ -37,7 +37,7 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 
 外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
-前台未读角标与后台提醒分别使用应用壳唯一计时器和后台协调器；前台按 30 秒校准角标，后台以固定 30 秒周期 Timer 尽力触发且不允许请求重叠。后台 poller 只保存当前后台时段的通知 ID/内容指纹、会话最后消息指纹和未读基线；每轮先生成候选批次，只有系统卡片全部提交成功后才原子更新指纹和计数，接口或卡片展示失败均保留旧基线供下一节拍重试。生命周期 epoch 使回前台后的 HTTP 结果不能再显示或提交；通知点击载荷是本地严格 v1 JSON，只允许通知目标、私聊会话和消息中心三类内部坐标，冷/热启动都先刷新权威未读事实，再交给现有路由鉴权。
+签到调度独立观察登录作用域与应用生命周期：服务端日期确认同日成功后不因 Widget 重建或重复恢复再次调用，前台只保留一个零点计时器和一个有限补试计时器；进入后台、退出或切号立即取消计时，重叠事件合并，旧作用域的迟到结果不进入当前账号。前台未读角标与后台提醒分别使用应用壳唯一计时器和后台协调器；前台按 30 秒校准角标，后台以固定 30 秒周期 Timer 尽力触发且不允许请求重叠。后台 poller 只保存当前后台时段的通知 ID/内容指纹、会话最后消息指纹和未读基线；每轮先生成候选批次，只有系统卡片全部提交成功后才原子更新指纹和计数，接口或卡片展示失败均保留旧基线供下一节拍重试。生命周期 epoch 使回前台后的 HTTP 结果不能再显示或提交；通知点击载荷是本地严格 v1 JSON，只允许通知目标、私聊会话和消息中心三类内部坐标，冷/热启动都先刷新权威未读事实，再交给现有路由鉴权。
 
 全局 `WenyouInstantKeyboardInsets` 观察应用生命周期：Android 非 resumed 状态把有效底部高度固定为零，恢复后继续等待新的前台原生回调，后台迟到结果不会覆盖；iOS 等其他平台继续使用引擎 `MediaQuery`。`MainActivity` 从根视图实际应用的 `WindowInsetsCompat` 读取 IME 可见性和高度，只有 Activity 已恢复且窗口聚焦时才发布正值；IME 动画仍只发布最终目标，不转发逐帧进度，恢复和聚焦则先发布零值并请求重新分发 Insets。
 
@@ -83,7 +83,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 - [x] 四分支使用 IndexedStack 保留页面状态；底栏中央发布动作在任一分支都先显示稳定类型选择，首页与动态顶栏可进入全站搜索。
 - [x] Android 普通页面进入与返回只使用 180ms 水平位移，不叠加缩放或淡化；主分支和无来源栈兜底瞬时切换，减少动态效果时全部零时长。
 - [x] 根主题切换不做全树插值；独立 Profile 包在 60 Hz 真机对外观、导航、动态流和 Markdown 时间线三轮采样并全部达到帧预算。
-- [x] 登录会话就绪后自动签到，同一会话重复构建不重复触发且失败不阻断应用壳。
+- [x] 登录会话就绪、前台跨过北京时间零点及后台跨日恢复后自动签到；同日重复构建/恢复不重复触发，临时失败只在前台有限补试，切号迟到结果不会污染新账号且失败不阻断应用壳。
 - [x] Android 带键盘或不带键盘切到后台再返回时，即使 Flutter 引擎仍保留旧 `viewInsets`，后台与恢复等待期也保持零高度；后台迟到回调、仅失焦恢复和系统恢复键盘均不会留下空白或重复避让。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
@@ -101,6 +101,6 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 14. 相关代码与架构文档
 
-根 router 与生命周期位于 `lib/app/app_router.dart`，主壳、认证、内容和账号路由组位于 `lib/app/routes/`。
+根 router 与签到生命周期分别位于 `lib/app/app_router.dart`、`lib/app/app_session_bootstrap.dart`，主壳、认证、内容和账号路由组位于 `lib/app/routes/`。
 
 代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

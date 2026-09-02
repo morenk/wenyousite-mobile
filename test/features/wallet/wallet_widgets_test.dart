@@ -15,42 +15,6 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 void main() {
-  testWidgets('登录会话就绪后只签到一次且仅本次领取展示提示', (tester) async {
-    final repository = _WidgetWalletRepository();
-    final invalidatedUserIds = <String?>[];
-    final container = ProviderContainer(
-      overrides: [
-        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
-        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
-        walletRepositoryProvider.overrideWithValue(repository),
-        profileCacheInvalidatorProvider.overrideWithValue(
-          invalidatedUserIds.add,
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
-    await container
-        .read(sessionControllerProvider.notifier)
-        .authenticate(_tokens('user-1'));
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const DailyCheckInBootstrap(child: Scaffold(body: Text('内容页'))),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(repository.checkInCalls, 1);
-    expect(invalidatedUserIds, ['user-1']);
-    expect(find.textContaining('今日签到获得 3 升温油'), findsOneWidget);
-    await tester.pump();
-    expect(repository.checkInCalls, 1);
-  });
-
   testWidgets('加油弹窗校验输入并只确认本次加油金额', (tester) async {
     final repository = _WidgetWalletRepository();
     final invalidatedUserIds = <String?>[];
