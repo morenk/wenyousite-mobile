@@ -12,9 +12,11 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 ///
 /// The envelope is an interoperability hint rather than proof of origin. Every
 /// element and attribute is rebuilt into the mobile Delta model, and the
-/// result must survive the Markdown v4 codec before it can reach the editor.
+/// result must survive the active Markdown codec before it can reach the editor.
 class WenyouSiteClipboardParser {
-  const WenyouSiteClipboardParser();
+  const WenyouSiteClipboardParser({this.imageAlignment = false});
+
+  final bool imageAlignment;
 
   static const maximumHtmlLength = 1000000;
   static const _versionAttribute = 'data-wenyou-clipboard';
@@ -40,7 +42,11 @@ class WenyouSiteClipboardParser {
       if ((version != 1 && version != 2) || source == null) {
         return null;
       }
-      return _SiteClipboardDeltaBuilder(source, version!).build(envelope);
+      return _SiteClipboardDeltaBuilder(
+        source,
+        version!,
+        imageAlignment,
+      ).build(envelope);
     } on Object {
       return null;
     }
@@ -50,7 +56,7 @@ class WenyouSiteClipboardParser {
 enum _SiteClipboardSource { reader, editor }
 
 class _SiteClipboardDeltaBuilder {
-  _SiteClipboardDeltaBuilder(this.source, this.version);
+  _SiteClipboardDeltaBuilder(this.source, this.version, this.imageAlignment);
 
   static const _blockTags = {'blockquote', 'h2', 'h3', 'hr', 'ol', 'p', 'ul'};
   static const _droppedTags = {
@@ -69,11 +75,16 @@ class _SiteClipboardDeltaBuilder {
 
   final _SiteClipboardSource source;
   final int version;
+  final bool imageAlignment;
 
   Delta? build(dom.Element envelope) {
     if (envelope.nodes.any(_beginsBlock)) {
-      final collector = _ClipboardBlockCollector(source, version, _beginsBlock)
-        ..appendChildren(envelope.nodes);
+      final collector = _ClipboardBlockCollector(
+        source,
+        version,
+        imageAlignment,
+        _beginsBlock,
+      )..appendChildren(envelope.nodes);
       return _canonicalizeBlocks(collector.groups);
     }
 
@@ -98,7 +109,7 @@ class _SiteClipboardDeltaBuilder {
 
   Delta? _canonicalize(Delta raw) {
     try {
-      MarkdownDeltaCodec.encode(raw);
+      MarkdownDeltaCodec.encode(raw, imageAlignment: imageAlignment);
       return Delta.from(raw);
     } on Object {
       return null;
@@ -147,10 +158,16 @@ class _SiteClipboardDeltaBuilder {
 }
 
 class _ClipboardBlockCollector {
-  _ClipboardBlockCollector(this.source, this.version, this.beginsBlock);
+  _ClipboardBlockCollector(
+    this.source,
+    this.version,
+    this.imageAlignment,
+    this.beginsBlock,
+  );
 
   final _SiteClipboardSource source;
   final int version;
+  final bool imageAlignment;
   final bool Function(dom.Node node) beginsBlock;
   final List<_ClipboardBlockGroup> groups = [];
 
@@ -247,7 +264,15 @@ class _ClipboardBlockCollector {
               element.attributes['data-type'] == 'image-block':
         final lines = _ClipboardInlineBuilder(source).build([element]);
         if (lines.any((line) => !_isVisiblyEmpty(line))) {
-          _appendInlineGroup(lines);
+          _appendInlineGroup(
+            lines,
+            lineAttributes: _alignmentAttributes(
+              element,
+              lines,
+              alignmentEligible: imageAlignment,
+              allowRegularImage: true,
+            ),
+          );
         }
       default:
         appendChildren(element.nodes, alignmentEligible: false);
@@ -258,11 +283,12 @@ class _ClipboardBlockCollector {
     dom.Element element,
     List<Delta> contents, {
     required bool alignmentEligible,
+    bool allowRegularImage = false,
   }) {
     if (version != 2 ||
         !alignmentEligible ||
         contents.every(_isVisiblyEmpty) ||
-        _containsRegularImage(element)) {
+        (_containsRegularImage(element) && !allowRegularImage)) {
       return const {};
     }
     return switch (element.attributes['data-wenyou-align']) {

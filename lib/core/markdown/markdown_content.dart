@@ -228,10 +228,13 @@ class MarkdownContent {
   /// into visible literal text. This mirrors the backend migration contract:
   /// unsupported source remains readable but cannot be reinterpreted as an
   /// unsupported node when the editor serializes it again.
-  static String literalizeUnsupported(String markdown) {
+  static String literalizeUnsupported(
+    String markdown, {
+    bool imageAlignment = false,
+  }) {
     final normalized = normalize(markdown);
     final lines = normalized.split('\n');
-    final affected = _unsupportedLines(lines);
+    final affected = _unsupportedLines(lines, imageAlignment: imageAlignment);
     if (affected.isEmpty) return normalized;
 
     final output = <String>[];
@@ -249,19 +252,30 @@ class MarkdownContent {
     return output.join('\n');
   }
 
-  static Set<int> unsupportedLineIndexes(String markdown) {
+  static Set<int> unsupportedLineIndexes(
+    String markdown, {
+    bool imageAlignment = false,
+  }) {
     final lines = normalize(markdown).split('\n');
-    return Set<int>.unmodifiable(_unsupportedLines(lines));
+    return Set<int>.unmodifiable(
+      _unsupportedLines(lines, imageAlignment: imageAlignment),
+    );
   }
 
   static String literalizeLine(String line) => _escapeLiteralLine(line);
 
-  static Set<int> _unsupportedLines(List<String> lines) {
+  static Set<int> _unsupportedLines(
+    List<String> lines, {
+    required bool imageAlignment,
+  }) {
     final affected = <int>{};
     _markFencedCode(lines, affected);
     _markTables(lines, affected);
     affected.addAll(
-      MarkdownAlignmentContract.analyzeLines(lines).invalidMarkerLines,
+      MarkdownAlignmentContract.analyzeLines(
+        lines,
+        imageAlignment: imageAlignment,
+      ).invalidMarkerLines,
     );
 
     for (var index = 0; index < lines.length; index++) {

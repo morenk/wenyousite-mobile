@@ -12,7 +12,7 @@
 | search | in_progress | 四类搜索已交付；主题结果 cursor 分页待接入 | [搜索](search.md) |
 | threads | in_progress | 阅读、创作、管理和邀请已交付；公网验收待补齐 | [主题](threads.md) |
 | posts | in_progress | 楼层与楼中楼读写已交付；阅读性能专项仍待完成 | [楼层与回复](posts.md) |
-| editor | in_progress | Markdown v4、块对齐与 clipboard v2 编辑主链已交付；撤销入口仍待完成 | [编辑器](editor.md) |
+| editor | in_progress | Markdown v3/v4/v5、文字/图片块对齐与 clipboard v2 编辑主链已交付；撤销入口仍待完成 | [编辑器](editor.md) |
 | drafts | in_progress | 本地快照与云草稿已交付；进程恢复边界持续收敛 | [草稿](drafts.md) |
 | media | in_progress | 图片上传与原图查看已交付；批量选择尚未支持 | [媒体](media.md) |
 | notifications | in_progress | 分类、帖子及动态评论精确定位已交付；协作者通知待接入 | [通知](notifications.md) |

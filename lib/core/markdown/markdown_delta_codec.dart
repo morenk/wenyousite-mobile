@@ -15,11 +15,10 @@ import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 export 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 
-/// Markdown v4 扩展节点与 Quill Delta 之间的无损协议层。
+/// Markdown v4/v5 扩展节点与 Quill Delta 之间的无损协议层。
 ///
 /// 受支持的普通 Markdown 先解析为中立富文本行模型，再映射为 Quill 属性；
-/// 需要稳定身份的扩展节点提升为原子 embed。无法证明精确往返的语法继续保留
-/// 源码文本，不改变后端、云草稿和本地快照保存完整 Markdown 的边界。
+/// 扩展节点提升为原子 embed；无法精确往返的语法保留源码文本。
 class MarkdownDeltaCodec {
   MarkdownDeltaCodec._();
 
@@ -59,23 +58,37 @@ class MarkdownDeltaCodec {
   static final _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
   static final _mentionWord = RegExp(r'[a-zA-Z0-9_\u4e00-\u9fff]');
 
-  static MarkdownDeltaDocument decode(String markdown) =>
-      _decode(markdown, readerClipboard: false);
-  static MarkdownDeltaDocument decodeReaderClipboard(String markdown) =>
-      _decode(markdown, readerClipboard: true);
+  static MarkdownDeltaDocument decode(
+    String markdown, {
+    bool imageAlignment = false,
+  }) => _decode(markdown, false, imageAlignment);
+  static MarkdownDeltaDocument decodeReaderClipboard(
+    String markdown, {
+    bool imageAlignment = false,
+  }) => _decode(markdown, true, imageAlignment);
 
   static MarkdownDeltaDocument _decode(
-    String markdown, {
-    required bool readerClipboard,
-  }) {
-    final editorDocument = MarkdownEditorDocument.parse(markdown);
+    String markdown,
+    bool readerClipboard,
+    bool imageAlignment,
+  ) {
+    final editorDocument = MarkdownEditorDocument.parse(
+      markdown,
+      imageAlignment: imageAlignment,
+    );
     final source = editorDocument.toMarkdown();
     final delta = Delta();
     final issues = <MarkdownCodecIssue>[];
     final diceNodeIds = <String>{};
     final lines = source.split('\n');
-    final literalLines = MarkdownContent.unsupportedLineIndexes(source);
-    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(lines);
+    final literalLines = MarkdownContent.unsupportedLineIndexes(
+      source,
+      imageAlignment: imageAlignment,
+    );
+    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(
+      lines,
+      imageAlignment: imageAlignment,
+    );
     final validAlignmentMarkers = alignmentAnalysis.validMarkerLines;
     _Fence? fence;
 
@@ -118,7 +131,7 @@ class MarkdownDeltaCodec {
           sourceBreakAttribute: sourceBreakAttribute,
           preservesSource: (candidate) {
             try {
-              return _encode(candidate, sanitizeUnsupported: false) == line;
+              return _encode(candidate, false, imageAlignment) == line;
             } on MarkdownCodecException {
               return false;
             }
@@ -188,16 +201,22 @@ class MarkdownDeltaCodec {
     );
   }
 
-  static String encode(Delta delta) =>
-      _encode(delta, sanitizeUnsupported: true);
+  static String encode(Delta delta, {bool imageAlignment = false}) =>
+      _encode(delta, true, imageAlignment);
 
-  static String _encode(Delta delta, {required bool sanitizeUnsupported}) {
+  static String _encode(
+    Delta delta,
+    bool sanitizeUnsupported, [
+    bool imageAlignment = false,
+  ]) {
     delta = MarkdownDeltaLineMetadata.prepareForEncoding(delta);
     MarkdownDeltaBlockValidator.validate(
       delta,
       horizontalRuleEmbed: horizontalRuleEmbed,
     );
-    final encodingBuffer = MarkdownDeltaEncodingBuffer();
+    final encodingBuffer = MarkdownDeltaEncodingBuffer(
+      imageAlignment: imageAlignment,
+    );
     final line = StringBuffer();
     var lineHasLiteralText = false;
     for (final operation in delta.operations) {
@@ -227,11 +246,18 @@ class MarkdownDeltaCodec {
     final encoded = sanitizeUnsupported
         ? MarkdownContent.literalizeUnsupported(
             encodingBuffer.output.toString(),
+            imageAlignment: imageAlignment,
           )
         : MarkdownContent.normalize(encodingBuffer.output.toString());
-    final document = MarkdownEditorDocument.parsePrepared(encoded);
+    final document = MarkdownEditorDocument.parsePrepared(
+      encoded,
+      imageAlignment: imageAlignment,
+    );
     final serialized = document.toMarkdown();
-    final reparsed = MarkdownEditorDocument.parsePrepared(serialized);
+    final reparsed = MarkdownEditorDocument.parsePrepared(
+      serialized,
+      imageAlignment: imageAlignment,
+    );
     if (!document.structurallyEquivalentTo(reparsed)) {
       throw const MarkdownCodecException('正文块结构无法安全保存，请撤销最近的格式操作');
     }
@@ -478,7 +504,7 @@ class MarkdownDeltaCodec {
       sourceBreakAttribute: false,
     });
     try {
-      if (_encode(candidate, sanitizeUnsupported: false) !=
+      if (_encode(candidate, false) !=
           MarkdownInlineBoundary.canonicalize(source)) {
         return null;
       }

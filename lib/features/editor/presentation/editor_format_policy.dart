@@ -19,8 +19,9 @@ abstract final class WenyouEditorFormatPolicy {
   }
 
   static MarkdownAlignmentSelectionState alignmentSelection(
-    QuillController controller,
-  ) {
+    QuillController controller, {
+    bool imageAlignment = false,
+  }) {
     final selection = controller.selection;
     return MarkdownDeltaAlignment.selectionState(
       controller.document.toDelta(),
@@ -28,13 +29,15 @@ abstract final class WenyouEditorFormatPolicy {
       end: selection.end,
       imageEmbed: MarkdownDeltaCodec.imageEmbed,
       horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
+      imageAlignment: imageAlignment,
     );
   }
 
   static void applyAlignment(
     QuillController controller,
-    WenyouTextAlignment alignment,
-  ) {
+    WenyouTextAlignment alignment, {
+    bool imageAlignment = false,
+  }) {
     final selection = controller.selection;
     final patch = MarkdownDeltaAlignment.applySelection(
       controller.document.toDelta(),
@@ -43,6 +46,7 @@ abstract final class WenyouEditorFormatPolicy {
       alignment: alignment,
       imageEmbed: MarkdownDeltaCodec.imageEmbed,
       horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
+      imageAlignment: imageAlignment,
     );
     if (patch.isNotEmpty) {
       controller.document.compose(patch, ChangeSource.local);

@@ -362,6 +362,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     _editorSession = RichEditorSession(
       initialMarkdown: widget.target.initialContent,
       clipboardScope: _openedSessionScope,
+      imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,
       initialSelection: RichEditorSelectionPlacement.end,
       onMarkdownChanged: (markdown) {
         if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
@@ -546,6 +547,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                     (capabilities) => capabilities.markdownAlignment,
                   ),
                 ),
+                imageAlignment: _editorSession.imageAlignment,
               ),
               surface: WenyouComposerSurface.expandableSheet,
               enabled: !locked && _editorSession.codecFailure == null,

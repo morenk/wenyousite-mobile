@@ -182,12 +182,16 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
   void _prepareData() {
     final normalized = MarkdownContent.literalizeUnsupported(
       MarkdownEmptyParagraphs.recoverLegacy(widget.data),
+      imageAlignment: true,
     );
     final prepared = _prepareInternalReferences(
       MarkdownInlineBoundary.canonicalizeDocument(normalized),
     );
     _normalizedData = prepared.data;
-    _renderSegments = MarkdownAlignmentContract.renderSegments(prepared.data);
+    _renderSegments = MarkdownAlignmentContract.renderSegments(
+      prepared.data,
+      imageAlignment: true,
+    );
     _internalReferences = prepared.references;
     _usesPlainTextFastPath =
         widget.enablePlainTextFastPath &&
@@ -215,6 +219,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
               _renderSegments[index].markdown,
               _alignedStyleSheet(_renderSegments[index].alignment),
               expandBlockWidth: _renderSegments[index].isAligned,
+              alignment: _renderSegments[index].alignment,
             ),
           ),
         ],
@@ -241,6 +246,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     String data,
     MarkdownStyleSheet? styleSheet, {
     bool expandBlockWidth = false,
+    WenyouTextAlignment alignment = WenyouTextAlignment.left,
   }) => MarkdownBody(
     data: data,
     selectable: false,
@@ -294,6 +300,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       onLongPress: widget.onLongPressNonText == null
           ? null
           : _handleNonTextLongPress,
+      blockAlignment: alignment,
     ),
   );
 
@@ -731,6 +738,7 @@ class _MarkdownImage extends StatelessWidget {
     this.alt,
     this.onAddToStickers,
     this.onLongPress,
+    this.blockAlignment = WenyouTextAlignment.left,
   });
 
   final Uri uri;
@@ -738,6 +746,7 @@ class _MarkdownImage extends StatelessWidget {
   final String? alt;
   final Future<String> Function(Uri uri)? onAddToStickers;
   final VoidCallback? onLongPress;
+  final WenyouTextAlignment blockAlignment;
 
   @override
   Widget build(BuildContext context) {
@@ -749,7 +758,14 @@ class _MarkdownImage extends StatelessWidget {
       return SizedBox(
         key: ValueKey('markdown-block-image-row-$uri'),
         width: double.infinity,
-        child: Align(alignment: AlignmentDirectional.centerStart, child: child),
+        child: Align(
+          alignment: switch (blockAlignment) {
+            WenyouTextAlignment.left => AlignmentDirectional.centerStart,
+            WenyouTextAlignment.center => Alignment.center,
+            WenyouTextAlignment.right => AlignmentDirectional.centerEnd,
+          },
+          child: child,
+        ),
       );
     }
 

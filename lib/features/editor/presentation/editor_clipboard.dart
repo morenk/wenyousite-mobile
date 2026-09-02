@@ -88,7 +88,7 @@ class WenyouEditorClipboardStore {
       regenerateDice: regenerateDice,
     );
     try {
-      MarkdownDeltaCodec.encode(transformed);
+      MarkdownDeltaCodec.encode(transformed, imageAlignment: true);
     } on Object {
       _payload = null;
       return const WenyouEditorClipboardResolution.plainText();

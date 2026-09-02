@@ -22,7 +22,7 @@
 
 ## 4. 用户操作流程
 
-冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 5 与 Markdown v3/v4、恢复会话并进入目标页。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
+冷启动在创建应用根之前读取本地外观偏好；成功则直接使用保存模式，失败则首帧跟随系统并保留可重试提示。随后调用元信息接口并用 `versionCode` / `CFBundleVersion` 比较当前平台策略。低于最低构建时进入阻断页；低于推荐构建时可更新或“稍后再说”，同一目标构建只提示一次。版本允许后检查主契约 5 与 Markdown v3/v4/v5、恢复会话并进入目标页。登录会话就绪后由 wallet 自动触发北京时间签到；应用保持前台时跨零点触发新日期检查，后台跨日则在首次恢复时补触发，只有本次真实领取才显示非阻断提示。回到前台时还会静默重查兼容信息，断网不打断正在使用的兼容客户端。Android 失去窗口焦点或进入后台时，Dart 与原生侧都把有效 IME 目标高度归零，不回退到可能仍残留键盘高度的引擎 inset；恢复或重新聚焦后先请求窗口重新应用 Insets，只以当前窗口焦点、Activity 生命周期和 IME 可见性共同确认的新高度避让页面。系统已经隐藏键盘时页面立即恢复完整高度，系统恢复键盘时仍保持输入区在键盘上方，不主动改变输入焦点、选区或未发送内容。
 
 Android 登录会话固定开启后台尽力提醒，并在前台主动申请系统通知权限，不提供应用内开关。应用离开前台时先记录通知与私聊基线，再由仍存活且仍获系统调度的 Flutter 进程全程每 30 秒尽力检查，不创建前台服务或常驻运行通知。前一轮未完成时跳过当前节拍，不并发或排队；返回前台立即取消后台定时器并丢弃迟到结果，退出登录、任务被划掉或进程被系统回收后自然停止。系统通知权限或消息频道被关闭时不拉取消息，并在回到前台后明确提示到系统设置开启。
 
@@ -33,7 +33,7 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 
 ## 6. 状态模型和数据流
 
-客户端兼容集合固定为 Markdown v3/v4；未知版本继续进入不可绕过的升级页。`AppCapabilities.markdownAlignment` 只在元信息明确声明 v4 时为真，主题与帖子只消费该纯 capability，不直接读取启动控制器；冷启动和回前台静默重查共用同一判定。
+客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的升级页。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。
 
 外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。
 
@@ -69,7 +69,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 11. 测试场景与验收条件
 
-- [x] 冷启动兼容检查接受 Markdown v3/v4、拒绝更旧或未知版本；只有 v4 映射编辑器块对齐能力，v3 保持入口隐藏。
+- [x] 冷启动兼容检查接受 Markdown v3/v4/v5、拒绝更旧或未知版本；v4 映射文字块对齐能力，v5 再映射图片块对齐能力，v3 保持入口隐藏。
 - [x] 兼容元信息进入四分支应用壳，游客无需登录。
 - [x] 启动前恢复外观偏好，系统/亮色/黑夜可即时切换；游客公开可达，读写失败回退与重试完整。
 - [x] 亮暗 ThemeData、系统栏、语义 Token 对比度及黑夜外观页具有自动化回归；原生静态启动层保持白色。
@@ -97,7 +97,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.15.0-dev.20260902.1`；Markdown v4；后端 `3f1cbd297f832803661078b1c5193c02a89167f4`；Foundation `v6.8.0`（`196deaf`）。
+契约 `5.15.0-dev.20260902.1`；公网 Markdown v4、客户端兼容 `{3, 4, 5}`；后端 `3f1cbd297f832803661078b1c5193c02a89167f4`；Foundation `v6.8.0`（`196deaf`）。
 
 ## 14. 相关代码与架构文档
 

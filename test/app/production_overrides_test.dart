@@ -44,7 +44,7 @@ void main() {
     }
   });
 
-  test('Markdown v4 单独启用块对齐，v3 保持旧编辑能力', () {
+  test('Markdown v4 启用文字块对齐，v5 再启用图片块对齐', () {
     const v3 = ContractInfo(
       contractVersion: '5.14.0',
       markdownContractVersion: 3,
@@ -55,11 +55,19 @@ void main() {
       markdownContractVersion: 4,
       directMessagesEnabled: true,
     );
+    const v5 = ContractInfo(
+      contractVersion: '5.15.0',
+      markdownContractVersion: 5,
+    );
 
     expect(appCapabilitiesForContract(v3).markdownAlignment, isFalse);
+    expect(appCapabilitiesForContract(v3).markdownImageAlignment, isFalse);
     expect(appCapabilitiesForContract(v3).stickers, isTrue);
     expect(appCapabilitiesForContract(v4).markdownAlignment, isTrue);
+    expect(appCapabilitiesForContract(v4).markdownImageAlignment, isFalse);
     expect(appCapabilitiesForContract(v4).directMessages, isTrue);
+    expect(appCapabilitiesForContract(v5).markdownAlignment, isTrue);
+    expect(appCapabilitiesForContract(v5).markdownImageAlignment, isTrue);
     expect(appCapabilitiesForContract(null).markdownAlignment, isFalse);
   });
 }

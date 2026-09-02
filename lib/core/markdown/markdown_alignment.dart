@@ -66,7 +66,7 @@ final class MarkdownRenderSegment {
   bool get isAligned => alignment != WenyouTextAlignment.left;
 }
 
-/// Shared Markdown v4 block-alignment protocol parser.
+/// Shared Markdown block-alignment protocol parser.
 ///
 /// Only an exact top-level v1 marker immediately followed by a non-empty
 /// paragraph or H2/H3 is consumed. Reserved but invalid markers remain visible
@@ -103,10 +103,15 @@ abstract final class MarkdownAlignmentContract {
   static const _stickerTitlePrefix = 'wenyousite-sticker:v1:';
   static final RegExp _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
 
-  static MarkdownAlignmentAnalysis analyze(String markdown) =>
-      analyzeLines(markdown.split('\n'));
+  static MarkdownAlignmentAnalysis analyze(
+    String markdown, {
+    bool imageAlignment = false,
+  }) => analyzeLines(markdown.split('\n'), imageAlignment: imageAlignment);
 
-  static MarkdownAlignmentAnalysis analyzeLines(List<String> sourceLines) {
+  static MarkdownAlignmentAnalysis analyzeLines(
+    List<String> sourceLines, {
+    bool imageAlignment = false,
+  }) {
     final lines = List<String>.unmodifiable(sourceLines);
     final blocks = <MarkdownAlignmentBlock>[];
     final invalid = <int>{};
@@ -141,7 +146,13 @@ abstract final class MarkdownAlignmentContract {
         continue;
       }
       final target = _targetAt(lines, index + 1);
-      if (target == null || target.hasRegularImage || !target.hasContent) {
+      final hasContent =
+          target?.hasContent == true ||
+          (imageAlignment && target?.hasStickerProtocol == true);
+      if (target == null ||
+          !hasContent ||
+          (target.hasRegularImage &&
+              !(imageAlignment && target.isStandaloneRegularImage))) {
         invalid.add(index);
         continue;
       }
@@ -183,8 +194,18 @@ abstract final class MarkdownAlignmentContract {
     return nodes.any(_hasRegularImage);
   }
 
-  static List<MarkdownRenderSegment> renderSegments(String markdown) {
-    final analysis = analyze(markdown);
+  static bool isStandaloneRegularImage(String markdown) {
+    final node = _parseSingleBlock(markdown.split('\n'));
+    return node is md.Element &&
+        node.tag == 'p' &&
+        _isStandaloneRegularImageNode(node);
+  }
+
+  static List<MarkdownRenderSegment> renderSegments(
+    String markdown, {
+    bool imageAlignment = false,
+  }) {
+    final analysis = analyze(markdown, imageAlignment: imageAlignment);
     if (analysis.blocks.isEmpty) {
       return [MarkdownRenderSegment(markdown: markdown)];
     }
@@ -244,7 +265,9 @@ abstract final class MarkdownAlignmentContract {
             ? MarkdownAlignedBlockKind.heading2
             : MarkdownAlignedBlockKind.heading3,
         hasContent: _hasMeaningfulContent(node),
-        hasRegularImage: _hasRegularImage(node),
+        hasRegularImage: _hasProtocolRegularImage(node),
+        hasStickerProtocol: _hasStickerProtocol(node),
+        isStandaloneRegularImage: false,
       );
     }
 
@@ -256,7 +279,9 @@ abstract final class MarkdownAlignmentContract {
         endLine: start + 1,
         kind: MarkdownAlignedBlockKind.heading2,
         hasContent: _hasMeaningfulContent(node),
-        hasRegularImage: _hasRegularImage(node),
+        hasRegularImage: _hasProtocolRegularImage(node),
+        hasStickerProtocol: _hasStickerProtocol(node),
+        isStandaloneRegularImage: false,
       );
     }
 
@@ -273,11 +298,14 @@ abstract final class MarkdownAlignmentContract {
     if (paragraphLines.any(_hasUnsupportedParagraphSource)) return null;
     final node = _parseSingleBlock(paragraphLines);
     if (node is! md.Element || node.tag != 'p') return null;
+    final isStandaloneRegularImage = _isStandaloneRegularImageNode(node);
     return _AlignmentTarget(
       endLine: end,
       kind: MarkdownAlignedBlockKind.paragraph,
-      hasContent: _hasMeaningfulContent(node),
-      hasRegularImage: _hasRegularImage(node),
+      hasContent: _hasMeaningfulContent(node) || isStandaloneRegularImage,
+      hasRegularImage: _hasProtocolRegularImage(node),
+      hasStickerProtocol: _hasStickerProtocol(node),
+      isStandaloneRegularImage: isStandaloneRegularImage,
     );
   }
 
@@ -420,6 +448,29 @@ abstract final class MarkdownAlignmentContract {
     return node.children?.any(_hasRegularImage) ?? false;
   }
 
+  static bool _hasProtocolRegularImage(md.Node? node) {
+    if (node is! md.Element) return false;
+    if (node.tag == 'img') return !_isStickerProtocolImage(node);
+    return node.children?.any(_hasProtocolRegularImage) ?? false;
+  }
+
+  static bool _hasStickerProtocol(md.Node? node) {
+    if (node is! md.Element) return false;
+    if (_isStickerProtocolImage(node)) return true;
+    return node.children?.any(_hasStickerProtocol) ?? false;
+  }
+
+  static bool _isStandaloneRegularImageNode(md.Element node) {
+    final children = node.children;
+    return children?.length == 1 &&
+        children!.single is md.Element &&
+        (children.single as md.Element).tag == 'img' &&
+        !_isStickerProtocolImage(children.single as md.Element);
+  }
+
+  static bool _isStickerProtocolImage(md.Element node) =>
+      node.attributes['title']?.startsWith(_stickerTitlePrefix) == true;
+
   static bool _hasValidSticker(md.Node node) {
     if (node is! md.Element) return false;
     if (_isValidStickerImage(node)) return true;
@@ -446,12 +497,16 @@ final class _AlignmentTarget {
     required this.kind,
     required this.hasContent,
     required this.hasRegularImage,
+    required this.hasStickerProtocol,
+    required this.isStandaloneRegularImage,
   });
 
   final int endLine;
   final MarkdownAlignedBlockKind kind;
   final bool hasContent;
   final bool hasRegularImage;
+  final bool hasStickerProtocol;
+  final bool isStandaloneRegularImage;
 }
 
 final class _AlignmentFence {

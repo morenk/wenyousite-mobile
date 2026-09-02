@@ -170,18 +170,33 @@ class MarkdownEditorDocument {
   List<MarkdownEditorBlockKind> get blockKinds =>
       List.unmodifiable(blocks.map((block) => block.kind));
 
-  static MarkdownEditorDocument parse(String markdown) {
+  static MarkdownEditorDocument parse(
+    String markdown, {
+    bool imageAlignment = false,
+  }) {
     final prepared = MarkdownEmptyParagraphs.prepareForLineEditor(markdown);
-    return parsePrepared(MarkdownContent.normalize(prepared));
+    return parsePrepared(
+      MarkdownContent.normalize(prepared),
+      imageAlignment: imageAlignment,
+    );
   }
 
-  static MarkdownEditorDocument parsePrepared(String source) {
+  static MarkdownEditorDocument parsePrepared(
+    String source, {
+    bool imageAlignment = false,
+  }) {
     if (source.isEmpty) {
       return const MarkdownEditorDocument._(blocks: [], trailingBlankLines: 0);
     }
     final lines = source.split('\n');
-    final literalLines = MarkdownContent.unsupportedLineIndexes(source);
-    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(lines);
+    final literalLines = MarkdownContent.unsupportedLineIndexes(
+      source,
+      imageAlignment: imageAlignment,
+    );
+    final alignmentAnalysis = MarkdownAlignmentContract.analyzeLines(
+      lines,
+      imageAlignment: imageAlignment,
+    );
     final validAlignmentMarkers = alignmentAnalysis.validMarkerLines;
     final blocks = <MarkdownEditorBlock>[];
     var pendingBlankLines = 0;

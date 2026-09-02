@@ -252,6 +252,7 @@ AppCapabilities appCapabilitiesForContract(ContractInfo? contract) {
     stickers: contract?.stickersEnabled ?? false,
     directMessages: contract?.directMessagesEnabled ?? false,
     pushNotifications: contract?.pushNotificationsEnabled ?? false,
-    markdownAlignment: contract?.markdownContractVersion == 4,
+    markdownAlignment: (contract?.markdownContractVersion ?? 0) >= 4,
+    markdownImageAlignment: (contract?.markdownContractVersion ?? 0) >= 5,
   );
 }

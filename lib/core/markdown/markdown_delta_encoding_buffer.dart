@@ -2,9 +2,12 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 
-/// Writes already-encoded Markdown lines while enforcing the v4 alignment
+/// Writes already-encoded Markdown lines while enforcing the alignment
 /// marker rules across physical Quill lines that form one Markdown paragraph.
 final class MarkdownDeltaEncodingBuffer {
+  MarkdownDeltaEncodingBuffer({this.imageAlignment = false});
+
+  final bool imageAlignment;
   final StringBuffer output = StringBuffer();
 
   WenyouTextAlignment? _openParagraphAlignment;
@@ -34,12 +37,16 @@ final class MarkdownDeltaEncodingBuffer {
     final hasRegularImage =
         hasContent &&
         MarkdownAlignmentContract.containsRegularImage(encodedLine);
+    final isStandaloneRegularImage =
+        hasRegularImage &&
+        MarkdownAlignmentContract.isStandaloneRegularImage(encodedLine);
     final isParagraphShape = hasContent && !isHeading && !isExcludedBlock;
 
     if (alignment != WenyouTextAlignment.left &&
         (!hasContent ||
             isExcludedBlock ||
-            hasRegularImage ||
+            (hasRegularImage &&
+                !(imageAlignment && isStandaloneRegularImage)) ||
             (header != null && !isHeading))) {
       throw const MarkdownCodecException('当前正文块不能使用对齐格式');
     }
@@ -55,7 +62,8 @@ final class MarkdownDeltaEncodingBuffer {
     } else if (isParagraphShape) {
       if (_previousLineWasParagraphShape &&
           (hasRegularImage || _openParagraphHasRegularImage) &&
-          alignment != WenyouTextAlignment.left) {
+          (alignment != WenyouTextAlignment.left ||
+              _openParagraphAlignment != WenyouTextAlignment.left)) {
         throw const MarkdownCodecException('包含普通图片的段落不能使用对齐格式');
       }
       if (_previousLineWasParagraphShape) {

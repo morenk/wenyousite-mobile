@@ -30,11 +30,15 @@ void repairEditorTrailingNewlineAlignment({
 
 /// Keeps locally typed Quill lines inside the Markdown paragraph-alignment
 /// contract before the editor session attempts serialization.
-void normalizeEditorDocumentAlignment(QuillController controller) {
+void normalizeEditorDocumentAlignment(
+  QuillController controller, {
+  bool imageAlignment = false,
+}) {
   final alignmentPatch = MarkdownDeltaAlignment.sanitize(
     controller.document.toDelta(),
     imageEmbed: MarkdownDeltaCodec.imageEmbed,
     horizontalRuleEmbed: MarkdownDeltaCodec.horizontalRuleEmbed,
+    imageAlignment: imageAlignment,
   );
   if (alignmentPatch.isNotEmpty) {
     controller.document.compose(alignmentPatch, ChangeSource.local);

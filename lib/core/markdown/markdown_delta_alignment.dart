@@ -10,6 +10,7 @@ abstract final class MarkdownDeltaAlignment {
     required int end,
     required String imageEmbed,
     required String horizontalRuleEmbed,
+    bool imageAlignment = false,
   }) {
     final blocks = _selectedBlocks(
       delta,
@@ -17,6 +18,7 @@ abstract final class MarkdownDeltaAlignment {
       end: end,
       imageEmbed: imageEmbed,
       horizontalRuleEmbed: horizontalRuleEmbed,
+      imageAlignment: imageAlignment,
     );
     if (blocks.isEmpty) {
       return const MarkdownAlignmentSelectionState.unavailable();
@@ -37,6 +39,7 @@ abstract final class MarkdownDeltaAlignment {
     required int end,
     required String imageEmbed,
     required String horizontalRuleEmbed,
+    bool imageAlignment = false,
   }) {
     return selectionState(
           delta,
@@ -44,6 +47,7 @@ abstract final class MarkdownDeltaAlignment {
           end: end,
           imageEmbed: imageEmbed,
           horizontalRuleEmbed: horizontalRuleEmbed,
+          imageAlignment: imageAlignment,
         ).alignment ??
         WenyouTextAlignment.left;
   }
@@ -55,6 +59,7 @@ abstract final class MarkdownDeltaAlignment {
     required WenyouTextAlignment alignment,
     required String imageEmbed,
     required String horizontalRuleEmbed,
+    bool imageAlignment = false,
   }) {
     final blocks = _selectedBlocks(
       delta,
@@ -62,6 +67,7 @@ abstract final class MarkdownDeltaAlignment {
       end: end,
       imageEmbed: imageEmbed,
       horizontalRuleEmbed: horizontalRuleEmbed,
+      imageAlignment: imageAlignment,
     );
     if (blocks.isEmpty) return Delta();
     return _attributePatch([
@@ -75,6 +81,7 @@ abstract final class MarkdownDeltaAlignment {
     required int end,
     required String imageEmbed,
     required String horizontalRuleEmbed,
+    bool imageAlignment = false,
   }) {
     final state = selectionState(
       delta,
@@ -82,6 +89,7 @@ abstract final class MarkdownDeltaAlignment {
       end: end,
       imageEmbed: imageEmbed,
       horizontalRuleEmbed: horizontalRuleEmbed,
+      imageAlignment: imageAlignment,
     );
     if (!state.canApply) return Delta();
     final current = state.alignment ?? WenyouTextAlignment.left;
@@ -97,6 +105,7 @@ abstract final class MarkdownDeltaAlignment {
       alignment: next,
       imageEmbed: imageEmbed,
       horizontalRuleEmbed: horizontalRuleEmbed,
+      imageAlignment: imageAlignment,
     );
   }
 
@@ -143,9 +152,9 @@ abstract final class MarkdownDeltaAlignment {
     if (afterLines.length != beforeLines.length + 1) return Delta();
     final previousLine = afterLines[afterLines.length - 2];
     final pendingLine = afterLines.last;
-    if (!beforeLines.last.isEligibleParagraphLine ||
+    if (!beforeLines.last.isEligibleTextParagraphLine ||
         beforeLines.last.alignment == WenyouTextAlignment.left ||
-        !previousLine.isEligibleParagraphLine ||
+        !previousLine.isEligibleTextParagraphLine ||
         previousLine.alignment != beforeLines.last.alignment ||
         !pendingLine.isTrailingEmptyLine ||
         pendingLine.alignment != WenyouTextAlignment.left) {
@@ -162,6 +171,7 @@ abstract final class MarkdownDeltaAlignment {
     Delta delta, {
     required String imageEmbed,
     required String horizontalRuleEmbed,
+    bool imageAlignment = false,
   }) {
     final lines = _readLines(
       delta,
@@ -176,7 +186,7 @@ abstract final class MarkdownDeltaAlignment {
       final last = paragraph.last;
       final valid = paragraph.every(
         (line) =>
-            line.isEligibleParagraphLine ||
+            line.isEligibleParagraphLine(imageAlignment: imageAlignment) ||
             (identical(line, last) && line.isTrailingEmptyLine),
       );
       final stored = paragraph.map((line) => line.alignment).toSet();
@@ -190,6 +200,11 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
+      if (imageAlignment && line.isStandaloneRegularImage) {
+        flushParagraph();
+        desired[line] = line.alignment;
+        continue;
+      }
       final joinsTrailingEmptyLine =
           line.isTrailingEmptyLine &&
           paragraph.isNotEmpty &&
@@ -224,6 +239,7 @@ abstract final class MarkdownDeltaAlignment {
     required int end,
     required String imageEmbed,
     required String horizontalRuleEmbed,
+    required bool imageAlignment,
   }) {
     final lines = _readLines(
       delta,
@@ -238,7 +254,7 @@ abstract final class MarkdownDeltaAlignment {
       final last = paragraph.last;
       if (paragraph.every(
         (line) =>
-            line.isEligibleParagraphLine ||
+            line.isEligibleParagraphLine(imageAlignment: imageAlignment) ||
             (identical(line, last) && line.isTrailingEmptyLine),
       )) {
         blocks.add(_AlignmentBlock(List.unmodifiable(paragraph)));
@@ -247,6 +263,11 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
+      if (imageAlignment && line.isStandaloneRegularImage) {
+        flushParagraph();
+        blocks.add(_AlignmentBlock([line]));
+        continue;
+      }
       final joinsTrailingEmptyLine =
           line.isTrailingEmptyLine &&
           paragraph.isNotEmpty &&
@@ -306,7 +327,9 @@ abstract final class MarkdownDeltaAlignment {
     var documentOffset = 0;
     var lineStart = 0;
     var hasMeaningfulContent = false;
+    var hasNonImageContent = false;
     var hasRegularImage = false;
+    var regularImageCount = 0;
     var hasHorizontalRule = false;
 
     void finishLine(Map<String, dynamic>? attributes) {
@@ -315,14 +338,18 @@ abstract final class MarkdownDeltaAlignment {
           startOffset: lineStart,
           newlineOffset: documentOffset,
           hasMeaningfulContent: hasMeaningfulContent,
+          hasNonImageContent: hasNonImageContent,
           hasRegularImage: hasRegularImage,
+          regularImageCount: regularImageCount,
           hasHorizontalRule: hasHorizontalRule,
           attributes: Map.unmodifiable(attributes ?? const {}),
         ),
       );
       lineStart = documentOffset + 1;
       hasMeaningfulContent = false;
+      hasNonImageContent = false;
       hasRegularImage = false;
+      regularImageCount = 0;
       hasHorizontalRule = false;
     }
 
@@ -334,6 +361,7 @@ abstract final class MarkdownDeltaAlignment {
           if (data[index] != '\n') continue;
           if (data.substring(segmentStart, index).trim().isNotEmpty) {
             hasMeaningfulContent = true;
+            hasNonImageContent = true;
           }
           documentOffset += index - segmentStart;
           finishLine(operation.attributes);
@@ -343,6 +371,7 @@ abstract final class MarkdownDeltaAlignment {
         if (segmentStart < data.length) {
           if (data.substring(segmentStart).trim().isNotEmpty) {
             hasMeaningfulContent = true;
+            hasNonImageContent = true;
           }
           documentOffset += data.length - segmentStart;
         }
@@ -351,10 +380,14 @@ abstract final class MarkdownDeltaAlignment {
 
       if (data is Map) {
         final embed = Map<String, dynamic>.from(data);
-        hasRegularImage = hasRegularImage || embed.containsKey(imageEmbed);
+        final isRegularImage = embed.containsKey(imageEmbed);
+        hasRegularImage = hasRegularImage || isRegularImage;
+        if (isRegularImage) regularImageCount += 1;
         hasHorizontalRule =
             hasHorizontalRule || embed.containsKey(horizontalRuleEmbed);
         hasMeaningfulContent = hasMeaningfulContent || !hasHorizontalRule;
+        hasNonImageContent =
+            hasNonImageContent || (!isRegularImage && !hasHorizontalRule);
       }
       documentOffset += operation.length ?? 0;
     }
@@ -381,7 +414,9 @@ final class _DeltaLine {
     required this.startOffset,
     required this.newlineOffset,
     required this.hasMeaningfulContent,
+    required this.hasNonImageContent,
     required this.hasRegularImage,
+    required this.regularImageCount,
     required this.hasHorizontalRule,
     required this.attributes,
   });
@@ -389,7 +424,9 @@ final class _DeltaLine {
   final int startOffset;
   final int newlineOffset;
   final bool hasMeaningfulContent;
+  final bool hasNonImageContent;
   final bool hasRegularImage;
+  final int regularImageCount;
   final bool hasHorizontalRule;
   final Map<String, dynamic> attributes;
 
@@ -412,8 +449,15 @@ final class _DeltaLine {
       !hasHorizontalRule &&
       (hasMeaningfulContent || hasRegularImage);
 
-  bool get isEligibleParagraphLine =>
+  bool get isEligibleTextParagraphLine =>
       isParagraphShape && hasMeaningfulContent && !hasRegularImage;
+
+  bool get isStandaloneRegularImage =>
+      isParagraphShape && regularImageCount == 1 && !hasNonImageContent;
+
+  bool isEligibleParagraphLine({required bool imageAlignment}) =>
+      isEligibleTextParagraphLine ||
+      (imageAlignment && isStandaloneRegularImage);
 
   bool get isEligibleHeading =>
       (attributes['header'] == 2 || attributes['header'] == 3) &&

@@ -217,7 +217,7 @@ void main() {
     );
   });
 
-  test('列表转换清除对齐，普通图片块不响应对齐切换', () {
+  test('列表转换清除对齐，普通图片块仅在 v5 响应对齐切换', () {
     final paragraph = _selectedController();
     addTearDown(paragraph.dispose);
     WenyouEditorFormatPolicy.applyAlignment(
@@ -243,6 +243,18 @@ void main() {
     expect(imageSelection.alignment, isNull);
     WenyouEditorFormatPolicy.applyAlignment(image, WenyouTextAlignment.center);
     expect(image.document.toDelta().toJson(), before);
+
+    final v5Selection = WenyouEditorFormatPolicy.alignmentSelection(
+      image,
+      imageAlignment: true,
+    );
+    expect(v5Selection.canApply, isTrue);
+    WenyouEditorFormatPolicy.applyAlignment(
+      image,
+      WenyouTextAlignment.center,
+      imageAlignment: true,
+    );
+    expect(_lineAttributes(image)['align'], 'center');
   });
 
   test('混合对齐选区不预选分段但仍可直接统一目标方向', () {

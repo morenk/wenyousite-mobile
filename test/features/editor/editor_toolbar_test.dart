@@ -1046,6 +1046,49 @@ void main() {
     expect(alignment.isSelected, isTrue);
   });
 
+  testWidgets('Markdown v5 独立图片可从更多面板设置对齐', (tester) async {
+    final controller = QuillController(
+      document: Document.fromDelta(
+        MarkdownDeltaCodec.decode(
+          '![图片](https://cdn.example.com/image.webp)',
+          imageAlignment: true,
+        ).delta,
+      ),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: WenyouEditorToolbar(
+            controller: controller,
+            enabled: true,
+            capabilities:
+                WenyouEditorCapabilities.richMarkdownWithImageAlignment,
+            onInsertImage: () async {},
+            onSaveDraft: () async {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('editor-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('居中'));
+    await tester.pumpAndSettle();
+
+    expect(
+      MarkdownDeltaCodec.encode(
+        controller.document.toDelta(),
+        imageAlignment: true,
+      ),
+      '[wenyousite-align-v1-center]: #\n'
+      '![图片](https://cdn.example.com/image.webp)',
+    );
+  });
+
   for (final scenario in [
     (name: 'light', theme: AppTheme.light),
     (name: 'dark', theme: AppTheme.dark),

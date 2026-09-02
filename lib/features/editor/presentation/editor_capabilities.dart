@@ -9,6 +9,7 @@ class WenyouEditorCapabilities {
     this.links = true,
     this.blockStyles = true,
     this.alignment = false,
+    this.imageAlignment = false,
     this.dice = true,
     this.stickers = true,
     this.drafts = true,
@@ -18,9 +19,19 @@ class WenyouEditorCapabilities {
   static const richMarkdownWithAlignment = WenyouEditorCapabilities(
     alignment: true,
   );
+  static const richMarkdownWithImageAlignment = WenyouEditorCapabilities(
+    alignment: true,
+    imageAlignment: true,
+  );
 
-  static WenyouEditorCapabilities forAlignment(bool enabled) =>
-      enabled ? richMarkdownWithAlignment : richMarkdown;
+  static WenyouEditorCapabilities forAlignment(
+    bool enabled, {
+    bool imageAlignment = false,
+  }) => !enabled
+      ? richMarkdown
+      : imageAlignment
+      ? richMarkdownWithImageAlignment
+      : richMarkdownWithAlignment;
 
   final bool headings;
   final bool inlineStyles;
@@ -28,6 +39,7 @@ class WenyouEditorCapabilities {
   final bool links;
   final bool blockStyles;
   final bool alignment;
+  final bool imageAlignment;
   final bool dice;
   final bool stickers;
   final bool drafts;

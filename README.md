@@ -11,7 +11,7 @@
 - Dio：请求追踪、双 Token 刷新锁、安全重试与上传
 - OpenAPI Generator `dart-dio`：固定契约客户端，输出在 `packages/wenyou_api`
 - Drift：完整 Markdown 编辑快照和待确认幂等创建操作
-- Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存 Markdown v4
+- Flutter Quill：仅作为内存编辑模型；后端、云草稿和本地快照始终保存服务端声明版本的完整 Markdown；客户端兼容 v3/v4/v5
 - flutter_secure_storage：Access/Refresh Token 单记录原子替换
 - wenyousite-foundation v6.8.0：跨端品牌资源、语义 Token、元素系统、图标注册表、三角色自托管字体、移动 profile 与编辑器体验契约
 - WenyouThemeTokens：Foundation 常量到 Flutter ThemeExtension 的轻量适配层

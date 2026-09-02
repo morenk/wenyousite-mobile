@@ -432,6 +432,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
           ),
           alignmentSelection: WenyouEditorFormatPolicy.alignmentSelection(
             widget.controller,
+            imageAlignment: widget.capabilities.imageAlignment,
           ),
           onLink: _openLinkTray,
           onInlineCode: () =>
@@ -445,6 +446,7 @@ class _WenyouEditorToolbarState extends State<WenyouEditorToolbar> {
             () => WenyouEditorFormatPolicy.applyAlignment(
               widget.controller,
               alignment,
+              imageAlignment: widget.capabilities.imageAlignment,
             ),
           ),
           onHorizontalRule: () => _runInsertionAction(_insertHorizontalRule),

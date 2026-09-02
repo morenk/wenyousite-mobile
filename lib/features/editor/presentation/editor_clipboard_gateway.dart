@@ -16,6 +16,34 @@ abstract interface class EditorClipboardGateway {
   Future<void> write({required String text, required String marker});
 }
 
+class CallbackEditorClipboardGateway implements EditorClipboardGateway {
+  CallbackEditorClipboardGateway({
+    required this.readCallback,
+    required this.writeCallback,
+  });
+
+  final Future<String?> Function() readCallback;
+  final Future<void> Function(String text) writeCallback;
+  String? _lastWrittenText;
+  String? _lastMarker;
+
+  @override
+  Future<EditorClipboardSnapshot> read() async {
+    final text = await readCallback();
+    return EditorClipboardSnapshot(
+      text: text,
+      marker: text == _lastWrittenText ? _lastMarker : null,
+    );
+  }
+
+  @override
+  Future<void> write({required String text, required String marker}) async {
+    await writeCallback(text);
+    _lastWrittenText = text;
+    _lastMarker = marker;
+  }
+}
+
 class PlatformEditorClipboardGateway implements EditorClipboardGateway {
   const PlatformEditorClipboardGateway();
 

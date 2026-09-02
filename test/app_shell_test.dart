@@ -212,7 +212,7 @@ void main() {
     expect(find.text('首页'), findsNothing);
   });
 
-  testWidgets('Markdown v4 可启动，未知 Markdown 版本显示升级页', (tester) async {
+  testWidgets('Markdown v4/v5 可启动，未知 Markdown 版本显示升级页', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -238,6 +238,24 @@ void main() {
             _FixedMetaRepository(
               contractVersion: '5.14.0',
               markdownContractVersion: 5,
+            ),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.15.0',
+              markdownContractVersion: 6,
             ),
           ),
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),

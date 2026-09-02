@@ -6,12 +6,14 @@ class AppCapabilities {
     this.directMessages = false,
     this.pushNotifications = false,
     this.markdownAlignment = false,
+    this.markdownImageAlignment = false,
   });
 
   final bool stickers;
   final bool directMessages;
   final bool pushNotifications;
   final bool markdownAlignment;
+  final bool markdownImageAlignment;
 }
 
 /// Application composition supplies the server-advertised capability set.

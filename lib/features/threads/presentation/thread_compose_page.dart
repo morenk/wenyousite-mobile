@@ -58,6 +58,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     _editorSession = RichEditorSession(
       initialMarkdown: '',
       clipboardScope: ref.read(sessionScopeProvider),
+      imageAlignment: ref.read(appCapabilitiesProvider).markdownImageAlignment,
       onMarkdownChanged: (markdown) {
         ref.read(threadComposeControllerProvider.notifier).updateBody(markdown);
         ref
@@ -336,6 +337,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                       (capabilities) => capabilities.markdownAlignment,
                     ),
                   ),
+                  imageAlignment: _editorSession.imageAlignment,
                 ),
                 surface: WenyouComposerSurface.page,
                 enabled: enabled,

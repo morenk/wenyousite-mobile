@@ -263,6 +263,52 @@ void main() {
   });
 
   group('移动编辑器结构复制保持块对齐', () {
+    testWidgets('v5 独立图片块复制粘贴保留对齐', (tester) async {
+      const markdown =
+          '[wenyousite-align-v1-center]: #\n'
+          '![图片](https://cdn.example.com/image.webp)';
+      final gateway = _MemoryClipboardGateway();
+      final store = WenyouEditorClipboardStore();
+      const scope = SessionScope(accountId: 'account', generation: 5);
+      final source = RichEditorSession(
+        initialMarkdown: markdown,
+        onMarkdownChanged: (_) {},
+        clipboardScope: scope,
+        clipboardGateway: gateway,
+        clipboardStore: store,
+        imageAlignment: true,
+      );
+      addTearDown(source.dispose);
+      source.controller.updateSelection(
+        TextSelection(
+          baseOffset: 0,
+          extentOffset: source.controller.document.length - 1,
+        ),
+        ChangeSource.local,
+      );
+
+      expect(await source.copySelection(), isTrue);
+      expect(gateway.snapshot.text, '[图片]');
+
+      final target = RichEditorSession(
+        initialMarkdown: '',
+        onMarkdownChanged: (_) {},
+        clipboardScope: scope,
+        clipboardGateway: gateway,
+        clipboardStore: store,
+        imageAlignment: true,
+      );
+      addTearDown(target.dispose);
+      expect(await target.controller.clipboardPaste(), isTrue);
+      expect(
+        MarkdownDeltaCodec.encode(
+          target.controller.document.toDelta(),
+          imageAlignment: true,
+        ),
+        markdown,
+      );
+    });
+
     for (final alignment in const ['center', 'right']) {
       testWidgets('$alignment 单段全选复制粘贴保留终止换行属性', (tester) async {
         final gateway = _MemoryClipboardGateway();

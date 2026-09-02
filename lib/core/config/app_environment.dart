@@ -2,7 +2,7 @@ class AppEnvironment {
   const AppEnvironment({
     required this.apiBaseUrl,
     this.supportedContractMajor = 5,
-    this.supportedMarkdownContractVersions = const {3, 4},
+    this.supportedMarkdownContractVersions = const {3, 4, 5},
   });
 
   factory AppEnvironment.fromDefines() {
@@ -18,7 +18,7 @@ class AppEnvironment {
   final int supportedContractMajor;
   final Set<int> supportedMarkdownContractVersions;
 
-  int get supportedMarkdownContractVersion => 4;
+  int get supportedMarkdownContractVersion => 5;
 
   Uri get apiBaseUri {
     final uri = Uri.parse(apiBaseUrl);

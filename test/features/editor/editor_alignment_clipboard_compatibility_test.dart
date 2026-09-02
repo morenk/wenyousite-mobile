@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/features/editor/presentation/editor_site_clipb
 
 void main() {
   const parser = WenyouSiteClipboardParser();
+  const v5Parser = WenyouSiteClipboardParser(imageAlignment: true);
 
   group('clipboard v2 顶层对齐白名单', () {
     for (final source in const ['reader', 'editor']) {
@@ -140,7 +141,7 @@ void main() {
       expect(markdown, contains(r'\[表情\]'));
     });
 
-    test('editor 的合法 sticker 原子可继承居右，普通图片仍清除', () {
+    test('editor 的合法 sticker 原子可继承居右，v4 普通图片仍清除', () {
       final sticker = parser.parse(
         _envelope(
           version: 2,
@@ -170,6 +171,38 @@ void main() {
       );
       expect(
         MarkdownDeltaCodec.encode(image!),
+        isNot(contains('wenyousite-align')),
+      );
+    });
+
+    test('v5 editor 独立图片块保留对齐，混排图片仍清除', () {
+      final image = v5Parser.parse(
+        _envelope(
+          version: 2,
+          source: 'editor',
+          body:
+              '<img data-type="image-block" data-wenyou-align="center" '
+              'src="https://cdn.example.com/a.png" alt="图片">',
+        ),
+      );
+      final mixed = v5Parser.parse(
+        _envelope(
+          version: 2,
+          source: 'editor',
+          body:
+              '<p data-wenyou-align="right">正文 '
+              '<img data-type="image-block" '
+              'src="https://cdn.example.com/a.png" alt="图片"></p>',
+        ),
+      );
+
+      expect(
+        MarkdownDeltaCodec.encode(image!, imageAlignment: true),
+        '[wenyousite-align-v1-center]: #\n'
+        '![1.00](https://cdn.example.com/a.png)',
+      );
+      expect(
+        MarkdownDeltaCodec.encode(mixed!, imageAlignment: true),
         isNot(contains('wenyousite-align')),
       );
     });

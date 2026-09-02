@@ -145,6 +145,32 @@ void main() {
     expect(tester.widget<RichText>(rightFinder).textAlign, TextAlign.end);
   });
 
+  testWidgets('Markdown v5 独立图片块按 marker 设置实际容器方向', (tester) async {
+    const url = 'https://cdn.example.com/image.webp';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouMarkdown(
+            data:
+                '[wenyousite-align-v1-right]: #\n'
+                '![图片]($url)',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final row = tester.widget<SizedBox>(
+      find.byKey(const ValueKey('markdown-block-image-row-$url')),
+    );
+    expect((row.child! as Align).alignment, AlignmentDirectional.centerEnd);
+    expect(
+      find.textContaining('wenyousite-align-v1-right', findRichText: true),
+      findsNothing,
+    );
+  });
+
   testWidgets('非法保留 marker 必须作为可见正文降级，不能静默隐藏', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

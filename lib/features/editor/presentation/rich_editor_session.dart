@@ -46,6 +46,7 @@ class RichEditorSession extends ChangeNotifier {
     this.codecDebounce = const Duration(milliseconds: 120),
     this.maximumSerializedLength = 10000,
     this.clipboardScope,
+    this.imageAlignment = false,
     EditorClipboardGateway? clipboardGateway,
     Future<String?> Function()? readClipboardText,
     Future<void> Function(String text)? writeClipboardText,
@@ -58,8 +59,12 @@ class RichEditorSession extends ChangeNotifier {
            _legacyClipboardGateway(readClipboardText, writeClipboardText),
        _clipboardStore = clipboardStore ?? wenyouEditorClipboardStore {
     _siteClipboardParser =
-        siteClipboardParser ?? const WenyouSiteClipboardParser();
-    final decoded = MarkdownDeltaCodec.decode(initialMarkdown);
+        siteClipboardParser ??
+        WenyouSiteClipboardParser(imageAlignment: imageAlignment);
+    final decoded = MarkdownDeltaCodec.decode(
+      initialMarkdown,
+      imageAlignment: imageAlignment,
+    );
     _issues = decoded.issues;
     _lastMarkdown = initialMarkdown;
     _serializedLength = initialMarkdown.length;
@@ -80,6 +85,7 @@ class RichEditorSession extends ChangeNotifier {
   final Duration codecDebounce;
   final int maximumSerializedLength;
   final Object? clipboardScope;
+  final bool imageAlignment;
   final ValueChanged<String> onMarkdownChanged;
   final EditorClipboardGateway _clipboardGateway;
   final WenyouEditorClipboardStore _clipboardStore;
@@ -298,7 +304,10 @@ class RichEditorSession extends ChangeNotifier {
     _applyingDocument = true;
     _documentGeneration += 1;
     try {
-      final decoded = MarkdownDeltaCodec.decode(markdown);
+      final decoded = MarkdownDeltaCodec.decode(
+        markdown,
+        imageAlignment: imageAlignment,
+      );
       final previousSelection = controller.selection;
       final document = Document.fromDelta(decoded.delta);
       unawaited(_documentChanges?.cancel());
@@ -338,7 +347,10 @@ class RichEditorSession extends ChangeNotifier {
     _codecTimer?.cancel();
     _codecTimer = null;
     try {
-      final markdown = MarkdownDeltaCodec.encode(controller.document.toDelta());
+      final markdown = MarkdownDeltaCodec.encode(
+        controller.document.toDelta(),
+        imageAlignment: imageAlignment,
+      );
       _serializedLength = markdown.length;
       if (_serializedLength > maximumSerializedLength) {
         _setOperationFailure(
@@ -572,7 +584,10 @@ class RichEditorSession extends ChangeNotifier {
     if (candidateMetadataPatch.isNotEmpty) {
       candidate.compose(candidateMetadataPatch, ChangeSource.local);
     }
-    final encoded = MarkdownDeltaCodec.encode(candidate.toDelta());
+    final encoded = MarkdownDeltaCodec.encode(
+      candidate.toDelta(),
+      imageAlignment: imageAlignment,
+    );
     if (encoded.length > maximumSerializedLength) {
       _serializedLength = encoded.length;
       _setOperationFailure(
@@ -675,14 +690,20 @@ class RichEditorSession extends ChangeNotifier {
     if (_applyingDocument || _disposed) return;
     _applyingDocument = true;
     try {
-      normalizeEditorDocumentAlignment(controller);
+      normalizeEditorDocumentAlignment(
+        controller,
+        imageAlignment: imageAlignment,
+      );
     } finally {
       _applyingDocument = false;
     }
     _dirty = true;
     _operationFailure = null;
     try {
-      if (MarkdownDeltaCodec.encode(controller.document.toDelta()) ==
+      if (MarkdownDeltaCodec.encode(
+            controller.document.toDelta(),
+            imageAlignment: imageAlignment,
+          ) ==
           _lastMarkdown) {
         _dirty = false;
         _codecTimer?.cancel();
@@ -744,7 +765,7 @@ class RichEditorSession extends ChangeNotifier {
     if (read == null && write == null) {
       return const PlatformEditorClipboardGateway();
     }
-    return _CallbackEditorClipboardGateway(
+    return CallbackEditorClipboardGateway(
       readCallback: read ?? _readSystemClipboardText,
       writeCallback: write ?? _writeSystemClipboardText,
     );
@@ -861,34 +882,6 @@ class _LiteralTextQuillController extends QuillController {
     ),
     _ => false,
   };
-}
-
-class _CallbackEditorClipboardGateway implements EditorClipboardGateway {
-  _CallbackEditorClipboardGateway({
-    required this.readCallback,
-    required this.writeCallback,
-  });
-
-  final Future<String?> Function() readCallback;
-  final Future<void> Function(String text) writeCallback;
-  String? _lastWrittenText;
-  String? _lastMarker;
-
-  @override
-  Future<EditorClipboardSnapshot> read() async {
-    final text = await readCallback();
-    return EditorClipboardSnapshot(
-      text: text,
-      marker: text == _lastWrittenText ? _lastMarker : null,
-    );
-  }
-
-  @override
-  Future<void> write({required String text, required String marker}) async {
-    await writeCallback(text);
-    _lastWrittenText = text;
-    _lastMarker = marker;
-  }
 }
 
 enum WenyouEditorClipboardAction { copy, cut, paste }
