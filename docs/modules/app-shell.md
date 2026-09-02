@@ -97,7 +97,7 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.15.0-dev.20260902.1`；Markdown v4；后端 `6519812efff84bafacfff28c3c2628dfcd14304e`；Foundation `v6.8.0`（`196deaf`）。
+契约 `5.15.0-dev.20260902.1`；Markdown v4；后端 `75669f22a088e1b84dea818eb1fda8682456d5fb`；Foundation `v6.8.0`（`196deaf`）。
 
 ## 14. 相关代码与架构文档
 
