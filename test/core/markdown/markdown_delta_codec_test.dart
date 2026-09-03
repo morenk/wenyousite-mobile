@@ -8,6 +8,44 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 
 void main() {
+  test('行内样式以空格相邻时不泄露 Markdown 定界符', () {
+    final styles = <Map<String, dynamic>>[
+      for (var mask = 1; mask < 16; mask++)
+        {
+          if (mask & 1 != 0) 'bold': true,
+          if (mask & 2 != 0) 'italic': true,
+          if (mask & 4 != 0) 'strike': true,
+          if (mask & 8 != 0) 'link': 'https://wenyou.site/help',
+        },
+      {'code': true},
+    ];
+    final failures = <String>[];
+
+    for (final boundary in const [('甲 ', '乙'), ('甲', ' 乙')]) {
+      for (final leading in styles) {
+        for (final trailing in styles) {
+          final delta = Delta()
+            ..insert(boundary.$1, leading)
+            ..insert(boundary.$2, trailing)
+            ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+          final markdown = MarkdownDeltaCodec.encode(delta);
+          final reopened = MarkdownDeltaCodec.decode(markdown).delta;
+          final visible = reopened.operations
+              .map((operation) => operation.data)
+              .join();
+          final reencoded = MarkdownDeltaCodec.encode(reopened);
+          if (visible != '甲 乙\n' || reencoded != markdown) {
+            failures.add(
+              '${boundary.$1}|${boundary.$2} $leading -> $trailing: '
+              '$markdown => $visible / $reencoded',
+            );
+          }
+        }
+      }
+    }
+    expect(failures, isEmpty);
+  });
+
   final editorRoundTripContract =
       jsonDecode(
             File(

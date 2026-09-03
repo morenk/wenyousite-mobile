@@ -126,6 +126,7 @@ class PostComposerEditorRegion extends StatelessWidget {
                             scrollable: true,
                             expands: true,
                             autoFocus: true,
+                            paintCursorAboveText: true,
                             padding: EdgeInsets.all(tokens.space16),
                             placeholder: placeholder,
                             customStyles: wenyouEditorTextStyles(context),

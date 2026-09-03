@@ -296,6 +296,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                         config: QuillEditorConfig(
                           scrollable: true,
                           expands: true,
+                          paintCursorAboveText: true,
                           padding: EdgeInsets.fromLTRB(
                             horizontalPadding,
                             tokens.space16,

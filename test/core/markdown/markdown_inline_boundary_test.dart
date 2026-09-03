@@ -82,6 +82,48 @@ void main() {
     );
   });
 
+  test('粗体尾随的单个分隔空格移到闭合定界符外', () {
+    const malformed = '**粗体 **`代码`';
+    const canonical = '**粗体** `代码`';
+
+    expect(MarkdownInlineBoundary.canonicalize(malformed), canonical);
+    expect(MarkdownInlineBoundary.canonicalize(canonical), canonical);
+    for (final source in const ['**粗体  **`代码`', '**粗体 **`未闭合', '*斜体 *`代码`']) {
+      expect(MarkdownInlineBoundary.canonicalize(source), source);
+    }
+
+    final authored = Delta()
+      ..insert('粗体 ', {'bold': true})
+      ..insert('代码', {'code': true})
+      ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
+    expect(MarkdownDeltaCodec.encode(authored), canonical);
+
+    final document = MarkdownDeltaCodec.decode(malformed);
+    expect(
+      document.delta.operations.where((operation) => operation.data != '\n'),
+      containsAllInOrder([
+        isA<Operation>()
+            .having((operation) => operation.data, 'text', '粗体')
+            .having(
+              (operation) => operation.attributes,
+              'attributes',
+              containsPair('bold', true),
+            ),
+        isA<Operation>()
+            .having((operation) => operation.data, 'text', ' ')
+            .having((operation) => operation.attributes, 'attributes', isNull),
+        isA<Operation>()
+            .having((operation) => operation.data, 'text', '代码')
+            .having(
+              (operation) => operation.attributes,
+              'attributes',
+              containsPair('code', true),
+            ),
+      ]),
+    );
+    expect(MarkdownDeltaCodec.encode(document.delta), canonical);
+  });
+
   test('编辑器恢复链接但不把链接标签中的定界符提升为强调', () {
     const source = '[前**【链接】**后](https://example.com)';
 

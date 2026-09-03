@@ -143,6 +143,30 @@ x****【四星】****y
     expect(_allResolvedRuns(tester).where(_hasEmphasisStyle), isEmpty);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('阅读态恢复粗体尾随空格并保留相邻行内代码', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: WenyouMarkdown(
+            data: '**粗体 **`代码`',
+            enablePlainTextFastPath: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final bold = _allResolvedRuns(
+      tester,
+    ).singleWhere((run) => run.text == '粗体');
+    expect(bold.style.fontWeight, FontWeight.w700);
+    expect(find.byType(WenyouInlineCodeSurface), findsOneWidget);
+    expect(find.text('代码'), findsOneWidget);
+    expect(find.textContaining('**', findRichText: true), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Iterable<({String text, TextStyle style})> _allResolvedRuns(

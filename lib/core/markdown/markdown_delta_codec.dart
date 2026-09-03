@@ -584,9 +584,11 @@ class MarkdownDeltaCodec {
     }
     if (inlineCode) return _inlineCode(value);
 
+    final core = value.trim();
+    if (core.isEmpty) return value;
     var encoded = attributes[literalTextAttribute] == true
-        ? MarkdownContent.literalizeInlineText(value)
-        : value;
+        ? MarkdownContent.literalizeInlineText(core)
+        : core;
     if (link != null) {
       if (link is! String || link.isEmpty) {
         throw const MarkdownCodecException('链接属性不是有效字符串');
@@ -599,12 +601,15 @@ class MarkdownDeltaCodec {
           value.contains(']')) {
         throw const MarkdownCodecException('这个链接暂时无法安全编辑');
       }
-      encoded = '[$encoded]($link)';
+      if (!strike || (!bold && !italic)) encoded = '[$encoded]($link)';
     }
     if (strike) encoded = '~~$encoded~~';
     if (italic) encoded = '*$encoded*';
     if (bold) encoded = '**$encoded**';
-    return encoded;
+    if (link != null && strike && (bold || italic)) {
+      encoded = '[$encoded]($link)';
+    }
+    return value.replaceFirst(core, encoded);
   }
 
   static String _encodeLine(
@@ -826,12 +831,10 @@ class MarkdownDeltaCodec {
   static String? normalizeDiceNotation(String value) =>
       MarkdownDiceContract.normalizeNotation(value);
 
-  static Map<String, dynamic> _payload(Object? value, String type) {
-    if (value is! Map) {
-      throw MarkdownCodecException('$type embed 载荷不是对象');
-    }
-    return Map<String, dynamic>.from(value);
-  }
+  static Map<String, dynamic> _payload(Object? value, String type) =>
+      value is Map
+      ? Map<String, dynamic>.from(value)
+      : throw MarkdownCodecException('$type embed 载荷不是对象');
 
   static String _requiredString(
     Map<String, dynamic> payload,
@@ -859,12 +862,8 @@ class MarkdownDeltaCodec {
     return value;
   }
 
-  static String _plainMarkdownLabel(String value, String type) {
-    if (value.contains(']') || value.contains('\n') || value.contains('\r')) {
-      throw MarkdownCodecException('这类$type内容包含暂不支持的字符');
-    }
-    return value;
-  }
+  static String _plainMarkdownLabel(String value, String type) =>
+      _markdownLabel(value, type, allowAtPrefix: true);
 
   static String _stableId(String value, String type) {
     if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value)) {
@@ -884,12 +883,10 @@ class MarkdownDeltaCodec {
     return value;
   }
 
-  static String _unwrapAngleUrl(String value) {
-    if (value.startsWith('<') && value.endsWith('>')) {
-      return value.substring(1, value.length - 1);
-    }
-    return value;
-  }
+  static String _unwrapAngleUrl(String value) =>
+      value.startsWith('<') && value.endsWith('>')
+      ? value.substring(1, value.length - 1)
+      : value;
 }
 
 class _Fence {

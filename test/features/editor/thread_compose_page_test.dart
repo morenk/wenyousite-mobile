@@ -85,6 +85,13 @@ void main() {
     expect(find.byKey(const Key('compose-title-label')), findsOneWidget);
     expect(controller.state.body, '恢复的主题正文');
     expect(find.byKey(const Key('compose-body')), findsOneWidget);
+    expect(
+      tester
+          .widget<QuillEditor>(find.byKey(const Key('compose-body')))
+          .config
+          .paintCursorAboveText,
+      isTrue,
+    );
     expect(find.byType(MentionSuggestions), findsOneWidget);
     expect(
       tester

@@ -1,9 +1,9 @@
 /// Restores supported emphasis syntax when strict CommonMark flanking rules
 /// leave a delimiter literal beside punctuation.
 ///
-/// The canonical form protects only an adjacent visible character with a
-/// numeric character reference. It changes no rendered text, adds no spaces,
-/// and keeps saved Markdown unambiguous across clients.
+/// The canonical form protects adjacent punctuation with a numeric character
+/// reference and moves one known legacy separator outside bold. It changes no
+/// rendered text or whitespace and keeps saved Markdown unambiguous.
 abstract final class MarkdownInlineBoundary {
   static const _tokens = <String>['***', '___', '**', '__', '~~', '*', '_'];
 
@@ -121,10 +121,17 @@ abstract final class MarkdownInlineBoundary {
       final next = nextIndex >= source.length
           ? null
           : _runeAt(source, nextIndex);
+      final moveTrailingSpace = _hasTrailingSpaceBeforeCode(
+        source,
+        token: token,
+        content: content,
+        nextIndex: nextIndex,
+      );
       if (closingMatch.containsProtected ||
           _isEscapedAt(source, index) ||
           _isEscapedAt(source, closing) ||
-          !_isRecoverable(content, previous: previous, next: next)) {
+          (!moveTrailingSpace &&
+              !_isRecoverable(content, previous: previous, next: next))) {
         index = nextIndex;
         continue;
       }
@@ -142,8 +149,13 @@ abstract final class MarkdownInlineBoundary {
       };
       output
         ..write(canonicalToken)
-        ..write(content)
+        ..write(
+          moveTrailingSpace
+              ? content.substring(0, content.length - 1)
+              : content,
+        )
         ..write(canonicalToken);
+      if (moveTrailingSpace) output.write(' ');
 
       var replacementEnd = nextIndex;
       if (_needsProtection(next)) {
@@ -319,6 +331,26 @@ abstract final class MarkdownInlineBoundary {
         (next != null && !_isWhitespace(next));
     return hasTightOutside &&
         (_isPunctuationOrSymbol(first) || _isPunctuationOrSymbol(last));
+  }
+
+  static bool _hasTrailingSpaceBeforeCode(
+    String source, {
+    required String token,
+    required String content,
+    required int nextIndex,
+  }) {
+    if (token != '**' ||
+        !content.endsWith(' ') ||
+        content.endsWith('  ') ||
+        nextIndex >= source.length ||
+        source[nextIndex] != '`') {
+      return false;
+    }
+    final core = content.substring(0, content.length - 1);
+    return core.isNotEmpty &&
+        !_isWhitespace(core.runes.first) &&
+        !_isWhitespace(core.runes.last) &&
+        _codeSpanEnd(source, nextIndex) != null;
   }
 
   static bool _needsProtection(int? rune) =>
