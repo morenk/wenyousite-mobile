@@ -13,6 +13,7 @@ final class MarkdownDeltaEncodingBuffer {
   WenyouTextAlignment? _openParagraphAlignment;
   var _openParagraphHasRegularImage = false;
   var _previousLineWasParagraphShape = false;
+  var _previousLineWasImageBlock = false;
 
   void writeLine(
     String encodedLine,
@@ -40,7 +41,9 @@ final class MarkdownDeltaEncodingBuffer {
     final isStandaloneRegularImage =
         hasRegularImage &&
         MarkdownAlignmentContract.isStandaloneRegularImage(encodedLine);
+    final isImageBlock = imageAlignment && isStandaloneRegularImage;
     final isParagraphShape = hasContent && !isHeading && !isExcludedBlock;
+    final joinsMarkdownParagraph = isParagraphShape && !isImageBlock;
 
     if (alignment != WenyouTextAlignment.left &&
         (!hasContent ||
@@ -51,15 +54,26 @@ final class MarkdownDeltaEncodingBuffer {
       throw const MarkdownCodecException('当前正文块不能使用对齐格式');
     }
 
+    if ((isImageBlock || (_previousLineWasImageBlock && hasContent)) &&
+        output.isNotEmpty) {
+      _ensureBlankLine();
+    }
+
     if (isLiteral && output.isNotEmpty && !output.toString().endsWith('\n\n')) {
       output.write('\n');
     }
 
-    if (isHeading && alignment != WenyouTextAlignment.left) {
+    if (isImageBlock) {
+      if (alignment != WenyouTextAlignment.left) {
+        output
+          ..write(MarkdownAlignmentContract.markerFor(alignment))
+          ..write('\n');
+      }
+    } else if (isHeading && alignment != WenyouTextAlignment.left) {
       output
         ..write(MarkdownAlignmentContract.markerFor(alignment))
         ..write('\n');
-    } else if (isParagraphShape) {
+    } else if (joinsMarkdownParagraph) {
       if (_previousLineWasParagraphShape &&
           (hasRegularImage || _openParagraphHasRegularImage) &&
           (alignment != WenyouTextAlignment.left ||
@@ -88,11 +102,18 @@ final class MarkdownDeltaEncodingBuffer {
       output.write(isLiteral ? '\n\n' : '\n');
     }
 
-    _previousLineWasParagraphShape = isParagraphShape;
-    if (!isParagraphShape) {
+    _previousLineWasParagraphShape = joinsMarkdownParagraph;
+    _previousLineWasImageBlock = isImageBlock;
+    if (!joinsMarkdownParagraph) {
       _openParagraphAlignment = null;
       _openParagraphHasRegularImage = false;
     }
+  }
+
+  void _ensureBlankLine() {
+    final current = output.toString();
+    if (!current.endsWith('\n')) output.write('\n');
+    if (!current.endsWith('\n\n')) output.write('\n');
   }
 
   static WenyouTextAlignment _alignmentFrom(Object? value) => switch (value) {

@@ -100,4 +100,32 @@ void main() {
       throwsA(isA<MarkdownCodecException>()),
     );
   });
+
+  test('空段前后的居中与居右图片编码为独立 Markdown 块', () {
+    for (final alignment in const ['center', 'right']) {
+      final delta = Delta()
+        ..insert('\n', const {MarkdownDeltaCodec.emptyParagraphAttribute: true})
+        ..insert({
+          MarkdownDeltaCodec.imageEmbed: const {
+            'version': 1,
+            'url': 'https://cdn.example.com/image.webp',
+            'alt': '图片',
+            'title': null,
+          },
+        })
+        ..insert('\n', {MarkdownDeltaCodec.alignmentAttribute: alignment})
+        ..insert('\n', const {MarkdownDeltaCodec.emptyParagraphAttribute: true})
+        ..insert('后文')
+        ..insert('\n', const {MarkdownDeltaCodec.sourceBreakAttribute: false});
+
+      expect(
+        MarkdownDeltaCodec.encode(delta, imageAlignment: true),
+        '<br />\n\n'
+        '[wenyousite-align-v1-$alignment]: #\n'
+        '![图片](https://cdn.example.com/image.webp)\n\n'
+        '<br />\n'
+        '后文',
+      );
+    }
+  });
 }
