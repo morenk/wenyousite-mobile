@@ -42,6 +42,7 @@
 
 - 阅读：`postsFindFloors` 使用查询参数 order 与可选 authorId 读取主楼层，`postsFindById` 定位目标，`postsFindReplies` 读取独立讨论；`postsFindFloorAuthors` 按子贴返回实际主楼作者，`postsFindReplyAuthors` 按根楼层返回实际回复作者。`postsFindLatestInThread` 直接返回主题全部存活子贴内最新有效主楼层或回复的稳定坐标，由主题详情顶栏按需调用。
 - 写入：`postsCreate`、`postsUpdate`、`postsUpsertBody`、`postsRemove`；提及候选复用 editor 的 `usersMentionCandidates`；社区举报复用 reports 的 `reportsCreate`。
+- 待接入：契约 5.16.0 已新增 `postsPin`、`postsUnpin` 与可空置顶时间；本契约同步切片尚不展示置顶入口，也不改变客户端楼层排序。
 - 主要生成类型：`FloorResponseDto`、`ReplyResponseDto`、`PostDetailResponseDto`、`PostResponseDto`、`LatestThreadPostResponseDto`、`CreatePostDto`、`UpdatePostDto`、`UpsertBodyDto`、`ApiPaginationMeta`。
 
 ## 6. 状态模型和数据流
@@ -133,7 +134,7 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.15.1-dev.20260903.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `6e153e036ef9e1b878a7e910f92aebfa1d4e04eb`；Foundation `v6.8.0`（`196deaf`）。
+契约 `5.16.0-dev.20260903.5`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`196deaf`）。
 
 ## 14. 相关代码与架构文档
 

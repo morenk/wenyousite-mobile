@@ -308,7 +308,9 @@ import 'package:wenyou_api/src/model/posts_find_floors200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_latest_in_thread200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_replies200_response.dart';
 import 'package:wenyou_api/src/model/posts_find_reply_authors200_response.dart';
+import 'package:wenyou_api/src/model/posts_pin200_response.dart';
 import 'package:wenyou_api/src/model/posts_remove200_response.dart';
+import 'package:wenyou_api/src/model/posts_unpin200_response.dart';
 import 'package:wenyou_api/src/model/posts_update200_response.dart';
 import 'package:wenyou_api/src/model/posts_upsert_body200_response.dart';
 import 'package:wenyou_api/src/model/private_user_response_dto.dart';
@@ -398,6 +400,7 @@ import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:wenyou_api/src/model/thread_category_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_count_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_detail_response_dto.dart';
+import 'package:wenyou_api/src/model/thread_export_dto.dart';
 import 'package:wenyou_api/src/model/thread_like_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_list_count_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_list_default_subthread_response_dto.dart';
@@ -782,7 +785,9 @@ part 'serializers.g.dart';
   PostsFindLatestInThread200Response,
   PostsFindReplies200Response,
   PostsFindReplyAuthors200Response,
+  PostsPin200Response,
   PostsRemove200Response,
+  PostsUnpin200Response,
   PostsUpdate200Response,
   PostsUpsertBody200Response,
   PrivateUserResponseDto,
@@ -872,6 +877,7 @@ part 'serializers.g.dart';
   ThreadCategoryResponseDto,
   ThreadCountResponseDto,
   ThreadDetailResponseDto,
+  ThreadExportDto,
   ThreadLikeResponseDto,
   ThreadListCountResponseDto,
   ThreadListDefaultSubthreadResponseDto,

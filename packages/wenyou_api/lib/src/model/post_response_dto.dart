@@ -28,6 +28,7 @@ part 'post_response_dto.g.dart';
 /// * [version] - 乐观锁版本
 /// * [createdAt]
 /// * [updatedAt]
+/// * [pinnedAt] - 主楼层置顶到当前子贴的时间；正文和楼中楼回复为 null
 /// * [deletedAt]
 /// * [author]
 @BuiltValue()
@@ -78,6 +79,10 @@ abstract class PostResponseDto implements Built<PostResponseDto, PostResponseDto
 
   @BuiltValueField(wireName: r'updatedAt')
   DateTime get updatedAt;
+
+  /// 主楼层置顶到当前子贴的时间；正文和楼中楼回复为 null
+  @BuiltValueField(wireName: r'pinnedAt')
+  DateTime? get pinnedAt;
 
   @BuiltValueField(wireName: r'deletedAt')
   DateTime? get deletedAt;
@@ -178,6 +183,13 @@ class _$PostResponseDtoSerializer implements PrimitiveSerializer<PostResponseDto
       object.updatedAt,
       specifiedType: const FullType(DateTime),
     );
+    if (object.pinnedAt != null) {
+      yield r'pinnedAt';
+      yield serializers.serialize(
+        object.pinnedAt,
+        specifiedType: const FullType.nullable(DateTime),
+      );
+    }
     yield r'deletedAt';
     yield object.deletedAt == null ? null : serializers.serialize(
       object.deletedAt,
@@ -312,6 +324,14 @@ class _$PostResponseDtoSerializer implements PrimitiveSerializer<PostResponseDto
             specifiedType: const FullType(DateTime),
           ) as DateTime;
           result.updatedAt = valueDes;
+          break;
+        case r'pinnedAt':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(DateTime),
+          ) as DateTime?;
+          if (valueDes == null) continue;
+          result.pinnedAt = valueDes;
           break;
         case r'deletedAt':
           final valueDes = serializers.deserialize(

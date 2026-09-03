@@ -102,6 +102,8 @@ class _$ReplyResponseDto extends ReplyResponseDto {
   @override
   final DateTime updatedAt;
   @override
+  final DateTime? pinnedAt;
+  @override
   final DateTime? deletedAt;
   @override
   final PostAuthorResponseDto author;
@@ -127,6 +129,7 @@ class _$ReplyResponseDto extends ReplyResponseDto {
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.pinnedAt,
     this.deletedAt,
     required this.author,
     this.replyToPost,
@@ -157,6 +160,7 @@ class _$ReplyResponseDto extends ReplyResponseDto {
         version == other.version &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
+        pinnedAt == other.pinnedAt &&
         deletedAt == other.deletedAt &&
         author == other.author &&
         replyToPost == other.replyToPost;
@@ -179,6 +183,7 @@ class _$ReplyResponseDto extends ReplyResponseDto {
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
+    _$hash = $jc(_$hash, pinnedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, author.hashCode);
     _$hash = $jc(_$hash, replyToPost.hashCode);
@@ -203,6 +208,7 @@ class _$ReplyResponseDto extends ReplyResponseDto {
           ..add('version', version)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
+          ..add('pinnedAt', pinnedAt)
           ..add('deletedAt', deletedAt)
           ..add('author', author)
           ..add('replyToPost', replyToPost))
@@ -274,6 +280,10 @@ class ReplyResponseDtoBuilder
   DateTime? get updatedAt => _$this._updatedAt;
   set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
 
+  DateTime? _pinnedAt;
+  DateTime? get pinnedAt => _$this._pinnedAt;
+  set pinnedAt(DateTime? pinnedAt) => _$this._pinnedAt = pinnedAt;
+
   DateTime? _deletedAt;
   DateTime? get deletedAt => _$this._deletedAt;
   set deletedAt(DateTime? deletedAt) => _$this._deletedAt = deletedAt;
@@ -310,6 +320,7 @@ class ReplyResponseDtoBuilder
       _version = $v.version;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
+      _pinnedAt = $v.pinnedAt;
       _deletedAt = $v.deletedAt;
       _author = $v.author.toBuilder();
       _replyToPost = $v.replyToPost?.toBuilder();
@@ -387,6 +398,7 @@ class ReplyResponseDtoBuilder
               r'ReplyResponseDto',
               'updatedAt',
             ),
+            pinnedAt: pinnedAt,
             deletedAt: deletedAt,
             author: author.build(),
             replyToPost: _replyToPost?.build(),

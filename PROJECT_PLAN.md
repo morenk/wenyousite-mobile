@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：`0.7.0+91` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
-- 后端契约：`5.15.1-dev.20260903.1`，revision `6e153e036ef9e1b878a7e910f92aebfa1d4e04eb`；Markdown v5、编辑器往返黄金契约 v6、剪贴板契约 v2 与独立图片块对齐保持激活，公网 `/meta` 已与本地契约基线一致。
+- 后端契约：`5.16.0-dev.20260903.5`，revision `f09aee365ce50fe921c0c443d252959fb7dc5903`；新增主题帖档案导出与子贴主楼层置顶，Markdown v5、编辑器往返黄金契约 v6、剪贴板契约 v2 与独立图片块对齐保持激活，公网 `/meta` 已与本地契约基线一致。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.8.0`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
@@ -20,6 +20,7 @@
 
 ## 持续债务
 
+- 契约 5.16.0 已提供主题帖档案导出和子贴主楼层置顶；本次契约同步先固定生成客户端，移动端入口、排序与系统保存将在紧随其后的两个功能切片接入。
 - 存量 `StateNotifier` 59 处、跨 feature 内部层导入 41 处、feature presentation 原始加载圆环 77 处已由架构门禁冻结；后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
 - `flutter_image_compress_common` 的当前可解析版本仍使用插件 Kotlin Gradle Plugin，Flutter 已提示未来需迁移 Built-in Kotlin；待上游提供兼容版本后单独升级和重新构建验收。
 - 动态卡片与详情的可选 `canInteract` 已在收藏主链按“字段缺失视为允许”消费：`false` 禁止新增收藏与移动但允许取消；点赞、评论和加油仍需独立接入该权限投影。

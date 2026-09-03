@@ -102,6 +102,8 @@ class _$FloorResponseDto extends FloorResponseDto {
   @override
   final DateTime updatedAt;
   @override
+  final DateTime? pinnedAt;
+  @override
   final DateTime? deletedAt;
   @override
   final PostAuthorResponseDto author;
@@ -129,6 +131,7 @@ class _$FloorResponseDto extends FloorResponseDto {
     required this.version,
     required this.createdAt,
     required this.updatedAt,
+    this.pinnedAt,
     this.deletedAt,
     required this.author,
     required this.count,
@@ -160,6 +163,7 @@ class _$FloorResponseDto extends FloorResponseDto {
         version == other.version &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt &&
+        pinnedAt == other.pinnedAt &&
         deletedAt == other.deletedAt &&
         author == other.author &&
         count == other.count &&
@@ -183,6 +187,7 @@ class _$FloorResponseDto extends FloorResponseDto {
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
+    _$hash = $jc(_$hash, pinnedAt.hashCode);
     _$hash = $jc(_$hash, deletedAt.hashCode);
     _$hash = $jc(_$hash, author.hashCode);
     _$hash = $jc(_$hash, count.hashCode);
@@ -208,6 +213,7 @@ class _$FloorResponseDto extends FloorResponseDto {
           ..add('version', version)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt)
+          ..add('pinnedAt', pinnedAt)
           ..add('deletedAt', deletedAt)
           ..add('author', author)
           ..add('count', count)
@@ -280,6 +286,10 @@ class FloorResponseDtoBuilder
   DateTime? get updatedAt => _$this._updatedAt;
   set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
 
+  DateTime? _pinnedAt;
+  DateTime? get pinnedAt => _$this._pinnedAt;
+  set pinnedAt(DateTime? pinnedAt) => _$this._pinnedAt = pinnedAt;
+
   DateTime? _deletedAt;
   DateTime? get deletedAt => _$this._deletedAt;
   set deletedAt(DateTime? deletedAt) => _$this._deletedAt = deletedAt;
@@ -321,6 +331,7 @@ class FloorResponseDtoBuilder
       _version = $v.version;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
+      _pinnedAt = $v.pinnedAt;
       _deletedAt = $v.deletedAt;
       _author = $v.author.toBuilder();
       _count = $v.count.toBuilder();
@@ -399,6 +410,7 @@ class FloorResponseDtoBuilder
               r'FloorResponseDto',
               'updatedAt',
             ),
+            pinnedAt: pinnedAt,
             deletedAt: deletedAt,
             author: author.build(),
             count: count.build(),
