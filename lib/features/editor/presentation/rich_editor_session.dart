@@ -94,7 +94,6 @@ class RichEditorSession extends ChangeNotifier {
   late final QuillController controller;
   final FocusNode focusNode = FocusNode();
   final ScrollController scrollController = ScrollController();
-
   Timer? _codecTimer;
   StreamSubscription<DocChange>? _documentChanges;
   Future<bool>? _pasteInFlight;
@@ -800,6 +799,14 @@ class _LiteralTextQuillController extends QuillController {
     bool shouldNotifyListeners = true,
   }) {
     final before = document.toDelta();
+    final code = Attribute.inlineCode;
+    if (data == ' ' &&
+        len == 0 &&
+        toggledStyle.attributes[code.key]?.value != true &&
+        document.collectStyle(index, 0).containsKey(code.key) &&
+        document.collectStyle(index, 1).containsKey(Attribute.bold.key)) {
+      toggledStyle = toggledStyle.put(Attribute.clone(code, null));
+    }
     final internalReference = data is String
         ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
             data,
