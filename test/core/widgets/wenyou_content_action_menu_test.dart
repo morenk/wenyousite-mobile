@@ -240,7 +240,7 @@ void main() {
     expect(find.text('复制内容'), findsOneWidget);
     expect(find.text('复制链接'), findsOneWidget);
     expect(find.text('编辑'), findsOneWidget);
-    expect(find.text('置顶到当前子贴'), findsOneWidget);
+    expect(find.text('置顶'), findsOneWidget);
     expect(find.byKey(const Key('content-action-test-pin')), findsOneWidget);
     expect(find.text('删除'), findsOneWidget);
     expect(find.text('举报'), findsOneWidget);

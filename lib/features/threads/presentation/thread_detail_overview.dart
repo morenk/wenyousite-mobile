@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
@@ -14,11 +15,13 @@ class ThreadDetailOverview extends StatelessWidget {
   const ThreadDetailOverview({
     required this.detail,
     required this.onTagPressed,
+    this.onExportArchive,
     super.key,
   });
 
   final ThreadDetailModel detail;
   final ValueChanged<ThreadTagModel> onTagPressed;
+  final VoidCallback? onExportArchive;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +78,18 @@ class ThreadDetailOverview extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+          ),
+        ],
+        if (onExportArchive != null) ...[
+          SizedBox(height: tokens.space8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: WenyouComposerAction(
+              key: const Key('thread-detail-export-button'),
+              label: '导出档案',
+              icon: WenyouIconIds.actionDownload,
+              onPressed: onExportArchive,
             ),
           ),
         ],

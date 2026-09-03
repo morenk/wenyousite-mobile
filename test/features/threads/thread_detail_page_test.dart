@@ -2592,6 +2592,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
+    expect(
+      find.byKey(const Key('thread-detail-export-button')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('thread-detail-export-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-export-submit')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('thread-export-close')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
     expect(find.byKey(const Key('thread-body-edit')), findsNothing);
     expect(find.byKey(const Key('thread-detail-edit-body')), findsNothing);
@@ -2628,7 +2637,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-detail-more')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('thread-detail-manage')), findsOneWidget);
-    expect(find.byKey(const Key('thread-detail-export')), findsOneWidget);
+    expect(find.byKey(const Key('thread-detail-export')), findsNothing);
     expect(find.byKey(const Key('thread-detail-edit-body')), findsOneWidget);
     expect(find.text('编辑正文'), findsOneWidget);
     expect(find.text('主线'), findsAtLeastNWidgets(1));

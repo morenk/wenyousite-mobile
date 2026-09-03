@@ -75,7 +75,7 @@ class PostCardActionMenu extends StatelessWidget {
         WenyouPopoverAction(
           value: PostCardAction.togglePin,
           icon: WenyouIconIds.actionPin,
-          label: isPinned ? '取消置顶' : '置顶到当前子贴',
+          label: isPinned ? '取消置顶' : '置顶',
           enabled: !pending,
           key: _actionKey('pin'),
         ),

@@ -335,12 +335,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         if (selectedSubthread != null) {
           await _compose(threadDetailBodyTarget(detail, selectedSubthread));
         }
-      case ThreadDetailAppBarAction.exportArchive:
-        final saved = await showThreadExportSheet(
-          context: context,
-          threadId: widget.threadId,
-        );
-        if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
       case ThreadDetailAppBarAction.manage:
         await _openManagement();
       case ThreadDetailAppBarAction.tip:
@@ -375,6 +369,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   Future<void> _handlePlayerExited(ThreadDetailModel detail) async {
     ref.invalidate(threadSubscriptionControllerProvider(detail.id));
     await ref.read(_detailProvider.notifier).refresh();
+  }
+
+  Future<void> _exportArchive() async {
+    final saved = await showThreadExportSheet(
+      context: context,
+      threadId: widget.threadId,
+    );
+    if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
   }
 
   void _applyEntryTarget(
@@ -501,6 +503,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             key: _renderGeometry.overviewKey,
             child: ThreadDetailOverview(
               detail: detail,
+              onExportArchive: detail.canManageThread ? _exportArchive : null,
               onTagPressed: (tag) => context.pushNamed(
                 AppRouteNames.tagThreads,
                 pathParameters: {'tagId': tag.id},

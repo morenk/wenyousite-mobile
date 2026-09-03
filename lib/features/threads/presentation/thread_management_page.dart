@@ -11,7 +11,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_invitation_controls.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_settings_sections.dart';
@@ -257,25 +256,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               SizedBox(height: tokens.space24),
               ThreadInviteLinkPanel(threadId: thread.id, enabled: !locked),
             ],
-            if (thread.published) ...[
-              SizedBox(height: tokens.space24),
-              Divider(height: 1, color: tokens.border),
-              SizedBox(height: tokens.space24),
-              const WenyouSectionHeader(
-                title: '导出主题档案',
-                subtitle: '将当前已发布内容生成 ZIP，并保存到你选择的位置。',
-              ),
-              SizedBox(height: tokens.space12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  key: const Key('thread-management-export'),
-                  onPressed: locked ? null : _exportArchive,
-                  icon: const WenyouIcon(WenyouIconIds.actionDownload),
-                  label: const Text('选择导出内容'),
-                ),
-              ),
-            ],
             if (thread.isOwner) ...[
               SizedBox(height: tokens.space24),
               Divider(height: 1, color: tokens.border),
@@ -311,15 +291,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     visibility: _visibility,
     tagNames: _tagNames,
   );
-
-  Future<void> _exportArchive() async {
-    if (!await _autosave.saveNow() || !mounted) return;
-    final saved = await showThreadExportSheet(
-      context: context,
-      threadId: widget.threadId,
-    );
-    if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
-  }
 
   bool _isDirty(ThreadManagementState state) {
     final thread = state.bootstrap?.thread;

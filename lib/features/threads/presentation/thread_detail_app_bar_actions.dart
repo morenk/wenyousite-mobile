@@ -11,14 +11,7 @@ import 'package:wenyousite_mobile/features/threads/application/thread_detail_con
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
-enum ThreadDetailAppBarAction {
-  editBody,
-  exportArchive,
-  manage,
-  tip,
-  report,
-  exitPlayer,
-}
+enum ThreadDetailAppBarAction { editBody, manage, tip, report, exitPlayer }
 
 List<Widget> buildThreadDetailAppBarActions({
   required String threadId,
@@ -57,14 +50,6 @@ List<Widget> buildThreadDetailAppBarActions({
                   : '编辑当前子贴正文',
               enabled: state.selectedSubthread != null,
               key: const Key('thread-detail-edit-body'),
-            ),
-          if (detail.canManageThread)
-            const WenyouPopoverAction(
-              value: ThreadDetailAppBarAction.exportArchive,
-              icon: WenyouIconIds.actionDownload,
-              label: '导出档案',
-              semanticsLabel: '导出主题档案',
-              key: Key('thread-detail-export'),
             ),
           if (detail.canManageThread)
             const WenyouPopoverAction(
