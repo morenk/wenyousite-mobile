@@ -49,7 +49,7 @@ abstract final class WenyouEditorFormatPolicy {
       imageAlignment: imageAlignment,
     );
     if (patch.isNotEmpty) {
-      controller.document.compose(patch, ChangeSource.local);
+      controller.compose(patch, controller.selection, ChangeSource.local);
     }
   }
 

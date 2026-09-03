@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_embed_builders.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_format_policy.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_text_styles.dart';
 
 import '../../support/foundation_icon_finder.dart';
@@ -109,38 +110,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('编辑态独占图片即时预览居中和居右位置', (tester) async {
-    const centerUrl = 'https://cdn.example.com/center.webp';
-    const rightUrl = 'https://cdn.example.com/right.webp';
+  testWidgets('光标在独占图片行时切换对齐会立即更新编辑画布', (tester) async {
+    const url = 'https://cdn.example.com/image.webp';
     final controller = QuillController(
       document: Document.fromDelta(
-        Delta()
-          ..insert({
-            MarkdownDeltaCodec.imageEmbed: const {
-              'version': 1,
-              'url': centerUrl,
-              'alt': '图片',
-              'title': null,
-            },
-          })
-          ..insert('\n', const {
-            MarkdownDeltaCodec.alignmentAttribute: 'center',
-          })
-          ..insert({
-            MarkdownDeltaCodec.imageEmbed: const {
-              'version': 1,
-              'url': rightUrl,
-              'alt': '图片',
-              'title': null,
-            },
-          })
-          ..insert('\n', const {
-            MarkdownDeltaCodec.alignmentAttribute: 'right',
-            MarkdownDeltaCodec.sourceBreakAttribute: false,
-          }),
+        MarkdownDeltaCodec.decode('![图片]($url)').delta,
       ),
-      selection: const TextSelection.collapsed(offset: 0),
-      readOnly: true,
+      selection: const TextSelection.collapsed(offset: 1),
     );
     final focusNode = FocusNode();
     final scrollController = ScrollController();
@@ -169,34 +145,43 @@ void main() {
     );
     await tester.pump();
 
-    expect(
-      tester
-          .widget<Align>(
-            find.byKey(const ValueKey('editor-image-alignment-$centerUrl')),
-          )
-          .alignment,
-      Alignment.center,
+    final image = find.byWidgetPredicate(
+      (widget) => widget is Semantics && widget.properties.label == '正文图片',
     );
-    expect(
-      tester
-          .widget<Align>(
-            find.byKey(const ValueKey('editor-image-alignment-$rightUrl')),
-          )
-          .alignment,
-      AlignmentDirectional.centerEnd,
+    final semantics = tester.widget<Semantics>(image).properties;
+    expect(semantics.image, isTrue);
+    expect(semantics.button, isNot(isTrue));
+    await tester.tapAt(tester.getTopLeft(image) + const Offset(8, 8));
+    await tester.pump();
+    expect(controller.selection.extentOffset, 0);
+    final imageLineFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is RichText && widget.text.toPlainText().contains('\uFFFC'),
     );
-    for (final image in tester.widgetList<Image>(find.byType(Image))) {
-      expect(image.width, isNull);
-    }
+    RichText imageLine() => tester.widget<RichText>(imageLineFinder);
+
+    expect(imageLine().textAlign, TextAlign.start);
+    WenyouEditorFormatPolicy.applyAlignment(
+      controller,
+      WenyouTextAlignment.center,
+      imageAlignment: true,
+    );
+    await tester.pump();
+    expect(imageLine().textAlign, TextAlign.center);
+
+    WenyouEditorFormatPolicy.applyAlignment(
+      controller,
+      WenyouTextAlignment.right,
+      imageAlignment: true,
+    );
+    await tester.pump();
+    expect(imageLine().textAlign, TextAlign.end);
     expect(
       MarkdownDeltaCodec.encode(
         controller.document.toDelta(),
         imageAlignment: true,
       ),
-      '[wenyousite-align-v1-center]: #\n'
-      '![图片]($centerUrl)\n\n'
-      '[wenyousite-align-v1-right]: #\n'
-      '![图片]($rightUrl)',
+      '[wenyousite-align-v1-right]: #\n![图片]($url)',
     );
   });
 
