@@ -25,15 +25,30 @@ class RequestContextInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     options.headers.putIfAbsent('X-Request-ID', _uuid.v4);
-    final accessToken = _sessionController.tokens?.accessToken;
-    if (accessToken != null &&
-        options.extra[ApiRequestExtraKeys.skipAuth] != true) {
-      options.headers['Authorization'] = 'Bearer $accessToken';
-    }
     if (_needsMobileHeader(options.path)) {
       options.headers['X-Client-Platform'] = 'mobile';
     }
-    handler.next(options);
+    _authorize(options).then(
+      (_) => handler.next(options),
+      onError: (Object error, StackTrace stackTrace) => handler.reject(
+        DioException(
+          requestOptions: options,
+          error: error,
+          stackTrace: stackTrace,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _authorize(RequestOptions options) async {
+    if (options.extra[ApiRequestExtraKeys.skipAuth] == true) return;
+    var tokens = _sessionController.tokens;
+    if (tokens != null && _sessionController.accessTokenNeedsRefresh) {
+      tokens = await _sessionController.refresh();
+    }
+    if (tokens != null) {
+      options.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
+    }
   }
 
   @override

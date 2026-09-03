@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -133,6 +134,36 @@ void main() {
     verify(() => handler.next(error)).called(1);
   });
 
+  test('不可重放写请求在 access token 到期前静默续期并只发送一次', () async {
+    final adapter = _TransientThenSuccessAdapter(failures: 0);
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    final remote = _FakeSessionRemote();
+    final store = _MemoryTokenStore();
+    final session = SessionController(store, remote);
+    await session.authenticate(
+      SessionTokens(
+        accessToken: _jwtExpiringIn(const Duration(seconds: 30)),
+        refreshToken: 'old-refresh',
+      ),
+    );
+    dio.interceptors.add(RequestContextInterceptor(dio, session));
+    addTearDown(dio.close);
+
+    final response = await dio.post<Object?>(
+      '/api/v1/auth/request-change-email-code',
+      options: Options(
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    );
+
+    expect(response.statusCode, 201);
+    expect(remote.refreshCalls, 1);
+    expect(adapter.attempts, 1);
+    expect(adapter.authorizationHeaders, const ['Bearer new-access']);
+    expect(store.value?.refreshToken, 'new-refresh');
+  });
+
   test('40103 立即清除会话并记录撤销原因', () async {
     final dio = _MockDio();
     final handler = _MockErrorInterceptorHandler();
@@ -262,6 +293,18 @@ const _oldTokens = SessionTokens(
   refreshToken: 'old-refresh',
 );
 
+String _jwtExpiringIn(Duration duration) {
+  final expiresAt = DateTime.now().toUtc().add(duration);
+  final payload = base64Url
+      .encode(
+        utf8.encode(
+          '{"sub":"user-one","exp":${expiresAt.millisecondsSinceEpoch ~/ 1000}}',
+        ),
+      )
+      .replaceAll('=', '');
+  return 'header.$payload.signature';
+}
+
 class _MockDio extends Mock implements Dio {}
 
 class _MockErrorInterceptorHandler extends Mock
@@ -302,6 +345,7 @@ class _TransientThenSuccessAdapter implements HttpClientAdapter {
   final int failures;
   int attempts = 0;
   final List<String?> requestIds = [];
+  final List<String?> authorizationHeaders = [];
 
   @override
   Future<ResponseBody> fetch(
@@ -311,6 +355,7 @@ class _TransientThenSuccessAdapter implements HttpClientAdapter {
   ) async {
     attempts += 1;
     requestIds.add(options.headers['X-Request-ID'] as String?);
+    authorizationHeaders.add(options.headers['Authorization'] as String?);
     if (attempts <= failures) {
       return ResponseBody.fromString(
         '{"code":50300,"message":"temporary"}',

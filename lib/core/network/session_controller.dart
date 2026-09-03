@@ -82,12 +82,38 @@ class SessionController extends StateNotifier<SessionState> {
   SessionScope get scope =>
       SessionScope(accountId: currentUserId, generation: _sessionGeneration);
 
+  /// Refresh before a protected request can cross the access-token boundary.
+  ///
+  /// This is only a transport optimization; the unverified JWT payload never
+  /// grants permissions. Opaque or malformed tokens keep the reactive 40101
+  /// fallback.
+  bool get accessTokenNeedsRefresh {
+    final expiry = _accessTokenPayload?['exp'];
+    final seconds = switch (expiry) {
+      int value => value,
+      num value when value.isFinite => value.toInt(),
+      String value => int.tryParse(value),
+      _ => null,
+    };
+    if (seconds == null) return false;
+    final refreshBefore =
+        DateTime.now().toUtc().millisecondsSinceEpoch ~/
+            Duration.millisecondsPerSecond +
+        const Duration(minutes: 1).inSeconds;
+    return seconds <= refreshBefore;
+  }
+
   /// 仅用于把本地敏感数据按当前登录用户隔离。
   ///
   /// 身份与权限仍由服务端校验；这里不把未验签 JWT 当作授权事实，也不持久化
   /// payload。若后端未来改用不透明 Token，则安全降级为 null 并由业务请求取得
   /// 当前用户 ID。
   String? get currentUserId {
+    final subject = _accessTokenPayload?['sub'];
+    return subject is String && subject.isNotEmpty ? subject : null;
+  }
+
+  Map<Object?, Object?>? get _accessTokenPayload {
     final token = _tokens?.accessToken;
     if (token == null) return null;
     final segments = token.split('.');
@@ -96,9 +122,7 @@ class SessionController extends StateNotifier<SessionState> {
       final payload = jsonDecode(
         utf8.decode(base64Url.decode(base64Url.normalize(segments[1]))),
       );
-      if (payload is! Map) return null;
-      final subject = payload['sub'];
-      return subject is String && subject.isNotEmpty ? subject : null;
+      return payload is Map ? payload : null;
     } on Object {
       return null;
     }

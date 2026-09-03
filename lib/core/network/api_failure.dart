@@ -70,6 +70,7 @@ class ApiFailure implements Exception {
     DioException exception, {
     Map<int, String> featureMessages = const {},
   }) {
+    if (exception.error case final ApiFailure failure) return failure;
     final response = exception.response;
     final body = response?.data;
     final envelope = body is Map ? body.cast<Object?, Object?>() : null;

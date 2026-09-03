@@ -1,6 +1,6 @@
 # 认证与账号生命周期
 
-移动端刷新会话显式携带 `X-Client-Platform: mobile` 并消费轮换后的双 Token；网络或服务暂时不可用时保留本地会话，只有明确的 401 会话失效响应才要求重新登录。
+移动端刷新会话显式携带 `X-Client-Platform: mobile` 并消费轮换后的双 Token；受保护请求会在 Access Token 到期前一分钟自动完成静默续期，网络或服务暂时不可用时保留本地会话，只有明确的 401 会话失效响应才要求重新登录。
 
 状态：`in_progress`
 
@@ -22,7 +22,7 @@
 
 注册第一步调用 `authRequestCode` 发送邮箱验证码，使用固定 60 秒重发冷却和明确成功响应中的有效期。发码不自动重放；超时、断线、429 或 5xx 造成结果不明时，直接进入验证步骤并显示“邮件可能已发出”、60 秒冷却和请求 ID，不猜测有效期。第二步本地校验 6 位验证码、2–24 位用户名及 8–100 位字母数字密码，调用 `authVerifyAndComplete` 并显式发送 mobile 头，只有同时返回 access/refresh token 才建立会话并恢复目标。
 
-登录表单校验账号与密码，防止重复提交；`authLogin` 显式发送 mobile 头，响应必须同时含 access/refresh token 才原子保存并恢复目标。并发 `40101` 共享一次 `authRefresh`，双 Token 原子轮转后原请求只重放一次；再次过期进入失效登录页。
+登录表单校验账号与密码，防止重复提交；`authLogin` 显式发送 mobile 头，响应必须同时含 access/refresh token 才原子保存并恢复目标。受保护请求发送前发现 Access Token 将在一分钟内到期时，会共享一次 `authRefresh` 并携带轮换后的 Token 直接发送本次请求，正常续期无需用户重试。并发 `40101` 也共享刷新，双 Token 原子轮转后可安全重放的原请求只重放一次；再次过期进入失效登录页。
 
 忘记密码先规范化邮箱并调用 `authForgotPassword`，无论邮箱是否注册都只展示相同的安全提示；明确成功或发码结果不明都进入重置页并开始固定 60 秒重发冷却，后者保留请求 ID 并使用中性“可能已发出”文案。重置页默认以脱敏摘要展示刚发送的邮箱，并提供“修改邮箱”和紧凑重发入口；只有明确成功或结果不明时才收起邮箱编辑，明确失败继续保留当前编辑字段，且不会把旧邮箱的投递成功状态误显示给新邮箱。页面本地校验邮箱、6 位数字验证码和 8–100 位字母数字密码，调用 `authResetPassword`；后端确认后所有 refresh 会话均被撤销，客户端不建立会话，只返回登录页提示使用新密码。失效会话可进入找回和重置公开路由，不会被守卫循环送回登录。
 
@@ -40,11 +40,11 @@
 
 ## 6. 状态模型和数据流
 
-`SessionState` 为 guest、restoring、authenticated、invalidated；`LoginState` 与 `LogoutState` 均为 idle、submitting、failed。`RegistrationState` 区分 email/verify 步骤、验证码请求/注册提交操作、有效期和重发剩余秒数；只有 `authVerifyAndComplete` 同时完成验证码校验、创建用户并返回双 Token 后才建立注册用户会话。`PasswordRecoveryState` 保存唯一在途动作、最近请求邮箱、重发秒数和安全错误；找回与重置页面复用同一个 autoDispose family，但不同路由种子不会共享密码或验证码。登录/注册和密码恢复控制器只依赖 `auth/application` 端口，`main.dart` 组合根绑定 API data 适配器；适配器映射 `RequestCodeDto`、`VerifyAndCompleteDto`、`LoginDto`、`ForgotPasswordDto` 与 `ResetPasswordDto`。独立会话远端通过生成客户端处理 `RefreshDto`、`LogoutDto`，`SessionController` 串行发布安全存储与路由状态。终端管理使用 settings 的 loading/ready/failed 状态和唯一在途撤销 ID，成功后按稳定终端 ID 原地移除；改密使用 idle/submitting/failed，换邮箱状态额外保存 request/verify 步骤、当前动作、规范化目标邮箱和重发剩余秒数。`AccountDeletionState` 区分 idle、submitting、failed，并用 `remoteDeletionConfirmed` 固定远端已完成、本地待清理的单向边界。
+`SessionState` 为 guest、restoring、authenticated、invalidated；`LoginState` 与 `LogoutState` 均为 idle、submitting、failed。`RegistrationState` 区分 email/verify 步骤、验证码请求/注册提交操作、有效期和重发剩余秒数；只有 `authVerifyAndComplete` 同时完成验证码校验、创建用户并返回双 Token 后才建立注册用户会话。`PasswordRecoveryState` 保存唯一在途动作、最近请求邮箱、重发秒数和安全错误；找回与重置页面复用同一个 autoDispose family，但不同路由种子不会共享密码或验证码。登录/注册和密码恢复控制器只依赖 `auth/application` 端口，`main.dart` 组合根绑定 API data 适配器；适配器映射 `RequestCodeDto`、`VerifyAndCompleteDto`、`LoginDto`、`ForgotPasswordDto` 与 `ResetPasswordDto`。独立会话远端通过生成客户端处理 `RefreshDto`、`LogoutDto`；请求拦截器在业务请求前触发到期预检，`SessionController` 复用唯一刷新 Future 并串行发布安全存储与路由状态。终端管理使用 settings 的 loading/ready/failed 状态和唯一在途撤销 ID，成功后按稳定终端 ID 原地移除；改密使用 idle/submitting/failed，换邮箱状态额外保存 request/verify 步骤、当前动作、规范化目标邮箱和重发剩余秒数。`AccountDeletionState` 区分 idle、submitting、failed，并用 `remoteDeletionConfirmed` 固定远端已完成、本地待清理的单向边界。
 
 ## 7. 鉴权、权限和隐私规则
 
-密码、验证码和双 Token 不进入日志、Drift、SharedPreferences、查询参数或持久化认证状态；找回到重置只在内存路由数据中携带规范化邮箱，页面销毁即释放验证码和新密码。注册和找回发码成功文案保持反枚举，不根据邮箱是否存在做差异展示。离开换邮箱页会释放验证码、当前密码和目标邮箱，返回第一步会清空验证码。终端页只消费稳定 ID、平台、是否当前及时间字段，不读取已废弃的原始设备标识。`40103` 至 `40106`、刷新失败或重放仍为 `40101` 时清会话；契约 4.14 已移除 `EMAIL_NOT_VERIFIED`，任何已登录注册用户都不再因邮箱状态进入只读会话。改密和换邮箱仅在后端确认成功后清本机会话；失败保留认证状态供用户修正。退出与注销请求都不记录凭据；注销页不持久化确认短语，也不承诺删除匿名保留的已发布内容或账号隔离的本地草稿。
+密码、验证码和双 Token 不进入日志、Drift、SharedPreferences、查询参数或持久化认证状态；找回到重置只在内存路由数据中携带规范化邮箱，页面销毁即释放验证码和新密码。未验签 JWT 的 `exp` 只决定提前刷新时机，不能作为权限或会话有效性的事实。注册和找回发码成功文案保持反枚举，不根据邮箱是否存在做差异展示。离开换邮箱页会释放验证码、当前密码和目标邮箱，返回第一步会清空验证码。终端页只消费稳定 ID、平台、是否当前及时间字段，不读取已废弃的原始设备标识。`40103` 至 `40106`、刷新失败或重放仍为 `40101` 时清会话；契约 4.14 已移除 `EMAIL_NOT_VERIFIED`，任何已登录注册用户都不再因邮箱状态进入只读会话。改密和换邮箱仅在后端确认成功后清本机会话；失败保留认证状态供用户修正。退出与注销请求都不记录凭据；注销页不持久化确认短语，也不承诺删除匿名保留的已发布内容或账号隔离的本地草稿。
 
 `40108/40109` 不伪装登录成功，登录页明确引导到 moderation 的专用申诉通道；`40120` 属于申诉凭据而非普通会话，只能由 moderation 清除该临时凭据。
 
@@ -60,13 +60,13 @@
 
 ## 10. 跨模块约束
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
 - [x] 账号/密码登录显式发送 mobile 头，双 Token 原子写入，创建入口鉴权回跳通过。
 - [x] 重启恢复和当前终端服务端退出闭环通过，失败可重试或明确选择本机退出。
-- [x] 并发 `40101` 只发起一次刷新并轮转双 Token，原请求最多重放一次。
+- [x] 临近到期的并发受保护请求在发送前只发起一次刷新并直接使用新 Token；并发 `40101` 同样共享刷新，已返回请求最多重放一次。
 - [x] 邮箱验证码注册显式发送 mobile 头，双 Token 原子写入并恢复受保护目标。
 - [x] 登录、注册、找回与重置在 320、360、400、600dp 宽度无溢出，输入框语义图标保持默认 20dp 并在 48dp 前缀区域居中，同时保留 Widget Key、无障碍错误语义和 48dp 主操作。
 - [x] 登录与注册复用 Foundation 48dp 装饰品牌标识和可见名称，TalkBack 不重复朗读标识。
@@ -85,8 +85,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.15.1-dev.20260903.1`；Markdown v5；后端 `6e153e036ef9e1b878a7e910f92aebfa1d4e04eb`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.15.1-dev.20260903.1`；Markdown v5；后端 `6e153e036ef9e1b878a7e910f92aebfa1d4e04eb`；Foundation `v6.8.0`（`196deaf`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.5.1 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.5.1/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

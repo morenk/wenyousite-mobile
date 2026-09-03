@@ -12,9 +12,9 @@
 
 每个请求生成 UUID v4 `X-Request-ID`。登录和完成注册额外发送 `X-Client-Platform: mobile`。普通日志只记录方法、脱敏路径、请求 ID、成功响应状态或失败来源；所有查询参数与 fragment 都在格式化前截断，`/threads/join-by-link/{token}` 的私密邀请 token 固定替换为 `<redacted>`。显式开启现场诊断的 Debug 包才额外记录 HTTP 状态、业务码、传输类型和响应契约版本，不记录认证头、密码、验证码、正文、预签名 URL 查询参数、邀请凭据或隐私资料。
 
-Access Token 与 Refresh Token 都保存到安全存储。刷新和退出由无业务拦截器的独立生成客户端发起，避免刷新请求递归进入 `40101` 拦截链。并发请求遇到 `40101` 时共享同一个刷新 Future；刷新成功后原子替换双 Token，每个可重放原请求最多重放一次。GET/HEAD、语义幂等的 PUT/DELETE 和显式声明 `idempotentCreate` 的创建请求可以重放；普通 POST 即使刷新成功也返回原结果，不自动重复写入。标记 `noAutomaticReplay` 的写请求同样只刷新会话、不重放请求。`40103` 至 `40106`、刷新失败或可重放请求再次返回 `40101` 时清空会话并携带失效原因进入登录页。
+Access Token 与 Refresh Token 都保存到安全存储。刷新和退出由无业务拦截器的独立生成客户端发起，避免刷新请求递归进入 `40101` 拦截链。受保护请求发送前会读取 JWT `exp`，在 Access Token 到期前一分钟共享同一个刷新 Future，先原子替换双 Token，再携带新 Token 发送本次业务请求；因此普通续期不要求用户重新触发原操作。并发请求遇到 `40101` 时也共享同一个刷新 Future；刷新成功后每个可重放原请求最多重放一次。GET/HEAD、语义幂等的 PUT/DELETE 和显式声明 `idempotentCreate` 的创建请求可以重放；普通 POST 即使刷新成功也返回原结果，不自动重复写入。标记 `noAutomaticReplay` 的写请求同样只刷新会话、不重放已返回的请求。`40103` 至 `40106`、刷新失败或可重放请求再次返回 `40101` 时清空会话并携带失效原因进入登录页。
 
-账号内页面状态使用 `SessionScope(accountId, generation)` 作为隔离边界。Access Token 轮转只替换凭据，不推进 generation，因此当前编辑器、待确认幂等创建、帖子讨论和云端草稿不会因正常刷新被销毁；登录建立新会话、退出、会话失效或切换账号才推进 generation 并释放旧账号状态。刷新完成前再次登录、退出或切号时，以刷新起点的 Token 与 generation 校验迟到结果，旧刷新既不能覆盖新凭据也不能清除新会话。JWT `sub` 只用于本地分区，不能作为权限事实。
+账号内页面状态使用 `SessionScope(accountId, generation)` 作为隔离边界。Access Token 轮转只替换凭据，不推进 generation，因此当前编辑器、待确认幂等创建、帖子讨论和云端草稿不会因正常刷新被销毁；登录建立新会话、退出、会话失效或切换账号才推进 generation 并释放旧账号状态。刷新完成前再次登录、退出或切号时，以刷新起点的 Token 与 generation 校验迟到结果，旧刷新既不能覆盖新凭据也不能清除新会话。未验签 JWT 的 `sub` 只用于本地分区，`exp` 只用于提前刷新，两者都不能作为权限事实；不透明或畸形 Access Token 安全降级到服务端 `40101` 续期链路。
 
 退出当前终端时同时提交 bearer 与 refresh token；若 access token 已过期，先共享刷新再重试退出一次。服务端成功或明确判定会话失效后清除本机 Token；网络/5xx 失败保留会话和请求 ID供重试。只有用户在风险提示中再次确认，才允许仅清除本机登录。
 
