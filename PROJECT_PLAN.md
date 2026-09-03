@@ -5,8 +5,8 @@
 ## 当前基线
 
 - 客户端：`0.7.0+91` 正式候选，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
-- 后端契约：`5.15.0-dev.20260902.1`，revision `3f1cbd297f832803661078b1c5193c02a89167f4`；新增动态正文与评论图片导入表情接口，Markdown v4、编辑器往返黄金契约 v6、剪贴板契约 v2 保持激活，并提供尚未激活的 Markdown v5 图片块对齐 fixture。该 revision 在依赖安全修复后仅清理未使用的后端直接依赖，公网 `/meta` 已与本地契约基线一致。
-- 正文契约：公网当前激活 Markdown v4；客户端兼容 `{3, 4, 5}`，仅在服务端声明 v5 后开放独立图片块对齐；站内引用契约：`wenyousite-internal-reference` v1。
+- 后端契约：`5.15.1-dev.20260903.1`，revision `6e153e036ef9e1b878a7e910f92aebfa1d4e04eb`；Markdown v5、编辑器往返黄金契约 v6、剪贴板契约 v2 与独立图片块对齐保持激活，公网 `/meta` 已与本地契约基线一致。
+- 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.8.0`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
