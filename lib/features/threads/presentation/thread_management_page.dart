@@ -159,8 +159,12 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     final tokens = context.wenyouTokens;
     final thread = bootstrap.thread;
     final locked = state.isDeleting;
+    final showInvite =
+        thread.isOwner &&
+        thread.published &&
+        thread.visibility == ThreadManagementVisibility.private;
+    final showActions = thread.published || thread.isOwner;
     return WenyouPageBody(
-      maxWidth: 640,
       child: Form(
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -172,6 +176,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               titleFocusNode: _titleFocusNode,
               categories: bootstrap.categories,
               categorySlug: _categorySlug,
+              tags: _tagNames,
               enabled: !locked,
               version: thread.version,
               onTitleChanged: (_) => _autosave.schedule(),
@@ -179,10 +184,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 setState(() => _categorySlug = value);
                 unawaited(_autosave.saveNow());
               },
+              onEditTags: _editTags,
             ),
-            SizedBox(height: tokens.space16),
-            Divider(height: 1, color: tokens.border),
-            SizedBox(height: tokens.space16),
+            SizedBox(height: tokens.space24),
             ThreadManagementPublishingSection(
               status: _status,
               visibility: _visibility,
@@ -194,22 +198,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               },
               onVisibilityChanged: (value) {
                 setState(() => _visibility = value);
-                unawaited(_autosave.saveNow());
-              },
-            ),
-            SizedBox(height: tokens.space16),
-            Divider(height: 1, color: tokens.border),
-            SizedBox(height: tokens.space16),
-            ThreadManagementTagsSection(
-              tags: _tagNames,
-              enabled: !locked,
-              onEdit: _editTags,
-              onDeleteTag: (tag) {
-                setState(
-                  () => _tagNames = List.unmodifiable(
-                    _tagNames.where((value) => value != tag),
-                  ),
-                );
                 unawaited(_autosave.saveNow());
               },
             ),
@@ -249,50 +237,61 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                       ),
               ),
             ],
-            if (thread.isOwner &&
-                thread.published &&
-                thread.visibility == ThreadManagementVisibility.private) ...[
-              SizedBox(height: tokens.space16),
-              Divider(height: 1, color: tokens.border),
-              SizedBox(height: tokens.space16),
-              ThreadInviteLinkPanel(threadId: thread.id, enabled: !locked),
-            ],
-            if (thread.published) ...[
-              SizedBox(height: tokens.space16),
-              Divider(height: 1, color: tokens.border),
-              ListTile(
-                key: const Key('thread-management-export'),
-                contentPadding: EdgeInsets.zero,
-                enabled: !locked,
-                title: const Text('导出主题档案'),
-                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
-                onTap: locked ? null : _exportArchive,
-              ),
-            ],
-            if (thread.isOwner) ...[
-              SizedBox(height: tokens.space16),
-              Divider(height: 1, color: tokens.border),
-              ListTile(
-                key: const Key('thread-management-delete'),
-                contentPadding: EdgeInsets.zero,
-                enabled: !state.isBusy,
-                title: Text(
-                  '删除主题',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            if (showActions) ...[
+              SizedBox(height: tokens.space24),
+              const ThreadManagementGroupLabel('主题操作'),
+              SizedBox(height: tokens.space8),
+              if (showInvite)
+                ListTile(
+                  key: const Key('thread-management-invite'),
+                  contentPadding: EdgeInsets.zero,
+                  enabled: !locked,
+                  leading: const WenyouIcon(WenyouIconIds.securityPassword),
+                  title: const Text('私密邀请'),
+                  subtitle: const Text('生成或复制邀请链接'),
+                  trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+                  onTap: locked ? null : _openInviteLinkSheet,
+                ),
+              if (showInvite) const Divider(height: 1),
+              if (thread.published)
+                ListTile(
+                  key: const Key('thread-management-export'),
+                  contentPadding: EdgeInsets.zero,
+                  enabled: !locked,
+                  leading: const WenyouIcon(WenyouIconIds.actionDownload),
+                  title: const Text('导出主题档案'),
+                  trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+                  onTap: locked ? null : _exportArchive,
+                ),
+              if (thread.published && thread.isOwner) const Divider(height: 1),
+              if (thread.isOwner)
+                ListTile(
+                  key: const Key('thread-management-delete'),
+                  contentPadding: EdgeInsets.zero,
+                  enabled: !state.isBusy,
+                  leading: WenyouIcon(
+                    WenyouIconIds.actionDelete,
                     color: state.isBusy
                         ? tokens.mutedText
                         : Theme.of(context).colorScheme.error,
                   ),
+                  title: Text(
+                    '删除主题',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: state.isBusy
+                          ? tokens.mutedText
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  subtitle: const Text('永久删除主题及全部内容，无法恢复。'),
+                  trailing: WenyouIcon(
+                    WenyouIconIds.navigationNext,
+                    color: state.isBusy
+                        ? tokens.mutedText
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                  onTap: state.isBusy ? null : _confirmDelete,
                 ),
-                subtitle: const Text('永久删除主题及全部内容，无法恢复。'),
-                trailing: WenyouIcon(
-                  WenyouIconIds.navigationNext,
-                  color: state.isBusy
-                      ? tokens.mutedText
-                      : Theme.of(context).colorScheme.error,
-                ),
-                onTap: state.isBusy ? null : _confirmDelete,
-              ),
             ],
           ],
         ),
@@ -307,6 +306,26 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     visibility: _visibility,
     tagNames: _tagNames,
   );
+
+  Future<void> _openInviteLinkSheet() {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          sheetContext.wenyouTokens.space16,
+          0,
+          sheetContext.wenyouTokens.space16,
+          sheetContext.wenyouTokens.space16,
+        ),
+        child: WenyouConstrainedWidth(
+          child: ThreadInviteLinkPanel(threadId: widget.threadId),
+        ),
+      ),
+    );
+  }
 
   Future<void> _exportArchive() async {
     if (!await _autosave.saveNow() || !mounted) return;
@@ -417,10 +436,12 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   }
 
   Future<void> _editTags() async {
-    final result = await showDialog<List<String>>(
+    final result = await showModalBottomSheet<List<String>>(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => _ThreadTagSelectorDialog(initial: _tagNames),
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => _ThreadTagSelectorSheet(initial: _tagNames),
     );
     if (result != null && mounted) {
       setState(() => _tagNames = result);
@@ -587,17 +608,17 @@ class _ThreadManagementAutosaveIndicator extends StatelessWidget {
   }
 }
 
-class _ThreadTagSelectorDialog extends StatefulWidget {
-  const _ThreadTagSelectorDialog({required this.initial});
+class _ThreadTagSelectorSheet extends StatefulWidget {
+  const _ThreadTagSelectorSheet({required this.initial});
 
   final List<String> initial;
 
   @override
-  State<_ThreadTagSelectorDialog> createState() =>
-      _ThreadTagSelectorDialogState();
+  State<_ThreadTagSelectorSheet> createState() =>
+      _ThreadTagSelectorSheetState();
 }
 
-class _ThreadTagSelectorDialogState extends State<_ThreadTagSelectorDialog> {
+class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
   final _controller = TextEditingController();
   late final List<String> _tags = [...widget.initial];
   String? _error;
@@ -611,73 +632,90 @@ class _ThreadTagSelectorDialogState extends State<_ThreadTagSelectorDialog> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return AlertDialog(
-      title: const Text('编辑主题标签'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              key: const Key('thread-management-tag-input'),
-              controller: _controller,
-              autofocus: true,
-              enabled: _tags.length < 5,
-              maxLength: 20,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _add(),
-              decoration: InputDecoration(
-                labelText: '标签名称',
-                hintText: '输入后添加',
-                errorText: _error,
-                suffixIcon: IconButton(
-                  key: const Key('thread-management-tag-add'),
-                  tooltip: '添加标签',
-                  onPressed: _tags.length < 5 ? _add : null,
-                  icon: const WenyouIcon(WenyouIconIds.actionAdd),
+    return AnimatedPadding(
+      duration: tokens.feedbackDuration,
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          tokens.space16,
+          0,
+          tokens.space16,
+          tokens.space16,
+        ),
+        child: WenyouConstrainedWidth(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('编辑主题标签', style: Theme.of(context).textTheme.titleLarge),
+              SizedBox(height: tokens.space12),
+              TextField(
+                key: const Key('thread-management-tag-input'),
+                controller: _controller,
+                autofocus: true,
+                enabled: _tags.length < 5,
+                maxLength: 20,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _add(),
+                decoration: InputDecoration(
+                  labelText: '标签名称',
+                  hintText: '输入后添加',
+                  errorText: _error,
+                  suffixIcon: IconButton(
+                    key: const Key('thread-management-tag-add'),
+                    tooltip: '添加标签',
+                    onPressed: _tags.length < 5 ? _add : null,
+                    icon: const WenyouIcon(WenyouIconIds.actionAdd),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: tokens.space8),
-            Text(
-              '已选 ${_tags.length}/5',
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            SizedBox(height: tokens.space8),
-            if (_tags.isNotEmpty)
-              Wrap(
-                spacing: tokens.space8,
-                runSpacing: tokens.space8,
-                children: [
-                  for (final tag in _tags)
-                    InputChip(
-                      label: Text(tag),
-                      onDeleted: () => setState(() => _tags.remove(tag)),
-                      deleteIcon: const WenyouIcon(
-                        WenyouIconIds.actionClose,
-                        size: 16,
+              SizedBox(height: tokens.space8),
+              Text(
+                '已选 ${_tags.length}/5',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              if (_tags.isNotEmpty) ...[
+                SizedBox(height: tokens.space8),
+                Wrap(
+                  spacing: tokens.space8,
+                  runSpacing: tokens.space8,
+                  children: [
+                    for (final tag in _tags)
+                      InputChip(
+                        label: Text(tag),
+                        onDeleted: () => setState(() => _tags.remove(tag)),
+                        deleteIcon: const WenyouIcon(
+                          WenyouIconIds.actionClose,
+                          size: 16,
+                        ),
                       ),
+                  ],
+                ),
+              ],
+              SizedBox(height: tokens.space16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    key: const Key('thread-management-tag-cancel'),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('取消'),
+                  ),
+                  SizedBox(width: tokens.space8),
+                  FilledButton(
+                    key: const Key('thread-management-tag-done'),
+                    onPressed: () => Navigator.pop<List<String>>(
+                      context,
+                      List<String>.unmodifiable(_tags),
                     ),
+                    child: const Text('完成'),
+                  ),
                 ],
               ),
-          ],
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          key: const Key('thread-management-tag-done'),
-          onPressed: () => Navigator.pop<List<String>>(
-            context,
-            List<String>.unmodifiable(_tags),
-          ),
-          child: const Text('完成'),
-        ),
-      ],
     );
   }
 

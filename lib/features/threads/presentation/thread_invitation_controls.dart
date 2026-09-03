@@ -25,9 +25,13 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const WenyouSectionHeader(
-          title: '私密邀请',
-          subtitle: '每次生成都会让旧邀请立即失效。只把链接发送给你希望加入这个私密主题的人。',
+        Text('私密邀请', style: Theme.of(context).textTheme.titleLarge),
+        SizedBox(height: tokens.space8),
+        Text(
+          '每次生成都会让旧邀请立即失效。只把链接发送给你希望加入这个私密主题的人。',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
         ),
         if (state.failure != null) ...[
           SizedBox(height: tokens.space12),

@@ -6,8 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
@@ -44,7 +42,7 @@ void main() {
     );
   });
 
-  testWidgets('主题标签完成编辑后关闭弹窗并更新表单', (tester) async {
+  testWidgets('主题标签完成编辑后关闭面板并更新表单', (tester) async {
     await _pumpPage(
       tester,
       _FakeRepository(initial: _bootstrap(tagNames: const ['原标签'])),
@@ -67,10 +65,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('thread-management-tag-add')));
     await tester.pump();
-    final originalChip = find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.widgetWithText(InputChip, '原标签'),
-    );
+    final originalChip = find.widgetWithText(InputChip, '原标签');
     tester.widget<InputChip>(originalChip).onDeleted!();
     await tester.pump();
     await tester.tap(find.byKey(const Key('thread-management-tag-done')));
@@ -78,12 +73,13 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('编辑主题标签'), findsNothing);
-    expect(find.text('主题标签 1/5'), findsOneWidget);
+    expect(find.text('主题标签'), findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget);
     expect(find.text('新标签'), findsOneWidget);
     expect(find.text('原标签'), findsNothing);
   });
 
-  testWidgets('主题标签取消编辑后关闭弹窗并保留原表单', (tester) async {
+  testWidgets('主题标签取消编辑后关闭面板并保留原表单', (tester) async {
     await _pumpPage(
       tester,
       _FakeRepository(initial: _bootstrap(tagNames: const ['原标签'])),
@@ -99,18 +95,16 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('thread-management-tag-add')));
     await tester.pump();
-    final originalChip = find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.widgetWithText(InputChip, '原标签'),
-    );
+    final originalChip = find.widgetWithText(InputChip, '原标签');
     tester.widget<InputChip>(originalChip).onDeleted!();
     await tester.pump();
-    await tester.tap(find.widgetWithText(TextButton, '取消'));
+    await tester.tap(find.byKey(const Key('thread-management-tag-cancel')));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     expect(find.text('编辑主题标签'), findsNothing);
-    expect(find.text('主题标签 1/5'), findsOneWidget);
+    expect(find.text('主题标签'), findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget);
     expect(find.text('原标签'), findsOneWidget);
     expect(find.text('暂存标签'), findsNothing);
   });
@@ -189,24 +183,34 @@ void main() {
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
   });
 
-  testWidgets('发布设置使用直接点选并在变更后立即自动保存', (tester) async {
+  testWidgets('发布设置通过列表面板选择并在变更后立即自动保存', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
+
+    final status = find.byKey(const Key('thread-management-status'));
+    await tester.ensureVisible(status);
+    await tester.tap(status);
+    await tester.pumpAndSettle();
+    expect(find.text('选择招募状态'), findsOneWidget);
+    expect(find.textContaining('不会限制发帖'), findsOneWidget);
 
     final closed = find.byKey(
       const ValueKey('thread-management-status-choice-closed'),
     );
-    await tester.ensureVisible(closed);
     await tester.tap(closed);
     await tester.pumpAndSettle();
 
     expect(repository.lastDraft?.status, ThreadManagementStatus.closed);
-    expect(tester.widget<ChoiceChip>(closed).selected, isTrue);
+    expect(find.text('已停招'), findsOneWidget);
 
+    final visibility = find.byKey(const Key('thread-management-visibility'));
+    await tester.ensureVisible(visibility);
+    await tester.tap(visibility);
+    await tester.pumpAndSettle();
+    expect(find.text('选择可见范围'), findsOneWidget);
     final private = find.byKey(
       const ValueKey('thread-management-visibility-choice-private'),
     );
-    await tester.ensureVisible(private);
     await tester.tap(private);
     await tester.pumpAndSettle();
 
@@ -217,26 +221,21 @@ void main() {
     expect(find.text('只有主题成员可以查看'), findsOneWidget);
   });
 
-  testWidgets('主题分区同行选择且菜单不重复显示说明', (tester) async {
+  testWidgets('主题分区使用整行入口和列表面板且不重复显示说明', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
 
     final category = find.byKey(const Key('thread-management-category'));
     expect(category, findsOneWidget);
-    final dropdown = tester.widget<WenyouDropdownFilter<String?>>(category);
-    expect(dropdown.selected, 'RPG');
-    expect(dropdown.appearance, WenyouDropdownFilterAppearance.quiet);
-    expect(
-      tester.getCenter(find.text('所在分区')).dy,
-      closeTo(tester.getCenter(category).dy, 1),
-    );
-    expect(find.byType(WenyouDropdownFormField<String>), findsNothing);
-    expect(find.byType(WenyouPanel), findsNothing);
+    expect(find.text('角色扮演'), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(find.byType(InputChip), findsNothing);
     expect(find.text('添加后更容易被搜索到。'), findsNothing);
 
     await tester.ensureVisible(category);
     await tester.tap(category);
     await tester.pumpAndSettle();
+    expect(find.text('选择主题分区'), findsOneWidget);
     expect(find.text('适合角色扮演主题'), findsNothing);
     expect(find.text('适合综合讨论主题'), findsNothing);
     final board = find.byKey(
@@ -247,10 +246,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.lastDraft?.categorySlug, 'BOARD');
-    expect(
-      tester.widget<WenyouDropdownFilter<String?>>(category).selected,
-      'BOARD',
-    );
+    expect(find.text('综合讨论'), findsOneWidget);
+  });
+
+  testWidgets('关闭单选面板不会修改或保存设置', (tester) async {
+    final repository = _FakeRepository(initial: _bootstrap());
+    await _pumpPage(tester, repository);
+
+    final status = find.byKey(const Key('thread-management-status'));
+    await tester.ensureVisible(status);
+    await tester.tap(status);
+    await tester.pumpAndSettle();
+    expect(find.text('选择招募状态'), findsOneWidget);
+
+    await tester.tapAt(const Offset(8, 120));
+    await tester.pumpAndSettle();
+
+    expect(find.text('选择招募状态'), findsNothing);
+    expect(repository.lastDraft, isNull);
+    expect(find.text('招募中'), findsOneWidget);
   });
 
   testWidgets('管理页移除正文编辑且键盘收起后可滚动到邀请和删除', (tester) async {
@@ -285,7 +299,7 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
 
-    final invitation = find.byKey(const Key('thread-invite-link-generate'));
+    final invitation = find.byKey(const Key('thread-management-invite'));
     await tester.ensureVisible(invitation);
     await tester.pumpAndSettle();
     expect(invitation, findsOneWidget);
@@ -341,16 +355,17 @@ void main() {
     final repository = _FakeRepository(initial: _bootstrap(isOwner: false));
     await _pumpPage(tester, repository);
 
-    final visibilityChoices = tester.widgetList<ChoiceChip>(
-      find.descendant(
-        of: find.byKey(const Key('thread-management-visibility')),
-        matching: find.byType(ChoiceChip),
-      ),
+    final visibility = find.byKey(const Key('thread-management-visibility'));
+    final visibilityTile = find.descendant(
+      of: visibility,
+      matching: find.byType(ListTile),
     );
-    expect(visibilityChoices, hasLength(2));
+    expect(tester.widget<ListTile>(visibilityTile).onTap, isNull);
+    await tester.tap(visibility);
+    await tester.pumpAndSettle();
     expect(
-      visibilityChoices.every((choice) => choice.onSelected == null),
-      isTrue,
+      find.byKey(const ValueKey('thread-management-visibility-choice-private')),
+      findsNothing,
     );
     expect(find.text('仅楼主可修改可见范围。'), findsOneWidget);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
@@ -374,6 +389,14 @@ void main() {
       ),
       invitationRepository: _FakeInvitationRepository(),
     );
+    final entry = find.byKey(const Key('thread-management-invite'));
+    expect(entry, findsOneWidget);
+    expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
+
+    await tester.ensureVisible(entry);
+    await tester.tap(entry);
+    await tester.pumpAndSettle();
+
     expect(
       find.byKey(const Key('thread-invite-link-generate')),
       findsOneWidget,
@@ -520,6 +543,21 @@ void main() {
       );
     });
   }
+
+  testWidgets('360dp 放大字体时设置行无布局溢出', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 900);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('thread-management-status')), findsOneWidget);
+    expect(find.byKey(const Key('thread-management-export')), findsOneWidget);
+  });
 
   testWidgets('360dp 主题设置自动保存视觉基线', (tester) async {
     tester.view.devicePixelRatio = 1;
