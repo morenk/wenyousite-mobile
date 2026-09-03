@@ -197,35 +197,56 @@ class _ImageEmbedBuilder extends EmbedBuilder {
     final payload = _payload(embedContext);
     final url = payload?['url']?.toString();
     final alt = payload?['alt']?.toString().trim();
+    final blockAlignment = switch (embedContext
+        .node
+        .parent
+        ?.style
+        .attributes[MarkdownDeltaCodec.alignmentAttribute]
+        ?.value) {
+      'center' => Alignment.center,
+      'right' => AlignmentDirectional.centerEnd,
+      _ => AlignmentDirectional.centerStart,
+    };
     final label = alt == null || alt.isEmpty || alt == '图片'
         ? '查看正文图片原图'
         : '查看正文图片原图：$alt';
     if (url == null) {
       return const _UnavailableImage(message: '图片加载失败');
     }
-    return Semantics(
-      button: true,
-      image: true,
-      label: label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
-        onTap: () => pushWenyouFullscreenPage<void>(
-          context: context,
-          builder: (_) =>
-              ContentImageViewerPage.single(url: url, alt: alt ?? ''),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 120, maxHeight: 320),
-            child: Image.network(
-              url,
-              width: double.infinity,
-              fit: BoxFit.contain,
-              frameBuilder: (context, child, frame, _) =>
-                  frame == null ? const _ImageLoadingPlaceholder() : child,
-              errorBuilder: (_, _, _) =>
-                  const _UnavailableImage(message: '图片加载失败，轻触后可在大图页重试'),
+    return SizedBox(
+      width: double.infinity,
+      child: Align(
+        key: ValueKey('editor-image-alignment-$url'),
+        alignment: blockAlignment,
+        child: Semantics(
+          button: true,
+          image: true,
+          label: label,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(context.wenyouTokens.radius12),
+            onTap: () => pushWenyouFullscreenPage<void>(
+              context: context,
+              builder: (_) =>
+                  ContentImageViewerPage.single(url: url, alt: alt ?? ''),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                context.wenyouTokens.radius12,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: 120,
+                  maxHeight: 320,
+                ),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  frameBuilder: (context, child, frame, _) =>
+                      frame == null ? const _ImageLoadingPlaceholder() : child,
+                  errorBuilder: (_, _, _) =>
+                      const _UnavailableImage(message: '图片加载失败，轻触后可在大图页重试'),
+                ),
+              ),
             ),
           ),
         ),

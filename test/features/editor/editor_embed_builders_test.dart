@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
@@ -106,6 +107,97 @@ void main() {
     }
     expect(MarkdownDeltaCodec.encode(controller.document.toDelta()), source);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('编辑态独占图片即时预览居中和居右位置', (tester) async {
+    const centerUrl = 'https://cdn.example.com/center.webp';
+    const rightUrl = 'https://cdn.example.com/right.webp';
+    final controller = QuillController(
+      document: Document.fromDelta(
+        Delta()
+          ..insert({
+            MarkdownDeltaCodec.imageEmbed: const {
+              'version': 1,
+              'url': centerUrl,
+              'alt': '图片',
+              'title': null,
+            },
+          })
+          ..insert('\n', const {
+            MarkdownDeltaCodec.alignmentAttribute: 'center',
+          })
+          ..insert({
+            MarkdownDeltaCodec.imageEmbed: const {
+              'version': 1,
+              'url': rightUrl,
+              'alt': '图片',
+              'title': null,
+            },
+          })
+          ..insert('\n', const {
+            MarkdownDeltaCodec.alignmentAttribute: 'right',
+            MarkdownDeltaCodec.sourceBreakAttribute: false,
+          }),
+      ),
+      selection: const TextSelection.collapsed(offset: 0),
+      readOnly: true,
+    );
+    final focusNode = FocusNode();
+    final scrollController = ScrollController();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SizedBox(
+            width: 360,
+            child: QuillEditor(
+              controller: controller,
+              focusNode: focusNode,
+              scrollController: scrollController,
+              config: QuillEditorConfig(
+                scrollable: false,
+                embedBuilders: wenyouEditorEmbedBuilders(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<Align>(
+            find.byKey(const ValueKey('editor-image-alignment-$centerUrl')),
+          )
+          .alignment,
+      Alignment.center,
+    );
+    expect(
+      tester
+          .widget<Align>(
+            find.byKey(const ValueKey('editor-image-alignment-$rightUrl')),
+          )
+          .alignment,
+      AlignmentDirectional.centerEnd,
+    );
+    for (final image in tester.widgetList<Image>(find.byType(Image))) {
+      expect(image.width, isNull);
+    }
+    expect(
+      MarkdownDeltaCodec.encode(
+        controller.document.toDelta(),
+        imageAlignment: true,
+      ),
+      '[wenyousite-align-v1-center]: #\n'
+      '![图片]($centerUrl)\n\n'
+      '[wenyousite-align-v1-right]: #\n'
+      '![图片]($rightUrl)',
+    );
   });
 
   testWidgets('编辑态分隔线使用 Foundation 居中短线与圆点', (tester) async {
