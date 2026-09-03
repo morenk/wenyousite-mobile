@@ -29,7 +29,6 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_ov
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_render_diagnostics.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_floor_filters.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -371,14 +370,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     await ref.read(_detailProvider.notifier).refresh();
   }
 
-  Future<void> _exportArchive() async {
-    final saved = await showThreadExportSheet(
-      context: context,
-      threadId: widget.threadId,
-    );
-    if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
-  }
-
   void _applyEntryTarget(
     ThreadDetailEntrySelection? selection,
     AutoDisposeStateNotifierProvider<ThreadDetailController, ThreadDetailState>
@@ -503,7 +494,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
             key: _renderGeometry.overviewKey,
             child: ThreadDetailOverview(
               detail: detail,
-              onExportArchive: detail.canManageThread ? _exportArchive : null,
               onTagPressed: (tag) => context.pushNamed(
                 AppRouteNames.tagThreads,
                 pathParameters: {'tagId': tag.id},

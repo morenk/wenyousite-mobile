@@ -163,6 +163,7 @@ void main() {
 
     expect(find.text('主题设置'), findsOneWidget);
     expect(find.textContaining('会在一次保存中同时更新'), findsNothing);
+    expect(find.byKey(const Key('thread-management-export')), findsOneWidget);
     expect(find.byKey(const Key('thread-management-delete')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('thread-management-title')),

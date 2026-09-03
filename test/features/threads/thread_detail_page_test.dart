@@ -2592,15 +2592,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('thread-detail-more')), findsOneWidget);
-    expect(
-      find.byKey(const Key('thread-detail-export-button')),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('thread-detail-export-button')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('thread-export-submit')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('thread-export-close')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-detail-export-button')), findsNothing);
     expect(find.byKey(const Key('thread-detail-manage')), findsNothing);
     expect(find.byKey(const Key('thread-body-edit')), findsNothing);
     expect(find.byKey(const Key('thread-detail-edit-body')), findsNothing);
