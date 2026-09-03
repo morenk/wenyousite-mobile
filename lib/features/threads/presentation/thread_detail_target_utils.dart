@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -196,14 +197,44 @@ List<ThreadFloorModel> threadFloorsWithTarget(
           for (var floorIndex = 0; floorIndex < floors.length; floorIndex++)
             floorIndex == index ? target.floor : floors[floorIndex],
         ];
-  merged.sort((left, right) {
-    final leftNumber = left.floorNumber;
-    final rightNumber = right.floorNumber;
-    if (leftNumber == null && rightNumber == null) return 0;
-    if (leftNumber == null) return 1;
-    if (rightNumber == null) return -1;
-    final comparison = leftNumber.compareTo(rightNumber);
-    return order == ThreadFloorOrder.oldest ? comparison : -comparison;
-  });
-  return merged;
+  return sortThreadFloors(merged, order);
+}
+
+PostItem threadFloorAsPost(
+  ThreadDetailModel detail,
+  ThreadSubthreadModel subthread,
+  ThreadFloorModel floor,
+) {
+  return PostItem(
+    id: floor.id,
+    threadId: detail.id,
+    subthreadId: subthread.id,
+    author: PostAuthor(
+      id: floor.author.id,
+      username: floor.author.username,
+      level: floor.author.level,
+      avatarUrl: floor.author.avatarUrl,
+    ),
+    content: floor.body.markdown,
+    version: floor.version,
+    createdAt: floor.createdAt,
+    updatedAt: floor.createdAt,
+    isBody: false,
+    isDeleted: floor.isDeleted,
+    floorNumber: floor.floorNumber,
+    pinnedAt: floor.pinnedAt,
+    replyCount: floor.replyCount,
+    threadTitle: detail.title,
+    subthreadTitle: subthread.title,
+    diceRolls: floor.body.diceRolls
+        .map(
+          (roll) => PostDiceRoll(
+            nodeId: roll.nodeId,
+            notation: roll.notation,
+            results: roll.results,
+            total: roll.total,
+          ),
+        )
+        .toList(growable: false),
+  );
 }

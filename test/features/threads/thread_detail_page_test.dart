@@ -2676,6 +2676,17 @@ void main() {
       find.byKey(const Key('thread-floor-action-floor-1-delete')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('thread-floor-action-floor-1-pin')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('thread-floor-action-floor-1-pin')));
+    await tester.pumpAndSettle();
+    expect(postRepository.pinRequests, [(postId: 'floor-1', pinned: true)]);
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-number-floor-1')),
+    );
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('删除'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('删除'));
@@ -3679,9 +3690,15 @@ class _FakeThreadInteractionRepository implements ThreadInteractionRepository {
 
 class _FakePostRepository implements PostRepository {
   final List<String> removedIds = [];
+  final List<({String postId, bool pinned})> pinRequests = [];
 
   @override
   Future<void> remove(String postId) async => removedIds.add(postId);
+
+  @override
+  Future<void> setPinned(String postId, {required bool pinned}) async {
+    pinRequests.add((postId: postId, pinned: pinned));
+  }
 
   @override
   Future<PostItem> fetchPost(String postId) async {
@@ -3767,6 +3784,10 @@ class _CreatingPostRepository implements PostRepository {
 
   @override
   Future<void> remove(String postId) => throw UnsupportedError('unused');
+
+  @override
+  Future<void> setPinned(String postId, {required bool pinned}) =>
+      throw UnsupportedError('unused');
 
   @override
   Future<PostItem> update({

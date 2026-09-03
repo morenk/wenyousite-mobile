@@ -220,7 +220,9 @@ class ThreadSubthreadBody extends ConsumerWidget {
             );
           case PostCardAction.edit:
             onEdit(threadDetailBodyTarget(detail, subthread));
-          case PostCardAction.delete || PostCardAction.report:
+          case PostCardAction.togglePin ||
+              PostCardAction.delete ||
+              PostCardAction.report:
             break;
         }
       },
@@ -340,12 +342,14 @@ class ThreadFloorCard extends ConsumerWidget {
     required this.floor,
     required this.canEdit,
     required this.canDelete,
+    required this.canPin,
     required this.pending,
     required this.onReply,
     required this.onReplyToReply,
     required this.onDiscussion,
     required this.onEdit,
     required this.onDelete,
+    required this.onTogglePin,
     this.reportReturnTo,
     this.isFocused = false,
     this.targetFrameKey,
@@ -358,12 +362,14 @@ class ThreadFloorCard extends ConsumerWidget {
   final GlobalKey? targetFrameKey;
   final bool canEdit;
   final bool canDelete;
+  final bool canPin;
   final bool pending;
   final VoidCallback onReply;
   final ValueChanged<ThreadReplyModel> onReplyToReply;
   final VoidCallback onDiscussion;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onTogglePin;
   final String? reportReturnTo;
 
   @override
@@ -373,6 +379,8 @@ class ThreadFloorCard extends ConsumerWidget {
       canCopyText: !floor.isDeleted,
       canEdit: !floor.isDeleted && canEdit,
       canDelete: !floor.isDeleted && canDelete,
+      canPin: !floor.isDeleted && canPin,
+      isPinned: floor.isPinned,
       canReport: !floor.isDeleted && reportReturnTo != null,
       pending: pending,
       semanticLabel: '楼层操作',
@@ -419,13 +427,32 @@ class ThreadFloorCard extends ConsumerWidget {
                         ),
                       ),
                       SizedBox(width: tokens.space8),
-                      Text(
-                        floor.floorNumber == null
-                            ? '楼层'
-                            : '#${floor.floorNumber}',
-                        key: Key('thread-floor-number-${floor.id}'),
+                      DefaultTextStyle.merge(
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: tokens.mutedText,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (floor.isPinned) ...[
+                              const WenyouIcon(
+                                WenyouIconIds.statusPinned,
+                                size: 14,
+                              ),
+                              SizedBox(width: tokens.space4),
+                              Text(
+                                '置顶',
+                                key: Key('thread-floor-pinned-${floor.id}'),
+                              ),
+                              SizedBox(width: tokens.space8),
+                            ],
+                            Text(
+                              floor.floorNumber == null
+                                  ? '楼层'
+                                  : '#${floor.floorNumber}',
+                              key: Key('thread-floor-number-${floor.id}'),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -488,6 +515,8 @@ class ThreadFloorCard extends ConsumerWidget {
         );
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+      case PostCardAction.togglePin:
+        onTogglePin();
       case PostCardAction.edit:
         onEdit();
       case PostCardAction.delete:
@@ -828,44 +857,6 @@ PostComposerTarget threadDetailEditFloorTarget(
     version: floor.version,
     initialContent: floor.body.markdown,
     label: '编辑 #${floor.floorNumber ?? '-'} 楼',
-  );
-}
-
-PostItem threadFloorAsPost(
-  ThreadDetailModel detail,
-  ThreadSubthreadModel subthread,
-  ThreadFloorModel floor,
-) {
-  return PostItem(
-    id: floor.id,
-    threadId: detail.id,
-    subthreadId: subthread.id,
-    author: PostAuthor(
-      id: floor.author.id,
-      username: floor.author.username,
-      level: floor.author.level,
-      avatarUrl: floor.author.avatarUrl,
-    ),
-    content: floor.body.markdown,
-    version: floor.version,
-    createdAt: floor.createdAt,
-    updatedAt: floor.createdAt,
-    isBody: false,
-    isDeleted: floor.isDeleted,
-    floorNumber: floor.floorNumber,
-    replyCount: floor.replyCount,
-    threadTitle: detail.title,
-    subthreadTitle: subthread.title,
-    diceRolls: floor.body.diceRolls
-        .map(
-          (roll) => PostDiceRoll(
-            nodeId: roll.nodeId,
-            notation: roll.notation,
-            results: roll.results,
-            total: roll.total,
-          ),
-        )
-        .toList(growable: false),
   );
 }
 

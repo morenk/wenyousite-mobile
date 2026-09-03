@@ -170,6 +170,23 @@ class ApiPostRepository implements PostRepository {
     }
   }
 
+  @override
+  Future<void> setPinned(String postId, {required bool pinned}) async {
+    try {
+      final data = pinned
+          ? (await _api.postsPin(
+              id: postId,
+              extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+            )).data?.data
+          : (await _api.postsUnpin(id: postId)).data?.data;
+      if (data == null || data.message.trim().isEmpty) {
+        throw const ApiFailure(userMessage: '楼层置顶状态没有更新，请重新加载。');
+      }
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
   void _validateDetail(
     PostDetailResponseDto dto, {
     required String expectedId,
@@ -182,6 +199,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == PostDetailResponseDtoKindEnum.BODY,
       isFloor: dto.kind == PostDetailResponseDtoKindEnum.FLOOR,
       floorNumber: dto.floorNumber,
+      pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
       clientRequestId: dto.clientRequestId,
@@ -209,6 +227,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == PostResponseDtoKindEnum.BODY,
       isFloor: dto.kind == PostResponseDtoKindEnum.FLOOR,
       floorNumber: dto.floorNumber,
+      pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
       clientRequestId: dto.clientRequestId,
@@ -232,6 +251,7 @@ class ApiPostRepository implements PostRepository {
         isBody: reply.kind == ReplyResponseDtoKindEnum.BODY,
         isFloor: reply.kind == ReplyResponseDtoKindEnum.FLOOR,
         floorNumber: reply.floorNumber,
+        pinnedAt: reply.pinnedAt,
         parentPostId: reply.parentPostId,
         replyToPostId: reply.replyToPostId,
         clientRequestId: reply.clientRequestId,
@@ -261,6 +281,7 @@ class ApiPostRepository implements PostRepository {
     required bool isBody,
     required bool isFloor,
     required num? floorNumber,
+    required DateTime? pinnedAt,
     required String? parentPostId,
     required String? replyToPostId,
     required String? clientRequestId,
@@ -270,13 +291,15 @@ class ApiPostRepository implements PostRepository {
     final invalidBody =
         isBody &&
         (floorNumber != null ||
+            pinnedAt != null ||
             parentPostId != null ||
             replyToPostId != null ||
             clientRequestId != null);
     final invalidFloor =
         isFloor &&
         ((parentPostId == null && floorNumber == null) ||
-            (parentPostId != null && floorNumber != null));
+            (parentPostId != null &&
+                (floorNumber != null || pinnedAt != null)));
     if (authorId != author.id ||
         (!isBody && !isFloor) ||
         invalidBody ||
@@ -310,6 +333,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == PostResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
       clientRequestId: dto.clientRequestId,
@@ -330,6 +354,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == ReplyResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
       replyToAuthor: dto.replyToPost == null
@@ -353,6 +378,7 @@ class ApiPostRepository implements PostRepository {
       isBody: dto.kind == PostDetailResponseDtoKindEnum.BODY,
       isDeleted: dto.deletedAt != null,
       floorNumber: dto.floorNumber?.toInt(),
+      pinnedAt: dto.pinnedAt,
       parentPostId: dto.parentPostId,
       replyToPostId: dto.replyToPostId,
       clientRequestId: dto.clientRequestId,

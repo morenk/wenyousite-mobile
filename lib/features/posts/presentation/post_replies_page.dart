@@ -199,6 +199,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                             post,
                             root: root,
                           ),
+                          onTogglePin: (post) =>
+                              _togglePin(context, ref, provider, post),
                         ),
                       ),
                     ),
@@ -362,6 +364,26 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       await ref.read(provider.notifier).refresh();
     }
   }
+
+  Future<void> _togglePin(
+    BuildContext context,
+    WidgetRef ref,
+    PostDiscussionControllerProvider provider,
+    PostItem post,
+  ) async {
+    final actionsProvider = postActionControllerProvider(threadId);
+    final updated = await ref
+        .read(actionsProvider.notifier)
+        .setPinned(post, pinned: !post.isPinned);
+    if (!context.mounted) return;
+    if (updated) {
+      showWenyouSnackBar(context, post.isPinned ? '已取消楼层置顶。' : '楼层已置顶。');
+      await ref.read(provider.notifier).refresh();
+    } else if (ref.read(actionsProvider).failure?.httpStatus == 403) {
+      ref.invalidate(postThreadContextProvider(threadId));
+      await ref.read(provider.notifier).refresh();
+    }
+  }
 }
 
 class _DiscussionList extends StatelessWidget {
@@ -384,6 +406,7 @@ class _DiscussionList extends StatelessWidget {
     required this.timeReference,
     required this.onCompose,
     required this.onDelete,
+    required this.onTogglePin,
   });
 
   final PostDiscussionState state;
@@ -404,6 +427,7 @@ class _DiscussionList extends StatelessWidget {
   final DateTime? timeReference;
   final ValueChanged<PostComposerTarget> onCompose;
   final void Function(PostItem post, bool root) onDelete;
+  final ValueChanged<PostItem> onTogglePin;
 
   @override
   Widget build(BuildContext context) {
@@ -428,6 +452,7 @@ class _DiscussionList extends StatelessWidget {
           timeReference: timeReference,
           canEdit: root.isAuthoredBy(viewerId),
           canDelete: root.isAuthoredBy(viewerId) || canManageThread,
+          canPin: canManageThread,
           pending: actions.pendingPostId == root.id,
           reportReturnTo:
               canReport && !root.isDeleted && !root.isAuthoredBy(viewerId)
@@ -438,6 +463,7 @@ class _DiscussionList extends StatelessWidget {
               : null,
           onEdit: () => onCompose(postEditTarget(root, '编辑原楼层')),
           onDelete: () => onDelete(root, true),
+          onTogglePin: () => onTogglePin(root),
         ),
       ),
       SizedBox(height: tokens.space12),
@@ -599,10 +625,12 @@ class _PostCard extends ConsumerWidget {
     this.focused = false,
     this.canEdit = false,
     this.canDelete = false,
+    this.canPin = false,
     this.pending = false,
     this.onReply,
     this.onEdit,
     this.onDelete,
+    this.onTogglePin,
     this.reportReturnTo,
     this.targetFrameKey,
     this.timeReference,
@@ -614,10 +642,12 @@ class _PostCard extends ConsumerWidget {
   final bool focused;
   final bool canEdit;
   final bool canDelete;
+  final bool canPin;
   final bool pending;
   final VoidCallback? onReply;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onTogglePin;
   final String? reportReturnTo;
   final Key? targetFrameKey;
   final DateTime? timeReference;
@@ -684,6 +714,8 @@ class _PostCard extends ConsumerWidget {
       canCopyText: !post.isDeleted,
       canEdit: canEdit,
       canDelete: canDelete,
+      canPin: canPin && root && !post.isDeleted,
+      isPinned: post.isPinned,
       canReport: reportReturnTo != null,
       pending: pending,
       semanticLabel: root ? '楼层操作' : '回复操作',
@@ -728,6 +760,8 @@ class _PostCard extends ConsumerWidget {
         );
       case PostCardAction.copyLink:
         await copyPostCardValue(context, _publicLink(), '楼层链接已复制');
+      case PostCardAction.togglePin:
+        onTogglePin?.call();
       case PostCardAction.edit:
         onEdit?.call();
       case PostCardAction.delete:
@@ -813,6 +847,16 @@ class _PostAuthorLine extends StatelessWidget {
                     key: Key('post-level-${post.id}'),
                     level: post.author.level,
                   ),
+                  if (root && post.isPinned) ...[
+                    SizedBox(width: tokens.space8),
+                    const WenyouIcon(WenyouIconIds.statusPinned, size: 14),
+                    SizedBox(width: tokens.space4),
+                    Text(
+                      '置顶',
+                      key: Key('post-pinned-${post.id}'),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
                 ],
               ),
               SizedBox(height: tokens.space4 / 2),

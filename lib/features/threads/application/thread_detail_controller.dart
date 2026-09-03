@@ -362,7 +362,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
           keyOf: (item) => item.id,
         );
         state = state.copyWith(
-          floors: _sortFloors(merged, order),
+          floors: sortThreadFloors(merged, order),
           cursor: page.cursor,
           hasMore: page.hasMore,
           transientFailure: null,
@@ -387,7 +387,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
               return;
             }
             state = state.copyWith(
-              floors: _sortFloors(firstPage.items, order),
+              floors: sortThreadFloors(firstPage.items, order),
               cursor: firstPage.cursor,
               hasMore: firstPage.hasMore,
               transientFailure: null,
@@ -427,7 +427,7 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
         return;
       }
       state = state.copyWith(
-        floors: _sortFloors(page.items, state.floorOrder),
+        floors: sortThreadFloors(page.items, state.floorOrder),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isRefreshing: false,
@@ -494,23 +494,6 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
       failure: failure,
       transientFailure: null,
     );
-  }
-
-  List<ThreadFloorModel> _sortFloors(
-    Iterable<ThreadFloorModel> floors,
-    ThreadFloorOrder order,
-  ) {
-    final sorted = floors.toList()
-      ..sort((left, right) {
-        final leftNumber = left.floorNumber;
-        final rightNumber = right.floorNumber;
-        if (leftNumber == null && rightNumber == null) return 0;
-        if (leftNumber == null) return 1;
-        if (rightNumber == null) return -1;
-        final comparison = leftNumber.compareTo(rightNumber);
-        return order == ThreadFloorOrder.oldest ? comparison : -comparison;
-      });
-    return List.unmodifiable(sorted);
   }
 
   ApiFailure _asFailure(Object error, String fallback) {

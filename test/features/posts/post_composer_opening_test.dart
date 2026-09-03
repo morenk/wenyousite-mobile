@@ -246,6 +246,10 @@ class _FakePostRepository implements PostRepository {
   Future<void> remove(String postId) => throw UnimplementedError();
 
   @override
+  Future<void> setPinned(String postId, {required bool pinned}) =>
+      throw UnimplementedError();
+
+  @override
   Future<PostItem> update({
     required String postId,
     required String content,

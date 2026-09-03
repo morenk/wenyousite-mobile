@@ -29,7 +29,7 @@ void main() {
           (builder) => builder
             ..code = ApiSuccessEnvelopeCodeEnum.number0
             ..message = 'ok'
-            ..data.replace(_detailDto()),
+            ..data.replace(_detailDto(pinnedAt: DateTime.utc(2026, 8, 10, 2))),
         ),
       ),
     );
@@ -70,6 +70,7 @@ void main() {
 
     expect(detail.version, 3);
     expect(detail.replyCount, 2);
+    expect(detail.pinnedAt, DateTime.utc(2026, 8, 10, 2));
     expect(detail.threadTitle, '远行主题');
     expect(detail.subthreadTitle, '主线');
     expect(detail.author.avatarUrl, isNull);
@@ -170,6 +171,33 @@ void main() {
         ),
       ),
     );
+    when(
+      () => api.postsPin(
+        id: 'created',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).thenAnswer(
+      (_) async => _response(
+        '/api/v1/posts/created/pin',
+        PostsPin200Response(
+          (builder) => builder
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.update((data) => data.message = '已置顶'),
+        ),
+      ),
+    );
+    when(() => api.postsUnpin(id: 'created')).thenAnswer(
+      (_) async => _response(
+        '/api/v1/posts/created/pin',
+        PostsUnpin200Response(
+          (builder) => builder
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..data.update((data) => data.message = '已取消置顶'),
+        ),
+      ),
+    );
     final repository = ApiPostRepository(api);
 
     final created = await repository.create(
@@ -192,6 +220,8 @@ void main() {
       version: 8,
     );
     await repository.remove(created.id);
+    await repository.setPinned(created.id, pinned: true);
+    await repository.setPinned(created.id, pinned: false);
 
     expect(createPayload.content, '新回复');
     expect(
@@ -213,6 +243,13 @@ void main() {
       '550e8400-e29b-41d4-a716-446655440002',
     );
     verify(() => api.postsRemove(id: 'created')).called(1);
+    verify(
+      () => api.postsPin(
+        id: 'created',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+      ),
+    ).called(1);
+    verify(() => api.postsUnpin(id: 'created')).called(1);
   });
 
   test('对齐 marker 在创建 DTO、创建结果、详情和回复映射中原样透传', () async {
@@ -622,6 +659,7 @@ PostDetailResponseDto _detailDto({
   String id = 'floor',
   String? replyToPostId,
   String content = '楼层内容',
+  DateTime? pinnedAt,
 }) {
   return PostDetailResponseDto(
     (builder) => builder
@@ -631,6 +669,7 @@ PostDetailResponseDto _detailDto({
       ..authorId = 'author-1'
       ..kind = PostDetailResponseDtoKindEnum.FLOOR
       ..floorNumber = 1
+      ..pinnedAt = pinnedAt
       ..replyToPostId = replyToPostId
       ..clientRequestId = _clientRequestId
       ..content = content

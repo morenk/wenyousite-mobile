@@ -204,6 +204,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     final target = dto.replyToPost;
     if (dto.kind != ReplyResponseDtoKindEnum.FLOOR ||
         dto.floorNumber != null ||
+        dto.pinnedAt != null ||
         dto.parentPostId != parent.id ||
         dto.threadId != parent.threadId ||
         dto.subthreadId != parent.subthreadId ||
@@ -229,6 +230,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
         dto.thread.id != dto.threadId ||
         dto.subthread.id != dto.subthreadId ||
         dto.authorId != dto.author.id ||
+        (dto.parentPostId != null && dto.pinnedAt != null) ||
         dto.diceRolls.any((roll) => roll.postId != dto.id) ||
         (dto.parentPostId == null &&
             (dto.floorNumber == null || parent != null)) ||
@@ -350,6 +352,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       createdAt: dto.createdAt,
       isDeleted: dto.deletedAt != null,
       version: dto.version.toInt(),
+      pinnedAt: dto.pinnedAt,
       replyCount: dto.count.replies.toInt(),
       replies: dto.replies
           .map(
@@ -387,6 +390,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
       createdAt: dto.createdAt,
       isDeleted: dto.deletedAt != null,
       version: dto.version.toInt(),
+      pinnedAt: dto.pinnedAt,
       replyCount: dto.count.replies.toInt(),
       replies: focusedReply == null ? const [] : [focusedReply],
     );

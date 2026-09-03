@@ -181,6 +181,7 @@ class ThreadFloorModel {
     required this.replyCount,
     required this.replies,
     this.version = 1,
+    this.pinnedAt,
   });
 
   final String id;
@@ -192,6 +193,9 @@ class ThreadFloorModel {
   final int replyCount;
   final List<ThreadReplyModel> replies;
   final int version;
+  final DateTime? pinnedAt;
+
+  bool get isPinned => pinnedAt != null;
 }
 
 class ThreadPostTargetModel {
@@ -234,4 +238,29 @@ enum ThreadFloorOrder {
 
   final String apiValue;
   final String label;
+}
+
+List<ThreadFloorModel> sortThreadFloors(
+  Iterable<ThreadFloorModel> floors,
+  ThreadFloorOrder order,
+) {
+  final sorted = floors.toList()
+    ..sort((left, right) {
+      final leftPinnedAt = left.pinnedAt;
+      final rightPinnedAt = right.pinnedAt;
+      if (leftPinnedAt != null && rightPinnedAt == null) return -1;
+      if (leftPinnedAt == null && rightPinnedAt != null) return 1;
+      if (leftPinnedAt != null && rightPinnedAt != null) {
+        final comparison = rightPinnedAt.compareTo(leftPinnedAt);
+        return comparison != 0 ? comparison : right.id.compareTo(left.id);
+      }
+      final leftNumber = left.floorNumber;
+      final rightNumber = right.floorNumber;
+      if (leftNumber == null && rightNumber == null) return 0;
+      if (leftNumber == null) return 1;
+      if (rightNumber == null) return -1;
+      final comparison = leftNumber.compareTo(rightNumber);
+      return order == ThreadFloorOrder.oldest ? comparison : -comparison;
+    });
+  return List.unmodifiable(sorted);
 }

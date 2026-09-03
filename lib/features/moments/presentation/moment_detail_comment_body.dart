@@ -205,6 +205,8 @@ class MomentCommentBody extends ConsumerWidget {
         );
       case PostCardAction.copyLink:
         return;
+      case PostCardAction.togglePin:
+        return;
       case PostCardAction.edit:
         return;
       case PostCardAction.delete:

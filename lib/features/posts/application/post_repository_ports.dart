@@ -27,6 +27,8 @@ abstract interface class PostRepository {
   });
 
   Future<void> remove(String postId);
+
+  Future<void> setPinned(String postId, {required bool pinned});
 }
 
 final postRepositoryProvider = Provider<PostRepository>((ref) {
@@ -73,6 +75,10 @@ class _UnboundPostRepository implements PostRepository {
 
   @override
   Future<void> remove(String postId) => Future.error(_error());
+
+  @override
+  Future<void> setPinned(String postId, {required bool pinned}) =>
+      Future.error(_error());
 }
 
 StateError _error() => StateError('帖子仓储尚未在应用组合根绑定。');

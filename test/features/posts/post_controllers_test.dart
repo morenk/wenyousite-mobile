@@ -485,6 +485,34 @@ void main() {
     expect(actions.state.failure, isNull);
     expect(actions.state.successMessage, '帖子已删除。');
   });
+
+  test('主楼层置顶成功递增完成版本，非法目标与失败不递增', () async {
+    final repository = _FakePostRepository();
+    final actions = PostActionController(repository);
+    addTearDown(actions.dispose);
+
+    expect(await actions.setPinned(_post('floor'), pinned: true), isTrue);
+    expect(repository.pinRequests, [(postId: 'floor', pinned: true)]);
+    expect(actions.state.pinRevision, 1);
+    expect(actions.state.successMessage, '楼层已置顶。');
+    actions.clearFeedback();
+    expect(actions.state.pinRevision, 1);
+    expect(await actions.setPinned(_reply('reply'), pinned: true), isFalse);
+    expect(repository.pinRequests, hasLength(1));
+
+    final denied = PostActionController(
+      _FakePostRepository(
+        pinFailure: const ApiFailure(
+          userMessage: '当前账号不能执行这项操作。',
+          httpStatus: 403,
+        ),
+      ),
+    );
+    addTearDown(denied.dispose);
+    expect(await denied.setPinned(_post('floor'), pinned: false), isFalse);
+    expect(denied.state.pinRevision, 0);
+    expect(denied.state.failure?.httpStatus, 403);
+  });
 }
 
 const _author = PostAuthor(id: 'author-1', username: '作者甲', level: 3);
@@ -616,6 +644,7 @@ class _FakePostRepository implements PostRepository {
     this.onCreate,
     this.onUpdate,
     this.removeFailure,
+    this.pinFailure,
   });
 
   final Map<String, PostItem> posts;
@@ -623,6 +652,7 @@ class _FakePostRepository implements PostRepository {
   final Future<PostItem> Function(PostCreateInput input)? onCreate;
   final _UpdateHandler? onUpdate;
   final ApiFailure? removeFailure;
+  final ApiFailure? pinFailure;
   final List<({String? cursor, PostReplyOrder order, String? authorId})>
   replyRequests = [];
   final List<PostCreateInput> createInputs = [];
@@ -631,6 +661,7 @@ class _FakePostRepository implements PostRepository {
   final List<({String subthreadId, String content, int? version})>
   bodyRequests = [];
   final List<String> removedIds = [];
+  final List<({String postId, bool pinned})> pinRequests = [];
 
   @override
   Future<PostItem> fetchPost(String postId) async => posts[postId]!;
@@ -688,5 +719,11 @@ class _FakePostRepository implements PostRepository {
   Future<void> remove(String postId) async {
     if (removeFailure case final failure?) throw failure;
     removedIds.add(postId);
+  }
+
+  @override
+  Future<void> setPinned(String postId, {required bool pinned}) async {
+    if (pinFailure case final failure?) throw failure;
+    pinRequests.add((postId: postId, pinned: pinned));
   }
 }

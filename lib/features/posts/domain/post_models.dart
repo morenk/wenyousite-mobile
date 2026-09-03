@@ -56,6 +56,7 @@ class PostItem {
     this.replyToAuthor,
     this.clientRequestId,
     this.replyCount = 0,
+    this.pinnedAt,
     this.threadTitle,
     this.subthreadTitle,
     this.diceRolls = const [],
@@ -77,9 +78,12 @@ class PostItem {
   final PostAuthor? replyToAuthor;
   final String? clientRequestId;
   final int replyCount;
+  final DateTime? pinnedAt;
   final String? threadTitle;
   final String? subthreadTitle;
   final List<PostDiceRoll> diceRolls;
+
+  bool get isPinned => pinnedAt != null;
 
   bool isAuthoredBy(String? userId) => userId != null && author.id == userId;
 }

@@ -132,11 +132,13 @@ class PostActionState {
     this.pendingPostId,
     this.failure,
     this.successMessage,
+    this.pinRevision = 0,
   });
 
   final String? pendingPostId;
   final ApiFailure? failure;
   final String? successMessage;
+  final int pinRevision;
 
   bool get isBusy => pendingPostId != null;
 
@@ -144,6 +146,7 @@ class PostActionState {
     Object? pendingPostId = _unset,
     Object? failure = _unset,
     Object? successMessage = _unset,
+    int? pinRevision,
   }) {
     return PostActionState(
       pendingPostId: identical(pendingPostId, _unset)
@@ -155,6 +158,7 @@ class PostActionState {
       successMessage: identical(successMessage, _unset)
           ? this.successMessage
           : successMessage as String?,
+      pinRevision: pinRevision ?? this.pinRevision,
     );
   }
 }

@@ -2093,6 +2093,9 @@ class _FakePostRepository implements PostRepository {
     removedIds.add(postId);
     replies.removeWhere((post) => post.id == postId);
   }
+
+  @override
+  Future<void> setPinned(String postId, {required bool pinned}) async {}
 }
 
 class _FakeStickerRepository implements StickerRepository {

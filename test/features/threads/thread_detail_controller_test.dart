@@ -604,6 +604,24 @@ void main() {
     expect(controller.state.failure?.httpStatus, 404);
     expect(controller.state.failure?.requestId, 'thread-request-id');
   });
+
+  test('置顶楼层始终优先并按置顶时间倒序，普通楼层仍服从筛选顺序', () {
+    final floors = [
+      _floor('ordinary-1', number: 1),
+      _floor('pinned-old', number: 2, pinnedAt: DateTime.utc(2026, 8, 9, 1)),
+      _floor('ordinary-3', number: 3),
+      _floor('pinned-new', number: 4, pinnedAt: DateTime.utc(2026, 8, 9, 2)),
+    ];
+
+    expect(
+      sortThreadFloors(floors, ThreadFloorOrder.oldest).map((item) => item.id),
+      ['pinned-new', 'pinned-old', 'ordinary-1', 'ordinary-3'],
+    );
+    expect(
+      sortThreadFloors(floors, ThreadFloorOrder.newest).map((item) => item.id),
+      ['pinned-new', 'pinned-old', 'ordinary-3', 'ordinary-1'],
+    );
+  });
 }
 
 void _expectRestrictedTerminal(ThreadDetailState state, int status) {
@@ -735,7 +753,7 @@ final _detailWithoutSelectedSubthread = ThreadDetailModel(
 
 const _author = ThreadAuthorModel(id: 'user-1', username: '温柔测试员', level: 3);
 
-ThreadFloorModel _floor(String id, {int number = 1}) {
+ThreadFloorModel _floor(String id, {int number = 1, DateTime? pinnedAt}) {
   return ThreadFloorModel(
     id: id,
     floorNumber: number,
@@ -745,5 +763,6 @@ ThreadFloorModel _floor(String id, {int number = 1}) {
     isDeleted: false,
     replyCount: 0,
     replies: const [],
+    pinnedAt: pinnedAt,
   );
 }

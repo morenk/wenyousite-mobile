@@ -562,11 +562,17 @@ class PostActionController extends StateNotifier<PostActionState> {
 
   Future<bool> remove(PostItem post) async {
     if (state.isBusy || post.isBody) return false;
-    state = PostActionState(pendingPostId: post.id);
+    state = PostActionState(
+      pendingPostId: post.id,
+      pinRevision: state.pinRevision,
+    );
     try {
       await _repository.remove(post.id);
       if (!mounted) return false;
-      state = const PostActionState(successMessage: '帖子已删除。');
+      state = PostActionState(
+        successMessage: '帖子已删除。',
+        pinRevision: state.pinRevision,
+      );
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
@@ -574,17 +580,50 @@ class PostActionController extends StateNotifier<PostActionState> {
           ? error
           : ApiFailure(userMessage: '帖子没有删除成功，请稍后重试。', cause: error);
       if (failure.businessCode == 40403) {
-        state = const PostActionState(successMessage: '帖子已删除。');
+        state = PostActionState(
+          successMessage: '帖子已删除。',
+          pinRevision: state.pinRevision,
+        );
         return true;
       }
-      state = PostActionState(failure: failure);
+      state = PostActionState(failure: failure, pinRevision: state.pinRevision);
+      return false;
+    }
+  }
+
+  Future<bool> setPinned(PostItem post, {required bool pinned}) async {
+    if (state.isBusy ||
+        post.isBody ||
+        post.isDeleted ||
+        post.parentPostId != null ||
+        post.floorNumber == null) {
+      return false;
+    }
+    final revision = state.pinRevision;
+    state = PostActionState(pendingPostId: post.id, pinRevision: revision);
+    try {
+      await _repository.setPinned(post.id, pinned: pinned);
+      if (!mounted) return false;
+      state = PostActionState(
+        successMessage: pinned ? '楼层已置顶。' : '已取消楼层置顶。',
+        pinRevision: revision + 1,
+      );
+      return true;
+    } on Object catch (error) {
+      if (!mounted) return false;
+      state = PostActionState(
+        failure: error is ApiFailure
+            ? error
+            : ApiFailure(userMessage: '楼层置顶状态没有更新，请稍后重试。', cause: error),
+        pinRevision: revision,
+      );
       return false;
     }
   }
 
   void clearFeedback() {
     if (state.isBusy) return;
-    state = const PostActionState();
+    state = PostActionState(pinRevision: state.pinRevision);
   }
 }
 

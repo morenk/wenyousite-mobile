@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -99,6 +101,13 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       ref
         ..invalidate(provider)
         ..invalidate(actionsProvider);
+    });
+    ref.listen<int>(actionsProvider.select((value) => value.pinRevision), (
+      previous,
+      next,
+    ) {
+      if (previous == null || next <= previous) return;
+      unawaited(ref.read(provider.notifier).retryFloors());
     });
     final state = ref.watch(provider);
     if (widget.enableRenderDiagnostics) {
@@ -663,6 +672,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                           canDelete:
                               floor.author.id == viewerId ||
                               detail.canManageThread,
+                          canPin: detail.canManageThread,
                           pending: actions.pendingPostId == floor.id,
                           onReply: authenticated
                               ? () => _compose(
@@ -704,6 +714,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                             ),
                           ),
                           onDelete: () => _deleteFloor(floor),
+                          onTogglePin: () => _toggleFloorPin(floor),
                         ),
                       ],
                     ),
@@ -844,5 +855,25 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     showWenyouSnackBar(context, '楼层已删除。');
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
     await ref.read(_detailProvider.notifier).refresh();
+  }
+
+  Future<void> _toggleFloorPin(ThreadFloorModel floor) async {
+    final state = ref.read(_detailProvider);
+    final detail = state.detail;
+    final subthread = state.selectedSubthread;
+    if (detail == null || subthread == null) return;
+    final actionsProvider = postActionControllerProvider(widget.threadId);
+    final updated = await ref
+        .read(actionsProvider.notifier)
+        .setPinned(
+          threadFloorAsPost(detail, subthread, floor),
+          pinned: !floor.isPinned,
+        );
+    if (!mounted) return;
+    if (updated) {
+      showWenyouSnackBar(context, floor.isPinned ? '已取消楼层置顶。' : '楼层已置顶。');
+    } else if (ref.read(actionsProvider).failure?.httpStatus == 403) {
+      await ref.read(_detailProvider.notifier).refresh();
+    }
   }
 }

@@ -5,7 +5,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_modal_action_menu.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar.dart';
 
-enum PostCardAction { copyText, copyLink, edit, delete, report }
+enum PostCardAction { copyText, copyLink, togglePin, edit, delete, report }
 
 void _ignorePopoverAction() {}
 
@@ -19,6 +19,8 @@ class PostCardActionMenu extends StatelessWidget {
     required this.canReport,
     required this.pending,
     this.canCopyLink = true,
+    this.canPin = false,
+    this.isPinned = false,
     this.copyLinkLabel = '复制链接',
     this.semanticLabel = '内容操作',
     this.actionKeyPrefix,
@@ -33,6 +35,8 @@ class PostCardActionMenu extends StatelessWidget {
   final bool canReport;
   final bool pending;
   final bool canCopyLink;
+  final bool canPin;
+  final bool isPinned;
   final String copyLinkLabel;
   final String semanticLabel;
   final String? actionKeyPrefix;
@@ -66,6 +70,14 @@ class PostCardActionMenu extends StatelessWidget {
           label: '编辑',
           enabled: !pending,
           key: _actionKey('edit'),
+        ),
+      if (canPin)
+        WenyouPopoverAction(
+          value: PostCardAction.togglePin,
+          icon: WenyouIconIds.actionPin,
+          label: isPinned ? '取消置顶' : '置顶到当前子贴',
+          enabled: !pending,
+          key: _actionKey('pin'),
         ),
       if (canDelete)
         WenyouPopoverAction(
