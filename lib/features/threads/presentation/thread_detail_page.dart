@@ -29,6 +29,7 @@ import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_ov
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_render_diagnostics.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_sections.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_detail_target_utils.dart';
+import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_floor_filters.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_membership_controls.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -334,6 +335,12 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         if (selectedSubthread != null) {
           await _compose(threadDetailBodyTarget(detail, selectedSubthread));
         }
+      case ThreadDetailAppBarAction.exportArchive:
+        final saved = await showThreadExportSheet(
+          context: context,
+          threadId: widget.threadId,
+        );
+        if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
       case ThreadDetailAppBarAction.manage:
         await _openManagement();
       case ThreadDetailAppBarAction.tip:
