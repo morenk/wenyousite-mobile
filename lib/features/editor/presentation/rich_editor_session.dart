@@ -779,16 +779,13 @@ class RichEditorSession extends ChangeNotifier {
       Clipboard.setData(ClipboardData(text: text));
 }
 
-/// Adds the literal-source marker synchronously while Quill still exposes the
-/// exact replacement offset. Document change streams are asynchronous and may
-/// otherwise describe an earlier edit after a later replacement has landed.
+/// Marks literal source at the exact offset before async changes can race.
 class _LiteralTextQuillController extends QuillController {
   _LiteralTextQuillController({
     required super.document,
     required super.selection,
     required super.config,
   });
-
   @override
   void replaceText(
     int index,
@@ -799,13 +796,16 @@ class _LiteralTextQuillController extends QuillController {
     bool shouldNotifyListeners = true,
   }) {
     final before = document.toDelta();
-    final code = Attribute.inlineCode;
-    if (data == ' ' &&
-        len == 0 &&
-        toggledStyle.attributes[code.key]?.value != true &&
-        document.collectStyle(index, 0).containsKey(code.key) &&
-        document.collectStyle(index, 1).containsKey(Attribute.bold.key)) {
-      toggledStyle = toggledStyle.put(Attribute.clone(code, null));
+    if (data == ' ' && len == 0 && index > 0) {
+      final left = document.collectStyle(index - 1, 1).attributes;
+      final right = document.collectStyle(index, 1).attributes;
+      for (final entry in left.entries) {
+        if (entry.value.isInline &&
+            entry.value.value != right[entry.key]?.value &&
+            !toggledStyle.attributes.containsKey(entry.key)) {
+          toggledStyle = toggledStyle.put(Attribute.clone(entry.value, null));
+        }
+      }
     }
     final internalReference = data is String
         ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
