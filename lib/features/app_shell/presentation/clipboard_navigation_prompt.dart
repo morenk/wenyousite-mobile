@@ -79,7 +79,7 @@ class _ClipboardNavigationPromptState
       return;
     }
     final reference = parseInternalReference(text);
-    if (reference == null || !_shouldOffer(reference.kind)) {
+    if (reference == null) {
       _lastClipboardFingerprint = fingerprint;
       return;
     }
@@ -94,18 +94,26 @@ class _ClipboardNavigationPromptState
 
     _lastClipboardFingerprint = fingerprint;
     _promptOpen = true;
+    final isInvite = reference.kind == InternalReferenceKind.invite;
+    final isThread =
+        reference.kind == InternalReferenceKind.thread ||
+        reference.kind == InternalReferenceKind.subthread;
     final accepted = await showDialog<bool>(
       context: navigatorContext,
       useRootNavigator: true,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          reference.kind == InternalReferenceKind.invite
+          isInvite
               ? '打开私密主题邀请？'
+              : isThread
+              ? '打开主题链接？'
               : '打开楼层链接？',
         ),
         content: Text(
-          reference.kind == InternalReferenceKind.invite
+          isInvite
               ? '剪贴板中有一个私密主题邀请链接，是否前往查看？'
+              : isThread
+              ? '剪贴板中有一个主题链接，是否前往查看？'
               : '剪贴板中有一个楼层链接，是否前往查看？',
         ),
         actions: [
@@ -128,8 +136,3 @@ class _ClipboardNavigationPromptState
     }
   }
 }
-
-bool _shouldOffer(InternalReferenceKind kind) =>
-    kind == InternalReferenceKind.floor ||
-    kind == InternalReferenceKind.reply ||
-    kind == InternalReferenceKind.invite;

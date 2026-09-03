@@ -84,11 +84,17 @@ void main() {
     );
   });
 
-  testWidgets('普通主题链接不触发楼层跳转提示', (tester) async {
+  testWidgets('普通主题传送门也先提示再进入', (tester) async {
     clipboardText = 'https://wenyou.site/threads/abcdefghijklmnopqrst';
-    await _pumpApp(tester);
+    final router = await _pumpApp(tester);
 
-    expect(find.byKey(const Key('clipboard-navigation-open')), findsNothing);
+    expect(find.text('打开主题链接？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('clipboard-navigation-open')));
+    await tester.pumpAndSettle();
+    expect(
+      router.routerDelegate.currentConfiguration.uri.path,
+      '/threads/abcdefghijklmnopqrst',
+    );
   });
 
   testWidgets('回前台须等窗口稳定后再读取剪贴板', (tester) async {
