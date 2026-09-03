@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -164,6 +165,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         thread.published &&
         thread.visibility == ThreadManagementVisibility.private;
     final showActions = thread.published || thread.isOwner;
+    final actionTitleStyle = Theme.of(context).textTheme.titleMedium;
+    final actionSubtitleStyle = Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText);
     return WenyouPageBody(
       child: Form(
         key: _formKey,
@@ -248,7 +253,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   enabled: !locked,
                   leading: const WenyouIcon(WenyouIconIds.securityPassword),
                   title: const Text('私密邀请'),
-                  subtitle: const Text('生成或复制邀请链接'),
+                  titleTextStyle: actionTitleStyle,
                   trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                   onTap: locked ? null : _openInviteLinkSheet,
                 ),
@@ -260,6 +265,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   enabled: !locked,
                   leading: const WenyouIcon(WenyouIconIds.actionDownload),
                   title: const Text('导出主题档案'),
+                  titleTextStyle: actionTitleStyle,
                   trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                   onTap: locked ? null : _exportArchive,
                 ),
@@ -275,15 +281,14 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                         ? tokens.mutedText
                         : Theme.of(context).colorScheme.error,
                   ),
-                  title: Text(
-                    '删除主题',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: state.isBusy
-                          ? tokens.mutedText
-                          : Theme.of(context).colorScheme.error,
-                    ),
+                  title: const Text('删除主题'),
+                  titleTextStyle: actionTitleStyle?.copyWith(
+                    color: state.isBusy
+                        ? tokens.mutedText
+                        : Theme.of(context).colorScheme.error,
                   ),
                   subtitle: const Text('永久删除主题及全部内容，无法恢复。'),
+                  subtitleTextStyle: actionSubtitleStyle,
                   trailing: WenyouIcon(
                     WenyouIconIds.navigationNext,
                     color: state.isBusy
@@ -647,7 +652,10 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('编辑主题标签', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                '编辑主题标签',
+                style: Theme.of(context).textTheme.wenyouOverlayTitle,
+              ),
               SizedBox(height: tokens.space12),
               TextField(
                 key: const Key('thread-management-tag-input'),
@@ -672,7 +680,9 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
               SizedBox(height: tokens.space8),
               Text(
                 '已选 ${_tags.length}/5',
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
               ),
               if (_tags.isNotEmpty) ...[
                 SizedBox(height: tokens.space8),

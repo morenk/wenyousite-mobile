@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
@@ -15,9 +16,7 @@ class ThreadManagementGroupLabel extends StatelessWidget {
       header: true,
       child: Text(
         label,
-        style: Theme.of(
-          context,
-        ).textTheme.labelLarge?.copyWith(color: context.wenyouTokens.mutedText),
+        style: Theme.of(context).textTheme.wenyouSubsectionTitle,
       ),
     );
   }
@@ -63,6 +62,8 @@ class ThreadManagementBasicsSection extends StatelessWidget {
       children: [
         const ThreadManagementGroupLabel('主题信息'),
         SizedBox(height: tokens.space12),
+        Text('主题标题', style: Theme.of(context).textTheme.titleMedium),
+        SizedBox(height: tokens.space8),
         TextFormField(
           key: const Key('thread-management-title'),
           controller: titleController,
@@ -70,9 +71,14 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           enabled: enabled,
           maxLength: 100,
           textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            labelText: '主题标题',
+          style: Theme.of(context).textTheme.bodyLarge,
+          decoration: InputDecoration(
             hintText: '一句话说明这个主题',
+            counterStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens.mutedText,
+              fontFamily: WenyouFoundationTypography.utility,
+              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+            ),
           ),
           onChanged: onTitleChanged,
           validator: (value) {
@@ -284,6 +290,10 @@ class _ThreadSettingRow extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       enabled: enabled,
+      titleTextStyle: Theme.of(context).textTheme.titleMedium,
+      subtitleTextStyle: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
       title: Text(label),
       subtitle: supportingLabel == null ? null : Text(supportingLabel!),
       trailing: ConstrainedBox(
@@ -352,7 +362,7 @@ Future<T?> _showChoiceSheet<T>({
               ),
               child: Text(
                 title,
-                style: Theme.of(sheetContext).textTheme.titleLarge,
+                style: Theme.of(sheetContext).textTheme.wenyouOverlayTitle,
               ),
             ),
             if (supportingText != null)
@@ -383,6 +393,12 @@ Future<T?> _showChoiceSheet<T>({
                       ),
                       enabled: enabled,
                       selected: isSelected,
+                      titleTextStyle: Theme.of(
+                        sheetContext,
+                      ).textTheme.titleMedium,
+                      subtitleTextStyle: Theme.of(
+                        sheetContext,
+                      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
                       title: Text(option.label),
                       subtitle: option.supportingLabel == null
                           ? null

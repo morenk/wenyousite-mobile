@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
@@ -249,6 +250,29 @@ void main() {
     expect(find.text('综合讨论'), findsOneWidget);
   });
 
+  testWidgets('主题设置使用固定语义字阶和对应字体', (tester) async {
+    await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
+
+    final group = tester.widget<Text>(find.text('主题信息'));
+    final fieldLabel = tester.widget<Text>(find.text('主题标题'));
+    final rowTitle = DefaultTextStyle.of(
+      tester.element(find.text('所在分区')),
+    ).style;
+    final currentValue = tester.widget<Text>(find.text('角色扮演'));
+    final counter = tester.widget<Text>(find.text('3/100'));
+
+    expect(group.style?.fontFamily, WenyouFoundationTypography.display);
+    expect(group.style?.fontSize, 16);
+    expect(fieldLabel.style?.fontFamily, WenyouFoundationTypography.body);
+    expect(fieldLabel.style?.fontSize, 16);
+    expect(rowTitle.fontFamily, WenyouFoundationTypography.body);
+    expect(rowTitle.fontSize, 16);
+    expect(currentValue.style?.fontFamily, WenyouFoundationTypography.body);
+    expect(currentValue.style?.fontSize, 14);
+    expect(counter.style?.fontFamily, WenyouFoundationTypography.utility);
+    expect(counter.style?.fontSize, 12);
+  });
+
   testWidgets('关闭单选面板不会修改或保存设置', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
@@ -391,6 +415,7 @@ void main() {
     );
     final entry = find.byKey(const Key('thread-management-invite'));
     expect(entry, findsOneWidget);
+    expect(find.text('生成或复制邀请链接'), findsNothing);
     expect(find.byKey(const Key('thread-invite-link-generate')), findsNothing);
 
     await tester.ensureVisible(entry);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_invitation_controller.dart';
@@ -25,7 +26,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('私密邀请', style: Theme.of(context).textTheme.titleLarge),
+        Text('私密邀请', style: Theme.of(context).textTheme.wenyouOverlayTitle),
         SizedBox(height: tokens.space8),
         Text(
           '每次生成都会让旧邀请立即失效。只把链接发送给你希望加入这个私密主题的人。',
