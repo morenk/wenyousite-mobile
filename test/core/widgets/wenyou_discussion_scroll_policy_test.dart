@@ -3,6 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 
 void main() {
+  testWidgets('目标前继续加载内容后仍保持目标可见', (tester) async {
+    final harnessKey = GlobalKey<_RevealHarnessState>();
+    await tester.pumpWidget(MaterialApp(home: _RevealHarness(key: harnessKey)));
+    await tester.pumpAndSettle();
+
+    final target = find.byKey(const Key('reveal-target'));
+    final initialTop = tester.getTopLeft(target).dy;
+
+    harnessKey.currentState!.insertBeforeTarget();
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(target).dy, closeTo(initialTop, 1));
+  });
+
   testWidgets('懒列表目标可自动显露，用户拖动后布局变化不再拉回', (tester) async {
     final harnessKey = GlobalKey<_RevealHarnessState>();
     await tester.pumpWidget(MaterialApp(home: _RevealHarness(key: harnessKey)));
@@ -38,16 +52,25 @@ class _RevealHarness extends StatefulWidget {
 }
 
 class _RevealHarnessState extends State<_RevealHarness> {
-  static const _targetIndex = 45;
   final _controller = ScrollController();
   final _targetKey = GlobalKey();
   final _reveal = DiscussionTargetRevealCoordinator();
-  var _itemCount = 60;
+  final _items = [
+    for (var index = 0; index < 45; index += 1) 'item-$index',
+    'target',
+    for (var index = 45; index < 59; index += 1) 'item-$index',
+  ];
   var _scope = 1;
 
   double get offset => _controller.offset;
 
-  void relayout() => setState(() => _itemCount += 1);
+  void relayout() => setState(() => _items.add('tail-${_items.length}'));
+
+  void insertBeforeTarget() => setState(() {
+    _items.insertAll(_items.indexOf('target'), [
+      for (var index = 0; index < 20; index += 1) 'inserted-$index',
+    ]);
+  });
 
   void changeScope() => setState(() => _scope += 1);
 
@@ -59,12 +82,13 @@ class _RevealHarnessState extends State<_RevealHarness> {
 
   @override
   Widget build(BuildContext context) {
+    final targetIndex = _items.indexOf('target');
     _reveal.schedule(
-      targetId: 'item-$_targetIndex',
+      targetId: 'target',
       scopeSignature: 'scope-$_scope',
-      contentSignature: 'items-$_itemCount',
-      targetIndex: _targetIndex,
-      itemCount: _itemCount,
+      contentSignature: 'items-${_items.length}:$targetIndex',
+      targetIndex: targetIndex,
+      itemCount: _items.length,
       ready: true,
       targetKey: _targetKey,
       scrollController: _controller,
@@ -82,14 +106,29 @@ class _RevealHarnessState extends State<_RevealHarness> {
           child: ListView.builder(
             controller: _controller,
             itemExtent: 80,
-            itemCount: _itemCount,
-            itemBuilder: (context, index) => SizedBox(
-              key: index == _targetIndex ? _targetKey : null,
-              child: Text(
-                '第 $index 项',
-                key: index == _targetIndex ? const Key('reveal-target') : null,
-              ),
-            ),
+            itemCount: _items.length,
+            itemBuilder: (context, index) {
+              final id = _items[index];
+              final isTarget = id == 'target';
+              return DiscussionKeepAlive(
+                key: ValueKey('reveal-item-$id'),
+                child: SizedBox(
+                  key: isTarget ? _targetKey : null,
+                  child: Text(
+                    '第 $index 项',
+                    key: isTarget ? const Key('reveal-target') : null,
+                  ),
+                ),
+              );
+            },
+            findChildIndexCallback: (key) {
+              final value = key is ValueKey<String> ? key.value : null;
+              if (value == null || !value.startsWith('reveal-item-')) {
+                return null;
+              }
+              final index = _items.indexOf(value.substring(12));
+              return index < 0 ? null : index;
+            },
           ),
         ),
       ),

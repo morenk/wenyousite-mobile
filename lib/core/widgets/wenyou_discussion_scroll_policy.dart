@@ -1,4 +1,5 @@
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/rendering.dart'
+    show RenderAbstractViewport, RenderObject, RenderSliver, ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
 /// Prepares the visible discussion plus two viewports on either side.
@@ -105,7 +106,7 @@ class DiscussionTargetRevealCoordinator {
         return;
       }
       final targetContext = targetKey.currentContext;
-      if (targetContext != null) {
+      if (targetContext != null && _canReveal(targetContext)) {
         Scrollable.ensureVisible(
           targetContext,
           duration: Duration.zero,
@@ -128,6 +129,22 @@ class DiscussionTargetRevealCoordinator {
       );
       if (isMounted()) requestRebuild();
     });
+  }
+
+  static bool _canReveal(BuildContext context) {
+    // Kept-alive sliver children retain context after losing layout geometry.
+    final target = context.findRenderObject();
+    if (target == null || !target.attached) return false;
+    RenderObject child = target;
+    while (child.parent != null) {
+      final parent = child.parent!;
+      if (parent is RenderSliver && parent.childScrollOffset(child) == null) {
+        return false;
+      }
+      if (parent is RenderAbstractViewport) return true;
+      child = parent;
+    }
+    return false;
   }
 
   bool handleLayoutChange({
