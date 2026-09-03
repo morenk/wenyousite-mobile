@@ -18,6 +18,7 @@ class ThreadManagementAutosaveCoordinator extends ChangeNotifier {
   final Duration delay;
 
   Timer? _timer;
+  Timer? _savedTimer;
   Future<bool>? _drainFuture;
   var _requested = false;
   var _disposed = false;
@@ -74,15 +75,27 @@ class ThreadManagementAutosaveCoordinator extends ChangeNotifier {
   }
 
   void _setStatus(ThreadManagementAutosaveStatus value) {
-    if (_status == value) return;
-    _status = value;
-    notifyListeners();
+    _savedTimer?.cancel();
+    _savedTimer = null;
+    if (_status != value) {
+      _status = value;
+      notifyListeners();
+    }
+    if (value == ThreadManagementAutosaveStatus.saved) {
+      _savedTimer = Timer(const Duration(milliseconds: 1500), () {
+        _savedTimer = null;
+        if (!_disposed && _status == ThreadManagementAutosaveStatus.saved) {
+          _setStatus(ThreadManagementAutosaveStatus.idle);
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _disposed = true;
     _timer?.cancel();
+    _savedTimer?.cancel();
     super.dispose();
   }
 }

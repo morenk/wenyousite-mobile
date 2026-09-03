@@ -27,6 +27,11 @@ void main() {
     await tester.pump();
     expect(saves, 1);
     expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
+
+    await tester.pump(const Duration(milliseconds: 1499));
+    expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(coordinator.status, ThreadManagementAutosaveStatus.idle);
   });
 
   testWidgets('写入期间的新修改串行合并到下一次保存', (tester) async {
@@ -58,5 +63,35 @@ void main() {
     expect(saves, 2);
     expect(savedVersion, 2);
     expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(coordinator.status, ThreadManagementAutosaveStatus.idle);
+  });
+
+  testWidgets('保存成功退场前的新修改会切换为待保存', (tester) async {
+    var dirty = true;
+    final coordinator = ThreadManagementAutosaveCoordinator(
+      hasChanges: () => dirty,
+      onSave: () async {
+        dirty = false;
+        return true;
+      },
+    );
+    addTearDown(coordinator.dispose);
+
+    await coordinator.saveNow();
+    expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
+    await tester.pump(const Duration(milliseconds: 1000));
+
+    dirty = true;
+    coordinator.schedule();
+    expect(coordinator.status, ThreadManagementAutosaveStatus.scheduled);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(coordinator.status, ThreadManagementAutosaveStatus.scheduled);
+
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+    expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(coordinator.status, ThreadManagementAutosaveStatus.idle);
   });
 }

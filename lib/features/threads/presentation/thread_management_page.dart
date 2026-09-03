@@ -166,10 +166,8 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         thread.visibility == ThreadManagementVisibility.private;
     final showActions = thread.published || thread.isOwner;
     final actionTitleStyle = Theme.of(context).textTheme.titleMedium;
-    final actionSubtitleStyle = Theme.of(
-      context,
-    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText);
     return WenyouPageBody(
+      key: const Key('thread-management-settings-content'),
       child: Form(
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -244,12 +242,11 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             ],
             if (showActions) ...[
               SizedBox(height: tokens.space24),
-              const ThreadManagementGroupLabel('主题操作'),
-              SizedBox(height: tokens.space8),
               if (showInvite)
                 ListTile(
                   key: const Key('thread-management-invite'),
                   contentPadding: EdgeInsets.zero,
+                  minTileHeight: 56,
                   enabled: !locked,
                   leading: const WenyouIcon(WenyouIconIds.securityPassword),
                   title: const Text('私密邀请'),
@@ -257,23 +254,26 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                   trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                   onTap: locked ? null : _openInviteLinkSheet,
                 ),
-              if (showInvite) const Divider(height: 1),
+              if (showInvite) SizedBox(height: tokens.space4),
               if (thread.published)
                 ListTile(
                   key: const Key('thread-management-export'),
                   contentPadding: EdgeInsets.zero,
+                  minTileHeight: 56,
                   enabled: !locked,
                   leading: const WenyouIcon(WenyouIconIds.actionDownload),
-                  title: const Text('导出主题档案'),
+                  title: const Text('导出档案'),
                   titleTextStyle: actionTitleStyle,
                   trailing: const WenyouIcon(WenyouIconIds.navigationNext),
                   onTap: locked ? null : _exportArchive,
                 ),
-              if (thread.published && thread.isOwner) const Divider(height: 1),
+              if (thread.published && thread.isOwner)
+                SizedBox(height: tokens.space4),
               if (thread.isOwner)
                 ListTile(
                   key: const Key('thread-management-delete'),
                   contentPadding: EdgeInsets.zero,
+                  minTileHeight: 56,
                   enabled: !state.isBusy,
                   leading: WenyouIcon(
                     WenyouIconIds.actionDelete,
@@ -287,8 +287,6 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                         ? tokens.mutedText
                         : Theme.of(context).colorScheme.error,
                   ),
-                  subtitle: const Text('永久删除主题及全部内容，无法恢复。'),
-                  subtitleTextStyle: actionSubtitleStyle,
                   trailing: WenyouIcon(
                     WenyouIconIds.navigationNext,
                     color: state.isBusy

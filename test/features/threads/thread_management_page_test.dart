@@ -75,7 +75,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('编辑主题标签'), findsNothing);
     expect(find.text('主题标签'), findsOneWidget);
-    expect(find.text('1/5'), findsOneWidget);
+    expect(find.text('1/5'), findsNothing);
     expect(find.text('新标签'), findsOneWidget);
     expect(find.text('原标签'), findsNothing);
   });
@@ -105,7 +105,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('编辑主题标签'), findsNothing);
     expect(find.text('主题标签'), findsOneWidget);
-    expect(find.text('1/5'), findsOneWidget);
+    expect(find.text('1/5'), findsNothing);
     expect(find.text('原标签'), findsOneWidget);
     expect(find.text('暂存标签'), findsNothing);
   });
@@ -177,10 +177,12 @@ void main() {
     await tester.pump();
     expect(find.text('待保存'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 1200));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(repository.lastDraft?.title, '新的主题标题');
     expect(find.text('已保存'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(find.text('已保存'), findsNothing);
     expect(find.byKey(const Key('thread-management-title')), findsOneWidget);
   });
 
@@ -219,7 +221,8 @@ void main() {
       repository.lastDraft?.visibility,
       ThreadManagementVisibility.private,
     );
-    expect(find.text('只有主题成员可以查看'), findsOneWidget);
+    expect(find.text('仅成员'), findsOneWidget);
+    expect(find.text('只有主题成员可以查看'), findsNothing);
   });
 
   testWidgets('主题分区使用整行入口和列表面板且不重复显示说明', (tester) async {
@@ -250,27 +253,55 @@ void main() {
     expect(find.text('综合讨论'), findsOneWidget);
   });
 
-  testWidgets('主题设置使用固定语义字阶和对应字体', (tester) async {
+  testWidgets('主题设置移除冗余标题、说明和内容分割线', (tester) async {
     await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
 
-    final group = tester.widget<Text>(find.text('主题信息'));
     final fieldLabel = tester.widget<Text>(find.text('主题标题'));
     final rowTitle = DefaultTextStyle.of(
       tester.element(find.text('所在分区')),
     ).style;
     final currentValue = tester.widget<Text>(find.text('角色扮演'));
-    final counter = tester.widget<Text>(find.text('3/100'));
+    final pageTitle = DefaultTextStyle.of(
+      tester.element(find.text('管理主题')),
+    ).style;
 
-    expect(group.style?.fontFamily, WenyouFoundationTypography.display);
-    expect(group.style?.fontSize, 16);
+    expect(find.text('主题信息'), findsNothing);
+    expect(find.text('发布与访问'), findsNothing);
+    expect(find.text('主题操作'), findsNothing);
+    expect(find.text('3/100'), findsNothing);
+    expect(find.text('所有人都可以查看主题'), findsNothing);
+    expect(find.text('永久删除主题及全部内容，无法恢复。'), findsNothing);
+    expect(find.text('导出档案'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('thread-management-settings-content')),
+        matching: find.byType(Divider),
+      ),
+      findsNothing,
+    );
+    expect(pageTitle.fontFamily, WenyouFoundationTypography.display);
     expect(fieldLabel.style?.fontFamily, WenyouFoundationTypography.body);
     expect(fieldLabel.style?.fontSize, 16);
     expect(rowTitle.fontFamily, WenyouFoundationTypography.body);
     expect(rowTitle.fontSize, 16);
     expect(currentValue.style?.fontFamily, WenyouFoundationTypography.body);
     expect(currentValue.style?.fontSize, 14);
-    expect(counter.style?.fontFamily, WenyouFoundationTypography.utility);
-    expect(counter.style?.fontSize, 12);
+
+    for (final key in [
+      'thread-management-category',
+      'thread-management-edit-tags',
+      'thread-management-status',
+      'thread-management-visibility',
+      'thread-management-export',
+      'thread-management-delete',
+    ]) {
+      expect(tester.getSize(find.byKey(Key(key))).height, 56);
+    }
+
+    await tester.tap(find.byKey(const Key('thread-management-status')));
+    await tester.pumpAndSettle();
+    final sheetTitle = tester.widget<Text>(find.text('选择招募状态'));
+    expect(sheetTitle.style?.fontFamily, WenyouFoundationTypography.body);
   });
 
   testWidgets('关闭单选面板不会修改或保存设置', (tester) async {
@@ -391,7 +422,8 @@ void main() {
       find.byKey(const ValueKey('thread-management-visibility-choice-private')),
       findsNothing,
     );
-    expect(find.text('仅楼主可修改可见范围。'), findsOneWidget);
+    expect(find.text('公开 · 仅楼主可改'), findsOneWidget);
+    expect(find.text('仅楼主可修改可见范围。'), findsNothing);
     expect(find.byKey(const Key('thread-management-delete')), findsNothing);
 
     await tester.enterText(
@@ -438,6 +470,7 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-management-delete')));
     await tester.pumpAndSettle();
     expect(find.text('确认删除这个主题？'), findsOneWidget);
+    expect(find.text('主题、子贴和全部内容会永久删除，且无法恢复。'), findsOneWidget);
     await tester.tap(find.byKey(const Key('thread-management-delete-confirm')));
     await tester.pumpAndSettle();
 

@@ -5,23 +5,6 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
-class ThreadManagementGroupLabel extends StatelessWidget {
-  const ThreadManagementGroupLabel(this.label, {super.key});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      header: true,
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.wenyouSubsectionTitle,
-      ),
-    );
-  }
-}
-
 class ThreadManagementBasicsSection extends StatelessWidget {
   const ThreadManagementBasicsSection({
     required this.titleController,
@@ -60,8 +43,6 @@ class ThreadManagementBasicsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ThreadManagementGroupLabel('主题信息'),
-        SizedBox(height: tokens.space12),
         Text('主题标题', style: Theme.of(context).textTheme.titleMedium),
         SizedBox(height: tokens.space8),
         TextFormField(
@@ -72,13 +53,9 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           maxLength: 100,
           textInputAction: TextInputAction.done,
           style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: '一句话说明这个主题',
-            counterStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens.mutedText,
-              fontFamily: WenyouFoundationTypography.utility,
-              fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-            ),
+            counterText: '',
           ),
           onChanged: onTitleChanged,
           validator: (value) {
@@ -88,8 +65,7 @@ class ThreadManagementBasicsSection extends StatelessWidget {
             return null;
           },
         ),
-        SizedBox(height: tokens.space4),
-        const Divider(height: 1),
+        SizedBox(height: tokens.space8),
         FormField<String>(
           key: ValueKey('thread-management-category-field-$version'),
           initialValue: categorySlug,
@@ -154,12 +130,11 @@ class ThreadManagementBasicsSection extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 1),
+        SizedBox(height: tokens.space4),
         _ThreadSettingRow(
           key: const Key('thread-management-edit-tags'),
           label: '主题标签',
-          value: tags.isEmpty ? '未添加' : '${tags.length}/5',
-          supportingLabel: tags.isEmpty ? null : tags.join('、'),
+          value: tags.isEmpty ? '未添加' : tags.join('、'),
           enabled: enabled,
           onTap: enabled ? onEditTags : null,
         ),
@@ -192,8 +167,6 @@ class ThreadManagementPublishingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ThreadManagementGroupLabel('发布与访问'),
-        SizedBox(height: tokens.space8),
         _ThreadSettingRow(
           key: const Key('thread-management-status'),
           label: '招募状态',
@@ -226,14 +199,13 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                   onStatusChanged(selected);
                 },
         ),
-        const Divider(height: 1),
+        SizedBox(height: tokens.space4),
         _ThreadSettingRow(
           key: const Key('thread-management-visibility'),
           label: '可见范围',
-          value: visibility.label,
-          supportingLabel: canChangeVisibility
-              ? visibility.description
-              : '仅楼主可修改可见范围。',
+          value: canChangeVisibility
+              ? visibility.label
+              : '${visibility.label} · 仅楼主可改',
           enabled: enabled,
           onTap: !enabled || !canChangeVisibility
               ? null
@@ -273,13 +245,11 @@ class _ThreadSettingRow extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onTap,
-    this.supportingLabel,
     super.key,
   });
 
   final String label;
   final String value;
-  final String? supportingLabel;
   final bool enabled;
   final VoidCallback? onTap;
 
@@ -289,13 +259,10 @@ class _ThreadSettingRow extends StatelessWidget {
     final actionable = enabled && onTap != null;
     return ListTile(
       contentPadding: EdgeInsets.zero,
+      minTileHeight: 56,
       enabled: enabled,
       titleTextStyle: Theme.of(context).textTheme.titleMedium,
-      subtitleTextStyle: Theme.of(
-        context,
-      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
       title: Text(label),
-      subtitle: supportingLabel == null ? null : Text(supportingLabel!),
       trailing: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width * .45,
