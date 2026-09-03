@@ -614,7 +614,7 @@ class PostActionController extends StateNotifier<PostActionState> {
       state = PostActionState(
         failure: error is ApiFailure
             ? error
-            : ApiFailure(userMessage: '楼层置顶状态没有更新，请稍后重试。', cause: error),
+            : mapApplicationFailure(error, '楼层置顶状态没有更新，请稍后重试。'),
         pinRevision: revision,
       );
       return false;

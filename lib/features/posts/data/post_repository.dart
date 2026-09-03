@@ -180,7 +180,10 @@ class ApiPostRepository implements PostRepository {
             )).data?.data
           : (await _api.postsUnpin(id: postId)).data?.data;
       if (data == null || data.message.trim().isEmpty) {
-        throw const ApiFailure(userMessage: '楼层置顶状态没有更新，请重新加载。');
+        throw ApiFailure.contractViolation(
+          userMessage: '楼层置顶状态没有更新，请重新加载。',
+          diagnosticCode: 'posts.pin.empty_response',
+        );
       }
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
