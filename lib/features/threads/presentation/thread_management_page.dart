@@ -180,9 +180,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
-            SizedBox(height: tokens.space24),
+            SizedBox(height: tokens.space16),
             Divider(height: 1, color: tokens.border),
-            SizedBox(height: tokens.space24),
+            SizedBox(height: tokens.space16),
             ThreadManagementPublishingSection(
               status: _status,
               visibility: _visibility,
@@ -197,9 +197,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                 unawaited(_autosave.saveNow());
               },
             ),
-            SizedBox(height: tokens.space24),
+            SizedBox(height: tokens.space16),
             Divider(height: 1, color: tokens.border),
-            SizedBox(height: tokens.space24),
+            SizedBox(height: tokens.space16),
             ThreadManagementTagsSection(
               tags: _tagNames,
               enabled: !locked,
@@ -252,50 +252,46 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             if (thread.isOwner &&
                 thread.published &&
                 thread.visibility == ThreadManagementVisibility.private) ...[
-              SizedBox(height: tokens.space24),
+              SizedBox(height: tokens.space16),
               Divider(height: 1, color: tokens.border),
-              SizedBox(height: tokens.space24),
+              SizedBox(height: tokens.space16),
               ThreadInviteLinkPanel(threadId: thread.id, enabled: !locked),
             ],
             if (thread.published) ...[
-              SizedBox(height: tokens.space24),
+              SizedBox(height: tokens.space16),
               Divider(height: 1, color: tokens.border),
-              SizedBox(height: tokens.space24),
-              const WenyouSectionHeader(
-                title: '导出主题档案',
-                subtitle: '将当前已发布内容生成 ZIP，并保存到你选择的位置。',
-              ),
-              SizedBox(height: tokens.space12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  key: const Key('thread-management-export'),
-                  onPressed: locked ? null : _exportArchive,
-                  icon: const WenyouIcon(WenyouIconIds.actionDownload),
-                  label: const Text('选择导出内容'),
-                ),
+              ListTile(
+                key: const Key('thread-management-export'),
+                contentPadding: EdgeInsets.zero,
+                enabled: !locked,
+                title: const Text('导出主题档案'),
+                trailing: const WenyouIcon(WenyouIconIds.navigationNext),
+                onTap: locked ? null : _exportArchive,
               ),
             ],
             if (thread.isOwner) ...[
-              SizedBox(height: tokens.space24),
+              SizedBox(height: tokens.space16),
               Divider(height: 1, color: tokens.border),
-              SizedBox(height: tokens.space24),
-              const WenyouSectionHeader(
-                title: '删除主题',
-                subtitle: '主题、子贴和全部内容会永久删除，且无法恢复。',
-              ),
-              SizedBox(height: tokens.space12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  key: const Key('thread-management-delete'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
+              ListTile(
+                key: const Key('thread-management-delete'),
+                contentPadding: EdgeInsets.zero,
+                enabled: !state.isBusy,
+                title: Text(
+                  '删除主题',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: state.isBusy
+                        ? tokens.mutedText
+                        : Theme.of(context).colorScheme.error,
                   ),
-                  onPressed: state.isBusy ? null : _confirmDelete,
-                  icon: const WenyouIcon(WenyouIconIds.actionDelete),
-                  label: const Text('删除这个主题'),
                 ),
+                subtitle: const Text('永久删除主题及全部内容，无法恢复。'),
+                trailing: WenyouIcon(
+                  WenyouIconIds.navigationNext,
+                  color: state.isBusy
+                      ? tokens.mutedText
+                      : Theme.of(context).colorScheme.error,
+                ),
+                onTap: state.isBusy ? null : _confirmDelete,
               ),
             ],
           ],

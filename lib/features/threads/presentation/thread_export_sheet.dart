@@ -17,8 +17,10 @@ Future<bool> showThreadExportSheet({
         isScrollControlled: true,
         useSafeArea: true,
         showDragHandle: true,
-        builder: (context) => FractionallySizedBox(
-          heightFactor: .9,
+        builder: (context) => ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * .9,
+          ),
           child: ThreadExportSheet(threadId: threadId),
         ),
       ) ??
@@ -49,138 +51,133 @@ class _ThreadExportSheetState extends ConsumerState<ThreadExportSheet> {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final supported = ref.watch(documentSaverProvider).isSupported;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space16,
-            0,
-            tokens.space8,
-            tokens.space12,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '导出主题档案',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    SizedBox(height: tokens.space4),
-                    Text(
-                      '生成 ZIP 后，由你选择保存位置。',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                key: const Key('thread-export-close'),
-                tooltip: '关闭导出设置',
-                onPressed: _isExporting ? null : () => Navigator.pop(context),
-                icon: const WenyouIcon(WenyouIconIds.actionClose),
-              ),
-            ],
-          ),
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          tokens.space16,
+          0,
+          tokens.space16,
+          tokens.space16,
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: tokens.space16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                Text('正文格式', style: Theme.of(context).textTheme.titleSmall),
-                SizedBox(height: tokens.space8),
-                Wrap(
-                  spacing: tokens.space8,
-                  runSpacing: tokens.space8,
-                  children: [
-                    _formatChoice(ThreadArchiveFormat.text, '纯文本'),
-                    _formatChoice(ThreadArchiveFormat.markdown, 'Markdown'),
-                    _formatChoice(ThreadArchiveFormat.both, '两种都要'),
-                  ],
+                Expanded(
+                  child: Text(
+                    '导出主题档案',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-                SizedBox(height: tokens.space16),
+                IconButton(
+                  key: const Key('thread-export-close'),
+                  tooltip: '关闭导出设置',
+                  onPressed: _isExporting ? null : () => Navigator.pop(context),
+                  icon: const WenyouIcon(WenyouIconIds.actionClose),
+                ),
+              ],
+            ),
+            SizedBox(height: tokens.space8),
+            Text('正文格式', style: Theme.of(context).textTheme.titleSmall),
+            SizedBox(height: tokens.space8),
+            Wrap(
+              spacing: tokens.space8,
+              runSpacing: tokens.space8,
+              children: [
+                _formatChoice(ThreadArchiveFormat.text, '纯文本'),
+                _formatChoice(ThreadArchiveFormat.markdown, 'Markdown'),
+                _formatChoice(ThreadArchiveFormat.both, '两种都要'),
+              ],
+            ),
+            SizedBox(height: tokens.space16),
+            Text('包含内容', style: Theme.of(context).textTheme.titleSmall),
+            SizedBox(height: tokens.space8),
+            Wrap(
+              spacing: tokens.space8,
+              runSpacing: tokens.space8,
+              children: [
                 _option(
                   key: 'authors',
-                  title: '保留作者名称',
+                  label: '作者',
                   value: _includeAuthors,
                   onChanged: (value) => _includeAuthors = value,
                 ),
                 _option(
                   key: 'timestamps',
-                  title: '保留发布时间',
+                  label: '发布时间',
                   value: _includeTimestamps,
                   onChanged: (value) => _includeTimestamps = value,
                 ),
                 _option(
                   key: 'floor-numbers',
-                  title: '保留楼层编号',
+                  label: '楼层号',
                   value: _includeFloorNumbers,
                   onChanged: (value) => _includeFloorNumbers = value,
                 ),
                 _option(
                   key: 'reply-targets',
-                  title: '保留回复对象',
+                  label: '回复对象',
                   value: _includeReplyTargets,
                   onChanged: (value) => _includeReplyTargets = value,
                 ),
                 _option(
                   key: 'source-links',
-                  title: '保留站内来源链接',
-                  subtitle: '邀请链接始终隐藏。',
+                  label: '来源链接',
                   value: _includeSourceLinks,
                   onChanged: (value) => _includeSourceLinks = value,
                 ),
                 _option(
                   key: 'media',
-                  title: '打包正文图片',
-                  subtitle: '无法取得的图片会在档案说明中列出。',
+                  label: '正文图片',
                   value: _includeMedia,
                   onChanged: (value) => _includeMedia = value,
                 ),
-                if (!supported) ...[
-                  SizedBox(height: tokens.space12),
-                  const WenyouStatusBanner(
-                    tone: WenyouStatusTone.error,
-                    message: '当前设备暂不支持保存档案。',
-                  ),
-                ],
-                if (_failure case final failure?) ...[
-                  SizedBox(height: tokens.space12),
-                  WenyouStatusBanner(
-                    key: const Key('thread-export-failure'),
-                    tone: WenyouStatusTone.error,
-                    message: failure.userMessage,
-                    detail: wenyouFailureDetail(failure),
-                  ),
-                ],
-                SizedBox(height: tokens.space16),
               ],
             ),
-          ),
-        ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.all(tokens.space16),
-            child: WenyouAsyncButton(
+            if (_includeSourceLinks || _includeMedia) ...[
+              SizedBox(height: tokens.space8),
+              Text(
+                [
+                  if (_includeSourceLinks) '来源链接不包含私密邀请。',
+                  if (_includeMedia) '无法取得的图片会列在档案说明中。',
+                ].join('\n'),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ),
+            ],
+            if (!supported) ...[
+              SizedBox(height: tokens.space12),
+              const WenyouStatusBanner(
+                tone: WenyouStatusTone.error,
+                message: '当前设备暂不支持保存档案。',
+              ),
+            ],
+            if (_failure case final failure?) ...[
+              SizedBox(height: tokens.space12),
+              WenyouStatusBanner(
+                key: const Key('thread-export-failure'),
+                tone: WenyouStatusTone.error,
+                message: failure.userMessage,
+                detail: wenyouFailureDetail(failure),
+              ),
+            ],
+            SizedBox(height: tokens.space16),
+            WenyouAsyncButton(
               key: const Key('thread-export-submit'),
-              label: '生成并选择保存位置',
+              label: '导出并保存',
               loadingLabel: '正在生成档案',
               icon: WenyouIconIds.actionDownload,
               isLoading: _isExporting,
               onPressed: supported ? _export : null,
               expand: true,
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -199,18 +196,15 @@ class _ThreadExportSheetState extends ConsumerState<ThreadExportSheet> {
 
   Widget _option({
     required String key,
-    required String title,
+    required String label,
     required bool value,
     required ValueChanged<bool> onChanged,
-    String? subtitle,
   }) {
-    return SwitchListTile.adaptive(
+    return FilterChip(
       key: ValueKey('thread-export-$key'),
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle),
-      value: value,
-      onChanged: _isExporting
+      label: Text(label),
+      selected: value,
+      onSelected: _isExporting
           ? null
           : (next) => setState(() => onChanged(next)),
     );

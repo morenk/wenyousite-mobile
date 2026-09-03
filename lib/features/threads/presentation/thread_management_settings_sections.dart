@@ -44,7 +44,7 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           focusNode: titleFocusNode,
           enabled: enabled,
           maxLength: 100,
-          textInputAction: TextInputAction.next,
+          textInputAction: TextInputAction.done,
           decoration: const InputDecoration(
             labelText: '主题标题',
             hintText: '一句话说明这个主题',
@@ -65,35 +65,44 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           builder: (field) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('所在分区', style: Theme.of(context).textTheme.titleSmall),
-              SizedBox(height: tokens.space8),
-              WenyouDropdownFilter<String?>(
-                key: const Key('thread-management-category'),
-                optionKeyPrefix: 'thread-management-category-option',
-                tooltip: '选择主题分区',
-                icon: WenyouIconIds.contentCategory,
-                enabled: enabled,
-                selected: field.value,
-                selectedLabel: selectedCategory == null
-                    ? '请选择分区'
-                    : selectedCategory.isSelectable
-                    ? selectedCategory.name
-                    : '${selectedCategory.name}（已停用）',
-                options: [
-                  for (final category in categories)
-                    WenyouFilterOption<String?>(
-                      value: category.slug,
-                      keyValue: category.slug,
-                      label: category.isSelectable
-                          ? category.name
-                          : '${category.name}（已停用）',
-                      supportingLabel: category.description,
+              Row(
+                children: [
+                  Text('所在分区', style: Theme.of(context).textTheme.titleSmall),
+                  SizedBox(width: tokens.space12),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: WenyouDropdownFilter<String?>(
+                        key: const Key('thread-management-category'),
+                        optionKeyPrefix: 'thread-management-category-option',
+                        tooltip: '选择主题分区',
+                        icon: WenyouIconIds.contentCategory,
+                        enabled: enabled,
+                        appearance: WenyouDropdownFilterAppearance.quiet,
+                        selected: field.value,
+                        selectedLabel: selectedCategory == null
+                            ? '请选择分区'
+                            : selectedCategory.isSelectable
+                            ? selectedCategory.name
+                            : '${selectedCategory.name}（已停用）',
+                        options: [
+                          for (final category in categories)
+                            WenyouFilterOption<String?>(
+                              value: category.slug,
+                              keyValue: category.slug,
+                              label: category.isSelectable
+                                  ? category.name
+                                  : '${category.name}（已停用）',
+                            ),
+                        ],
+                        onSelected: (value) {
+                          field.didChange(value);
+                          onCategoryChanged(value);
+                        },
+                      ),
                     ),
+                  ),
                 ],
-                onSelected: (value) {
-                  field.didChange(value);
-                  onCategoryChanged(value);
-                },
               ),
               if (field.hasError) ...[
                 SizedBox(height: tokens.space4),
@@ -208,7 +217,6 @@ class ThreadManagementTagsSection extends StatelessWidget {
       children: [
         WenyouSectionHeader(
           title: '主题标签 ${tags.length}/5',
-          subtitle: tags.isEmpty ? '添加后更容易被搜索到。' : null,
           trailing: TextButton.icon(
             key: const Key('thread-management-edit-tags'),
             onPressed: enabled ? onEdit : null,

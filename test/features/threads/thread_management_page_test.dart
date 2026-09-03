@@ -217,22 +217,28 @@ void main() {
     expect(find.text('只有主题成员可以查看'), findsOneWidget);
   });
 
-  testWidgets('主题分区复用列表筛选器且设置区不再套卡片', (tester) async {
+  testWidgets('主题分区同行选择且菜单不重复显示说明', (tester) async {
     final repository = _FakeRepository(initial: _bootstrap());
     await _pumpPage(tester, repository);
 
     final category = find.byKey(const Key('thread-management-category'));
     expect(category, findsOneWidget);
+    final dropdown = tester.widget<WenyouDropdownFilter<String?>>(category);
+    expect(dropdown.selected, 'RPG');
+    expect(dropdown.appearance, WenyouDropdownFilterAppearance.quiet);
     expect(
-      tester.widget<WenyouDropdownFilter<String?>>(category).selected,
-      'RPG',
+      tester.getCenter(find.text('所在分区')).dy,
+      closeTo(tester.getCenter(category).dy, 1),
     );
     expect(find.byType(WenyouDropdownFormField<String>), findsNothing);
     expect(find.byType(WenyouPanel), findsNothing);
+    expect(find.text('添加后更容易被搜索到。'), findsNothing);
 
     await tester.ensureVisible(category);
     await tester.tap(category);
     await tester.pumpAndSettle();
+    expect(find.text('适合角色扮演主题'), findsNothing);
+    expect(find.text('适合综合讨论主题'), findsNothing);
     final board = find.byKey(
       const Key('thread-management-category-option-BOARD'),
     );
@@ -418,10 +424,8 @@ void main() {
     );
     expect(
       tester
-          .widget<OutlinedButton>(
-            find.byKey(const Key('thread-management-delete')),
-          )
-          .onPressed,
+          .widget<ListTile>(find.byKey(const Key('thread-management-delete')))
+          .onTap,
       isNotNull,
     );
   });
@@ -696,8 +700,18 @@ ThreadManagementBootstrap _bootstrap({
       tagNames: tagNames,
     ),
     categories: const [
-      ThreadManagementCategory(slug: 'RPG', name: '角色扮演', sortOrder: 1),
-      ThreadManagementCategory(slug: 'BOARD', name: '综合讨论', sortOrder: 2),
+      ThreadManagementCategory(
+        slug: 'RPG',
+        name: '角色扮演',
+        sortOrder: 1,
+        description: '适合角色扮演主题',
+      ),
+      ThreadManagementCategory(
+        slug: 'BOARD',
+        name: '综合讨论',
+        sortOrder: 2,
+        description: '适合综合讨论主题',
+      ),
     ],
   );
 }

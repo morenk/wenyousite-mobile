@@ -15,34 +15,23 @@ void main() {
   setUpAll(loadFoundationTestFonts);
 
   testWidgets('完整导出设置生成 ZIP 并交给系统保存器', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     final repository = _ExportRepository();
     final saver = _DocumentSaver();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          threadManagementRepositoryProvider.overrideWithValue(repository),
-          documentSaverProvider.overrideWithValue(saver),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => FilledButton(
-                onPressed: () => showThreadExportSheet(
-                  context: context,
-                  threadId: 'thread-1',
-                ),
-                child: const Text('导出'),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    await _pumpSheet(tester, repository, saver);
 
     await tester.tap(find.text('导出'));
     await tester.pumpAndSettle();
-    expect(find.text('生成 ZIP 后，由你选择保存位置。'), findsOneWidget);
+    expect(find.text('生成 ZIP 后，由你选择保存位置。'), findsNothing);
+    expect(find.text('包含内容'), findsOneWidget);
+    expect(find.text('无法取得的图片会列在档案说明中。'), findsOneWidget);
+    await expectLater(
+      find.byType(BottomSheet),
+      matchesGoldenFile('goldens/thread_export_sheet_360.png'),
+    );
     await tester.tap(
       find.byKey(const ValueKey('thread-export-format-markdown')),
     );
@@ -66,6 +55,61 @@ void main() {
     expect(saver.mimeType, 'application/zip');
     expect(find.text('导出主题档案'), findsNothing);
   });
+
+  testWidgets('两倍字号下导出设置可滚动且无布局溢出', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpSheet(
+      tester,
+      _ExportRepository(),
+      _DocumentSaver(),
+      textScaler: const TextScaler.linear(2),
+    );
+
+    await tester.tap(find.text('导出'));
+    await tester.pumpAndSettle();
+    final submit = find.byKey(const Key('thread-export-submit'));
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(submit, findsOneWidget);
+  });
+}
+
+Future<void> _pumpSheet(
+  WidgetTester tester,
+  ThreadManagementRepository repository,
+  DocumentSaver saver, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        threadManagementRepositoryProvider.overrideWithValue(repository),
+        documentSaverProvider.overrideWithValue(saver),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () =>
+                  showThreadExportSheet(context: context, threadId: 'thread-1'),
+              child: const Text('导出'),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 class _ExportRepository implements ThreadManagementRepository {
