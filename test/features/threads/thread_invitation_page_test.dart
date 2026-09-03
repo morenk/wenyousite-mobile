@@ -28,18 +28,14 @@ void main() {
     expect(find.text('主题详情 thread-1'), findsOneWidget);
   });
 
-  testWidgets('已加入用户不重复写入并可直接进入主题', (tester) async {
+  testWidgets('已加入用户跳过邀请界面并直接进入主题', (tester) async {
     final repository = _PageRepository(
       previewValue: _preview(alreadyJoined: true),
     );
     await _pumpPage(tester, repository);
 
-    expect(find.textContaining('已经是这个主题的成员'), findsOneWidget);
-    expect(find.byKey(const Key('thread-invite-join')), findsNothing);
-    await tester.tap(find.byKey(const Key('thread-invite-open-thread')));
-    await tester.pumpAndSettle();
-
     expect(repository.joinCalls, 0);
+    expect(find.text('有人邀请你加入私密主题'), findsNothing);
     expect(find.text('主题详情 thread-1'), findsOneWidget);
   });
 

@@ -56,6 +56,14 @@ class _InvitationReady extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preview = state.preview!;
+    if (preview.alreadyJoined) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.go(AppRouteLocations.thread(preview.threadId));
+        }
+      });
+      return const SizedBox.shrink();
+    }
     final category = ref
         .watch(threadCategoryCatalogControllerProvider)
         .resolve(preview.categorySlug);
@@ -141,27 +149,14 @@ class _InvitationReady extends ConsumerWidget {
             ),
           ],
           SizedBox(height: tokens.space16),
-          if (preview.alreadyJoined)
-            WenyouStatusBanner(
-              key: const Key('thread-invite-already-joined'),
-              tone: WenyouStatusTone.accent,
-              message: '你已经是这个主题的成员，可以直接进入。',
-              action: TextButton(
-                key: const Key('thread-invite-open-thread'),
-                onPressed: () =>
-                    context.go(AppRouteLocations.thread(preview.threadId)),
-                child: const Text('进入主题'),
-              ),
-            )
-          else
-            WenyouAsyncPrimaryButton(
-              key: const Key('thread-invite-join'),
-              label: '接受邀请并加入',
-              loadingLabel: '正在加入私密主题',
-              icon: WenyouIconIds.actionAdd,
-              isLoading: state.isJoining,
-              onPressed: state.isJoining ? null : () => _join(context, ref),
-            ),
+          WenyouAsyncPrimaryButton(
+            key: const Key('thread-invite-join'),
+            label: '接受邀请并加入',
+            loadingLabel: '正在加入私密主题',
+            icon: WenyouIconIds.actionAdd,
+            isLoading: state.isJoining,
+            onPressed: state.isJoining ? null : () => _join(context, ref),
+          ),
         ],
       ),
     );
