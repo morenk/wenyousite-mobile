@@ -4,6 +4,7 @@ import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
@@ -141,6 +142,73 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
+  }
+
+  @override
+  Future<ThreadArchive> exportArchive(
+    String threadId,
+    ThreadArchiveOptions options,
+  ) async {
+    try {
+      final response = await _threadsApi.threadsExport(
+        id: threadId,
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+        threadExportDto: ThreadExportDto(
+          (builder) => builder
+            ..format = switch (options.format) {
+              ThreadArchiveFormat.text => ThreadExportDtoFormatEnum.TXT,
+              ThreadArchiveFormat.markdown =>
+                ThreadExportDtoFormatEnum.MARKDOWN,
+              ThreadArchiveFormat.both => ThreadExportDtoFormatEnum.BOTH,
+            }
+            ..includeAuthors = options.includeAuthors
+            ..includeTimestamps = options.includeTimestamps
+            ..includeFloorNumbers = options.includeFloorNumbers
+            ..includeReplyTargets = options.includeReplyTargets
+            ..includeSourceLinks = options.includeSourceLinks
+            ..includeMedia = options.includeMedia,
+        ),
+      );
+      final bytes = response.data;
+      if (bytes == null ||
+          bytes.length < 4 ||
+          bytes[0] != 0x50 ||
+          bytes[1] != 0x4b ||
+          bytes[2] != 0x03 ||
+          bytes[3] != 0x04) {
+        throw ApiFailure.contractViolation(
+          userMessage: '主题档案生成失败，请重新导出。',
+          diagnosticCode: 'threads.export.invalid_zip',
+        );
+      }
+      return (bytes: bytes, fileName: _exportFileName(response.headers));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  String _exportFileName(Headers headers) {
+    final disposition = headers.value('content-disposition');
+    final encoded = disposition == null
+        ? null
+        : RegExp(
+            r"filename\*=UTF-8''([^;]+)",
+            caseSensitive: false,
+          ).firstMatch(disposition)?.group(1);
+    if (encoded != null) {
+      try {
+        final decoded = Uri.decodeComponent(encoded);
+        if (decoded.length <= 120 &&
+            decoded.toLowerCase().endsWith('.zip') &&
+            !decoded.contains('/') &&
+            !decoded.contains(r'\')) {
+          return decoded;
+        }
+      } on FormatException {
+        // 使用稳定回退名，不把响应头解析异常扩散到已经生成的档案。
+      }
+    }
+    return 'wenyou-thread-export.zip';
   }
 
   ThreadManagementSnapshot _mapThread(ThreadDetailResponseDto dto) {

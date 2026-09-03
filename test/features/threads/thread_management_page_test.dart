@@ -8,9 +8,9 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_invitation_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
@@ -665,6 +665,12 @@ class _FakeRepository implements ThreadManagementRepository {
       tagNames: draft.normalizedTagNames,
     );
   }
+
+  @override
+  Future<ThreadArchive> exportArchive(
+    String threadId,
+    ThreadArchiveOptions options,
+  ) => throw UnsupportedError('unused');
 }
 
 ThreadManagementBootstrap _bootstrap({

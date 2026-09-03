@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
 void main() {
@@ -172,6 +172,12 @@ class _FakeRepository implements ThreadManagementRepository {
       isOwner: current.isOwner,
     );
   }
+
+  @override
+  Future<ThreadArchive> exportArchive(
+    String threadId,
+    ThreadArchiveOptions options,
+  ) => throw UnsupportedError('unused');
 }
 
 ThreadManagementBootstrap _bootstrap({

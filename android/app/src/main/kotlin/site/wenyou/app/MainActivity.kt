@@ -31,6 +31,7 @@ class MainActivity : FlutterActivity() {
 
     private var keyboardInsetsChannel: MethodChannel? = null
     private var imageGalleryChannel: ImageGalleryChannel? = null
+    private var documentSaverChannel: DocumentSaverChannel? = null
     private var keyboardInsetsActive = false
     private var appliedKeyboardInsetBottom = 0
 
@@ -45,6 +46,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         EditorClipboardChannel(this).register(flutterEngine)
         imageGalleryChannel = ImageGalleryChannel(this).also { it.register(flutterEngine) }
+        documentSaverChannel = DocumentSaverChannel(this).also { it.register(flutterEngine) }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -117,9 +119,16 @@ class MainActivity : FlutterActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (documentSaverChannel?.onActivityResult(requestCode, resultCode, data) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         imageGalleryChannel?.dispose()
         imageGalleryChannel = null
+        documentSaverChannel?.dispose()
+        documentSaverChannel = null
         keyboardInsetsChannel?.setMethodCallHandler(null)
         keyboardInsetsChannel = null
         super.cleanUpFlutterEngine(flutterEngine)

@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
@@ -17,6 +21,7 @@ void main() {
           ..tagNames.replace(const <String>[]),
       ),
     );
+    registerFallbackValue(ThreadExportDto());
   });
 
   test('加载主题权限与动态分区，并保留当前已停用分区', () async {
@@ -91,6 +96,63 @@ void main() {
     expect(captured.visibility, isNull);
     expect(captured.published, isNull);
     expect(updated.title, '新标题');
+  });
+
+  test('档案导出透传完整选项并采用响应头 UTF-8 文件名', () async {
+    final threadsApi = _MockThreadsApi();
+    when(
+      () => threadsApi.threadsExport(
+        id: 'thread-1',
+        extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+        threadExportDto: any(named: 'threadExportDto'),
+      ),
+    ).thenAnswer(
+      (_) async => Response<Uint8List>(
+        data: Uint8List.fromList([0x50, 0x4b, 0x03, 0x04, 1]),
+        headers: Headers.fromMap({
+          'content-disposition': [
+            "attachment; filename=\"fallback.zip\"; filename*=UTF-8''%E6%98%9F%E6%B5%B7.zip",
+          ],
+        }),
+        requestOptions: RequestOptions(path: '/threads/thread-1/export'),
+      ),
+    );
+    final repository = ApiThreadManagementRepository(
+      threadsApi,
+      _MockCategoriesApi(),
+    );
+
+    final archive = await repository.exportArchive(
+      'thread-1',
+      const ThreadArchiveOptions(
+        format: ThreadArchiveFormat.markdown,
+        includeAuthors: false,
+        includeTimestamps: false,
+        includeFloorNumbers: false,
+        includeReplyTargets: false,
+        includeSourceLinks: true,
+        includeMedia: false,
+      ),
+    );
+
+    final dto =
+        verify(
+              () => threadsApi.threadsExport(
+                id: 'thread-1',
+                extra: ApiRequestPolicy.authenticatedNonReplayable.extra,
+                threadExportDto: captureAny(named: 'threadExportDto'),
+              ),
+            ).captured.single
+            as ThreadExportDto;
+    expect(dto.format, ThreadExportDtoFormatEnum.MARKDOWN);
+    expect(dto.includeAuthors, isFalse);
+    expect(dto.includeTimestamps, isFalse);
+    expect(dto.includeFloorNumbers, isFalse);
+    expect(dto.includeReplyTargets, isFalse);
+    expect(dto.includeSourceLinks, isTrue);
+    expect(dto.includeMedia, isFalse);
+    expect(archive.fileName, '星海.zip');
+    expect(archive.bytes, [0x50, 0x4b, 0x03, 0x04, 1]);
   });
 
   test('协作者在客户端不能夹带可见性修改', () async {
