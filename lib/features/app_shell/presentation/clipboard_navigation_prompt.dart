@@ -29,9 +29,7 @@ class _ClipboardNavigationPromptState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => unawaited(_readClipboard(prompt: true)),
-    );
+    _readClipboardAfterFrame();
   }
 
   @override
@@ -45,8 +43,16 @@ class _ClipboardNavigationPromptState
     if (state == AppLifecycleState.inactive) {
       unawaited(_readClipboard(prompt: false));
     } else if (state == AppLifecycleState.resumed) {
-      unawaited(_readClipboard(prompt: true));
+      _readClipboardAfterFrame();
     }
+  }
+
+  void _readClipboardAfterFrame() {
+    final binding = WidgetsBinding.instance;
+    binding.addPostFrameCallback(
+      (_) => unawaited(_readClipboard(prompt: true)),
+    );
+    binding.scheduleFrame();
   }
 
   @override

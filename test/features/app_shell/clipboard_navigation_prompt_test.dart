@@ -10,12 +10,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late String? clipboardText;
+  late bool clipboardReadable;
 
   setUp(() {
     clipboardText = null;
+    clipboardReadable = true;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
           if (call.method == 'Clipboard.getData') {
+            if (!clipboardReadable) return null;
             return {'text': clipboardText};
           }
           return null;
@@ -52,6 +55,7 @@ void main() {
     await tester.pump();
     clipboardText = 'https://wenyou.site/join/AbCdEfGh_123-XYZ';
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('打开私密主题邀请？'), findsOneWidget);
@@ -62,6 +66,7 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     await tester.pump();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
     await tester.pumpAndSettle();
     expect(find.text('打开私密主题邀请？'), findsNothing);
 
@@ -69,6 +74,7 @@ void main() {
     await tester.pump();
     clipboardText = 'https://wenyou.site/join/AbCdEfGh_123-XY2';
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('clipboard-navigation-open')));
     await tester.pumpAndSettle();
@@ -83,6 +89,22 @@ void main() {
     await _pumpApp(tester);
 
     expect(find.byKey(const Key('clipboard-navigation-open')), findsNothing);
+  });
+
+  testWidgets('回前台须等窗口稳定后再读取剪贴板', (tester) async {
+    clipboardText = '普通文字';
+    await _pumpApp(tester);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    clipboardText = 'https://wenyou.site/join/AbCdEfGh_123-XYZ';
+    clipboardReadable = false;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    clipboardReadable = true;
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('打开私密主题邀请？'), findsOneWidget);
   });
 }
 
