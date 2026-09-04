@@ -20,6 +20,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
     final semantics = tester.ensureSemantics();
+    var commentTapCount = 0;
     final card = _card(
       likeCount: 12345,
       commentCount: 89,
@@ -29,7 +30,12 @@ void main() {
       viewerBookmarked: true,
     );
 
-    await _pumpBar(tester, card: card, onTip: _noop);
+    await _pumpBar(
+      tester,
+      card: card,
+      onComment: () => commentTapCount += 1,
+      onTip: _noop,
+    );
 
     final strip = find.byKey(const Key('moment-detail-actions'));
     final actionFinders = [
@@ -133,15 +139,18 @@ void main() {
     expect(likeSemantics.label, '取消点赞，12345 次点赞');
     expect(likeSemantics.getSemanticsData().flagsCollection.isButton, isTrue);
     final commentSemantics = tester.getSemantics(actionFinders[2]);
-    expect(commentSemantics.label, '89 条评论');
+    expect(commentSemantics.label, '发表评论，89 条评论');
     expect(
       commentSemantics.getSemanticsData().flagsCollection.isButton,
-      isFalse,
+      isTrue,
     );
     expect(
       commentSemantics.getSemanticsData().hasAction(SemanticsAction.tap),
-      isFalse,
+      isTrue,
     );
+    await tester.tap(actionFinders[2]);
+    await tester.pumpAndSettle();
+    expect(commentTapCount, 1);
     final tipSemantics = tester.getSemantics(actionFinders[3]);
     expect(tipSemantics.label, '为温柔测试员加油，累计 123,000 升');
     expect(tipSemantics.getSemanticsData().flagsCollection.isButton, isTrue);
@@ -266,6 +275,7 @@ Future<void> _pumpBar(
   WidgetTester tester, {
   required MomentCard card,
   MomentInteractionAction? pendingAction,
+  VoidCallback onComment = _noop,
   VoidCallback? onTip,
   TextScaler textScaler = TextScaler.noScaling,
   double width = 336,
@@ -284,6 +294,7 @@ Future<void> _pumpBar(
                 pendingAction: pendingAction,
                 onLike: _noop,
                 onBookmark: _noop,
+                onComment: onComment,
                 onTip: onTip,
               ),
             ),

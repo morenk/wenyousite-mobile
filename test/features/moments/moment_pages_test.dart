@@ -547,7 +547,7 @@ void main() {
     expect(find.byKey(const Key('moment-comment-dock')), findsOneWidget);
   });
 
-  testWidgets('动态评论入口悬浮首屏并从评论动作带入回复对象', (tester) async {
+  testWidgets('动态互动栏评论可唤起并聚焦发布输入且评论点击带入回复对象', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -581,7 +581,7 @@ void main() {
     expect(find.text('发表评论…'), findsOneWidget);
     expect(tester.getBottomRight(dock).dy, lessThanOrEqualTo(760));
 
-    await tester.tap(dock);
+    await tester.tap(find.byKey(const Key('moment-detail-comments')));
     await tester.pumpAndSettle();
     expect(find.byType(DraggableScrollableSheet), findsNothing);
     expect(find.byKey(const Key('moment-comment-dock')), findsNothing);
@@ -589,6 +589,13 @@ void main() {
     expect(find.byKey(const Key('moment-comment-input')), findsOneWidget);
     expect(find.byKey(const Key('moment-comment-close')), findsNothing);
     expect(find.byType(QuillEditor), findsOneWidget);
+    expect(
+      tester
+          .widget<QuillEditor>(find.byKey(const Key('moment-comment-input')))
+          .focusNode
+          .hasFocus,
+      isTrue,
+    );
     expect(find.text('0/500'), findsNothing);
     final editorDock = find.byKey(const Key('moment-comment-editor-dock'));
     tester.view.viewInsets = const FakeViewPadding(bottom: 280);

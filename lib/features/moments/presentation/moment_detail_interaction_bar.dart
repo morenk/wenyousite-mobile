@@ -12,6 +12,7 @@ class MomentDetailInteractionBar extends StatelessWidget {
     required this.pendingAction,
     required this.onLike,
     required this.onBookmark,
+    required this.onComment,
     this.onTip,
     super.key,
   });
@@ -20,6 +21,7 @@ class MomentDetailInteractionBar extends StatelessWidget {
   final MomentInteractionAction? pendingAction;
   final VoidCallback onLike;
   final VoidCallback onBookmark;
+  final VoidCallback onComment;
   final VoidCallback? onTip;
 
   @override
@@ -65,7 +67,8 @@ class MomentDetailInteractionBar extends StatelessWidget {
               key: const Key('moment-detail-comments'),
               icon: WenyouIconIds.metricComments,
               value: formatWenyouCompactCount(card.commentCount),
-              semanticLabel: '${card.commentCount} 条评论',
+              semanticLabel: '发表评论，${card.commentCount} 条评论',
+              onPressed: onComment,
             ),
           ),
           Expanded(

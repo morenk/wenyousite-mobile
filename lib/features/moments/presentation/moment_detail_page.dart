@@ -192,6 +192,8 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                             ),
                           );
                         }),
+                        onComment: () =>
+                            _authenticated(() => _openCommentComposer()),
                       ),
                     ),
                   ),
@@ -544,6 +546,7 @@ class _MomentDetailPanel extends StatelessWidget {
     required this.pendingAction,
     required this.onLike,
     required this.onBookmark,
+    required this.onComment,
     this.onTip,
   });
 
@@ -551,6 +554,7 @@ class _MomentDetailPanel extends StatelessWidget {
   final MomentInteractionAction? pendingAction;
   final VoidCallback onLike;
   final VoidCallback onBookmark;
+  final VoidCallback onComment;
   final VoidCallback? onTip;
 
   @override
@@ -609,6 +613,7 @@ class _MomentDetailPanel extends StatelessWidget {
           pendingAction: pendingAction,
           onLike: onLike,
           onBookmark: onBookmark,
+          onComment: onComment,
           onTip: onTip,
         ),
       ],
