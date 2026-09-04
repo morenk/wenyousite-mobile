@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -32,7 +33,7 @@ void main() {
     expect(brandMark.semanticLabel, isNull);
     expect(find.text('角色扮演'), findsOneWidget);
     expect(find.text('星海旅团'), findsOneWidget);
-    expect(find.text('向星海出发'), findsOneWidget);
+    expect(find.textContaining('向星海出发'), findsOneWidget);
     expect(find.text('#太空歌剧'), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNothing);
     final tag = find.byKey(const Key('home-thread-tag-thread-1-tag-1'));
@@ -64,6 +65,23 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('home-thread-cover-thread-1')), findsNothing);
+    final avatar = find.byKey(const Key('home-thread-author-avatar-thread-1'));
+    final owner = find.text('温柔测试员');
+    final contextLine = find.byKey(const Key('home-thread-context-thread-1'));
+    final metadata = find.byKey(const Key('home-thread-metadata-thread-1'));
+    final preview = tester.widget<Text>(
+      find.byKey(const Key('home-thread-preview-thread-1')),
+    );
+    expect(tester.getSize(avatar), const Size.square(32));
+    expect(tester.getSize(metadata).height, 32);
+    expect(
+      tester.widget<Text>(owner).style,
+      same(Theme.of(tester.element(owner)).textTheme.wenyouCaptionEmphasis),
+    );
+    expect(tester.getCenter(owner).dy, tester.getCenter(contextLine).dy);
+    expect(tester.widget<Text>(contextLine).maxLines, 1);
+    expect(tester.widget<Text>(contextLine).data, '角色扮演·招募中·置顶');
+    expect(preview.maxLines, 4);
 
     await tester.tap(find.byKey(const Key('home-category-RPG')));
     await tester.pumpAndSettle();
@@ -268,6 +286,34 @@ void main() {
     });
   }
 
+  testWidgets('320dp 两倍字号下主题元信息保持单行且不挤压四行摘要', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 900);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await tester.pumpWidget(
+      _homeApp(_FakeHomeRepository(items: [_threadWithAvatar])),
+    );
+    await tester.pumpAndSettle();
+
+    final metadata = find.byKey(
+      const Key('home-thread-metadata-thread-avatar'),
+    );
+    final contextLine = find.byKey(
+      const Key('home-thread-context-thread-avatar'),
+    );
+    final preview = tester.widget<Text>(
+      find.byKey(const Key('home-thread-preview-thread-avatar')),
+    );
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(metadata).height, lessThan(40));
+    expect(tester.widget<Text>(contextLine).maxLines, 1);
+    expect(preview.maxLines, 4);
+  });
+
   testWidgets('360dp 有封面主题使用正文整宽 16:9 单封面', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
@@ -460,7 +506,8 @@ final _thread = HomeThreadCardModel(
   ownerId: 'user-1',
   ownerName: '温柔测试员',
   ownerLevel: 3,
-  preview: '向星海出发',
+  preview:
+      '向星海出发，在旧航路熄灭前寻找失落的信标。旅团将在每一次选择里共同记录角色关系、沿途见闻与尚未揭晓的秘密，并为后来者留下可以继续书写的航行日志。',
   tags: const [HomeThreadTag(id: 'tag-1', name: '太空歌剧')],
   coverImageUrls: const [],
   memberCount: 5,

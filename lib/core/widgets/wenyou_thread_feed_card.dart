@@ -10,6 +10,8 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
 
+const _threadAuthorAvatarSize = 32.0;
+
 class ThreadFeedCard extends StatelessWidget {
   const ThreadFeedCard({
     required this.thread,
@@ -51,21 +53,21 @@ class ThreadFeedCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.wenyouListTitle,
                 ),
-                SizedBox(height: tokens.space12),
+                SizedBox(height: tokens.space8),
                 _ThreadHeader(thread: thread, category: category),
                 if (thread.coverImageUrls.isNotEmpty) ...[
-                  SizedBox(height: tokens.space12),
+                  SizedBox(height: tokens.space8),
                   _ThreadCover(
                     key: Key('home-thread-cover-${thread.id}'),
                     url: thread.coverImageUrls.first,
                   ),
                 ],
                 if (thread.preview != null) ...[
-                  SizedBox(height: tokens.space12),
+                  SizedBox(height: tokens.space8),
                   Text(
                     thread.preview!,
                     key: Key('home-thread-preview-${thread.id}'),
-                    maxLines: 2,
+                    maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.wenyouCompactBody,
                   ),
@@ -97,23 +99,17 @@ class _ThreadHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      key: Key('home-thread-metadata-${thread.id}'),
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _ThreadAuthorAvatar(
           threadId: thread.id,
           ownerName: thread.ownerName,
           avatarUrl: thread.ownerAvatarUrl,
         ),
-        SizedBox(width: tokens.space12),
+        SizedBox(width: tokens.space8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ThreadAuthor(thread: thread),
-              SizedBox(height: tokens.space4),
-              _ThreadContextLine(thread: thread, category: category),
-            ],
-          ),
+          child: _ThreadMetadata(thread: thread, category: category),
         ),
       ],
     );
@@ -137,7 +133,7 @@ class _ThreadContextLine extends StatelessWidget {
       if (thread.isPinned) '置顶',
     ];
     return Text(
-      labels.join(' · '),
+      labels.join('·'),
       key: Key('home-thread-context-${thread.id}'),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -151,10 +147,11 @@ class _ThreadContextLine extends StatelessWidget {
   }
 }
 
-class _ThreadAuthor extends StatelessWidget {
-  const _ThreadAuthor({required this.thread});
+class _ThreadMetadata extends StatelessWidget {
+  const _ThreadMetadata({required this.thread, required this.category});
 
   final ThreadFeedCardModel thread;
+  final ThreadCategoryPresentation? category;
 
   @override
   Widget build(BuildContext context) {
@@ -162,17 +159,24 @@ class _ThreadAuthor extends StatelessWidget {
     return Row(
       children: [
         Flexible(
+          flex: 4,
           child: Text(
             thread.ownerName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.wenyouLabel,
+            style: Theme.of(context).textTheme.wenyouCaptionEmphasis,
           ),
         ),
         SizedBox(width: tokens.space4),
         WenyouLevelBadge(level: thread.ownerLevel),
-        SizedBox(width: tokens.space8),
+        SizedBox(width: tokens.space4),
         Flexible(
+          flex: 6,
+          child: _ThreadContextLine(thread: thread, category: category),
+        ),
+        SizedBox(width: tokens.space4),
+        Flexible(
+          flex: 2,
           child: WenyouTimeText(
             value: thread.activityAt,
             prefix: '· ',
@@ -206,7 +210,7 @@ class _ThreadAuthorAvatar extends StatelessWidget {
       key: Key('home-thread-author-avatar-$threadId'),
       username: ownerName,
       avatarUrl: avatarUrl,
-      size: 40,
+      size: _threadAuthorAvatarSize,
     );
   }
 }
