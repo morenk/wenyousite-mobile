@@ -229,6 +229,10 @@ class _BookmarkFolderCatalogPageState
     );
     if (!mounted || folder == null) return;
     setState(() => _selectedFolderIds[_kind] = folder.id);
-    showWenyouSnackBar(context, '已新建“${folder.name}”。');
+    showWenyouSnackBar(
+      context,
+      '已新建“${folder.name}”。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 }

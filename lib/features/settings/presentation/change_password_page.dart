@@ -44,6 +44,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       showWenyouSnackBar(
         context,
         '密码已修改，请重新登录。',
+        tone: WenyouSnackBarTone.success,
         pacing: WenyouSnackBarPacing.extended,
       );
     }

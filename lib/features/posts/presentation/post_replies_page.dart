@@ -373,12 +373,15 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     PostItem post,
   ) async {
     final actionsProvider = postActionControllerProvider(threadId);
-    final updated = await ref
-        .read(actionsProvider.notifier)
-        .setPinned(post, pinned: !post.isPinned);
+    final actions = ref.read(actionsProvider.notifier);
+    final updated = await actions.setPinned(post, pinned: !post.isPinned);
     if (!context.mounted) return;
     if (updated) {
-      showWenyouSnackBar(context, post.isPinned ? '已取消楼层置顶。' : '楼层已置顶。');
+      showWenyouSnackBar(
+        context,
+        post.isPinned ? '已取消楼层置顶。' : '楼层已置顶。',
+        tone: WenyouSnackBarTone.success,
+      );
       await ref.read(provider.notifier).refresh();
     } else if (ref.read(actionsProvider).failure?.httpStatus == 403) {
       ref.invalidate(postThreadContextProvider(threadId));

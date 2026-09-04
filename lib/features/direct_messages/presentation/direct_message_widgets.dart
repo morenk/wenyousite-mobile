@@ -876,6 +876,7 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
       pacing: failed
           ? WenyouSnackBarPacing.extended
           : WenyouSnackBarPacing.brief,
+      tone: failed ? WenyouSnackBarTone.error : WenyouSnackBarTone.success,
     );
   }
 

@@ -65,7 +65,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .read(accountDeletionControllerProvider.notifier)
         .submit();
     if (!succeeded) return;
-    messenger.showWenyouSnackBar('账号已注销。');
+    messenger.showWenyouSnackBar('账号已注销。', tone: WenyouSnackBarTone.success);
     router.go(AppRouteLocations.home);
   }
 
@@ -76,7 +76,10 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         .read(accountDeletionControllerProvider.notifier)
         .retryLocalCleanup();
     if (!succeeded) return;
-    messenger.showWenyouSnackBar('这台设备的登录信息已清除。');
+    messenger.showWenyouSnackBar(
+      '这台设备的登录信息已清除。',
+      tone: WenyouSnackBarTone.success,
+    );
     router.go(AppRouteLocations.home);
   }
 

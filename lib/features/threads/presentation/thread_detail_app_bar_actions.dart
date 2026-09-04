@@ -165,6 +165,7 @@ class _ThreadLatestPostActionState
             ? presentation.message
             : '${presentation.message}\n${presentation.problemDetail}',
         pacing: WenyouSnackBarPacing.extended,
+        tone: WenyouSnackBarTone.error,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

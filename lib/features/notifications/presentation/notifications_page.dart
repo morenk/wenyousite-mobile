@@ -121,7 +121,7 @@ class NotificationSection extends ConsumerWidget {
     if (!confirmed || !context.mounted) return;
     final succeeded = await notifier.remove(id);
     if (!context.mounted || !succeeded) return;
-    showWenyouSnackBar(context, '通知已删除。');
+    showWenyouSnackBar(context, '通知已删除。', tone: WenyouSnackBarTone.success);
   }
 }
 

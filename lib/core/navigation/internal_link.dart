@@ -41,6 +41,7 @@ void openInternalWenyouLink(BuildContext context, Uri uri) {
     showWenyouSnackBar(
       context,
       '这个站内目标暂时无法打开。',
+      tone: WenyouSnackBarTone.error,
       pacing: WenyouSnackBarPacing.extended,
     );
     return;

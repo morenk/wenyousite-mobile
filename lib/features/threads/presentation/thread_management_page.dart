@@ -336,7 +336,9 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
       context: context,
       threadId: widget.threadId,
     );
-    if (saved && mounted) showWenyouSnackBar(context, '主题档案已保存。');
+    if (saved && mounted) {
+      showWenyouSnackBar(context, '主题档案已保存。', tone: WenyouSnackBarTone.success);
+    }
   }
 
   bool _isDirty(ThreadManagementState state) {
@@ -531,7 +533,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         .read(threadManagementControllerProvider(widget.threadId).notifier)
         .remove();
     if (!succeeded || !mounted) return;
-    showWenyouSnackBar(context, '主题已删除。');
+    showWenyouSnackBar(context, '主题已删除。', tone: WenyouSnackBarTone.success);
     _allowPop = true;
     context.go(AppRouteLocations.home);
   }

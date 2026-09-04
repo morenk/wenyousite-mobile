@@ -121,14 +121,22 @@ class BookmarkListView extends ConsumerWidget {
           );
           if (!context.mounted || folder == null) return;
           if (onCatalogChanged case final refresh?) unawaited(refresh());
-          showWenyouSnackBar(context, '已移动到“${folder.name}”。');
+          showWenyouSnackBar(
+            context,
+            '已移动到“${folder.name}”。',
+            tone: WenyouSnackBarTone.success,
+          );
         },
         onLoadMore: notifier.loadMore,
         onRemove: (bookmarkId) async {
           final succeeded = await notifier.removeBookmark(bookmarkId);
           if (!context.mounted || !succeeded) return;
           if (onCatalogChanged case final refresh?) unawaited(refresh());
-          showWenyouSnackBar(context, '已取消收藏。');
+          showWenyouSnackBar(
+            context,
+            '已取消收藏。',
+            tone: WenyouSnackBarTone.success,
+          );
         },
         onDismissFailure: notifier.clearActionFailure,
       ),

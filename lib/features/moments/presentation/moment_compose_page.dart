@@ -722,7 +722,12 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   }
 
   void _showFeedback(String message) {
-    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
+    showWenyouSnackBar(
+      context,
+      message,
+      pacing: WenyouSnackBarPacing.extended,
+      tone: WenyouSnackBarTone.error,
+    );
   }
 }
 

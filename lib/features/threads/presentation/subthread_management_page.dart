@@ -305,7 +305,7 @@ class _SubthreadRow extends ConsumerWidget {
         .read(subthreadManagementControllerProvider(threadId).notifier)
         .remove(item);
     if (succeeded && context.mounted) {
-      showWenyouSnackBar(context, '子贴已删除。');
+      showWenyouSnackBar(context, '子贴已删除。', tone: WenyouSnackBarTone.success);
     }
   }
 }

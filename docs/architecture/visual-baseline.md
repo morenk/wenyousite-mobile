@@ -1,5 +1,7 @@
 # 移动端视觉基线
 
+全局临时消息入口为 `showWenyouSnackBar`：使用 Foundation `panel/border/text`、语义信息/成功/失败图标、对应柔和图标底色及 `floating` 层级。正文不裁切、不缩小字号，操作按钮另起一行；亮色、黑夜、长文案和 2 倍字号由 Widget/Golden 覆盖。保留框架安全区与底部避让，私聊保留输入区净空；阻断失败仍在原位置提供恢复操作。具体行为见[应用壳](../modules/app-shell.md)。
+
 移动端视觉唯一规范是 Foundation 远端最新正式发布 Tag；当前锁定 v6.8.0 的 Flutter profile、品牌资源、核心元素、语义图标注册表与生成 Token。现行页面在亮色与黑夜模式下使用各自的中央语义画布与表面色、轻量分隔、12/24dp 响应式外边距、600dp 最大内容宽度和不小于 48dp 的独立触控目标；列表容器与列表项占满分配列，只有消息气泡、标签、徽标和紧凑操作可按内容收缩。品牌浅粉 `brandSurface` 只承担按钮、气泡和强调块，不能用作白底文字或图标；链接和通用强调前景使用 `brandForeground`，点赞与收藏选中态分别使用 `like` 与 `bookmark`，继续以透明容器及图标颜色/填充表达状态，表面上的内容使用对应 `on*` Token，并由程序化测试保证普通文字 AA 对比度。Foundation v6.8.0 的正文分隔线和主题标签生成常量已由阅读态、编辑态及共享标签组件消费。
 
 全站用户可见文字只通过 `WenyouSemanticTextStyles` 的页面、区块、子区块、列表、状态、正文、紧凑正文、标签、说明和阅读正文等语义角色取值；角色的字号、行高、字重和字体族直接读取 Foundation v6.8.0 `WenyouFoundationTypography`，页面不得依赖 Material 字体槽位名称或声明数字字号。时间、计数与金额复用相同层级的 utility 变体并启用等宽数字；钱包主余额使用页面标题层级的 22sp utility，单位使用紧凑正文层级，禁止通过 `FittedBox` 缩小文字。等级、未读计数、编辑器正文等组件级特例只能读取 Foundation 导出的元素或编辑器契约。`AppTheme` 为 Flutter/Material 组件提供完整兜底映射，架构门禁阻止新页面绕过这些入口。

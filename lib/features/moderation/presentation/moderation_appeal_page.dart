@@ -375,7 +375,7 @@ class _DecisionCard extends StatelessWidget {
       builder: (_) => _AppealSheet(decision: decision),
     );
     if (submitted == true && context.mounted) {
-      showWenyouSnackBar(context, '申诉已提交。');
+      showWenyouSnackBar(context, '申诉已提交。', tone: WenyouSnackBarTone.success);
     }
   }
 }

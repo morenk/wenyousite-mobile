@@ -107,6 +107,7 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
         showWenyouSnackBar(
           context,
           next.userMessage,
+          tone: WenyouSnackBarTone.error,
           pacing: WenyouSnackBarPacing.extended,
         );
       }
@@ -431,7 +432,11 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       },
     );
     if (!mounted || folder == null) return;
-    showWenyouSnackBar(context, '已收藏到“${folder.name}”。');
+    showWenyouSnackBar(
+      context,
+      '已收藏到“${folder.name}”。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 
   void _openLogin() {

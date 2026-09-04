@@ -540,7 +540,7 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
     if (saved == null) return;
     ref.invalidate(remoteThreadDraftsControllerProvider);
     if (!mounted) return;
-    showWenyouSnackBar(context, '已保存到云端草稿');
+    showWenyouSnackBar(context, '已保存到云端草稿', tone: WenyouSnackBarTone.success);
   }
 
   Future<void> _handleRemoteDraftAction(ThreadRemoteDraftAction action) async {

@@ -852,7 +852,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .read(postActionControllerProvider(widget.threadId).notifier)
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
-    showWenyouSnackBar(context, '楼层已删除。');
+    showWenyouSnackBar(context, '楼层已删除。', tone: WenyouSnackBarTone.success);
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
     await ref.read(_detailProvider.notifier).refresh();
   }
@@ -871,7 +871,11 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         );
     if (!mounted) return;
     if (updated) {
-      showWenyouSnackBar(context, floor.isPinned ? '已取消楼层置顶。' : '楼层已置顶。');
+      showWenyouSnackBar(
+        context,
+        floor.isPinned ? '已取消楼层置顶。' : '楼层已置顶。',
+        tone: WenyouSnackBarTone.success,
+      );
     } else if (ref.read(actionsProvider).failure?.httpStatus == 403) {
       await ref.read(_detailProvider.notifier).refresh();
     }

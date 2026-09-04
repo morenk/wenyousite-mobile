@@ -141,7 +141,7 @@ class ThreadMembershipControls extends ConsumerWidget {
         .read(threadPlayerExitControllerProvider(threadId).notifier)
         .exit();
     if (!context.mounted || !succeeded) return;
-    showWenyouSnackBar(context, '已退出玩家身份。');
+    showWenyouSnackBar(context, '已退出玩家身份。', tone: WenyouSnackBarTone.success);
     await onExited();
   }
 }

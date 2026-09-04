@@ -269,7 +269,11 @@ class _ThreadTagManagementPageState
         .read(threadTagManagementControllerProvider(widget.threadId).notifier)
         .addExisting(tag);
     if (!succeeded || !mounted) return;
-    showWenyouSnackBar(context, '已添加 #${tag.name}。');
+    showWenyouSnackBar(
+      context,
+      '已添加 #${tag.name}。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 
   Future<void> _addByName(String name) async {
@@ -279,7 +283,11 @@ class _ThreadTagManagementPageState
     if (!succeeded || !mounted) return;
     _searchController.clear();
     setState(() {});
-    showWenyouSnackBar(context, '已添加 #$name。');
+    showWenyouSnackBar(
+      context,
+      '已添加 #$name。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 
   Future<void> _confirmRemove(TopicTagModel tag) async {
@@ -306,7 +314,11 @@ class _ThreadTagManagementPageState
         .read(threadTagManagementControllerProvider(widget.threadId).notifier)
         .remove(tag);
     if (!succeeded || !mounted) return;
-    showWenyouSnackBar(context, '已移除 #${tag.name}。');
+    showWenyouSnackBar(
+      context,
+      '已移除 #${tag.name}。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 }
 

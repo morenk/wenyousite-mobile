@@ -66,6 +66,7 @@ class _MomentBookmarkFolderPageState
             context,
             message,
             pacing: WenyouSnackBarPacing.extended,
+            tone: WenyouSnackBarTone.error,
           );
         }
       }
@@ -322,7 +323,7 @@ class _MomentBookmarkFolderPageState
       final succeeded = await notifier.remove(card);
       if (!mounted || !succeeded) return;
       _refreshCatalog();
-      showWenyouSnackBar(context, '已取消收藏。');
+      showWenyouSnackBar(context, '已取消收藏。', tone: WenyouSnackBarTone.success);
       return;
     }
     final repository = ref.read(momentBookmarkRepositoryProvider);
@@ -340,7 +341,11 @@ class _MomentBookmarkFolderPageState
     );
     if (!mounted || folder == null) return;
     _refreshCatalog();
-    showWenyouSnackBar(context, '已移动到“${folder.name}”。');
+    showWenyouSnackBar(
+      context,
+      '已移动到“${folder.name}”。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 
   void _refreshCatalog() {

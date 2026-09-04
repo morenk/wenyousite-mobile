@@ -127,6 +127,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
       showWenyouSnackBar(
         context,
         generated ? '新邀请已生成并复制，旧链接已失效。' : '邀请链接已复制。',
+        tone: WenyouSnackBarTone.success,
         pacing: generated
             ? WenyouSnackBarPacing.extended
             : WenyouSnackBarPacing.brief,
@@ -136,6 +137,7 @@ class ThreadInviteLinkPanel extends ConsumerWidget {
       showWenyouSnackBar(
         context,
         '邀请已生成，但自动复制失败，请长按上方链接复制。',
+        tone: WenyouSnackBarTone.error,
         pacing: WenyouSnackBarPacing.extended,
       );
     }

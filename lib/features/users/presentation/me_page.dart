@@ -32,7 +32,12 @@ import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.da
 void _showRefreshFailure(BuildContext context, ApiFailure failure) {
   final message = wenyouFailureMessage(failure);
   if (message != null) {
-    showWenyouSnackBar(context, message, pacing: WenyouSnackBarPacing.extended);
+    showWenyouSnackBar(
+      context,
+      message,
+      pacing: WenyouSnackBarPacing.extended,
+      tone: WenyouSnackBarTone.error,
+    );
   }
 }
 
@@ -678,7 +683,11 @@ class _LogoutAction extends ConsumerWidget {
         .submit();
     if (succeeded && context.mounted) {
       context.go(AppRouteLocations.me);
-      showWenyouSnackBar(context, '已安全退出当前账号。');
+      showWenyouSnackBar(
+        context,
+        '已安全退出当前账号。',
+        tone: WenyouSnackBarTone.success,
+      );
     }
   }
 
@@ -696,7 +705,11 @@ class _LogoutAction extends ConsumerWidget {
     await ref.read(logoutControllerProvider.notifier).forceLocalLogout();
     if (context.mounted) {
       context.go(AppRouteLocations.me);
-      showWenyouSnackBar(context, '这台设备的登录信息已清除。');
+      showWenyouSnackBar(
+        context,
+        '这台设备的登录信息已清除。',
+        tone: WenyouSnackBarTone.success,
+      );
     }
   }
 }

@@ -485,5 +485,5 @@ class _ActionOutcome extends StatelessWidget {
 void _showSuccess(BuildContext context, ThreadSubscriptionController notifier) {
   final message = notifier.takeSuccessMessage();
   if (message == null) return;
-  showWenyouSnackBar(context, message);
+  showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
 }

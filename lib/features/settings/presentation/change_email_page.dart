@@ -59,6 +59,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
       showWenyouSnackBar(
         context,
         '邮箱已更换，请重新登录。',
+        tone: WenyouSnackBarTone.success,
         pacing: WenyouSnackBarPacing.extended,
       );
     }

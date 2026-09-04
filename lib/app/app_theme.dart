@@ -361,12 +361,15 @@ abstract final class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: tokens.text,
+        backgroundColor: tokens.panel,
+        elevation: WenyouOverlayContract.elevation['floating'],
+        insetPadding: EdgeInsets.all(tokens.space16),
         contentTextStyle: textTheme.wenyouCompactBody.copyWith(
-          color: tokens.panel,
+          color: tokens.text,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius12),
+          borderRadius: BorderRadius.circular(tokens.radius16),
+          side: BorderSide(color: tokens.border),
         ),
       ),
     );

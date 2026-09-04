@@ -143,7 +143,11 @@ class MeAvatarEditor extends ConsumerWidget {
       unawaited(WenyouCachedImage.evictFromCache(previousUrl));
     }
     if (navigator.mounted) {
-      showWenyouSnackBar(navigator.context, '头像已更新。');
+      showWenyouSnackBar(
+        navigator.context,
+        '头像已更新。',
+        tone: WenyouSnackBarTone.success,
+      );
     }
   }
 
@@ -190,7 +194,7 @@ class MeAvatarEditor extends ConsumerWidget {
     if (previousUrl != null) {
       unawaited(WenyouCachedImage.evictFromCache(previousUrl));
     }
-    showWenyouSnackBar(context, message);
+    showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
   }
 
   String _progressMessage(AvatarState state) {

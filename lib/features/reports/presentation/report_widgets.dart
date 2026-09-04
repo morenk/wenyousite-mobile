@@ -75,6 +75,7 @@ Future<void> showWenyouReportFlow({
   showWenyouSnackBar(
     context,
     '举报已提交，管理员会根据站点规范进行审核。',
+    tone: WenyouSnackBarTone.success,
     pacing: WenyouSnackBarPacing.extended,
   );
 }

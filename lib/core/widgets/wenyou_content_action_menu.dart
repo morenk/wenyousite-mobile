@@ -166,7 +166,10 @@ Future<void> copyPostCardContent(
     await WidgetsBinding.instance.endOfFrame;
     if (!context.mounted || messenger?.mounted != true) return;
     try {
-      messenger!.showWenyouSnackBar(successMessage);
+      messenger!.showWenyouSnackBar(
+        successMessage,
+        tone: WenyouSnackBarTone.success,
+      );
     } on Object catch (error, stackTrace) {
       FlutterError.reportError(
         FlutterErrorDetails(

@@ -198,6 +198,7 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
                 '${result.experienceAwarded} 经验。'
           : '今日签到获得 ${result.rewardAmount} 升温油。',
       pacing: WenyouSnackBarPacing.extended,
+      tone: WenyouSnackBarTone.success,
     );
   }
 

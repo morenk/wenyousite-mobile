@@ -166,5 +166,5 @@ void _showUserRelationSuccess(
 ) {
   final message = notifier.takeSuccessMessage();
   if (message == null) return;
-  showWenyouSnackBar(context, message);
+  showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
 }

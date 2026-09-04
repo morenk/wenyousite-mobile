@@ -171,7 +171,11 @@ class _ContentImageViewerPageState
     try {
       await operation.result;
       if (!mounted) return;
-      showWenyouSnackBar(context, '图片已保存到系统相册。');
+      showWenyouSnackBar(
+        context,
+        '图片已保存到系统相册。',
+        tone: WenyouSnackBarTone.success,
+      );
     } on Object catch (error) {
       if (!mounted) return;
       final galleryFailure = error is ImageGalleryException ? error : null;
@@ -205,7 +209,7 @@ class _ContentImageViewerPageState
     try {
       final message = await addToStickers(widget.items[targetIndex]);
       if (!mounted) return;
-      showWenyouSnackBar(context, message);
+      showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
     } on Object catch (error) {
       if (!mounted) return;
       setState(() {

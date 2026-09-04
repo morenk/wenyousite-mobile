@@ -167,7 +167,7 @@ class _InvitationReady extends ConsumerWidget {
         .read(threadInvitationAccessControllerProvider(token).notifier)
         .join();
     if (result == null || !context.mounted) return;
-    showWenyouSnackBar(context, '已加入私密主题。');
+    showWenyouSnackBar(context, '已加入私密主题。', tone: WenyouSnackBarTone.success);
     context.go(AppRouteLocations.thread(result.threadId));
   }
 }

@@ -143,7 +143,11 @@ class MeProfileCoverEditor extends ConsumerWidget {
       unawaited(WenyouCachedImage.evictFromCache(url));
     }
     if (navigator.mounted) {
-      showWenyouSnackBar(navigator.context, '主页背景已更新。');
+      showWenyouSnackBar(
+        navigator.context,
+        '主页背景已更新。',
+        tone: WenyouSnackBarTone.success,
+      );
     }
   }
 
@@ -193,7 +197,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
     for (final url in oldUrls) {
       unawaited(WenyouCachedImage.evictFromCache(url));
     }
-    showWenyouSnackBar(context, message);
+    showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
   }
 
   String _progressMessage(ProfileCoverState state) {

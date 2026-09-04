@@ -194,7 +194,11 @@ class ThreadInteractionActions extends ConsumerWidget {
     );
     if (!context.mounted || folder == null) return;
     notifier.takeSuccessMessage();
-    showWenyouSnackBar(context, '已收藏到“${folder.name}”。');
+    showWenyouSnackBar(
+      context,
+      '已收藏到“${folder.name}”。',
+      tone: WenyouSnackBarTone.success,
+    );
   }
 
   void _showFailure(
@@ -209,6 +213,7 @@ class ThreadInteractionActions extends ConsumerWidget {
           context,
           message,
           pacing: WenyouSnackBarPacing.extended,
+          tone: WenyouSnackBarTone.error,
         );
       }
       return;
@@ -224,6 +229,7 @@ class ThreadInteractionActions extends ConsumerWidget {
         context,
         message,
         pacing: WenyouSnackBarPacing.extended,
+        tone: WenyouSnackBarTone.error,
       );
     }
   }
@@ -234,6 +240,6 @@ class ThreadInteractionActions extends ConsumerWidget {
   ) {
     final message = notifier.takeSuccessMessage();
     if (message == null) return;
-    showWenyouSnackBar(context, message);
+    showWenyouSnackBar(context, message, tone: WenyouSnackBarTone.success);
   }
 }

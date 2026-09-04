@@ -218,6 +218,7 @@ class _MemberRow extends ConsumerWidget {
                         member.playerMarked
                             ? '已收回 ${member.username} 的玩家标记。'
                             : '已将 ${member.username} 标记为玩家。',
+                        tone: WenyouSnackBarTone.success,
                       );
                     },
               icon: playerPending
@@ -303,6 +304,7 @@ class _MemberRow extends ConsumerWidget {
     showWenyouSnackBar(
       context,
       promoting ? '已任命 ${member.username} 为协作者。' : '已移除协作者身份。',
+      tone: WenyouSnackBarTone.success,
     );
   }
 }
