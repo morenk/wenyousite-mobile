@@ -16,7 +16,6 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_overflow_content.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_transient_target_frame.dart';
@@ -26,6 +25,7 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_composer.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_comment_navigation.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_comment_body.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_interaction_bar.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_widgets.dart';
 import 'package:wenyousite_mobile/features/reports/domain/report_models.dart';
 import 'package:wenyousite_mobile/features/reports/presentation/report_widgets.dart';
@@ -161,19 +161,23 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
                       child: _MomentDetailPanel(
                         detail: state.detail!,
                         pendingAction: state.pendingMomentAction,
-                        tipAction: state.detail!.canEdit
+                        onTip: state.detail!.canEdit
                             ? null
-                            : WenyouTipButton(
-                                key: const Key('moment-detail-tip'),
-                                target: TipTarget.moment(
-                                  id: state.detail!.card.id,
-                                  recipientUserId: state.detail!.card.author.id,
+                            : () => unawaited(
+                                showWenyouTipFlow(
+                                  context: context,
+                                  ref: ref,
+                                  target: TipTarget.moment(
+                                    id: state.detail!.card.id,
+                                    recipientUserId:
+                                        state.detail!.card.author.id,
+                                  ),
+                                  recipientName:
+                                      state.detail!.card.author.username,
+                                  returnTo: _location,
+                                  onSuccess: (_) =>
+                                      ref.read(provider.notifier).load(),
                                 ),
-                                recipientName:
-                                    state.detail!.card.author.username,
-                                returnTo: _location,
-                                onSuccess: (_) =>
-                                    ref.read(provider.notifier).load(),
                               ),
                         onLike: () => _authenticated(
                           () => ref.read(provider.notifier).toggleLike(),
@@ -538,16 +542,16 @@ class _MomentDetailPanel extends StatelessWidget {
   const _MomentDetailPanel({
     required this.detail,
     required this.pendingAction,
-    required this.tipAction,
     required this.onLike,
     required this.onBookmark,
+    this.onTip,
   });
 
   final MomentDetail detail;
   final MomentInteractionAction? pendingAction;
-  final Widget? tipAction;
   final VoidCallback onLike;
   final VoidCallback onBookmark;
+  final VoidCallback? onTip;
 
   @override
   Widget build(BuildContext context) {
@@ -600,107 +604,14 @@ class _MomentDetailPanel extends StatelessWidget {
         ],
         SizedBox(height: tokens.space16),
         const Divider(height: 1),
-        Row(
-          children: [
-            Expanded(
-              child: _DetailAction(
-                key: const Key('moment-detail-like'),
-                icon: card.viewerLiked
-                    ? WenyouIconIds.actionLike
-                    : WenyouIconIds.actionLike,
-                label: '${card.likeCount} 点赞',
-                selected: card.viewerLiked,
-                kind: WenyouInteractionKind.like,
-                pending: pendingAction == MomentInteractionAction.like,
-                onPressed: pendingAction == null ? onLike : null,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                key: const Key('moment-detail-bookmark'),
-                icon: card.viewerBookmarked
-                    ? WenyouIconIds.actionBookmark
-                    : WenyouIconIds.actionBookmark,
-                label: '${card.bookmarkCount} 收藏',
-                selected: card.viewerBookmarked,
-                kind: WenyouInteractionKind.bookmark,
-                pending: pendingAction == MomentInteractionAction.bookmark,
-                onPressed:
-                    pendingAction == null &&
-                        (card.canInteract || card.viewerBookmarked)
-                    ? onBookmark
-                    : null,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: WenyouIconIds.metricComments,
-                label: '${card.commentCount} 评论',
-              ),
-            ),
-          ],
+        MomentDetailInteractionBar(
+          card: card,
+          pendingAction: pendingAction,
+          onLike: onLike,
+          onBookmark: onBookmark,
+          onTip: onTip,
         ),
-        if (tipAction != null) ...[
-          SizedBox(height: tokens.space8),
-          Center(child: tipAction),
-        ],
-        if (card.tipTotal != '0') ...[
-          SizedBox(height: tokens.space8),
-          Text(
-            '已获得 ${WenyouAmount.format(card.tipTotal)} 升加油',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.wenyouCaption.copyWith(
-              color: tokens.mutedText,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ],
-    );
-  }
-}
-
-class _DetailAction extends StatelessWidget {
-  const _DetailAction({
-    required this.icon,
-    required this.label,
-    this.selected = false,
-    this.kind,
-    this.pending = false,
-    this.onPressed,
-    super.key,
-  });
-
-  final String icon;
-  final String label;
-  final bool selected;
-  final WenyouInteractionKind? kind;
-  final bool pending;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    if (kind case final interactionKind?) {
-      return WenyouInteractionToggle(
-        kind: interactionKind,
-        selected: selected,
-        pending: pending,
-        onPressed: onPressed,
-        semanticLabel: label,
-        supporting: Flexible(
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        expand: true,
-      );
-    }
-    return TextButton.icon(
-      onPressed: onPressed,
-      icon: WenyouIcon(
-        icon,
-        size: 20,
-        color: selected ? context.wenyouTokens.focus : null,
-      ),
-      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }
 }

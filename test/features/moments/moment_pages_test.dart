@@ -30,6 +30,7 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page.dart';
+import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 import '../../support/foundation_test_fonts.dart';
 
@@ -251,6 +252,40 @@ void main() {
       find.byKey(const Key('moment-feed-visual')),
       matchesGoldenFile('goldens/moment_waterfall_360.png'),
     );
+  });
+
+  testWidgets('他人动态的紧凑加油项继续打开原有加油流程', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+        sessionRemoteProvider.overrideWithValue(_FakeSessionRemote()),
+        momentRepositoryProvider.overrideWithValue(_PageRepository()),
+        walletRepositoryProvider.overrideWithValue(
+          _MomentPageWalletRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container
+        .read(sessionControllerProvider.notifier)
+        .authenticate(_tokensFor('viewer-1'));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const MomentDetailPage(momentId: 'moment-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('moment-detail-tip')));
+    await tester.pumpAndSettle();
+    expect(find.text('为温柔测试员加油'), findsOneWidget);
+    expect(find.byKey(const Key('tip-amount-2')), findsOneWidget);
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('动态详情直接切换评论顺序且不请求作者候选', (tester) async {
@@ -2024,6 +2059,8 @@ MomentCard _card({
     updatedAt: now,
   );
 }
+
+class _MomentPageWalletRepository extends Fake implements WalletRepository {}
 
 MomentDetail _detail() => MomentDetail(
   card: _card(),
