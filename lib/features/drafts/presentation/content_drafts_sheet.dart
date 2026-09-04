@@ -93,9 +93,9 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
                     SizedBox(height: tokens.space4),
                     Text(
                       '只保存当前正文 · 已用 ${state.usage.usedSlots}/${state.usage.maxSlots}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
                     ),
                   ],
                 ),
@@ -177,14 +177,14 @@ class _ReadyDrafts extends ConsumerWidget {
                   children: [
                     Text(
                       '自动保存到草稿位 1',
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: Theme.of(context).textTheme.wenyouCompactTitle,
                     ),
                     SizedBox(height: tokens.space4),
                     Text(
                       _autoSaveDescription(state),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
                     ),
                   ],
                 ),
@@ -241,7 +241,7 @@ class _ReadyDrafts extends ConsumerWidget {
               if (state.usage.isFull) ...[
                 Text(
                   '五个草稿位都已有内容。你仍可选择任一位置保存并确认覆盖。',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.wenyouCaption,
                 ),
                 SizedBox(height: tokens.space8),
               ],
@@ -344,7 +344,7 @@ class _AutoSaveSwitch extends StatelessWidget {
         Text(
           value ? '已开启' : '已关闭',
           key: const Key('content-drafts-auto-save-state'),
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          style: Theme.of(context).textTheme.wenyouCaptionEmphasis.copyWith(
             color: enabled
                 ? (value ? tokens.brandForeground : tokens.text)
                 : tokens.mutedText,
@@ -423,14 +423,13 @@ class _DraftSlotCard extends ConsumerWidget {
                     children: [
                       Text(
                         '草稿位 $slot',
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: Theme.of(context).textTheme.wenyouCompactTitle,
                       ),
                       SizedBox(height: tokens.space4),
                       Text(
                         slot == 1 ? '空闲 · 自动保存位置' : '空闲',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCaption
+                            .copyWith(color: tokens.mutedText),
                       ),
                     ],
                   ),
@@ -469,7 +468,9 @@ class _DraftSlotCard extends ConsumerWidget {
                         children: [
                           Text(
                             '草稿位 $slot',
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.wenyouCompactTitle,
                           ),
                           SizedBox(height: tokens.space4),
                           Text(
@@ -484,8 +485,8 @@ class _DraftSlotCard extends ConsumerWidget {
                           Text(
                             '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(item.updatedAt.toLocal())}'
                             '${slot == 1 ? ' · 自动保存位置' : ''}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: tokens.mutedText),
+                            style: Theme.of(context).textTheme.wenyouCaption
+                                .copyWith(color: tokens.mutedText),
                           ),
                         ],
                       ),
@@ -636,7 +637,7 @@ class _SlotNumber extends StatelessWidget {
       ),
       child: Text(
         slot.toString(),
-        style: Theme.of(context).textTheme.titleMedium,
+        style: Theme.of(context).textTheme.wenyouRowTitle,
       ),
     );
   }

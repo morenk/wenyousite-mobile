@@ -48,6 +48,8 @@
 
 ## 10. 跨模块约束
 
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
 media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和安全上传，stickers presentation 只消费完成的 `mediaId`，不导入 media data 或 Dio；direct_messages 负责 `stickerAssetId` 独占载荷和消息展示；editor 只插入 Codec 已支持的 sticker embed；posts/threads 传入真实 postId 与 Markdown 图片 URL；moments 分别传入动态/评论 ID 与图片 mediaId。视觉只使用 Foundation v6.8.0 Token、语义图标、面板、状态和最小触控目标，不维护平行审美规范。
 
 ## 11. 测试场景与验收条件

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -94,31 +95,28 @@ class _WalletSummaryPanel extends StatelessWidget {
                         children: [
                           Text(
                             '温油余额',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: tokens.mutedText),
+                            style: Theme.of(context).textTheme.wenyouCompactBody
+                                .copyWith(color: tokens.mutedText),
                           ),
                           SizedBox(height: tokens.space4),
                           Semantics(
                             label: '温油余额 ${summary.balance} 升',
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text.rich(
-                                TextSpan(
-                                  text: WenyouAmount.format(summary.balance),
-                                  children: const [
-                                    TextSpan(
-                                      text: ' 升',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                style: Theme.of(context).textTheme.displaySmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                            child: Text.rich(
+                              TextSpan(
+                                text: WenyouAmount.format(summary.balance),
+                                children: [
+                                  TextSpan(
+                                    text: ' 升',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .wenyouCompactBody
+                                        .copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                ],
                               ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.wenyouMetricValue,
                             ),
                           ),
                         ],
@@ -193,15 +191,18 @@ class _SummaryStat extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Column(
       children: [
-        Text(label, style: TextStyle(color: tokens.mutedText)),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
+        ),
         SizedBox(height: tokens.space4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.wenyouUtilityRowTitle.copyWith(
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -320,7 +321,7 @@ class _TransactionTile extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context).textTheme.wenyouCompactTitle,
                 ),
                 SizedBox(height: tokens.space4),
                 Text(
@@ -329,7 +330,7 @@ class _TransactionTile extends StatelessWidget {
                   ).format(transaction.createdAt.toLocal()),
                   style: Theme.of(
                     context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
                 ),
                 if (detail != null) ...[
                   SizedBox(height: tokens.space4),
@@ -337,7 +338,7 @@ class _TransactionTile extends StatelessWidget {
                     detail,
                     style: Theme.of(
                       context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                    ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
                   ),
                 ],
               ],
@@ -349,19 +350,20 @@ class _TransactionTile extends StatelessWidget {
             children: [
               Text(
                 '${income ? '+' : '−'}${WenyouAmount.format(transaction.amount)} 升',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: income
-                      ? Theme.of(context).colorScheme.tertiary
-                      : tokens.text,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.wenyouUtilityCompactTitle
+                    .copyWith(
+                      color: income
+                          ? Theme.of(context).colorScheme.tertiary
+                          : tokens.text,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
               SizedBox(height: tokens.space4),
               Text(
                 '余额 ${WenyouAmount.format(transaction.balanceAfter)} 升',
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
             ],
           ),

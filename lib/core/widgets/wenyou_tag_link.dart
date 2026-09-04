@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 /// Lightweight topic-tag navigation for public reading surfaces.
@@ -104,7 +105,7 @@ class WenyouTagLink extends StatelessWidget {
 }
 
 TextStyle? _textStyle(BuildContext context) =>
-    Theme.of(context).textTheme.bodySmall?.copyWith(
+    Theme.of(context).textTheme.wenyouCaption.copyWith(
       color: context.wenyouTokens.brandForeground,
       fontWeight: FontWeight.w600,
     );

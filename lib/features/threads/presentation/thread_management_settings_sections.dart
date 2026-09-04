@@ -43,7 +43,7 @@ class ThreadManagementBasicsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('主题标题', style: Theme.of(context).textTheme.titleMedium),
+        Text('主题标题', style: Theme.of(context).textTheme.wenyouRowTitle),
         SizedBox(height: tokens.space8),
         TextFormField(
           key: const Key('thread-management-title'),
@@ -52,7 +52,7 @@ class ThreadManagementBasicsSection extends StatelessWidget {
           enabled: enabled,
           maxLength: 100,
           textInputAction: TextInputAction.done,
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: Theme.of(context).textTheme.wenyouBody,
           decoration: const InputDecoration(
             hintText: '一句话说明这个主题',
             counterText: '',
@@ -122,7 +122,7 @@ class ThreadManagementBasicsSection extends StatelessWidget {
                   ),
                   child: Text(
                     field.errorText!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: Theme.of(context).textTheme.wenyouCaption.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
@@ -261,7 +261,7 @@ class _ThreadSettingRow extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       minTileHeight: 56,
       enabled: enabled,
-      titleTextStyle: Theme.of(context).textTheme.titleMedium,
+      titleTextStyle: Theme.of(context).textTheme.wenyouRowTitle,
       title: Text(label),
       trailing: ConstrainedBox(
         constraints: BoxConstraints(
@@ -277,7 +277,7 @@ class _ThreadSettingRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               ),
             ),
             if (actionable) ...[
@@ -342,7 +342,7 @@ Future<T?> _showChoiceSheet<T>({
                 ),
                 child: Text(
                   supportingText,
-                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                  style: Theme.of(sheetContext).textTheme.wenyouCaption,
                 ),
               ),
             for (var index = 0; index < options.length; index++) ...[
@@ -362,10 +362,11 @@ Future<T?> _showChoiceSheet<T>({
                       selected: isSelected,
                       titleTextStyle: Theme.of(
                         sheetContext,
-                      ).textTheme.titleMedium,
-                      subtitleTextStyle: Theme.of(
-                        sheetContext,
-                      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                      ).textTheme.wenyouRowTitle,
+                      subtitleTextStyle: Theme.of(sheetContext)
+                          .textTheme
+                          .wenyouCompactBody
+                          .copyWith(color: tokens.mutedText),
                       title: Text(option.label),
                       subtitle: option.supportingLabel == null
                           ? null

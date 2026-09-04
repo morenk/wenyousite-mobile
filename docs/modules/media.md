@@ -54,6 +54,8 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 
 ## 10. 跨模块约束
 
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
 只有 `COMPLETED` 且用途匹配的资源能成为 `wenyou_image` 节点、动态/评论/私聊媒体 ID、收藏表情导入源、头像或背景候选；`media/domain` 定义归一化端口与输入输出，`media/application` 负责上传任务以及头像/背景的取景契约，`media/presentation` 按业务入口提供直接选图或静态图取景/GIF 原样确认，`media/data` 负责系统选图、header 校验、isolate 解码、native WebP 编码、工作协调、Debug 分阶段计时与 Dio adapter。editor 与 stickers 只消费完成媒体；moments 和 direct_messages 可在当前页面内消费 application/domain 提供的本地输入做待发送预览，但业务请求仍只提交完成媒体 ID；users 只接收头像或双背景候选并负责资料端点和本人资料事实。正文、动态详情和评论图片遵循 Foundation 的 contain、不裁切、状态占位和全屏交互契约；动态信息流封面、背景和头像是允许 cover 裁切的角色，但动态封面必须可进入详情原图。
 
 ## 11. 测试场景与验收条件
@@ -86,7 +88,7 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；Markdown v5；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.16.0-dev.20260903.5`；Markdown v5；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 

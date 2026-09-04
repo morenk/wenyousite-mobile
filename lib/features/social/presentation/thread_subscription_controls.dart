@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -236,7 +237,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
           children: [
             Text(
               includeThreadToggle ? '管理更新订阅' : '订阅玩家发言',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.wenyouOverlayTitle,
             ),
             SizedBox(height: tokens.space4),
             Text(
@@ -245,7 +246,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   : '只列出本帖中已标记的普通玩家；可同时订阅多人。',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
             if (state.actionFailure != null) ...[
               SizedBox(height: tokens.space12),
@@ -299,7 +300,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
               ),
               Divider(height: 1, color: tokens.border),
               SizedBox(height: tokens.space12),
-              Text('玩家发言', style: Theme.of(context).textTheme.titleMedium),
+              Text('玩家发言', style: Theme.of(context).textTheme.wenyouRowTitle),
               SizedBox(height: tokens.space4),
             ],
             Expanded(
@@ -323,7 +324,7 @@ class _PlayerSubscriptionSheet extends ConsumerWidget {
                   Center(
                     child: Text(
                       '暂无可订阅的玩家',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.wenyouCaption,
                     ),
                   ),
                 ThreadSubscriptionPhase.ready => ListView.separated(

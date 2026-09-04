@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
@@ -86,7 +87,7 @@ class PostDiscussionTitle extends StatelessWidget {
           root.threadTitle ?? '楼中楼讨论',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.wenyouRowTitle,
         ),
         Text(
           contextLabel,
@@ -94,7 +95,7 @@ class PostDiscussionTitle extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
         ),
       ],
     );

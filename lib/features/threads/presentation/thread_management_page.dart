@@ -165,7 +165,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         thread.published &&
         thread.visibility == ThreadManagementVisibility.private;
     final showActions = thread.published || thread.isOwner;
-    final actionTitleStyle = Theme.of(context).textTheme.titleMedium;
+    final actionTitleStyle = Theme.of(context).textTheme.wenyouRowTitle;
     return WenyouPageBody(
       key: const Key('thread-management-settings-content'),
       child: Form(
@@ -282,7 +282,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
                         : Theme.of(context).colorScheme.error,
                   ),
                   title: const Text('删除主题'),
-                  titleTextStyle: actionTitleStyle?.copyWith(
+                  titleTextStyle: actionTitleStyle.copyWith(
                     color: state.isBusy
                         ? tokens.mutedText
                         : Theme.of(context).colorScheme.error,
@@ -599,7 +599,7 @@ class _ThreadManagementAutosaveIndicator extends StatelessWidget {
                           label,
                           style: Theme.of(
                             context,
-                          ).textTheme.bodySmall?.copyWith(color: color),
+                          ).textTheme.wenyouCaption.copyWith(color: color),
                         ),
                       ],
                     ),
@@ -680,7 +680,7 @@ class _ThreadTagSelectorSheetState extends State<_ThreadTagSelectorSheet> {
                 '已选 ${_tags.length}/5',
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               ),
               if (_tags.isNotEmpty) ...[
                 SizedBox(height: tokens.space8),

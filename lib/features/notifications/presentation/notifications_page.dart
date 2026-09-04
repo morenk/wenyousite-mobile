@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -309,7 +310,7 @@ class _NotificationBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final bodyStyle = Theme.of(context).textTheme.bodyMedium;
+    final bodyStyle = Theme.of(context).textTheme.wenyouCompactBody;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -332,13 +333,13 @@ class _NotificationBody extends StatelessWidget {
               copy.preview!,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: bodyStyle?.copyWith(color: tokens.mutedText),
+              style: bodyStyle.copyWith(color: tokens.mutedText),
             ),
           ],
         ] else
           Text(
             copy.fallbackText,
-            style: bodyStyle?.copyWith(
+            style: bodyStyle.copyWith(
               fontWeight: item.isRead ? FontWeight.w400 : FontWeight.w600,
             ),
           ),
@@ -346,7 +347,7 @@ class _NotificationBody extends StatelessWidget {
           SizedBox(height: tokens.space4),
           Text(
             item.target.deletedHint!,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.wenyouCaption.copyWith(
               color: Theme.of(context).colorScheme.error,
               fontWeight: FontWeight.w600,
             ),
@@ -358,7 +359,7 @@ class _NotificationBody extends StatelessWidget {
           semanticsPrefix: '通知时间：',
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ).textTheme.wenyouUtilityCaption.copyWith(color: tokens.mutedText),
         ),
       ],
     );

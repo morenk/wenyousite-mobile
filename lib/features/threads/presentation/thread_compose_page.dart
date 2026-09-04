@@ -239,9 +239,8 @@ class _ThreadComposePageState extends ConsumerState<ThreadComposePage>
                     Text(
                       '主题标题',
                       key: const Key('compose-title-label'),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: tokens.mutedText,
-                      ),
+                      style: Theme.of(context).textTheme.wenyouCaptionEmphasis
+                          .copyWith(color: tokens.mutedText),
                     ),
                     TextField(
                       key: const Key('compose-title'),

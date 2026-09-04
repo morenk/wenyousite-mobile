@@ -1,10 +1,10 @@
 # Foundation v6.8.0 移动端实现审计
 
-本审计以 Foundation `v6.8.0`（`196deaf16120aef2b12ca289170e5d8d4a89f067`）为事实源，复核 Flutter profile、`experiences.elements`、`controls`、`feedback`、`formatting`、`images` 与 v6 变更。最近审查日期为 2026-08-30；它记录当前实现覆盖和明确债务，不在移动端仓库复制或改写上游规范。v6.8.0 只调整 Web 工具栏优先级；Flutter Token、语义图标、品牌资源与移动编辑器契约保持兼容。
+本审计以 Foundation `v6.8.0`（`196deaf16120aef2b12ca289170e5d8d4a89f067`）为事实源，复核 Flutter profile、`experiences.elements`、`controls`、`feedback`、`formatting`、`images` 与 v6 变更。最近审查日期为 2026-09-05；它记录当前实现覆盖和明确债务，不在移动端仓库复制或改写上游规范。v6.8.0 只调整 Web 工具栏优先级；Flutter Token、语义图标、品牌资源与移动编辑器契约保持兼容。
 
 ## 已闭环基线
 
-- 纯白画布、共享色板与三角色字体已由 `AppTheme`、`WenyouThemeTokens` 和 Foundation 字体统一提供。
+- 纯白画布、共享色板与三角色字体已由 `AppTheme`、`WenyouThemeTokens` 和 Foundation 字体统一提供。全站页面已改为消费 `WenyouSemanticTextStyles` 的结构、正文、标签、说明与 utility 数字角色，所有 Material 字体槽位均映射到 Foundation 正式字阶；架构门禁禁止 feature/core UI 重新读取裸槽位或声明数字字号，等级、未读计数与编辑器正文等特例只允许使用 Foundation 导出的组件契约。
 - 12/24dp 响应式页边距、600dp 内容上限、普通单列列表整宽和 48dp 触控目标已有共享组件与架构门禁；搜索结果和嵌套回复的内容宽度已复核。
 - 页面内同级内容导航、通知分组、动态模式和首页排头分类统一使用 `WenyouContentTabs`：纯文字、底部分隔线与短选中线、至少 48dp 命中区，二至四项在文字容纳时自动等宽，更多项目或放大字号时仅页签条横向滚动并保持选中项可见。首页、动态主流与消息中心在内容区复用 `WenyouSwipeTabRegion` 切换相邻栏目，按 Foundation standard 180ms 播放克制的方向位移并在减少动态效果时瞬时完成；页签条不随内容重建，首页加载只替换内容区，动态与消息按需构建并保留已访问栏目，避免整页闪烁和重复读取。页面继续持有选择值且不安装会一次预构建全部内容的 `TabBarView`；排序、状态、收藏夹等查询条件、表单单选和长目录继续使用筛选控件或 Bottom Sheet。
 - 单列页面区域统一通过 `WenyouContentFrame` 消费响应式页边距和内容宽度，连续阅读详情通过 `WenyouReadingAppBar` 固定 48dp 顶栏；主题列表标题先于作者语境，动态详情标题先于作者，避免列表与详情互换信息层级。
@@ -27,7 +27,7 @@
 
 ## 本轮审计结论
 
-本轮在既有 v6.8.0 元素合同上收敛了页面结构族：标准页签、相邻栏目滑动区、查询筛选、表单单选、长目录、讨论设置、阅读顶栏、响应式内容框和结构 Skeleton 各有明确入口；feature 页面由架构门禁禁止直接使用 Material `TabBar`、`TabBarView` 与 `DefaultTabController`。Material 的 SegmentedButton/Chip/ListTile/Badge 仍由全局主题统一兜底，ChoiceChip 只用于裁剪、骰子和创作元数据等专用选择，不再承担页面页签或长收藏夹目录。后续新增页面仍需直接消费生成合同和共享组件，不得重新引入页面级近似 Token、各自实现的切栏手势、通用 Spinner 首屏或仅靠 Snackbar 承载可重试失败。
+本轮在既有 v6.8.0 元素合同上进一步收敛了全站排版与页面结构族：标准页签、相邻栏目滑动区、查询筛选、表单单选、长目录、讨论设置、阅读顶栏、响应式内容框、结构 Skeleton 和语义文字角色各有明确入口；feature 页面由架构门禁禁止直接使用 Material `TabBar`、`TabBarView` 与 `DefaultTabController`，也不得读取裸字体槽位或声明数字字号。Material 的 SegmentedButton/Chip/ListTile/Badge 仍由全局主题统一兜底，ChoiceChip 只用于裁剪、骰子和创作元数据等专用选择，不再承担页面页签或长收藏夹目录。后续新增页面仍需直接消费生成合同和共享组件，不得重新引入页面级近似 Token、各自实现的切栏手势、通用 Spinner 首屏或仅靠 Snackbar 承载可重试失败。
 
 ## 待闭环差异
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 
 WenyouLevelTier? wenyouLevelTier(BuildContext context, int level) {
   return Theme.of(context).brightness == Brightness.dark
@@ -31,9 +32,9 @@ class WenyouLevelBadge extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             'Lv.$level',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
               color: tier.foreground,
-              fontSize: 11,
+              fontSize: WenyouElementContract.levelFontSize,
               height: 1,
               fontWeight: FontWeight.w700,
               fontFeatures: const [FontFeature.tabularFigures()],

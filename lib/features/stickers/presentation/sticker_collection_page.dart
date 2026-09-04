@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -147,7 +148,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                           Expanded(
                             child: Text(
                               '${collection.items.length}/${collection.limit} 个收藏',
-                              style: Theme.of(context).textTheme.titleMedium,
+                              style: Theme.of(context).textTheme.wenyouRowTitle,
                             ),
                           ),
                           FilledButton.icon(
@@ -179,7 +180,9 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                             Expanded(
                               child: Text(
                                 uploadState.progressLabel,
-                                style: Theme.of(context).textTheme.bodySmall,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.wenyouCaption,
                               ),
                             ),
                             TextButton(
@@ -203,7 +206,7 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                         SizedBox(height: tokens.space12),
                         Text(
                           '正在处理 ${collection.pendingImports.length} 个表情…',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.wenyouCaption,
                         ),
                       ],
                     ],

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
@@ -60,7 +61,7 @@ class MeProfileCoverEditor extends ConsumerWidget {
         SizedBox(height: tokens.space4),
         Text(
           '支持 JPG、PNG、WebP，最大 10MB；上传前可分别调整网页端 3:1 与手机端 2:1 取景。',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.wenyouCaption,
           textAlign: TextAlign.center,
         ),
         if (state.isBusy) ...[

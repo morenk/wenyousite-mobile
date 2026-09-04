@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -224,14 +225,13 @@ class _SubthreadRow extends ConsumerWidget {
                         item.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.wenyouRowTitle,
                       ),
                       SizedBox(height: tokens.space4),
                       Text(
                         '${item.postingPolicy.label} · ${item.postCount} 个楼层 · ${item.hasBody ? '有正文' : '暂无正文'}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCaption
+                            .copyWith(color: tokens.mutedText),
                       ),
                     ],
                   ),

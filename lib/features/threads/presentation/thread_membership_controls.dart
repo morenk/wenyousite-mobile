@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_member_management_controller.dart';
@@ -29,13 +30,16 @@ Future<void> showThreadPlayerExitSheet({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('玩家身份', style: Theme.of(sheetContext).textTheme.titleLarge),
+              Text(
+                '玩家身份',
+                style: Theme.of(sheetContext).textTheme.wenyouOverlayTitle,
+              ),
               SizedBox(height: tokens.space4),
               Text(
                 '退出后会从“我参与的”主题中移除。',
                 style: Theme.of(
                   sheetContext,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
               ThreadMembershipControls(
                 threadId: threadId,

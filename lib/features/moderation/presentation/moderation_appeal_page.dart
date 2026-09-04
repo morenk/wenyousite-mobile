@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moderation/application/moderation_appeal_controller.dart';
@@ -68,11 +69,11 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('验证受限账号', style: Theme.of(context).textTheme.titleLarge),
+            Text('验证受限账号', style: Theme.of(context).textTheme.wenyouListTitle),
             SizedBox(height: tokens.space8),
             Text(
               '受限账号验证密码后可查看本人决定并提交申诉，验证有效 15 分钟。',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.wenyouCompactBody,
             ),
             SizedBox(height: tokens.space16),
             TextFormField(
@@ -147,7 +148,7 @@ class _ModerationAppealPageState extends ConsumerState<ModerationAppealPage> {
               '离开此页后需重新验证；不会恢复账号登录。',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
           ],
         ),
@@ -282,13 +283,13 @@ class _DecisionCard extends StatelessWidget {
               ),
               Text(
                 decision.actionLabel,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.wenyouRowTitle,
               ),
               Text(
                 DateFormat(
                   'yyyy-MM-dd HH:mm',
                 ).format(decision.createdAt.toLocal()),
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(context).textTheme.wenyouCaption,
               ),
             ],
           ),
@@ -297,7 +298,7 @@ class _DecisionCard extends StatelessWidget {
           SizedBox(height: tokens.space8),
           Text(
             '规则 ${decision.policyCode} · ${decision.targetTypeLabel} ${decision.targetId}',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.wenyouCaption,
           ),
           if (decision.appeal case final appeal?) ...[
             SizedBox(height: tokens.space16),
@@ -317,7 +318,7 @@ class _DecisionCard extends StatelessWidget {
                       children: [
                         Text(
                           '已提交申诉',
-                          style: Theme.of(context).textTheme.labelLarge,
+                          style: Theme.of(context).textTheme.wenyouLabel,
                         ),
                         _StatusBadge(
                           label: appeal.statusLabel,
@@ -400,7 +401,7 @@ class _StatusBadge extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          style: Theme.of(context).textTheme.wenyouCaption.copyWith(
             color: active ? tokens.brandForeground : tokens.mutedText,
             fontWeight: FontWeight.w700,
           ),
@@ -447,11 +448,11 @@ class _AppealSheetState extends ConsumerState<_AppealSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('提交申诉', style: Theme.of(context).textTheme.titleLarge),
+            Text('提交申诉', style: Theme.of(context).textTheme.wenyouListTitle),
             SizedBox(height: tokens.space4),
             Text(
               '说明你认为“${widget.decision.actionLabel}”需要复核的事实和理由。每项决定只能申诉一次。',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
             SizedBox(height: tokens.space16),
             TextFormField(

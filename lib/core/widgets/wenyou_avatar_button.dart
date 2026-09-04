@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 
@@ -81,7 +82,7 @@ class WenyouAvatar extends StatelessWidget {
             : Text(
                 initial,
                 key: const Key('avatar-initial'),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.wenyouRowTitle.copyWith(
                   color: foreground,
                   fontWeight: FontWeight.w600,
                   fontSize: size * 0.42,

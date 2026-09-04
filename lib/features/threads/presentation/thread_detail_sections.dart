@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -140,9 +141,8 @@ class ThreadSubthreadBody extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     '这个子贴还没有正文。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                    style: Theme.of(context).textTheme.wenyouCompactBody
+                        .copyWith(color: tokens.mutedText),
                   ),
                 ),
                 if (canManage)
@@ -428,9 +428,8 @@ class ThreadFloorCard extends ConsumerWidget {
                       ),
                       SizedBox(width: tokens.space8),
                       DefaultTextStyle.merge(
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens.mutedText,
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCaption
+                            .copyWith(color: tokens.mutedText),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -461,9 +460,8 @@ class ThreadFloorCard extends ConsumerWidget {
                   if (floor.isDeleted)
                     Text(
                       '该楼层已删除。',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCompactBody
+                          .copyWith(color: tokens.mutedText),
                     )
                   else
                     StickerPostMarkdown(
@@ -633,7 +631,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               '回复 @$username',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
           ],
           SizedBox(height: tokens.space8),
@@ -642,7 +640,7 @@ class _FloorInlineReplyCard extends StatelessWidget {
               '该回复已删除。',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
             )
           else
             StickerPostMarkdown(
@@ -691,7 +689,7 @@ class ThreadFloorsFooter extends StatelessWidget {
         child: Text(
           '已经读完这个子贴的全部楼层',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.wenyouCaption,
         ),
       );
     }
@@ -745,7 +743,7 @@ class _AuthorLine extends StatelessWidget {
                   author.username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge,
+                  style: Theme.of(context).textTheme.wenyouLabel,
                 ),
               ),
               SizedBox(width: tokens.space4),
@@ -757,9 +755,8 @@ class _AuthorLine extends StatelessWidget {
                   semanticsPrefix: '发布时间：',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  style: Theme.of(context).textTheme.wenyouUtilityCaption
+                      .copyWith(color: tokens.mutedText),
                 ),
               ),
             ],

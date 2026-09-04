@@ -252,10 +252,8 @@ class WenyouIconLabelAction extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: color,
-                      height: 1.15,
-                    ),
+                    style: Theme.of(context).textTheme.wenyouCaptionEmphasis
+                        .copyWith(color: color, height: 1.15),
                   ),
                 ],
               ),
@@ -465,9 +463,9 @@ class WenyouSectionHeader extends StatelessWidget {
                 SizedBox(height: tokens.space8),
                 Text(
                   subtitle!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
+                    color: tokens.mutedText,
+                  ),
                 ),
               ],
             ],

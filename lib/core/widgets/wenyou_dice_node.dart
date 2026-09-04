@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 @immutable
@@ -202,7 +203,7 @@ class _DiceResultSheet extends StatelessWidget {
                   Expanded(
                     child: Text(
                       WenyouElementContract.diceDetailTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.wenyouOverlayTitle,
                     ),
                   ),
                   IconButton(
@@ -224,7 +225,7 @@ class _DiceResultSheet extends StatelessWidget {
                   children: [
                     Text(
                       WenyouElementContract.diceDetailResultsLabel,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.wenyouRowTitle,
                     ),
                     SizedBox(height: tokens.space12),
                     _DiceResultTray(results: detail.results),
@@ -249,13 +250,10 @@ class _DiceResultTray extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final fontSize = Theme.of(context).textTheme.bodyLarge?.fontSize ?? 16;
-    final style = Theme.of(context).textTheme.bodyLarge?.copyWith(
-      color: tokens.text,
-      fontFamily: WenyouFoundationTypography.utility,
-      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
+    final fontSize = Theme.of(context).textTheme.wenyouBody.fontSize!;
+    final style = Theme.of(
+      context,
+    ).textTheme.wenyouUtilityBody.copyWith(color: tokens.text);
     return Wrap(
       key: const Key('wenyou-dice-result-tray'),
       spacing: tokens.space8,
@@ -357,15 +355,12 @@ class _CalculationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final valueStyle = textTheme.bodyLarge?.copyWith(
-      fontFamily: WenyouFoundationTypography.utility,
-      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-      fontFeatures: const [FontFeature.tabularFigures()],
+    final valueStyle = textTheme.wenyouUtilityBody.copyWith(
       fontWeight: emphasized ? FontWeight.w700 : FontWeight.w400,
     );
     return Row(
       children: [
-        Expanded(child: Text(label, style: textTheme.bodyMedium)),
+        Expanded(child: Text(label, style: textTheme.wenyouCompactBody)),
         Text(value, style: valueStyle),
       ],
     );

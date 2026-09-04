@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/formatters/relative_time.dart';
@@ -679,7 +680,7 @@ class _PostCard extends ConsumerWidget {
                 root ? '该楼层已删除。' : '该回复已删除。',
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               )
             else
               StickerPostMarkdown(
@@ -838,8 +839,8 @@ class _PostAuthorLine extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: root
-                          ? Theme.of(context).textTheme.titleMedium
-                          : Theme.of(context).textTheme.labelLarge,
+                          ? Theme.of(context).textTheme.wenyouRowTitle
+                          : Theme.of(context).textTheme.wenyouLabel,
                     ),
                   ),
                   SizedBox(width: tokens.space4),
@@ -854,7 +855,7 @@ class _PostAuthorLine extends StatelessWidget {
                     Text(
                       '置顶',
                       key: Key('post-pinned-${post.id}'),
-                      style: Theme.of(context).textTheme.labelSmall,
+                      style: Theme.of(context).textTheme.wenyouCaption,
                     ),
                   ],
                 ],
@@ -884,7 +885,7 @@ class _PostAuthorLine extends StatelessWidget {
                   ].join(' · '),
                   style: Theme.of(
                     context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
                 ),
               ),
             ],

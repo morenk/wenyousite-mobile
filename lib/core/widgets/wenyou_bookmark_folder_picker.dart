@@ -209,7 +209,7 @@ class _BookmarkFolderPickerSheetState extends State<BookmarkFolderPickerSheet> {
                 '选择收藏夹后确认，本次内容只会保存在一个收藏夹中。',
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
               if (_failure != null) ...[
                 SizedBox(height: tokens.space12),

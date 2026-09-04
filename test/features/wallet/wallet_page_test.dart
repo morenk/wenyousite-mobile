@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -21,6 +22,18 @@ void main() {
     expect(find.text('−10 升'), findsOneWidget);
     expect(find.text('+8 升'), findsOneWidget);
     expect(find.textContaining('实际到账 8 升'), findsOneWidget);
+
+    final balance = tester.widget<Text>(find.text('9,007,199,254,740,993 升'));
+    expect(
+      balance.style!.fontSize,
+      WenyouFoundationTypography.mobileSizes['pageTitle'],
+    );
+    expect(balance.style!.fontFamily, WenyouFoundationTypography.utility);
+    final unit = (balance.textSpan! as TextSpan).children!.single as TextSpan;
+    expect(
+      unit.style!.fontSize,
+      WenyouFoundationTypography.mobileSizes['compactBody'],
+    );
   });
 
   testWidgets('余额局部失败不遮挡流水并可独立重试', (tester) async {
@@ -48,12 +61,34 @@ void main() {
       expect(find.text('我的温油'), findsOneWidget);
     });
   }
+
+  testWidgets('320dp 与 2 倍字体下完整余额无布局溢出', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(_walletApp(_WalletPageRepository(), textScale: 2));
+    await tester.pumpAndSettle();
+
+    expect(find.text('9,007,199,254,740,993 升'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-Widget _walletApp(WalletRepository repository) {
+Widget _walletApp(WalletRepository repository, {double textScale = 1}) {
   return ProviderScope(
     overrides: [walletRepositoryProvider.overrideWithValue(repository)],
-    child: MaterialApp(theme: AppTheme.light, home: const WalletPage()),
+    child: MaterialApp(
+      theme: AppTheme.light,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
+      home: const WalletPage(),
+    ),
   );
 }
 

@@ -67,7 +67,7 @@ class ThreadFeedCard extends StatelessWidget {
                     key: Key('home-thread-preview-${thread.id}'),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.wenyouCompactBody,
                   ),
                 ],
                 SizedBox(height: tokens.space8),
@@ -141,7 +141,7 @@ class _ThreadContextLine extends StatelessWidget {
       key: Key('home-thread-context-${thread.id}'),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
         color: thread.status == HomeThreadStatus.recruiting
             ? tokens.brandForeground
             : tokens.mutedText,
@@ -166,7 +166,7 @@ class _ThreadAuthor extends StatelessWidget {
             thread.ownerName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge,
+            style: Theme.of(context).textTheme.wenyouLabel,
           ),
         ),
         SizedBox(width: tokens.space4),
@@ -181,7 +181,7 @@ class _ThreadAuthor extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouUtilityCaption.copyWith(color: tokens.mutedText),
           ),
         ),
       ],
@@ -340,7 +340,7 @@ class _ThreadTagSummary extends StatelessWidget {
                 maxLines: 1,
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
             ],
           ],
@@ -370,7 +370,7 @@ class _ThreadTagSummary extends StatelessWidget {
             text: '+$hiddenCount',
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouUtilityCaption.copyWith(color: tokens.mutedText),
           ),
           maxLines: 1,
           textDirection: Directionality.of(context),
@@ -409,7 +409,7 @@ class _ThreadStat extends StatelessWidget {
             formatWenyouCompactCount(value),
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
         ],
       ),
@@ -438,7 +438,7 @@ class _ThreadTipStat extends StatelessWidget {
           SizedBox(width: tokens.space4),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.wenyouCaption.copyWith(
               color: tokens.brandForeground,
               fontWeight: FontWeight.w600,
             ),

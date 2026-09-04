@@ -142,7 +142,7 @@ class ThreadDetailSubthreadHeaderSliver extends StatelessWidget {
         text: '子贴\n子贴',
         style: Theme.of(
           context,
-        ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        ).textTheme.wenyouCaption.copyWith(fontWeight: FontWeight.w500),
       ),
       maxLines: 2,
       textDirection: Directionality.of(context),

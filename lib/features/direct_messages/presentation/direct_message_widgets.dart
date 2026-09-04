@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
@@ -731,13 +732,16 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                       child: widget.message.isRecalled
                           ? Text(
                               widget.mine ? '你撤回了一条消息' : '对方撤回了一条消息',
-                              style: TextStyle(
-                                color: widget.mine
-                                    ? tokens.onBrandSurface.withValues(
-                                        alpha: 0.82,
-                                      )
-                                    : tokens.mutedText,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .wenyouCompactBody
+                                  .copyWith(
+                                    color: widget.mine
+                                        ? tokens.onBrandSurface.withValues(
+                                            alpha: 0.82,
+                                          )
+                                        : tokens.mutedText,
+                                  ),
                             )
                           : Column(
                               mainAxisSize: MainAxisSize.min,
@@ -746,8 +750,10 @@ class _DirectMessageBubbleState extends ConsumerState<DirectMessageBubble> {
                                 if (widget.message.content != null)
                                   WenyouInternalReferenceText(
                                     content: widget.message.content!,
-                                    style: Theme.of(context).textTheme.bodyLarge
-                                        ?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .wenyouBody
+                                        .copyWith(
                                           color: widget.mine
                                               ? tokens.onBrandSurface
                                               : tokens.text,

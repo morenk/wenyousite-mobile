@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -119,12 +120,14 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                 children: [
                   Text(
                     '提交后会保存当前目标快照并进入人工审核。管理员可看到你的举报账号；举报不会立即删除内容。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                    style: Theme.of(context).textTheme.wenyouCompactBody
+                        .copyWith(color: tokens.mutedText),
                   ),
                   SizedBox(height: tokens.space16),
-                  Text('举报原因', style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    '举报原因',
+                    style: Theme.of(context).textTheme.wenyouCompactTitle,
+                  ),
                   SizedBox(height: tokens.space8),
                   WenyouDropdownFilter<ReportReason>(
                     key: const Key('report-reason'),

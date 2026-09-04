@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
@@ -137,7 +138,7 @@ class _MetadataButton extends StatelessWidget {
             '$title · $value',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium,
+            style: Theme.of(context).textTheme.wenyouCaptionEmphasis,
           ),
         ),
       ),
@@ -303,7 +304,10 @@ class ThreadComposeLocalSaveStatus extends StatelessWidget {
           WenyouIcon(icon, size: 18),
           SizedBox(width: context.wenyouTokens.space8),
           Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.wenyouCaption,
+            ),
           ),
         ],
       ),

@@ -197,7 +197,10 @@ class _InviteFact extends StatelessWidget {
           children: [
             WenyouIcon(icon, size: 16),
             SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.labelMedium),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.wenyouCaptionEmphasis,
+            ),
           ],
         ),
       ),

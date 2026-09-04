@@ -594,7 +594,7 @@ class _MomentDetailPanel extends StatelessWidget {
               selectable: true,
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(height: 1.7),
+              ).textTheme.wenyouBody.copyWith(height: 1.7),
             ),
           ),
         ],
@@ -649,7 +649,7 @@ class _MomentDetailPanel extends StatelessWidget {
           Text(
             '已获得 ${WenyouAmount.format(card.tipTotal)} 升加油',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.wenyouCaption.copyWith(
               color: tokens.mutedText,
               fontWeight: FontWeight.w600,
             ),

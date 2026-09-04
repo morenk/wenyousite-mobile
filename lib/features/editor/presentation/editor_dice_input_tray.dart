@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_task_tray.dart';
@@ -286,7 +287,7 @@ class _EditorDiceInputTrayState extends State<EditorDiceInputTray> {
         visibleText,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme.of(context).textTheme.wenyouCaption.copyWith(
           color: color,
           fontFamily: firstError == null && widget.insertEnabled
               ? WenyouFoundationTypography.utility
@@ -309,10 +310,9 @@ class _EditorDiceInputTrayState extends State<EditorDiceInputTray> {
           widthFactor: 1,
           child: Text(
             'd',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: tokens.mutedText,
-              fontFamily: WenyouFoundationTypography.utility,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.wenyouUtilityRowTitle.copyWith(color: tokens.mutedText),
           ),
         ),
       ),
@@ -373,14 +373,14 @@ class _DiceQuickSidesRail extends StatelessWidget {
                   showCheckmark: false,
                   label: Text(
                     'd${WenyouElementContract.diceQuickSides[index]}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontFamily: WenyouFoundationTypography.utility,
-                      fontWeight:
-                          selectedSides ==
-                              WenyouElementContract.diceQuickSides[index]
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                    ),
+                    style: Theme.of(context).textTheme.wenyouUtilityCompactBody
+                        .copyWith(
+                          fontWeight:
+                              selectedSides ==
+                                  WenyouElementContract.diceQuickSides[index]
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
                   ),
                   selected:
                       selectedSides ==
@@ -451,11 +451,7 @@ class _DiceNumberField extends StatelessWidget {
       keyboardType: TextInputType.numberWithOptions(signed: signed),
       textInputAction: textInputAction,
       textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-        fontFamily: WenyouFoundationTypography.utility,
-        fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
+      style: Theme.of(context).textTheme.wenyouUtilityBody,
       inputFormatters: [
         if (signed)
           TextInputFormatter.withFunction((oldValue, newValue) {

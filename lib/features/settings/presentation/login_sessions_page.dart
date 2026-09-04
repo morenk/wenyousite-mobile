@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/application/login_sessions_controller.dart';
@@ -181,10 +182,10 @@ class _LoginSessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final titleStyle = Theme.of(context).textTheme.titleMedium;
+    final titleStyle = Theme.of(context).textTheme.wenyouRowTitle;
     final detailStyle = Theme.of(
       context,
-    ).textTheme.bodySmall?.copyWith(color: tokens.mutedText);
+    ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText);
     return WenyouPanel(
       key: ValueKey('login-session-${session.id}'),
       child: Column(
@@ -291,7 +292,7 @@ class _CurrentSessionPill extends StatelessWidget {
         '当前终端',
         style: Theme.of(
           context,
-        ).textTheme.labelSmall?.copyWith(color: tokens.brandForeground),
+        ).textTheme.wenyouCaption.copyWith(color: tokens.brandForeground),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
@@ -178,7 +179,7 @@ class _MemberRow extends ConsumerWidget {
                             member.username,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context).textTheme.wenyouRowTitle,
                           ),
                           SizedBox(height: tokens.space4),
                           Text(
@@ -186,8 +187,8 @@ class _MemberRow extends ConsumerWidget {
                             '${member.playerMarked ? '玩家' : '非玩家'}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: tokens.mutedText),
+                            style: Theme.of(context).textTheme.wenyouCaption
+                                .copyWith(color: tokens.mutedText),
                           ),
                         ],
                       ),

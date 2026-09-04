@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/semantics.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -63,14 +64,17 @@ class MomentComposeImageStrip extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text('图片', style: Theme.of(context).textTheme.titleSmall),
+              child: Text(
+                '图片',
+                style: Theme.of(context).textTheme.wenyouCompactTitle,
+              ),
             ),
             Text(
               '${images.length + pendingImages.length}/9',
               key: const Key('moment-compose-image-count'),
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
             ),
           ],
         ),
@@ -145,7 +149,7 @@ class MomentComposeImageStrip extends StatelessWidget {
             '点按选择封面，长按调整顺序',
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
         ],
         if (pendingImages.isNotEmpty && uploadState.isBusy) ...[
@@ -419,8 +423,8 @@ class _ComposeThumbnail extends StatelessWidget {
                         ),
                         child: Text(
                           '封面',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: tokens.onBrandSurface),
+                          style: Theme.of(context).textTheme.wenyouCaption
+                              .copyWith(color: tokens.onBrandSurface),
                         ),
                       ),
                     ),

@@ -208,7 +208,7 @@ void main() {
     );
     expect(
       theme.textTheme.labelSmall!.fontFamily,
-      WenyouFoundationTypography.utility,
+      WenyouFoundationTypography.body,
     );
     expect(filledMinimum!.height, 48);
     expect(textMinimum!.height, 48);
@@ -243,6 +243,76 @@ void main() {
     expect(androidTransition, isA<WenyouPageTransitionsBuilder>());
   });
 
+  test('语义字阶完整锁定 Foundation 移动端排版', () {
+    for (final theme in [AppTheme.light, AppTheme.dark]) {
+      final text = theme.textTheme;
+      _expectTextRole(
+        text.wenyouPageTitle,
+        role: 'pageTitle',
+        family: WenyouFoundationTypography.display,
+      );
+      _expectTextRole(
+        text.wenyouSectionTitle,
+        role: 'sectionTitle',
+        family: WenyouFoundationTypography.display,
+      );
+      _expectTextRole(
+        text.wenyouSubsectionTitle,
+        role: 'subsectionTitle',
+        family: WenyouFoundationTypography.display,
+      );
+      _expectTextRole(text.wenyouBody, role: 'body');
+      _expectTextRole(text.wenyouCompactBody, role: 'compactBody');
+      _expectTextRole(text.wenyouLabel, role: 'label');
+      _expectTextRole(text.wenyouCaption, role: 'caption');
+      _expectTextRole(text.wenyouReadingBody, role: 'reading');
+
+      expect(text.wenyouListTitle.fontSize, 18);
+      expect(text.wenyouListTitle.fontFamily, WenyouFoundationTypography.body);
+      expect(text.wenyouListTitle.fontWeight, FontWeight.w600);
+      expect(text.wenyouRowTitle.fontSize, 16);
+      expect(text.wenyouRowTitle.fontFamily, WenyouFoundationTypography.body);
+      expect(text.wenyouRowTitle.fontWeight, FontWeight.w600);
+      expect(text.wenyouCompactTitle.fontSize, 14);
+      expect(text.wenyouCompactTitle.fontWeight, FontWeight.w600);
+      expect(
+        text.wenyouUtilityCaption.fontFamily,
+        WenyouFoundationTypography.utility,
+      );
+      expect(text.wenyouUtilityCaption.fontSize, 12);
+      expect(
+        text.wenyouMetricValue.fontFamily,
+        WenyouFoundationTypography.utility,
+      );
+      expect(text.wenyouMetricValue.fontSize, 22);
+      expect(text.wenyouMetricValue.fontWeight, FontWeight.w700);
+    }
+  });
+
+  test('Material 字体槽位只映射到 Foundation 字阶', () {
+    final text = AppTheme.light.textTheme;
+    expect(
+      [
+        text.displayLarge,
+        text.displayMedium,
+        text.displaySmall,
+        text.headlineLarge,
+      ].map((style) => style!.fontSize),
+      everyElement(22),
+    );
+    expect(text.headlineMedium!.fontSize, 18);
+    expect(text.headlineSmall!.fontSize, 16);
+    expect(text.titleLarge!.fontSize, 18);
+    expect(text.titleMedium!.fontSize, 16);
+    expect(text.titleSmall!.fontSize, 14);
+    expect(text.bodyLarge!.fontSize, 16);
+    expect(text.bodyMedium!.fontSize, 14);
+    expect(text.bodySmall!.fontSize, 12);
+    expect(text.labelLarge!.fontSize, 14);
+    expect(text.labelMedium!.fontSize, 12);
+    expect(text.labelSmall!.fontSize, 12);
+  });
+
   test('亮色与黑夜 ThemeData 分别注册正确亮度和语义操作色', () {
     for (final (theme, tokens, brightness) in [
       (AppTheme.light, WenyouThemeTokens.light, Brightness.light),
@@ -262,6 +332,18 @@ void main() {
     expect(AppTheme.light, same(AppTheme.light));
     expect(AppTheme.dark, same(AppTheme.dark));
   });
+}
+
+void _expectTextRole(
+  TextStyle style, {
+  required String role,
+  String family = WenyouFoundationTypography.body,
+}) {
+  expect(style.fontFamily, family);
+  expect(style.fontSize, WenyouFoundationTypography.mobileSizes[role]);
+  expect(style.height, WenyouFoundationTypography.mobileLineHeights[role]);
+  final weight = WenyouFoundationTypography.mobileWeights[role]!;
+  expect(style.fontWeight, FontWeight.values[(weight ~/ 100) - 1]);
 }
 
 double _contrastRatio(Color first, Color second) {

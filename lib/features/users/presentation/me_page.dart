@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
@@ -504,7 +505,12 @@ class _AccountSecurityPanel extends StatelessWidget {
               WenyouIconIds.actionDelete,
               color: scheme.error,
             ),
-            title: Text('注销账号', style: TextStyle(color: scheme.error)),
+            title: Text(
+              '注销账号',
+              style: Theme.of(
+                context,
+              ).textTheme.wenyouRowTitle.copyWith(color: scheme.error),
+            ),
             subtitle: const Text('不可恢复；已发布内容会匿名保留'),
             trailing: WenyouIcon(
               WenyouIconIds.navigationNext,

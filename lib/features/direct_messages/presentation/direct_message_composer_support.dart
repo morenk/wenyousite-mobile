@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -42,7 +43,7 @@ class DirectMessageComposerStatusLine extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: color),
+            ).textTheme.wenyouCaption.copyWith(color: color),
           ),
         ),
         if (onRetry != null)
@@ -106,7 +107,7 @@ class DirectMessageImagePreview extends StatelessWidget {
               '[图片]',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ),
           IconButton(
@@ -149,7 +150,7 @@ class DirectMessageUploadProgress extends StatelessWidget {
             state.progressLabel,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.wenyouCaption,
           ),
         ),
         IconButton(

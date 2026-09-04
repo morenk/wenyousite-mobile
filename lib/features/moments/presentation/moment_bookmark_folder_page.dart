@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -267,7 +268,7 @@ class _MomentBookmarkFolderPageState
                 icon: const WenyouIcon(WenyouIconIds.navigationExpand),
                 label: const Text('加载更多'),
               )
-            : Text('已经看到这里了', style: Theme.of(context).textTheme.bodySmall),
+            : Text('已经看到这里了', style: Theme.of(context).textTheme.wenyouCaption),
       ),
     );
   }

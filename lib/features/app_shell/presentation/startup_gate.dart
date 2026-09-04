@@ -186,8 +186,8 @@ class StartupCheckingPage extends StatelessWidget {
                           Text(
                             '正在确认是否可以正常使用。',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: tokens.brandForeground),
+                            style: Theme.of(context).textTheme.wenyouCompactBody
+                                .copyWith(color: tokens.brandForeground),
                           ),
                         ],
                       ),
@@ -260,7 +260,7 @@ class _UpdatePage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
               ),
               SizedBox(height: tokens.space20),
               _BuildTransition(update: update),
@@ -335,7 +335,7 @@ class _BuildTransition extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    final textStyle = Theme.of(context).textTheme.labelLarge;
+    final textStyle = Theme.of(context).textTheme.wenyouLabel;
     return Semantics(
       label: '当前构建 ${update.currentBuild}，可用构建 ${update.targetBuild}',
       child: DecoratedBox(

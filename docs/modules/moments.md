@@ -44,7 +44,7 @@
 
 `MomentFeedController` 以 main/user target 隔离公开列表、游标、刷新、分页和单条互动写入；本人收藏由 `MomentBookmarkListController` 以必填 folderId 建立独立分页，保留本人收藏 DTO 的 `bookmarkFolderId` 与 `canInteract`，移动/取消后本地移除并权威刷新。`BookmarkFolderCatalogController` 通过动态专属仓储读取/创建目录，不与主题目录混用。`MomentMedia` 保存主图、显式派生 URL、contentType、animated 和尺寸，并为信息流与正文分别给出有序候选；仓储和搜索映射器对所有非空 URL fail-closed。`MomentFeedList` 通过滚动通知触发接近底部分页，因此独立页面可使用自身滚动位置，嵌入本人主页时也可继承父级滚动协调器；卡片与全宽尾部状态由同一懒加载瀑布流维护几何，稳定 Key 在刷新重排和分页追加时恢复既有卡片位置。`MomentDetailController` 同时读取详情与主评论；切换顶层顺序只重载一次主评论首页并清空原 cursor 与已展开回复。根评论内嵌回复与楼中楼分页均保留后端返回顺序，楼中楼分页固定请求 `OLDEST`。带评论坐标时，独立且按会话隔离的 `momentCommentContextProvider` 并行读取上下文；展示投影按 ID 去重，以上下文目标覆盖重复项，将缺失主评论按当前顺序注入，并把目标回复按最早顺序展开。上下文不改写普通列表 cursor，也不触发 `fetchComments` 或 `fetchReplies` 分页扫描。`MomentComposerController` 负责创建幂等键、编辑版本、冲突重试和删除确认结果；动态仓储与本机草稿存储端口位于 `moments/application`。用户在 `40002` 后选择“保留我的内容”时，控制器先读取最新详情和权限，再以最新 `version` 重交当前表单；选择“使用最新内容”时清除本机草稿并重载详情。动态发布页为未完成图片保留本地输入、独立任务状态和完成结果，最多两张在途；全部完成后一次按原顺序并入已上传列表。评论仍按页面实例消费单图上传任务。
 
-信息流与详情的点赞/收藏状态记录精确在途动作，只锁定对应控件并保留旧选中投影，直到服务端回包覆盖。可写消费者统一使用 Foundation v6.5.1 的点赞/收藏语义色、透明选中容器和官方实心图标变体；搜索等只读消费者始终显示中性线性图标，不暴露按钮或 toggled 语义。
+信息流与详情的点赞/收藏状态记录精确在途动作，只锁定对应控件并保留旧选中投影，直到服务端回包覆盖。可写消费者统一使用 Foundation v6.8.0 的点赞/收藏语义色、透明选中容器和官方实心图标变体；搜索等只读消费者始终显示中性线性图标，不暴露按钮或 toggled 语义。
 
 ## 7. 鉴权、权限和隐私规则
 
@@ -66,9 +66,11 @@
 
 ## 10. 跨模块约束
 
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
 动态作者头像、发布时间与互动计数复用 Foundation 共享身份和格式化组件；短时间同时提供完整时间语义，紧凑计数的操作语义保留服务端原值。
 
-media/application 提供相册与上传端口、唯一任务状态、取消、失败和同文件重试；共享上传横幅直接消费任务阶段与进度，不在各编辑器重复推导文案。moments presentation 不直接导入 media/data 或 Dio，只消费完成结果并维护最多九图、封面顺序及评论图片/表情互斥。stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId 和可选 momentCommentId；users 暴露公开用户动态入口；search 复用动态卡片；wallet 维护加油幂等写入；reports 管理举报。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。合法站内坐标由共享阅读组件渲染成 Foundation v6.5.1 传送门胶囊。视觉只消费 Foundation v6.5.1 Token、元素契约、语义图标与图片角色；发现、关注、收藏和用户信息流显式消费双列瀑布流领域例外，详情保持单列和不超过 600dp，独立操作命中区不小于 48dp。
+media/application 提供相册与上传端口、唯一任务状态、取消、失败和同文件重试；共享上传横幅直接消费任务阶段与进度，不在各编辑器重复推导文案。moments presentation 不直接导入 media/data 或 Dio，只消费完成结果并维护最多九图、封面顺序及评论图片/表情互斥。stickers 提供用户私有收藏选择器；notifications 只传稳定 momentId 和可选 momentCommentId；users 暴露公开用户动态入口；search 复用动态卡片；wallet 维护加油幂等写入；reports 管理举报。动态正文和评论始终是纯文本，不进入 Markdown/Quill Codec。合法站内坐标由共享阅读组件渲染成 Foundation v6.8.0 传送门胶囊。视觉只消费 Foundation v6.8.0 Token、元素契约、语义图标与图片角色；发现、关注、收藏和用户信息流显式消费双列瀑布流领域例外，详情保持单列和不超过 600dp，独立操作命中区不小于 48dp。
 
 ## 11. 测试场景与验收条件
 
@@ -81,7 +83,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 - [x] 独立动态列表保留下拉刷新；嵌入“我的”的用户动态不重复安装刷新层，滚回列表顶部后继续展开资料头，并保持接近底部分页。
 - [x] 360dp 双列瀑布续排、首屏骨架、列表信息层级、TalkBack 标签、48dp 点赞命中区和 Foundation 视觉基线有回归测试。
 - [x] 混合长短标题与横竖封面反复滚动到底、回顶及分页追加后，双列位置、全宽尾部状态和可滚动范围保持稳定。
-- [x] 点赞/收藏的 Foundation v6.5.1 语义色、透明容器、官方实心资产、提交锁、最小命中区与只读中性语义有 Widget 回归。
+- [x] 点赞/收藏的 Foundation v6.8.0 语义色、透明容器、官方实心资产、提交锁、最小命中区与只读中性语义有 Widget 回归。
 - [x] 动态首次收藏先读取独立目录，默认夹预选且可内联新建；确认后携带 folderId 只写一次，失败留在 Sheet 重试，已收藏点击直接取消。
 - [x] 本人动态收藏按必填 folderId 双列分页，失效 cursor 回当前夹首页；48dp 更多操作显示当前夹、移动与取消，移动/取消后本地移除并权威刷新。
 - [x] `canInteract` 缺失按 true；false 时详情禁止新增收藏、收藏卡禁止移动但仍允许取消收藏。

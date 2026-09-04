@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -262,7 +263,10 @@ class _HorizontalRuleEmbedBuilder extends EmbedBuilder {
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
-    return WenyouBodyDivider(fontSize: embedContext.textStyle.fontSize ?? 17);
+    return WenyouBodyDivider(
+      fontSize:
+          embedContext.textStyle.fontSize ?? WenyouEditorContract.bodyFontSize,
+    );
   }
 }
 
@@ -300,7 +304,7 @@ class _AtomicNode extends StatelessWidget {
           children: [
             WenyouIcon(icon, size: 16),
             SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            Text(label, style: Theme.of(context).textTheme.wenyouCaption),
           ],
         ),
       ),

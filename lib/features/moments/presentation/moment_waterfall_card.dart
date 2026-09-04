@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
@@ -69,8 +70,8 @@ class MomentWaterfallCard extends StatelessWidget {
                             moment.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
+                            style: Theme.of(context).textTheme.wenyouCompactBody
+                                .copyWith(
                                   color: tokens.text,
                                   fontWeight: FontWeight.w700,
                                   height: 1.4,
@@ -115,7 +116,7 @@ class MomentWaterfallCard extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: Theme.of(
                                       context,
-                                    ).textTheme.bodySmall,
+                                    ).textTheme.wenyouCaption,
                                   ),
                                 ),
                               ),
@@ -201,10 +202,11 @@ class MomentWaterfallCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${moment.imageCount} 图',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: tokens.panel,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.wenyouUtilityCaption
+                        .copyWith(
+                          color: tokens.panel,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ),
@@ -251,7 +253,7 @@ class _MomentWaterfallLikeButton extends StatelessWidget {
       supporting: count > 0
           ? Text(
               formatWenyouCompactCount(count),
-              style: Theme.of(context).textTheme.labelSmall,
+              style: Theme.of(context).textTheme.wenyouUtilityCaption,
             )
           : null,
     );

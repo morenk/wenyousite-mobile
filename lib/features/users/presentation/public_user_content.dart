@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -260,7 +261,7 @@ class _UserReplyCard extends StatelessWidget {
                     item.threadTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: Theme.of(context).textTheme.wenyouCompactTitle,
                   ),
                 ),
                 SizedBox(width: tokens.space8),
@@ -277,7 +278,7 @@ class _UserReplyCard extends StatelessWidget {
             Text(
               '${item.subthreadTitle} · '
               '${DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ],
         ),
@@ -309,7 +310,7 @@ class _ContentPill extends StatelessWidget {
           label,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+          ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
         ),
       ),
     );

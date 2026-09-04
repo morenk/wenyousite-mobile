@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_clipboard_text.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -59,7 +60,7 @@ class MomentCommentBody extends ConsumerWidget {
             '该评论已删除',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
           )
         else ...[
           if (comment.replyToComment != null)
@@ -67,12 +68,12 @@ class MomentCommentBody extends ConsumerWidget {
               '回复 @${comment.replyToComment!.author.username}',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.focus),
+              ).textTheme.wenyouCaption.copyWith(color: tokens.focus),
             ),
           if (comment.content != null)
             WenyouInternalReferenceText(
               content: comment.content!,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.wenyouCompactBody,
               selectable: true,
               onTapText: canReply ? onReply : null,
               onLongPressNonText: openActions,

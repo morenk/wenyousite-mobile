@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -55,9 +56,7 @@ class ThreadInteractionActions extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: tokens.space4),
             supporting: Text(
               formatWenyouCompactCount(state.likeCount),
-              style: const TextStyle(
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
+              style: Theme.of(context).textTheme.wenyouUtilityCaption,
             ),
           ),
           if (authenticated)

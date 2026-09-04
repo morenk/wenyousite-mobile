@@ -82,6 +82,7 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkFeatureSpinnerBudget(dartFiles, failures, root);
   _checkEditorPublicSurface(dartFiles, failures, root);
   _checkFoundationIconBoundary(dartFiles, failures, root);
+  _checkTypographyBoundary(dartFiles, failures, root);
   _checkSharedTabBoundary(dartFiles, failures, root);
   _checkSnackBarBoundary(dartFiles, failures, root);
   _checkFailurePresentationBoundary(dartFiles, failures, root);
@@ -413,6 +414,47 @@ void _checkFoundationIconBoundary(
           '$path uses ${entry.value}; use Foundation semantic icons',
         );
       }
+    }
+  }
+}
+
+void _checkTypographyBoundary(
+  List<File> files,
+  List<String> failures,
+  Directory root,
+) {
+  const centralizedFiles = <String>{
+    'lib/app/app_theme.dart',
+    'lib/app/wenyou_text_styles.dart',
+  };
+  final rawMaterialSlot = RegExp(
+    r'\btextTheme\s*\.\s*'
+    r'(?:displayLarge|displayMedium|displaySmall|'
+    r'headlineLarge|headlineMedium|headlineSmall|'
+    r'titleLarge|titleMedium|titleSmall|'
+    r'bodyLarge|bodyMedium|bodySmall|'
+    r'labelLarge|labelMedium|labelSmall)\b',
+  );
+  final literalFontSize = RegExp(
+    r'\bfontSize\s*:\s*(?:const\s+)?\d+(?:\.\d+)?\b',
+  );
+
+  for (final file in files.where(
+    (file) => !file.path.replaceAll('\\', '/').endsWith('.g.dart'),
+  )) {
+    final path = _relative(file.path, root);
+    if (centralizedFiles.contains(path)) continue;
+    final source = file.readAsStringSync();
+    if (rawMaterialSlot.hasMatch(source)) {
+      failures.add(
+        '$path reads a raw Material text slot; use a Wenyou semantic text role',
+      );
+    }
+    if (literalFontSize.hasMatch(source)) {
+      failures.add(
+        '$path declares a literal font size; use Foundation typography or an '
+        'exported component contract',
+      );
     }
   }
 }

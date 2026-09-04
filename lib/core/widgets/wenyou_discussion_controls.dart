@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
@@ -108,7 +109,7 @@ class WenyouDiscussionListControls<T extends Object> extends StatelessWidget {
       key: countKey,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+      style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
         color: tokens.mutedText,
         fontWeight: FontWeight.w600,
       ),
@@ -306,7 +307,7 @@ class _DiscussionAuthorStatus extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.wenyouCaption.copyWith(
                 color: tokens.mutedText,
                 fontWeight: FontWeight.w500,
               ),
@@ -363,7 +364,7 @@ class _DiscussionOrderToggle<T extends Object> extends StatelessWidget {
                   currentLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.wenyouCaption.copyWith(
                     color: tokens.mutedText,
                     fontWeight: FontWeight.w500,
                   ),
@@ -437,7 +438,7 @@ class WenyouDiscussionControls<T extends Object> extends StatelessWidget {
           child: Text(
             countLabel,
             key: countKey,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
               color: tokens.mutedText,
               fontWeight: FontWeight.w600,
             ),
@@ -461,7 +462,7 @@ class WenyouDiscussionControls<T extends Object> extends StatelessWidget {
               settingsLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ),
         ),
@@ -561,7 +562,7 @@ class _WenyouDiscussionSettingsSheetState<T extends Object>
                   Expanded(
                     child: Text(
                       '讨论设置',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.wenyouRowTitle,
                     ),
                   ),
                   IconButton(
@@ -709,7 +710,7 @@ class _SectionLabel extends StatelessWidget {
         label,
         style: Theme.of(
           context,
-        ).textTheme.labelMedium?.copyWith(color: tokens.mutedText),
+        ).textTheme.wenyouCaptionEmphasis.copyWith(color: tokens.mutedText),
       ),
     );
   }

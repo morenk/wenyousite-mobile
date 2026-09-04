@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 class WenyouUnreadDot extends StatelessWidget {
@@ -36,7 +37,7 @@ class WenyouUnreadCountBadge extends StatelessWidget {
       textColor: theme.colorScheme.onError,
       largeSize: WenyouElementContract.unreadCountHeight,
       padding: EdgeInsets.symmetric(horizontal: tokens.space4),
-      textStyle: theme.textTheme.labelSmall?.copyWith(
+      textStyle: theme.textTheme.wenyouUtilityCaption.copyWith(
         fontSize: WenyouElementContract.unreadCountFontSize,
         height: 1,
         fontWeight: FontWeight.w700,

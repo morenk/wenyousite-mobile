@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -58,7 +59,7 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
               side: BorderSide.none,
               textStyle: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+              ).textTheme.wenyouCaption.copyWith(fontWeight: FontWeight.w500),
             ),
             child: SizedBox(
               width: double.infinity,
@@ -143,13 +144,15 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                         Expanded(
                           child: Text(
                             '主题目录',
-                            style: Theme.of(sheetContext).textTheme.titleMedium,
+                            style: Theme.of(
+                              sheetContext,
+                            ).textTheme.wenyouRowTitle,
                           ),
                         ),
                         Text(
                           '共 ${widget.subthreads.length} 个子贴',
-                          style: Theme.of(sheetContext).textTheme.bodySmall
-                              ?.copyWith(color: tokens.mutedText),
+                          style: Theme.of(sheetContext).textTheme.wenyouCaption
+                              .copyWith(color: tokens.mutedText),
                         ),
                       ],
                     ),
@@ -192,14 +195,14 @@ class _ThreadSubthreadNavigatorState extends State<ThreadSubthreadNavigator> {
                           title: Text(
                             subthread.title,
                             style: isSelected
-                                ? Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(fontWeight: FontWeight.w600)
+                                ? Theme.of(context).textTheme.wenyouBody
+                                      .copyWith(fontWeight: FontWeight.w600)
                                 : null,
                           ),
                           trailing: Text(
                             '${subthread.postCount} 楼',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: tokens.mutedText),
+                            style: Theme.of(context).textTheme.wenyouCaption
+                                .copyWith(color: tokens.mutedText),
                           ),
                           onTap: () => Navigator.pop(context, subthread.id),
                         );

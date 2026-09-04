@@ -2,6 +2,8 @@
 
 状态仅允许 `planned`、`in_progress`、`implemented`、`deferred`。`implemented` 表示文档中的验收项已经由自动测试或明确记录的人工测试验证，不表示该模块永远不再变化。
 
+所有模块的用户可见排版统一消费 Foundation v6.8.0 语义文字角色；具体层级、数字字体、组件特例与架构门禁见[移动端视觉基线](../architecture/visual-baseline.md)。模块文档只记录业务语境中的层级选择，不维护平行字号表。
+
 | 模块 | 状态 | 当前事实 | 文档 |
 | --- | --- | --- | --- |
 | app-shell | in_progress | 主壳与在线更新已交付；正式签名升级安装仍需真机验收 | [应用壳](app-shell.md) |

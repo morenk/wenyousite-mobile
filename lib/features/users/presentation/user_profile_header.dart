@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
@@ -93,7 +94,7 @@ class UserProfileHeader extends StatelessWidget {
                       normalizedBio!,
                       style: Theme.of(
                         context,
-                      ).textTheme.bodyMedium?.copyWith(height: 1.55),
+                      ).textTheme.wenyouCompactBody.copyWith(height: 1.55),
                     ),
                   ],
                   if (metadata?.isNotEmpty == true) ...[
@@ -109,7 +110,7 @@ class UserProfileHeader extends StatelessWidget {
                         Expanded(
                           child: Text(
                             metadata!,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.wenyouCaption,
                           ),
                         ),
                       ],
@@ -131,7 +132,7 @@ class UserProfileHeader extends StatelessWidget {
                     if (levelProgressLabel != null) ...[
                       Text(
                         levelProgressLabel!,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.wenyouCaption,
                       ),
                       SizedBox(height: tokens.space8),
                     ],
@@ -212,7 +213,7 @@ class _ProfileIdentity extends StatelessWidget {
                       username,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.wenyouListTitle,
                     ),
                   ),
                   SizedBox(width: tokens.space8),
@@ -252,7 +253,7 @@ class _ProfileIdentity extends StatelessWidget {
                         username,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.wenyouListTitle,
                       ),
                     ),
                     SizedBox(width: tokens.space8),
@@ -362,14 +363,14 @@ class _ProfileStat extends StatelessWidget {
                     item.value!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.wenyouUtilityRowTitle,
                   ),
                 SizedBox(height: tokens.space4),
                 Text(
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.wenyouCaption,
                 ),
               ],
             ),
@@ -404,7 +405,7 @@ class _ProfileBadge extends StatelessWidget {
           children: [
             WenyouIcon(icon, size: 15, color: tokens.focus),
             SizedBox(width: tokens.space4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            Text(label, style: Theme.of(context).textTheme.wenyouCaption),
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_chip.dart';
@@ -90,7 +91,7 @@ class _ThreadTagManagementPageState
                 SizedBox(height: tokens.space16),
                 Text(
                   '已选标签 ${bootstrap.tags.length}/$maxThreadTagCount',
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.wenyouRowTitle,
                 ),
                 SizedBox(height: tokens.space8),
                 if (bootstrap.tags.isNotEmpty)
@@ -189,9 +190,8 @@ class _ThreadTagManagementPageState
                 if (!state.isSearching && suggestions.isEmpty)
                   Text(
                     normalizedQuery.isEmpty ? '当前没有可添加的标签。' : '没有找到其他匹配标签。',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                    style: Theme.of(context).textTheme.wenyouCompactBody
+                        .copyWith(color: tokens.mutedText),
                   )
                 else
                   for (final tag in suggestions)

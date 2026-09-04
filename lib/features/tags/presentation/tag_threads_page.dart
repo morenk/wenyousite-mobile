@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -110,9 +111,9 @@ class _TagThreadsPageState extends ConsumerState<TagThreadsPage> {
                     SizedBox(height: tokens.space8),
                     Text(
                       '已加载 ${state.items.length} 个主题',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
+                        color: tokens.mutedText,
+                      ),
                     ),
                   ],
                 ),

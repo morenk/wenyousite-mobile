@@ -78,6 +78,8 @@ v5 独立图片保存时会与前后正文、协议空段及其他块保持 Mark
 
 ## 10. 跨模块约束
 
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
 Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 Markdown v4。提及候选接口位于 users，但查询生命周期和插入行为由 editor 管理；帖子和主题页面只传真实 `threadId`。媒体上传任务生命周期属于 `media/application`；editor 页面不直接调用上传仓储或持有 Dio 取消令牌，只消费 `COMPLETED` 结果并插入正文。骰子结果只由服务端生成。五槽位正文草稿属于[草稿](drafts.md)模块，不等同于当前主题实体的未发布草稿。参见[Codec 架构](../architecture/editor-codec.md)和[持久化](../architecture/persistence.md)。
 
 ## 11. 测试场景与验收条件

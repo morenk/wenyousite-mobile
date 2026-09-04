@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_anchored_popover.dart';
 
@@ -149,9 +150,8 @@ class _WenyouActionDialog<T> extends StatelessWidget {
                         semanticLabel,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context).textTheme.wenyouCompactTitle
+                            .copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                     IconButton(
@@ -262,7 +262,7 @@ class _ModalActionButton<T> extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: Theme.of(context).textTheme.wenyouCaption.copyWith(
                     color: action.enabled ? color : tokens.mutedText,
                     height: 1.05,
                   ),

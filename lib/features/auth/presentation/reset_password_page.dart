@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/credential_input_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_password_field.dart';
@@ -190,7 +191,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                           child: Text(
                             _maskedEmail(_emailController.text),
                             key: const Key('reset-password-email-summary'),
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.wenyouCompactTitle,
                           ),
                         ),
                         TextButton(

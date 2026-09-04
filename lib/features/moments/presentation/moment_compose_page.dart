@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
@@ -242,7 +243,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                   Text(
                     failure,
                     key: const Key('moment-compose-content-failure'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: Theme.of(context).textTheme.wenyouCaption.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
@@ -667,14 +668,17 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('要保存这次编辑吗？', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                '要保存这次编辑吗？',
+                style: Theme.of(context).textTheme.wenyouOverlayTitle,
+              ),
               if (hasPendingImages) ...[
                 SizedBox(height: tokens.space8),
                 Text(
                   '尚未完成的图片不会保留，已完成的图片会随草稿保存。',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+                  style: Theme.of(context).textTheme.wenyouCompactBody.copyWith(
+                    color: tokens.mutedText,
+                  ),
                 ),
               ],
               SizedBox(height: tokens.space16),

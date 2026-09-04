@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -212,7 +213,7 @@ class _DraftCard extends ConsumerWidget {
                   draft.displayTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.wenyouRowTitle,
                 ),
               ),
               if (isCurrent)
@@ -227,14 +228,14 @@ class _DraftCard extends ConsumerWidget {
             metadata.join(' · '),
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
           SizedBox(height: tokens.space4),
           Text(
             '更新于 ${DateFormat('yyyy-MM-dd HH:mm').format(draft.updatedAt.toLocal())}',
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
           ),
           if (draft.tags.isNotEmpty) ...[
             SizedBox(height: tokens.space8),

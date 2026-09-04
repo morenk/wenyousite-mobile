@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_page_failure_state.dart';
@@ -224,7 +225,7 @@ class _DirectConversationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final unread = conversation.unreadCount > 0;
-    final previewStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+    final previewStyle = Theme.of(context).textTheme.wenyouCaption.copyWith(
       color: unread ? tokens.text : tokens.mutedText,
       fontWeight: unread ? FontWeight.w600 : FontWeight.normal,
     );
@@ -255,8 +256,10 @@ class _DirectConversationCard extends StatelessWidget {
                               conversation.otherUser.username,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .wenyouCompactTitle
+                                  .copyWith(
                                     fontWeight: unread
                                         ? FontWeight.w700
                                         : FontWeight.w500,
@@ -268,8 +271,10 @@ class _DirectConversationCard extends StatelessWidget {
                             WenyouTimeText(
                               value: conversation.lastMessageAt!,
                               semanticsPrefix: '最后消息时间：',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(color: tokens.mutedText),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .wenyouUtilityCaption
+                                  .copyWith(color: tokens.mutedText),
                             ),
                           ],
                         ],

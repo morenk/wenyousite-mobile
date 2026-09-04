@@ -273,6 +273,40 @@ void main() {
     );
   });
 
+  test('production UI must use semantic typography and contract sizes', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      'final caption = Theme.of(context).textTheme.bodySmall;\n'
+      'final style = const TextStyle(fontSize: 13);\n',
+    );
+
+    expect(
+      collectArchitectureFailures(root),
+      containsAll(<String>[
+        '$path reads a raw Material text slot; '
+            'use a Wenyou semantic text role',
+        '$path declares a literal font size; use Foundation typography or an '
+            'exported component contract',
+      ]),
+    );
+  });
+
+  test('semantic typography and exported component sizes are allowed', () {
+    const path = 'lib/features/alpha/presentation/page.dart';
+    _write(
+      root,
+      path,
+      'final caption = Theme.of(context).textTheme.wenyouCaption;\n'
+      'final style = caption.copyWith(\n'
+      '  fontSize: WenyouElementContract.levelFontSize,\n'
+      ');\n',
+    );
+
+    expect(collectArchitectureFailures(root), isEmpty);
+  });
+
   test('feature pages must use the shared content tabs', () {
     const path = 'lib/features/alpha/presentation/page.dart';
     _write(

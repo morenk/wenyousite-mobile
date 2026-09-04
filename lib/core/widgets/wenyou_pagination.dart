@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -118,7 +119,7 @@ class WenyouLoadMoreControl extends StatelessWidget {
         textAlign: TextAlign.center,
         style: Theme.of(
           context,
-        ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+        ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
       );
     }
     return child;

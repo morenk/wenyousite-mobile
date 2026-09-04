@@ -85,7 +85,7 @@ class MomentCardTile extends StatelessWidget {
                             moment.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleLarge,
+                            style: Theme.of(context).textTheme.wenyouListTitle,
                           ),
                         if (moment.contentExcerpt.isNotEmpty) ...[
                           if (moment.coverType == MomentCoverType.image)
@@ -94,7 +94,9 @@ class MomentCardTile extends StatelessWidget {
                             moment.contentExcerpt,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.wenyouCompactBody,
                           ),
                         ],
                       ],
@@ -229,7 +231,7 @@ class MomentAuthorLine extends StatelessWidget {
                       author.username,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge,
+                      style: Theme.of(context).textTheme.wenyouLabel,
                     ),
                   ),
                   SizedBox(width: tokens.space4),
@@ -240,9 +242,8 @@ class MomentAuthorLine extends StatelessWidget {
                 WenyouTimeText(
                   value: createdAt!,
                   semanticsPrefix: '发布时间：',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: tokens.mutedText),
+                  style: Theme.of(context).textTheme.wenyouUtilityCaption
+                      .copyWith(color: tokens.mutedText),
                 ),
             ],
           ),
@@ -434,8 +435,8 @@ class _MomentGalleryState extends ConsumerState<MomentGallery> {
                                     '${_index + 1} / ${images.length}',
                                     style: Theme.of(context)
                                         .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
+                                        .wenyouUtilityCaption
+                                        .copyWith(
                                           color: tokens.background,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -528,7 +529,7 @@ class _MomentImageStatus extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
             if (detail != null) ...[
               SizedBox(height: tokens.space4),
@@ -537,7 +538,7 @@ class _MomentImageStatus extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
-                ).textTheme.labelSmall?.copyWith(color: tokens.mutedText),
+                ).textTheme.wenyouCaption.copyWith(color: tokens.mutedText),
               ),
             ],
           ],
@@ -637,7 +638,10 @@ class _MomentCountAction extends StatelessWidget {
         onPressed: onPressed,
         interactive: interactive,
         semanticLabel: '$tooltip，${semanticValue ?? label}',
-        supporting: Text(label),
+        supporting: Text(
+          label,
+          style: Theme.of(context).textTheme.wenyouUtilityCaption,
+        ),
       );
     }
     return Semantics(
@@ -646,7 +650,10 @@ class _MomentCountAction extends StatelessWidget {
       child: TextButton.icon(
         onPressed: onPressed,
         icon: WenyouIcon(icon, size: 20, color: selected ? tokens.focus : null),
-        label: Text(label),
+        label: Text(
+          label,
+          style: Theme.of(context).textTheme.wenyouUtilityLabel,
+        ),
         style: TextButton.styleFrom(
           minimumSize: Size(
             tokens.minimumTouchTarget,

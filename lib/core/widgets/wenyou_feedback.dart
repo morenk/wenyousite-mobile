@@ -101,12 +101,17 @@ class WenyouStatusBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(message, style: TextStyle(color: foreground)),
+                  Text(
+                    message,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.wenyouCompactBody.copyWith(color: foreground),
+                  ),
                   if (detail != null) ...[
                     SizedBox(height: tokens.space4),
                     SelectableText(
                       detail!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context).textTheme.wenyouCaption.copyWith(
                         color: foreground.withValues(alpha: 0.78),
                       ),
                     ),
@@ -284,7 +289,7 @@ class WenyouEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: tokens.mutedText),
+            ).textTheme.wenyouCompactBody.copyWith(color: tokens.mutedText),
           ),
         ],
         if (detail != null) ...[
@@ -292,7 +297,7 @@ class WenyouEmptyState extends StatelessWidget {
           SelectableText(
             detail!,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.wenyouCaption,
           ),
         ],
         if (action != null) ...[SizedBox(height: tokens.space20), action!],

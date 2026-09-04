@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 
 /// Shows a single destination action only when content is visually clipped or
@@ -124,7 +125,7 @@ class WenyouOverflowAction extends StatelessWidget {
       foregroundColor: tokens.mutedText,
       textStyle: Theme.of(
         context,
-      ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w400),
+      ).textTheme.wenyouCaption.copyWith(fontWeight: FontWeight.w400),
       padding: EdgeInsets.symmetric(horizontal: tokens.space8),
     );
     final button = switch ((appearance, icon)) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -576,7 +577,7 @@ class _UserResultCard extends StatelessWidget {
                 children: [
                   Text(
                     item.username,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.wenyouRowTitle,
                   ),
                   if (item.bio != null) ...[
                     SizedBox(height: tokens.space4),
@@ -584,7 +585,7 @@ class _UserResultCard extends StatelessWidget {
                       item.bio!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.wenyouCaption,
                     ),
                   ],
                 ],
@@ -622,20 +623,20 @@ class _PostResultCard extends StatelessWidget {
               item.preview.isEmpty ? '该内容没有可显示的文字预览' : item.preview,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.wenyouCompactBody,
             ),
             SizedBox(height: tokens.space12),
             Text(
               '${item.authorName} · '
               '${item.floorNumber == null ? '楼中楼' : '#${item.floorNumber}'}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
             SizedBox(height: tokens.space4),
             Text(
               '${item.threadTitle} · ${item.subthreadTitle}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.wenyouCaption,
             ),
           ],
         ),

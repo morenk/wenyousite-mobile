@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 
 class WenyouTimeText extends StatelessWidget {
   const WenyouTimeText({
@@ -30,7 +31,7 @@ class WenyouTimeText extends StatelessWidget {
       excludeSemantics: true,
       child: Text(
         '$prefix${formatWenyouTime(value, reference: reference)}$suffix',
-        style: style,
+        style: style ?? Theme.of(context).textTheme.wenyouUtilityCaption,
         maxLines: maxLines,
         overflow: overflow,
       ),

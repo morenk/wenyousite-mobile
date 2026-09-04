@@ -46,9 +46,11 @@
 
 ## 10. 跨模块约束
 
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
 流水对手方具名头像缺图或加载失败时显示用户名首个可读字符；没有可用对手方身份时保留中性用户图标。
 
-app-shell 只负责会话、前后台与北京时间边界的签到调度及非阻断提示，不在后台唤醒应用；wallet 通过 app 组合层的 `ProfileCacheInvalidator` 发布失效意图，不直接导入 users provider。users、threads 和 moments 只挂载目标入口并在成功后重读自身服务端投影。钱包流水目标导航复用这些模块的稳定路由。所有 UI 只消费 Foundation v6.5.1 Token、语义图标、全局主题和共享面板；精确金额字符串是 Wallet 与动态/主题/用户累计加油的共同约束。
+app-shell 只负责会话、前后台与北京时间边界的签到调度及非阻断提示，不在后台唤醒应用；wallet 通过 app 组合层的 `ProfileCacheInvalidator` 发布失效意图，不直接导入 users provider。users、threads 和 moments 只挂载目标入口并在成功后重读自身服务端投影。钱包流水目标导航复用这些模块的稳定路由。所有 UI 只消费 Foundation v6.8.0 Token、语义图标、全局主题和共享面板；精确金额字符串是 Wallet 与动态/主题/用户累计加油的共同约束。
 
 ## 11. 测试场景与验收条件
 
@@ -71,7 +73,7 @@ app-shell 只负责会话、前后台与北京时间边界的签到调度及非�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.16.0-dev.20260903.5`；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 

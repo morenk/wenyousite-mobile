@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 
@@ -225,7 +226,9 @@ class _ZoomableViewerImageState extends State<_ZoomableViewerImage> {
                     Text(
                       widget.errorLabel,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: tokens.onImageViewerBackground),
+                      style: Theme.of(context).textTheme.wenyouBody.copyWith(
+                        color: tokens.onImageViewerBackground,
+                      ),
                     ),
                   ],
                 ),

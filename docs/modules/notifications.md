@@ -49,6 +49,8 @@ Android 通知权限关闭时只提示用户前往系统设置开启，不把权
 
 ## 10. 跨模块约束
 
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+
 有明确操作者的通知头像缺图时显示用户名首个可读字符，无操作者的系统通知保留事件图标；通知短时间向辅助技术提供完整时间。
 
 导航遵循[导航](../architecture/navigation.md)，目标 API 才是权威；不依赖提醒到达保证。私聊入口、角标和正文归 [direct-messages](direct-messages.md)，通知模块不读取私聊正文。仓库持续固定 mobile push v1 Schema/样例，本地系统卡片使用独立严格 v1 JSON 且当前切片不启用 FCM 运行时、设备注册或 push capability。
@@ -77,7 +79,7 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；Markdown v5；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.5.1`（`a9318b8`）。
+契约 `5.16.0-dev.20260903.5`；Markdown v5；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`a9318b8`）。
 
 ## 14. 相关代码与架构文档
 

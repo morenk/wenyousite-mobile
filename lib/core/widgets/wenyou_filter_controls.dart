@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/animation/wenyou_motion.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -260,7 +261,7 @@ class _WenyouAdaptiveTabBarState<T> extends State<_WenyouAdaptiveTabBar<T>> {
     final tokens = context.wenyouTokens;
     final labelStyle = Theme.of(
       context,
-    ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700);
+    ).textTheme.wenyouLabel.copyWith(fontWeight: FontWeight.w700);
     final labelWidths = [
       for (final option in widget.options)
         _measureLabel(context, option.label, labelStyle),
@@ -433,7 +434,7 @@ class _ContentTabButton<T> extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       softWrap: false,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      style: Theme.of(context).textTheme.wenyouLabel.copyWith(
                         color: selected
                             ? tokens.brandForeground
                             : tokens.mutedText,
@@ -561,8 +562,8 @@ class WenyouDropdownFilter<T> extends StatelessWidget {
                               supportingLabel,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: tokens.mutedText),
+                              style: Theme.of(context).textTheme.wenyouCaption
+                                  .copyWith(color: tokens.mutedText),
                             ),
                         ],
                       ),
@@ -601,11 +602,11 @@ class _DropdownFilterAnchor extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final quiet = appearance == WenyouDropdownFilterAppearance.quiet;
     final labelStyle = quiet
-        ? Theme.of(context).textTheme.bodySmall?.copyWith(
+        ? Theme.of(context).textTheme.wenyouCaption.copyWith(
             color: tokens.mutedText,
             fontWeight: FontWeight.w500,
           )
-        : Theme.of(context).textTheme.labelMedium;
+        : Theme.of(context).textTheme.wenyouCaptionEmphasis;
     final content = ConstrainedBox(
       constraints: BoxConstraints(minHeight: tokens.minimumTouchTarget),
       child: Padding(
