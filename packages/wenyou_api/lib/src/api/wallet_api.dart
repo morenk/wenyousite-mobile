@@ -26,7 +26,7 @@ class WalletApi {
 
   const WalletApi(this._dio, this._serializers);
 
-  /// 按北京时间自动签到；每日幂等获得 1–3 升温油和 2 经验
+  /// 按北京时间自动签到；每日幂等获得 1–3 升温油，日活经验由签到或首次有效行为领取
   ///
   ///
   /// Parameters:

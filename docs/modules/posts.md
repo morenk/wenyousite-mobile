@@ -138,7 +138,7 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.16.0-dev.20260903.5`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `f09aee365ce50fe921c0c443d252959fb7dc5903`；Foundation `v6.8.0`（`196deaf`）。
+契约 `5.16.0-dev.20260904.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `fb02efa2ea4f4fd8f9b793f6d4bbd9f9f74a2d7e`；Foundation `v6.8.0`（`196deaf`）。
 
 ## 14. 相关代码与架构文档
 
