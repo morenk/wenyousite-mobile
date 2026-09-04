@@ -65,6 +65,8 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 ## 10. 跨模块约束
 
+Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 和 x86_64。正式构建仍为单 APK，原包名、签名、构建号和站内更新比较规则不变；文楷、Noto Sans SC 和 Nunito 均保留。构建与上传入口在本地校验 ABI、引擎和字体条目，拒绝混入其他架构或缺失必要资源的制品。
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。

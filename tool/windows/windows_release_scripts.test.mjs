@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
@@ -6,6 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const read = (name) => readFile(path.join(directory, name), 'utf8');
+
+test('正式 APK 校验拒绝其他 ABI、缺失引擎或字体以及重复条目', () => {
+  execFileSync('pwsh', ['-NoProfile', '-File', path.join(directory, 'release_apk_fixtures.test.ps1')]);
+});
 
 test('仓库自动化入口统一使用 PowerShell 7', async () => {
   const packageJson = await readFile(

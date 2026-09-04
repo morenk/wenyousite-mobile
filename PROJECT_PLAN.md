@@ -4,7 +4,7 @@
 
 ## 当前基线
 
-- 客户端：`0.7.0+93` 正式发布，Android 8+，正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`。
+- 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
 - 后端契约：`5.16.0-dev.20260904.1`，revision `fb02efa2ea4f4fd8f9b793f6d4bbd9f9f74a2d7e`；签到返回当天实际发放经验（0～2），内容互动经验由后端异步幂等结算；主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返黄金契约 v6、剪贴板契约 v2 与独立图片块对齐保持激活，公网 `/meta` 已与本地契约基线一致。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.8.0`。

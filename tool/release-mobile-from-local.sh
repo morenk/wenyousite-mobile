@@ -264,12 +264,14 @@ build_android() {
     fi
   done
 
-  (cd "$PROJECT_DIR" && flutter build apk --release --build-name "$VERSION_NAME" --build-number "$BUILD_NUMBER")
+  (cd "$PROJECT_DIR" && flutter build apk --release --target-platform android-arm64 --build-name "$VERSION_NAME" --build-number "$BUILD_NUMBER")
   apk_path="$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk"
   if [ ! -f "$apk_path" ]; then
     echo "Android release APK 未生成: $apk_path" >&2
     return 1
   fi
+
+  pwsh -NoProfile -File "$PROJECT_DIR/tool/windows/Test-WenyouReleaseApk.ps1" -ApkPath "$apk_path"
 
   android_sdk=$(resolve_android_sdk)
   build_tools_dir=$(find "$android_sdk/build-tools" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)
