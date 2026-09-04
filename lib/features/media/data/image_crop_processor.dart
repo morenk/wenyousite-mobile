@@ -13,7 +13,10 @@ class IsolateImageCropProcessor implements ImageCropProcessor {
   @override
   Future<CropImageSource> prepare(MediaUploadInput input) async {
     final materialized = await input.materialize();
-    return compute(_prepareCropSource, materialized);
+    return compute(
+      _prepareCropSource,
+      _normalizeJpegDecoderCompatibility(materialized),
+    );
   }
 
   @override
@@ -40,6 +43,34 @@ class IsolateImageCropProcessor implements ImageCropProcessor {
   }) {
     return compute(_cropProfileCover, (source, webCrop, mobileCrop));
   }
+}
+
+MediaUploadInput _normalizeJpegDecoderCompatibility(MediaUploadInput input) {
+  final bytes = input.bytes;
+  if (bytes.length < 6 ||
+      bytes[0] != 0xff ||
+      bytes[1] != 0xd8 ||
+      bytes[bytes.length - 2] != 0xff ||
+      bytes[bytes.length - 1] != 0xd9 ||
+      bytes[bytes.length - 4] != 0xff ||
+      bytes[bytes.length - 3] < 0xd0 ||
+      bytes[bytes.length - 3] > 0xd7) {
+    return input;
+  }
+
+  // Some QQ-exported JPEGs place one final restart marker immediately before
+  // EOI. Platform decoders accept it, while package:image rejects the marker
+  // after completing the final scan. Only remove this exact trailing pair;
+  // restart markers inside entropy-coded data remain untouched.
+  final normalized = Uint8List(bytes.length - 2)
+    ..setRange(0, bytes.length - 4, bytes)
+    ..setRange(bytes.length - 4, bytes.length - 2, bytes, bytes.length - 2);
+  return MediaUploadInput(
+    filename: input.filename,
+    bytes: normalized,
+    declaredContentType: input.declaredContentType,
+    purpose: input.purpose,
+  );
 }
 
 CropImageSource _prepareCropSource(MediaUploadInput input) {

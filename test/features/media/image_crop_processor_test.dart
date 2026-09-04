@@ -64,6 +64,51 @@ void main() {
     expect(output.bytes.length, lessThanOrEqualTo(maxMediaImageBytes));
   });
 
+  test('QQ JPEG 尾随重启标记不会阻断完整图片取景', () async {
+    final input = _jpegInputWithTrailingRestartMarker();
+
+    final source = await processor.prepare(input);
+    final output = await processor.cropImage(
+      source,
+      const NormalizedCropRect(left: 0, top: 0, width: 1, height: 1),
+    );
+
+    expect(source.original.bytes.length, input.bytes.length - 2);
+    expect(source.original.bytes.sublist(source.original.bytes.length - 2), [
+      0xff,
+      0xd9,
+    ]);
+    expect((source.width, source.height), (180, 90));
+    expect(_sizeOf(output.bytes), (180, 90));
+  });
+
+  test('普通 JPEG 不经过尾随重启标记兼容改写', () async {
+    final input = _jpegInput();
+
+    final source = await processor.prepare(input);
+
+    expect(source.original.bytes, orderedEquals(input.bytes));
+  });
+
+  test('JPEG 非精确尾随重启标记仍按损坏图片拒绝', () async {
+    final jpeg = _jpegInput().bytes;
+    final malformed = Uint8List(jpeg.length + 3)
+      ..setRange(0, jpeg.length - 2, jpeg)
+      ..setRange(jpeg.length - 2, jpeg.length + 1, [0xff, 0xd6, 0x00])
+      ..setRange(jpeg.length + 1, jpeg.length + 3, jpeg, jpeg.length - 2);
+
+    await expectLater(
+      processor.prepare(
+        MediaUploadInput(
+          filename: 'malformed.jpg',
+          declaredContentType: 'image/jpeg',
+          bytes: malformed,
+        ),
+      ),
+      throwsA(isA<image.ImageException>()),
+    );
+  });
+
   test('通用图片处理会在解码前读取延迟加载的相册文件', () async {
     final directory = await Directory.systemTemp.createTemp(
       'wenyou-crop-source-',
@@ -126,6 +171,34 @@ MediaUploadInput _sourceInput() {
     filename: 'source.png',
     declaredContentType: 'image/png',
     bytes: image.encodePng(source),
+  );
+}
+
+MediaUploadInput _jpegInput() {
+  final source = image.Image(width: 180, height: 90);
+  for (var y = 0; y < source.height; y++) {
+    for (var x = 0; x < source.width; x++) {
+      source.setPixelRgb(x, y, x, y * 2, 80);
+    }
+  }
+  return MediaUploadInput(
+    filename: 'source.jpg',
+    declaredContentType: 'image/jpeg',
+    bytes: image.encodeJpg(source),
+  );
+}
+
+MediaUploadInput _jpegInputWithTrailingRestartMarker() {
+  final original = _jpegInput();
+  final bytes = original.bytes;
+  final compatible = Uint8List(bytes.length + 2)
+    ..setRange(0, bytes.length - 2, bytes)
+    ..setRange(bytes.length - 2, bytes.length, [0xff, 0xd6])
+    ..setRange(bytes.length, bytes.length + 2, bytes, bytes.length - 2);
+  return MediaUploadInput(
+    filename: original.filename,
+    declaredContentType: original.declaredContentType,
+    bytes: compatible,
   );
 }
 
