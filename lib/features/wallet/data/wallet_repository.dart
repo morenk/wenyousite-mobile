@@ -51,11 +51,16 @@ class ApiWalletRepository implements WalletRepository {
       if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
         throw const ApiFailure(userMessage: '签到日期无效，请重新加载。');
       }
+      final experienceAwarded = _nonNegativeInteger(
+        dto.experienceAwarded,
+        '签到经验',
+        maximum: 2,
+      );
       return DailyCheckInResult(
         claimedNow: dto.claimedNow,
         date: date,
         rewardAmount: reward,
-        experienceAwarded: _nonNegativeInteger(dto.experienceAwarded, '签到经验'),
+        experienceAwarded: experienceAwarded,
         balance: _amount(dto.balance, '签到后余额'),
         progression: WalletProgression(
           level: _nonNegativeInteger(dto.progression.level, '等级'),
@@ -243,8 +248,11 @@ class ApiWalletRepository implements WalletRepository {
     }
   }
 
-  int _nonNegativeInteger(num value, String field) {
-    if (!value.isFinite || value < 0 || value != value.truncateToDouble()) {
+  int _nonNegativeInteger(num value, String field, {int? maximum}) {
+    if (!value.isFinite ||
+        value < 0 ||
+        value != value.truncateToDouble() ||
+        (maximum != null && value > maximum)) {
       throw ApiFailure(userMessage: '$field无效，请重新加载。');
     }
     return value.toInt();

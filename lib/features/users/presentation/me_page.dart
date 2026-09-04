@@ -23,6 +23,7 @@ import 'package:wenyousite_mobile/features/users/application/public_user_control
 import 'package:wenyousite_mobile/features/users/domain/me_profile_models.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_profile_editor.dart';
+import 'package:wenyousite_mobile/features/users/presentation/me_profile_refresh_boundary.dart';
 import 'package:wenyousite_mobile/features/users/presentation/user_profile_header.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
@@ -44,7 +45,9 @@ class MePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
     if (!session.isAuthenticated) return const _GuestMePage();
-    return _AuthenticatedMePage(userMoments: userMoments);
+    return MeProfileRefreshBoundary(
+      child: _AuthenticatedMePage(userMoments: userMoments),
+    );
   }
 }
 

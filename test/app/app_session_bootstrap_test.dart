@@ -17,6 +17,35 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('日活经验已领取时只提示温油并刷新资料，重复签到不再提示', (tester) async {
+    var claimedNow = true;
+    final repository = _CheckInRepository(
+      (_) async => _result(
+        date: '2026-09-03',
+        claimedNow: claimedNow,
+        experienceAwarded: 0,
+      ),
+    );
+    final invalidated = <String?>[];
+    final container = await _authenticatedContainer(repository, invalidated);
+    addTearDown(container.dispose);
+    _restoreResumedLifecycle(tester);
+    final now = DateTime.utc(2026, 9, 3, 2);
+    await tester.pumpWidget(_app(container, now: () => now));
+    await _settle(tester);
+    expect(find.text('今日签到获得 3 升温油。'), findsOneWidget);
+    expect(find.textContaining('0 经验'), findsNothing);
+    expect(invalidated, ['user-1']);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    claimedNow = false;
+    await tester.pumpWidget(_app(container, now: () => now));
+    await _settle(tester);
+    expect(repository.checkInCalls, 2);
+    expect(find.textContaining('今日签到获得'), findsNothing);
+    expect(invalidated, ['user-1', 'user-1']);
+  });
+
   testWidgets('登录后签到一次且同日重建与恢复不重复请求', (tester) async {
     final repository = _CheckInRepository(
       (_) async => _result(date: '2026-09-03', claimedNow: true),
@@ -332,12 +361,13 @@ DailyCheckInResult _result({
   required String date,
   required bool claimedNow,
   String reward = '3',
+  int experienceAwarded = 2,
 }) {
   return DailyCheckInResult(
     claimedNow: claimedNow,
     date: date,
     rewardAmount: reward,
-    experienceAwarded: 2,
+    experienceAwarded: experienceAwarded,
     balance: '13',
     progression: const WalletProgression(
       level: 2,

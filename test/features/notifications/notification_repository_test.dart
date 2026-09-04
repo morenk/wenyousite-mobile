@@ -13,6 +13,55 @@ void main() {
     registerFallbackValue(SetReadStatusDto((dto) => dto.isRead = true));
   });
 
+  test('异步升级通知保留服务端内容，不从奖励或旧等级合成升级提示', () async {
+    final api = _MockNotificationsApi();
+    when(() => api.notificationsFindAll(cursor: null, type: null)).thenAnswer(
+      (_) async => Response(
+        requestOptions: RequestOptions(path: '/api/v1/notifications'),
+        data: NotificationsFindAll200Response(
+          (b) => b
+            ..code = ApiSuccessEnvelopeCodeEnum.number0
+            ..message = 'ok'
+            ..meta.update((m) => m..hasMore = false)
+            ..data.add(
+              NotificationResponseDto(
+                (n) => n
+                  ..id = 'level-notice-1'
+                  ..userId = 'user-1'
+                  ..type = NotificationResponseDtoTypeEnum.levelUp
+                  ..content = '恭喜你升级到 Lv.3'
+                  ..eventKey = 'level-up:user-1:3:50'
+                  ..isRead = false
+                  ..createdAt = DateTime.utc(2026, 9, 5)
+                  ..payload.update(
+                    (p) => p
+                      ..schemaVersion =
+                          NotificationPayloadResponseDtoSchemaVersionEnum.n1
+                      ..action = 'level_up'
+                      ..previousLevel = 2
+                      ..level = 3
+                      ..experience = 50,
+                  )
+                  ..target.update(
+                    (t) => t
+                      ..kind = NotificationTargetResponseDtoKindEnum.none
+                      ..state =
+                          NotificationTargetResponseDtoStateEnum.NO_TARGET,
+                  ),
+              ),
+            ),
+        ),
+      ),
+    );
+    final item = (await ApiNotificationRepository(
+      api,
+    ).fetchPage()).items.single;
+    expect(item.kind, NotificationKind.levelUp);
+    expect(item.actor, isNull);
+    expect(item.target.canOpen, isFalse);
+    expect(formatNotificationCopy(item).plainText, '恭喜你升级到 Lv.3');
+  });
+
   test('通知列表传递筛选与游标并映射结构化内容和目标', () async {
     final api = _MockNotificationsApi();
     when(
