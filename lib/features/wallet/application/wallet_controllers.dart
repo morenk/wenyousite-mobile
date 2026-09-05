@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
@@ -206,33 +207,77 @@ class DailyCheckInState {
     this.phase = DailyCheckInPhase.idle,
     this.result,
     this.failure,
+    this.expectedDate,
+    this.pendingReceipt,
+    this.retryRevision = 0,
   });
 
   final DailyCheckInPhase phase;
   final DailyCheckInResult? result;
   final ApiFailure? failure;
+  final String? expectedDate;
+  final DailyCheckInResult? pendingReceipt;
+  final int retryRevision;
+
+  bool get canRetry =>
+      phase == DailyCheckInPhase.failed && isCheckInRetryable(failure);
 }
+
+bool isCheckInRetryable(ApiFailure? failure) =>
+    failure != null &&
+    (failure.isExpiredAccessToken ||
+        failure.reason == FailureReason.offline ||
+        failure.reason == FailureReason.timeout ||
+        failure.reason == FailureReason.rateLimited ||
+        failure.effectiveSource == FailureSource.service);
 
 class DailyCheckInController extends StateNotifier<DailyCheckInState> {
   DailyCheckInController(this._repository) : super(const DailyCheckInState());
 
   final WalletRepository _repository;
+  Future<DailyCheckInResult?>? _inFlight;
+  String? _acknowledgedDate;
 
-  Future<DailyCheckInResult?> checkIn() async {
-    if (state.phase == DailyCheckInPhase.submitting) return null;
-    state = const DailyCheckInState(phase: DailyCheckInPhase.submitting);
+  Future<DailyCheckInResult?> checkIn(String expectedDate) {
+    return _inFlight ??= _perform(
+      expectedDate,
+    ).whenComplete(() => _inFlight = null);
+  }
+
+  Future<DailyCheckInResult?> _perform(String expectedDate) async {
+    final pending = state.pendingReceipt;
+    state = DailyCheckInState(
+      phase: DailyCheckInPhase.submitting,
+      expectedDate: expectedDate,
+      pendingReceipt:
+          pending != null && pending.date.compareTo(expectedDate) >= 0
+          ? pending
+          : null,
+      retryRevision: state.retryRevision,
+    );
     try {
       final result = await _repository.checkIn();
       if (!mounted) return null;
       state = DailyCheckInState(
         phase: DailyCheckInPhase.completed,
         result: result,
+        expectedDate: expectedDate,
+        retryRevision: state.retryRevision,
+        pendingReceipt:
+            result.claimedNow &&
+                result.date != _acknowledgedDate &&
+                result.date.compareTo(expectedDate) >= 0
+            ? result
+            : state.pendingReceipt,
       );
       return result;
     } on Object catch (error) {
       if (!mounted) return null;
       state = DailyCheckInState(
         phase: DailyCheckInPhase.failed,
+        expectedDate: expectedDate,
+        retryRevision: state.retryRevision,
+        pendingReceipt: state.pendingReceipt,
         failure: error is ApiFailure
             ? error
             : ApiFailure(userMessage: '每日签到失败。', cause: error),
@@ -240,10 +285,35 @@ class DailyCheckInController extends StateNotifier<DailyCheckInState> {
       return null;
     }
   }
+
+  void acknowledgeReceipt(String date) {
+    if (state.pendingReceipt?.date != date) return;
+    _acknowledgedDate = date;
+    state = DailyCheckInState(
+      phase: state.phase,
+      result: state.result,
+      failure: state.failure,
+      expectedDate: state.expectedDate,
+      retryRevision: state.retryRevision,
+    );
+  }
+
+  void requestRetry() {
+    if (!state.canRetry) return;
+    state = DailyCheckInState(
+      phase: state.phase,
+      result: state.result,
+      failure: state.failure,
+      expectedDate: state.expectedDate,
+      pendingReceipt: state.pendingReceipt,
+      retryRevision: state.retryRevision + 1,
+    );
+  }
 }
 
 final dailyCheckInControllerProvider =
     StateNotifierProvider<DailyCheckInController, DailyCheckInState>((ref) {
+      ref.watch(sessionScopeProvider);
       return DailyCheckInController(ref.watch(walletRepositoryProvider));
     }, dependencies: [walletRepositoryProvider]);
 

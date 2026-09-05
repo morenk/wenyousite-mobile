@@ -10,6 +10,39 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  testWidgets('局部主题缺少消息样式时仍使用 Foundation 面板', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showWenyouSnackBar(context, '已保存'),
+              child: const Text('显示'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('显示'));
+    await tester.pumpAndSettle();
+    final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snack.backgroundColor, WenyouThemeTokens.light.panel);
+    expect(snack.behavior, SnackBarBehavior.floating);
+    final material = tester.widget<Material>(
+      find
+          .descendant(
+            of: find.byType(SnackBar),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(material.color, WenyouThemeTokens.light.panel);
+    expect(
+      (material.shape! as RoundedRectangleBorder).side.color,
+      WenyouThemeTokens.light.border,
+    );
+  });
+
   for (final dark in [false, true]) {
     for (final large in [false, true]) {
       final name = '${dark ? 'dark' : 'light'}_${large ? 'large' : 'regular'}';
@@ -21,9 +54,7 @@ void main() {
         final theme = dark ? AppTheme.dark : AppTheme.light;
         debugDisableShadows = false;
         addTearDown(() => debugDisableShadows = true);
-        final message = large
-            ? '操作失败，请检查网络连接后重试。你的内容已保留。'
-            : '今日签到获得 3 升温油和 2 经验。';
+        final message = large ? '操作失败，请检查网络连接后重试。你的内容已保留。' : '今日签到获得 3 升温油。';
         var retried = false;
         await tester.pumpWidget(
           MaterialApp(

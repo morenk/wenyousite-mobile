@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_snack_bar_activity.dart';
 
 const wenyouBriefSnackBarDuration = Duration(milliseconds: 2500);
 const wenyouExtendedSnackBarDuration = Duration(seconds: 4);
@@ -46,6 +47,7 @@ extension WenyouSnackBarMessenger on ScaffoldMessengerState {
     Key? actionKey,
     SnackBarBehavior? behavior,
     EdgeInsetsGeometry? margin,
+    bool deferred = false,
   }) {
     assert(
       (actionLabel == null) == (onAction == null),
@@ -74,10 +76,18 @@ extension WenyouSnackBarMessenger on ScaffoldMessengerState {
         WenyouIconIds.statusError,
       ),
     };
-    clearSnackBars();
-    return showSnackBar(
+    final activity = WenyouSnackBarActivity.of(this);
+    final epoch = deferred ? null : activity.begin();
+    if (!deferred) clearSnackBars();
+    final controller = showSnackBar(
       SnackBar(
         key: key,
+        backgroundColor: tokens.panel,
+        elevation: WenyouOverlayContract.elevation['floating'],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radius16),
+          side: BorderSide(color: tokens.border),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,7 +101,7 @@ extension WenyouSnackBarMessenger on ScaffoldMessengerState {
                     height: tokens.space32,
                     decoration: BoxDecoration(
                       color: surface,
-                      borderRadius: BorderRadius.circular(tokens.radius12),
+                      shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: WenyouIcon(icon, color: color),
@@ -130,9 +140,17 @@ extension WenyouSnackBarMessenger on ScaffoldMessengerState {
         ),
         duration: duration,
         persist: false,
-        behavior: behavior,
-        margin: margin,
+        behavior: behavior ?? SnackBarBehavior.floating,
+        margin:
+            margin ??
+            (behavior == SnackBarBehavior.fixed
+                ? null
+                : EdgeInsets.all(tokens.space16)),
       ),
     );
+    if (epoch != null) {
+      controller.closed.then((_) => activity.finish(epoch));
+    }
+    return controller;
   }
 }

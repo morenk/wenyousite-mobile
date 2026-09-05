@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/app_scaffold.dart';
 import 'package:wenyousite_mobile/features/app_shell/presentation/message_center_page.dart';
@@ -11,7 +12,10 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page
 import 'package:wenyousite_mobile/features/users/presentation/me_content_dashboard.dart';
 import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 
-RouteBase buildAppShellRoute(Ref ref) {
+RouteBase buildAppShellRoute(
+  Ref ref, {
+  required WenyouFeedbackVisibility feedbackVisibility,
+}) {
   return StatefulShellRoute.indexedStack(
     pageBuilder: (context, state, navigationShell) => wenyouInstantPage<void>(
       key: state.pageKey,
@@ -19,6 +23,7 @@ RouteBase buildAppShellRoute(Ref ref) {
     ),
     branches: [
       StatefulShellBranch(
+        observers: [feedbackVisibility.createObserver()],
         routes: [
           GoRoute(
             path: AppRoutePaths.home,
@@ -28,6 +33,7 @@ RouteBase buildAppShellRoute(Ref ref) {
         ],
       ),
       StatefulShellBranch(
+        observers: [feedbackVisibility.createObserver()],
         routes: [
           GoRoute(
             path: AppRoutePaths.moments,
@@ -37,6 +43,7 @@ RouteBase buildAppShellRoute(Ref ref) {
         ],
       ),
       StatefulShellBranch(
+        observers: [feedbackVisibility.createObserver()],
         routes: [
           GoRoute(
             path: AppRoutePaths.notifications,
@@ -48,6 +55,7 @@ RouteBase buildAppShellRoute(Ref ref) {
         ],
       ),
       StatefulShellBranch(
+        observers: [feedbackVisibility.createObserver()],
         routes: [
           GoRoute(
             path: AppRoutePaths.me,

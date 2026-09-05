@@ -33,6 +33,8 @@ Android 登录会话固定开启后台尽力提醒，并在前台主动申请系
 
 ## 6. 状态模型和数据流
 
+签到的已领取日期与待展示回执分别保存，按 `SessionScope` 隔离。应用级反馈宿主观察生命周期、根与分支路由、模态弹层和普通操作消息；后台或被遮挡时保留回执，页面就绪后显示“今日签到获得 N 升温油。”，完整显示 4 秒或主动关闭后确认消费。普通操作消息优先，打断的签到回执在其结束后补显。跨日丢弃旧回执，退出和切号不保留旧账号消息，补显不重新签到；组件重新挂载复用当前会话的签到状态，进程重启则以钱包状态和流水核对。
+
 客户端兼容集合固定为 Markdown v3/v4/v5；未知版本继续进入不可绕过的升级页。`AppCapabilities.markdownAlignment` 从元信息声明 v4 起启用普通段落与 H2/H3 对齐，`markdownImageAlignment` 只在声明 v5 时启用独立普通图片块对齐；主题与帖子只消费纯 capability，不直接读取启动控制器，冷启动和回前台静默重查共用同一判定。剪贴板导航只复用 `internal-reference v1` 解析结果与应用根路由，不新增链接解析器、预取请求或持久状态；离开前台时只记录当前内容的进程内指纹，恢复后主动安排一个渲染帧并在帧结束时读取，只处理发生变化的完整目标。
 
 外观偏好状态包含当前选择、写入中、失败目标、读取失败和用户提示；应用根只观察当前选择并映射为 Flutter `ThemeMode.system/light/dark`，复用已缓存的亮/黑夜 `ThemeData`，在下一帧直接换主题而不创建根 `AnimatedTheme`，主题变化不进入业务控制器。启动状态为 checking、ready、recommendedUpdate、updateRequired、incompatible、failed；更新动作另有 idle、checking、downloading、verifying、installing、openingExternalPage、permissionRequired、installerOpened、externalPageOpened、failed。元信息映射为纯 `ContractInfo`，应用根通过 `AppCapabilities` 把 stickers、directMessages、pushNotifications 能力注入业务入口；入口默认关闭并只在服务端明确启用后创建，feature 不反向依赖 app-shell 控制器。元信息读取、更新执行与推荐更新忽略记录均由 `app_shell/application` 端口表达，`main.dart` 组合根绑定 data 实现；application 控制器不直接依赖 Dio、MethodChannel 或 SharedPreferences。签到状态由 wallet 独立管理，不进入启动兼容状态机。生成客户端负责 `/api/v1`；APK 使用不带认证拦截器的独立 Dio，避免向下载地址泄露 Token。

@@ -65,6 +65,7 @@ class _WenyouMaterialApp extends ConsumerWidget {
             : Brightness.dark;
         final app = StartupGate(
           child: AppSessionBootstrap(
+            feedbackVisibility: ref.watch(feedbackVisibilityProvider),
             child: ClipboardNavigationPrompt(
               child: BackgroundNotificationNavigation(
                 child: child ?? const SizedBox.shrink(),

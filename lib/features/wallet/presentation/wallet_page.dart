@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_controllers.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
+import 'package:wenyousite_mobile/features/wallet/presentation/daily_check_in_status.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_widgets.dart';
 
 class WalletPage extends ConsumerWidget {
@@ -33,6 +34,8 @@ class WalletPage extends ConsumerWidget {
               state: state,
               onRetry: () => ref.read(provider.notifier).retrySummary(),
             ),
+            SizedBox(height: context.wenyouTokens.space12),
+            const DailyCheckInStatus(),
             SizedBox(height: context.wenyouTokens.space12),
             _WalletTransactionsPanel(
               state: state,
