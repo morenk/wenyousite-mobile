@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_session_bootstrap.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -21,6 +22,34 @@ import 'package:wenyousite_mobile/features/wallet/presentation/daily_check_in_st
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('启动恢复保留诊断，退出账号清除诊断', (tester) async {
+    final previous = FailureDiagnostics.instance;
+    final diagnostics = FailureDiagnostics();
+    FailureDiagnostics.instance = diagnostics;
+    addTearDown(() => FailureDiagnostics.instance = previous);
+    final repository = _CheckInRepository(
+      (_) async => _result(date: '2026-09-03', claimedNow: false),
+    );
+    final container = await _authenticatedContainer(repository, []);
+    addTearDown(container.dispose);
+    _restoreResumedLifecycle(tester);
+    await tester.pumpWidget(
+      _app(container, now: () => DateTime.utc(2026, 9, 3, 2)),
+    );
+    await tester.pumpAndSettle();
+    diagnostics.capture(StateError('private-record'));
+    await diagnostics.settled;
+    await container.read(sessionControllerProvider.notifier).logoutLocally();
+    await tester.pumpAndSettle();
+    expect(diagnostics.records, isEmpty);
+    diagnostics.capture(StateError('restorable-record'));
+    await diagnostics.settled;
+    await container.read(tokenStoreProvider).write(_tokens('restored-user'));
+    await container.read(sessionControllerProvider.notifier).restore();
+    await tester.pumpAndSettle();
+    expect(diagnostics.records, hasLength(1));
+  });
 
   testWidgets('已显示旧账号提示时切号，旧回执立即移除且新账号独立展示', (tester) async {
     final repository = _CheckInRepository(

@@ -264,7 +264,15 @@ build_android() {
     fi
   done
 
-  (cd "$PROJECT_DIR" && flutter build apk --release --target-platform android-arm64 --build-name "$VERSION_NAME" --build-number "$BUILD_NUMBER")
+  local diagnostics_args=()
+  if [ -n "${WENYOU_DIAGNOSTICS_CONFIG:-}" ]; then
+    if [ ! -f "$WENYOU_DIAGNOSTICS_CONFIG" ]; then
+      echo "故障诊断构建配置文件不存在" >&2
+      return 1
+    fi
+    diagnostics_args+=("--dart-define-from-file=$WENYOU_DIAGNOSTICS_CONFIG")
+  fi
+  (cd "$PROJECT_DIR" && flutter build apk --release --target-platform android-arm64 --build-name "$VERSION_NAME" --build-number "$BUILD_NUMBER" "${diagnostics_args[@]}")
   apk_path="$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk"
   if [ ! -f "$apk_path" ]; then
     echo "Android release APK 未生成: $apk_path" >&2

@@ -14,6 +14,12 @@ class ApiPostRepository implements PostRepository {
   ApiPostRepository(this._api);
 
   final PostsApi _api;
+  static const _writeMessages = {
+    40000: '内容未能保存，请检查后重试。',
+    40001: '内容未能保存，请检查后重试。',
+    40006: '图片或表情无法保存，请重新选择后再试。',
+    40009: '正文格式无法保存，请调整图片或文字排版后重试。',
+  };
 
   @override
   Future<PostItem> fetchPost(String postId) async {
@@ -94,7 +100,7 @@ class ApiPostRepository implements PostRepository {
       }
       return _mapPost(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: _writeMessages);
     }
   }
 
@@ -124,7 +130,7 @@ class ApiPostRepository implements PostRepository {
       }
       return _mapPost(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: _writeMessages);
     }
   }
 
@@ -154,7 +160,7 @@ class ApiPostRepository implements PostRepository {
       }
       return _mapPost(dto);
     } on DioException catch (error) {
-      throw ApiFailure.fromDio(error);
+      throw ApiFailure.fromDio(error, featureMessages: _writeMessages);
     }
   }
 

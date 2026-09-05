@@ -1,0 +1,120 @@
+// ignore_for_file: experimental_member_use
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
+import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
+
+/// Marks literal source at the exact offset before async changes can race.
+class LiteralTextQuillController extends QuillController {
+  LiteralTextQuillController({
+    required super.document,
+    required super.selection,
+    required super.config,
+  });
+  @override
+  void replaceText(
+    int index,
+    int len,
+    Object? data,
+    TextSelection? textSelection, {
+    bool ignoreFocus = false,
+    bool shouldNotifyListeners = true,
+  }) {
+    final before = document.toDelta();
+    if (data == ' ' && len == 0 && index > 0) {
+      final left = document.collectStyle(index - 1, 1).attributes;
+      final right = document.collectStyle(index, 1).attributes;
+      for (final entry in left.entries) {
+        if (entry.value.isInline &&
+            entry.value.value != right[entry.key]?.value &&
+            !toggledStyle.attributes.containsKey(entry.key)) {
+          toggledStyle = toggledStyle.put(Attribute.clone(entry.value, null));
+        }
+      }
+    }
+    final internalReference = data is String
+        ? WenyouEditorClipboardPastePlanner.internalReferenceDelta(
+            data,
+            len == 0 ? '' : document.getPlainText(index, len),
+          )
+        : null;
+    final effectiveData = internalReference ?? data;
+    final effectiveSelection = internalReference == null
+        ? textSelection
+        : TextSelection.collapsed(offset: index + 1);
+    if (_containsEmbed(effectiveData)) {
+      // Quill applies pending inline toolbar styles to every replacement,
+      // including embeds. Protocol nodes must remain attribute-free so the
+      // Markdown codec can persist them without weakening its fail-closed
+      // validation.
+      toggledStyle = const Style();
+    }
+    super.replaceText(
+      index,
+      len,
+      effectiveData,
+      effectiveSelection,
+      ignoreFocus: ignoreFocus,
+      shouldNotifyListeners: shouldNotifyListeners,
+    );
+    final insertedLength = switch (effectiveData) {
+      String value => value.length,
+      Delta value => MarkdownDeltaLineMetadata.documentLength(value),
+      Embeddable() => 1,
+      _ => 0,
+    };
+    final sourceSeparatorPatch = MarkdownDeltaLineMetadata.sourceSeparatorPatch(
+      before: before,
+      after: document.toDelta(),
+      index: index,
+      replacedLength: len,
+      insertedLength: insertedLength,
+      insertedDelta: effectiveData is Delta ? effectiveData : null,
+    );
+    if (sourceSeparatorPatch.isNotEmpty) {
+      document.compose(sourceSeparatorPatch, ChangeSource.local);
+    }
+    repairEditorTrailingNewlineAlignment(
+      controller: this,
+      before: before,
+      insertedData: effectiveData,
+      replacedLength: len,
+      selection: effectiveSelection,
+    );
+    if (effectiveData is! String || effectiveData.isEmpty) return;
+
+    final formatting = Delta();
+    var formattingOffset = 0;
+    var sourceOffset = 0;
+    while (sourceOffset < effectiveData.length) {
+      final newline = effectiveData.indexOf('\n', sourceOffset);
+      final end = newline < 0 ? effectiveData.length : newline;
+      if (end > sourceOffset) {
+        final start = index + sourceOffset;
+        if (start > formattingOffset) {
+          formatting.retain(start - formattingOffset);
+        }
+        formatting.retain(end - sourceOffset, {
+          MarkdownDeltaCodec.literalTextAttribute: true,
+        });
+        formattingOffset = start + end - sourceOffset;
+      }
+      if (newline < 0) break;
+      sourceOffset = newline + 1;
+    }
+    if (formatting.isNotEmpty) {
+      document.compose(formatting, ChangeSource.local);
+    }
+  }
+
+  static bool _containsEmbed(Object? data) => switch (data) {
+    Embeddable() => true,
+    Delta value => value.operations.any(
+      (operation) => operation.isInsert && operation.data is Map,
+    ),
+    _ => false,
+  };
+}

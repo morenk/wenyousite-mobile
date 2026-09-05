@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -23,6 +24,7 @@ class MediaUploadFailure {
     required this.canRetry,
     this.businessCode,
     this.requestId,
+    this.diagnosticId,
   }) : assert(presentation != null || userMessage != null),
        _legacyUserMessage = userMessage;
 
@@ -31,6 +33,7 @@ class MediaUploadFailure {
   final bool canRetry;
   final int? businessCode;
   final String? requestId;
+  final String? diagnosticId;
 
   UserFacingFailure get resolvedPresentation =>
       presentation ??
@@ -189,6 +192,7 @@ class MediaUploadTaskController
     var acceptProgress = true;
     try {
       if (selected == null) {
+        DiagnosticAttempt.current?.mark(DiagnosticStage.picking);
         state = const MediaUploadTaskState(phase: MediaUploadTaskPhase.picking);
         final selection = await _untilCancelled(
           ref.read(editorImagePickerPortProvider).pickFromGallery(),
@@ -204,6 +208,7 @@ class MediaUploadTaskController
       }
 
       _retryInput = selected;
+      DiagnosticAttempt.current?.mark(DiagnosticStage.preparing);
       const preparing = MediaUploadProgress(stage: MediaUploadStage.preparing);
       state = const MediaUploadTaskState(
         phase: MediaUploadTaskPhase.preparing,
@@ -245,13 +250,13 @@ class MediaUploadTaskController
       _retryInput = null;
       state = const MediaUploadTaskState();
       return result;
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
       acceptProgress = false;
       if (!_isCurrent(runId)) return null;
       _operation = null;
       state = MediaUploadTaskState(
         phase: MediaUploadTaskPhase.failed,
-        failure: _failureFor(error, canRetry: _retryInput != null),
+        failure: _failureFor(error, stack, canRetry: _retryInput != null),
       );
       return null;
     } finally {
@@ -272,9 +277,19 @@ class MediaUploadTaskController
 
   bool _isCurrent(int runId) => !_disposed && runId == _runId;
 
-  MediaUploadFailure _failureFor(Object error, {required bool canRetry}) {
+  MediaUploadFailure _failureFor(
+    Object error,
+    StackTrace stack, {
+    required bool canRetry,
+  }) {
+    final diagnosticId = FailureDiagnostics.instance.capture(
+      error,
+      stackTrace: stack,
+      operation: DiagnosticOperation.mediaUpload,
+    );
     if (error is ApiFailure) {
       return MediaUploadFailure(
+        diagnosticId: diagnosticId,
         presentation: UserFacingFailure.fromApi(
           error,
           title: '图片上传失败',
@@ -289,6 +304,7 @@ class MediaUploadTaskController
       );
     }
     return MediaUploadFailure(
+      diagnosticId: diagnosticId,
       presentation: const UserFacingFailure(
         title: '图片上传失败',
         message: '图片没有上传成功，请重试。',

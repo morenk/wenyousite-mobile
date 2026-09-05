@@ -4,6 +4,7 @@ import 'package:wenyousite_mobile/app/production_overrides.dart';
 import 'package:wenyousite_mobile/app/wenyou_app.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_bootstrap.dart';
 import 'package:wenyousite_mobile/core/storage/shared_preferences_appearance_store.dart';
 import 'package:wenyousite_mobile/features/media/application/recovered_media_selection.dart';
 import 'package:wenyousite_mobile/features/media/data/media_picker_recovery.dart';
@@ -11,6 +12,7 @@ import 'package:wenyousite_mobile/features/media/data/system_image_picker_config
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeFailureDiagnostics();
   if (wenyouFieldDiagnosticsEnabled) installWenyouDebugDiagnostics();
   configureSystemImagePicker();
   final recoveredMediaSelection = RecoveredMediaSelectionStore.fromResult(

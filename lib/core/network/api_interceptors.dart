@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
@@ -41,6 +42,7 @@ class RequestContextInterceptor extends Interceptor {
   }
 
   Future<void> _authorize(RequestOptions options) async {
+    DiagnosticAttempt.current?.mark(DiagnosticStage.authorize);
     if (options.extra[ApiRequestExtraKeys.skipAuth] == true) return;
     var tokens = _sessionController.tokens;
     if (tokens != null && _sessionController.accessTokenNeedsRefresh) {

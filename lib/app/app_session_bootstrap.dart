@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -55,6 +56,9 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) FailureDiagnostics.instance.retryPending();
+    });
   }
 
   @override
@@ -67,6 +71,9 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
+    if (state == AppLifecycleState.resumed) {
+      FailureDiagnostics.instance.retryPending();
+    }
     if (state != AppLifecycleState.resumed) {
       _rolloverTimer?.cancel();
       _rolloverTimer = null;
@@ -82,6 +89,14 @@ class _AppSessionBootstrapState extends ConsumerState<AppSessionBootstrap>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<SessionState>(sessionControllerProvider, (previous, next) {
+      // Restoring persisted tokens at startup must preserve the outbox.
+      if (previous != null &&
+          previous.status != SessionStatus.restoring &&
+          previous.generation != next.generation) {
+        unawaited(FailureDiagnostics.instance.clear());
+      }
+    });
     final session = ref.watch(sessionControllerProvider);
     final scope = ref.watch(sessionScopeProvider);
     final checkIn = ref.watch(dailyCheckInControllerProvider);

@@ -194,6 +194,10 @@ class ApiFailure implements Exception {
 
   bool shouldExposeRequestId({bool treatAsWrite = false}) {
     if (requestId == null) return false;
+    if (treatAsWrite &&
+        const {40000, 40001, 40006, 40009}.contains(businessCode)) {
+      return true;
+    }
     if (treatAsWrite && hasUnknownWriteOutcome) return true;
     if (businessCode == 40912) return true;
     return effectiveSource == FailureSource.service ||

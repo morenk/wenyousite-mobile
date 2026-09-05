@@ -86,6 +86,10 @@ class _GuestMePage extends StatelessWidget {
             ),
             SizedBox(height: context.wenyouTokens.space12),
             const _AppearanceSettingsPanel(),
+            ListTile(
+              title: const Text('故障诊断'),
+              onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+            ),
           ],
         ),
       ),
@@ -217,11 +221,15 @@ class MeSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
-      body: const _MePageList(
+      body: _MePageList(
         children: [
-          _AppearanceSettingsPanel(),
-          _AccountSecurityPanel(disabled: false),
-          _LogoutPanel(),
+          const _AppearanceSettingsPanel(),
+          const _AccountSecurityPanel(disabled: false),
+          const _LogoutPanel(),
+          ListTile(
+            title: const Text('故障诊断'),
+            onTap: () => context.pushNamed(AppRouteNames.diagnostics),
+          ),
         ],
       ),
     );

@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mime/mime.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/diagnostics/network_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
@@ -353,6 +355,7 @@ final mediaUploadDioProvider = Provider<Dio>((ref) {
       receiveTimeout: const Duration(seconds: 20),
     ),
   );
+  dio.interceptors.add(NetworkDiagnosticInterceptor());
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });
@@ -385,13 +388,40 @@ class RepositoryMediaUploadGateway implements MediaUploadGateway {
   }) {
     final cancelToken = CancelToken();
     return _DioMediaUploadOperation(
-      result: _normalizeAndUpload(
+      result: _diagnosticUpload(
         input,
         cancelToken: cancelToken,
         onProgress: onProgress,
       ),
       cancelToken: cancelToken,
     );
+  }
+
+  Future<UploadedEditorImage> _diagnosticUpload(
+    MediaUploadInput input, {
+    required CancelToken cancelToken,
+    void Function(MediaUploadProgress progress)? onProgress,
+  }) {
+    final diagnostics = FailureDiagnostics.instance;
+    final attempt =
+        DiagnosticAttempt.current ??
+        diagnostics.attempt(DiagnosticOperation.mediaUpload);
+    return attempt.run(() async {
+      try {
+        return await _normalizeAndUpload(
+          input,
+          cancelToken: cancelToken,
+          onProgress: onProgress,
+        );
+      } on Object catch (error, stack) {
+        diagnostics.capture(
+          error,
+          stackTrace: stack,
+          operation: DiagnosticOperation.mediaUpload,
+        );
+        rethrow;
+      }
+    });
   }
 
   Future<UploadedEditorImage> _normalizeAndUpload(

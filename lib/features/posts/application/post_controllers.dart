@@ -358,7 +358,13 @@ class PostComposerController extends StateNotifier<PostComposerState> {
     if (state.isSubmitting) return null;
     final validation = _validate(state.content);
     if (validation != null) {
-      state = state.copyWith(failure: ApiFailure(userMessage: validation));
+      state = state.copyWith(
+        failure: ApiFailure(
+          userMessage: validation,
+          source: FailureSource.expected,
+          reason: FailureReason.validation,
+        ),
+      );
       return null;
     }
     return switch (target.kind) {

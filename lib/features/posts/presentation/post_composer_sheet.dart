@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
@@ -19,6 +20,7 @@ import 'package:wenyousite_mobile/features/media/presentation/media_upload_statu
 import 'package:wenyousite_mobile/features/posts/application/post_composer_draft.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
+import 'package:wenyousite_mobile/features/posts/presentation/post_composer_diagnostics.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_opening.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet_layout.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
@@ -350,6 +352,7 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
   int _toolbarInteractionGeneration = 0;
   int _minimumHeightGeneration = 0;
   final Object _uploadTaskId = Object();
+  final _diagnostics = PostComposerDiagnostics();
   final Object _contentDraftSessionKey = Object();
 
   bool get _uploading =>
@@ -448,14 +451,19 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 message: state.failure!.userMessage,
                 detail: _requestDetail(state.failure),
                 tone: WenyouStatusTone.error,
-                action: state.conflict == null
-                    ? null
-                    : TextButton.icon(
+                action: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CopyDiagnosticButton(failure: state.failure),
+                    if (state.conflict != null)
+                      TextButton.icon(
                         key: const Key('post-composer-retry-conflict'),
                         onPressed: locked ? null : _confirmConflictRetry,
                         icon: const WenyouIcon(WenyouIconIds.actionSync),
                         label: const Text('用当前正文覆盖最新版'),
                       ),
+                  ],
+                ),
               ),
             ),
           if (state.hasAmbiguousCreate)
@@ -483,6 +491,9 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
                 message: '当前格式组合暂时不能安全保存。',
                 detail: _editorSession.codecFailure,
                 tone: WenyouStatusTone.error,
+                action: CopyDiagnosticButton(
+                  diagnosticId: _editorSession.diagnosticId,
+                ),
               ),
             ),
           if (_editorSession.operationFailure != null)
@@ -640,7 +651,16 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit() => _diagnostics.submit(
+    kind: widget.target.kind,
+    content: ref.read(postComposerControllerProvider(widget.target)).content,
+    failure: () => mounted
+        ? ref.read(postComposerControllerProvider(widget.target)).failure
+        : null,
+    action: _submitContent,
+  );
+
+  Future<void> _submitContent() async {
     if (_closing || ref.read(sessionScopeProvider) != _openedSessionScope) {
       return;
     }
@@ -694,18 +714,27 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
         confirmed != true) {
       return;
     }
-    final result = await ref
-        .read(postComposerControllerProvider(widget.target).notifier)
-        .retryConflict();
-    if (!mounted) return;
-    if (_closing ||
-        ref.read(sessionScopeProvider) != _openedSessionScope ||
-        result == null) {
-      return;
-    }
-    widget.onDraftChanged?.call(null);
-    setState(() => _closing = true);
-    widget.onClose(result);
+    await _diagnostics.submit(
+      kind: widget.target.kind,
+      content: ref.read(postComposerControllerProvider(widget.target)).content,
+      failure: () => mounted
+          ? ref.read(postComposerControllerProvider(widget.target)).failure
+          : null,
+      action: () async {
+        final result = await ref
+            .read(postComposerControllerProvider(widget.target).notifier)
+            .retryConflict();
+        if (!mounted) return;
+        if (_closing ||
+            ref.read(sessionScopeProvider) != _openedSessionScope ||
+            result == null) {
+          return;
+        }
+        widget.onDraftChanged?.call(null);
+        setState(() => _closing = true);
+        widget.onClose(result);
+      },
+    );
   }
 
   Future<void> _requestClose() async {
@@ -780,7 +809,10 @@ class _PostComposerSheetState extends ConsumerState<PostComposerSheet> {
     await _runImageUpload(retry: true);
   }
 
-  Future<void> _runImageUpload({required bool retry}) async {
+  Future<void> _runImageUpload({required bool retry}) =>
+      _diagnostics.upload(() => _uploadImage(retry: retry));
+
+  Future<void> _uploadImage({required bool retry}) async {
     if (_uploading) return;
     final controller = ref.read(
       mediaUploadTaskControllerProvider(_uploadTaskId).notifier,
