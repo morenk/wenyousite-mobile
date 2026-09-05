@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/features/app_shell/domain/mobile_update.dart';
 
 export 'package:wenyousite_mobile/features/app_shell/application/app_shell_ports.dart'
     show
+        MobileUpdateAvailabilityChecker,
         MobileUpdateException,
         MobileUpdateService,
         MobileUpdateStage,
@@ -60,7 +61,8 @@ class MethodChannelMobileUpdatePlatformBridge
   }
 }
 
-class DeviceMobileUpdateService implements MobileUpdateService {
+class DeviceMobileUpdateService
+    implements MobileUpdateService, MobileUpdateAvailabilityChecker {
   factory DeviceMobileUpdateService(Dio downloadDio) {
     return DeviceMobileUpdateService.withDependencies(downloadDio);
   }
@@ -100,6 +102,7 @@ class DeviceMobileUpdateService implements MobileUpdateService {
   final Future<Directory> Function() _temporaryDirectoryProvider;
   final Future<bool> Function(Uri uri) _externalLauncher;
   _VerifiedAndroidArtifact? _verifiedArtifact;
+  _AvailableAndroidRelease? _availableRelease;
 
   @override
   MobileClientPlatform get platform {
@@ -121,6 +124,34 @@ class DeviceMobileUpdateService implements MobileUpdateService {
       rethrow;
     } on Object catch (error) {
       throw MobileUpdateException('无法读取当前应用版本，请稍后重试。', error);
+    }
+  }
+
+  @override
+  Future<MobileUpdateAvailability> checkAvailability(
+    MobileUpdateInfo update,
+  ) async {
+    final uri = update.updateUri;
+    if (uri == null) return const MobileUpdateAvailability.preparing();
+    if (update.platform != MobileClientPlatform.android) {
+      return const MobileUpdateAvailability.available();
+    }
+    try {
+      final metadata = await _readAndroidReleaseMetadata(
+        uri,
+        targetBuild: update.targetBuild,
+      );
+      _availableRelease = _AvailableAndroidRelease(
+        uri: uri,
+        targetBuild: update.targetBuild,
+        metadata: metadata,
+      );
+      return MobileUpdateAvailability.available(
+        targetVersion: metadata.versionName,
+      );
+    } on Object {
+      _availableRelease = null;
+      return const MobileUpdateAvailability.preparing();
     }
   }
 
@@ -151,17 +182,16 @@ class DeviceMobileUpdateService implements MobileUpdateService {
       }
 
       onStage(MobileUpdateStage.checking);
-      final headResponse = await _downloadDio.headUri<Object?>(
-        uri,
-        options: Options(
-          headers: const {'Accept': _apkContentType},
-          followRedirects: true,
-        ),
-      );
-      final metadata = _AndroidReleaseMetadata.fromResponse(
-        headResponse,
-        targetBuild: update.targetBuild,
-      );
+      final availableRelease = _availableRelease;
+      final metadata =
+          availableRelease != null &&
+              availableRelease.uri == uri &&
+              availableRelease.targetBuild == update.targetBuild
+          ? availableRelease.metadata
+          : await _readAndroidReleaseMetadata(
+              uri,
+              targetBuild: update.targetBuild,
+            );
       final temporaryDirectory = await _temporaryDirectoryProvider();
       final updateDirectory = Directory(
         path.join(temporaryDirectory.path, 'wenyou_updates'),
@@ -225,6 +255,23 @@ class DeviceMobileUpdateService implements MobileUpdateService {
       return null;
     }
     return artifact;
+  }
+
+  Future<_AndroidReleaseMetadata> _readAndroidReleaseMetadata(
+    Uri uri, {
+    required int targetBuild,
+  }) async {
+    final response = await _downloadDio.headUri<Object?>(
+      uri,
+      options: Options(
+        headers: const {'Accept': _apkContentType},
+        followRedirects: true,
+      ),
+    );
+    return _AndroidReleaseMetadata.fromResponse(
+      response,
+      targetBuild: targetBuild,
+    );
   }
 
   Future<UpdateLaunchResult> _install(
@@ -429,6 +476,18 @@ class _VerifiedAndroidArtifact {
   final Uri uri;
   final int targetBuild;
   final File file;
+  final _AndroidReleaseMetadata metadata;
+}
+
+class _AvailableAndroidRelease {
+  const _AvailableAndroidRelease({
+    required this.uri,
+    required this.targetBuild,
+    required this.metadata,
+  });
+
+  final Uri uri;
+  final int targetBuild;
   final _AndroidReleaseMetadata metadata;
 }
 

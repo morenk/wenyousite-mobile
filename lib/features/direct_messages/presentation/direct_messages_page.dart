@@ -281,11 +281,15 @@ class _DirectConversationCard extends StatelessWidget {
                       ),
                       SizedBox(height: tokens.space4),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
+                              key: ValueKey(
+                                'direct-conversation-preview-${conversation.id}',
+                              ),
                               conversation.lastMessage?.displayText ?? '暂无消息',
-                              maxLines: 1,
+                              maxLines: 4,
                               overflow: TextOverflow.ellipsis,
                               style: previewStyle,
                             ),

@@ -316,6 +316,7 @@ class _NotificationBody extends StatelessWidget {
       children: [
         if (copy.isStructured) ...[
           Text.rich(
+            key: ValueKey('notification-copy-${item.id}'),
             TextSpan(
               style: bodyStyle,
               children: [
@@ -324,21 +325,22 @@ class _NotificationBody extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 TextSpan(text: ' ${copy.actionText}'),
+                if (copy.preview != null)
+                  TextSpan(
+                    text: '\n${copy.preview}',
+                    style: bodyStyle.copyWith(color: tokens.mutedText),
+                  ),
               ],
             ),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
           ),
-          if (copy.preview != null) ...[
-            SizedBox(height: tokens.space4),
-            Text(
-              copy.preview!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: bodyStyle.copyWith(color: tokens.mutedText),
-            ),
-          ],
         ] else
           Text(
+            key: ValueKey('notification-copy-${item.id}'),
             copy.fallbackText,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
             style: bodyStyle.copyWith(
               fontWeight: item.isRead ? FontWeight.w400 : FontWeight.w600,
             ),

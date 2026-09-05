@@ -5,6 +5,7 @@ import UIKit
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var imageGalleryChannel: ImageGalleryChannel?
+  private var clipboardNavigationChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
@@ -43,6 +44,28 @@ import UIKit
     }
     imageGalleryChannel = ImageGalleryChannel(messenger: registrar.messenger())
     imageGalleryChannel?.register()
+    clipboardNavigationChannel = FlutterMethodChannel(
+      name: "site.wenyou.app/clipboard_navigation",
+      binaryMessenger: registrar.messenger()
+    )
+    clipboardNavigationChannel?.setMethodCallHandler { call, result in
+      let pasteboard = UIPasteboard.general
+      switch call.method {
+      case "getChangeToken":
+        result("ios:\(pasteboard.changeCount)")
+      case "readSnapshot":
+        guard let text = pasteboard.string else {
+          result(nil)
+          return
+        }
+        result([
+          "text": text,
+          "changeToken": "ios:\(pasteboard.changeCount)",
+        ])
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 }
 

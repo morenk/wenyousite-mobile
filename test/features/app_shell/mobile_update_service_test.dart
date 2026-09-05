@@ -59,6 +59,41 @@ void main() {
     dio.close(force: true);
   });
 
+  test('预检确认安装包版本且下载时复用同一份发布元数据', () async {
+    final adapter = _ReleaseAdapter(_apkBytes);
+    final dio = Dio()..httpClientAdapter = adapter;
+    final bridge = _FakePlatformBridge();
+    final service = _service(dio, bridge, temporaryDirectory);
+
+    final availability = await service.checkAvailability(_update);
+    final result = await service.launchUpdate(
+      _update,
+      onStage: (_) {},
+      onProgress: (_) {},
+    );
+
+    expect(availability.isAvailable, isTrue);
+    expect(availability.targetVersion, '0.3.0-dev.37');
+    expect(result, UpdateLaunchResult.installerOpened);
+    expect(adapter.headCalls, 1);
+    expect(adapter.getCalls, 1);
+    dio.close(force: true);
+  });
+
+  test('安装包对象尚未上传时预检返回准备中且不开始下载', () async {
+    final adapter = _ReleaseAdapter(_apkBytes, headStatusCode: 404);
+    final dio = Dio()..httpClientAdapter = adapter;
+    final service = _service(dio, _FakePlatformBridge(), temporaryDirectory);
+
+    final availability = await service.checkAvailability(_update);
+
+    expect(availability.isAvailable, isFalse);
+    expect(availability.targetVersion, isNull);
+    expect(adapter.headCalls, 1);
+    expect(adapter.getCalls, 0);
+    dio.close(force: true);
+  });
+
   test('未知来源权限返回后复用本次已验证 APK，不再次请求或计算下载', () async {
     final adapter = _ReleaseAdapter(_apkBytes);
     final dio = Dio()..httpClientAdapter = adapter;
@@ -260,11 +295,13 @@ class _ReleaseAdapter implements HttpClientAdapter {
   _ReleaseAdapter(
     this.bytes, {
     this.applicationId = 'site.wenyou.app',
+    this.headStatusCode = 200,
     String? advertisedSha256,
   }) : advertisedSha256 = advertisedSha256 ?? sha256.convert(bytes).toString();
 
   final Uint8List bytes;
   final String applicationId;
+  final int headStatusCode;
   final String advertisedSha256;
   int headCalls = 0;
   int getCalls = 0;
@@ -286,7 +323,11 @@ class _ReleaseAdapter implements HttpClientAdapter {
     };
     if (options.method == 'HEAD') {
       headCalls += 1;
-      return ResponseBody.fromBytes(const [], 200, headers: headers);
+      return ResponseBody.fromBytes(
+        const [],
+        headStatusCode,
+        headers: headStatusCode == 200 ? headers : const {},
+      );
     }
     getCalls += 1;
     return ResponseBody.fromBytes(bytes, 200, headers: headers);

@@ -55,8 +55,8 @@ void main() {
     expect(find.byKey(const Key('notification-filter-menu')), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNothing);
     expect(find.text('回复与提及'), findsNothing);
-    expect(find.text('骰子猫 回复了你', findRichText: true), findsOneWidget);
-    expect(find.text('雾港见'), findsOneWidget);
+    expect(find.textContaining('骰子猫 回复了你', findRichText: true), findsOneWidget);
+    expect(find.textContaining('雾港见', findRichText: true), findsOneWidget);
     expect(find.byKey(const Key('notification-unread-summary')), findsNothing);
     final unreadDecoration =
         tester
@@ -76,6 +76,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('主题=thread-1，帖子=post-7'), findsOneWidget);
     expect(repository.readIds, ['notification-1']);
+  });
+
+  testWidgets('结构化与普通通知正文总计最多显示四行', (tester) async {
+    final repository = _FakeRepository(
+      items: [
+        _item('structured-long', preview: '第一行\n第二行\n第三行\n第四行\n第五行'),
+        _fallbackItem('fallback-long'),
+      ],
+    );
+    final router = _router();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(router.dispose);
+    addTearDown(container.dispose);
+    await _pumpAuthenticated(tester, container, router);
+
+    for (final id in ['structured-long', 'fallback-long']) {
+      final copy = tester.widget<Text>(
+        find.byKey(ValueKey('notification-copy-$id')),
+      );
+      expect(copy.maxLines, 4);
+      expect(copy.overflow, TextOverflow.ellipsis);
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('消息中心主栏目与紧凑通知筛选无布局溢出', (tester) async {
@@ -136,7 +159,10 @@ void main() {
     addTearDown(container.dispose);
     await _pumpAuthenticated(tester, container, router);
 
-    expect(find.text('骰子猫 回复了阿忠', findRichText: true), findsOneWidget);
+    expect(
+      find.textContaining('骰子猫 回复了阿忠', findRichText: true),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('notification-nested-reply')));
     await tester.pumpAndSettle();
     expect(find.text('回复页=thread-1/floor-2/reply-9'), findsOneWidget);
@@ -389,6 +415,7 @@ NotificationListItem _item(
     threadId: 'thread-1',
     postId: 'post-7',
   ),
+  String preview = '雾港见',
 }) {
   return NotificationListItem(
     id: id,
@@ -400,11 +427,23 @@ NotificationListItem _item(
       actorName: '骰子猫',
       replyTargetUserId: replyTargetUserId,
       replyTargetName: replyTargetName,
-      preview: '雾港见',
+      preview: preview,
     ),
     target: target,
     actor: const NotificationActor(id: 'actor-1', username: '骰子猫', level: 4),
     isRead: isRead,
+    createdAt: DateTime.now(),
+  );
+}
+
+NotificationListItem _fallbackItem(String id) {
+  return NotificationListItem(
+    id: id,
+    recipientUserId: 'viewer-user',
+    kind: NotificationKind.system,
+    content: '第一行\n第二行\n第三行\n第四行\n第五行',
+    target: const NotificationTarget(kind: NotificationTargetKind.none),
+    isRead: false,
     createdAt: DateTime.now(),
   );
 }

@@ -84,6 +84,28 @@ void main() {
     expect(find.text('第二位用户'), findsOneWidget);
   });
 
+  testWidgets('会话列表的最后消息最多显示四行并省略其余内容', (tester) async {
+    final repository = _FakeRepository(
+      firstPreview: '第一行\n第二行\n第三行\n第四行\n第五行不会完整显示',
+    );
+    final router = _router();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(repository),
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final preview = tester.widget<Text>(
+      find.byKey(const ValueKey('direct-conversation-preview-conversation-1')),
+    );
+    expect(preview.maxLines, 4);
+    expect(preview.overflow, TextOverflow.ellipsis);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
     testWidgets('$width dp 私信中心无布局溢出', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -155,9 +177,10 @@ GoRouter _router() {
 }
 
 class _FakeRepository implements DirectMessageRepository {
-  _FakeRepository({this.failLoadMoreOnce = false});
+  _FakeRepository({this.failLoadMoreOnce = false, this.firstPreview = '你好'});
 
   bool failLoadMoreOnce;
+  final String firstPreview;
   final List<DirectConversationView> views = [];
 
   @override
@@ -187,7 +210,7 @@ class _FakeRepository implements DirectMessageRepository {
       );
     }
     return CursorPage(
-      items: [_acceptedConversation()],
+      items: [_acceptedConversation(content: firstPreview)],
       cursor: 'conversation-1',
       hasMore: true,
     );
@@ -254,6 +277,7 @@ final _now = DateTime.now().subtract(const Duration(minutes: 1));
 DirectConversation _acceptedConversation({
   String id = 'conversation-1',
   String name = '小油',
+  String content = '你好',
 }) {
   return DirectConversation(
     id: id,
@@ -267,7 +291,7 @@ DirectConversation _acceptedConversation({
     lastMessage: DirectMessagePreview(
       id: 'message-$id',
       senderId: 'user-1',
-      content: '你好',
+      content: content,
       hasImage: false,
       hasSticker: false,
       isRecalled: false,

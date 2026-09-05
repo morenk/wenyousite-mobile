@@ -36,6 +36,7 @@ class MobileUpdateInfo {
     required this.currentVersion,
     required this.currentBuild,
     required this.targetBuild,
+    this.targetVersion,
     this.updateUri,
   });
 
@@ -44,10 +45,38 @@ class MobileUpdateInfo {
   final String currentVersion;
   final int currentBuild;
   final int targetBuild;
+  final String? targetVersion;
   final Uri? updateUri;
 
   bool get isRequired => kind == MobileUpdateKind.required;
   bool get canStartUpdate => updateUri != null;
+
+  MobileUpdateInfo withTargetVersion(String? value) {
+    final normalized = value?.trim();
+    return MobileUpdateInfo(
+      kind: kind,
+      platform: platform,
+      currentVersion: currentVersion,
+      currentBuild: currentBuild,
+      targetBuild: targetBuild,
+      targetVersion: normalized == null || normalized.isEmpty
+          ? null
+          : normalized,
+      updateUri: updateUri,
+    );
+  }
+}
+
+class MobileUpdateAvailability {
+  const MobileUpdateAvailability.available({this.targetVersion})
+    : isAvailable = true;
+
+  const MobileUpdateAvailability.preparing()
+    : isAvailable = false,
+      targetVersion = null;
+
+  final bool isAvailable;
+  final String? targetVersion;
 }
 
 MobileUpdateInfo? evaluateMobileUpdate({

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -192,7 +194,7 @@ void main() {
     expect(notifications.fetchCalls, greaterThanOrEqualTo(1));
   });
 
-  testWidgets('未知契约主版本显示不可绕过的升级页', (tester) async {
+  testWidgets('未知契约主版本且新版未就绪时显示友好等待页', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -207,8 +209,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('需要升级温油站'), findsOneWidget);
-    expect(find.text('兼容信息：6.0.0'), findsOneWidget);
+    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(find.text('当前版本暂时无法继续使用。新版正在发布，请稍后再试。'), findsOneWidget);
+    expect(find.textContaining('兼容信息'), findsNothing);
+    expect(find.byKey(const Key('mobile-update-recheck')), findsOneWidget);
     expect(find.text('首页'), findsNothing);
   });
 
@@ -265,7 +269,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('需要升级温油站'), findsOneWidget);
+    expect(find.text('新版正在准备中'), findsOneWidget);
     expect(find.text('首页'), findsNothing);
   });
 
@@ -330,7 +334,7 @@ void main() {
     expect(updateService.launchCalls, 1);
   });
 
-  testWidgets('推荐更新可跳过并记住该目标构建', (tester) async {
+  testWidgets('推荐更新不阻断进入应用且可记住该目标构建', (tester) async {
     final dismissStore = _MemoryRecommendedUpdateDismissStore();
     await tester.pumpWidget(
       ProviderScope(
@@ -357,11 +361,201 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('温油站有新版本'), findsOneWidget);
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
+    expect(find.byKey(const Key('recommended-update-banner')), findsOneWidget);
     await tester.tap(find.byKey(const Key('mobile-update-dismiss')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
     expect(dismissStore.dismissedBuild, 10);
+  });
+
+  testWidgets('推荐安装包预检尚未完成时也先进入应用', (tester) async {
+    final availability = Completer<MobileUpdateAvailability>();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.0.0',
+              android: const MobilePlatformPolicy(
+                recommendedBuild: 10,
+                updateUrl: _androidUpdateUrl,
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(
+            _FakeMobileUpdateService(
+              build: 7,
+              availabilityCompleter: availability,
+            ),
+          ),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
+    expect(find.byKey(const Key('recommended-update-banner')), findsNothing);
+
+    availability.complete(
+      const MobileUpdateAvailability.available(targetVersion: '0.4.0'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('recommended-update-banner')), findsOneWidget);
+    expect(find.textContaining('0.4.0+10'), findsOneWidget);
+  });
+
+  testWidgets('必须更新但下载地址尚未发布时等待并允许重新检查', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.0.0',
+              android: const MobilePlatformPolicy(
+                minimumSupportedBuild: 8,
+                recommendedBuild: 10,
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(
+            _FakeMobileUpdateService(build: 7),
+          ),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(find.text('当前 0.3.0+7'), findsOneWidget);
+    expect(find.byKey(const Key('mobile-update-start')), findsNothing);
+    expect(find.byKey(const Key('mobile-update-recheck')), findsOneWidget);
+  });
+
+  testWidgets('安装包尚未上传时等待，重新检查发现安装包后显示更新入口', (tester) async {
+    final repository = _FixedMetaRepository(
+      contractVersion: '6.0.0',
+      android: const MobilePlatformPolicy(
+        recommendedBuild: 10,
+        updateUrl: _androidUpdateUrl,
+      ),
+    );
+    final updateService = _FakeMobileUpdateService(
+      build: 7,
+      releaseAvailable: false,
+      targetVersion: '0.4.0',
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(repository),
+          mobileUpdateServiceProvider.overrideWithValue(updateService),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('新版正在准备中'), findsOneWidget);
+    expect(updateService.availabilityChecks, 1);
+
+    updateService.releaseAvailable = true;
+    await tester.tap(find.byKey(const Key('mobile-update-recheck')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('需要更新后继续'), findsOneWidget);
+    expect(find.text('可用0.4.0+10'), findsOneWidget);
+    expect(updateService.availabilityChecks, 2);
+  });
+
+  testWidgets('等待页在前台定时发现安装包后自动显示更新入口', (tester) async {
+    final updateService = _FakeMobileUpdateService(
+      build: 7,
+      releaseAvailable: false,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '6.0.0',
+              android: const MobilePlatformPolicy(
+                recommendedBuild: 10,
+                updateUrl: _androidUpdateUrl,
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(updateService),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('新版正在准备中'), findsOneWidget);
+
+    updateService.releaseAvailable = true;
+    await tester.pump(const Duration(seconds: 60));
+    await tester.pumpAndSettle();
+
+    expect(find.text('需要更新后继续'), findsOneWidget);
+    expect(updateService.availabilityChecks, 2);
+  });
+
+  testWidgets('当前版本仍可用而推荐安装包未就绪时直接进入应用', (tester) async {
+    final updateService = _FakeMobileUpdateService(
+      build: 7,
+      releaseAvailable: false,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          metaRepositoryProvider.overrideWithValue(
+            _FixedMetaRepository(
+              contractVersion: '5.0.0',
+              android: const MobilePlatformPolicy(
+                recommendedBuild: 10,
+                updateUrl: _androidUpdateUrl,
+              ),
+            ),
+          ),
+          mobileUpdateServiceProvider.overrideWithValue(updateService),
+          recommendedUpdateDismissStoreProvider.overrideWithValue(
+            _MemoryRecommendedUpdateDismissStore(),
+          ),
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          homeRepositoryProvider.overrideWithValue(_EmptyHomeRepository()),
+        ],
+        child: const WenyouApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('home-category-menu')), findsOneWidget);
+    expect(find.byKey(const Key('recommended-update-banner')), findsNothing);
   });
 
   testWidgets('iOS 推荐更新交给 TestFlight', (tester) async {
@@ -839,18 +1033,38 @@ class _FixedMetaRepository implements MetaRepository {
   }
 }
 
-class _FakeMobileUpdateService implements MobileUpdateService {
+class _FakeMobileUpdateService
+    implements MobileUpdateService, MobileUpdateAvailabilityChecker {
   _FakeMobileUpdateService({
     required this.build,
     this.clientPlatform = MobileClientPlatform.android,
+    this.releaseAvailable = true,
+    this.targetVersion,
+    this.availabilityCompleter,
   });
 
   final int build;
   final MobileClientPlatform clientPlatform;
+  bool releaseAvailable;
+  final String? targetVersion;
+  final Completer<MobileUpdateAvailability>? availabilityCompleter;
   int launchCalls = 0;
+  int availabilityChecks = 0;
 
   @override
   MobileClientPlatform get platform => clientPlatform;
+
+  @override
+  Future<MobileUpdateAvailability> checkAvailability(
+    MobileUpdateInfo update,
+  ) async {
+    availabilityChecks += 1;
+    final pending = availabilityCompleter;
+    if (pending != null) return pending.future;
+    return releaseAvailable
+        ? MobileUpdateAvailability.available(targetVersion: targetVersion)
+        : const MobileUpdateAvailability.preparing();
+  }
 
   @override
   Future<InstalledAppInfo> readInstalledApp() async {

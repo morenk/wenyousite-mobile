@@ -30,6 +30,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private var keyboardInsetsChannel: MethodChannel? = null
+    private var clipboardNavigationChannel: ClipboardNavigationChannel? = null
     private var imageGalleryChannel: ImageGalleryChannel? = null
     private var documentSaverChannel: DocumentSaverChannel? = null
     private var keyboardInsetsActive = false
@@ -45,6 +46,8 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         EditorClipboardChannel(this).register(flutterEngine)
+        clipboardNavigationChannel =
+            ClipboardNavigationChannel(this).also { it.register(flutterEngine) }
         imageGalleryChannel = ImageGalleryChannel(this).also { it.register(flutterEngine) }
         documentSaverChannel = DocumentSaverChannel(this).also { it.register(flutterEngine) }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL)
@@ -125,6 +128,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        clipboardNavigationChannel?.dispose()
+        clipboardNavigationChannel = null
         imageGalleryChannel?.dispose()
         imageGalleryChannel = null
         documentSaverChannel?.dispose()
