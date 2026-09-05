@@ -69,6 +69,9 @@ dependencies:
     git:
       url: https://github.com/singerdmx/flutter-quill.git
       ref: c273155025d1255335a6dd3e6ecd3700d29f103e
+  sentry: 9.29.0
+  package_info_plus: ^10.2.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
