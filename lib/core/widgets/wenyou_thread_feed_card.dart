@@ -100,7 +100,7 @@ class _ThreadHeader extends StatelessWidget {
     final tokens = context.wenyouTokens;
     return Row(
       key: Key('home-thread-metadata-${thread.id}'),
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _ThreadAuthorAvatar(
           threadId: thread.id,
@@ -156,38 +156,42 @@ class _ThreadMetadata extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Flexible(
-          flex: 4,
-          child: Text(
-            thread.ownerName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.wenyouCaptionEmphasis,
-          ),
+        Row(
+          key: Key('home-thread-identity-${thread.id}'),
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      thread.ownerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.wenyouCaptionEmphasis,
+                    ),
+                  ),
+                  SizedBox(width: tokens.space4),
+                  WenyouLevelBadge(level: thread.ownerLevel),
+                ],
+              ),
+            ),
+            SizedBox(width: tokens.space12),
+            WenyouTimeText(
+              key: Key('home-thread-time-${thread.id}'),
+              value: thread.activityAt,
+              semanticsPrefix: '最近活跃时间：',
+              maxLines: 1,
+              style: Theme.of(context).textTheme.wenyouUtilityCaption.copyWith(
+                color: tokens.mutedText,
+              ),
+            ),
+          ],
         ),
-        SizedBox(width: tokens.space4),
-        WenyouLevelBadge(level: thread.ownerLevel),
-        SizedBox(width: tokens.space4),
-        Flexible(
-          flex: 6,
-          child: _ThreadContextLine(thread: thread, category: category),
-        ),
-        SizedBox(width: tokens.space4),
-        Flexible(
-          flex: 2,
-          child: WenyouTimeText(
-            value: thread.activityAt,
-            prefix: '· ',
-            semanticsPrefix: '最近活跃时间：',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.wenyouUtilityCaption.copyWith(color: tokens.mutedText),
-          ),
-        ),
+        SizedBox(height: tokens.space4),
+        _ThreadContextLine(thread: thread, category: category),
       ],
     );
   }

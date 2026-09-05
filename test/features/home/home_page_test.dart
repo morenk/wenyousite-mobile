@@ -69,16 +69,28 @@ void main() {
     final owner = find.text('温柔测试员');
     final contextLine = find.byKey(const Key('home-thread-context-thread-1'));
     final metadata = find.byKey(const Key('home-thread-metadata-thread-1'));
+    final identity = find.byKey(const Key('home-thread-identity-thread-1'));
+    final time = find.descendant(
+      of: find.byKey(const Key('home-thread-time-thread-1')),
+      matching: find.byType(Text),
+    );
     final preview = tester.widget<Text>(
       find.byKey(const Key('home-thread-preview-thread-1')),
     );
     expect(tester.getSize(avatar), const Size.square(32));
-    expect(tester.getSize(metadata).height, 32);
+    expect(tester.getSize(metadata).height, greaterThan(32));
+    expect(tester.getSize(metadata).height, lessThan(42));
     expect(
       tester.widget<Text>(owner).style,
       same(Theme.of(tester.element(owner)).textTheme.wenyouCaptionEmphasis),
     );
-    expect(tester.getCenter(owner).dy, tester.getCenter(contextLine).dy);
+    expect(tester.getCenter(owner).dy, tester.getCenter(time).dy);
+    expect(
+      tester.getTopLeft(contextLine).dy - tester.getBottomLeft(identity).dy,
+      4,
+    );
+    expect(tester.widget<Text>(time).data, matches(RegExp(r'^\d+ 小时前$')));
+    _expectTextFits(tester, time);
     expect(tester.widget<Text>(contextLine).maxLines, 1);
     expect(tester.widget<Text>(contextLine).data, '角色扮演·招募中·置顶');
     expect(preview.maxLines, 4);
@@ -286,7 +298,7 @@ void main() {
     });
   }
 
-  testWidgets('320dp 两倍字号下主题元信息保持单行且不挤压四行摘要', (tester) async {
+  testWidgets('320dp 两倍字号下主题元信息保持两行且完整显示相对时间', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 900);
     tester.platformDispatcher.textScaleFactorTestValue = 2;
@@ -302,14 +314,27 @@ void main() {
     final metadata = find.byKey(
       const Key('home-thread-metadata-thread-avatar'),
     );
+    final identity = find.byKey(
+      const Key('home-thread-identity-thread-avatar'),
+    );
     final contextLine = find.byKey(
       const Key('home-thread-context-thread-avatar'),
+    );
+    final time = find.descendant(
+      of: find.byKey(const Key('home-thread-time-thread-avatar')),
+      matching: find.byType(Text),
     );
     final preview = tester.widget<Text>(
       find.byKey(const Key('home-thread-preview-thread-avatar')),
     );
     expect(tester.takeException(), isNull);
-    expect(tester.getSize(metadata).height, lessThan(40));
+    expect(tester.getSize(metadata).height, lessThan(80));
+    expect(
+      tester.getTopLeft(contextLine).dy - tester.getBottomLeft(identity).dy,
+      4,
+    );
+    expect(tester.widget<Text>(time).data, matches(RegExp(r'^\d+ 分钟前$')));
+    _expectTextFits(tester, time);
     expect(tester.widget<Text>(contextLine).maxLines, 1);
     expect(preview.maxLines, 4);
   });
@@ -450,6 +475,20 @@ Future<void> _settleHomeBrandMark(WidgetTester tester) async {
   await tester.pump();
 }
 
+void _expectTextFits(WidgetTester tester, Finder finder) {
+  final text = tester.widget<Text>(finder);
+  final painter = TextPainter(
+    text: TextSpan(text: text.data, style: text.style),
+    textDirection: Directionality.of(tester.element(finder)),
+    textScaler: MediaQuery.textScalerOf(tester.element(finder)),
+    maxLines: 1,
+  )..layout();
+  expect(
+    tester.getSize(finder).width,
+    greaterThanOrEqualTo(painter.width - 0.01),
+  );
+}
+
 class _FakeHomeRepository implements HomeRepository {
   _FakeHomeRepository({
     this.failFirstRequest = false,
@@ -580,7 +619,7 @@ final _threadWithAvatar = HomeThreadCardModel(
   playerCount: 1,
   postCount: 3,
   tipTotal: '0',
-  lastActivityAt: DateTime(2026, 8, 12),
+  lastActivityAt: DateTime.now().subtract(const Duration(minutes: 30)),
 );
 
 final _threadWithManyTags = HomeThreadCardModel(
