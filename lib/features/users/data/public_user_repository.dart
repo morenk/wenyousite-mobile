@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
 import 'package:wenyousite_mobile/features/users/domain/public_user_models.dart';
@@ -191,7 +191,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       coverImageUrls: _safeHttpUrls(dto.coverImages),
@@ -225,7 +225,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       coverImageUrls: _safeHttpUrls(dto.coverImages),

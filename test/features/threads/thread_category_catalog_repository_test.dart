@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
-import 'package:wenyousite_mobile/features/threads/data/thread_category_catalog_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 
 void main() {
   test('公开分类目录保留服务端用户 label 并过滤停用项', () async {

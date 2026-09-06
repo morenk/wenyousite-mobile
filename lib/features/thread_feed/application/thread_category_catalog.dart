@@ -1,26 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
-
-abstract interface class ThreadCategoryCatalogRepository {
-  Future<List<HomeCategory>> fetchThreadCategories();
-}
-
-final threadCategoryCatalogRepositoryProvider =
-    Provider<ThreadCategoryCatalogRepository>((ref) {
-      return const _UnboundThreadCategoryCatalogRepository();
-    });
-
-class _UnboundThreadCategoryCatalogRepository
-    implements ThreadCategoryCatalogRepository {
-  const _UnboundThreadCategoryCatalogRepository();
-
-  @override
-  Future<List<HomeCategory>> fetchThreadCategories() {
-    return Future.error(StateError('主题分类目录尚未在应用组合根绑定。'));
-  }
-}
+import 'package:wenyousite_mobile/features/thread_feed/application/thread_category_catalog_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 enum ThreadCategoryCatalogPhase { loading, ready, failed }
 
@@ -32,7 +14,7 @@ class ThreadCategoryCatalogState {
   });
 
   final ThreadCategoryCatalogPhase phase;
-  final List<HomeCategory> categories;
+  final List<ThreadCategory> categories;
   final bool isRefreshing;
 
   ThreadCategoryPresentation? resolve(String? categorySlug) {
@@ -55,11 +37,27 @@ class ThreadCategoryCatalogController
     extends StateNotifier<ThreadCategoryCatalogState> {
   ThreadCategoryCatalogController(this._repository, {bool autoStart = true})
     : super(const ThreadCategoryCatalogState()) {
+    if (_repository case final ThreadCategoryCatalogUpdates updates) {
+      _subscription = updates.changes.listen((categories) {
+        if (!mounted) return;
+        state = ThreadCategoryCatalogState(
+          phase: ThreadCategoryCatalogPhase.ready,
+          categories: categories,
+        );
+      });
+    }
     if (autoStart) unawaited(load());
   }
 
   final ThreadCategoryCatalogRepository _repository;
   Future<void>? _pendingLoad;
+  StreamSubscription<List<ThreadCategory>>? _subscription;
+
+  @override
+  void dispose() {
+    unawaited(_subscription?.cancel());
+    super.dispose();
+  }
 
   Future<void> load({bool refresh = false}) {
     if (!mounted) return Future.value();
@@ -83,7 +81,9 @@ class ThreadCategoryCatalogController
       isRefreshing: hadSnapshot && refresh,
     );
     try {
-      final categories = await _repository.fetchThreadCategories();
+      final categories = await _repository.fetchThreadCategories(
+        refresh: refresh,
+      );
       if (!mounted) return;
       state = ThreadCategoryCatalogState(
         phase: ThreadCategoryCatalogPhase.ready,

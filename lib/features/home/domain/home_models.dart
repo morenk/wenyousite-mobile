@@ -1,4 +1,4 @@
-export 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+export 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 enum HomeFeedSort {
   recommended('recommended', '推荐'),

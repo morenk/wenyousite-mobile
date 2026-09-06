@@ -6,12 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
+import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
+import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/users/application/avatar_controller.dart';
 import 'package:wenyousite_mobile/features/users/application/me_profile_controller.dart';
@@ -533,6 +535,7 @@ class _AvatarTaskFeedback extends StatelessWidget {
       return _MediaFailureNotice(
         key: const Key('me-avatar-failure'),
         failure: failure,
+        uploadFailure: state.uploadFailure,
         message: _avatarFailureMessage(state, failure),
         retryKey: const Key('me-avatar-retry'),
         retryLabel: _avatarRetryLabel(state),
@@ -584,6 +587,7 @@ class _CoverTaskFeedback extends StatelessWidget {
       return _MediaFailureNotice(
         key: const Key('me-profile-cover-failure'),
         failure: failure,
+        uploadFailure: state.uploadFailure,
         message: _coverFailureMessage(state, failure),
         retryKey: const Key('me-profile-cover-retry'),
         retryLabel: _coverRetryLabel(state),
@@ -623,6 +627,7 @@ class _CoverTaskFeedback extends StatelessWidget {
 class _MediaFailureNotice extends StatefulWidget {
   const _MediaFailureNotice({
     required this.failure,
+    this.uploadFailure,
     required this.message,
     required this.retryKey,
     required this.retryLabel,
@@ -631,6 +636,7 @@ class _MediaFailureNotice extends StatefulWidget {
   });
 
   final ApiFailure failure;
+  final MediaUploadFailure? uploadFailure;
   final String message;
   final Key retryKey;
   final String retryLabel;
@@ -659,12 +665,22 @@ class _MediaFailureNoticeState extends State<_MediaFailureNotice> {
   Widget build(BuildContext context) {
     return WenyouStatusBanner(
       tone: WenyouStatusTone.error,
-      message: widget.message,
-      detail: wenyouFailureDetail(widget.failure, treatAsWrite: true),
-      action: TextButton(
-        key: widget.retryKey,
-        onPressed: widget.onRetry,
-        child: Text(widget.retryLabel),
+      message: widget.uploadFailure?.presentation.message ?? widget.message,
+      detail:
+          widget.uploadFailure?.presentation.problemDetail ??
+          wenyouFailureDetail(widget.failure, treatAsWrite: true),
+      action: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.uploadFailure case final upload?)
+            CopyDiagnosticButton(diagnosticId: upload.diagnosticId),
+          if (widget.uploadFailure?.canRetry ?? true)
+            TextButton(
+              key: widget.retryKey,
+              onPressed: widget.onRetry,
+              child: Text(widget.retryLabel),
+            ),
+        ],
       ),
     );
   }

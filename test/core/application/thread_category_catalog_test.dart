@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 void main() {
   const categories = [
-    HomeCategory(
+    ThreadCategory(
       id: 'category-deduction',
       slug: 'DEDUCTION',
       name: '演绎',
@@ -33,7 +33,7 @@ void main() {
       resolveThreadCategoryPresentation(
         'LEAKED_CONSTANT',
         categories: const [
-          HomeCategory(
+          ThreadCategory(
             id: 'category-leaked',
             slug: 'LEAKED_CONSTANT',
             name: 'LEAKED_CONSTANT',
@@ -89,13 +89,13 @@ void main() {
 }
 
 class _ControlledRepository implements ThreadCategoryCatalogRepository {
-  final pending = <Completer<List<HomeCategory>>>[];
+  final pending = <Completer<List<ThreadCategory>>>[];
   int calls = 0;
 
   @override
-  Future<List<HomeCategory>> fetchThreadCategories() {
+  Future<List<ThreadCategory>> fetchThreadCategories({bool refresh = false}) {
     calls += 1;
-    final completer = Completer<List<HomeCategory>>();
+    final completer = Completer<List<ThreadCategory>>();
     pending.add(completer);
     return completer.future;
   }

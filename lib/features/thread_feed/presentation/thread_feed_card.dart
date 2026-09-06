@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 const _threadAuthorAvatarSize = 32.0;
 
@@ -24,7 +23,7 @@ class ThreadFeedCard extends StatelessWidget {
   final ThreadFeedCardModel thread;
   final ThreadCategoryPresentation? category;
   final VoidCallback onTap;
-  final ValueChanged<HomeThreadTag>? onTagTap;
+  final ValueChanged<ThreadFeedTag>? onTagTap;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +118,7 @@ class _ThreadHeader extends StatelessWidget {
 class _ThreadContextLine extends StatelessWidget {
   const _ThreadContextLine({required this.thread, required this.category});
 
-  final HomeThreadCardModel thread;
+  final ThreadFeedCardModel thread;
   final ThreadCategoryPresentation? category;
 
   @override
@@ -138,7 +137,7 @@ class _ThreadContextLine extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.wenyouCaption.copyWith(
-        color: thread.status == HomeThreadStatus.recruiting
+        color: thread.status == ThreadFeedStatus.recruiting
             ? tokens.brandForeground
             : tokens.mutedText,
         fontWeight: FontWeight.w500,
@@ -265,7 +264,7 @@ class _ThreadFooter extends StatelessWidget {
   const _ThreadFooter({required this.thread, required this.onTagTap});
 
   final ThreadFeedCardModel thread;
-  final ValueChanged<HomeThreadTag>? onTagTap;
+  final ValueChanged<ThreadFeedTag>? onTagTap;
 
   @override
   Widget build(BuildContext context) {
@@ -312,8 +311,8 @@ class _ThreadTagSummary extends StatelessWidget {
   });
 
   final String threadId;
-  final List<HomeThreadTag> tags;
-  final ValueChanged<HomeThreadTag>? onTagTap;
+  final List<ThreadFeedTag> tags;
+  final ValueChanged<ThreadFeedTag>? onTagTap;
 
   @override
   Widget build(BuildContext context) {

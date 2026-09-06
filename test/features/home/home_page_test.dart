@@ -130,7 +130,7 @@ void main() {
   });
 
   testWidgets('首页切换分类时页签保持稳定且只在内容区展示加载骨架', (tester) async {
-    final categoryPage = Completer<CursorPage<HomeThreadCardModel>>();
+    final categoryPage = Completer<CursorPage<ThreadFeedCardModel>>();
     final repository = _FakeHomeRepository(categoryPage: categoryPage);
     await tester.pumpWidget(_homeApp(repository));
     await tester.pumpAndSettle();
@@ -187,7 +187,7 @@ void main() {
       _homeApp(
         _FakeHomeRepository(
           categories: const [
-            HomeCategory(
+            ThreadCategory(
               id: 'category-deduction',
               slug: 'DEDUCTION',
               name: '演绎',
@@ -495,7 +495,7 @@ class _FakeHomeRepository implements HomeRepository {
     this.items,
     this.categoryPage,
     this.categories = const [
-      HomeCategory(
+      ThreadCategory(
         id: 'category-rpg',
         slug: 'RPG',
         name: '角色扮演',
@@ -506,17 +506,17 @@ class _FakeHomeRepository implements HomeRepository {
   });
 
   final bool failFirstRequest;
-  final List<HomeThreadCardModel>? items;
-  final Completer<CursorPage<HomeThreadCardModel>>? categoryPage;
-  final List<HomeCategory> categories;
+  final List<ThreadFeedCardModel>? items;
+  final Completer<CursorPage<ThreadFeedCardModel>>? categoryPage;
+  final List<ThreadCategory> categories;
   int threadCalls = 0;
   HomeFeedQuery? lastQuery;
 
   @override
-  Future<List<HomeCategory>> fetchCategories() async => categories;
+  Future<List<ThreadCategory>> fetchCategories() async => categories;
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,
@@ -536,18 +536,18 @@ class _FakeHomeRepository implements HomeRepository {
   }
 }
 
-final _thread = HomeThreadCardModel(
+final _thread = ThreadFeedCardModel(
   id: 'thread-1',
   title: '星海旅团',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: true,
   ownerId: 'user-1',
   ownerName: '温柔测试员',
   ownerLevel: 3,
   preview:
       '向星海出发，在旧航路熄灭前寻找失落的信标。旅团将在每一次选择里共同记录角色关系、沿途见闻与尚未揭晓的秘密，并为后来者留下可以继续书写的航行日志。',
-  tags: const [HomeThreadTag(id: 'tag-1', name: '太空歌剧')],
+  tags: const [ThreadFeedTag(id: 'tag-1', name: '太空歌剧')],
   coverImageUrls: const [],
   memberCount: 5,
   playerCount: 2,
@@ -556,11 +556,11 @@ final _thread = HomeThreadCardModel(
   lastActivityAt: DateTime.now().subtract(const Duration(hours: 5)),
 );
 
-final _deductionThread = HomeThreadCardModel(
+final _deductionThread = ThreadFeedCardModel(
   id: 'thread-deduction',
   title: '演绎主题',
   categorySlug: 'DEDUCTION',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   ownerName: '楼主',
   ownerLevel: 1,
   memberCount: 1,
@@ -568,11 +568,11 @@ final _deductionThread = HomeThreadCardModel(
   lastActivityAt: DateTime.utc(2026, 8, 10),
 );
 
-final _historicalThread = HomeThreadCardModel(
+final _historicalThread = ThreadFeedCardModel(
   id: 'thread-historical',
   title: '旧分类主题',
   categorySlug: 'ARCHIVED_WORLD',
-  status: HomeThreadStatus.closed,
+  status: ThreadFeedStatus.closed,
   ownerName: '楼主',
   ownerLevel: 1,
   memberCount: 1,
@@ -580,11 +580,11 @@ final _historicalThread = HomeThreadCardModel(
   lastActivityAt: DateTime.utc(2026, 8, 10),
 );
 
-final _threadWithCover = HomeThreadCardModel(
+final _threadWithCover = ThreadFeedCardModel(
   id: 'thread-cover',
   title: '带封面的长篇主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'user-1',
   ownerName: '温柔测试员',
@@ -602,11 +602,11 @@ final _threadWithCover = HomeThreadCardModel(
   lastActivityAt: DateTime.now().subtract(const Duration(hours: 10)),
 );
 
-final _threadWithAvatar = HomeThreadCardModel(
+final _threadWithAvatar = ThreadFeedCardModel(
   id: 'thread-avatar',
   title: '有头像的主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'user-avatar',
   ownerName: '一位名字很长但仍需完整保持卡片节奏的头像作者',
@@ -622,21 +622,21 @@ final _threadWithAvatar = HomeThreadCardModel(
   lastActivityAt: DateTime.now().subtract(const Duration(minutes: 30)),
 );
 
-final _threadWithManyTags = HomeThreadCardModel(
+final _threadWithManyTags = ThreadFeedCardModel(
   id: 'thread-many-tags',
   title: '标签密度测试主题',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: true,
   ownerId: 'user-1',
   ownerName: '温柔测试员',
   ownerLevel: 3,
   preview: '标签只占固定底栏，不推动正文高度。',
   tags: const [
-    HomeThreadTag(id: 'tag-1', name: '太空歌剧'),
-    HomeThreadTag(id: 'tag-2', name: '长期演绎'),
-    HomeThreadTag(id: 'tag-3', name: '角色招募'),
-    HomeThreadTag(id: 'tag-4', name: '轻松日常'),
+    ThreadFeedTag(id: 'tag-1', name: '太空歌剧'),
+    ThreadFeedTag(id: 'tag-2', name: '长期演绎'),
+    ThreadFeedTag(id: 'tag-3', name: '角色招募'),
+    ThreadFeedTag(id: 'tag-4', name: '轻松日常'),
   ],
   coverImageUrls: const [],
   memberCount: 5,
@@ -646,11 +646,11 @@ final _threadWithManyTags = HomeThreadCardModel(
   lastActivityAt: DateTime(2026, 8, 15),
 );
 
-final _secondThread = HomeThreadCardModel(
+final _secondThread = ThreadFeedCardModel(
   id: 'thread-2',
   title: '第二段接力',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.finished,
+  status: ThreadFeedStatus.finished,
   isPinned: false,
   ownerId: 'user-2',
   ownerName: '接力作者',

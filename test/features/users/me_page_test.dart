@@ -863,6 +863,8 @@ void main() {
     expect(failure, findsOneWidget);
     expect(find.text('背景图上传失败，请重试。'), findsOneWidget);
     expect(find.textContaining('问题编号：cover-upload-request'), findsOneWidget);
+    expect(find.textContaining('问题环节：内容处理'), findsOneWidget);
+    expect(find.text('复制问题详情'), findsOneWidget);
     expect(find.text('重试上传'), findsOneWidget);
     expect(tester.getRect(failure).top, lessThan(640));
   });
@@ -1435,6 +1437,9 @@ class _FailingProfileCoverUploadGateway implements MediaUploadGateway {
         const ApiFailure(
           userMessage: '背景图上传失败，请重试。',
           requestId: 'cover-upload-request',
+          source: FailureSource.content,
+          reason: FailureReason.contractViolation,
+          diagnosticCode: 'media.cover.fixture.rejected',
         ),
       ),
     );

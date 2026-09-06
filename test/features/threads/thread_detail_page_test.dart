@@ -3443,12 +3443,12 @@ class _FakeHomeRepository implements HomeRepository {
   int threadCalls = 0;
 
   @override
-  Future<List<HomeCategory>> fetchCategories() async => const [
-    HomeCategory(id: 'category-rpg', slug: 'RPG', name: '角色扮演', sortOrder: 1),
+  Future<List<ThreadCategory>> fetchCategories() async => const [
+    ThreadCategory(id: 'category-rpg', slug: 'RPG', name: '角色扮演', sortOrder: 1),
   ];
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,
@@ -3918,11 +3918,11 @@ final _latestFloorPost = ThreadLatestPostModel(
   createdAt: _recentFixtureTime,
 );
 
-final _homeThread = HomeThreadCardModel(
+final _homeThread = ThreadFeedCardModel(
   id: 'thread-1',
   title: '星海旅团',
   categorySlug: 'RPG',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'user-1',
   ownerName: '温柔测试员',

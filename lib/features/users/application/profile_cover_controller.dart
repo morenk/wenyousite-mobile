@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
@@ -26,6 +27,7 @@ class ProfileCoverState {
     this.phase = ProfileCoverPhase.idle,
     this.progress,
     this.failure,
+    this.uploadFailure,
     this.failedOperation,
     this.pendingWebMediaId,
     this.pendingMobileMediaId,
@@ -36,6 +38,7 @@ class ProfileCoverState {
   final ProfileCoverPhase phase;
   final MediaUploadProgress? progress;
   final ApiFailure? failure;
+  final MediaUploadFailure? uploadFailure;
   final ProfileCoverOperation? failedOperation;
   final String? pendingWebMediaId;
   final String? pendingMobileMediaId;
@@ -67,7 +70,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
   ProfileCoverImageSelection? _selection;
 
   Future<MediaUploadInput?> pickImage() async {
-    if (state.isBusy) return null;
+    if (!mounted || state.isBusy) return null;
     _selection = null;
     _resetTasks();
     state = const ProfileCoverState(phase: ProfileCoverPhase.picking);
@@ -95,14 +98,14 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
   Future<ProfileCoverUpdateResult?> setSelection(
     ProfileCoverImageSelection selection,
   ) {
-    if (state.isBusy) return Future.value();
+    if (!mounted || state.isBusy) return Future.value();
     _selection = selection;
     _resetTasks();
     return _continueSet();
   }
 
   Future<ProfileCoverUpdateResult?> remove() async {
-    if (state.isBusy) return null;
+    if (!mounted || state.isBusy) return null;
     _selection = null;
     state = const ProfileCoverState(phase: ProfileCoverPhase.removing);
     try {
@@ -122,6 +125,9 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
   }
 
   Future<ProfileCoverUpdateResult?> retry() {
+    if (!mounted || state.uploadFailure?.canRetry == false) {
+      return Future.value();
+    }
     if (state.isBusy) return Future.value();
     if (state.failedOperation == ProfileCoverOperation.remove) return remove();
     if (_selection == null &&
@@ -136,6 +142,7 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
   }
 
   void cancelUpload() {
+    if (!mounted) return;
     if (state.phase != ProfileCoverPhase.uploadingWeb &&
         state.phase != ProfileCoverPhase.uploadingMobile) {
       return;
@@ -248,11 +255,8 @@ class ProfileCoverController extends StateNotifier<ProfileCoverState> {
             pendingMobileMediaId: mobileMediaId,
             hasPendingSelection: _selection != null,
             previewBytes: _selection?.mobile.bytes,
-            failure: ApiFailure(
-              userMessage: failure.userMessage,
-              businessCode: failure.businessCode,
-              requestId: failure.requestId,
-            ),
+            failure: failure.failure,
+            uploadFailure: failure,
           );
     return null;
   }
@@ -280,6 +284,7 @@ final profileCoverControllerProvider =
       ProfileCoverState
     >(
       (ref) {
+        ref.watch(sessionScopeProvider);
         final webUploadProvider = mediaUploadTaskControllerProvider(
           _webProfileCoverUploadTaskId,
         );
@@ -301,6 +306,7 @@ final profileCoverControllerProvider =
         return controller;
       },
       dependencies: [
+        sessionScopeProvider,
         profileCoverImagePickerPortProvider,
         profileCoverRepositoryProvider,
         mediaUploadTaskControllerProvider,

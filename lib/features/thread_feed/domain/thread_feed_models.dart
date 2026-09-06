@@ -1,19 +1,19 @@
-export 'package:wenyousite_mobile/core/models/thread_category_presentation.dart'
-    show HomeCategory;
+export 'package:wenyousite_mobile/features/thread_feed/domain/thread_category_presentation.dart'
+    show ThreadCategory;
 
-enum HomeThreadStatus {
+enum ThreadFeedStatus {
   recruiting('招募中'),
   closed('已停招'),
   finished('已完结'),
   unknown('状态未知');
 
-  const HomeThreadStatus(this.label);
+  const ThreadFeedStatus(this.label);
 
   final String label;
 }
 
-class HomeThreadTag {
-  const HomeThreadTag({required this.id, required this.name});
+class ThreadFeedTag {
+  const ThreadFeedTag({required this.id, required this.name});
 
   final String id;
   final String name;
@@ -46,7 +46,7 @@ class ThreadFeedCardModel {
   final String id;
   final String title;
   final String? categorySlug;
-  final HomeThreadStatus status;
+  final ThreadFeedStatus status;
   final bool isPinned;
   final bool isPrivate;
   final bool isPublished;
@@ -55,7 +55,7 @@ class ThreadFeedCardModel {
   final String? ownerAvatarUrl;
   final int ownerLevel;
   final String? preview;
-  final List<HomeThreadTag> tags;
+  final List<ThreadFeedTag> tags;
   final List<String> coverImageUrls;
   final int memberCount;
   final int? playerCount;
@@ -66,8 +66,6 @@ class ThreadFeedCardModel {
 
   DateTime get activityAt => lastActivityAt ?? createdAt!;
 }
-
-typedef HomeThreadCardModel = ThreadFeedCardModel;
 
 DateTime latestThreadActivityAt({
   required DateTime updatedAt,

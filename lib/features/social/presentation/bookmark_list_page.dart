@@ -6,16 +6,15 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_thread_feed_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 
 class BookmarkListPage extends ConsumerWidget {
   const BookmarkListPage({
@@ -464,10 +463,10 @@ ThreadFeedCardModel _threadModel(BookmarkListItem item) {
     title: item.title,
     categorySlug: item.categorySlug,
     status: switch (item.status) {
-      BookmarkedThreadStatus.recruiting => HomeThreadStatus.recruiting,
-      BookmarkedThreadStatus.closed => HomeThreadStatus.closed,
-      BookmarkedThreadStatus.finished => HomeThreadStatus.finished,
-      BookmarkedThreadStatus.unknown => HomeThreadStatus.unknown,
+      BookmarkedThreadStatus.recruiting => ThreadFeedStatus.recruiting,
+      BookmarkedThreadStatus.closed => ThreadFeedStatus.closed,
+      BookmarkedThreadStatus.finished => ThreadFeedStatus.finished,
+      BookmarkedThreadStatus.unknown => ThreadFeedStatus.unknown,
     },
     isPinned: item.isPinned,
     isPrivate: item.isPrivate,

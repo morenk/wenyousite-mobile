@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_controller.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
 import 'package:wenyousite_mobile/features/search/presentation/search_page.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 import '../../support/fake_thread_category_catalog.dart';
 
@@ -329,7 +329,7 @@ SearchThreadResult _threadResult() {
     id: 'thread-1',
     title: '星海旅团',
     categorySlug: 'DEDUCTION',
-    status: HomeThreadStatus.recruiting,
+    status: ThreadFeedStatus.recruiting,
     ownerId: 'user-1',
     ownerName: '温柔测试员',
     ownerLevel: 3,

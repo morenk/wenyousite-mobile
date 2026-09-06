@@ -32,8 +32,8 @@ class HomeFeedState {
   });
 
   final HomeFeedPhase phase;
-  final List<HomeCategory> categories;
-  final List<HomeThreadCardModel> items;
+  final List<ThreadCategory> categories;
+  final List<ThreadFeedCardModel> items;
   final HomeFeedQuery query;
   final String? cursor;
   final bool hasMore;
@@ -45,8 +45,8 @@ class HomeFeedState {
 
   HomeFeedState copyWith({
     HomeFeedPhase? phase,
-    List<HomeCategory>? categories,
-    List<HomeThreadCardModel>? items,
+    List<ThreadCategory>? categories,
+    List<ThreadFeedCardModel>? items,
     HomeFeedQuery? query,
     Object? cursor = _unset,
     bool? hasMore,
@@ -99,8 +99,8 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
         _repository.fetchCategories(),
         _repository.fetchThreads(query: state.query),
       ]);
-      final categories = results[0] as List<HomeCategory>;
-      final page = results[1] as CursorPage<HomeThreadCardModel>;
+      final categories = results[0] as List<ThreadCategory>;
+      final page = results[1] as CursorPage<ThreadFeedCardModel>;
       if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: HomeFeedPhase.ready,
@@ -249,8 +249,8 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
             : Future.value(state.categories),
         _repository.fetchThreads(query: state.query),
       ]);
-      final categories = results[0] as List<HomeCategory>;
-      final page = results[1] as CursorPage<HomeThreadCardModel>;
+      final categories = results[0] as List<ThreadCategory>;
+      final page = results[1] as CursorPage<ThreadFeedCardModel>;
       if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = state.copyWith(
         phase: HomeFeedPhase.ready,

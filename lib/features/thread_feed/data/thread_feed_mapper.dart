@@ -1,7 +1,7 @@
 import 'package:wenyou_api/wenyou_api.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
-HomeThreadCardModel mapHomeThreadCardResponse(
+ThreadFeedCardModel mapThreadFeedCardResponse(
   HomeThreadListItemResponseDto item,
 ) {
   final preview = item.preview.trim();
@@ -22,7 +22,7 @@ HomeThreadCardModel mapHomeThreadCardResponse(
     tags: item.topicTags
         .map(
           (relation) =>
-              HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+              ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
         )
         .toList(growable: false),
     coverImageUrls: item.coverImages
@@ -52,17 +52,17 @@ String? _safeHttpUrl(String? value) {
   return value;
 }
 
-HomeThreadStatus _mapHomeThreadStatus(
+ThreadFeedStatus _mapHomeThreadStatus(
   HomeThreadListItemResponseDtoStatusEnum value,
 ) {
   if (value == HomeThreadListItemResponseDtoStatusEnum.RECRUITING) {
-    return HomeThreadStatus.recruiting;
+    return ThreadFeedStatus.recruiting;
   }
   if (value == HomeThreadListItemResponseDtoStatusEnum.CLOSED) {
-    return HomeThreadStatus.closed;
+    return ThreadFeedStatus.closed;
   }
   if (value == HomeThreadListItemResponseDtoStatusEnum.FINISHED) {
-    return HomeThreadStatus.finished;
+    return ThreadFeedStatus.finished;
   }
-  return HomeThreadStatus.unknown;
+  return ThreadFeedStatus.unknown;
 }

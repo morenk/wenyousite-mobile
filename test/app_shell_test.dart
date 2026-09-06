@@ -968,10 +968,10 @@ class _CompatibleMetaRepository implements MetaRepository {
 
 class _EmptyHomeRepository implements HomeRepository {
   @override
-  Future<List<HomeCategory>> fetchCategories() async => const [];
+  Future<List<ThreadCategory>> fetchCategories() async => const [];
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,

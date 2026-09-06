@@ -9,6 +9,7 @@
 | app-shell | in_progress | 主壳与在线更新已交付；正式签名升级安装仍需真机验收 | [应用壳](app-shell.md) |
 | auth | in_progress | 认证与账号恢复已交付；公网账号回归仍待补齐 | [认证](auth.md) |
 | home | in_progress | 发现流与分类筛选已交付；持续做真实性能验收 | [首页](home.md) |
+| thread-feed | in_progress | 主题卡片、DTO 映射与分类目录已统一；真机消费者回归待完成 | [只读主题信息流](thread-feed.md) |
 | moments | in_progress | 动态主闭环、独立收藏夹与评论通知定位已交付；公网真机联调待补齐 | [动态](moments.md) |
 | tags | in_progress | 公开标签与标签工作台已交付；公网联调待补齐 | [标签](tags.md) |
 | search | in_progress | 四类搜索已交付；主题结果 cursor 分页待接入 | [搜索](search.md) |

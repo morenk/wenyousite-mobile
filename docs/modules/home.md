@@ -27,7 +27,7 @@
 
 ## 6. 状态模型和数据流
 
-`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 threads，home 仓储只编排分类和信息流查询。搜索、本人收藏和用户主页的主题列表把各自 DTO 映射到同一共享读模型，不维护平行卡片字段。仓储接口位于 `home/application`，`main.dart` 组合根绑定 API data 适配器，控制器不直接导入 data。作者头像与卡片封面都只接受 HTTP(S) URL；头像缺失或不安全时映射为 null 并由共享卡片统一降级，封面只消费服务端 `coverImages` 的唯一首图，空数组时不预留图片区。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
+`HomeFeedQuery` 与 `CursorPage` 组成不可变查询状态；主题卡片读模型与 OpenAPI 映射归属 thread_feed，home 仓储只编排分类和信息流查询。搜索、本人收藏和用户主页的主题列表把各自 DTO 映射到同一共享读模型，不维护平行卡片字段。仓储接口位于 `home/application`，`main.dart` 组合根绑定 API data 适配器，控制器不直接导入 data。作者头像与卡片封面都只接受 HTTP(S) URL；头像缺失或不安全时映射为 null 并由共享卡片统一降级，封面只消费服务端 `coverImages` 的唯一首图，空数组时不预留图片区。控制器复用 `RequestEpoch` 丢弃过期响应，并用 `mergeUniqueBy` 在分页合并时按主题 ID 去重。
 
 分类 slug 只用于筛选和请求；卡片元信息通过共享分类展示模型读取当前名称。匹配 `DEDUCTION` 时显示“演绎”，不在当前目录中的历史值显示“历史分类”，缺少分类显示“未分类”；任何 slug 都不进入用户文案。
 
@@ -36,6 +36,8 @@
 游客不请求受保护数据；私密主题不得因本地缓存或错误合并泄露。登录关系状态缺失时安全降级。
 
 ## 8. 本地存储、缓存及失效规则
+
+分类读取委托 thread_feed 的唯一目录端口，首页进入与下拉刷新显式请求刷新；与同时进入的标签、创作、管理或目录展示共用在途请求，不再独立映射分类 DTO。
 
 只读列表依赖统一 `ViewerScope`（会话归属与内容可见性版本）。登录、退出、切号或拉黑关系变化会重建查询与分页，从默认发现首页重新读取；同账号 Token 刷新保留当前列表。
 
@@ -55,7 +57,7 @@
 
 主题卡作者头像缺图时复用共享首字符降级，活跃时间使用 Foundation 短时间并向辅助技术提供完整时间；玩家和回复计数达到阈值后紧凑显示，完整值保留在语义标签中。
 
-主题卡片、纯文字 `#标签` 链接与映射复用 threads/core 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签以 Foundation `brandStrong` 呈现并进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
+主题卡片、纯文字 `#标签` 链接与映射复用 thread_feed 读模型，不依赖 tags 的页面实现；卡片图片走媒体降级规则，标签以 Foundation `brandStrong` 呈现并进入公开标签页，主题导航遵循[导航](../architecture/navigation.md)和[依赖边界](../architecture/dependencies.md)。
 
 ## 11. 测试场景与验收条件
 

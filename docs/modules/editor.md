@@ -60,7 +60,7 @@ v5 独立图片保存时会与前后正文、协议空段及其他块保持 Mark
 
 `ThreadComposeState` 分离加载阶段、账号/分类引导、表单字段、Markdown 正文、本地保存状态、当前服务端主题草稿版本、切换/保存/发布动作和失败反馈；`RemoteThreadDraftsState` 独立管理草稿摘要、刷新与删除，选择后由创作控制器读取完整详情。二者归属 `threads`。`PostComposerState` 单独管理短会话 Markdown、创建幂等确认、正文/帖子版本和云端冲突，不复用主题实体状态。主题设置与子贴管理由 threads 状态持有元数据表单与版本，不创建 Markdown 编辑生命周期；详情页正文统一交给 `PostComposerState` 和共享编辑器。`ContentDraftsController` 以每个编辑器会话为 key，持有槽位快照、自动保存状态、当前槽位 1 版本及防抖任务；页面在面板关闭后继续观察该状态。主题创作、云端草稿和帖子编辑器以 `SessionScope(accountId, generation)` 隔离：Access Token 刷新保持控制器与当前内容，登录、退出、会话失效或切号才重建。业务控制器只接收 Markdown，不持有 Quill Delta；Quill 生命周期、文档 generation 与 Delta 签名同步、格式错误、选区和图片/表情/骰子插入由公共 `RichEditorSession` 管理。系统粘贴统一由该会话接管，不再回退到 Quill 默认粘贴；仅 Web clipboard v1/v2 envelope 经过 `WenyouSiteClipboardParser` 白名单重建后作为结构化片段，其余外部文本与 HTML 都按普通文本插入。粘贴读取期间若选区、文档 Delta 签名或文档 generation 改变则整次拒绝，序列化后超过正文 10000 字符也不会部分写入。每次显式保存、发布、云草稿或本地快照前都先等待在途粘贴，再忽略缓存脏标记从当前 Delta 重新编码；失败时保留当前正文并展示可执行错误。`MarkdownDeltaCodec.encode` 对外部、手输和 IME 文本统一转义可成为 Markdown 语法的标点，并在完整编码出口再次字面化 Markdown v4 不支持结构，因此格式切换或残留属性也不能绕过提交边界；只有工具栏、协议插入器、合法完整站内坐标和已通过 clipboard v1/v2 白名单的站内片段创建语义节点。主题端口位于 `threads/application`，提及与本地快照端口位于 `editor/application`，适配器由 `main.dart` 组合根绑定。图片上传进度、失败与取消由 media 的独立上传任务控制器管理。恢复五槽位正文或切换完整主题时递增文档 generation。`MentionCandidatesController(threadId)` 独立管理当前查询的 loading/ready/failed、候选和请求失败，以 generation 丢弃乱序响应；页面只读取光标前最多 26 个字符检测提及，仓储只映射最多 20 个服务端授权的关注用户和帖内标记玩家，未知关系失败关闭。`MarkdownDeltaDocument` 返回内存 Delta 和兼容问题列表，未知或损坏协议节点锁定显示并保留原 token。
 
-云端主题草稿摘要的分类元信息通过 threads/core 共享目录解析，只渲染“演绎”等用户 label。目录加载不阻塞草稿列表，刷新草稿时同时刷新目录；未知 slug 显示“历史分类”而不显示原值。
+云端主题草稿摘要的分类元信息通过 thread_feed 共享目录解析，只渲染“演绎”等用户 label。目录加载不阻塞草稿列表，刷新草稿时同时刷新目录；未知 slug 显示“历史分类”而不显示原值。
 
 ## 7. 鉴权、权限和隐私规则
 

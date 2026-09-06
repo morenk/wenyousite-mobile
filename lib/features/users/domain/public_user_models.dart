@@ -1,4 +1,4 @@
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/domain/profile_cover_models.dart';
 
 enum PublicUserContentTab {
@@ -13,7 +13,7 @@ enum PublicUserContentTab {
   final String description;
 }
 
-typedef PublicUserThreadStatus = HomeThreadStatus;
+typedef PublicUserThreadStatus = ThreadFeedStatus;
 
 class PublicUserProfileModel {
   const PublicUserProfileModel({

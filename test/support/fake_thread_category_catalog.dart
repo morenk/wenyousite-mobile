@@ -1,11 +1,11 @@
-import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 class FakeThreadCategoryCatalogRepository
     implements ThreadCategoryCatalogRepository {
   FakeThreadCategoryCatalogRepository({
     this.categories = const [
-      HomeCategory(
+      ThreadCategory(
         id: 'category-deduction',
         slug: 'DEDUCTION',
         name: '演绎',
@@ -15,12 +15,14 @@ class FakeThreadCategoryCatalogRepository
     this.failure,
   });
 
-  final List<HomeCategory> categories;
+  final List<ThreadCategory> categories;
   final Object? failure;
   int calls = 0;
 
   @override
-  Future<List<HomeCategory>> fetchThreadCategories() async {
+  Future<List<ThreadCategory>> fetchThreadCategories({
+    bool refresh = false,
+  }) async {
     calls += 1;
     if (failure case final error?) throw error;
     return categories;

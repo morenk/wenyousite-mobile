@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 
 void main() {
   test('分类按服务端顺序映射且过滤停用项', () async {
@@ -15,7 +16,7 @@ void main() {
 
     final categories = await ApiHomeRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).fetchCategories();
 
     expect(categories.map((item) => item.slug), ['RPG', 'DEDUCTION']);
@@ -38,8 +39,11 @@ void main() {
       ),
     ).thenAnswer((_) async => _threadsResponse());
 
-    final page = await ApiHomeRepository(threadsApi, categoriesApi)
-        .fetchThreads(
+    final page =
+        await ApiHomeRepository(
+          threadsApi,
+          ApiThreadCategoryCatalogRepository(categoriesApi),
+        ).fetchThreads(
           query: const HomeFeedQuery(
             categorySlug: 'RPG',
             tagId: 'tag-1',
@@ -53,7 +57,7 @@ void main() {
     expect(page.hasMore, isTrue);
     final item = page.items.single;
     expect(item.title, '星海旅团');
-    expect(item.status, HomeThreadStatus.finished);
+    expect(item.status, ThreadFeedStatus.finished);
     expect(item.ownerName, '温柔测试员');
     expect(item.ownerAvatarUrl, 'https://cdn.example.com/avatar.webp');
     expect(item.ownerLevel, 3);
@@ -84,7 +88,7 @@ void main() {
 
     final page = await ApiHomeRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).fetchThreads(query: const HomeFeedQuery());
 
     expect(page.items.single.ownerAvatarUrl, isNull);
@@ -108,7 +112,7 @@ void main() {
 
     final page = await ApiHomeRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).fetchThreads(query: const HomeFeedQuery());
 
     expect(page.items.single.lastActivityAt, latestActivityAt);

@@ -1,4 +1,4 @@
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 
@@ -46,7 +46,7 @@ class BookmarkListItem {
   final DateTime createdAt;
   final DateTime? lastActivityAt;
   final String? preview;
-  final List<HomeThreadTag> tags;
+  final List<ThreadFeedTag> tags;
   final List<String> coverImageUrls;
   final int memberCount;
   final int? playerCount;

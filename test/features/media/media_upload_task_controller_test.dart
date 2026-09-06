@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -187,13 +188,26 @@ void main() {
 
     final failed = controller.pickAndUpload();
     await Future<void>.value();
-    gateway.fail(
-      const ApiFailure(userMessage: '图片处理失败', requestId: 'request-one'),
+    const original = ApiFailure(
+      userMessage: '图片处理失败',
+      requestId: 'request-one',
+      source: FailureSource.content,
+      reason: FailureReason.contractViolation,
+      diagnosticCode: 'media.fixture.rejected',
+      recoveryAction: FailureRecoveryAction.refresh,
     );
+    gateway.fail(original);
     expect(await failed, isNull);
     expect(container.read(provider).phase, MediaUploadTaskPhase.failed);
     expect(container.read(provider).failure?.userMessage, '图片处理失败');
     expect(container.read(provider).failure?.requestId, 'request-one');
+    final failure = container.read(provider).failure!;
+    expect(failure.failure, same(original));
+    expect(failure.presentation.sourceLabel, '内容处理');
+    expect(failure.presentation.problemNumber, 'request-one');
+    expect(failure.presentation.recoveryAction, FailureRecoveryAction.refresh);
+    expect(failure.diagnosticId, isNotNull);
+    expect(failure.diagnosticId, FailureDiagnostics.instance.idFor(original));
 
     final retried = controller.retryUpload();
     await Future<void>.value();

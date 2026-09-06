@@ -78,7 +78,7 @@ class _FakeTagRepository implements TagRepository {
         isActive: true,
       ),
       categories: const [
-        HomeCategory(
+        ThreadCategory(
           id: 'category-1',
           slug: 'DEDUCTION',
           name: '演绎',
@@ -90,7 +90,7 @@ class _FakeTagRepository implements TagRepository {
   }
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
     required String tagId,
     String? cursor,
     int limit = 20,
@@ -135,16 +135,16 @@ class _FakeTagRepository implements TagRepository {
   }
 }
 
-final _thread = HomeThreadCardModel(
+final _thread = ThreadFeedCardModel(
   id: 'thread-1',
   title: '星海旅团',
   categorySlug: 'DEDUCTION',
-  status: HomeThreadStatus.recruiting,
+  status: ThreadFeedStatus.recruiting,
   isPinned: false,
   ownerId: 'owner-1',
   ownerName: '楼主',
   ownerLevel: 1,
-  tags: const [HomeThreadTag(id: 'tag-1', name: '太空歌剧')],
+  tags: const [ThreadFeedTag(id: 'tag-1', name: '太空歌剧')],
   coverImageUrls: const [],
   memberCount: 2,
   playerCount: 1,

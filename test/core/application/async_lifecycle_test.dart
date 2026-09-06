@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/application/session_logout_controller.dart';
-import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
@@ -15,6 +13,8 @@ import 'package:wenyousite_mobile/features/auth/application/registration_control
 import 'package:wenyousite_mobile/features/tags/application/tag_repository_ports.dart';
 import 'package:wenyousite_mobile/features/tags/application/tag_threads_controller.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 void main() {
   for (final changedAccount in [false, true]) {
@@ -188,9 +188,10 @@ class _Remote extends Fake implements SessionRemote {
 }
 
 class _Categories extends Fake implements ThreadCategoryCatalogRepository {
-  final result = Completer<List<HomeCategory>>();
+  final result = Completer<List<ThreadCategory>>();
   @override
-  Future<List<HomeCategory>> fetchThreadCategories() => result.future;
+  Future<List<ThreadCategory>> fetchThreadCategories({bool refresh = false}) =>
+      result.future;
 }
 
 class _Tags extends Fake implements TagRepository {

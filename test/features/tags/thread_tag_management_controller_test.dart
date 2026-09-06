@@ -145,7 +145,7 @@ class _FakeTagRepository implements TagRepository {
   }
 
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchTagThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchTagThreads({
     required String tagId,
     String? cursor,
     int limit = 20,

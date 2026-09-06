@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_policy.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -19,6 +20,7 @@ class AvatarState {
     this.phase = AvatarPhase.idle,
     this.progress,
     this.failure,
+    this.uploadFailure,
     this.failedOperation,
     this.pendingMediaId,
     this.hasPendingInput = false,
@@ -28,6 +30,7 @@ class AvatarState {
   final AvatarPhase phase;
   final MediaUploadProgress? progress;
   final ApiFailure? failure;
+  final MediaUploadFailure? uploadFailure;
   final AvatarOperation? failedOperation;
   final String? pendingMediaId;
   final bool hasPendingInput;
@@ -52,7 +55,7 @@ class AvatarController extends StateNotifier<AvatarState> {
   MediaUploadInput? _pendingInput;
 
   Future<MediaUploadInput?> pickImage() async {
-    if (state.isBusy) return null;
+    if (!mounted || state.isBusy) return null;
     _pendingInput = null;
     _uploadTask.reset();
     state = const AvatarState(phase: AvatarPhase.picking);
@@ -79,7 +82,7 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   Future<AvatarUpdateResult?> setImage(MediaUploadInput input) async {
-    if (state.isBusy) return null;
+    if (!mounted || state.isBusy) return null;
     _pendingInput = null;
     try {
       _pendingInput = validateAvatarImageInput(input);
@@ -119,11 +122,8 @@ class AvatarController extends StateNotifier<AvatarState> {
           failedOperation: AvatarOperation.set,
           hasPendingInput: true,
           previewBytes: input.bytes,
-          failure: ApiFailure(
-            userMessage: failure.userMessage,
-            businessCode: failure.businessCode,
-            requestId: failure.requestId,
-          ),
+          failure: failure.failure,
+          uploadFailure: failure,
         );
         return null;
       }
@@ -143,7 +143,7 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   Future<AvatarUpdateResult?> remove() async {
-    if (state.isBusy) return null;
+    if (!mounted || state.isBusy) return null;
     state = const AvatarState(phase: AvatarPhase.removing);
     try {
       final result = await _avatarRepository.removeAvatar();
@@ -162,6 +162,9 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   Future<AvatarUpdateResult?> retry() {
+    if (!mounted || state.uploadFailure?.canRetry == false) {
+      return Future.value();
+    }
     if (state.isBusy) return Future<AvatarUpdateResult?>.value();
     if (state.failedOperation == AvatarOperation.remove) return remove();
     final mediaId = state.pendingMediaId;
@@ -171,6 +174,7 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   void cancelUpload() {
+    if (!mounted) return;
     if (state.phase != AvatarPhase.uploading) return;
     _uploadTask.cancel();
     _pendingInput = null;
@@ -178,6 +182,7 @@ class AvatarController extends StateNotifier<AvatarState> {
   }
 
   void clearFailure() {
+    if (!mounted) return;
     if (state.phase != AvatarPhase.failed) return;
     _pendingInput = null;
     state = const AvatarState();
@@ -232,6 +237,7 @@ class AvatarController extends StateNotifier<AvatarState> {
 final avatarControllerProvider =
     StateNotifierProvider.autoDispose<AvatarController, AvatarState>(
       (ref) {
+        ref.watch(sessionScopeProvider);
         final uploadProvider = mediaUploadTaskControllerProvider(
           _avatarUploadTaskId,
         );
@@ -246,6 +252,7 @@ final avatarControllerProvider =
         return controller;
       },
       dependencies: [
+        sessionScopeProvider,
         avatarImagePickerPortProvider,
         avatarRepositoryProvider,
         mediaUploadTaskControllerProvider,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/user_facing_failure.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -19,34 +20,22 @@ enum MediaUploadTaskPhase {
 
 class MediaUploadFailure {
   const MediaUploadFailure({
-    this.presentation,
-    String? userMessage,
+    required this.failure,
+    required this.presentation,
     required this.canRetry,
-    this.businessCode,
-    this.requestId,
     this.diagnosticId,
-  }) : assert(presentation != null || userMessage != null),
-       _legacyUserMessage = userMessage;
+  });
 
-  final UserFacingFailure? presentation;
-  final String? _legacyUserMessage;
+  /// Keep the typed cause and its diagnostic association intact across features.
+  final ApiFailure failure;
+  final UserFacingFailure presentation;
   final bool canRetry;
-  final int? businessCode;
-  final String? requestId;
   final String? diagnosticId;
 
-  UserFacingFailure get resolvedPresentation =>
-      presentation ??
-      UserFacingFailure(
-        title: '图片上传失败',
-        message: _legacyUserMessage!,
-        recoveryAction: FailureRecoveryAction.retry,
-        placement: FailurePresentationPlacement.inline,
-        retainContent: true,
-        actionLabel: '重试',
-      );
-
-  String get userMessage => resolvedPresentation.message;
+  UserFacingFailure get resolvedPresentation => presentation;
+  String get userMessage => presentation.message;
+  int? get businessCode => failure.businessCode;
+  String? get requestId => failure.requestId;
 }
 
 class MediaUploadTaskState {
@@ -289,6 +278,7 @@ class MediaUploadTaskController
     );
     if (error is ApiFailure) {
       return MediaUploadFailure(
+        failure: error,
         diagnosticId: diagnosticId,
         presentation: UserFacingFailure.fromApi(
           error,
@@ -299,11 +289,10 @@ class MediaUploadTaskController
           treatAsWrite: true,
         ),
         canRetry: canRetry,
-        businessCode: error.businessCode,
-        requestId: error.requestId,
       );
     }
     return MediaUploadFailure(
+      failure: mapApplicationFailure(error, '图片没有上传成功，请重试。'),
       diagnosticId: diagnosticId,
       presentation: const UserFacingFailure(
         title: '图片上传失败',

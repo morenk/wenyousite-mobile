@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 void main() {
   test('搜索仓库映射综合、动态、分类与主题内结果契约', () async {
@@ -68,7 +68,7 @@ void main() {
     expect(moments.cursor, 'moment-cursor-2');
     expect(threads.single.title, '星海旅团');
     expect(threads.single.ownerName, '已注销用户');
-    expect(threads.single.status, HomeThreadStatus.recruiting);
+    expect(threads.single.status, ThreadFeedStatus.recruiting);
     expect(threads.single.preview, '向星海出发');
     expect(threads.single.tags.single.name, '太空歌剧');
     expect(threads.single.coverImageUrls, [

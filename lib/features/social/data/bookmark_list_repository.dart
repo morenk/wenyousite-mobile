@@ -2,11 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart'
     show BookmarkListRepository, bookmarkListRepositoryProvider;
@@ -155,7 +155,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       coverImageUrls: dto.coverImages

@@ -1,7 +1,7 @@
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/tags/domain/tag_models.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 enum ThreadTagManagementPhase { loading, ready, failed }
 
@@ -94,8 +94,8 @@ class TagThreadsState {
 
   final TagThreadsPhase phase;
   final TopicTagModel? tag;
-  final List<HomeCategory> categories;
-  final List<HomeThreadCardModel> items;
+  final List<ThreadCategory> categories;
+  final List<ThreadFeedCardModel> items;
   final String? cursor;
   final bool hasMore;
   final ApiFailure? failure;
@@ -107,8 +107,8 @@ class TagThreadsState {
   TagThreadsState copyWith({
     TagThreadsPhase? phase,
     Object? tag = _unset,
-    List<HomeCategory>? categories,
-    List<HomeThreadCardModel>? items,
+    List<ThreadCategory>? categories,
+    List<ThreadFeedCardModel>? items,
     Object? cursor = _unset,
     bool? hasMore,
     Object? failure = _unset,

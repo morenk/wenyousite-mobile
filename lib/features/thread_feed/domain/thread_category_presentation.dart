@@ -1,5 +1,5 @@
-class HomeCategory {
-  const HomeCategory({
+class ThreadCategory {
+  const ThreadCategory({
     required this.id,
     required this.slug,
     required this.name,
@@ -65,7 +65,7 @@ class ThreadCategoryPresentation {
 
 ThreadCategoryPresentation? resolveThreadCategoryPresentation(
   String? categorySlug, {
-  required Iterable<HomeCategory> categories,
+  required Iterable<ThreadCategory> categories,
   ThreadCategoryCatalogAvailability availability =
       ThreadCategoryCatalogAvailability.available,
 }) {

@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
@@ -31,12 +32,12 @@ void main() {
       () => threadsApi.threadsFindById(id: 'thread-1'),
     ).thenAnswer((_) async => _findResponse(_detail(category: 'ARCHIVED')));
     when(
-      categoriesApi.threadCategoriesList,
+      () => categoriesApi.threadCategoriesList(extra: any(named: 'extra')),
     ).thenAnswer((_) async => _categoryResponse());
 
     final result = await ApiThreadManagementRepository(
       threadsApi,
-      categoriesApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
     ).load('thread-1');
 
     expect(result.thread.version, 7);
@@ -62,7 +63,10 @@ void main() {
         _detail(title: '新标题', status: ThreadDetailResponseDtoStatusEnum.CLOSED),
       ),
     );
-    final repository = ApiThreadManagementRepository(threadsApi, categoriesApi);
+    final repository = ApiThreadManagementRepository(
+      threadsApi,
+      ApiThreadCategoryCatalogRepository(categoriesApi),
+    );
 
     final updated = await repository.update(
       current: _snapshot(isOwner: false),
@@ -119,7 +123,7 @@ void main() {
     );
     final repository = ApiThreadManagementRepository(
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
     );
 
     final archive = await repository.exportArchive(
@@ -159,7 +163,7 @@ void main() {
     final threadsApi = _MockThreadsApi();
     final repository = ApiThreadManagementRepository(
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
     );
 
     await expectLater(
@@ -197,7 +201,7 @@ void main() {
     );
     final repository = ApiThreadManagementRepository(
       threadsApi,
-      _MockCategoriesApi(),
+      ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
     );
 
     await expectLater(

@@ -1,4 +1,4 @@
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 enum SearchResultTab {
   overview('综合', '一次查看主题、用户和正文摘要'),

@@ -24,11 +24,11 @@ void main() {
 }
 
 class _Repository implements HomeRepository {
-  final result = Completer<CursorPage<HomeThreadCardModel>>();
+  final result = Completer<CursorPage<ThreadFeedCardModel>>();
   @override
-  Future<List<HomeCategory>> fetchCategories() async => [];
+  Future<List<ThreadCategory>> fetchCategories() async => [];
   @override
-  Future<CursorPage<HomeThreadCardModel>> fetchThreads({
+  Future<CursorPage<ThreadFeedCardModel>> fetchThreads({
     required HomeFeedQuery query,
     String? cursor,
     int limit = 20,

@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/core/models/thread_feed_models.dart';
 import 'package:wenyousite_mobile/core/network/api_call.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
@@ -11,6 +10,7 @@ import 'package:wenyousite_mobile/features/moments/data/moment_search_mapper.dar
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart';
 import 'package:wenyousite_mobile/features/search/domain/search_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/features/search/application/search_repository_ports.dart'
     show SearchRepository, searchRepositoryProvider;
@@ -180,7 +180,7 @@ class ApiSearchRepository implements SearchRepository {
       tags: dto.topicTags
           .map(
             (relation) =>
-                HomeThreadTag(id: relation.tag.id, name: relation.tag.name),
+                ThreadFeedTag(id: relation.tag.id, name: relation.tag.name),
           )
           .toList(growable: false),
       memberCount: dto.count.members.toInt(),
@@ -195,17 +195,17 @@ class ApiSearchRepository implements SearchRepository {
     );
   }
 
-  HomeThreadStatus _mapThreadStatus(SearchThreadResponseDtoStatusEnum value) {
+  ThreadFeedStatus _mapThreadStatus(SearchThreadResponseDtoStatusEnum value) {
     if (value == SearchThreadResponseDtoStatusEnum.RECRUITING) {
-      return HomeThreadStatus.recruiting;
+      return ThreadFeedStatus.recruiting;
     }
     if (value == SearchThreadResponseDtoStatusEnum.CLOSED) {
-      return HomeThreadStatus.closed;
+      return ThreadFeedStatus.closed;
     }
     if (value == SearchThreadResponseDtoStatusEnum.FINISHED) {
-      return HomeThreadStatus.finished;
+      return ThreadFeedStatus.finished;
     }
-    return HomeThreadStatus.unknown;
+    return ThreadFeedStatus.unknown;
   }
 
   SearchUserResult _mapUser(SearchUserResponseDto dto) {

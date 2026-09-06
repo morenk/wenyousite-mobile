@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
-import 'package:wenyousite_mobile/core/models/thread_category_presentation.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
-import 'package:wenyousite_mobile/features/threads/domain/thread_feed_models.dart';
-import 'package:wenyousite_mobile/features/threads/presentation/thread_feed_card.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_widgets.dart';
 
 void main() {
   testWidgets('主题卡片向 TalkBack 暴露单一可操作描述', (tester) async {
@@ -16,10 +15,10 @@ void main() {
         theme: AppTheme.light,
         home: Scaffold(
           body: HomeThreadCard(
-            thread: HomeThreadCardModel(
+            thread: ThreadFeedCardModel(
               id: 'thread-1',
               title: '海边旅店',
-              status: HomeThreadStatus.recruiting,
+              status: ThreadFeedStatus.recruiting,
               isPinned: false,
               ownerId: 'owner-1',
               ownerName: '小温',
