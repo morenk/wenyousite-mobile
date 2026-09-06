@@ -3,6 +3,28 @@ import 'package:wenyousite_mobile/app/app_router.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 
 void main() {
+  test('清理失败仅放行已确认注销页，不放行其他账号页面', () {
+    for (final path in ['/me/security/delete-account', '/me/edit']) {
+      expect(
+        resolveSessionRedirect(
+          session: const SessionState.guest(),
+          matchedLocation: path,
+          uri: Uri.parse(path),
+          accountCleanupPending: true,
+        ),
+        path.endsWith('delete-account') ? isNull : isNotNull,
+      );
+    }
+    expect(
+      resolveSessionRedirect(
+        session: const SessionState.guest(),
+        matchedLocation: '/me/security/delete-account',
+        uri: Uri.parse('/me/security/delete-account'),
+      ),
+      isNotNull,
+    );
+  });
+
   test('游客可直接进入外观设置', () {
     expect(
       resolveSessionRedirect(

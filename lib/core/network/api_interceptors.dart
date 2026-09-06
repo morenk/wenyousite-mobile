@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
+import 'package:wenyousite_mobile/core/network/request_session_binding.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
 
 class RequestContextInterceptor extends Interceptor {
@@ -25,6 +26,7 @@ class RequestContextInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    RequestSessionBinding.bind(options, _sessionController);
     options.headers.putIfAbsent('X-Request-ID', _uuid.v4);
     if (_needsMobileHeader(options.path)) {
       options.headers['X-Client-Platform'] = 'mobile';
@@ -32,22 +34,30 @@ class RequestContextInterceptor extends Interceptor {
     _authorize(options).then(
       (_) => handler.next(options),
       onError: (Object error, StackTrace stackTrace) => handler.reject(
-        DioException(
-          requestOptions: options,
-          error: error,
-          stackTrace: stackTrace,
-        ),
+        error is DioException
+            ? error
+            : DioException(
+                requestOptions: options,
+                error: error,
+                stackTrace: stackTrace,
+              ),
       ),
     );
   }
 
   Future<void> _authorize(RequestOptions options) async {
     DiagnosticAttempt.current?.mark(DiagnosticStage.authorize);
-    if (options.extra[ApiRequestExtraKeys.skipAuth] == true) return;
+    RequestSessionBinding.ensureCurrent(options);
+    if (options.extra[ApiRequestExtraKeys.explicitCredentials] == true) return;
+    options.headers.removeWhere(
+      (key, _) => key.toLowerCase() == 'authorization',
+    );
+    if (!RequestSessionBinding.usesSession(options)) return;
     var tokens = _sessionController.tokens;
     if (tokens != null && _sessionController.accessTokenNeedsRefresh) {
       tokens = await _sessionController.refresh();
     }
+    RequestSessionBinding.ensureCurrent(options);
     if (tokens != null) {
       options.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
     }
@@ -58,27 +68,35 @@ class RequestContextInterceptor extends Interceptor {
     Response<Object?> response,
     ResponseInterceptorHandler handler,
   ) {
+    if (RequestSessionBinding.cancellation(response.requestOptions)
+        case final error?) {
+      handler.reject(error);
+      return;
+    }
     _logResponse(response);
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (RequestSessionBinding.cancellation(err.requestOptions)
+        case final error?) {
+      handler.next(error);
+      return;
+    }
     final failure = ApiFailure.fromDio(err);
     _logError(err, failure);
-    if (failure.invalidatesSession) {
-      unawaited(
-        _sessionController.invalidate(_reasonFor(failure.businessCode)),
-      );
+    if (!RequestSessionBinding.usesSession(err.requestOptions)) {
       handler.next(err);
+      return;
+    }
+    if (failure.invalidatesSession) {
+      _invalidate(err, handler, _reasonFor(failure.businessCode));
       return;
     }
     final alreadyRetried = err.requestOptions.extra[_retriedKey] == true;
     if (failure.isExpiredAccessToken && alreadyRetried) {
-      unawaited(
-        _sessionController.invalidate(SessionInvalidationReason.refreshFailed),
-      );
-      handler.next(err);
+      _invalidate(err, handler, SessionInvalidationReason.refreshFailed);
       return;
     }
     if (!failure.isExpiredAccessToken) {
@@ -87,17 +105,46 @@ class RequestContextInterceptor extends Interceptor {
     }
     if (!_canReplayAfterRefresh(err.requestOptions)) {
       _sessionController.refresh().then(
-        (_) => handler.next(err),
-        onError: (_) => handler.next(err),
+        (_) => handler.next(
+          RequestSessionBinding.cancellation(err.requestOptions) ?? err,
+        ),
+        onError: (_) => handler.next(
+          RequestSessionBinding.cancellation(err.requestOptions) ?? err,
+        ),
       );
       return;
     }
     _retryAfterRefresh(err).then(
       handler.resolve,
       onError: (_) {
-        handler.next(err);
+        handler.next(
+          RequestSessionBinding.cancellation(err.requestOptions) ?? err,
+        );
       },
     );
+  }
+
+  void _invalidate(
+    DioException error,
+    ErrorInterceptorHandler handler,
+    SessionInvalidationReason reason,
+  ) {
+    _sessionController
+        .invalidate(reason)
+        .then(
+          (_) => handler.next(error),
+          onError: (Object failure, StackTrace stack) => handler.next(
+            DioException(
+              requestOptions: error.requestOptions,
+              error: ApiFailure(
+                source: FailureSource.device,
+                reason: FailureReason.localPersistence,
+                cause: failure,
+              ),
+              stackTrace: stack,
+            ),
+          ),
+        );
   }
 
   bool _canReplayAfterRefresh(RequestOptions options) {
@@ -113,7 +160,9 @@ class RequestContextInterceptor extends Interceptor {
   }
 
   Future<Response<Object?>> _retryAfterRefresh(DioException error) async {
+    RequestSessionBinding.ensureCurrent(error.requestOptions);
     final tokens = await _sessionController.refresh();
+    RequestSessionBinding.ensureCurrent(error.requestOptions);
     final options = error.requestOptions;
     options.extra[_retriedKey] = true;
     options.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
@@ -210,6 +259,10 @@ class SafeRetryInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final options = err.requestOptions;
+    if (RequestSessionBinding.cancellation(options) case final error?) {
+      handler.next(error);
+      return;
+    }
     final attempt = options.extra[_attemptKey] as int? ?? 0;
     if (attempt >= 2 || !_isRetryable(err)) {
       handler.next(err);
@@ -220,8 +273,15 @@ class SafeRetryInterceptor extends Interceptor {
       milliseconds: 250 * (attempt + 1) + _random.nextInt(150),
     );
     _wait(delay)
-        .then((_) => _dio.fetch<Object?>(options))
-        .then(handler.resolve, onError: (_) => handler.next(err));
+        .then((_) {
+          RequestSessionBinding.ensureCurrent(options);
+          return _dio.fetch<Object?>(options);
+        })
+        .then(
+          handler.resolve,
+          onError: (_) =>
+              handler.next(RequestSessionBinding.cancellation(options) ?? err),
+        );
   }
 
   bool _isRetryable(DioException error) {

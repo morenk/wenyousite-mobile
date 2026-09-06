@@ -7,6 +7,25 @@ import 'package:wenyousite_mobile/features/settings/application/account_deletion
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 
 void main() {
+  test('注销清理失败后若已重新登录，旧清理入口不能清除新会话', () async {
+    final store = _MemoryTokenStore(failFirstClear: true);
+    final session = await _authenticatedSession(store);
+    final repository = _FakeAccountDeletionRepository();
+    final controller = AccountDeletionController(repository, session);
+    addTearDown(controller.dispose);
+    addTearDown(session.dispose);
+    expect(await controller.submit(), isFalse);
+    const next = SessionTokens(
+      accessToken: 'new-account',
+      refreshToken: 'new-refresh',
+    );
+    await session.authenticate(next);
+    expect(await controller.retryLocalCleanup(), isFalse);
+    expect(session.tokens, same(next));
+    expect(store.value, same(next));
+    expect(repository.calls, 1);
+  });
+
   test('服务端确认注销后清除本地双 Token', () async {
     final store = _MemoryTokenStore();
     final session = await _authenticatedSession(store);

@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
+import 'package:wenyousite_mobile/features/settings/application/account_deletion_controller.dart';
 import 'package:wenyousite_mobile/features/settings/data/account_deletion_repository.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/delete_account_page.dart';
 
@@ -136,7 +137,12 @@ Future<_Harness> _pumpPage(
       final authenticated = container
           .read(sessionControllerProvider)
           .isAuthenticated;
-      if (!authenticated && state.matchedLocation == '/delete-account') {
+      final cleanupPending = container
+          .read(accountDeletionControllerProvider)
+          .remoteDeletionConfirmed;
+      if (!authenticated &&
+          !cleanupPending &&
+          state.matchedLocation == '/delete-account') {
         return '/home';
       }
       return null;

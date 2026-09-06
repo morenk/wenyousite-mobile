@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/routes/content_routes.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_controller.dart';
+import 'package:wenyousite_mobile/features/settings/application/account_deletion_controller.dart';
 
 final feedbackVisibilityProvider = Provider<WenyouFeedbackVisibility>((ref) {
   final visibility = WenyouFeedbackVisibility();
@@ -27,6 +28,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         session: ref.read(sessionControllerProvider),
         matchedLocation: state.matchedLocation,
         uri: state.uri,
+        accountCleanupPending:
+            state.matchedLocation == AppRoutePaths.deleteAccount &&
+            ref.read(accountDeletionControllerProvider).remoteDeletionConfirmed,
       );
     },
     routes: [
@@ -45,7 +49,13 @@ String? resolveSessionRedirect({
   required SessionState session,
   required String matchedLocation,
   required Uri uri,
+  bool accountCleanupPending = false,
 }) {
+  // This route exposes only local cleanup after irreversible deletion. It
+  // must remain reachable without credentials when secure storage fails.
+  if (accountCleanupPending && matchedLocation == AppRoutePaths.deleteAccount) {
+    return null;
+  }
   final access = AppRouteAccessPolicy.forLocation(matchedLocation);
   final isGuestOnlyAuth = access == AppRouteAccess.guestOnly;
   if (session.status == SessionStatus.invalidated && !isGuestOnlyAuth) {
