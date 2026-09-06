@@ -37,6 +37,7 @@ import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart'
 import 'package:wenyousite_mobile/features/media/data/media_upload_repository.dart';
 import 'package:wenyousite_mobile/features/media/data/profile_cover_image_picker.dart';
 import 'package:wenyousite_mobile/features/moderation/data/moderation_appeal_repository.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_bookmark_repository.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
@@ -151,8 +152,12 @@ List<Override> productionProviderOverrides() => [
     (ref) => ref.watch(apiModerationAppealRepositoryProvider),
   ),
   momentDraftStoreProvider.overrideWith(
-    (ref) => ref.watch(sharedPreferencesMomentDraftStoreProvider),
+    (ref) => ref.watch(databaseMomentDraftStoreProvider),
   ),
+  momentComposerOwnerResolverProvider.overrideWith((ref) {
+    final repository = ref.watch(meProfileRepositoryProvider);
+    return () async => (await repository.fetchMe()).id;
+  }),
   momentRepositoryProvider.overrideWith(
     (ref) => ref.watch(apiMomentRepositoryProvider),
   ),

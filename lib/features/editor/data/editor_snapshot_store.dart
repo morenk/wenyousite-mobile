@@ -18,6 +18,29 @@ class DatabaseEditorSnapshotStore implements EditorSnapshotStore {
   final AppDatabase _database;
 
   @override
+  Future<void> beginThreadCreate(
+    LocalEditorSnapshot snapshot,
+    PendingCreateOperation operation,
+  ) => _database.transaction(() async {
+    if (snapshot.contextType != EditorContextType.thread ||
+        snapshot.clientRequestId != operation.clientRequestId ||
+        operation.operationType != 'thread.create') {
+      throw ArgumentError(
+        'Thread snapshot and operation must share an identity.',
+      );
+    }
+    await _database.saveEditorSnapshot(snapshot);
+    await _database.savePendingCreateOperation(operation);
+  });
+
+  @override
+  Future<void> completeThreadCreate(LocalEditorSnapshot snapshot) =>
+      _database.transaction(() async {
+        await _database.saveEditorSnapshot(snapshot);
+        await _database.deletePendingCreateOperation(snapshot.clientRequestId);
+      });
+
+  @override
   Future<LocalEditorSnapshot?> findThreadSnapshot(String ownerId) {
     return _database.findEditorSnapshot(threadSnapshotId(ownerId));
   }

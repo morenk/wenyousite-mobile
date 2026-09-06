@@ -345,7 +345,11 @@ class TipController extends StateNotifier<TipState> {
     try {
       amount = WenyouAmount.normalizeTip(input);
     } on WenyouAmountValidationException catch (failure) {
-      state = TipState(failure: ApiFailure(userMessage: failure.userMessage));
+      state = TipState(
+        pendingAmount: state.pendingAmount,
+        pendingRequestId: state.pendingRequestId,
+        failure: ApiFailure(userMessage: failure.userMessage),
+      );
       return null;
     }
     final requestId = state.pendingAmount == amount
@@ -383,5 +387,6 @@ class TipController extends StateNotifier<TipState> {
 
 final tipControllerProvider = StateNotifierProvider.autoDispose
     .family<TipController, TipState, TipTarget>((ref, target) {
+      ref.watch(sessionScopeProvider);
       return TipController(ref.watch(walletRepositoryProvider), target);
     }, dependencies: [walletRepositoryProvider]);

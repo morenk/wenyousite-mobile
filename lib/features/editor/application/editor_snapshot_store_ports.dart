@@ -8,6 +8,13 @@ abstract interface class EditorSnapshotStore {
 
   Future<void> saveThreadSnapshot(LocalEditorSnapshot snapshot);
 
+  Future<void> beginThreadCreate(
+    LocalEditorSnapshot snapshot,
+    PendingCreateOperation operation,
+  );
+
+  Future<void> completeThreadCreate(LocalEditorSnapshot snapshot);
+
   Future<void> deleteThreadSnapshot(String ownerId);
 
   Future<PendingCreateOperation?> findPendingCreate(String clientRequestId);
@@ -23,6 +30,16 @@ final editorSnapshotStoreProvider = Provider<EditorSnapshotStore>((ref) {
 
 class _UnboundEditorSnapshotStore implements EditorSnapshotStore {
   const _UnboundEditorSnapshotStore();
+
+  @override
+  Future<void> beginThreadCreate(
+    LocalEditorSnapshot snapshot,
+    PendingCreateOperation operation,
+  ) => Future.error(_error());
+
+  @override
+  Future<void> completeThreadCreate(LocalEditorSnapshot snapshot) =>
+      Future.error(_error());
 
   @override
   Future<LocalEditorSnapshot?> findThreadSnapshot(String ownerId) {

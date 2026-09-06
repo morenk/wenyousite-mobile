@@ -7,6 +7,8 @@ import 'package:wenyousite_mobile/features/moments/application/moment_controller
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
+import '../../support/moment_test_draft_store.dart';
+
 void main() {
   test('信息流游标失效自动回到首屏，点赞收藏采用服务端计数', () async {
     final repository = _FeedRepository();
@@ -126,10 +128,13 @@ void main() {
     var requestIndex = 0;
     final controller = MomentComposerController(
       repository,
+      draftStore: MemoryMomentDraftStore(),
+      resolveOwner: () async => 'user-1',
       autoStart: false,
       requestIdFactory: () => 'request-${++requestIndex}',
     );
     addTearDown(controller.dispose);
+    await controller.load();
     const input = MomentDraftInput(title: '今日微光', content: '纯文本', mediaIds: []);
 
     expect(await controller.submit(input), isNull);
@@ -142,6 +147,8 @@ void main() {
     final repository = _ConflictComposerRepository();
     final controller = MomentComposerController(
       repository,
+      draftStore: MemoryMomentDraftStore(),
+      resolveOwner: () async => 'user-1',
       momentId: 'moment-1',
       autoStart: false,
     );

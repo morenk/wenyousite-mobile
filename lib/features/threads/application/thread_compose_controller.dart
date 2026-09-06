@@ -169,6 +169,7 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   Timer? _snapshotTimer;
   Future<void> _snapshotQueue = Future.value();
   PendingCreateOperation? _pendingCreate;
+  ThreadRemoteDraft? _confirmedRemoteDraft;
   int _loadEpoch = 0;
   int _snapshotRevision = 0;
 
@@ -277,6 +278,11 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
   }
 
   Future<void> flushLocalSnapshot() {
+    if (state.isSubmitting) return _snapshotQueue;
+    return _writeLocalSnapshot();
+  }
+
+  Future<void> _writeLocalSnapshot() {
     _snapshotTimer?.cancel();
     _snapshotTimer = null;
     if (state.phase != ThreadComposePhase.ready) return Future.value();
@@ -400,8 +406,6 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       );
       return null;
     }
-    await flushLocalSnapshot();
-    if (!mounted || state.phase != ThreadComposePhase.ready) return null;
     state = state.copyWith(
       action: publish
           ? ThreadComposeAction.publish
@@ -410,6 +414,8 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       successMessage: null,
     );
     try {
+      await _writeLocalSnapshot();
+      if (!mounted || state.phase != ThreadComposePhase.ready) return null;
       var remote = await _ensureRemoteDraft();
       if (!mounted || state.phase != ThreadComposePhase.ready) return null;
       remote = await _repository.saveAggregate(
@@ -492,19 +498,28 @@ class ThreadComposeController extends StateNotifier<ThreadComposeState> {
       state: PendingOperationState.sending,
       updatedAt: _clock(),
     );
-    await _snapshotStore.savePendingCreate(sending);
+    await _snapshotQueue;
+    if (!mounted) throw StateError('Editor session ended.');
+    await _snapshotStore.beginThreadCreate(_buildSnapshot(state), sending);
+    if (!mounted) throw StateError('Editor session ended.');
     _pendingCreate = sending;
     try {
-      final remote = await _repository.createDraft(payload);
-      await _snapshotStore.deletePendingCreate(payload.clientRequestId);
+      final remote =
+          _confirmedRemoteDraft ?? await _repository.createDraft(payload);
+      if (!mounted) return remote;
+      _confirmedRemoteDraft = remote;
+      final confirmed = state.copyWith(remoteDraft: remote);
+      await _snapshotStore.completeThreadCreate(_buildSnapshot(confirmed));
+      if (!mounted) return remote;
       _pendingCreate = null;
-      state = state.copyWith(remoteDraft: remote);
+      _confirmedRemoteDraft = null;
+      state = confirmed;
       _snapshotRevision += 1;
-      await flushLocalSnapshot();
       return remote;
     } on Object catch (error) {
+      if (!mounted) rethrow;
       final failure = _asFailure(error, '主题草稿创建失败，请重试。');
-      if (_isAmbiguousCreateFailure(failure)) {
+      if (_confirmedRemoteDraft != null || _isAmbiguousCreateFailure(failure)) {
         final awaiting = PendingCreateOperation(
           clientRequestId: sending.clientRequestId,
           operationType: sending.operationType,

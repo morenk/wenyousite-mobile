@@ -8,7 +8,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_atomic_text_editor.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -17,18 +17,33 @@ import 'package:wenyousite_mobile/features/media/presentation/editor_image_selec
 import 'package:wenyousite_mobile/features/moments/application/moment_controllers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_actions.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_images.dart';
 
-class MomentComposePage extends ConsumerStatefulWidget {
+class MomentComposePage extends ConsumerWidget {
   const MomentComposePage({this.momentId, super.key});
 
   final String? momentId;
 
   @override
-  ConsumerState<MomentComposePage> createState() => _MomentComposePageState();
+  Widget build(BuildContext context, WidgetRef ref) => _MomentComposeEditor(
+    key: ValueKey((momentId, ref.watch(sessionScopeProvider))),
+    momentId: momentId,
+  );
 }
 
-class _MomentComposePageState extends ConsumerState<MomentComposePage> {
+class _MomentComposeEditor extends ConsumerStatefulWidget {
+  const _MomentComposeEditor({this.momentId, super.key});
+
+  final String? momentId;
+
+  @override
+  ConsumerState<_MomentComposeEditor> createState() =>
+      _MomentComposePageState();
+}
+
+class _MomentComposePageState extends ConsumerState<_MomentComposeEditor>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   late final WenyouAtomicTextController _contentController;
@@ -47,6 +62,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _contentController = WenyouAtomicTextController(
       initialMarkdown: '',
       maximumMarkdownLength: 1000,
@@ -57,6 +73,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _draftTimer?.cancel();
     _titleController.removeListener(_onDraftChanged);
     _contentController.removeListener(_onDraftChanged);
@@ -64,6 +81,21 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     _contentController.dispose();
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _draftTimer?.cancel();
+      unawaited(_saveDraftNow(reportFailure: true));
+    }
+  }
+
+  MomentComposerController get _composer =>
+      ref.read(momentComposerControllerProvider(widget.momentId).notifier);
+
+  MomentComposerState get _composerState =>
+      ref.read(momentComposerControllerProvider(widget.momentId));
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +123,9 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     final uploadState = _aggregateUploadState(pendingImages);
     _hydrate(state.initialDetail);
     final editing = widget.momentId != null;
-    if (!editing && !_contentReady) {
+    if (!editing &&
+        !_contentReady &&
+        state.phase == MomentComposerPhase.editing) {
       _contentReady = true;
       _baselineDraft = _currentDraft();
       _baselineSignature = _signature();
@@ -102,7 +136,12 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
         state.phase != MomentComposerPhase.failed;
     final hasPendingImages = _hasPendingImageWork(uploadState);
     return PopScope(
-      canPop: _allowPop || (!_hasUnsavedChanges && !hasPendingImages),
+      canPop:
+          _allowPop ||
+          (!state.isSubmitting &&
+              !state.awaitingConfirmation &&
+              !_hasUnsavedChanges &&
+              !hasPendingImages),
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_confirmLeave(uploadState));
       },
@@ -113,7 +152,11 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
             if (editing && state.initialDetail?.canDelete == true)
               IconButton(
                 key: const Key('moment-compose-delete'),
-                onPressed: state.isSubmitting ? null : _confirmDelete,
+                onPressed:
+                    state.isSubmitting ||
+                        state.phase == MomentComposerPhase.succeeded
+                    ? null
+                    : _confirmDelete,
                 tooltip: '删除动态',
                 icon: const WenyouIcon(WenyouIconIds.actionDelete),
               ),
@@ -123,16 +166,18 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
           MomentComposerPhase.loading => const Center(
             child: CircularProgressIndicator(),
           ),
-          MomentComposerPhase.failed => _ComposeFailure(
+          MomentComposerPhase.failed => MomentComposeFailure(
             failure: state.failure,
             onRetry: () => ref.read(provider.notifier).load(),
           ),
           _ => _buildEditorBody(state, uploadState, pendingImages),
         },
         bottomNavigationBar: editable
-            ? _MomentPublishBar(
+            ? MomentPublishBar(
                 editing: editing,
                 submitting: state.isSubmitting,
+                awaitingConfirmation: state.awaitingConfirmation,
+                cleanupPending: state.phase == MomentComposerPhase.succeeded,
                 onPressed: hasPendingImages ? null : _submit,
               )
             : null,
@@ -161,15 +206,20 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (state.failure != null) ...[
+                if (state.failure != null || state.awaitingConfirmation) ...[
                   WenyouStatusBanner(
-                    message: state.failure!.userMessage,
+                    key: state.awaitingConfirmation
+                        ? const Key('moment-compose-pending')
+                        : null,
+                    message: state.awaitingConfirmation
+                        ? '请重试确认发布结果。已保留这次内容，确认前不能修改。'
+                        : state.failure!.userMessage,
                     detail: wenyouFailureDetail(
                       state.failure,
                       treatAsWrite: true,
                     ),
                     tone: WenyouStatusTone.error,
-                    action: state.failure!.businessCode == 40002
+                    action: state.failure?.businessCode == 40002
                         ? TextButton(
                             key: const Key('moment-compose-resolve-conflict'),
                             onPressed: _resolveConflict,
@@ -179,37 +229,41 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                   ),
                   SizedBox(height: tokens.space8),
                 ],
-                MomentComposeImageStrip(
-                  images: _images,
-                  coverMediaId: _coverMediaId,
-                  uploadState: uploadState,
-                  pendingImages: pendingImages,
-                  onAdd:
-                      _images.length >= 9 ||
-                          state.isSubmitting ||
-                          _hasPendingImageWork(uploadState)
-                      ? null
-                      : _pickAndUpload,
-                  onCancelUpload: state.isSubmitting
-                      ? null
-                      : _cancelPendingImageUpload,
-                  onRetryUpload:
-                      uploadState.failure?.canRetry == true &&
-                          !state.isSubmitting &&
-                          _pendingImageUploads
-                                  .where((upload) => upload.active)
-                                  .length <
-                              2
-                      ? _retryUpload
-                      : null,
-                  onCoverSelected: _selectCover,
-                  onRemove: _removeImage,
-                  onReorder: _reorderImages,
+                IgnorePointer(
+                  ignoring: !state.canEditContent,
+                  child: MomentComposeImageStrip(
+                    images: _images,
+                    coverMediaId: _coverMediaId,
+                    uploadState: uploadState,
+                    pendingImages: pendingImages,
+                    onAdd:
+                        _images.length >= 9 ||
+                            !state.canEditContent ||
+                            _hasPendingImageWork(uploadState)
+                        ? null
+                        : _pickAndUpload,
+                    onCancelUpload: !state.canEditContent
+                        ? null
+                        : _cancelPendingImageUpload,
+                    onRetryUpload:
+                        uploadState.failure?.canRetry == true &&
+                            !state.isSubmitting &&
+                            _pendingImageUploads
+                                    .where((upload) => upload.active)
+                                    .length <
+                                2
+                        ? _retryUpload
+                        : null,
+                    onCoverSelected: _selectCover,
+                    onRemove: _removeImage,
+                    onReorder: _reorderImages,
+                  ),
                 ),
                 SizedBox(height: tokens.space12),
                 TextFormField(
                   key: const Key('moment-compose-title'),
                   controller: _titleController,
+                  readOnly: !state.canEditContent,
                   maxLength: 40,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
@@ -231,6 +285,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                     ),
                     child: WenyouAtomicTextEditor(
                       controller: _contentController,
+                      enabled: state.canEditContent,
                       editorKey: const Key('moment-compose-content'),
                       placeholder: '分享此刻的想法…',
                       semanticLabel: '正文（选填）',
@@ -425,14 +480,22 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   }
 
   Future<void> _submit() async {
+    if (_composerState.phase == MomentComposerPhase.succeeded) {
+      final saved = _composerState.savedDetail;
+      if (saved != null) {
+        await _finishSubmit(saved);
+      } else {
+        await _finishRemoval();
+      }
+      return;
+    }
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (!_contentController.flush()) {
       _showFeedback(_contentController.failure ?? '正文暂时无法保存，请重新编辑后再试。');
       return;
     }
-    final saved = await ref
-        .read(momentComposerControllerProvider(widget.momentId).notifier)
-        .submit(_draftInput());
+    _draftTimer?.cancel();
+    final saved = await _composer.submit(_draftInput(), draft: _currentDraft());
     if (saved == null || !mounted) return;
     await _finishSubmit(saved);
   }
@@ -446,7 +509,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   Future<void> _finishSubmit(MomentDetail saved) async {
     _draftTimer?.cancel();
-    await ref.read(momentDraftStoreProvider).delete(widget.momentId);
+    if (widget.momentId != null && !await _deleteDraft()) return;
     if (!mounted) return;
     _allowPop = true;
     ref.invalidate(momentFeedControllerProvider);
@@ -493,7 +556,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     }
     _draftTimer?.cancel();
     try {
-      await ref.read(momentDraftStoreProvider).delete(widget.momentId);
+      await _composer.deleteDraft();
     } on Object {
       if (mounted) _showFeedback('操作失败，请稍后重试。');
       return;
@@ -526,8 +589,12 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
         .read(momentComposerControllerProvider(widget.momentId).notifier)
         .remove();
     if (!removed || !mounted) return;
+    await _finishRemoval();
+  }
+
+  Future<void> _finishRemoval() async {
     _draftTimer?.cancel();
-    await ref.read(momentDraftStoreProvider).delete(widget.momentId);
+    if (!await _deleteDraft()) return;
     if (!mounted) return;
     _allowPop = true;
     ref.invalidate(momentFeedControllerProvider);
@@ -571,7 +638,9 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   );
 
   void _onDraftChanged() {
-    if (_applyingContent || !_contentReady) return;
+    if (_applyingContent || !_contentReady || !_composerState.canEditContent) {
+      return;
+    }
     if (mounted) setState(() {});
     _draftTimer?.cancel();
     _draftTimer = Timer(const Duration(milliseconds: 500), () {
@@ -585,16 +654,14 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _restoreSavedDraft());
   }
 
-  Future<void> _restoreSavedDraft() async {
-    MomentLocalDraft? draft;
-    try {
-      draft = await ref.read(momentDraftStoreProvider).read(widget.momentId);
-    } on Object {
-      if (mounted) _showFeedback('草稿加载失败，请稍后重试。');
-      return;
-    }
-    if (!mounted || draft == null) return;
+  void _restoreSavedDraft() {
+    if (!mounted) return;
+    final draft = ref
+        .read(momentComposerControllerProvider(widget.momentId))
+        .localDraft;
+    if (draft == null) return;
     _applyDraft(draft);
+    if (draft.pendingCreate != null) return;
     showWenyouSnackBar(
       context,
       '已恢复上次的草稿',
@@ -621,9 +688,10 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   Future<void> _restoreBaseline() async {
     final baseline = _baselineDraft;
-    if (baseline == null) return;
+    if (baseline == null || !_composerState.canEditContent) return;
+    _draftTimer?.cancel();
     try {
-      await ref.read(momentDraftStoreProvider).delete(widget.momentId);
+      await _composer.deleteDraft();
     } on Object {
       if (mounted) _showFeedback('操作失败，请稍后重试。');
       return;
@@ -633,14 +701,15 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   Future<bool> _saveDraftNow({bool reportFailure = false}) async {
     if (!_contentReady) return true;
-    final store = ref.read(momentDraftStoreProvider);
+    final composer = _composer;
+    if (_composerState.awaitingConfirmation) return true;
+    if (!_composerState.canEditContent) return false;
     try {
       if (!_hasUnsavedChanges) {
-        await store.delete(widget.momentId);
+        return await composer.deleteDraft();
       } else {
-        await store.write(widget.momentId, _currentDraft());
+        return await composer.saveDraft(_currentDraft());
       }
-      return true;
     } on Object {
       if (reportFailure && mounted) {
         _showFeedback('草稿保存失败，请稍后重试。');
@@ -650,6 +719,8 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
   }
 
   Future<void> _confirmLeave(MediaUploadTaskState uploadState) async {
+    if (_composerState.isSubmitting) return;
+    final pending = _composerState.awaitingConfirmation;
     final hasPendingImages = _hasPendingImageWork(uploadState);
     final decision = await showModalBottomSheet<_LeaveDraftDecision>(
       context: context,
@@ -669,7 +740,7 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                '要保存这次编辑吗？',
+                pending ? '已保留这次发布的内容' : '要保存这次编辑吗？',
                 style: Theme.of(context).textTheme.wenyouOverlayTitle,
               ),
               if (hasPendingImages) ...[
@@ -686,15 +757,16 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
                 key: const Key('moment-leave-save'),
                 onPressed: () =>
                     Navigator.pop(context, _LeaveDraftDecision.save),
-                child: const Text('保存草稿并退出'),
+                child: Text(pending ? '保留并退出' : '保存草稿并退出'),
               ),
               SizedBox(height: tokens.space8),
-              TextButton(
-                key: const Key('moment-leave-discard'),
-                onPressed: () =>
-                    Navigator.pop(context, _LeaveDraftDecision.discard),
-                child: const Text('不保存'),
-              ),
+              if (!pending)
+                TextButton(
+                  key: const Key('moment-leave-discard'),
+                  onPressed: () =>
+                      Navigator.pop(context, _LeaveDraftDecision.discard),
+                  child: const Text('不保存'),
+                ),
             ],
           ),
         );
@@ -713,10 +785,9 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 
   Future<bool> _deleteDraft() async {
     try {
-      await ref.read(momentDraftStoreProvider).delete(widget.momentId);
-      return true;
+      return await _composer.deleteDraft();
     } on Object {
-      if (mounted) _showFeedback('操作失败，请稍后重试。');
+      if (mounted) _showFeedback('草稿清理失败，请重试。');
       return false;
     }
   }
@@ -734,85 +805,6 @@ class _MomentComposePageState extends ConsumerState<MomentComposePage> {
 enum _LeaveDraftDecision { save, discard }
 
 enum _ConflictDecision { keepMine, useLatest }
-
-class _MomentPublishBar extends StatelessWidget {
-  const _MomentPublishBar({
-    required this.editing,
-    required this.submitting,
-    required this.onPressed,
-  });
-
-  final bool editing;
-  final bool submitting;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final horizontal = wenyouHorizontalPagePadding(context);
-    return Material(
-      color: tokens.background,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            horizontal,
-            tokens.space8,
-            horizontal,
-            tokens.space8,
-          ),
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: SizedBox(
-                width: double.infinity,
-                child: WenyouAsyncPrimaryButton(
-                  key: const Key('moment-compose-submit'),
-                  label: editing ? '保存' : '发布',
-                  loadingLabel: editing ? '正在保存' : '正在发布',
-                  isLoading: submitting,
-                  icon: editing
-                      ? WenyouIconIds.actionSave
-                      : WenyouIconIds.actionSend,
-                  onPressed: onPressed,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ComposeFailure extends StatelessWidget {
-  const _ComposeFailure({required this.failure, required this.onRetry});
-
-  final ApiFailure? failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return WenyouPageBody(
-      maxWidth: 600,
-      child: WenyouPanel(
-        child: WenyouEmptyState(
-          icon: WenyouIconIds.statusOffline,
-          title: '动态加载失败',
-          message: failure?.userMessage ?? '请稍后重试。',
-          detail: wenyouFailureDetail(failure),
-          action: OutlinedButton.icon(
-            key: const Key('moment-compose-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-            label: const Text('重新加载'),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _MomentPendingUpload {
   _MomentPendingUpload(this.input);

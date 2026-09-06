@@ -984,6 +984,21 @@ class _FakeContentDraftRepository implements ContentDraftRepository {
 }
 
 class _MemorySnapshotStore implements EditorSnapshotStore {
+  @override
+  Future<void> beginThreadCreate(
+    LocalEditorSnapshot value,
+    PendingCreateOperation operation,
+  ) async {
+    await saveThreadSnapshot(value);
+    await savePendingCreate(operation);
+  }
+
+  @override
+  Future<void> completeThreadCreate(LocalEditorSnapshot value) async {
+    await saveThreadSnapshot(value);
+    await deletePendingCreate(value.clientRequestId);
+  }
+
   _MemorySnapshotStore({this.snapshot, this.failSaves = false});
 
   LocalEditorSnapshot? snapshot;

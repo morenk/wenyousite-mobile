@@ -60,6 +60,13 @@ void main() {
     addTearDown(controller.dispose);
 
     expect(await controller.submit('10'), isNull);
+    final pendingRequest = controller.state.pendingRequestId;
+    for (final invalid in ['0', '', '2.5', '9223372036854775808']) {
+      expect(await controller.submit(invalid), isNull);
+      expect(controller.state.pendingAmount, '10');
+      expect(controller.state.pendingRequestId, pendingRequest);
+      expect(repository.requests, hasLength(1));
+    }
     expect(await controller.submit('10'), isNotNull);
     repository.failNext = true;
     expect(await controller.submit('11'), isNull);

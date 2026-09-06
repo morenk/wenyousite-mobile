@@ -24,7 +24,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_interaction_toggle.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
-import 'package:wenyousite_mobile/features/moments/data/moment_draft_store.dart';
+import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
@@ -33,8 +33,70 @@ import 'package:wenyousite_mobile/features/moments/presentation/moment_feed_page
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 import '../../support/foundation_test_fonts.dart';
+import '../../support/moment_test_draft_store.dart';
 
 void main() {
+  for (final deleting in [false, true]) {
+    testWidgets('动态${deleting ? '删除' : '保存'}成功后本机清理失败只重试清理', (tester) async {
+      final repository = _CleanupPageRepository();
+      final store = _FlakyDeleteStore();
+      final router = GoRouter(
+        initialLocation: '/moments',
+        routes: [
+          GoRoute(
+            path: '/moments',
+            builder: (context, _) => Scaffold(
+              body: TextButton(
+                onPressed: () => context.push('/edit'),
+                child: const Text('进入编辑'),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/edit',
+            builder: (_, _) => const MomentComposePage(momentId: 'moment-1'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            momentRepositoryProvider.overrideWithValue(repository),
+            momentComposerOwnerResolverProvider.overrideWithValue(
+              () async => 'user-1',
+            ),
+            momentDraftStoreProvider.overrideWithValue(store),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.tap(find.text('进入编辑'));
+      await tester.pumpAndSettle();
+      if (deleting) {
+        await tester.tap(find.byKey(const Key('moment-compose-delete')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const Key('moment-compose-delete-confirm')),
+        );
+      } else {
+        await tester.tap(find.byKey(const Key('moment-compose-submit')));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('重试清理'), findsOneWidget);
+      expect(find.text('草稿清理失败，请重试。'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('重试清理'));
+      await tester.pumpAndSettle();
+      expect(find.text('进入编辑'), findsOneWidget);
+      expect(repository.updateCalls, deleting ? 0 : 1);
+      expect(repository.removeCalls, deleting ? 1 : 0);
+    });
+  }
+
   setUpAll(loadFoundationTestFonts);
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -726,7 +788,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(repository),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -759,7 +824,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(_FakeImagePicker()),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -823,7 +891,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(picker),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -863,7 +934,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(
             _FakeMultiImagePicker(),
           ),
@@ -915,7 +989,10 @@ void main() {
           momentRepositoryProvider.overrideWithValue(
             _PageRepository(detail: _editableDetail(title: '原动态', version: 3)),
           ),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(picker),
           mediaUploadGatewayPortProvider.overrideWithValue(gateway),
         ],
@@ -1061,7 +1138,7 @@ void main() {
 
   testWidgets('纯文字动态可完成发布且保留稳定详情目标', (tester) async {
     final repository = _PageRepository();
-    final draftStore = _MemoryMomentDraftStore();
+    final draftStore = MemoryMomentDraftStore();
     final router = GoRouter(
       initialLocation: '/compose/moment',
       routes: [
@@ -1082,6 +1159,9 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(repository),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
           momentDraftStoreProvider.overrideWithValue(draftStore),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -1131,7 +1211,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(repository),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
@@ -1167,7 +1250,7 @@ void main() {
     tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
-    final draftStore = _MemoryMomentDraftStore()
+    final draftStore = MemoryMomentDraftStore()
       ..draft = MomentLocalDraft(
         title: '未完成的标题',
         content: '未完成的正文',
@@ -1189,6 +1272,9 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
           momentDraftStoreProvider.overrideWithValue(draftStore),
         ],
         child: MaterialApp(
@@ -1270,7 +1356,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
           editorImagePickerPortProvider.overrideWithValue(
             _FakeMultiImagePicker(),
           ),
@@ -1309,7 +1398,7 @@ void main() {
 
   testWidgets('动态图片可点按选封面、长按排序并在移除封面后自动回退', (tester) async {
     final semantics = tester.ensureSemantics();
-    final draftStore = _MemoryMomentDraftStore()
+    final draftStore = MemoryMomentDraftStore()
       ..draft = MomentLocalDraft(
         title: '图片动态',
         content: '',
@@ -1330,6 +1419,9 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
           momentDraftStoreProvider.overrideWithValue(draftStore),
         ],
         child: MaterialApp(
@@ -1381,11 +1473,14 @@ void main() {
 
   testWidgets('动态编辑冲突明确提供保留本机内容或使用最新内容', (tester) async {
     final repository = _ConflictPageRepository();
-    final draftStore = _MemoryMomentDraftStore();
+    final draftStore = MemoryMomentDraftStore();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(repository),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
           momentDraftStoreProvider.overrideWithValue(draftStore),
         ],
         child: MaterialApp(
@@ -1432,7 +1527,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -1461,7 +1559,10 @@ void main() {
       ProviderScope(
         overrides: [
           momentRepositoryProvider.overrideWithValue(_PageRepository()),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -1491,7 +1592,10 @@ void main() {
           momentRepositoryProvider.overrideWithValue(
             _PageRepository(detail: _editableDetailWithImages()),
           ),
-          momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+          momentComposerOwnerResolverProvider.overrideWithValue(
+            () async => 'user-1',
+          ),
+          momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -1530,8 +1634,11 @@ void main() {
         ProviderScope(
           overrides: [
             momentRepositoryProvider.overrideWithValue(repository),
+            momentComposerOwnerResolverProvider.overrideWithValue(
+              () async => 'user-1',
+            ),
             momentDraftStoreProvider.overrideWithValue(
-              _MemoryMomentDraftStore(),
+              MemoryMomentDraftStore(),
             ),
           ],
           child: MaterialApp(
@@ -1547,8 +1654,11 @@ void main() {
         ProviderScope(
           overrides: [
             momentRepositoryProvider.overrideWithValue(repository),
+            momentComposerOwnerResolverProvider.overrideWithValue(
+              () async => 'user-1',
+            ),
             momentDraftStoreProvider.overrideWithValue(
-              _MemoryMomentDraftStore(),
+              MemoryMomentDraftStore(),
             ),
           ],
           child: MaterialApp(
@@ -1567,7 +1677,10 @@ Widget _feedApp(MomentRepository repository) {
   return ProviderScope(
     overrides: [
       momentRepositoryProvider.overrideWithValue(repository),
-      momentDraftStoreProvider.overrideWithValue(_MemoryMomentDraftStore()),
+      momentComposerOwnerResolverProvider.overrideWithValue(
+        () async => 'user-1',
+      ),
+      momentDraftStoreProvider.overrideWithValue(MemoryMomentDraftStore()),
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -1707,6 +1820,41 @@ class _PageRepository extends Fake implements MomentRepository {
   }
 }
 
+class _CleanupPageRepository extends _PageRepository {
+  _CleanupPageRepository()
+    : super(detail: _editableDetail(title: '原始标题', version: 1));
+  int updateCalls = 0;
+  int removeCalls = 0;
+
+  @override
+  Future<MomentDetail> update(
+    String id,
+    MomentDraftInput input, {
+    required int version,
+  }) async {
+    updateCalls += 1;
+    return _editableDetail(title: input.title, version: version + 1);
+  }
+
+  @override
+  Future<void> remove(String id) async {
+    removeCalls += 1;
+  }
+}
+
+class _FlakyDeleteStore extends MemoryMomentDraftStore {
+  bool failNext = true;
+
+  @override
+  Future<void> delete(String ownerId, String? momentId) async {
+    if (failNext) {
+      failNext = false;
+      throw StateError('Test cleanup failure.');
+    }
+    await super.delete(ownerId, momentId);
+  }
+}
+
 class _MomentFolderRepository extends Fake implements BookmarkFolderCatalog {
   @override
   Future<List<BookmarkFolderItem>> fetchFolders() async => [
@@ -1832,21 +1980,6 @@ class _ConflictPageRepository extends _PageRepository {
     required int version,
   }) async {
     throw const ApiFailure(businessCode: 40002, userMessage: '这条动态刚刚更新了。');
-  }
-}
-
-class _MemoryMomentDraftStore implements MomentDraftStore {
-  MomentLocalDraft? draft;
-
-  @override
-  Future<void> delete(String? momentId) async => draft = null;
-
-  @override
-  Future<MomentLocalDraft?> read(String? momentId) async => draft;
-
-  @override
-  Future<void> write(String? momentId, MomentLocalDraft value) async {
-    draft = value;
   }
 }
 
