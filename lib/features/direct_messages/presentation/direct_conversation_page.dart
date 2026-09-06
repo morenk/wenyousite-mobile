@@ -516,7 +516,7 @@ String? _conversationSubtitle(DirectConversation conversation) {
 String _sendingDisabledReason(DirectConversation conversation) {
   if (conversation.isIncomingRequest) return '请先接受或拒绝这条消息请求。';
   if (conversation.isOutgoingRequest) return '对方接受消息请求后才能继续发送。';
-  if (conversation.isBlocked) return '你们之间存在拉黑关系，历史消息仅供查看。';
+  if (conversation.isBlocked) return '你们之间存在拉黑关系，暂时无法查看或发送消息。';
   if (conversation.otherUser.isDeactivated) return '该用户已注销，历史消息仅供查看。';
   return switch (conversation.status) {
     DirectConversationStatus.declined => '该消息请求已被拒绝。',

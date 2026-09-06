@@ -25,7 +25,7 @@ class ApiSearchRepository implements SearchRepository {
     return runApiCall(() async {
       final data = (await _api.searchSearch(
         q: _query(query),
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       )).data?.data;
       if (data == null) {
         throw const ApiFailure(userMessage: '搜索失败，请稍后重试。');
@@ -71,7 +71,7 @@ class ApiSearchRepository implements SearchRepository {
     return runApiCall(() async {
       final response = await _api.searchSearchThreads(
         q: _query(query),
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -86,7 +86,7 @@ class ApiSearchRepository implements SearchRepository {
     return runApiCall(() async {
       final response = await _api.searchSearchUsers(
         q: _query(query),
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       );
       final data = response.data?.data;
       if (data == null) {
@@ -108,7 +108,7 @@ class ApiSearchRepository implements SearchRepository {
         q: _contentQuery(query),
         cursor: _optionalText(cursor),
         limit: limit,
-        extra: ApiRequestPolicy.public.extra,
+        extra: ApiRequestPolicy.standard.extra,
       );
       final envelope = response.data;
       if (envelope == null) {
@@ -219,6 +219,12 @@ class ApiSearchRepository implements SearchRepository {
   }
 
   SearchPostResult _mapPost(SearchPostResponseDto dto) {
+    if (dto.kind != SearchPostResponseDtoKindEnum.FLOOR) {
+      throw ApiFailure.contractViolation(
+        userMessage: '搜索结果已变化，请重新搜索。',
+        diagnosticCode: 'search.unrequested_body',
+      );
+    }
     return SearchPostResult(
       id: dto.id,
       floorNumber: dto.floorNumber?.toInt(),

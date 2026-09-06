@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
+import 'package:wenyousite_mobile/app/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/background_online_reminders.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/application/document_saver.dart';
 import 'package:wenyousite_mobile/core/application/image_gallery.dart';
 import 'package:wenyousite_mobile/core/application/profile_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/thread_category_catalog.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/platform/android_background_notification_gateway.dart';
 import 'package:wenyousite_mobile/core/platform/device_document_saver.dart';
 import 'package:wenyousite_mobile/core/platform/device_image_gallery.dart';
@@ -259,6 +261,9 @@ List<Override> productionProviderOverrides() => [
         ref.invalidate(publicUserControllerProvider(userId));
       }
     };
+  }),
+  visibilityCacheInvalidatorProvider.overrideWith((ref) {
+    return () => invalidateVisibilityCaches(ref.container);
   }),
 ];
 

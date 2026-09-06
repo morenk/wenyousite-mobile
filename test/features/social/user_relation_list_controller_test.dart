@@ -8,6 +8,20 @@ import 'package:wenyousite_mobile/features/social/data/user_relation_repository.
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
 
 void main() {
+  test('从黑名单解除后清理跨模块可见性缓存', () async {
+    var invalidations = 0;
+    final controller = UserRelationListController(
+      _FakeListRepository(),
+      _FakeRelationRepository(),
+      const UserRelationListTarget.current(kind: UserRelationListKind.blocks),
+      onVisibilityChanged: () => invalidations++,
+    );
+    addTearDown(controller.dispose);
+    await _flush();
+    expect(await controller.unblock('blocked-1'), true);
+    expect(invalidations, 1);
+  });
+
   test('按目标类型加载公开关注列表', () async {
     final listRepository = _FakeListRepository();
     final controller = UserRelationListController(

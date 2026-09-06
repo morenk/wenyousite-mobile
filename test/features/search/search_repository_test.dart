@@ -10,24 +10,24 @@ void main() {
   test('搜索仓库映射综合、动态、分类与主题内结果契约', () async {
     final api = _MockSearchApi();
     when(
-      () => api.searchSearch(q: '星海', extra: const {'skipAuth': true}),
+      () => api.searchSearch(q: '星海', extra: const {}),
     ).thenAnswer((_) async => _overviewResponse());
     when(
       () =>
           api.searchSearchMoments(q: '星海', cursor: 'moment-cursor-1', limit: 6),
     ).thenAnswer((_) async => _momentsResponse());
     when(
-      () => api.searchSearchThreads(q: '星海', extra: const {'skipAuth': true}),
+      () => api.searchSearchThreads(q: '星海', extra: const {}),
     ).thenAnswer((_) async => _threadsResponse());
     when(
-      () => api.searchSearchUsers(q: '星海', extra: const {'skipAuth': true}),
+      () => api.searchSearchUsers(q: '星海', extra: const {}),
     ).thenAnswer((_) async => _usersResponse());
     when(
       () => api.searchSearchPosts(
         q: '星海',
         cursor: 'cursor-1',
         limit: 7,
-        extra: const {'skipAuth': true},
+        extra: const {},
       ),
     ).thenAnswer((_) async => _postsResponse());
     when(

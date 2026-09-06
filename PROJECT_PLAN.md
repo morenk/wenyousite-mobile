@@ -11,7 +11,7 @@
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
 
-- 故障诊断：已接入帖子、上传、网络与全局错误的脱敏记录和独立 Sentry 发送器；真实移动端 DSN 尚待配置，收件、私密帖编辑及后端日志关联按 [诊断验收清单](docs/architecture/failure-diagnostics.md) 完成。
+- 故障诊断：已接入帖子、上传、网络与全局错误的脱敏记录和独立 Sentry 发送器；独立移动端 DSN 已在仓库外配置，Windows SDK 已收到同编号事件接收确认；手机收件、私密帖编辑及后端日志关联按 [诊断验收清单](docs/architecture/failure-diagnostics.md) 完成。
 
 ## 当前优先级
 

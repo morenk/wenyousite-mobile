@@ -15,6 +15,7 @@ import 'package:wenyousite_mobile/features/media/application/media_upload_ports.
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
+import 'direct_message_state_helpers.dart';
 import 'direct_message_states.dart';
 
 export 'direct_conversation_target_controller.dart';
@@ -289,7 +290,7 @@ class DirectConversationController
       final current = state;
       state = current.copyWith(
         conversation: conversation,
-        messages: _mergeMessages(current.messages, page.items),
+        messages: mergeDirectMessages(current.messages, page.items),
         cursor: resetPagination ? page.cursor : current.cursor,
         hasMore: resetPagination ? page.hasMore : current.hasMore,
         isRefreshing: false,
@@ -298,9 +299,9 @@ class DirectConversationController
       unawaited(_markLatestIncomingRead());
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        isRefreshing: false,
-        transientFailure: _asFailure(error, '私聊会话刷新失败，请重试。'),
+      state = directConversationReadFailure(
+        state,
+        _asFailure(error, '私聊会话刷新失败，请重试。'),
       );
     }
   }
@@ -328,23 +329,26 @@ class DirectConversationController
       validateDirectMessageParticipants(conversation, page.items);
       final current = state;
       state = current.copyWith(
-        messages: _mergeMessages(current.messages, page.items),
+        messages: mergeDirectMessages(current.messages, page.items),
         cursor: page.cursor,
         hasMore: page.hasMore,
         isLoadingOlder: false,
       );
     } on ApiFailure catch (failure) {
       if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+      if (isDirectConversationInaccessible(failure)) {
+        state = directConversationReadFailure(state, failure);
+        return;
+      } else if (failure.isInvalidCursor) {
         await refresh(resetPagination: true);
         return;
       }
       state = state.copyWith(isLoadingOlder: false, transientFailure: failure);
     } on Object catch (error) {
       if (!mounted || epoch != _epoch) return;
-      state = state.copyWith(
-        isLoadingOlder: false,
-        transientFailure: _asFailure(error, '更早消息加载失败。'),
+      state = directConversationReadFailure(
+        state,
+        _asFailure(error, '更早消息加载失败。'),
       );
     }
   }
@@ -377,7 +381,7 @@ class DirectConversationController
         validateDirectMessageParticipants(conversation, page.items);
         if (page.items.isNotEmpty) {
           state = state.copyWith(
-            messages: _mergeMessages(state.messages, page.items),
+            messages: mergeDirectMessages(state.messages, page.items),
             transientFailure: null,
           );
           anchor = page.items.last.id;
@@ -388,7 +392,9 @@ class DirectConversationController
       unawaited(_markLatestIncomingRead());
     } on ApiFailure catch (failure) {
       if (!mounted || epoch != _epoch) return;
-      if (failure.isInvalidCursor) {
+      if (isDirectConversationInaccessible(failure)) {
+        state = directConversationReadFailure(state, failure);
+      } else if (failure.isInvalidCursor) {
         await refresh(resetPagination: true);
       }
     } on Object {
@@ -449,7 +455,7 @@ class DirectConversationController
       );
     }
     state = state.copyWith(
-      messages: _mergeMessages(state.messages, [optimistic]),
+      messages: mergeDirectMessages(state.messages, [optimistic]),
       pendingMedia: Map.unmodifiable(pendingMedia),
       transientFailure: null,
     );
@@ -530,7 +536,7 @@ class DirectConversationController
       )..remove(optimisticMessageId);
       _pendingMediaJobs?.remove(optimisticMessageId);
       state = state.copyWith(
-        messages: _mergeMessages(remaining, [message]),
+        messages: mergeDirectMessages(remaining, [message]),
         transientFailure: null,
         failedDraft: state.failedDraft?.clientRequestId == draft.clientRequestId
             ? null
@@ -844,26 +850,6 @@ class DirectConversationController
         _schedulePoll(_pollInterval);
       }
     });
-  }
-
-  List<DirectMessage> _mergeMessages(
-    Iterable<DirectMessage> current,
-    Iterable<DirectMessage> incoming,
-  ) {
-    final byId = <String, DirectMessage>{};
-    for (final message in current) {
-      byId[message.id] = message;
-    }
-    for (final message in incoming) {
-      byId[message.id] = message;
-    }
-    final merged = byId.values.toList()..sort(_compareMessages);
-    return List.unmodifiable(merged);
-  }
-
-  int _compareMessages(DirectMessage left, DirectMessage right) {
-    final byTime = left.createdAt.compareTo(right.createdAt);
-    return byTime != 0 ? byTime : left.id.compareTo(right.id);
   }
 
   @override

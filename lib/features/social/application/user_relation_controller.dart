@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/application/write_reconciler.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
@@ -13,11 +14,13 @@ class UserRelationController extends StateNotifier<UserRelationState> {
     this._repository,
     this.target, {
     this._reconciler = const WriteReconciler(),
+    this.onVisibilityChanged,
   }) : super(UserRelationState.fromTarget(target));
 
   final UserRelationRepository _repository;
   final UserRelationTarget target;
   final WriteReconciler _reconciler;
+  final void Function()? onVisibilityChanged;
   var _actionEpoch = 0;
 
   Future<bool> toggleFollow() async {
@@ -107,6 +110,11 @@ class UserRelationController extends StateNotifier<UserRelationState> {
       },
     );
     if (outcome.isDiscarded || !mounted || epoch != _actionEpoch) return false;
+    if (action == UserRelationAction.block &&
+        (outcome.status == WriteOutcomeStatus.completed ||
+            outcome.status == WriteOutcomeStatus.indeterminate)) {
+      onVisibilityChanged?.call();
+    }
     switch (outcome.status) {
       case WriteOutcomeStatus.completed:
         state = outcome.projection == null
@@ -223,12 +231,16 @@ class UserRelationController extends StateNotifier<UserRelationState> {
 }
 
 final userRelationControllerProvider = StateNotifierProvider.autoDispose
-    .family<UserRelationController, UserRelationState, UserRelationTarget>((
-      ref,
-      target,
-    ) {
-      return UserRelationController(
-        ref.watch(userRelationRepositoryProvider),
-        target,
-      );
-    }, dependencies: [userRelationRepositoryProvider]);
+    .family<UserRelationController, UserRelationState, UserRelationTarget>(
+      (ref, target) {
+        return UserRelationController(
+          ref.watch(userRelationRepositoryProvider),
+          target,
+          onVisibilityChanged: ref.read(visibilityCacheInvalidatorProvider),
+        );
+      },
+      dependencies: [
+        userRelationRepositoryProvider,
+        visibilityCacheInvalidatorProvider,
+      ],
+    );

@@ -46,3 +46,7 @@ flutter build apk --debug --dart-define-from-file=C:/private/diagnostics.json --
 4. 断网产生记录后重启，仍可复制；恢复网络并回到前台后发送同一事件编号，不重发帖子请求。
 5. 关闭自动发送后产生错误，仅本机保存；退出、切号、清除后旧记录不可见，旧请求返回不会复活记录。
 6. 检查 320/360dp、两倍字号、亮色/黑夜以及软键盘状态的复制入口，确认无溢出或丢稿。
+
+## 向导与收件复核
+
+Sentry 向导只用于取得独立移动端 DSN；不得另装全局采集、100% 性能采样或启动示例异常，避免绕过脱敏和发送开关。向导修改备份在仓库外，DSN 保存在本机发布目录。可显式运行 `diagnostic_live_receipt_test.dart` 并传 `WENYOU_VALIDATE_SENTRY=true` 与私有配置验证 SDK 接收确认；普通门禁跳过该联网测试。该确认不能代替手机安装后的场景与 Sentry 页面核对。
