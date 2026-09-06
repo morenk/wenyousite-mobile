@@ -6,7 +6,80 @@ part of 'search_post_response_dto.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const SearchPostResponseDtoKindEnum _$searchPostResponseDtoKindEnum_BODY =
+    const SearchPostResponseDtoKindEnum._('BODY');
+const SearchPostResponseDtoKindEnum _$searchPostResponseDtoKindEnum_FLOOR =
+    const SearchPostResponseDtoKindEnum._('FLOOR');
+const SearchPostResponseDtoKindEnum
+_$searchPostResponseDtoKindEnum_unknownDefaultOpenApi =
+    const SearchPostResponseDtoKindEnum._('unknownDefaultOpenApi');
+
+SearchPostResponseDtoKindEnum _$searchPostResponseDtoKindEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'BODY':
+      return _$searchPostResponseDtoKindEnum_BODY;
+    case 'FLOOR':
+      return _$searchPostResponseDtoKindEnum_FLOOR;
+    case 'unknownDefaultOpenApi':
+      return _$searchPostResponseDtoKindEnum_unknownDefaultOpenApi;
+    default:
+      return _$searchPostResponseDtoKindEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SearchPostResponseDtoKindEnum>
+_$searchPostResponseDtoKindEnumValues = BuiltSet<SearchPostResponseDtoKindEnum>(
+  const <SearchPostResponseDtoKindEnum>[
+    _$searchPostResponseDtoKindEnum_BODY,
+    _$searchPostResponseDtoKindEnum_FLOOR,
+    _$searchPostResponseDtoKindEnum_unknownDefaultOpenApi,
+  ],
+);
+
+Serializer<SearchPostResponseDtoKindEnum>
+_$searchPostResponseDtoKindEnumSerializer =
+    _$SearchPostResponseDtoKindEnumSerializer();
+
+class _$SearchPostResponseDtoKindEnumSerializer
+    implements PrimitiveSerializer<SearchPostResponseDtoKindEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'BODY': 'BODY',
+    'FLOOR': 'FLOOR',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'BODY': 'BODY',
+    'FLOOR': 'FLOOR',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[SearchPostResponseDtoKindEnum];
+  @override
+  final String wireName = 'SearchPostResponseDtoKindEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SearchPostResponseDtoKindEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SearchPostResponseDtoKindEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SearchPostResponseDtoKindEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$SearchPostResponseDto extends SearchPostResponseDto {
+  @override
+  final SearchPostResponseDtoKindEnum kind;
   @override
   final String id;
   @override
@@ -29,6 +102,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   ]) => (SearchPostResponseDtoBuilder()..update(updates))._build();
 
   _$SearchPostResponseDto._({
+    required this.kind,
     required this.id,
     this.floorNumber,
     this.parentPostId,
@@ -51,6 +125,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is SearchPostResponseDto &&
+        kind == other.kind &&
         id == other.id &&
         floorNumber == other.floorNumber &&
         parentPostId == other.parentPostId &&
@@ -64,6 +139,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, floorNumber.hashCode);
     _$hash = $jc(_$hash, parentPostId.hashCode);
@@ -79,6 +155,7 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'SearchPostResponseDto')
+          ..add('kind', kind)
           ..add('id', id)
           ..add('floorNumber', floorNumber)
           ..add('parentPostId', parentPostId)
@@ -94,6 +171,10 @@ class _$SearchPostResponseDto extends SearchPostResponseDto {
 class SearchPostResponseDtoBuilder
     implements Builder<SearchPostResponseDto, SearchPostResponseDtoBuilder> {
   _$SearchPostResponseDto? _$v;
+
+  SearchPostResponseDtoKindEnum? _kind;
+  SearchPostResponseDtoKindEnum? get kind => _$this._kind;
+  set kind(SearchPostResponseDtoKindEnum? kind) => _$this._kind = kind;
 
   String? _id;
   String? get id => _$this._id;
@@ -139,6 +220,7 @@ class SearchPostResponseDtoBuilder
   SearchPostResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _kind = $v.kind;
       _id = $v.id;
       _floorNumber = $v.floorNumber;
       _parentPostId = $v.parentPostId;
@@ -171,6 +253,11 @@ class SearchPostResponseDtoBuilder
       _$result =
           _$v ??
           _$SearchPostResponseDto._(
+            kind: BuiltValueNullFieldError.checkNotNull(
+              kind,
+              r'SearchPostResponseDto',
+              'kind',
+            ),
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'SearchPostResponseDto',

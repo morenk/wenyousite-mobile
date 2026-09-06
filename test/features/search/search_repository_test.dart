@@ -328,6 +328,7 @@ SearchPostResponseDto _postDto({String threadId = 'thread-1'}) {
   return SearchPostResponseDto(
     (post) => post
       ..id = 'post-7'
+      ..kind = SearchPostResponseDtoKindEnum.FLOOR
       ..floorNumber = 7
       ..content = '**星海正文** ![航图](https://cdn.example.com/map.jpg)'
       ..createdAt = DateTime.utc(2026, 8, 10)

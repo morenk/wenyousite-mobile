@@ -3,6 +3,7 @@ param(
   [string]$BackendPath = '..\wenyousite-backend',
   [string]$Remote = 'origin',
   [string]$Branch = 'dev',
+  [string]$Revision,
   [switch]$SkipFetch
 )
 
@@ -69,14 +70,25 @@ if (-not $SkipFetch) {
 }
 
 $contractRef = "$Remote/$Branch"
+$selectedRef = $contractRef
+if (-not [string]::IsNullOrWhiteSpace($Revision)) {
+  if ($Revision -notmatch '^[0-9a-fA-F]{40}$') {
+    throw 'Revision must be a full 40-character commit SHA.'
+  }
+  $selectedRef = $Revision
+}
 $revisionOutput = @(Invoke-BackendGit @(
   'rev-parse',
   '--verify',
-  "$contractRef^{commit}"
+  "$selectedRef^{commit}"
 ))
 $revision = $revisionOutput[-1].Trim()
 if ($revision -notmatch '^[0-9a-f]{40}$') {
   throw "Cannot resolve $contractRef to a full backend commit."
+}
+& git -C $backend merge-base --is-ancestor $revision $contractRef
+if ($LASTEXITCODE -ne 0) {
+  throw "Selected revision must be an ancestor of $contractRef."
 }
 
 $backendContractPaths = @(Invoke-BackendGit @(

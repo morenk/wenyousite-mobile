@@ -430,6 +430,7 @@ Serializers _$serializers =
           ..add(SaveThreadAggregateDtoVisibilityEnum.serializer)
           ..add(SearchAuthorResponseDto.serializer)
           ..add(SearchPostResponseDto.serializer)
+          ..add(SearchPostResponseDtoKindEnum.serializer)
           ..add(SearchResultResponseDto.serializer)
           ..add(SearchSearch200Response.serializer)
           ..add(SearchSearchMoments200Response.serializer)
