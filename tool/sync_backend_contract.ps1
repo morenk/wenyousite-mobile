@@ -196,14 +196,13 @@ try {
   Pop-Location
 }
 
-$contractVersionLine = Select-String `
-  -LiteralPath (Join-Path $contractDirectory 'CHANGELOG.md') `
-  -Pattern '^##\s+(.+)$' |
-  Select-Object -First 1
-if ($null -eq $contractVersionLine) {
-  throw 'Cannot read the contract version from contracts/CHANGELOG.md.'
+$openApi = Get-Content `
+  -LiteralPath (Join-Path $contractDirectory 'openapi.json') `
+  -Encoding UTF8 -Raw | ConvertFrom-Json
+$contractVersion = [string]$openApi.info.version
+if ($contractVersion -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+  throw 'Cannot read the API contract version from contracts/openapi.json.'
 }
-$contractVersion = $contractVersionLine.Matches[0].Groups[1].Value
 $markdownFixture = Get-Content `
   -LiteralPath (Join-Path $contractDirectory (Split-Path -Leaf $markdownFixtureSource)) `
   -Encoding UTF8 `

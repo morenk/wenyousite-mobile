@@ -17,6 +17,8 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     fs.mkdirSync(backend);
     fs.mkdirSync(path.join(backend, 'docs'));
     fs.cpSync(path.join(repository, 'contracts'), path.join(backend, 'contracts'), { recursive: true });
+    const changelog = path.join(backend, 'contracts/CHANGELOG.md');
+    fs.writeFileSync(changelog, '# API 合同变更\n\n## 编辑器测试语料更新\n\n' + fs.readFileSync(changelog, 'utf8'));
     fs.copyFileSync(path.join(repository, 'contracts/mobile-client-guide.md'), path.join(backend, 'docs/mobile-client-guide.md'));
     git('init', '-b', 'dev');
     git('config', 'user.name', 'Contract fixture');
@@ -39,6 +41,8 @@ test('固定部署祖先导出同一 SHA，拒绝远端 dev 以外提交且不�
     const metadataPath = path.join(mobile, 'contracts/backend-contract.properties');
     const metadata = fs.readFileSync(metadataPath, 'utf8');
     assert.match(metadata, new RegExp(`backendRevision=${deployed}`));
+    const apiVersion = JSON.parse(fs.readFileSync(path.join(backend, 'contracts/openapi.json'), 'utf8')).info.version;
+    assert.ok(metadata.split('\n').includes(`contractVersion=${apiVersion}`));
     assert.doesNotMatch(metadata, new RegExp(branchHead));
     assert.equal(fs.readFileSync(path.join(mobile, 'contracts/CHANGELOG.md'), 'utf8'), git('show', `${deployed}:contracts/CHANGELOG.md`) + '\n');
     git('checkout', '-b', 'unpublished');

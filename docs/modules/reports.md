@@ -70,7 +70,7 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；后端 `8f646f0cc872e1f19a1dd3388fd98fcbd16f1696`；Foundation `v6.9.0`（`5888132`）。
+契约 `5.18.0-dev.20260905.1`；后端 `6b0c9c83ecd4532490cf07ad38eff9e10eb277b3`；Foundation `v6.9.0`（`5888132`）。
 
 ## 14. 相关代码与架构文档
 

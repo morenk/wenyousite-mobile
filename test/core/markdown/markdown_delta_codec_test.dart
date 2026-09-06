@@ -49,7 +49,7 @@ void main() {
   final editorRoundTripContract =
       jsonDecode(
             File(
-              'contracts/markdown-editor-roundtrip-v6-fixtures.json',
+              'contracts/markdown-editor-roundtrip-v7-fixtures.json',
             ).readAsStringSync(),
           )
           as Map<String, dynamic>;
@@ -57,8 +57,8 @@ void main() {
       (editorRoundTripContract['cases'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
-  test('消费后端编辑器往返黄金语料 v6', () {
-    expect(editorRoundTripContract['version'], 6);
+  test('消费后端编辑器往返黄金语料 v7', () {
+    expect(editorRoundTripContract['version'], 7);
     expect(editorRoundTripContract['markdownContractVersion'], 4);
     expect(editorRoundTripCases, isNotEmpty);
   });
