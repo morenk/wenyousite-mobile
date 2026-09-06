@@ -211,7 +211,7 @@ class _MeEditPageState extends ConsumerState<MeEditPage> {
     final canLeave =
         state.phase != MeProfilePhase.ready ||
         (!_draft.isDirty && !mutationBusy);
-    return PopScope<Object?>(
+    final page = PopScope<Object?>(
       canPop: _allowPop || canLeave,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) unawaited(_handlePopAttempt(result, mutationBusy));
@@ -255,6 +255,7 @@ class _MeEditPageState extends ConsumerState<MeEditPage> {
             : null,
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Future<void> _save() async {
@@ -352,7 +353,7 @@ class MeSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('账号设置')),
       body: _MePageList(
         children: [
@@ -366,6 +367,7 @@ class MeSettingsPage extends StatelessWidget {
         ],
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }
 

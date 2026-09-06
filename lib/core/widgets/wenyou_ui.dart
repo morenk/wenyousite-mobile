@@ -18,6 +18,53 @@ double wenyouHorizontalPagePadding(
       : tokens.regularHorizontalPadding;
 }
 
+/// Keeps configuration surfaces functional and compact by using Foundation's
+/// body family for every semantic heading level while preserving the shared
+/// sizes, line heights, weights, colors, and utility-number variants.
+class WenyouSettingsTypography extends StatelessWidget {
+  const WenyouSettingsTypography({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = _settingsTextTheme(theme.textTheme);
+    final primaryTextTheme = _settingsTextTheme(theme.primaryTextTheme);
+    return Theme(
+      data: theme.copyWith(
+        textTheme: textTheme,
+        primaryTextTheme: primaryTextTheme,
+        appBarTheme: theme.appBarTheme.copyWith(
+          titleTextStyle: _settingsTextStyle(
+            theme.appBarTheme.titleTextStyle ?? textTheme.wenyouSectionTitle,
+          ),
+          toolbarTextStyle: _settingsTextStyle(
+            theme.appBarTheme.toolbarTextStyle,
+          ),
+        ),
+        dialogTheme: theme.dialogTheme.copyWith(
+          titleTextStyle: _settingsTextStyle(theme.dialogTheme.titleTextStyle),
+          contentTextStyle: _settingsTextStyle(
+            theme.dialogTheme.contentTextStyle,
+          ),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+TextTheme _settingsTextTheme(TextTheme source) => source.apply(
+  fontFamily: WenyouFoundationTypography.body,
+  fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+);
+
+TextStyle? _settingsTextStyle(TextStyle? source) => source?.copyWith(
+  fontFamily: WenyouFoundationTypography.body,
+  fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+);
+
 class WenyouConstrainedWidth extends StatelessWidget {
   const WenyouConstrainedWidth({required this.child, this.maxWidth, super.key});
 

@@ -11,6 +11,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/network/session_remote.dart';
 import 'package:wenyousite_mobile/core/storage/token_store.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/avatar_image_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_ports.dart';
@@ -384,6 +385,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('添加主页背景'), findsOneWidget);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
     expect(find.text('选择图片后可调整取景'), findsOneWidget);
     expect(find.bySemanticsLabel('添加主页背景'), findsOneWidget);
     expect(find.bySemanticsLabel('添加头像'), findsOneWidget);
@@ -1050,6 +1052,7 @@ void main() {
 
     expect(repository.fetchCalls, 0);
     expect(find.text('账号设置'), findsOneWidget);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
     expect(find.text('登录终端'), findsOneWidget);
     expect(find.text('修改密码'), findsOneWidget);
     expect(find.text('更换邮箱'), findsOneWidget);

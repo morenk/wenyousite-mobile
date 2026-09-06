@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/diagnostics/diagnostic_widgets.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_feedback.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 class DiagnosticSettingsPage extends ConsumerWidget {
   const DiagnosticSettingsPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final diagnostics = ref.watch(failureDiagnosticsProvider);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('故障诊断')),
       body: AnimatedBuilder(
         animation: diagnostics,
@@ -46,5 +46,6 @@ class DiagnosticSettingsPage extends ConsumerWidget {
         },
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }

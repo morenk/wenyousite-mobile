@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/diagnostic_settings_page.dart';
 
 void main() {
@@ -43,6 +44,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('复制问题详情').hitTestable(),
       200,

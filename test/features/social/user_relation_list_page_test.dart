@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_list_repository.dart';
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/social/domain/user_relation_list_models.dart';
@@ -69,6 +70,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('unblock-user-1')));
     await tester.pumpAndSettle();

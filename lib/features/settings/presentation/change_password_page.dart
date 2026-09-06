@@ -57,7 +57,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final tokens = context.wenyouTokens;
     final state = ref.watch(passwordChangeControllerProvider);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('修改密码')),
       body: WenyouPageBody(
         maxWidth: 520,
@@ -136,5 +136,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }

@@ -15,7 +15,7 @@ class LoginSessionsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(loginSessionsControllerProvider);
     final notifier = ref.read(loginSessionsControllerProvider.notifier);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('登录终端')),
       body: switch (state.phase) {
         LoginSessionsPhase.loading => const WenyouPageBody(
@@ -47,6 +47,7 @@ class LoginSessionsPage extends ConsumerWidget {
         ),
       },
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Future<void> _confirmAndRevoke(

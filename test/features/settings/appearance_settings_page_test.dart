@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/appearance_preference.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/appearance_settings_page.dart';
 
 import '../../support/foundation_test_fonts.dart';
@@ -21,6 +22,7 @@ void main() {
     expect(find.text('亮色'), findsOneWidget);
     expect(find.text('黑夜'), findsOneWidget);
     expect(find.text('随设备外观自动切换'), findsOneWidget);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('appearance-option-dark')));
     await tester.pump();

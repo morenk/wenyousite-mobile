@@ -19,7 +19,7 @@ class UserRelationListPage extends ConsumerWidget {
     final provider = userRelationListControllerProvider(target);
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: Text(_title(target.kind))),
       body: switch (state.phase) {
         UserRelationListPhase.loading => WenyouPageBody(
@@ -60,6 +60,9 @@ class UserRelationListPage extends ConsumerWidget {
         ),
       },
     );
+    return target.kind == UserRelationListKind.blocks
+        ? WenyouSettingsTypography(child: page)
+        : page;
   }
 }
 

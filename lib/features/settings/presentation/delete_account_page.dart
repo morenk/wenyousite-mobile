@@ -89,7 +89,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(accountDeletionControllerProvider);
     final locked = state.isSubmitting || state.remoteDeletionConfirmed;
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('注销账号')),
       body: WenyouPageBody(
         maxWidth: 520,
@@ -196,6 +196,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }
 

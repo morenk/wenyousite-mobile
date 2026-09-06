@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_invitation_repository.dart';
@@ -26,6 +27,7 @@ void main() {
       _FakeRepository(initial: _bootstrap()),
       subthreadRepository: _FakeSubthreadRepository(),
     );
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     await tester.tap(
       find.byKey(
@@ -253,7 +255,7 @@ void main() {
     expect(find.text('综合讨论'), findsOneWidget);
   });
 
-  testWidgets('主题设置移除冗余标题、说明和内容分割线', (tester) async {
+  testWidgets('主题设置移除冗余内容并统一使用正文字体', (tester) async {
     await _pumpPage(tester, _FakeRepository(initial: _bootstrap()));
 
     final fieldLabel = tester.widget<Text>(find.text('主题标题'));
@@ -279,7 +281,7 @@ void main() {
       ),
       findsNothing,
     );
-    expect(pageTitle.fontFamily, WenyouFoundationTypography.display);
+    expect(pageTitle.fontFamily, WenyouFoundationTypography.body);
     expect(fieldLabel.style?.fontFamily, WenyouFoundationTypography.body);
     expect(fieldLabel.style?.fontSize, 16);
     expect(rowTitle.fontFamily, WenyouFoundationTypography.body);

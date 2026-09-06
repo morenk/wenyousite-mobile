@@ -17,7 +17,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
       appearancePreferenceControllerProvider.notifier,
     );
     final tokens = context.wenyouTokens;
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('外观')),
       body: WenyouPageBody(
         child: Column(
@@ -66,6 +66,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 }
 

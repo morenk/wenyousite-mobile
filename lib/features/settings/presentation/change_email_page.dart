@@ -71,7 +71,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(emailChangeControllerProvider);
-    return Scaffold(
+    final page = Scaffold(
       appBar: AppBar(title: const Text('更换邮箱')),
       body: WenyouPageBody(
         maxWidth: 520,
@@ -82,6 +82,7 @@ class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Widget _buildRequestStep(BuildContext context, EmailChangeState state) {

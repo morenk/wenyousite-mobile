@@ -87,7 +87,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         });
       }
     }
-    return PopScope<Object?>(
+    final page = PopScope<Object?>(
       canPop: _allowPop || state.phase != ThreadManagementPhase.ready,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_handlePopAttempt(state));
@@ -151,6 +151,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
         ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Widget _buildSettings(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/settings/data/login_session_repository.dart';
 import 'package:wenyousite_mobile/features/settings/domain/login_session_models.dart';
 import 'package:wenyousite_mobile/features/settings/presentation/login_sessions_page.dart';
@@ -12,6 +13,7 @@ void main() {
     final repository = _FakeRepository(sessions: [_current, _other]);
     await tester.pumpWidget(_app(repository));
     await tester.pumpAndSettle();
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
 
     expect(find.text('手机端登录'), findsOneWidget);
     expect(find.text('网页端登录'), findsOneWidget);
