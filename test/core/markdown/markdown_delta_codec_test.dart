@@ -169,6 +169,21 @@ void main() {
           ..insert(canonical)
           ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
 
+        if (const {
+          'aligned-list',
+          'aligned-quote',
+          'aligned-regular-image',
+          'four-level-list',
+        }.contains(id)) {
+          // These raw, unmarked Deltas used to activate structure on save.
+          // Public encoding must now reject that semantic change; the fixture
+          // remains accepted through the proper Markdown decode path above.
+          expect(
+            () => MarkdownDeltaCodec.encode(delta),
+            throwsA(isA<MarkdownCodecException>()),
+          );
+          return;
+        }
         final encoded = MarkdownDeltaCodec.encode(delta);
 
         expect(encoded, expected);

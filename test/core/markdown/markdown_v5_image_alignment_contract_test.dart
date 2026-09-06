@@ -19,6 +19,7 @@ void main() {
       .cast<Map<String, dynamic>>();
 
   test('消费 Markdown v5 图片块对齐 fixture', () {
+    expect(contract['version'], 2);
     expect(contract['markdownContractVersion'], 5);
 
     for (final testCase in cases) {

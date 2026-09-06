@@ -8,6 +8,33 @@ import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_sessi
 import 'rich_editor_session_test_support.dart';
 
 void registerRichEditorSessionDocumentTransactionsCases() {
+  testWidgets('无损证明失败保留当前 Delta 与上次草稿，修正后可保存', (tester) async {
+    final emitted = <String>[];
+    final session = RichEditorSession(
+      initialMarkdown: '原草稿',
+      onMarkdownChanged: emitted.add,
+    );
+    addTearDown(session.dispose);
+    // Simulate an invalid producer bypassing literal input metadata.
+    session.controller.document = Document()..insert(0, '**源码字符**');
+    final before = session.controller.document.toDelta().toJson();
+    expect(await session.flush(), isFalse);
+    expect(emitted, isEmpty);
+    expect(session.controller.document.toDelta().toJson(), before);
+    expect(session.codecFailure, isNot(contains('源码字符')));
+    session.controller.document.format(
+      0,
+      8,
+      Attribute<bool>(
+        MarkdownDeltaCodec.literalTextAttribute,
+        AttributeScope.inline,
+        true,
+      ),
+    );
+    expect(await session.flush(), isTrue);
+    expect(emitted.single, r'\*\*源码字符\*\*');
+  });
+
   testWidgets('正文输入空闲后才编码 Markdown，显式 flush 会立即同步', (tester) async {
     final emitted = <String>[];
     final session = RichEditorSession(

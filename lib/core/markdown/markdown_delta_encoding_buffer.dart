@@ -14,6 +14,7 @@ final class MarkdownDeltaEncodingBuffer {
   var _openParagraphHasRegularImage = false;
   var _previousLineWasParagraphShape = false;
   var _previousLineWasImageBlock = false;
+  var _previousLineWasLiteral = false;
 
   void writeLine(
     String encodedLine,
@@ -59,7 +60,10 @@ final class MarkdownDeltaEncodingBuffer {
       _ensureBlankLine();
     }
 
-    if (isLiteral && output.isNotEmpty && !output.toString().endsWith('\n\n')) {
+    if ((isLiteral || _previousLineWasLiteral) &&
+        hasContent &&
+        output.isNotEmpty &&
+        !output.toString().endsWith('\n\n')) {
       output.write('\n');
     }
 
@@ -99,11 +103,12 @@ final class MarkdownDeltaEncodingBuffer {
 
     output.write(encodedLine);
     if (attributes?[sourceBreakAttribute] != false) {
-      output.write(isLiteral ? '\n\n' : '\n');
+      output.write('\n');
     }
 
     _previousLineWasParagraphShape = joinsMarkdownParagraph;
     _previousLineWasImageBlock = isImageBlock;
+    _previousLineWasLiteral = isLiteral;
     if (!joinsMarkdownParagraph) {
       _openParagraphAlignment = null;
       _openParagraphHasRegularImage = false;

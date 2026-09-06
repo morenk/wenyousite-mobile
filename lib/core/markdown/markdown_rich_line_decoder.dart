@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
@@ -8,6 +9,41 @@ class MarkdownRichLine {
 
   final List<MarkdownRichSpan> spans;
   final Map<String, dynamic> lineAttributes;
+
+  bool semanticallyEquivalentTo(MarkdownRichLine other) {
+    if (!mapEquals(lineAttributes, other.lineAttributes)) return false;
+    final left = _mergedSpans(spans);
+    final right = _mergedSpans(other.spans);
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      final a = left[index];
+      final b = right[index];
+      if (a.text != b.text ||
+          !mapEquals(a.attributes, b.attributes) ||
+          a.internalReference?.label != b.internalReference?.label ||
+          a.internalReference?.reference.location.toString() !=
+              b.internalReference?.reference.location.toString()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static List<MarkdownRichSpan> _mergedSpans(List<MarkdownRichSpan> spans) {
+    final result = <MarkdownRichSpan>[];
+    for (final span in spans) {
+      if (span.internalReference == null &&
+          result.isNotEmpty &&
+          result.last.internalReference == null &&
+          mapEquals(result.last.attributes, span.attributes)) {
+        final last = result.removeLast();
+        result.add(MarkdownRichSpan(last.text + span.text, span.attributes));
+      } else {
+        result.add(span);
+      }
+    }
+    return result;
+  }
 }
 
 class MarkdownRichSpan {
@@ -25,7 +61,7 @@ class MarkdownRichSpan {
 /// Parses the deliberately small Markdown subset supported by the editor.
 ///
 /// The result is independent from Quill. The Delta adapter remains responsible
-/// for proving that the candidate serializes back to the canonical input.
+/// for proving that canonical serialization preserves the full semantics.
 class MarkdownRichLineDecoder {
   MarkdownRichLineDecoder._();
 
@@ -179,6 +215,9 @@ class MarkdownRichLineDecoder {
       } else if (node.tag == 'code') {
         attributes['code'] = true;
       } else if (node.tag == 'a') {
+        // Delta links have no title field; accepting one would erase source
+        // metadata during canonicalization (including escaped image syntax).
+        if (node.attributes.containsKey('title')) return false;
         final href = node.attributes['href'];
         final reference = href == null ? null : parseInternalReference(href);
         if (reference != null && inherited.isEmpty) {

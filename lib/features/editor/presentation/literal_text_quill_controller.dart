@@ -24,6 +24,10 @@ class LiteralTextQuillController extends QuillController {
     bool shouldNotifyListeners = true,
   }) {
     final before = document.toDelta();
+    final preservesLink =
+        toggledStyle.attributes[Attribute.link.key]?.value != null ||
+        document.collectStyle(index, 0).attributes[Attribute.link.key]?.value !=
+            null;
     if (data == ' ' && len == 0 && index > 0) {
       final left = document.collectStyle(index - 1, 1).attributes;
       final right = document.collectStyle(index, 1).attributes;
@@ -99,6 +103,9 @@ class LiteralTextQuillController extends QuillController {
         }
         formatting.retain(end - sourceOffset, {
           MarkdownDeltaCodec.literalTextAttribute: true,
+          // Literal typing must not acquire Quill's automatically detected
+          // links. Existing links and explicitly enabled input marks survive.
+          if (!preservesLink) Attribute.link.key: null,
         });
         formattingOffset = start + end - sourceOffset;
       }

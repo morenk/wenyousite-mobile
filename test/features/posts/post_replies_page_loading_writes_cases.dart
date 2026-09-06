@@ -197,6 +197,54 @@ void registerPostRepliesPageLoadingWritesCases() {
     expect(repository.createInputs.single.content, '第一段\n<br />\n第二段');
   });
 
+  for (final invalid in [false, true]) {
+    testWidgets('真实回复${invalid ? '拒绝有损正文且保留编辑器' : '发布合并后的新旧粗体文字'}', (
+      tester,
+    ) async {
+      final repository = PostRepliesPageTestFakePostRepository();
+      final container = await postRepliesPageTestPostContainer(
+        repository,
+        userId: 'author-1',
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(postRepliesPageTestPostRepliesApp(container));
+      await postRepliesPageTestPumpUi(tester);
+      await tester.tap(find.byKey(const Key('post-reply-compose')));
+      await postRepliesPageTestPumpUi(tester);
+      final controller = tester
+          .state<QuillEditorState>(find.byKey(const Key('post-composer-body')))
+          .widget
+          .controller;
+      controller.document = invalid
+          ? (Document()..insert(0, '**源码字符**'))
+          : Document.fromDelta(MarkdownDeltaCodec.decode('**甲乙**').delta);
+      if (!invalid) {
+        controller.updateSelection(
+          const TextSelection.collapsed(offset: 1),
+          ChangeSource.local,
+        );
+        controller.formatSelection(Attribute.bold);
+        controller.replaceText(
+          1,
+          0,
+          '新',
+          const TextSelection.collapsed(offset: 2),
+        );
+      }
+      final before = controller.document.toDelta().toJson();
+      await tester.tap(find.byKey(const Key('editor-submit')));
+      await postRepliesPageTestPumpUi(tester);
+      if (invalid) {
+        expect(repository.createInputs, isEmpty);
+        expect(find.byKey(const Key('post-composer-sheet')), findsOneWidget);
+        expect(controller.document.toDelta().toJson(), before);
+      } else {
+        expect(repository.createInputs.single.content, '**甲新乙**');
+        expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
+      }
+    });
+  }
+
   testWidgets('回复正文和原子表情共同进入发布载荷并在列表回显', (tester) async {
     const expected =
         '前文![表情]($postRepliesPageTestStickerUrl '

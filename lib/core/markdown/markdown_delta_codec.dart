@@ -6,7 +6,9 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_validator.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_encoding_buffer.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_extension_nodes.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
@@ -124,32 +126,12 @@ class MarkdownDeltaCodec {
           horizontalRuleEmbed: const {'version': 1},
         });
       } else if (MarkdownContent.hasCanonicalLiteralEncoding(line)) {
-        final decoded = MarkdownCanonicalLiteralDecoder.decode(
+        richLineAttributes = _decodeInlineLine(
           line,
-          literalTextAttribute: literalTextAttribute,
-          internalReferenceEmbed: internalReferenceEmbed,
-          sourceBreakAttribute: sourceBreakAttribute,
-          preservesSource: (candidate) {
-            try {
-              return _encode(candidate, false, imageAlignment) == line;
-            } on MarkdownCodecException {
-              return false;
-            }
-          },
+          delta,
+          issues,
+          diceNodeIds,
         );
-        if (decoded == null) {
-          for (final span in MarkdownContent.decodeLiteralSpans(line)!) {
-            delta.insert(
-              span.text,
-              span.literal ? const {literalTextAttribute: true} : null,
-            );
-          }
-        } else {
-          for (final operation in decoded.delta.operations) {
-            delta.insert(operation.data, operation.attributes);
-          }
-          richLineAttributes = decoded.lineAttributes;
-        }
       } else {
         final richSource = readerClipboard
             ? MarkdownRichLineDecoder.canonicalizeReaderBlockPrefix(line)
@@ -160,22 +142,14 @@ class MarkdownDeltaCodec {
                 ? MarkdownRichLineDecoder.decodeEditable(richSource)
                 : null);
         if (richLine == null) {
-          _decodeInlineLine(line, delta, issues, diceNodeIds);
+          richLineAttributes = _decodeInlineLine(
+            line,
+            delta,
+            issues,
+            diceNodeIds,
+          );
         } else {
-          for (final span in richLine.spans) {
-            final portal = span.internalReference;
-            if (portal == null) {
-              delta.insert(span.text, span.attributes);
-            } else {
-              delta.insert({
-                internalReferenceEmbed: {
-                  'version': 1,
-                  'label': portal.label,
-                  'location': portal.reference.location.toString(),
-                },
-              });
-            }
-          }
+          _appendRichLine(richLine, delta);
           richLineAttributes = richLine.lineAttributes;
         }
       }
@@ -201,14 +175,23 @@ class MarkdownDeltaCodec {
     );
   }
 
-  static String encode(Delta delta, {bool imageAlignment = false}) =>
-      _encode(delta, true, imageAlignment);
+  static String encode(Delta delta, {bool imageAlignment = false}) {
+    final encoded = _encode(delta, true, imageAlignment);
+    final reopened = _decode(encoded, false, imageAlignment).delta;
+    if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
+      throw const MarkdownCodecException('正文无法安全保存，请撤销最近的格式操作');
+    }
+    return encoded;
+  }
 
   static String _encode(
     Delta delta,
     bool sanitizeUnsupported, [
     bool imageAlignment = false,
   ]) {
+    if (delta.operations.any((operation) => !operation.isInsert)) {
+      throw const MarkdownCodecException('文档 Delta 只能包含 insert 操作');
+    }
     delta = MarkdownDeltaLineMetadata.prepareForEncoding(delta);
     MarkdownDeltaBlockValidator.validate(
       delta,
@@ -218,6 +201,7 @@ class MarkdownDeltaCodec {
       imageAlignment: imageAlignment,
     );
     final line = StringBuffer();
+    final inline = MarkdownDeltaInlineEncoder(line);
     var lineHasLiteralText = false;
     for (final operation in delta.operations) {
       if (!operation.isInsert) {
@@ -229,6 +213,7 @@ class MarkdownDeltaCodec {
           data,
           operation.attributes,
           line,
+          inline,
           encodingBuffer,
           lineHasLiteralText: lineHasLiteralText,
         );
@@ -240,8 +225,10 @@ class MarkdownDeltaCodec {
       if (operation.attributes?.isNotEmpty ?? false) {
         throw const MarkdownCodecException('扩展节点不能携带富文本属性');
       }
+      inline.flush();
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
+    inline.flush();
     if (line.isNotEmpty) encodingBuffer.output.write(line);
     final encoded = sanitizeUnsupported
         ? MarkdownContent.literalizeUnsupported(
@@ -275,17 +262,46 @@ class MarkdownDeltaCodec {
     );
   }
 
-  static void _decodeInlineLine(
+  static Map<String, dynamic>? _decodeInlineLine(
     String line,
     Delta delta,
     List<MarkdownCodecIssue> issues,
     Set<String> diceNodeIds,
   ) {
     final text = StringBuffer();
+    final lineStart = delta.length;
+    Map<String, dynamic>? lineAttributes;
 
     void flushText() {
       if (text.isEmpty) return;
-      delta.insert(text.toString());
+      final source = text.toString();
+      final isFirst = delta.length == lineStart;
+      final hasLiteral = MarkdownContent.hasCanonicalLiteralEncoding(source);
+      final literal = hasLiteral ? _decodeCanonicalLiteral(source) : null;
+      final rich = !hasLiteral
+          ? _tryDecodeRichLine(source, protocolTextOnly: true)
+          : null;
+      final attributes = literal?.lineAttributes ?? rich?.lineAttributes;
+      if (attributes?.isNotEmpty == true && delta.length != lineStart) {
+        delta.insert(source);
+      } else if (literal != null) {
+        for (final operation in literal.delta.operations) {
+          delta.insert(operation.data, operation.attributes);
+        }
+        if (isFirst) lineAttributes = attributes;
+      } else if (rich != null) {
+        _appendRichLine(rich, delta);
+        if (isFirst) lineAttributes = attributes;
+      } else if (MarkdownContent.decodeLiteralSpans(source) case final spans?) {
+        for (final span in spans) {
+          delta.insert(
+            span.text,
+            span.literal ? const {literalTextAttribute: true} : null,
+          );
+        }
+      } else {
+        delta.insert(source);
+      }
       text.clear();
     }
 
@@ -472,25 +488,38 @@ class MarkdownDeltaCodec {
       index += 1;
     }
     flushText();
+    return lineAttributes;
   }
 
-  static MarkdownRichLine? _tryDecodeRichLine(String source) {
-    if (source.contains('](/users/') ||
-        source.contains(_allPlayersLabel) ||
-        source.toLowerCase().contains('[[dice:') ||
-        source.contains('![')) {
-      return null;
-    }
-    final richLine = MarkdownRichLineDecoder.decode(source);
-    if (richLine == null) return null;
+  static MarkdownCanonicalLiteralDecodeResult? _decodeCanonicalLiteral(
+    String source,
+  ) => MarkdownCanonicalLiteralDecoder.decode(
+    source,
+    literalTextAttribute: literalTextAttribute,
+    internalReferenceEmbed: internalReferenceEmbed,
+    sourceBreakAttribute: sourceBreakAttribute,
+    preservesSource: (candidate) {
+      try {
+        final encoded = _encode(candidate, false);
+        if (encoded == source) return true;
+        final original = MarkdownRichLineDecoder.decode(source);
+        final canonical = MarkdownRichLineDecoder.decode(encoded);
+        return original != null &&
+            canonical != null &&
+            original.semanticallyEquivalentTo(canonical);
+      } on MarkdownCodecException {
+        return false;
+      }
+    },
+  );
 
-    final candidate = Delta();
+  static void _appendRichLine(MarkdownRichLine richLine, Delta delta) {
     for (final span in richLine.spans) {
       final portal = span.internalReference;
       if (portal == null) {
-        candidate.insert(span.text, span.attributes);
+        delta.insert(span.text, span.attributes);
       } else {
-        candidate.insert({
+        delta.insert({
           internalReferenceEmbed: {
             'version': 1,
             'label': portal.label,
@@ -499,13 +528,38 @@ class MarkdownDeltaCodec {
         });
       }
     }
+  }
+
+  static MarkdownRichLine? _tryDecodeRichLine(
+    String source, {
+    bool protocolTextOnly = false,
+  }) {
+    if (!protocolTextOnly &&
+        (source.contains('](/users/') ||
+            source.contains(_allPlayersLabel) ||
+            source.toLowerCase().contains('[[dice:') ||
+            source.contains('!['))) {
+      return null;
+    }
+    final richLine = MarkdownRichLineDecoder.decode(source);
+    if (richLine == null) return null;
+
+    final candidate = Delta();
+    _appendRichLine(richLine, candidate);
     candidate.insert('\n', {
       ...richLine.lineAttributes,
       sourceBreakAttribute: false,
     });
     try {
-      if (_encode(candidate, false) !=
-          MarkdownInlineBoundary.canonicalize(source)) {
+      final encoded = _encode(candidate, false);
+      // Automatic URL links retain their existing source spelling. Explicit
+      // rich marks may canonicalize their nesting after semantic proof.
+      if (encoded != MarkdownInlineBoundary.canonicalize(source) &&
+          RegExp(r'(^|[\s>])<?https?://').hasMatch(source)) {
+        return null;
+      }
+      final reparsed = MarkdownRichLineDecoder.decode(encoded);
+      if (reparsed == null || !richLine.semanticallyEquivalentTo(reparsed)) {
         return null;
       }
     } on MarkdownCodecException {
@@ -518,6 +572,7 @@ class MarkdownDeltaCodec {
     String value,
     Map<String, dynamic>? attributes,
     StringBuffer line,
+    MarkdownDeltaInlineEncoder inline,
     MarkdownDeltaEncodingBuffer encodingBuffer, {
     required bool lineHasLiteralText,
   }) {
@@ -526,13 +581,13 @@ class MarkdownDeltaCodec {
       final isLineBreak = index < value.length && value[index] == '\n';
       if (!isLineBreak && index != value.length) continue;
       if (index > start) {
-        line.write(
-          _encodeInlineText(value.substring(start, index), attributes),
-        );
+        if (attributes != null) _validateTextAttributes(attributes);
+        inline.add(value.substring(start, index), attributes);
         lineHasLiteralText =
             lineHasLiteralText || attributes?[literalTextAttribute] == true;
       }
       if (!isLineBreak) break;
+      inline.flush();
       final encodedLine = _encodeLine(
         line.toString(),
         attributes,
@@ -552,11 +607,7 @@ class MarkdownDeltaCodec {
     return lineHasLiteralText;
   }
 
-  static String _encodeInlineText(
-    String value,
-    Map<String, dynamic>? attributes,
-  ) {
-    if (attributes == null || attributes.isEmpty) return value;
+  static void _validateTextAttributes(Map<String, dynamic> attributes) {
     _rejectUnknownAttributes(attributes, const {
       'bold',
       'italic',
@@ -573,43 +624,6 @@ class MarkdownDeltaCodec {
       'blockquote',
       'indent',
     });
-
-    final inlineCode = attributes['code'] == true;
-    final bold = attributes['bold'] == true;
-    final italic = attributes['italic'] == true;
-    final strike = attributes['strike'] == true;
-    final link = attributes['link'];
-    if (inlineCode && (bold || italic || strike || link != null)) {
-      throw const MarkdownCodecException('行内代码不能与其他行内格式组合');
-    }
-    if (inlineCode) return _inlineCode(value);
-
-    final core = value.trim();
-    if (core.isEmpty) return value;
-    var encoded = attributes[literalTextAttribute] == true
-        ? MarkdownContent.literalizeInlineText(core)
-        : core;
-    if (link != null) {
-      if (link is! String || link.isEmpty) {
-        throw const MarkdownCodecException('链接属性不是有效字符串');
-      }
-      final uri = Uri.tryParse(link);
-      if (uri == null ||
-          !uri.hasScheme ||
-          !MarkdownContent.isSafeLink(uri) ||
-          RegExp(r'[\s)]').hasMatch(link) ||
-          value.contains(']')) {
-        throw const MarkdownCodecException('这个链接暂时无法安全编辑');
-      }
-      if (!strike || (!bold && !italic)) encoded = '[$encoded]($link)';
-    }
-    if (strike) encoded = '~~$encoded~~';
-    if (italic) encoded = '*$encoded*';
-    if (bold) encoded = '**$encoded**';
-    if (link != null && strike && (bold || italic)) {
-      encoded = '[$encoded]($link)';
-    }
-    return value.replaceFirst(core, encoded);
   }
 
   static String _encodeLine(
@@ -622,22 +636,7 @@ class MarkdownDeltaCodec {
           ? MarkdownContent.protectUnsafeWhitespace(content)
           : content;
     }
-    _rejectUnknownAttributes(attributes, const {
-      'bold',
-      'italic',
-      'strike',
-      'code',
-      'link',
-      emptyParagraphAttribute,
-      sourceBreakAttribute,
-      literalLineAttribute,
-      literalTextAttribute,
-      alignmentAttribute,
-      'header',
-      'list',
-      'blockquote',
-      'indent',
-    });
+    _validateTextAttributes(attributes);
     if (attributes[literalLineAttribute] == true) {
       final incompatible = attributes.keys.where(
         (key) => key != literalLineAttribute && key != sourceBreakAttribute,
@@ -695,22 +694,6 @@ class MarkdownDeltaCodec {
       throw const MarkdownCodecException('只有列表行可以携带缩进');
     }
     return canonicalContent;
-  }
-
-  static String _inlineCode(String value) {
-    var longestRun = 0;
-    var currentRun = 0;
-    for (final rune in value.runes) {
-      if (rune == 0x60) {
-        currentRun += 1;
-        if (currentRun > longestRun) longestRun = currentRun;
-      } else {
-        currentRun = 0;
-      }
-    }
-    final delimiter = '`' * (longestRun + 1);
-    final needsPadding = value.startsWith('`') || value.endsWith('`');
-    return '$delimiter${needsPadding ? ' ' : ''}$value${needsPadding ? ' ' : ''}$delimiter';
   }
 
   static void _rejectUnknownAttributes(

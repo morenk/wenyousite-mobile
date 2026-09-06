@@ -141,6 +141,14 @@ void main() {
       WenyouEditorFormatPolicy.toggle(controller, Attribute.italic);
       WenyouEditorFormatPolicy.toggle(controller, Attribute.strikeThrough);
 
+      if (indent == 3) {
+        expect(
+          () => MarkdownDeltaCodec.encode(controller.document.toDelta()),
+          throwsA(isA<MarkdownCodecException>()),
+          reason: '第四层列表超出共享契约，不能丢失列表和行内样式后保存',
+        );
+        return;
+      }
       final markdown = MarkdownDeltaCodec.encode(controller.document.toDelta());
       expect(
         MarkdownDeltaCodec.encode(MarkdownDeltaCodec.decode(markdown).delta),
