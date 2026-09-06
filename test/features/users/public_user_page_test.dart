@@ -35,10 +35,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const Key('home-thread-card-thread-created')),
-      findsOneWidget,
-    );
     expect(find.text('一起写下温柔的故事。'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
@@ -59,6 +55,14 @@ void main() {
     expect(tester.getSemantics(avatar).label, contains('温柔测试员 的头像'));
     final avatarRect = tester.getRect(avatar);
     expect(avatarRect.size, const Size.square(72));
+    await _scrollToContent(
+      tester,
+      find.byKey(const Key('home-thread-card-thread-created')),
+    );
+    expect(
+      find.byKey(const Key('home-thread-card-thread-created')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('公开用户页失败后可重试恢复', (tester) async {
@@ -266,6 +270,10 @@ void main() {
     await tester.pumpWidget(_userApp(repository));
     await tester.pumpAndSettle();
 
+    await _scrollToContent(
+      tester,
+      find.byKey(const Key('home-thread-card-thread-created')),
+    );
     expect(
       find.byKey(const Key('home-thread-card-thread-created')),
       findsOneWidget,
@@ -378,6 +386,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('温柔测试员'), findsOneWidget);
+    await _scrollToContent(
+      tester,
+      find.byKey(const Key('public-user-created-retry')),
+    );
     expect(find.text('创建的主题加载失败'), findsOneWidget);
     await tester.ensureVisible(
       find.byKey(const Key('public-user-created-retry')),
@@ -429,7 +441,7 @@ void main() {
     final createdThread = find.byKey(
       const Key('home-thread-card-thread-created'),
     );
-    await tester.ensureVisible(createdThread);
+    await _scrollToContent(tester, createdThread);
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(of: createdThread, matching: find.text('创建主题')),
@@ -815,4 +827,13 @@ class _FakeSessionRemote implements SessionRemote {
 
   @override
   Future<SessionTokens> refresh(String refreshToken) async => _tokens;
+}
+
+Future<void> _scrollToContent(WidgetTester tester, Finder target) async {
+  await tester.scrollUntilVisible(
+    target,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
 }

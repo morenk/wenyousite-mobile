@@ -102,45 +102,53 @@ class _MeContentTabBodyState extends ConsumerState<MeContentTabBody>
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
     final isOverview = widget.tab == MeContentTab.overview;
-    return ListView(
+    return CustomScrollView(
       key: PageStorageKey('me-${tab.name}-content'),
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        wenyouHorizontalPagePadding(context),
-        context.wenyouTokens.space12,
-        wenyouHorizontalPagePadding(context),
-        112,
-      ),
-      children: [
-        WenyouConstrainedWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (isOverview) ...[
-                UserActivitySummaryPanel(
-                  key: const Key('me-activity-summary'),
-                  keyPrefix: 'me-activity',
-                  state: state,
-                  onRetry: notifier.retryActivitySummary,
-                  onMomentsPressed: () =>
-                      widget.onSelectTab(MeContentTab.moments),
-                  onCreatedThreadsPressed: () =>
-                      widget.onSelectTab(MeContentTab.createdThreads),
-                  onPlayedThreadsPressed: () =>
-                      widget.onSelectTab(MeContentTab.playedThreads),
-                  onRepliesPressed: _revealRecentReplies,
-                ),
-                SizedBox(height: context.wenyouTokens.space20),
-                KeyedSubtree(
-                  key: _recentRepliesKey,
-                  child: const WenyouSectionHeader(
-                    key: Key('me-recent-replies'),
-                    title: '最近回复',
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            wenyouHorizontalPagePadding(context),
+            context.wenyouTokens.space12,
+            wenyouHorizontalPagePadding(context),
+            112,
+          ),
+          sliver: SliverMainAxisGroup(
+            slivers: [
+              SliverToBoxAdapter(
+                child: WenyouConstrainedWidth(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (isOverview) ...[
+                        UserActivitySummaryPanel(
+                          key: const Key('me-activity-summary'),
+                          keyPrefix: 'me-activity',
+                          state: state,
+                          onRetry: notifier.retryActivitySummary,
+                          onMomentsPressed: () =>
+                              widget.onSelectTab(MeContentTab.moments),
+                          onCreatedThreadsPressed: () =>
+                              widget.onSelectTab(MeContentTab.createdThreads),
+                          onPlayedThreadsPressed: () =>
+                              widget.onSelectTab(MeContentTab.playedThreads),
+                          onRepliesPressed: _revealRecentReplies,
+                        ),
+                        SizedBox(height: context.wenyouTokens.space20),
+                        KeyedSubtree(
+                          key: _recentRepliesKey,
+                          child: const WenyouSectionHeader(
+                            key: Key('me-recent-replies'),
+                            title: '最近回复',
+                          ),
+                        ),
+                        SizedBox(height: context.wenyouTokens.space8),
+                      ],
+                    ],
                   ),
                 ),
-                SizedBox(height: context.wenyouTokens.space8),
-              ],
-              PublicUserContentSectionView(
+              ),
+              PublicUserContentSectionSliver(
                 tab: tab,
                 state: state,
                 isSelf: true,

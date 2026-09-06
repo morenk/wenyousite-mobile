@@ -166,66 +166,84 @@ class _ReadyNotificationList extends StatelessWidget {
     final horizontal = wenyouHorizontalPagePadding(context);
     return RefreshIndicator(
       onRefresh: state.isBusy ? () async {} : onRefresh,
-      child: ListView(
+      child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-          horizontal,
-          tokens.space16,
-          horizontal,
-          tokens.space32,
-        ),
-        children: [
-          if (state.actionFailure != null) ...[
-            WenyouConstrainedWidth(
-              child: WenyouFailureBanner(
-                failure: state.actionFailure!,
-                action: TextButton(
-                  key: const Key('notification-action-error-dismiss'),
-                  onPressed: onDismissFailure,
-                  child: const Text('知道了'),
-                ),
-              ),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              tokens.space16,
+              horizontal,
+              tokens.space32,
             ),
-            SizedBox(height: tokens.space12),
-          ],
-          if (state.items.isEmpty)
-            WenyouConstrainedWidth(
-              child: WenyouEmptyState(
-                icon: WenyouIconIds.statusNotifications,
-                title: state.filter == NotificationFilters.all
-                    ? '暂无通知'
-                    : '这个分类暂无通知',
-              ),
-            )
-          else
-            for (var index = 0; index < state.items.length; index++) ...[
-              if (index > 0) const Divider(height: 1),
-              WenyouConstrainedWidth(
-                child: _NotificationCard(
-                  item: state.items[index],
-                  isPending: state.pendingId == state.items[index].id,
-                  actionsDisabled:
-                      state.isMutating &&
-                      state.pendingId != state.items[index].id,
-                  onOpen: () => onOpen(state.items[index]),
-                  onRemove: () => onRemove(state.items[index].id),
-                ),
-              ),
-            ],
-          if (state.items.isNotEmpty) ...[
-            SizedBox(height: tokens.space12),
-            WenyouConstrainedWidth(
-              child: WenyouPaginationFooter(
-                hasMore: state.hasMore,
-                isLoading: state.isLoadingMore,
-                failure: state.loadMoreFailure,
-                onLoadMore: state.isBusy ? null : onLoadMore,
-                loadMoreKey: const Key('notification-load-more'),
-                retryKey: const Key('notification-load-more-retry'),
-                endLabel: '已经看到全部通知',
-              ),
+            sliver: SliverMainAxisGroup(
+              slivers: [
+                if (state.actionFailure != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: tokens.space12),
+                      child: WenyouConstrainedWidth(
+                        child: WenyouFailureBanner(
+                          failure: state.actionFailure!,
+                          action: TextButton(
+                            key: const Key('notification-action-error-dismiss'),
+                            onPressed: onDismissFailure,
+                            child: const Text('知道了'),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (state.items.isEmpty && !state.hasMore)
+                  SliverToBoxAdapter(
+                    child: WenyouConstrainedWidth(
+                      child: WenyouEmptyState(
+                        icon: WenyouIconIds.statusNotifications,
+                        title: state.filter == NotificationFilters.all
+                            ? '暂无通知'
+                            : '这个分类暂无通知',
+                      ),
+                    ),
+                  )
+                else
+                  SliverList.separated(
+                    itemCount: state.items.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = state.items[index];
+                      return WenyouConstrainedWidth(
+                        key: ValueKey(item.id),
+                        child: _NotificationCard(
+                          item: item,
+                          isPending: state.pendingId == item.id,
+                          actionsDisabled:
+                              state.isMutating && state.pendingId != item.id,
+                          onOpen: () => onOpen(item),
+                          onRemove: () => onRemove(item.id),
+                        ),
+                      );
+                    },
+                  ),
+                if (state.items.isNotEmpty || state.hasMore)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: tokens.space12),
+                      child: WenyouConstrainedWidth(
+                        child: WenyouPaginationFooter(
+                          hasMore: state.hasMore,
+                          isLoading: state.isLoadingMore,
+                          failure: state.loadMoreFailure,
+                          onLoadMore: state.isBusy ? null : onLoadMore,
+                          loadMoreKey: const Key('notification-load-more'),
+                          retryKey: const Key('notification-load-more-retry'),
+                          endLabel: '已经看到全部通知',
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );

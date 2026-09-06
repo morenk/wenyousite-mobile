@@ -10,6 +10,44 @@ import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 import 'package:wenyousite_mobile/features/wallet/presentation/wallet_page.dart';
 
 void main() {
+  testWidgets('千条钱包流水保持惰性布局并可到达分页入口', (tester) async {
+    await tester.pumpWidget(_walletApp(_WalletPageRepository(longList: true)));
+    await tester.pumpAndSettle();
+    Finder rows() => find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'wallet-transaction-lazy-',
+          ),
+    );
+    expect(rows().evaluate().length, lessThan(20));
+    expect(
+      find.byKey(const ValueKey('wallet-transaction-lazy-999')),
+      findsNothing,
+    );
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position;
+    for (var attempt = 0; attempt < 5; attempt++) {
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pumpAndSettle();
+    }
+    expect(
+      find.byKey(const ValueKey('wallet-transaction-lazy-999')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('wallet-transaction-lazy-0')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('wallet-load-more')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(rows().evaluate().length, lessThan(20));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('钱包页展示精确大整数以及签到、支出和收入业务含义', (tester) async {
     await tester.pumpWidget(_walletApp(_WalletPageRepository()));
     await tester.pumpAndSettle();
@@ -93,9 +131,10 @@ Widget _walletApp(WalletRepository repository, {double textScale = 1}) {
 }
 
 class _WalletPageRepository extends Fake implements WalletRepository {
-  _WalletPageRepository({this.failSummaryOnce = false});
+  _WalletPageRepository({this.failSummaryOnce = false, this.longList = false});
 
   final bool failSummaryOnce;
+  final bool longList;
   var summaryCalls = 0;
 
   @override
@@ -120,15 +159,17 @@ class _WalletPageRepository extends Fake implements WalletRepository {
     int limit = 20,
   }) async {
     return CursorPage(
-      items: [_daily(), _expense(), _income()],
-      cursor: null,
-      hasMore: false,
+      items: longList
+          ? List.generate(1000, (index) => _daily(id: 'lazy-$index'))
+          : [_daily(), _expense(), _income()],
+      cursor: longList ? 'opaque' : null,
+      hasMore: longList,
     );
   }
 }
 
-WalletTransaction _daily() => WalletTransaction(
-  id: 'daily',
+WalletTransaction _daily({String id = 'daily'}) => WalletTransaction(
+  id: id,
   type: WalletTransactionType.dailyCheckIn,
   direction: WalletTransactionDirection.income,
   amount: '3',

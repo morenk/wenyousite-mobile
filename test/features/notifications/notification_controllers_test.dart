@@ -251,7 +251,7 @@ void main() {
     expect(unread.state.count, 3);
   });
 
-  test('删除未读尾项后回退游标并同步角标', () async {
+  test('删除未读尾项后保留不透明游标并同步角标', () async {
     final repository = _FakeRepository(
       pages: {
         (NotificationFilters.all, null): CursorPage(
@@ -272,7 +272,7 @@ void main() {
     expect(await controller.remove('notification-2'), isTrue);
 
     expect(controller.state.items.single.id, 'notification-1');
-    expect(controller.state.cursor, 'notification-1');
+    expect(controller.state.cursor, 'notification-2');
     expect(unread.state.count, 1);
     expect(repository.removedIds, ['notification-2']);
   });
@@ -341,7 +341,7 @@ class _FakeRepository implements NotificationRepository {
 
   final Map<(NotificationFilter, String?), CursorPage<NotificationListItem>>
   pages;
-  final int unreadCount;
+  int unreadCount;
   final Future<void> Function(String id)? setReadOperation;
   final ApiFailure? markAllFailure;
   final Future<CursorPage<NotificationListItem>> Function(
@@ -372,14 +372,19 @@ class _FakeRepository implements NotificationRepository {
   Future<void> markAllRead() async {
     if (markAllFailure != null) throw markAllFailure!;
     markAllCalls += 1;
+    unreadCount = 0;
   }
 
   @override
-  Future<void> remove(String id) async => removedIds.add(id);
+  Future<void> remove(String id) async {
+    removedIds.add(id);
+    if (unreadCount > 0) unreadCount--;
+  }
 
   @override
   Future<void> setReadStatus(String id, {required bool isRead}) async {
     await setReadOperation?.call(id);
+    if (isRead && unreadCount > 0) unreadCount--;
   }
 }
 

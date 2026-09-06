@@ -22,6 +22,64 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  testWidgets('删空当前页但还有下一页时保留加载更多入口', (tester) async {
+    final repository = _FakeRepository(items: [_item('only')], hasMore: true);
+    final router = _router();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(router.dispose);
+    addTearDown(container.dispose);
+    await _pumpAuthenticated(tester, container, router);
+    await tester.tap(find.byKey(const ValueKey('notification-remove-only')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('notification-remove-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('notification-only')), findsNothing);
+    expect(
+      find.byKey(const Key('notification-load-more')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(container.read(notificationListControllerProvider).cursor, 'opaque');
+  });
+
+  testWidgets('千条通知只构建视口附近行，末项可滚动到达', (tester) async {
+    final repository = _FakeRepository(
+      items: List.generate(1000, (index) => _item('lazy-$index')),
+    );
+    final router = _router();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(router.dispose);
+    addTearDown(container.dispose);
+    await _pumpAuthenticated(tester, container, router);
+    Finder rows() => find.byWidgetPredicate(
+      (widget) =>
+          widget is Material &&
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'notification-lazy-',
+          ),
+    );
+    expect(rows().evaluate().length, lessThan(20));
+    expect(find.byKey(const ValueKey('notification-lazy-999')), findsNothing);
+    final scroll = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(CustomScrollView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    for (var attempt = 0; attempt < 5; attempt++) {
+      scroll.jumpTo(scroll.maxScrollExtent);
+      await tester.pumpAndSettle();
+    }
+    expect(find.byKey(const ValueKey('notification-lazy-999')), findsOneWidget);
+    expect(find.byKey(const ValueKey('notification-lazy-0')), findsNothing);
+    expect(rows().evaluate().length, lessThan(20));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('游客看到安全登录引导且保留通知回跳', (tester) async {
     final router = _router();
     addTearDown(router.dispose);
@@ -370,11 +428,15 @@ Future<ProviderContainer> _authenticatedContainer(
 }
 
 class _FakeRepository implements NotificationRepository {
-  _FakeRepository({this.items = const [], int? unreadCount})
-    : unreadCount = unreadCount ?? items.where((item) => !item.isRead).length;
+  _FakeRepository({
+    this.items = const [],
+    int? unreadCount,
+    this.hasMore = false,
+  }) : unreadCount = unreadCount ?? items.where((item) => !item.isRead).length;
 
   final List<NotificationListItem> items;
-  final int unreadCount;
+  final bool hasMore;
+  int unreadCount;
   final List<NotificationFilter> filters = [];
   final List<String> readIds = [];
   final List<String> removedIds = [];
@@ -386,21 +448,34 @@ class _FakeRepository implements NotificationRepository {
     String? cursor,
   }) async {
     filters.add(filter);
-    return CursorPage(items: items, hasMore: false);
+    return CursorPage(
+      items: items,
+      hasMore: hasMore,
+      cursor: hasMore ? 'opaque' : null,
+    );
   }
 
   @override
   Future<int> fetchUnreadCount() async => unreadCount;
 
   @override
-  Future<void> markAllRead() async => markAllCalls += 1;
+  Future<void> markAllRead() async {
+    markAllCalls += 1;
+    unreadCount = 0;
+  }
 
   @override
-  Future<void> remove(String id) async => removedIds.add(id);
+  Future<void> remove(String id) async {
+    removedIds.add(id);
+    if (items.any((item) => item.id == id && !item.isRead) && unreadCount > 0) {
+      unreadCount--;
+    }
+  }
 
   @override
   Future<void> setReadStatus(String id, {required bool isRead}) async {
     readIds.add(id);
+    if (isRead && unreadCount > 0) unreadCount--;
   }
 }
 

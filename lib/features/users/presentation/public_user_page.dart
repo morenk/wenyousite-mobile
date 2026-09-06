@@ -80,59 +80,89 @@ class _PublicUserPageState extends ConsumerState<PublicUserPage> {
         ),
         PublicUserPhase.ready => RefreshIndicator(
           onRefresh: () => ref.read(provider.notifier).load(),
-          child: ListView(
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: _pagePadding(context),
-            children: [
-              WenyouConstrainedWidth(
-                child: state.profile!.isDeactivated
-                    ? const WenyouPanel(
-                        child: WenyouEmptyState(
-                          icon: WenyouIconIds.statusUserUnavailable,
-                          title: '已注销用户',
-                        ),
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _UserProfileContent(
-                            profile: state.profile!,
-                            canTip: canTip,
-                            relationTarget: relationTarget,
-                            isCurrentUser:
-                                meState?.phase == MeProfilePhase.ready &&
-                                meState!.profile!.id == state.profile!.id,
-                          ),
-                          SizedBox(height: context.wenyouTokens.space12),
-                          UserActivitySummaryPanel(
-                            key: const Key('public-user-activity-summary'),
-                            keyPrefix: 'public-user-activity',
-                            state: state,
-                            onRetry: () => ref
-                                .read(provider.notifier)
-                                .retryActivitySummary(),
-                            onMomentsPressed: () => context.pushNamed(
-                              'user-moments',
-                              pathParameters: {'userId': widget.userId},
-                            ),
-                            onCreatedThreadsPressed: () =>
-                                _selectContentTab(PublicUserContentTab.created),
-                            onPlayedThreadsPressed: () =>
-                                _selectContentTab(PublicUserContentTab.played),
-                            onRepliesPressed: () =>
-                                _selectContentTab(PublicUserContentTab.replies),
-                          ),
-                          SizedBox(height: context.wenyouTokens.space12),
-                          KeyedSubtree(
-                            key: _contentAreaTargetKey,
-                            child: PublicUserContentArea(
-                              key: const Key('public-user-content-area'),
-                              userId: widget.userId,
-                              state: state,
-                            ),
-                          ),
-                        ],
+            slivers: [
+              SliverPadding(
+                padding: _pagePadding(context),
+                sliver: SliverMainAxisGroup(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: WenyouConstrainedWidth(
+                        child: state.profile!.isDeactivated
+                            ? const WenyouPanel(
+                                child: WenyouEmptyState(
+                                  icon: WenyouIconIds.statusUserUnavailable,
+                                  title: '已注销用户',
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _UserProfileContent(
+                                    profile: state.profile!,
+                                    canTip: canTip,
+                                    relationTarget: relationTarget,
+                                    isCurrentUser:
+                                        meState?.phase ==
+                                            MeProfilePhase.ready &&
+                                        meState!.profile!.id ==
+                                            state.profile!.id,
+                                  ),
+                                  SizedBox(
+                                    height: context.wenyouTokens.space12,
+                                  ),
+                                  UserActivitySummaryPanel(
+                                    key: const Key(
+                                      'public-user-activity-summary',
+                                    ),
+                                    keyPrefix: 'public-user-activity',
+                                    state: state,
+                                    onRetry: () => ref
+                                        .read(provider.notifier)
+                                        .retryActivitySummary(),
+                                    onMomentsPressed: () => context.pushNamed(
+                                      'user-moments',
+                                      pathParameters: {'userId': widget.userId},
+                                    ),
+                                    onCreatedThreadsPressed: () =>
+                                        _selectContentTab(
+                                          PublicUserContentTab.created,
+                                        ),
+                                    onPlayedThreadsPressed: () =>
+                                        _selectContentTab(
+                                          PublicUserContentTab.played,
+                                        ),
+                                    onRepliesPressed: () => _selectContentTab(
+                                      PublicUserContentTab.replies,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: context.wenyouTokens.space12,
+                                  ),
+                                  KeyedSubtree(
+                                    key: _contentAreaTargetKey,
+                                    child: PublicUserContentArea(
+                                      key: const Key(
+                                        'public-user-content-area',
+                                      ),
+                                      userId: widget.userId,
+                                      state: state,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
+                    ),
+                    if (!state.profile!.isDeactivated)
+                      PublicUserContentSectionSliver(
+                        tab: state.activeTab,
+                        state: state,
+                        onRetry: ref.read(provider.notifier).retryActive,
+                        onLoadMore: ref.read(provider.notifier).loadMoreActive,
+                      ),
+                  ],
+                ),
               ),
             ],
           ),

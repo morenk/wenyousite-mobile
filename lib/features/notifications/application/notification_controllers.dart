@@ -20,16 +20,18 @@ class NotificationUnreadController
   }
 
   final NotificationRepository _repository;
+  final _requestEpoch = RequestEpoch();
 
-  Future<void> refresh() async {
-    if (state.isLoading) return;
+  Future<void> refresh({bool force = false}) async {
+    if (!mounted || (state.isLoading && !force)) return;
+    final epoch = _requestEpoch.begin();
     state = NotificationUnreadState(count: state.count, isLoading: true);
     try {
       final count = await _repository.fetchUnreadCount();
-      if (!mounted) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = NotificationUnreadState(count: count < 0 ? 0 : count);
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || !_requestEpoch.isCurrent(epoch)) return;
       state = NotificationUnreadState(
         count: state.count,
         failure: mapApplicationFailure(error, '未读通知数同步失败。'),
@@ -37,12 +39,23 @@ class NotificationUnreadController
     }
   }
 
-  void decrement() => _setCount(state.count - 1);
+  void decrement() {
+    if (!mounted) return;
+    _setCount(state.count - 1);
+  }
 
   void clear() => _setCount(0);
 
   void _setCount(int value) {
+    if (!mounted) return;
+    _requestEpoch.invalidate();
     state = NotificationUnreadState(count: value < 0 ? 0 : value);
+  }
+
+  @override
+  void dispose() {
+    _requestEpoch.invalidate();
+    super.dispose();
   }
 }
 
@@ -72,11 +85,12 @@ class NotificationListController extends StateNotifier<NotificationListState> {
   final _requestEpoch = RequestEpoch();
 
   Future<void> selectFilter(NotificationFilter filter) async {
-    if (filter == state.filter) return;
+    if (!mounted || filter == state.filter) return;
     await load(filter: filter);
   }
 
   Future<void> load({NotificationFilter? filter}) async {
+    if (!mounted) return;
     final nextFilter = filter ?? state.filter;
     final epoch = _requestEpoch.begin();
     state = NotificationListState.loading(filter: nextFilter);
@@ -101,7 +115,8 @@ class NotificationListController extends StateNotifier<NotificationListState> {
   }
 
   Future<void> loadMore() async {
-    if (state.phase != NotificationListPhase.ready ||
+    if (!mounted ||
+        state.phase != NotificationListPhase.ready ||
         state.isBusy ||
         !state.hasMore) {
       return;
@@ -138,11 +153,14 @@ class NotificationListController extends StateNotifier<NotificationListState> {
   }
 
   Future<bool> markRead(String id) async {
-    if (state.phase != NotificationListPhase.ready || state.isMutating) {
+    if (!mounted ||
+        state.phase != NotificationListPhase.ready ||
+        state.isBusy) {
       return false;
     }
     final index = state.items.indexWhere((item) => item.id == id);
     if (index < 0 || state.items[index].isRead) return true;
+    final epoch = _requestEpoch.current;
     final before = state;
     final optimistic = [...before.items];
     optimistic[index] = optimistic[index].copyWith(isRead: true);
@@ -160,27 +178,33 @@ class NotificationListController extends StateNotifier<NotificationListState> {
     try {
       await _repository.setReadStatus(id, isRead: true);
       if (!mounted) return false;
+      unawaited(_unread.refresh(force: true));
+      if (!_requestEpoch.isCurrent(epoch)) return false;
       state = _readyFrom(state);
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
+      unawaited(_unread.refresh(force: true));
+      if (!_requestEpoch.isCurrent(epoch)) return false;
       state = _readyFrom(
         before,
         actionFailure: mapApplicationFailure(error, '通知没有标记为已读，请稍后重试。'),
       );
-      unawaited(_unread.refresh());
       return false;
     }
   }
 
   Future<bool> remove(String id) async {
-    if (state.phase != NotificationListPhase.ready || state.isMutating) {
+    if (!mounted ||
+        state.phase != NotificationListPhase.ready ||
+        state.isBusy) {
       return false;
     }
     final item = state.items
         .where((candidate) => candidate.id == id)
         .firstOrNull;
     if (item == null) return false;
+    final epoch = _requestEpoch.current;
     final before = state;
     state = _readyFrom(
       before,
@@ -191,24 +215,26 @@ class NotificationListController extends StateNotifier<NotificationListState> {
     try {
       await _repository.remove(id);
       if (!mounted) return false;
+      if (!item.isRead) _unread.decrement();
+      unawaited(_unread.refresh(force: true));
+      if (!_requestEpoch.isCurrent(epoch)) return false;
       final updated = before.items
           .where((candidate) => candidate.id != id)
           .toList(growable: false);
-      final nextCursor = before.cursor == id
-          ? (updated.isEmpty ? null : updated.last.id)
-          : before.cursor;
       state = NotificationListState(
         phase: NotificationListPhase.ready,
         filter: before.filter,
         items: updated,
-        cursor: nextCursor,
+        // Cursor is opaque even when its bytes happen to equal a removed ID.
+        cursor: before.cursor,
         hasMore: before.hasMore,
         loadMoreFailure: before.loadMoreFailure,
       );
-      if (!item.isRead) _unread.decrement();
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
+      unawaited(_unread.refresh(force: true));
+      if (!_requestEpoch.isCurrent(epoch)) return false;
       state = _readyFrom(
         before,
         actionFailure: mapApplicationFailure(error, '通知没有删除，请稍后重试。'),
@@ -218,9 +244,12 @@ class NotificationListController extends StateNotifier<NotificationListState> {
   }
 
   Future<bool> markAllRead() async {
-    if (state.phase != NotificationListPhase.ready || state.isMutating) {
+    if (!mounted ||
+        state.phase != NotificationListPhase.ready ||
+        state.isBusy) {
       return false;
     }
+    final epoch = _requestEpoch.current;
     final before = state;
     state = NotificationListState(
       phase: NotificationListPhase.ready,
@@ -237,22 +266,31 @@ class NotificationListController extends StateNotifier<NotificationListState> {
     try {
       await _repository.markAllRead();
       if (!mounted) return false;
+      unawaited(_unread.refresh(force: true));
+      if (!_requestEpoch.isCurrent(epoch)) return false;
       state = _readyFrom(state);
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
+      unawaited(_unread.refresh(force: true));
+      if (!_requestEpoch.isCurrent(epoch)) return false;
       state = _readyFrom(
         before,
         actionFailure: mapApplicationFailure(error, '全部标为已读失败，请稍后重试。'),
       );
-      unawaited(_unread.refresh());
       return false;
     }
   }
 
   void clearActionFailure() {
-    if (state.actionFailure == null) return;
+    if (!mounted || state.actionFailure == null) return;
     state = _readyFrom(state);
+  }
+
+  @override
+  void dispose() {
+    _requestEpoch.invalidate();
+    super.dispose();
   }
 
   NotificationListState _readyFrom(
