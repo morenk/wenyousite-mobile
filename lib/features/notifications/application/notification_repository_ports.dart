@@ -1,14 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
-import 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart';
+import 'package:wenyousite_mobile/features/notifications/domain/notification_filter.dart';
 import 'package:wenyousite_mobile/features/notifications/domain/notification_models.dart';
 
-export 'package:wenyousite_mobile/features/notifications/application/notification_filters.dart'
-    show NotificationFilter, NotificationFilters;
+export 'package:wenyousite_mobile/features/notifications/domain/notification_filter.dart';
 
 abstract interface class NotificationRepository {
   Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilters.all,
+    NotificationFilter filter = NotificationFilter.all,
     String? cursor,
   });
 
@@ -30,7 +29,7 @@ class _UnboundNotificationRepository implements NotificationRepository {
 
   @override
   Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilters.all,
+    NotificationFilter filter = NotificationFilter.all,
     String? cursor,
   }) {
     return Future.error(_unboundError());

@@ -1,44 +1,16 @@
-import 'package:flutter/foundation.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
+import 'package:wenyousite_mobile/features/notifications/domain/notification_filter.dart';
 
-@immutable
-class NotificationFilter {
-  const NotificationFilter({
-    required this.id,
-    required this.label,
-    required this.eventTypes,
-  });
-
-  final String id;
-  final String label;
-  final List<String> eventTypes;
-
-  String? get wireValue => eventTypes.isEmpty ? null : eventTypes.join(',');
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is NotificationFilter &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
+export 'package:wenyousite_mobile/features/notifications/domain/notification_filter.dart';
 
 abstract final class NotificationFilters {
-  static const all = NotificationFilter(
-    id: 'all',
-    label: WenyouNotificationContract.allLabel,
-    eventTypes: <String>[],
-  );
+  static const all = NotificationFilter.all;
 
   static final List<NotificationFilter> values = List.unmodifiable([
     all,
     for (final id in WenyouNotificationContract.groupOrder)
       NotificationFilter(
         id: id,
-        label: WenyouNotificationContract.labels[id] ?? id,
         eventTypes: List.unmodifiable(
           WenyouNotificationContract.eventTypes[id] ?? const <String>[],
         ),
@@ -47,4 +19,10 @@ abstract final class NotificationFilters {
 
   static NotificationFilter byId(String id) =>
       values.firstWhere((filter) => filter.id == id, orElse: () => all);
+}
+
+extension NotificationFilterPresentation on NotificationFilter {
+  String get label => id == NotificationFilter.all.id
+      ? WenyouNotificationContract.allLabel
+      : WenyouNotificationContract.labels[id] ?? id;
 }

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 
 void main() {
@@ -25,6 +26,45 @@ void main() {
             as Map<String, dynamic>?;
     expect(extra?['skipAuth'], isTrue);
   });
+
+  for (final invalid in [
+    'empty-id',
+    'empty-slug',
+    'empty-name',
+    'duplicate-id',
+    'duplicate-slug',
+  ]) {
+    test('公开分类目录拒绝 $invalid 而不返回部分结果', () async {
+      final api = _MockThreadCategoriesApi();
+      final response = _response();
+      final first = response.data!.data.first;
+      final bad = first.rebuild(
+        (builder) => builder
+          ..id = invalid == 'empty-id'
+              ? ' '
+              : invalid == 'duplicate-id'
+              ? first.id
+              : 'second-id'
+          ..slug = invalid == 'empty-slug'
+              ? ' '
+              : invalid == 'duplicate-slug'
+              ? first.slug
+              : 'SECOND_SLUG'
+          ..name = invalid == 'empty-name' ? ' ' : '第二分类',
+      );
+      response.data = response.data!.rebuild(
+        (builder) => builder.data.replace([first, bad]),
+      );
+      when(
+        () => api.threadCategoriesList(extra: any(named: 'extra')),
+      ).thenAnswer((_) async => response);
+
+      await expectLater(
+        ApiThreadCategoryCatalogRepository(api).fetchThreadCategories(),
+        throwsA(isA<ApiFailure>()),
+      );
+    });
+  }
 }
 
 class _MockThreadCategoriesApi extends Mock implements ThreadCategoriesApi {}

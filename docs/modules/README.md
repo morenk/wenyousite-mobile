@@ -17,13 +17,13 @@
 | posts | in_progress | 楼层与楼中楼读写已交付；阅读性能专项仍待完成 | [楼层与回复](posts.md) |
 | editor | in_progress | Markdown v3/v4/v5、文字/图片块对齐与 clipboard v2 编辑主链已交付；撤销入口仍待完成 | [编辑器](editor.md) |
 | drafts | in_progress | 本地快照与云草稿已交付；进程恢复边界持续收敛 | [草稿](drafts.md) |
-| media | in_progress | 图片上传与原图查看已交付；批量选择尚未支持 | [媒体](media.md) |
+| media | in_progress | 图片上传、动态多选与原图查看已交付；弱网及进程恢复真机验收待补齐 | [媒体](media.md) |
 | notifications | in_progress | 分类、帖子及动态评论精确定位已交付；协作者通知待接入 | [通知](notifications.md) |
 | direct-messages | in_progress | 私聊主闭环已交付；公网弱网与长会话验收待补齐 | [站内私聊](direct-messages.md) |
 | stickers | in_progress | 收藏表情主闭环已交付；公网处理态验收待补齐 | [表情包](stickers.md) |
-| users | in_progress | 用户资料主闭环已交付；背景图与活动汇总待接入 | [用户](users.md) |
+| users | in_progress | 用户资料、双画幅背景与活动汇总已交付；本人协作主题列表待接入 | [用户](users.md) |
 | reports | in_progress | 社区举报六类目标主闭环已交付；公网联调待补齐 | [社区举报](reports.md) |
 | moderation | in_progress | 治理决定与申诉已交付；管理员隐藏能力待接入 | [治理决定与申诉](moderation.md) |
 | wallet | in_progress | 钱包与加油主闭环已交付；公网账务联调待补齐 | [温油钱包](wallet.md) |
-| social | in_progress | 双收藏夹、订阅与关系主闭环已交付；切号回归待补齐 | [社交关系](social.md) |
+| social | in_progress | 双收藏夹、订阅与关系主闭环已交付；切号及可见性自动回归已补齐，真机联调待完成 | [社交关系](social.md) |
 | settings | in_progress | 账号设置主闭环已交付；部分资料能力仍有限制 | [设置](settings.md) |

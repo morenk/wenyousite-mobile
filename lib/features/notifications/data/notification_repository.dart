@@ -17,7 +17,7 @@ class ApiNotificationRepository implements NotificationRepository {
 
   @override
   Future<CursorPage<NotificationListItem>> fetchPage({
-    NotificationFilter filter = NotificationFilters.all,
+    NotificationFilter filter = NotificationFilter.all,
     String? cursor,
   }) async {
     try {

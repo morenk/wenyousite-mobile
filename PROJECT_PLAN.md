@@ -27,11 +27,13 @@
 - [x] 缓存与生命周期：统一会话/可见性失效信号，补齐异步回写保护与启动恢复容错；完整门禁和 Debug APK 已通过。
 - [x] 业务边界：建立共享主题流读模型与分类目录，收敛重复实现并保留上传失败诊断信息。
 - [x] 长列表与并发状态：通知、钱包、用户内容惰性构建，游标保持不透明，异步写入避免覆盖新状态。
-- [ ] 规范与门禁：修正文档事实，按精确依赖边检查边界，将测试与工具纳入文件规模约束。
+- [x] 规范与门禁：修正文档事实，按精确依赖边和导出链检查边界，将测试与工具纳入文件规模约束；全量门禁与最终 Debug APK 已通过，真机清单待负责人执行。
+
+本轮验收范围、剩余债务与项目负责人待执行步骤见 [架构加固验收](docs/architecture/architecture-hardening-acceptance.md)。
 
 ## 持续债务
 
-- 存量 `StateNotifier` 59 处、跨 feature 内部层导入 41 处、feature presentation 原始加载圆环 77 处已由架构门禁冻结；后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
+- 存量 `StateNotifier` 59 处、跨 feature 内部层引用 35 条精确文件边、feature presentation 原始加载圆环 77 处已由架构门禁冻结；内部引用不再以文本匹配总量放行，新边与删除旧边不能相互抵扣。后续只在对应业务切片中逐步迁移为 `Notifier` / `AsyncNotifier`、feature facade 和共享状态组件，不做一次性大改。
 - `flutter_image_compress_common` 的当前可解析版本仍使用插件 Kotlin Gradle Plugin，Flutter 已提示未来需迁移 Built-in Kotlin；待上游提供兼容版本后单独升级和重新构建验收。
 - 动态卡片与详情的可选 `canInteract` 已在收藏主链按“字段缺失视为允许”消费：`false` 禁止新增收藏与移动但允许取消；点赞、评论和加油仍需独立接入该权限投影。
 - 主题列表、草稿、详情、邀请预览与订阅响应已提供稳定的 `categoryInfo` 分类展示投影；移动端当前仍通过旧 `category` slug 与分类目录解析名称，需要独立迁移共享主题读模型并保留未知历史分类的安全降级。
