@@ -32,7 +32,11 @@ import 'package:wenyousite_mobile/features/users/presentation/me_page.dart';
 import 'package:wenyousite_mobile/features/wallet/application/wallet_repository_ports.dart';
 import 'package:wenyousite_mobile/features/wallet/domain/wallet_models.dart';
 
+import '../../support/foundation_test_fonts.dart';
+
 void main() {
+  setUpAll(loadFoundationTestFonts);
+
   testWidgets('游客我的页提供登录入口且不读取私有资料', (tester) async {
     final repository = _FakeMeProfileRepository();
     await tester.pumpWidget(
@@ -367,6 +371,38 @@ void main() {
     expect(actionWidths, hasLength(1));
   });
 
+  testWidgets('新用户资料编辑以可点背景舞台引导并只保留一个主保存', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('添加主页背景'), findsOneWidget);
+    expect(find.text('选择图片后可调整取景'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加主页背景'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加头像'), findsOneWidget);
+    expect(find.text('主页公开内容'), findsOneWidget);
+    expect(find.text('资料图片'), findsNothing);
+    expect(find.text('基本信息'), findsNothing);
+    expect(find.text('公开范围'), findsNothing);
+    expect(find.textContaining('支持 JPG'), findsNothing);
+
+    final saveButton = find.descendant(
+      of: find.byKey(const Key('me-settings-save')),
+      matching: find.byType(FilledButton),
+    );
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
+    await tester.enterText(find.byKey(const Key('me-bio-field')), '尚未保存的新简介');
+    await tester.pump();
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+  });
+
   testWidgets('用户名独立校验并只提交显式修改', (tester) async {
     final repository = _FakeMeProfileRepository();
     final container = await _authenticatedContainer(repository);
@@ -426,7 +462,7 @@ void main() {
     expect(repository.lastPatch?.bio, '新的移动端简介');
     expect(repository.lastPatch?.showBookmarks, isFalse);
     expect(repository.lastPatch?.showRecentReplies, isNull);
-    expect(find.text('资料与隐私设置已保存。'), findsOneWidget);
+    expect(find.text('资料已保存。'), findsOneWidget);
   });
 
   testWidgets('选择图片后复用媒体上传并立即采用服务端头像', (tester) async {
@@ -449,7 +485,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('选择头像'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加头像'), findsOneWidget);
     await tester.tap(find.byKey(const Key('me-avatar-change')));
     await tester.pumpAndSettle();
 
@@ -461,8 +497,39 @@ void main() {
     expect(avatar.setCalls, 1);
     expect(avatar.lastMediaId, 'media-avatar-1');
     expect(find.text('头像已更新。'), findsOneWidget);
-    expect(find.text('更换头像'), findsOneWidget);
-    expect(find.byKey(const Key('me-avatar-remove')), findsOneWidget);
+    expect(find.bySemanticsLabel('更换头像'), findsOneWidget);
+  });
+
+  testWidgets('更新头像不会覆盖尚未保存的简介草稿', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final container = await _authenticatedContainer(
+      repository,
+      avatarPicker: _FakeAvatarPicker(_avatarInput),
+      mediaRepository: _FakeMediaRepository(),
+      avatarRepository: _FakeAvatarRepository(),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('me-bio-field')), '先写好的简介草稿');
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('image-crop-confirm')));
+    await tester.pumpAndSettle();
+
+    final bio = tester.widget<TextFormField>(
+      find.byKey(const Key('me-bio-field')),
+    );
+    expect(bio.controller!.text, '先写好的简介草稿');
+    await tester.tap(find.byKey(const Key('me-settings-save')));
+    await tester.pumpAndSettle();
+    expect(repository.lastPatch?.bio, '先写好的简介草稿');
   });
 
   testWidgets('头像确认取景后在上传等待期间立即显示本地成品', (tester) async {
@@ -853,16 +920,50 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const Key('me-avatar-change')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('me-avatar-remove')));
     await tester.pumpAndSettle();
-    expect(find.text('移除当前头像？'), findsOneWidget);
+    expect(find.text('移除头像？'), findsOneWidget);
     await tester.tap(find.byKey(const Key('me-avatar-remove-confirm')));
     await tester.pumpAndSettle();
 
     expect(avatar.removeCalls, 1);
     expect(find.text('头像已移除。'), findsOneWidget);
-    expect(find.text('选择头像'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加头像'), findsOneWidget);
     expect(find.byKey(const Key('me-avatar-remove')), findsNothing);
+  });
+
+  testWidgets('已有主页背景从统一操作面板二次确认后移除', (tester) async {
+    final cover = _FakeProfileCoverRepository();
+    final repository = _FakeMeProfileRepository(
+      initialProfile: _profileWithCover(),
+    );
+    final container = await _authenticatedContainer(
+      repository,
+      profileCoverRepository: cover,
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const MeEditPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('me-profile-cover-change')));
+    await tester.pumpAndSettle();
+    expect(find.text('更换主页背景'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('me-profile-cover-remove')));
+    await tester.pumpAndSettle();
+    expect(find.text('移除主页背景？'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('me-profile-cover-remove-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(cover.removeCalls, 1);
+    expect(find.text('主页背景已移除。'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加主页背景'), findsOneWidget);
   });
 
   testWidgets('编辑资料加载失败可重试且已有简介不能伪装清空', (tester) async {
@@ -888,8 +989,51 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('me-settings-save')));
     await tester.pump();
-    expect(find.textContaining('暂时不能清空已有简介'), findsOneWidget);
+    expect(find.text('请至少保留 1 个字符'), findsOneWidget);
     expect(repository.updateCalls, 0);
+  });
+
+  testWidgets('离开未保存的资料时可继续编辑或明确放弃', (tester) async {
+    final repository = _FakeMeProfileRepository();
+    final container = await _authenticatedContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                key: const Key('open-me-edit'),
+                onPressed: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MeEditPage()),
+                ),
+                child: const Text('打开编辑资料'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-me-edit')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('me-bio-field')), '还没有保存');
+    await tester.pump();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('放弃未保存的修改？'), findsOneWidget);
+    await tester.tap(find.text('继续编辑'));
+    await tester.pumpAndSettle();
+    expect(find.text('还没有保存'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('me-edit-discard-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('open-me-edit')), findsOneWidget);
   });
 
   testWidgets('账号设置不依赖个人资料读取即可使用安全入口', (tester) async {
@@ -911,6 +1055,71 @@ void main() {
     expect(find.text('更换邮箱'), findsOneWidget);
     expect(find.byKey(const Key('logout-submit')), findsOneWidget);
     expect(find.text('账号状态加载失败'), findsNothing);
+  });
+
+  for (final visual in const [
+    (name: 'me_profile_edit_empty_360_light.png', dark: false),
+    (name: 'me_profile_edit_empty_360_dark.png', dark: true),
+  ]) {
+    testWidgets('编辑资料空背景视觉基线 ${visual.name}', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 900);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final container = await _authenticatedContainer(
+        _FakeMeProfileRepository(),
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: visual.dark ? AppTheme.dark : AppTheme.light,
+            home: const RepaintBoundary(
+              key: Key('me-profile-edit-golden'),
+              child: MeEditPage(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byKey(const Key('me-profile-edit-golden')),
+        matchesGoldenFile('goldens/${visual.name}'),
+      );
+    });
+  }
+
+  testWidgets('编辑资料在两倍字号下可滚动且主要入口满足点击规范', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final container = await _authenticatedContainer(_FakeMeProfileRepository());
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const MeEditPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('me-privacy-bookmarks')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
   });
 
   for (final width in [320.0, 360.0, 400.0, 600.0]) {
@@ -1079,13 +1288,16 @@ class _DeferredAvatarPicker implements AvatarImagePicker {
 
 class _FakeProfileCoverRepository implements ProfileCoverRepository {
   int setCalls = 0;
+  int removeCalls = 0;
 
   @override
-  Future<ProfileCoverUpdateResult> removeProfileCover() async =>
-      ProfileCoverUpdateResult(
-        profileCover: null,
-        updatedAt: DateTime.utc(2026, 8, 16),
-      );
+  Future<ProfileCoverUpdateResult> removeProfileCover() async {
+    removeCalls += 1;
+    return ProfileCoverUpdateResult(
+      profileCover: null,
+      updatedAt: DateTime.utc(2026, 8, 16),
+    );
+  }
 
   @override
   Future<ProfileCoverUpdateResult> setProfileCover({
@@ -1515,6 +1727,34 @@ MeProfileModel _profileWithAvatar(String avatarUrl) {
     showBookmarks: _profile.showBookmarks,
     followingCount: _profile.followingCount,
     followerCount: _profile.followerCount,
+    createdAt: _profile.createdAt,
+    updatedAt: _profile.updatedAt,
+  );
+}
+
+MeProfileModel _profileWithCover() {
+  return MeProfileModel(
+    id: _profile.id,
+    email: _profile.email,
+    username: _profile.username,
+    bio: _profile.bio,
+    level: _profile.level,
+    experience: _profile.experience,
+    currentLevelExperience: _profile.currentLevelExperience,
+    nextLevelExperience: _profile.nextLevelExperience,
+    receivedTipTotal: _profile.receivedTipTotal,
+    receivedTipCount: _profile.receivedTipCount,
+    showRecentReplies: _profile.showRecentReplies,
+    showPlayedThreads: _profile.showPlayedThreads,
+    showBookmarks: _profile.showBookmarks,
+    followingCount: _profile.followingCount,
+    followerCount: _profile.followerCount,
+    profileCover: const ProfileCoverModel(
+      web: ProfileCoverVariant(url: 'https://cdn.example.com/cover-web.webp'),
+      mobile: ProfileCoverVariant(
+        url: 'https://cdn.example.com/cover-mobile.webp',
+      ),
+    ),
     createdAt: _profile.createdAt,
     updatedAt: _profile.updatedAt,
   );

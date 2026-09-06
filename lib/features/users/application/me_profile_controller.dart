@@ -172,11 +172,11 @@ class MeProfileController extends StateNotifier<MeProfileState> {
       state = MeProfileState(
         phase: MeProfilePhase.ready,
         profile: profile,
-        successMessage: '资料设置没有变化。',
+        successMessage: '资料没有变化。',
       );
       return true;
     }
-    return _submit(patch, MeProfileAction.settings, '资料与隐私设置已保存。');
+    return _submit(patch, MeProfileAction.settings, '资料已保存。');
   }
 
   void clearFeedback() {
