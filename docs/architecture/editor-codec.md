@@ -36,6 +36,8 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 ## 往返不变量
 
+引用内部的独占 `>` 行由 `MarkdownQuoteBlock(content: '')` 表达，在 Delta 中保留带 `blockquote` 的空换行；Quill 因而把上下正文与间隔组合为同一引用块。空引用标记上的空白不产生硬换行语义，写回统一为 `>`；普通空白分隔仍区分独立引用，代码和字面转义的保护先于空引用识别。
+
 v7 行内写入由 `MarkdownDeltaInlineEncoder` 按全部可见 marks／链接合并连续逻辑区间，来源属性只决定片段内转义。`MarkdownDeltaSemantics` 在公共 encode 后比较原 Delta 与重新解码的语义：保留文字、样式、链接、块属性、软换行、空段和节点身份；仅去除已知来源属性、既有格式边缘空白归属及显式块的语法分隔。解码的内部 encode 不执行公共检查，防止递归。兼容源码行在下一块开始时补分隔，末尾不提前补双换行，避免重开多出空段。
 
 1. 对白名单内结构，`decode(markdown) → encode(delta)` 经当前 Markdown 版本规范化后必须与 canonical 输入一致；对白名单外但可读取的结构，输出必须等于契约规定的安全字面化结果。

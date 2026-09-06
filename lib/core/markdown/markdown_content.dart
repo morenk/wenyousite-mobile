@@ -18,6 +18,7 @@ class MarkdownContent {
     r'^ {0,3}<br\s*/?>[\t ]*$',
     caseSensitive: false,
   );
+  static final _emptyQuote = RegExp(r'^ {0,3}>[\t ]*$');
   static final _thematicBreak = RegExp(
     r'^ {0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$',
   );
@@ -264,6 +265,8 @@ class MarkdownContent {
 
   static String literalizeLine(String line) => _escapeLiteralLine(line);
 
+  static bool isEmptyQuoteLine(String line) => _emptyQuote.hasMatch(line);
+
   static Set<int> _unsupportedLines(
     List<String> lines, {
     required bool imageAlignment,
@@ -371,6 +374,9 @@ class MarkdownContent {
   }
 
   static bool _hasHardBreak(String line) {
+    // Whitespace after an empty quote marker separates quoted paragraphs;
+    // it is not a hard break in text.
+    if (isEmptyQuoteLine(line)) return false;
     final spaces = RegExp(r' +$').firstMatch(line)?.group(0)?.length ?? 0;
     final slashes = RegExp(r'\\+$').firstMatch(line)?.group(0)?.length ?? 0;
     return spaces >= 2 || slashes.isOdd;

@@ -114,7 +114,9 @@ class MarkdownDeltaCodec {
       } else if (opening != null) {
         fence = _Fence(opening[0], opening.length);
         delta.insert(line);
-      } else if (readerClipboard && RegExp(r'^>[\t ]*$').hasMatch(line)) {
+      } else if (MarkdownContent.isEmptyQuoteLine(line)) {
+        // Keep paragraph separators inside the quote, so Quill groups both
+        // sides into one block instead of displaying a literal marker.
         richLineAttributes = const {'blockquote': true};
       } else if (_emptyParagraph.hasMatch(line)) {
         // 独占 <br /> 是协议空段，不进入可编辑文本。
@@ -689,7 +691,7 @@ class MarkdownDeltaCodec {
       final prefix = list == 'ordered' ? '1. ' : '- ';
       return '${'  ' * indent}$prefix$canonicalContent';
     }
-    if (quote) return '> $canonicalContent';
+    if (quote) return canonicalContent.isEmpty ? '>' : '> $canonicalContent';
     if (indent != 0) {
       throw const MarkdownCodecException('只有列表行可以携带缩进');
     }

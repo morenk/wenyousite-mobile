@@ -81,7 +81,7 @@ final class MarkdownQuoteBlock extends MarkdownEditorBlock {
   MarkdownEditorBlockKind get kind => MarkdownEditorBlockKind.quote;
 
   @override
-  List<String> get sourceLines => ['> $content'];
+  List<String> get sourceLines => [content.isEmpty ? '>' : '> $content'];
 }
 
 final class MarkdownListItemBlock extends MarkdownEditorBlock {
@@ -357,6 +357,12 @@ class MarkdownEditorDocument {
         content: heading.group(2)!,
         blankLinesBefore: blankLinesBefore,
         alignment: alignment,
+      );
+    }
+    if (MarkdownContent.isEmptyQuoteLine(line)) {
+      return MarkdownQuoteBlock(
+        content: '',
+        blankLinesBefore: blankLinesBefore,
       );
     }
     final quote = RegExp(r'^> (.+)$').firstMatch(line);
