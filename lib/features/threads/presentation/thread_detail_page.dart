@@ -98,9 +98,6 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     ref.listen(sessionScopeProvider, (previous, next) {
       if (previous == null || previous == next) return;
       _composerDrafts.clear();
-      ref
-        ..invalidate(provider)
-        ..invalidate(actionsProvider);
     });
     ref.listen<int>(actionsProvider.select((value) => value.pinRevision), (
       previous,

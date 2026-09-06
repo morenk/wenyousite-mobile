@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
@@ -512,14 +512,16 @@ final threadDetailControllerProvider = StateNotifierProvider.autoDispose
       ThreadDetailState,
       ThreadDetailControllerScope
     >((ref, scope) {
+      ref.watch(viewerScopeProvider);
       return ThreadDetailController(
         ref.watch(threadDetailRepositoryProvider),
         scope.threadId,
       );
-    }, dependencies: [threadDetailRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, threadDetailRepositoryProvider]);
 
 final threadPostTargetProvider = FutureProvider.autoDispose
     .family<ThreadPostTargetModel, String>((ref, postId) {
-      ref.watch(sessionScopeProvider);
+      ref.watch(viewerScopeProvider);
+
       return ref.watch(threadDetailRepositoryProvider).fetchPostTarget(postId);
-    }, dependencies: [threadDetailRepositoryProvider, sessionScopeProvider]);
+    }, dependencies: [threadDetailRepositoryProvider, viewerScopeProvider]);

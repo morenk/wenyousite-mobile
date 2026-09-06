@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 
@@ -259,11 +259,13 @@ class MomentFeedController extends StateNotifier<MomentFeedState> {
 }
 
 final momentFeedControllerProvider = StateNotifierProvider.autoDispose
-    .family<MomentFeedController, MomentFeedState, MomentFeedTarget>(
-      (ref, target) =>
-          MomentFeedController(ref.watch(momentRepositoryProvider), target),
-      dependencies: [momentRepositoryProvider],
-    );
+    .family<MomentFeedController, MomentFeedState, MomentFeedTarget>((
+      ref,
+      target,
+    ) {
+      ref.watch(viewerScopeProvider);
+      return MomentFeedController(ref.watch(momentRepositoryProvider), target);
+    }, dependencies: [viewerScopeProvider, momentRepositoryProvider]);
 
 class MomentReplyPageState {
   const MomentReplyPageState({
@@ -703,21 +705,23 @@ class MomentDetailController extends StateNotifier<MomentDetailState> {
 
 final momentDetailControllerProvider = StateNotifierProvider.autoDispose
     .family<MomentDetailController, MomentDetailState, String>((ref, momentId) {
+      ref.watch(viewerScopeProvider);
       return MomentDetailController(
         ref.watch(momentRepositoryProvider),
         momentId,
       );
-    }, dependencies: [momentRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, momentRepositoryProvider]);
 
 typedef MomentCommentContextScope = ({String momentId, String commentId});
 
 final momentCommentContextProvider = FutureProvider.autoDispose
     .family<MomentCommentContext, MomentCommentContextScope>((ref, scope) {
-      ref.watch(sessionScopeProvider);
+      ref.watch(viewerScopeProvider);
+
       return ref
           .watch(momentRepositoryProvider)
           .fetchCommentContext(
             momentId: scope.momentId,
             commentId: scope.commentId,
           );
-    }, dependencies: [momentRepositoryProvider, sessionScopeProvider]);
+    }, dependencies: [momentRepositoryProvider, viewerScopeProvider]);

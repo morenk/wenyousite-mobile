@@ -88,6 +88,7 @@ class RegistrationController extends StateNotifier<RegistrationState> {
     );
     try {
       final info = await _repository.requestRegistrationCode(email: email);
+      if (!mounted) return false;
       state = state.copyWith(
         step: RegistrationStep.verify,
         status: RegistrationStatus.idle,
@@ -100,6 +101,7 @@ class RegistrationController extends StateNotifier<RegistrationState> {
       _startCooldown(resendCooldown.inSeconds);
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
       if (failure.hasUnknownWriteOutcome) {
         state = state.copyWith(
           step: RegistrationStep.verify,
@@ -122,6 +124,7 @@ class RegistrationController extends StateNotifier<RegistrationState> {
       if (retrySeconds > 0) _startCooldown(retrySeconds);
       return false;
     } on Object catch (error) {
+      if (!mounted) return false;
       state = state.copyWith(
         status: RegistrationStatus.failed,
         failure: ApiFailure(userMessage: '验证码请求失败，请稍后重试。', cause: error),
@@ -145,6 +148,7 @@ class RegistrationController extends StateNotifier<RegistrationState> {
       status: RegistrationStatus.completing,
       clearFailure: true,
     );
+    final scope = _sessionController.scope;
     try {
       final tokens = await _repository.completeRegistration(
         email: email,
@@ -152,19 +156,24 @@ class RegistrationController extends StateNotifier<RegistrationState> {
         username: username.trim(),
         password: password,
       );
+      if (!mounted) return false;
+      _sessionController.ensureScopeCurrent(scope);
       await _sessionController.authenticate(tokens);
+      if (!mounted) return true;
       state = state.copyWith(
         status: RegistrationStatus.idle,
         clearFailure: true,
       );
       return true;
     } on ApiFailure catch (failure) {
+      if (!mounted) return false;
       state = state.copyWith(
         status: RegistrationStatus.failed,
         failure: failure,
       );
       return false;
     } on Object catch (error) {
+      if (!mounted) return false;
       state = state.copyWith(
         status: RegistrationStatus.failed,
         failure: ApiFailure(userMessage: '注册失败，请稍后重试。', cause: error),

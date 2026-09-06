@@ -82,10 +82,17 @@ void main() {
   });
 
   testWidgets('登录身份确认目标非本人后显示关系操作并同步粉丝数', (tester) async {
-    final relationRepository = _FakeUserRelationRepository();
+    final publicRepository = _FakePublicUserRepository();
+    final relationRepository = _FakeUserRelationRepository(
+      onBlock: () => publicRepository.isBlocked = true,
+      onUnfollow: () {
+        publicRepository.isFollowing = false;
+        publicRepository.followerCount = 8;
+      },
+    );
     final container = await _authenticatedContainer(
       currentUserId: 'me-1',
-      publicRepository: _FakePublicUserRepository(),
+      publicRepository: publicRepository,
       relationRepository: relationRepository,
     );
     addTearDown(container.dispose);
@@ -133,6 +140,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(relationRepository.blockCalls, 1);
     expect(find.byTooltip('取消拉黑'), findsOneWidget);
+    expect(publicRepository.calls, 2);
+    expect(find.text('8'), findsOneWidget);
   });
 
   testWidgets('公开页目标是本人时不显示关注和拉黑操作', (tester) async {
@@ -595,6 +604,9 @@ class _FakePublicUserRepository implements PublicUserRepository {
   int playedCalls = 0;
   int replyCalls = 0;
   int bookmarkCalls = 0;
+  bool isFollowing = true;
+  bool isBlocked = false;
+  int followerCount = 9;
 
   @override
   Future<PublicUserActivitySummary> fetchActivitySummary(String userId) async {
@@ -624,15 +636,15 @@ class _FakePublicUserRepository implements PublicUserRepository {
       bio: '一起写下温柔的故事。',
       level: 4,
       followingCount: 7,
-      followerCount: 9,
+      followerCount: followerCount,
       receivedTipTotal: '18',
       receivedTipCount: 6,
       showRecentReplies: showPrivateContent,
       showPlayedThreads: showPrivateContent,
       showBookmarks: showPrivateContent,
-      isFollowing: true,
+      isFollowing: isFollowing,
       isFollowedBy: true,
-      isBlocked: false,
+      isBlocked: isBlocked,
       isBlockedBy: false,
       isDeactivated: deactivated,
       createdAt: DateTime.utc(2026, 8, 10),
@@ -751,6 +763,10 @@ class _FakeMeProfileRepository implements MeProfileRepository {
 }
 
 class _FakeUserRelationRepository implements UserRelationRepository {
+  _FakeUserRelationRepository({this.onBlock, this.onUnfollow});
+
+  final void Function()? onBlock;
+  final void Function()? onUnfollow;
   int followCalls = 0;
   int unfollowCalls = 0;
   int blockCalls = 0;
@@ -760,10 +776,16 @@ class _FakeUserRelationRepository implements UserRelationRepository {
   Future<void> follow(String userId) async => followCalls += 1;
 
   @override
-  Future<void> unfollow(String userId) async => unfollowCalls += 1;
+  Future<void> unfollow(String userId) async {
+    unfollowCalls += 1;
+    onUnfollow?.call();
+  }
 
   @override
-  Future<void> block(String userId) async => blockCalls += 1;
+  Future<void> block(String userId) async {
+    blockCalls += 1;
+    onBlock?.call();
+  }
 
   @override
   Future<void> unblock(String userId) async => unblockCalls += 1;

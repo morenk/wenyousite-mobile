@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
@@ -50,6 +51,7 @@ final notificationUnreadControllerProvider =
       NotificationUnreadController,
       NotificationUnreadState
     >((ref) {
+      ref.watch(viewerScopeProvider);
       final authenticated = ref.watch(
         sessionControllerProvider.select((session) => session.isAuthenticated),
       );
@@ -57,7 +59,7 @@ final notificationUnreadControllerProvider =
         ref.watch(notificationRepositoryProvider),
         autoStart: authenticated,
       );
-    }, dependencies: [notificationRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, notificationRepositoryProvider]);
 
 class NotificationListController extends StateNotifier<NotificationListState> {
   NotificationListController(this._repository, this._unread)
@@ -285,12 +287,14 @@ final notificationListControllerProvider =
       NotificationListState
     >(
       (ref) {
+        ref.watch(viewerScopeProvider);
         return NotificationListController(
           ref.watch(notificationRepositoryProvider),
           ref.watch(notificationUnreadControllerProvider.notifier),
         );
       },
       dependencies: [
+        viewerScopeProvider,
         notificationRepositoryProvider,
         notificationUnreadControllerProvider,
       ],

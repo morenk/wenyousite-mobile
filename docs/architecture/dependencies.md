@@ -10,6 +10,8 @@ feature 内保持 `presentation → application → domain`，data 在应用边�
 
 ## 可复用生命周期
 
+只读内容 Provider 主动依赖 `ViewerScope = (SessionScope, visibilityRevision)`：账号切换与拉黑关系变化重建投影，Token 刷新保留。可见性协调器只推进版本，不维护跨模块缓存清单；新增读缓存必须声明该依赖。草稿、创建幂等与表单写入只跟随账号边界，不因可见性变更被清除。所有异步完成必须先确认 mounted 与请求代次，释放后不得回写或启动计时器。
+
 新异步代码优先使用小状态和 `Notifier` / `AsyncNotifier`；暂不一次性迁移既有 `StateNotifier`。`RequestEpoch` 统一丢弃筛选、刷新后的过期响应，`mergeUniqueBy` 统一游标页按稳定 ID 合并。迁移按热点模块逐步发生，并保持既有 provider、仓储和路由接口不变。
 
 存量迁移采用非增长基线：`StateNotifier` 声明 59 处、跨 feature 内部层导入 41 处、feature presentation 直接创建 `CircularProgressIndicator` 77 处。新代码不得扩大基线；后续切片按业务边界改为 `Notifier` / `AsyncNotifier`、feature facade 和共享加载组件，每次减少后同步收紧数值。超过 700 行的非生成文件会在架构检查中列出复审提示，900 行仍是硬门禁。

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -639,12 +640,13 @@ final postDiscussionControllerProvider = StateNotifierProvider.autoDispose
       PostDiscussionState,
       PostDiscussionTarget
     >((ref, target) {
-      ref.watch(sessionScopeProvider);
+      ref.watch(viewerScopeProvider);
+
       return PostDiscussionController(
         ref.watch(postRepositoryProvider),
         target,
       );
-    }, dependencies: [sessionScopeProvider, postRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, postRepositoryProvider]);
 
 final postComposerControllerProvider = StateNotifierProvider.autoDispose
     .family<PostComposerController, PostComposerState, PostComposerTarget>((

@@ -62,6 +62,7 @@ class ThreadCategoryCatalogController
   Future<void>? _pendingLoad;
 
   Future<void> load({bool refresh = false}) {
+    if (!mounted) return Future.value();
     if (!refresh && state.phase == ThreadCategoryCatalogPhase.ready) {
       return Future.value();
     }
@@ -83,11 +84,13 @@ class ThreadCategoryCatalogController
     );
     try {
       final categories = await _repository.fetchThreadCategories();
+      if (!mounted) return;
       state = ThreadCategoryCatalogState(
         phase: ThreadCategoryCatalogPhase.ready,
         categories: List.unmodifiable(categories),
       );
     } on Object {
+      if (!mounted) return;
       if (hadSnapshot) {
         state = ThreadCategoryCatalogState(
           phase: ThreadCategoryCatalogPhase.ready,

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/application/social_states.dart';
@@ -416,10 +417,13 @@ Future<_CaptureResult<T>> _capture<T>(Future<T> future) async {
 }
 
 final bookmarkListControllerProvider = StateNotifierProvider.autoDispose
-    .family<BookmarkListController, BookmarkListState, String?>(
-      (ref, initialFolderId) => BookmarkListController(
+    .family<BookmarkListController, BookmarkListState, String?>((
+      ref,
+      initialFolderId,
+    ) {
+      ref.watch(viewerScopeProvider);
+      return BookmarkListController(
         ref.watch(bookmarkListRepositoryProvider),
         initialFolderId: initialFolderId,
-      ),
-      dependencies: [bookmarkListRepositoryProvider],
-    );
+      );
+    }, dependencies: [viewerScopeProvider, bookmarkListRepositoryProvider]);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -532,18 +533,20 @@ class PublicUserController extends StateNotifier<PublicUserState> {
 
 final publicUserControllerProvider = StateNotifierProvider.autoDispose
     .family<PublicUserController, PublicUserState, String>((ref, userId) {
+      ref.watch(viewerScopeProvider);
       return PublicUserController(
         ref.watch(publicUserRepositoryProvider),
         userId,
       );
-    }, dependencies: [publicUserRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, publicUserRepositoryProvider]);
 
 final meUserContentControllerProvider = StateNotifierProvider.autoDispose
     .family<PublicUserController, PublicUserState, String>((ref, userId) {
+      ref.watch(viewerScopeProvider);
       return PublicUserController(
         ref.watch(publicUserRepositoryProvider),
         userId,
         selfContentOnly: true,
         initialTab: PublicUserContentTab.replies,
       );
-    }, dependencies: [publicUserRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, publicUserRepositoryProvider]);

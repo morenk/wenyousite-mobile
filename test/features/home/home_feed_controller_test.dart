@@ -132,10 +132,12 @@ void main() {
 
     serverItems = [_secondThread];
     await session.logoutLocally();
+    final guestController = container.read(homeFeedControllerProvider.notifier);
     await pumpEventQueue();
 
-    expect(controller.state.items.single.id, 'thread-2');
-    expect(controller.state.phase, HomeFeedPhase.ready);
+    expect(guestController, isNot(same(controller)));
+    expect(guestController.state.items.single.id, 'thread-2');
+    expect(guestController.state.phase, HomeFeedPhase.ready);
   });
 }
 

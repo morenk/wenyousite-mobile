@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/app/app_capabilities.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
@@ -60,6 +61,7 @@ class DirectUnreadController extends StateNotifier<DirectUnreadState> {
 final directUnreadControllerProvider =
     StateNotifierProvider<DirectUnreadController, DirectUnreadState>(
       (ref) {
+        ref.watch(viewerScopeProvider);
         final authenticated = ref.watch(
           sessionControllerProvider.select(
             (session) => session.isAuthenticated,
@@ -75,6 +77,7 @@ final directUnreadControllerProvider =
       // capability is scoped by WenyouApp (and overridden by feature tests).
       // Declaring the dependency keeps Riverpod in the same override scope.
       dependencies: [
+        viewerScopeProvider,
         directMessagesEnabledProvider,
         directMessageRepositoryProvider,
       ],
@@ -194,11 +197,12 @@ final directConversationListControllerProvider = StateNotifierProvider
       DirectConversationListState,
       DirectConversationView
     >((ref, view) {
+      ref.watch(viewerScopeProvider);
       return DirectConversationListController(
         view,
         ref.watch(directMessageRepositoryProvider),
       );
-    }, dependencies: [directMessageRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, directMessageRepositoryProvider]);
 
 class DirectConversationController
     extends StateNotifier<DirectConversationState> {
@@ -863,6 +867,7 @@ class DirectConversationController
 final directConversationControllerProvider = StateNotifierProvider.autoDispose
     .family<DirectConversationController, DirectConversationState, String>(
       (ref, conversationId) {
+        ref.watch(viewerScopeProvider);
         return DirectConversationController(
           conversationId,
           ref.watch(directMessageRepositoryProvider),
@@ -872,6 +877,7 @@ final directConversationControllerProvider = StateNotifierProvider.autoDispose
         );
       },
       dependencies: [
+        viewerScopeProvider,
         directMessageRepositoryProvider,
         mediaUploadGatewayPortProvider,
       ],

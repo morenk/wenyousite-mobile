@@ -98,6 +98,7 @@ final userRelationListControllerProvider = StateNotifierProvider.autoDispose
       UserRelationListTarget
     >(
       (ref, target) {
+        ref.watch(viewerScopeProvider);
         return UserRelationListController(
           ref.watch(userRelationListRepositoryProvider),
           ref.watch(userRelationRepositoryProvider),
@@ -106,6 +107,7 @@ final userRelationListControllerProvider = StateNotifierProvider.autoDispose
         );
       },
       dependencies: [
+        viewerScopeProvider,
         userRelationListRepositoryProvider,
         userRelationRepositoryProvider,
         visibilityCacheInvalidatorProvider,

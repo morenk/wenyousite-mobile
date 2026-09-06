@@ -335,6 +335,7 @@ class StickerCollectionController
 final stickerCollectionControllerProvider =
     StateNotifierProvider<StickerCollectionController, StickerCollectionState>(
       (ref) {
+        ref.watch(sessionScopeProvider);
         final authenticated = ref.watch(
           sessionControllerProvider.select(
             (session) => session.isAuthenticated,

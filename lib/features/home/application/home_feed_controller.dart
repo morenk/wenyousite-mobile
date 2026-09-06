@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/failure_mapping.dart';
 import 'package:wenyousite_mobile/core/application/request_epoch.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/models/paging.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/network/session_controller.dart';
 import 'package:wenyousite_mobile/features/home/application/home_repository_ports.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 
@@ -276,17 +275,7 @@ class HomeFeedController extends StateNotifier<HomeFeedState> {
 
 final homeFeedControllerProvider =
     StateNotifierProvider<HomeFeedController, HomeFeedState>((ref) {
+      ref.watch(viewerScopeProvider);
       final controller = HomeFeedController(ref.watch(homeRepositoryProvider));
-      ref.listen(
-        sessionControllerProvider.select((session) => session.status),
-        (previous, next) {
-          if (previous == null ||
-              previous == next ||
-              next == SessionStatus.restoring) {
-            return;
-          }
-          unawaited(controller.refresh());
-        },
-      );
       return controller;
-    }, dependencies: [homeRepositoryProvider]);
+    }, dependencies: [viewerScopeProvider, homeRepositoryProvider]);
