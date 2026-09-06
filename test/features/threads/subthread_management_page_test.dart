@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -39,6 +40,7 @@ void main() {
     await tester.tap(find.byKey(const Key('subthread-management-create')));
     await tester.pumpAndSettle();
     expect(find.text('添加子贴'), findsOneWidget);
+    expect(find.byType(WenyouSettingsTypography), findsOneWidget);
     expect(
       find.byKey(const Key('thread-management-body-editor')),
       findsNothing,

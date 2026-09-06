@@ -74,8 +74,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.8.0`（`196deaf`）。
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.9.0`（`5888132`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。
+代码入口：`lib/features/home/application/home_repository_ports.dart`、`lib/features/home/data/`、`lib/features/home/presentation/home_page.dart`、`lib/main.dart`。参见[网络与会话](../architecture/networking.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[主题](threads.md)、[标签](tags.md)。

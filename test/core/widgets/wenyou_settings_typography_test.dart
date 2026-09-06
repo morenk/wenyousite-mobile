@@ -6,7 +6,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 
 void main() {
-  testWidgets('设置界面保留语义字阶并统一使用 Foundation 正文字体', (tester) async {
+  testWidgets('设置与管理界面按 Foundation 功能标题语境使用正文字体 600', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
@@ -48,14 +48,14 @@ void main() {
       scoped.textTheme.wenyouSectionTitle.height,
       base.textTheme.wenyouSectionTitle.height,
     );
-    expect(
-      scoped.textTheme.wenyouSectionTitle.fontWeight,
-      base.textTheme.wenyouSectionTitle.fontWeight,
-    );
+    expect(scoped.textTheme.wenyouPageTitle.fontWeight, FontWeight.w600);
+    expect(scoped.textTheme.wenyouSectionTitle.fontWeight, FontWeight.w600);
+    expect(scoped.textTheme.wenyouSubsectionTitle.fontWeight, FontWeight.w600);
     expect(
       scoped.appBarTheme.titleTextStyle?.fontFamily,
       WenyouFoundationTypography.body,
     );
+    expect(scoped.appBarTheme.titleTextStyle?.fontWeight, FontWeight.w600);
     expect(
       scoped.dialogTheme.titleTextStyle?.fontFamily,
       WenyouFoundationTypography.body,

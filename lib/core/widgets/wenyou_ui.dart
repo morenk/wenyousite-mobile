@@ -18,9 +18,9 @@ double wenyouHorizontalPagePadding(
       : tokens.regularHorizontalPadding;
 }
 
-/// Keeps configuration surfaces functional and compact by using Foundation's
-/// body family for every semantic heading level while preserving the shared
-/// sizes, line heights, weights, colors, and utility-number variants.
+/// Applies Foundation's functional-title context to settings and management
+/// surfaces: Noto Sans SC 600 for page, section, and subsection titles while
+/// preserving their semantic sizes, line heights, colors, and utility roles.
 class WenyouSettingsTypography extends StatelessWidget {
   const WenyouSettingsTypography({required this.child, super.key});
 
@@ -38,6 +38,7 @@ class WenyouSettingsTypography extends StatelessWidget {
         appBarTheme: theme.appBarTheme.copyWith(
           titleTextStyle: _settingsTextStyle(
             theme.appBarTheme.titleTextStyle ?? textTheme.wenyouSectionTitle,
+            fontWeight: FontWeight.w600,
           ),
           toolbarTextStyle: _settingsTextStyle(
             theme.appBarTheme.toolbarTextStyle,
@@ -55,15 +56,33 @@ class WenyouSettingsTypography extends StatelessWidget {
   }
 }
 
-TextTheme _settingsTextTheme(TextTheme source) => source.apply(
-  fontFamily: WenyouFoundationTypography.body,
-  fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-);
+TextTheme _settingsTextTheme(TextTheme source) {
+  final bodyTheme = source.apply(
+    fontFamily: WenyouFoundationTypography.body,
+    fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+  );
+  return bodyTheme.copyWith(
+    displayLarge: _settingsTextStyle(
+      bodyTheme.displayLarge,
+      fontWeight: FontWeight.w600,
+    ),
+    headlineMedium: _settingsTextStyle(
+      bodyTheme.headlineMedium,
+      fontWeight: FontWeight.w600,
+    ),
+    headlineSmall: _settingsTextStyle(
+      bodyTheme.headlineSmall,
+      fontWeight: FontWeight.w600,
+    ),
+  );
+}
 
-TextStyle? _settingsTextStyle(TextStyle? source) => source?.copyWith(
-  fontFamily: WenyouFoundationTypography.body,
-  fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
-);
+TextStyle? _settingsTextStyle(TextStyle? source, {FontWeight? fontWeight}) =>
+    source?.copyWith(
+      fontFamily: WenyouFoundationTypography.body,
+      fontFamilyFallback: WenyouFoundationTypography.chineseFallback,
+      fontWeight: fontWeight,
+    );
 
 class WenyouConstrainedWidth extends StatelessWidget {
   const WenyouConstrainedWidth({required this.child, this.maxWidth, super.key});

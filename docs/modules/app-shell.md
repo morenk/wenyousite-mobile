@@ -73,9 +73,9 @@ Android Manifest 明确关闭全量备份，Android 11 及以下和 Android 12+ 
 
 Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 和 x86_64。正式构建仍为单 APK，原包名、签名、构建号和站内更新比较规则不变；文楷、Noto Sans SC 和 Nunito 均保留。构建与上传入口在本地校验 ABI、引擎和字体条目，拒绝混入其他架构或缺失必要资源的制品。
 
-本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
-遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
+遵循[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[依赖边界与架构门禁](../architecture/dependencies.md)和[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。app 组合层只连接 capability、全局外观与跨 feature 缓存失效等接口，不持有业务页面状态。亮色与黑夜只使用中央 `WenyouThemeTokens`、Foundation 语义色/等级/图标及全局 `ColorScheme`；图片内容与布局结构保持一致。原生图标与启动图只同步 Foundation 平台资产，Flutter 页面只消费 `WenyouBrandContract` 和 `WenyouBrandMark`；更新页复用中央 Token、语义图标、共享面板、状态横幅和 Foundation 最小触控目标的主按钮，以“当前构建 → 可用构建”作为版本识别元素。Android 竖屏优先；iOS 不下载 IPA，只交给 TestFlight。
 
 ## 11. 测试场景与验收条件
 
@@ -99,7 +99,7 @@ Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 �
 - [x] 冷启动或回前台首帧稳定后发现新的完整主题、子贴、楼层、讨论、回复与私密邀请传送门时先询问再进入准确路由；取消与跳转都跨重启记住同一次复制，站外重新复制相同链接会因复制事件变化再次提示，应用内复制、混合文字、非法链接和站外链接不误触发，持久记录不含链接或邀请 token。
 - [x] Xiaomi Android 16 真机通过公网契约检查、冷启动与进程存活冒烟。
 - [x] 应用壳、启动状态在 360、400、600dp 宽度无溢出，关键控件满足 48dp 触控区。
-- [x] Android adaptive/monochrome/legacy 图标与 iOS AppIcon 均与 Foundation v6.8.0 哈希一致；Android 12+、旧版 Android 和 iOS 系统启动层只显示纯白底色，Flutter 品牌首帧的整体居中、尺寸、文案、字体、实际可见最短停留时间、零尺寸预热帧和快速就绪切换均有回归。
+- [x] Android adaptive/monochrome/legacy 图标与 iOS AppIcon 均与 Foundation v6.9.0 哈希一致；Android 12+、旧版 Android 和 iOS 系统启动层只显示纯白底色，Flutter 品牌首帧的整体居中、尺寸、文案、字体、实际可见最短停留时间、零尺寸预热帧和快速就绪切换均有回归。
 - [x] Android 全量备份与设备迁移明确关闭；iOS 应用名、相册用途文案、iPhone 竖屏和应用本地化声明有静态回归。
 - [ ] Android 8+ 模拟器通过启动冒烟。
 
@@ -111,10 +111,10 @@ Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 �
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.8.0`（`196deaf`）。签到经验遵循实际 `experienceAwarded`，日活奖励可能已由其他有效行为领取。
+契约 `5.18.0-dev.20260905.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.9.0`（`5888132`）。签到经验遵循实际 `experienceAwarded`，日活奖励可能已由其他有效行为领取。
 
 ## 14. 相关代码与架构文档
 
 根 router 与签到生命周期分别位于 `lib/app/app_router.dart`、`lib/app/app_session_bootstrap.dart`，主壳、认证、内容和账号路由组位于 `lib/app/routes/`。
 
-代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。
+代码入口：`lib/app/app_theme.dart`、`lib/app/app_router.dart`、`lib/app/wenyou_app.dart`、`lib/core/application/background_online_reminders.dart`、`lib/features/app_shell/application/background_online_poller.dart`、`lib/features/app_shell/application/background_online_reminder_coordinator.dart`、`lib/features/app_shell/presentation/app_scaffold.dart`、`lib/features/app_shell/presentation/startup_gate.dart`、`lib/core/platform/android_background_notification_gateway.dart`、`lib/main.dart`、`android/app/src/main/`、`ios/Runner/Assets.xcassets/`、`test/features/app_shell/`、`integration_test/performance_test.dart`、`tool/windows/Measure-WenyouAndroidPerformance.ps1`、`tool/release-mobile-from-local.sh`。参见[设置](settings.md)、[私有发布运维](../../contracts/mobile-release-operations.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[移动端性能基线](../architecture/performance.md)、[语义图标](../architecture/icons.md)、[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[温油钱包](wallet.md)和[站内私聊](direct-messages.md)。

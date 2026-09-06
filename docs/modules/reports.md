@@ -45,9 +45,9 @@
 
 ## 10. 跨模块约束
 
-本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
-users、threads、posts、moments 和 direct_messages 只提供目标事实与入口，提交状态不写回这些模块。auth 提供统一登录会话；core/network 提供请求 ID、会话失效和稳定业务错误。页面只消费 Foundation v6.8.0 Token、语义图标、共享锚点筛选器、状态横幅和至少 48dp 触控目标。管理端 operationId 不得为了覆盖数字从移动端调用。
+users、threads、posts、moments 和 direct_messages 只提供目标事实与入口，提交状态不写回这些模块。auth 提供统一登录会话；core/network 提供请求 ID、会话失效和稳定业务错误。页面只消费 Foundation v6.9.0 Token、语义图标、共享锚点筛选器、状态横幅和至少 48dp 触控目标。管理端 operationId 不得为了覆盖数字从移动端调用。
 
 ## 11. 测试场景与验收条件
 
@@ -70,7 +70,7 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.8.0`（`a9318b8`）。
+契约 `5.18.0-dev.20260905.1`；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.9.0`（`5888132`）。
 
 ## 14. 相关代码与架构文档
 

@@ -52,7 +52,7 @@
 
 ## 10. 跨模块约束
 
-本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 用户搜索结果头像缺图或加载失败时显示用户名首个可读字符，不使用无法区分具名用户的统一人物占位。
 
@@ -77,8 +77,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.8.0`（`73ed49e`）。
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.9.0`（`5888132`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/search/application/search_repository_ports.dart`、`lib/features/search/data/`、`lib/main.dart`。参见[导航](../architecture/navigation.md)、[楼层与回复](posts.md)、[用户与资料](users.md)、[语义图标](../architecture/icons.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。

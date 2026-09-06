@@ -61,7 +61,7 @@
 
 ## 10. 跨模块约束
 
-本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。资料编辑与账号设置属于配置工作台，统一保留语义字阶但使用 Foundation 正文字体，页面及区块标题不显示楷体。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。资料编辑与账号设置属于配置工作台，统一保留语义字号和行高，但页面、区块及子区块标题使用 Foundation 正文字体 600，不显示楷体。
 
 本人、公开资料和关系列表头像缺图或加载失败时显示用户名首个可读字符；匿名身份才使用中性用户图标，停用身份使用不可用图标。关注与粉丝数按 Foundation 阈值紧凑显示，TalkBack 朗读完整值。
 
@@ -104,8 +104,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.8.0`（`a9318b8`）。
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.9.0`（`5888132`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)。
+代码入口：`lib/features/users/application/user_repository_ports.dart`、`lib/features/users/data/`、`lib/main.dart`。参见[动态](moments.md)、[搜索](search.md)、[社交关系](social.md)、[温油钱包](wallet.md)、[社区举报](reports.md)、[治理决定与申诉](moderation.md)、[站内私聊](direct-messages.md)、[设置](settings.md)、[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)。

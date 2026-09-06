@@ -60,9 +60,9 @@
 
 ## 10. 跨模块约束
 
-本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.8.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
+本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
-遵循[网络与会话](../architecture/networking.md)与[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
+遵循[网络与会话](../architecture/networking.md)与[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)；所有受保护模块通过统一鉴权回跳，不自行读取 Token。登录、注册、找回与账号安全表单复用验证码字段、凭据校验策略、状态提示和异步主按钮，业务页不得复制输入约束、错误卡片或提交加载样式。
 
 ## 11. 测试场景与验收条件
 
@@ -87,8 +87,8 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.8.0`（`196deaf`）。
+契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `8ea511a4fa16341b9d1bb7aee7e7c2c66b89f9fb`；Foundation `v6.9.0`（`5888132`）。
 
 ## 14. 相关代码与架构文档
 
-代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.8.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.8.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。
+代码入口：`lib/features/auth/application/auth_ports.dart`、`lib/features/auth/data/`、`lib/features/auth/presentation/auth_brand_header.dart`、`lib/main.dart`、`lib/core/network/session_remote.dart`；找回/重置由 `password_recovery_*` 承载，终端管理与注销由 `lib/features/settings/` 下的 `account_deletion_*` 等切片承载。参见[Foundation v6.9.0 Flutter profile](https://github.com/morenk/wenyousite-foundation/blob/v6.9.0/docs/platforms/mobile.md)、[语义图标](../architecture/icons.md)、[网络与会话](../architecture/networking.md)、[导航](../architecture/navigation.md)。

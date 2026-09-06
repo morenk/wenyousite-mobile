@@ -53,7 +53,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
     final state = ref.watch(provider);
     _schedulePreparation(state);
     final locked = state.isBusy || _preparing;
-    return PopScope<Object?>(
+    final page = PopScope<Object?>(
       canPop: _allowPop,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_requestClose(locked));
@@ -91,6 +91,7 @@ class _SubthreadEditorPageState extends ConsumerState<SubthreadEditorPage> {
               ),
       ),
     );
+    return WenyouSettingsTypography(child: page);
   }
 
   Widget _buildLoading(SubthreadManagementState state) {
