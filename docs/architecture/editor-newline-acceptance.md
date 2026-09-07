@@ -29,7 +29,7 @@
 - Web 已部署 `1fae34b0b59971e7c35877d9fb529511a2ce8ab5`，Build ID `bB9JsBI66q3JzgHUiK1os`；公网静态资源验证通过。旧客户端不能据此视为已更新，须安装本轮 Debug 候选；应用更新策略与正式分发版本未变更。
 - Windows 完整 `npm run check:apk` 通过：公网契约核对、客户端再生成零差异、格式、应用与 SDK 静态检查、架构、21 个模块文档、API 覆盖、2,299 项 Flutter 测试、16 项 Windows 工具测试及 Debug 构建。1 项 Sentry 真实接收测试按既有显式开关未启用，本轮不改动其跳过条件。
 - Android 候选：`site.wenyou.app.debug`，名称“温油站 Debug”，版本 `0.7.0-dev.1-debug`，构建号 `94`；SHA-256 `44c9e082a979cdb6b31a8296f24000139449c5327fd9f9a342cbcc49194cf54b`。安装包归档为 `build/app/outputs/flutter-apk/wenyou-debug-newline-44c9e082.apk`。
-- 2026-09-08 本轮交付检查时 `adb devices -l` 无设备，尚未执行安装；不能把此前已装的 Debug 记作本轮候选。设备重新连接后须覆盖正确 Debug 包，并核对更新时间及设备内 APK 的同一 SHA-256，再由负责人复验。
+- 2026-09-08 首次交付时 ADB 无设备，未执行安装。负责人再次要求 ADB 安装后，设备恢复连接，已用 `adb install -r` 覆盖正确的 `site.wenyou.app.debug`，保留应用数据；设备记录的更新时间为 `2026-09-08 03:52:55`。设备内 `base.apk` 的完整 SHA-256 与上述候选一致，对应源码 `67b3d574b755b6f32e3ab0e6e2c760010bc7846d`。安装核验通过，原问题及双端回车效果仍待负责人验收。
 
 ## 负责人复验
 
