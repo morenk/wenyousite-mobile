@@ -7,6 +7,39 @@ import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/rich_editor_session.dart';
 
 void main() {
+  for (final content in ['甲', '\u00a0', '\u200b', '\u2060', '\u3000']) {
+    for (final prefix in ['>', '>\t', '   >']) {
+      test('引用可选空格不影响块归属：$prefix ${content.codeUnits}', () {
+        final source = '> 上段\n$prefix$content\n> **下段** *~~样式~~*';
+        final document = Document.fromDelta(
+          MarkdownDeltaCodec.decode(source).delta,
+        );
+        addTearDown(document.close);
+        expect(document.toPlainText(), '上段\n$content\n下段 样式\n');
+        _expectSingleQuote(document, 3);
+        final encoded = MarkdownDeltaCodec.encode(document.toDelta());
+        expect(encoded, '> 上段\n> $content\n> **下段** *~~样式~~*');
+        expect(
+          md.markdownToHtml(
+            encoded,
+            extensionSet: md.ExtensionSet.gitHubFlavored,
+          ),
+          md.markdownToHtml(
+            source,
+            extensionSet: md.ExtensionSet.gitHubFlavored,
+          ),
+        );
+        final reopened = Document.fromDelta(
+          MarkdownDeltaCodec.decode(encoded).delta,
+        );
+        addTearDown(reopened.close);
+        _expectSingleQuote(reopened, 3);
+        expect(reopened.toPlainText(), document.toPlainText());
+        expect(MarkdownDeltaCodec.encode(reopened.toDelta()), encoded);
+      });
+    }
+  }
+
   for (final separator in ['>', '> ', '>\t', '>  ', '   >\t ']) {
     test('引用空行 $separator 保持同一个 Quill 引用块及段落间隔', () {
       final source = '> **甲**\n$separator\n> *乙*';

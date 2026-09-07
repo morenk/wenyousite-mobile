@@ -36,6 +36,8 @@ Embed payload 必须版本化且只包含序列化回 Markdown 所需的稳定�
 
 ## 往返不变量
 
+引用前缀由 `MarkdownContent.quoteLineContent` 统一识别，中立块模型、富文本行解码和阅读复制不再分别要求不同空白拼写。只消费最多三个前导普通空格、一个 `>` 及其后至多一个 ASCII 空格或 Tab；ASCII 空引用行沿用空行规范化，Unicode 空白和零宽内容逐字保留。保护区在块解析前仍按原兼容规则判定。`editor_quote_paragraphs_test.dart` 以独立 Markdown 阅读结构验证无空格、Tab、缩进等价写法；`editor_quote_rendering_test.dart` 验证单一 Quill 引用块、引用外空段和实际 Widget／保存重开，不以首次 Delta 自洽代替输入语义验证。
+
 引用内部的独占 `>` 行由 `MarkdownQuoteBlock(content: '')` 表达，在 Delta 中保留带 `blockquote` 的空换行；Quill 因而把上下正文与间隔组合为同一引用块。空引用标记上的空白不产生硬换行语义，写回统一为 `>`；普通空白分隔仍区分独立引用，代码和字面转义的保护先于空引用识别。
 
 v7 行内写入由 `MarkdownDeltaInlineEncoder` 按全部可见 marks／链接合并连续逻辑区间，来源属性只决定片段内转义。`MarkdownDeltaSemantics` 在公共 encode 后比较原 Delta 与重新解码的语义：保留文字、样式、链接、块属性、软换行、空段和节点身份；仅去除已知来源属性、既有格式边缘空白归属及显式块的语法分隔。解码的内部 encode 不执行公共检查，防止递归。兼容源码行在下一块开始时补分隔，末尾不提前补双换行，避免重开多出空段。

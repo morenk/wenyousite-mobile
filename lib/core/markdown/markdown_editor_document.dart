@@ -359,16 +359,10 @@ class MarkdownEditorDocument {
         alignment: alignment,
       );
     }
-    if (MarkdownContent.isEmptyQuoteLine(line)) {
-      return MarkdownQuoteBlock(
-        content: '',
-        blankLinesBefore: blankLinesBefore,
-      );
-    }
-    final quote = RegExp(r'^> (.+)$').firstMatch(line);
+    final quote = MarkdownContent.quoteLineContent(line);
     if (quote != null) {
       return MarkdownQuoteBlock(
-        content: quote.group(1)!,
+        content: quote,
         blankLinesBefore: blankLinesBefore,
       );
     }

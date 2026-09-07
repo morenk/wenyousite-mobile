@@ -19,6 +19,7 @@ class MarkdownContent {
     caseSensitive: false,
   );
   static final _emptyQuote = RegExp(r'^ {0,3}>[\t ]*$');
+  static final _quote = RegExp(r'^ {0,3}>[\t ]?(.*)$');
   static final _thematicBreak = RegExp(
     r'^ {0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$',
   );
@@ -266,6 +267,12 @@ class MarkdownContent {
   static String literalizeLine(String line) => _escapeLiteralLine(line);
 
   static bool isEmptyQuoteLine(String line) => _emptyQuote.hasMatch(line);
+
+  /// Strips only the CommonMark quote marker and its optional ASCII space.
+  /// Non-breaking spaces and invisible content remain part of the paragraph.
+  /// Callers must exclude literal/code lines before using this block prefix.
+  static String? quoteLineContent(String line) =>
+      isEmptyQuoteLine(line) ? '' : _quote.firstMatch(line)?.group(1);
 
   static Set<int> _unsupportedLines(
     List<String> lines, {

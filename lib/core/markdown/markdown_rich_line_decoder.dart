@@ -72,8 +72,8 @@ class MarkdownRichLineDecoder {
       r'^(#{2,3})[\t ]+(.+?)[\t ]+#+[\t ]*$',
     ).firstMatch(source);
     if (heading != null) return '${heading.group(1)} ${heading.group(2)}';
-    final quote = RegExp(r'^>[\t ]*([^>\s].*)$').firstMatch(source);
-    if (quote != null) return '> ${quote.group(1)}';
+    final quote = MarkdownContent.quoteLineContent(source);
+    if (quote != null) return quote.isEmpty ? '>' : '> $quote';
     final bullet = RegExp(r'^( {0,6})[-+*][\t ]+(.+)$').firstMatch(source);
     if (bullet != null && bullet.group(1)!.length.isEven) {
       return '${bullet.group(1)}- ${bullet.group(2)}';
@@ -93,14 +93,14 @@ class MarkdownRichLineDecoder {
     var inlineSource = source;
     final lineAttributes = <String, dynamic>{};
     final heading = RegExp(r'^(#{2,3}) (.+)$').firstMatch(source);
-    final quote = RegExp(r'^> (.+)$').firstMatch(source);
+    final quote = MarkdownContent.quoteLineContent(source);
     final list = RegExp(r'^( {0,6})(- |1\. )(.+)$').firstMatch(source);
     if (heading != null) {
       lineAttributes['header'] = heading.group(1)!.length;
       inlineSource = heading.group(2)!;
     } else if (quote != null) {
       lineAttributes['blockquote'] = true;
-      inlineSource = quote.group(1)!;
+      inlineSource = quote;
     } else if (list != null) {
       final spaces = list.group(1)!.length;
       final content = list.group(3)!;
