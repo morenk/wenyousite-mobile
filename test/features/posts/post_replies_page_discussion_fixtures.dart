@@ -34,11 +34,15 @@ Future<ProviderContainer> postRepliesPageTestPostContainer(
   PostRepliesPageTestFakeStickerRepository? stickerRepository,
   ReaderMarkdownClipboardWriter? clipboardWriter,
   bool markdownAlignment = false,
+  bool markdownImageAlignment = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
       appCapabilitiesProvider.overrideWithValue(
-        AppCapabilities(markdownAlignment: markdownAlignment),
+        AppCapabilities(
+          markdownAlignment: markdownAlignment,
+          markdownImageAlignment: markdownImageAlignment,
+        ),
       ),
       tokenStoreProvider.overrideWithValue(
         PostRepliesPageTestMemoryTokenStore(),

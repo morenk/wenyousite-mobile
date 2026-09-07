@@ -41,16 +41,16 @@ void main() {
   }
 
   for (final separator in ['>', '> ', '>\t', '>  ', '   >\t ']) {
-    test('引用空行 $separator 保持同一个 Quill 引用块及段落间隔', () {
+    test('引用分隔 $separator 保持同一个 Quill 引用块且不创建空行', () {
       final source = '> **甲**\n$separator\n> *乙*';
       final document = Document.fromDelta(
         MarkdownDeltaCodec.decode(source).delta,
       );
       addTearDown(document.close);
-      expect(document.toPlainText(), '甲\n\n乙\n');
-      _expectSingleQuote(document, 3);
+      expect(document.toPlainText(), '甲\n乙\n');
+      _expectSingleQuote(document, 2);
       expect(document.collectStyle(0, 1).attributes['bold']?.value, isTrue);
-      expect(document.collectStyle(3, 1).attributes['italic']?.value, isTrue);
+      expect(document.collectStyle(2, 1).attributes['italic']?.value, isTrue);
       final encoded = MarkdownDeltaCodec.encode(document.toDelta());
       expect(encoded, '> **甲**\n>\n> *乙*');
       final readerBlocks = md.Document().parseLines(encoded.split('\n'));
@@ -65,7 +65,7 @@ void main() {
         MarkdownDeltaCodec.decode(encoded).delta,
       );
       addTearDown(reopened.close);
-      _expectSingleQuote(reopened, 3);
+      _expectSingleQuote(reopened, 2);
       expect(reopened.toPlainText(), document.toPlainText());
       expect(MarkdownDeltaCodec.encode(reopened.toDelta()), encoded);
       expect(
@@ -75,7 +75,7 @@ void main() {
     });
   }
 
-  testWidgets('真实编辑会话在引用空行输入粗体、保存、删除后不拆块', (tester) async {
+  testWidgets('真实编辑会话输入粗体、保存、删除后保持引用分段且不多空行', (tester) async {
     const source = '> **甲**\n>\n> *乙*';
     final emitted = <String>[];
     final session = RichEditorSession(
@@ -84,29 +84,31 @@ void main() {
     );
     addTearDown(session.dispose);
     final controller = session.controller;
-    _expectSingleQuote(controller.document, 3);
+    _expectSingleQuote(controller.document, 2);
     controller.updateSelection(
-      const TextSelection.collapsed(offset: 2),
+      const TextSelection.collapsed(offset: 1),
       ChangeSource.local,
     );
-    controller.formatSelection(Attribute.bold);
-    controller.replaceText(2, 0, '丙', const TextSelection.collapsed(offset: 3));
+    controller.replaceText(1, 0, '丙', const TextSelection.collapsed(offset: 2));
     expect(await session.flush(), isTrue);
-    expect(emitted.last, '> **甲**\n> **丙**\n> *乙*');
-    _expectSingleQuote(controller.document, 3);
-    controller.replaceText(2, 1, '', const TextSelection.collapsed(offset: 2));
+    expect(emitted.last, '> **甲丙**\n>\n> *乙*');
+    _expectSingleQuote(controller.document, 2);
+    controller.replaceText(1, 1, '', const TextSelection.collapsed(offset: 1));
     expect(await session.flush(), isTrue);
     expect(emitted.last, source);
-    _expectSingleQuote(controller.document, 3);
+    _expectSingleQuote(controller.document, 2);
   });
 
   for (final source in ['>', '>\n> 甲', '> 甲\n>', '> 甲\n>\n>\n> 乙']) {
-    test('首尾及连续引用空行保持个数：$source', () {
+    test('首尾空引用可编辑，内部连续分隔保持源码个数：$source', () {
       final document = Document.fromDelta(
         MarkdownDeltaCodec.decode(source).delta,
       );
       addTearDown(document.close);
-      _expectSingleQuote(document, source.split('\n').length);
+      _expectSingleQuote(
+        document,
+        source == '> 甲\n>\n>\n> 乙' ? 2 : source.split('\n').length,
+      );
       expect(document.toPlainText(), isNot(contains('>')));
       expect(MarkdownDeltaCodec.encode(document.toDelta()), source);
     });

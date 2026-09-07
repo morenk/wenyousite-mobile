@@ -35,7 +35,7 @@ void main() {
       expect(document.root.children, hasLength(2));
       final quote = document.root.children.first as Block;
       expect(quote.style.attributes['blockquote']?.value, isTrue);
-      expect(quote.childCount, 3);
+      expect(quote.childCount, sample.name == 'paragraphs' ? 2 : 3);
       expect(document.root.children.last, isA<Line>());
       expect(document.toPlainText(), isNot(contains('>')));
 

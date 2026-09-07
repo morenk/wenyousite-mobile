@@ -86,6 +86,8 @@
 
 ## 10. 跨模块约束
 
+楼层和回复进入编辑时，两段引用正文之间的空 `>` 源码分隔不创建可编辑空行；保存时仍保留原来的引用段落边界。真实页面回归覆盖重新读取最新版、首次打开、关闭后重开及引用外空段；引用内多空行候选的负责人验收见 [引用空行验收](../architecture/editor-quote-acceptance.md)。
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 楼层与回复阅读统一消费 Markdown v4/v5 对齐，隐藏协议 marker；v4 对普通段落和 H2/H3 应用布局，v5 再允许独立普通图片块。“复制内容”通过 clipboard v2 进程载荷保留合法文字与图片块对齐，系统 `text/plain` 不暴露 marker。

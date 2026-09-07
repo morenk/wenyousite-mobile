@@ -444,6 +444,7 @@ void registerEditorClipboardContractInteropCases() {
     expect(
       MarkdownDeltaCodec.encode(delta),
       '> *斜体开头* `inline code` *斜体结尾*\n'
+      '>\n'
       '> **粗体开头** `second code` **粗体结尾**\n\n'
       '> 独立引用',
     );
