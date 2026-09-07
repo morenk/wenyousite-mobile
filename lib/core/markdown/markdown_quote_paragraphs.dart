@@ -53,7 +53,12 @@ abstract final class MarkdownQuoteParagraphs {
         throw const MarkdownCodecException('引用段落无法安全保存');
       }
       for (var separator = 0; separator < count; separator++) {
-        output.add(_QuoteLine(Delta(), {'blockquote': true}));
+        output.add(
+          _QuoteLine(Delta(), {
+            'blockquote': true,
+            'wenyou_source_separator': true,
+          }),
+        );
       }
     }
     return _join(output);
@@ -84,7 +89,10 @@ final class _QuoteLine {
       terminated &&
       attributes['blockquote'] == true &&
       attributes['wenyou_literal_line'] != true;
-  bool get isEmptyQuote => isQuote && content.isEmpty;
+  bool get isEmptyQuote =>
+      isQuote &&
+      content.isEmpty &&
+      attributes['wenyou_empty_paragraph'] != true;
   bool get isQuoteContent => isQuote && content.isNotEmpty;
 
   static List<_QuoteLine> split(Delta source) {

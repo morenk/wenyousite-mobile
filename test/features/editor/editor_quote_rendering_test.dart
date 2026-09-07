@@ -16,6 +16,7 @@ void main() {
   for (final sample in [
     (name: 'paragraphs', separator: '>'),
     (name: 'invisible_content', separator: '>\u200b'),
+    (name: 'explicit_empty', separator: '> <br />'),
   ]) {
     testWidgets('${sample.name} 阅读与编辑引用背景连续且保留外部空段', (tester) async {
       tester.view.devicePixelRatio = 1;
@@ -32,6 +33,7 @@ void main() {
       );
       addTearDown(session.dispose);
       final document = session.controller.document;
+      final editorKey = GlobalKey<EditorState>();
       expect(document.root.children, hasLength(2));
       final quote = document.root.children.first as Block;
       expect(quote.style.attributes['blockquote']?.value, isTrue);
@@ -63,6 +65,7 @@ void main() {
                         focusNode: session.focusNode,
                         scrollController: session.scrollController,
                         config: QuillEditorConfig(
+                          editorKey: editorKey,
                           scrollable: false,
                           showCursor: false,
                           padding: EdgeInsets.zero,
@@ -79,6 +82,30 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      final renderEditor = editorKey.currentState!.renderEditor;
+      final firstCaret = renderEditor.getLocalRectForCaret(
+        const TextPosition(offset: 0),
+      );
+      final lastCaret = renderEditor.getLocalRectForCaret(
+        TextPosition(offset: document.toPlainText().indexOf('阿')),
+      );
+      final expectedRows = sample.name == 'paragraphs' ? 1 : 2;
+      var rowsHeight = 0.0;
+      final renderedRows = find
+          .descendant(
+            of: find.byType(QuillEditor),
+            matching: find.byType(RichText),
+          )
+          .evaluate()
+          .toList();
+      // Empty text uses the font's strut metrics; measure text boxes directly
+      // and assert that Quill adds no paragraph padding between those boxes.
+      for (var row = 0; row < expectedRows; row++) {
+        rowsHeight += tester
+            .getSize(find.byWidget(renderedRows[row].widget))
+            .height;
+      }
+      expect(lastCaret.top - firstCaret.top, closeTo(rowsHeight, 1));
       expect(emitted, isEmpty);
       expect(await session.flush(), isTrue);
       expect(

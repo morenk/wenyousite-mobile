@@ -237,7 +237,7 @@ void main() {
         WenyouEditorFormatPolicy.alignmentSelection(
           session.controller,
         ).alignment,
-        isNull,
+        WenyouTextAlignment.center,
       );
 
       final typingOffset = session.controller.selection.extentOffset;
@@ -252,12 +252,12 @@ void main() {
         WenyouEditorFormatPolicy.alignmentSelection(
           session.controller,
         ).alignment,
-        WenyouTextAlignment.left,
+        WenyouTextAlignment.center,
       );
       expect(await session.flush(), isTrue);
       expect(
         MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
-        '[wenyousite-align-v1-center]: #\n第一行\n<br />\n第三行',
+        '[wenyousite-align-v1-center]: #\n第一行\n<br />\n[wenyousite-align-v1-center]: #\n第三行',
       );
     });
   });

@@ -192,17 +192,20 @@ class MarkdownDeltaLineMetadata {
         source?[sourceSeparatorAttribute] == true && !lineHasContent;
     final onlyPendingAlignment =
         !lineHasContent &&
-        isFinalNewline &&
         attributes.keys
             .where(_blockAttributes.contains)
             .every((key) => key == 'align');
     if (onlyPendingAlignment) attributes.remove('align');
     final hasBlockStyle =
-        attributes.keys.any(_blockAttributes.contains) ||
+        attributes.keys.any(
+          (key) => key != 'blockquote' && _blockAttributes.contains(key),
+        ) ||
         attributes[literalLineKey] == true;
 
     if (lineHasContent ||
-        isOnlyDocumentLine ||
+        (isOnlyDocumentLine &&
+            !(attributes['blockquote'] == true &&
+                attributes[emptyKey] == true)) ||
         isSourceSeparator ||
         hasBlockStyle) {
       attributes.remove(emptyKey);

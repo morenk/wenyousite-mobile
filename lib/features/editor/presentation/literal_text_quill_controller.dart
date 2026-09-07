@@ -45,7 +45,8 @@ class LiteralTextQuillController extends QuillController {
             len == 0 ? '' : document.getPlainText(index, len),
           )
         : null;
-    final effectiveData = internalReference ?? data;
+    final effectiveData =
+        internalReference ?? _plainNewline(data, index) ?? data;
     final effectiveSelection = internalReference == null
         ? textSelection
         : TextSelection.collapsed(offset: index + 1);
@@ -124,4 +125,22 @@ class LiteralTextQuillController extends QuillController {
     ),
     _ => false,
   };
+
+  Object? _plainNewline(Object? data, int index) {
+    if (data != '\n') return null;
+    final attributes = document.collectStyle(index, 0).attributes;
+    if (attributes.containsKey('header') ||
+        attributes.containsKey('list') ||
+        attributes.containsKey('code-block') ||
+        attributes.containsKey('indent')) {
+      return null;
+    }
+    // Quill's string insertion exits an empty quote/aligned line without
+    // inserting anything. An explicit Delta keeps the user's Enter literal.
+    return Delta()..insert('\n', {
+      if (attributes['blockquote']?.value == true) 'blockquote': true,
+      if (attributes['align']?.value case final String alignment)
+        'align': alignment,
+    });
+  }
 }

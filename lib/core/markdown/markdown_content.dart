@@ -214,6 +214,10 @@ class MarkdownContent {
         fence = fenceToken;
         continue;
       }
+      if (isQuotedEmptyParagraphLine(line)) {
+        lines[index] = '> <br />';
+        continue;
+      }
       if (RegExp(
         r'^ {0,3}<br\s*/?>[\t ]*$',
         caseSensitive: false,
@@ -267,6 +271,14 @@ class MarkdownContent {
   static String literalizeLine(String line) => _escapeLiteralLine(line);
 
   static bool isEmptyQuoteLine(String line) => _emptyQuote.hasMatch(line);
+
+  static final _quotedEmptyParagraph = RegExp(
+    r'^ {0,3}>[\t ]?<br\s*/?>[\t ]*$',
+    caseSensitive: false,
+  );
+
+  static bool isQuotedEmptyParagraphLine(String line) =>
+      _quotedEmptyParagraph.hasMatch(line);
 
   /// Strips only the CommonMark quote marker and its optional ASCII space.
   /// Non-breaking spaces and invisible content remain part of the paragraph.
@@ -390,7 +402,9 @@ class MarkdownContent {
   }
 
   static bool _hasRawHtml(String line) {
-    if (_emptyParagraph.hasMatch(line)) return false;
+    if (_emptyParagraph.hasMatch(line) || isQuotedEmptyParagraphLine(line)) {
+      return false;
+    }
     for (final match in _htmlToken.allMatches(line)) {
       if (_isEscaped(line, match.start)) continue;
       final token = match.group(0)!;

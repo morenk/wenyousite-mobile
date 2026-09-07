@@ -1,4 +1,5 @@
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 
 /// Compatibility rules for Markdown v3 empty paragraphs.
 ///
@@ -77,11 +78,26 @@ class MarkdownEmptyParagraphs {
     final lines = recoverLegacy(markdown).split('\n');
     for (var index = 0; index < lines.length; index++) {
       if (_emptyParagraph.hasMatch(lines[index])) lines[index] = '<br />';
+      if (MarkdownContent.isQuotedEmptyParagraphLine(lines[index])) {
+        lines[index] = '> <br />';
+      }
     }
 
     final output = <String>[];
     var index = 0;
     while (index < lines.length) {
+      if (MarkdownContent.isEmptyQuoteLine(lines[index])) {
+        final start = index;
+        while (index < lines.length &&
+            MarkdownContent.isEmptyQuoteLine(lines[index])) {
+          index += 1;
+        }
+        final adjacentMarker =
+            (start > 0 && lines[start - 1] == '> <br />') ||
+            (index < lines.length && lines[index] == '> <br />');
+        if (!adjacentMarker) output.addAll(lines.getRange(start, index));
+        continue;
+      }
       if (!_blankLine.hasMatch(lines[index])) {
         output.add(lines[index]);
         index += 1;

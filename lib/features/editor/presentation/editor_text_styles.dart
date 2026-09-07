@@ -53,7 +53,9 @@ DefaultStyles wenyouEditorTextStyles(BuildContext context) {
       spec.quote,
       HorizontalSpacing(spec.quotePadding.left, spec.quotePadding.right),
       VerticalSpacing(spec.blockSpacing, spec.blockSpacing),
-      VerticalSpacing(spec.quotePadding.top, spec.quotePadding.bottom),
+      // Quill applies lineSpacing between every quoted row, not to the
+      // outside of the quote. A literal newline must retain only line height.
+      noVerticalSpacing,
       spec.quoteDecoration,
     ),
     code: DefaultTextBlockStyle(

@@ -115,6 +115,9 @@ class MarkdownDeltaCodec {
       } else if (opening != null) {
         fence = _Fence(opening[0], opening.length);
         delta.insert(line);
+      } else if (MarkdownContent.isQuotedEmptyParagraphLine(line)) {
+        richLineAttributes = const {'blockquote': true};
+        isProtocolEmptyParagraph = true;
       } else if (MarkdownContent.isEmptyQuoteLine(line)) {
         // Keep paragraph separators inside the quote, so Quill groups both
         // sides into one block instead of displaying a literal marker.
@@ -164,7 +167,8 @@ class MarkdownDeltaCodec {
             when alignment != WenyouTextAlignment.left)
           alignmentAttribute: alignment.name,
         if (isProtocolEmptyParagraph) emptyParagraphAttribute: true,
-        if (line.isEmpty && lines.length > 1)
+        if ((line.isEmpty && lines.length > 1) ||
+            MarkdownContent.isEmptyQuoteLine(line))
           MarkdownDeltaLineMetadata.sourceSeparatorAttribute: true,
         if (isLastLine) sourceBreakAttribute: false,
       };
@@ -650,10 +654,13 @@ class MarkdownDeltaCodec {
       return MarkdownContent.literalizeLine(content);
     }
     if (attributes[emptyParagraphAttribute] == true) {
-      if (content.isNotEmpty) {
+      if (content.isNotEmpty ||
+          attributes.containsKey('header') ||
+          attributes.containsKey('list') ||
+          attributes.containsKey('indent')) {
         throw const MarkdownCodecException('这段内容暂时无法安全编辑');
       }
-      return '<br />';
+      return attributes['blockquote'] == true ? '> <br />' : '<br />';
     }
 
     final canonicalContent = MarkdownInlineBoundary.canonicalize(content);

@@ -8,6 +8,25 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  for (final count in [0, 1, 2]) {
+    testWidgets('引用内 $count 个显式空行按行高显示', (tester) async {
+      final source = [
+        '> 甲',
+        ...List.filled(count, '> <br />'),
+        '> 乙',
+      ].join('\n');
+      await tester.pumpWidget(_testApp(WenyouMarkdown(data: source)));
+      await tester.pump();
+      expect(_emptyParagraphs(), findsNothing);
+      expect(
+        find.text('甲${'\n' * (count + 1)}乙', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.textContaining('<br', findRichText: true), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('连续协议标记逐段渲染且不暴露 HTML 文本', (tester) async {
     await tester.pumpWidget(
       _testApp(const WenyouMarkdown(data: '<br>\n<br/>\n<br >\n<br />')),
@@ -34,8 +53,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(_emptyParagraphs(), findsNWidgets(4));
-    expect(find.textContaining('正文一', findRichText: true), findsOneWidget);
+    expect(find.text('\n正文一\n\n正文二\n\n', findRichText: true), findsOneWidget);
     expect(find.textContaining('正文二', findRichText: true), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -67,7 +85,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(_emptyParagraphs(), findsNWidgets(4));
+    expect(
+      find.text('序章\n\n\n第一节\n\n\n尾声', findRichText: true),
+      findsOneWidget,
+    );
     await expectLater(
       find.byKey(const Key('markdown-blank-paragraphs-visual')),
       matchesGoldenFile('goldens/markdown_blank_paragraphs_360.png'),

@@ -23,7 +23,7 @@ void main() {
     final quote = styles.quote!;
     expect(quote.style.fontStyle, FontStyle.normal);
     expect(quote.horizontalSpacing, const HorizontalSpacing(12.75, 12.75));
-    expect(quote.lineSpacing, const VerticalSpacing(8.5, 8.5));
+    expect(quote.lineSpacing, VerticalSpacing.zero);
     final quoteDecoration = quote.decoration!;
     expect(quoteDecoration.color, WenyouFoundationPalette.muted);
     expect(

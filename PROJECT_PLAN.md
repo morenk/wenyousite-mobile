@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
-- 后端契约：`5.18.0-dev.20260905.1`，候选 revision `1ad27c7871936d2451162ab5ae5914f34f33588e`，新增普通回车语料；HTTP SDK 无变化。公网暂为 `1f9c749`，将在本次双端候选齐备后切换并再次核验。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
+- 后端契约：`5.18.0-dev.20260905.1`，revision `1ad27c7871936d2451162ab5ae5914f34f33588e`，新增普通回车语料；HTTP SDK 无变化。公网 `/meta` 已核验同一 revision；Web 候选 `1fae34b` 已部署，移动端须使用本轮 Debug 候选，跨端效果待负责人验收。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.9.0`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
@@ -15,7 +15,7 @@
 
 ## 当前优先级
 
-当前中断项：引用段落之间多出可编辑空行的候选修复，**待负责人验收**。已查明此前安装 Release、负责人打开旧 Debug 的包名错配；覆盖更新正确 Debug 后，负责人于 2026-09-08 明确确认 `>` 拆分引用的问题解决。现用已取得的原楼层 Markdown 复现并处理多空行问题，保留保存后的段落边界，详见 [引用空行验收](docs/architecture/editor-quote-acceptance.md)。
+当前中断项：普通正文与引用的一次回车双端统一，以及引用额外空行候选，**待负责人验收**。已查明此前安装 Release、负责人打开旧 Debug 的包名错配；覆盖更新正确 Debug 后，负责人于 2026-09-08 明确确认 `>` 拆分引用的问题解决。现用已取得的原楼层 Markdown 复现并处理多空行问题，保留保存后的段落边界，历史见 [引用空行验收](docs/architecture/editor-quote-acceptance.md)，本次普通回车候选与真机步骤见 [双端回车验收](docs/architecture/editor-newline-acceptance.md)。
 
 1. 完成正式签名包的真实更新安装冒烟，覆盖线上 `/meta`、下载、SHA-256、签名、安装器返回和旧版本升级后的会话/本地数据保留。
 2. 接入协作者权限闭环：展示本人协作主题列表，消费子贴 `postingCapability`，识别协作者任免通知，并在权限撤销或管理写入被拒时退出管理页、刷新成员与协作列表。

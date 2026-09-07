@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
@@ -187,9 +188,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     final prepared = _prepareInternalReferences(
       MarkdownInlineBoundary.canonicalizeDocument(normalized),
     );
-    _normalizedData = prepared.data;
-    _renderSegments = MarkdownAlignmentContract.renderSegments(
+    _normalizedData = MarkdownEmptyParagraphs.prepareForLineEditor(
       prepared.data,
+    );
+    _renderSegments = MarkdownAlignmentContract.renderSegments(
+      _normalizedData,
       imageAlignment: true,
     );
     _internalReferences = prepared.references;
@@ -209,7 +212,8 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < _renderSegments.length; index++) ...[
-          if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
+          if (_separatesRenderSegments(index))
+            SizedBox(height: _styleSheet?.blockSpacing ?? 0),
           KeyedSubtree(
             key: ValueKey(
               'wenyou-markdown-segment-$index-'
@@ -242,6 +246,13 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     );
   }
 
+  bool _separatesRenderSegments(int index) {
+    if (index == 0) return false;
+    final previous = _renderSegments[index - 1].markdown.trimRight();
+    final next = _renderSegments[index].markdown.trimLeft();
+    return !previous.endsWith('<br />') && !next.startsWith('<br />');
+  }
+
   MarkdownBody _buildMarkdownBody(
     String data,
     MarkdownStyleSheet? styleSheet, {
@@ -257,7 +268,11 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     fitContent: !expandBlockWidth,
     softLineBreak: true,
     styleSheet: styleSheet,
-    blockSyntaxes: [_EmptyParagraphBlockSyntax()],
+    blockSyntaxes: [
+      const MarkdownQuoteLineSyntax(_emptyParagraphTag),
+      const MarkdownLiteralRowsSyntax(),
+      _EmptyParagraphBlockSyntax(),
+    ],
     inlineSyntaxes: [
       _InternalReferenceInlineSyntax(),
       _UserMentionInlineSyntax(),

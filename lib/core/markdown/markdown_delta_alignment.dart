@@ -200,6 +200,11 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
+      if (line.isPlainEmptyLine && line.alignment != WenyouTextAlignment.left) {
+        flushParagraph();
+        desired[line] = line.alignment;
+        continue;
+      }
       if (imageAlignment && line.isStandaloneRegularImage) {
         flushParagraph();
         desired[line] = line.alignment;
@@ -263,6 +268,11 @@ abstract final class MarkdownDeltaAlignment {
     }
 
     for (final line in lines) {
+      if (line.isPlainEmptyLine && line.alignment != WenyouTextAlignment.left) {
+        flushParagraph();
+        blocks.add(_AlignmentBlock([line]));
+        continue;
+      }
       if (imageAlignment && line.isStandaloneRegularImage) {
         flushParagraph();
         blocks.add(_AlignmentBlock([line]));
