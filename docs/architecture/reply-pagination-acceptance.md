@@ -44,9 +44,11 @@
 - 版本：`0.7.0-dev.1-debug`，构建号 `94`。
 - 本地文件：`build/app/outputs/flutter-apk/wenyou-debug-reply-pagination-6c5aa226.apk`，203696242 字节。
 - SHA-256：`6c5aa2263c4f5db00054c9f57f60594506744d4bda5552de2c2eb05c06875269`。
-- 本 APK 由本修复提交的源码构建；精确提交记录在对应候选 PR 和交付说明，后端来源同步为独立提交 `27928ed`。
+- APK 源码提交：`23cc47ea05988caa7fe5746e492a072541b8132c`；后端来源同步为独立提交 `27928ed`。后续安装记录文档提交不改变此 APK。
 - 本候选从 `dev` 基线 `7d9ac40` 独立创建；此前[行内元素候选 PR #4](https://github.com/morenk/wenyousite-mobile/pull/4)未包含在此 APK 中。
-- 尚未安装到负责人设备，原场景仍待对应候选包上的真机验收。
+- 经负责人明确授权，已于 2026-09-08 使用 `adb install -r` 更新安装到连接的 Android 真机。安装前确认正式包与 Debug 包同时存在，本次目标为 `site.wenyou.app.debug`。
+- 安装后核对版本 `0.7.0-dev.1-debug`／构建号 `94`，设备记录的 `lastUpdateTime` 为 `2026-09-08 23:18:50`；设备内 `base.apk` 的 SHA-256 与上述候选完全一致。
+- 安装验证通过，原场景仍待负责人在“温油站 Debug”中亲自复验；安装成功不代表 Bug 已验收。
 
 ## 负责人复验
 
