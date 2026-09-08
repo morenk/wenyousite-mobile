@@ -26,7 +26,7 @@ Quill 在行首收集选区样式时还会排除标题属性，导致空标题�
 
 ## 候选版本与安装
 
-- 源码：独立分支 `codex/20260909-empty-heading`，提交号在推送后补录。
+- 源码：`7118b0645a3be2ef91a1d6058228e303643a4a57`，独立分支 `codex/20260909-empty-heading`；后续仅补录本节文档，不改变已检查的源码和 APK。
 - Worktree：`D:\code\wenyousite\wenyousite-mobile\.dart_tool\worktrees\empty-heading`。
 - 本地 APK：`build/app/outputs/flutter-apk/wenyou-debug-empty-heading-1c7fb8a6.apk`，203,705,338 字节。
 - 已由 aapt 核对：包名 `site.wenyou.app.debug`，应用名“温油站 Debug”，版本 `0.7.0-dev.1-debug`，构建号 94，最低 API 26。
