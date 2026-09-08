@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -835,22 +836,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final detail = state.detail;
     final subthread = state.selectedSubthread;
     if (detail == null || subthread == null) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除这个楼层？'),
-        content: const Text('楼层会被标记为已删除，且无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      title: '删除这个楼层？',
+      confirmLabel: '删除',
     );
     if (confirmed != true || !mounted) return;
     final removed = await ref
@@ -858,9 +847,20 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
     showWenyouSnackBar(context, '楼层已删除。', tone: WenyouSnackBarTone.success);
+    final targetId = widget.entryTarget.postId;
+    final target = targetId == null
+        ? null
+        : resolvedThreadPostTarget(
+            ref.read(threadPostTargetProvider(targetId)),
+          );
+    if (targetId == floor.id || target?.floor.id == floor.id) {
+      context.replace(
+        AppRouteLocations.thread(widget.threadId, subthreadId: subthread.id),
+      );
+    }
     ref.invalidate(threadPostTargetProvider(floor.id));
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
-    await _refreshDetail();
+    await ref.read(_detailProvider.notifier).refresh();
   }
 
   Future<void> _toggleFloorPin(ThreadFloorModel floor) async {

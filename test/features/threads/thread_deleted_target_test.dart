@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_discussion_author_directory_ports.dart';
 import 'package:wenyousite_mobile/features/posts/data/post_repository.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
@@ -48,11 +49,23 @@ void main() {
     expect(find.text('编辑后的楼层原文'), findsOneWidget);
     await _deleteTarget(tester);
     expect(find.text('楼层已删除。'), findsOneWidget);
+    expect(find.text('目标内容已不可见'), findsNothing);
+    expect(find.byKey(const Key('thread-target-retry')), findsNothing);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['post'],
+      isNull,
+    );
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['subthread'],
+      'subthread-1',
+    );
     expect(find.text('编辑后的楼层原文'), findsNothing);
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
     await _refreshPage(tester);
     expect(find.text('编辑后的楼层原文'), findsNothing);
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
+    expect(find.text('目标内容已不可见'), findsNothing);
+    expect(find.byKey(const Key('thread-target-retry')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -73,10 +86,16 @@ void main() {
   testWidgets('删除定位楼层成功后立即移除，刷新不会从目标缓存补回', (tester) async {
     final posts = _MutablePosts();
     final repository = _MutableDetail(posts);
-    await _pumpPage(tester, posts, repository);
+    final router = await _pumpPage(tester, posts, repository);
     await _deleteTarget(tester);
     expect(posts.removedIds, ['floor-1']);
     expect(find.text('楼层已删除。'), findsOneWidget);
+    expect(find.text('目标内容已不可见'), findsNothing);
+    expect(find.byKey(const Key('thread-target-retry')), findsNothing);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['post'],
+      isNull,
+    );
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
     await _refreshPage(tester);
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
@@ -91,6 +110,15 @@ void main() {
     await _refreshPage(tester);
     expect(repository.targetPostIds.length, greaterThan(1));
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsNothing);
+    expect(find.text('目标内容已不可见'), findsOneWidget);
+    expect(find.byKey(const Key('thread-target-retry')), findsNothing);
+    final unavailableBanner = tester.widget<WenyouStatusBanner>(
+      find.ancestor(
+        of: find.text('目标内容已不可见'),
+        matching: find.byType(WenyouStatusBanner),
+      ),
+    );
+    expect(unavailableBanner.tone, WenyouStatusTone.neutral);
     expect(tester.takeException(), isNull);
   });
 
@@ -101,6 +129,48 @@ void main() {
     await _deleteTarget(tester);
     expect(posts.removedIds, isEmpty);
     expect(find.text('楼层已删除。'), findsNothing);
+    expect(find.byKey(const Key('thread-floor-card-floor-1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('删除确认只询问操作，不解释存储实现，取消不删除', (tester) async {
+    final posts = _MutablePosts();
+    await _pumpPage(tester, posts, _MutableDetail(posts));
+    await tester.ensureVisible(
+      find.byKey(const Key('thread-floor-number-floor-1')),
+    );
+    await tester.longPress(
+      find.byKey(const Key('thread-floor-number-floor-1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('thread-floor-action-floor-1-delete')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('删除这个楼层？'), findsOneWidget);
+    expect(
+      tester.widget<AlertDialog>(find.byType(AlertDialog)).content,
+      isNull,
+    );
+    await tester.tap(find.widgetWithText(TextButton, '取消'));
+    await tester.pumpAndSettle();
+    expect(posts.removedIds, isEmpty);
+    expect(find.byKey(const Key('thread-floor-card-floor-1')), findsOneWidget);
+  });
+
+  testWidgets('定位网络失败仍显示重试，成功后恢复定位', (tester) async {
+    final posts = _MutablePosts();
+    final repository = _MutableDetail(posts)
+      ..targetFailure = const ApiFailure(
+        userMessage: '定位加载失败。',
+        httpStatus: 500,
+      );
+    await _pumpPage(tester, posts, repository);
+    expect(find.byKey(const Key('thread-target-retry')), findsOneWidget);
+    repository.targetFailure = null;
+    await tester.tap(find.byKey(const Key('thread-target-retry')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('thread-target-retry')), findsNothing);
     expect(find.byKey(const Key('thread-floor-card-floor-1')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -146,6 +216,7 @@ Future<GoRouter> _pumpPage(
           threadId: state.pathParameters['threadId']!,
           entryTarget: ThreadDetailEntryTarget.fromQuery(
             postId: state.uri.queryParameters['post'],
+            subthreadId: state.uri.queryParameters['subthread'],
           ),
         ),
       ),
@@ -241,9 +312,11 @@ class _MutableDetail extends ThreadDetailPageTestFakeThreadDetailRepository {
       );
 
   final _MutablePosts posts;
+  ApiFailure? targetFailure;
 
   @override
   Future<ThreadPostTargetModel> fetchPostTarget(String postId) async {
+    if (targetFailure case final failure?) throw failure;
     if (posts.removedIds.contains(postId)) {
       targetPostIds.add(postId);
       throw const ApiFailure(

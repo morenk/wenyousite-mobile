@@ -266,21 +266,24 @@ class ThreadTargetPostStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return targetState.when(
-      loading: () => const WenyouStatusBanner(message: '正在定位搜索结果…'),
+      loading: () => const WenyouStatusBanner(message: '正在加载楼层…'),
       error: (error, _) {
         final failure = error is ApiFailure ? error : null;
+        final unavailable = failure?.httpStatus == 404;
         return WenyouStatusBanner(
-          tone: WenyouStatusTone.error,
-          message: failure?.httpStatus == 404
+          tone: unavailable ? WenyouStatusTone.neutral : WenyouStatusTone.error,
+          message: unavailable
               ? '目标内容已不可见'
               : (failure?.userMessage ?? '目标内容定位失败，请重试。'),
-          detail: wenyouFailureDetail(failure),
-          action: TextButton.icon(
-            key: const Key('thread-target-retry'),
-            onPressed: onRetry,
-            icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
-            label: const Text('重试定位'),
-          ),
+          detail: unavailable ? null : wenyouFailureDetail(failure),
+          action: unavailable
+              ? null
+              : TextButton.icon(
+                  key: const Key('thread-target-retry'),
+                  onPressed: onRetry,
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh, size: 18),
+                  label: const Text('重试定位'),
+                ),
         );
       },
       data: (target) {
