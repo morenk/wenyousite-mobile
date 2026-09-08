@@ -8,6 +8,7 @@
 - 后端契约：`5.18.0-dev.20260905.1`，revision `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；本次部署来源仅运维与治理变化，HTTP SDK 与已有普通回车语料不变。公网 `/meta` 已核验同一 revision；普通回车跨端效果仍待负责人验收。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.9.0`。
+- 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
 - 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
@@ -15,6 +16,8 @@
 - 故障诊断：已接入帖子、上传、网络与全局错误的脱敏记录和独立 Sentry 发送器；独立移动端 DSN 已在仓库外配置，Windows SDK 已收到同编号事件接收确认；手机收件、私密帖编辑及后端日志关联按 [诊断验收清单](docs/architecture/failure-diagnostics.md) 完成。
 
 ## 当前优先级
+
+回车对齐反馈：按最新要求继续调整手动回车后的正文对齐，新行恢复默认左对齐，长句自动折行保留整段方向；Web 与共享契约由已授权的 VPS 关联任务处理，尚未交付该新规则。
 
 本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
 
