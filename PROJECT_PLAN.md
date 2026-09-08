@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
-- 后端契约：`5.18.0-dev.20260905.1`，revision `1ad27c7871936d2451162ab5ae5914f34f33588e`，新增普通回车语料；HTTP SDK 无变化。公网 `/meta` 已核验同一 revision；Web 候选 `1fae34b` 已部署，移动端须使用本轮 Debug 候选，跨端效果待负责人验收。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
+- 后端契约：`5.18.0-dev.20260905.1`，revision `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；本次部署来源仅运维与治理变化，HTTP SDK 与已有普通回车语料不变。公网 `/meta` 已核验同一 revision；普通回车跨端效果仍待负责人验收。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.9.0`。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
