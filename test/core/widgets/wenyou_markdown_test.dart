@@ -500,13 +500,9 @@ $diceNode
         .singleWhere(
           (paragraph) =>
               paragraph.text.toPlainText().contains('前文') &&
-              _widgetSpans(
-                paragraph.text,
-              ).any((span) => span.child is WenyouInternalReferenceChip),
+              _widgetSpans(paragraph.text).isNotEmpty,
         );
-    final portalSpan = _widgetSpans(
-      inlineParagraph.text,
-    ).singleWhere((span) => span.child is WenyouInternalReferenceChip);
+    final portalSpan = _widgetSpans(inlineParagraph.text).single;
     expect(portalSpan.alignment, PlaceholderAlignment.baseline);
     expect(portalSpan.baseline, TextBaseline.alphabetic);
     expect(inlineParagraph.text.toPlainText(), contains('后文仍在同一行'));
@@ -562,7 +558,9 @@ $diceNode
     );
     await tester.pumpAndSettle();
 
-    final markdown = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final markdown = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
     final style = markdown.styleSheet!;
     expect(style.p?.fontSize, 17);
     expect(style.p?.height, 1.8);
@@ -592,7 +590,7 @@ $diceNode
     expect(
       tester.getSize(bodyDivider).width,
       closeTo(
-        tester.getSize(find.byType(MarkdownBody)).width *
+        tester.getSize(find.bySubtype<MarkdownBody>()).width *
             WenyouElementContract.dividerInlineSizeFraction,
         0.01,
       ),
@@ -815,13 +813,13 @@ $diceNode
     final centered = tester.widget<MarkdownBody>(
       find.descendant(
         of: find.byKey(const ValueKey('wenyou-markdown-segment-0-center')),
-        matching: find.byType(MarkdownBody),
+        matching: find.bySubtype<MarkdownBody>(),
       ),
     );
     final right = tester.widget<MarkdownBody>(
       find.descendant(
         of: find.byKey(const ValueKey('wenyou-markdown-segment-1-right')),
-        matching: find.byType(MarkdownBody),
+        matching: find.bySubtype<MarkdownBody>(),
       ),
     );
     expect(centered.styleSheet!.h2Align, WrapAlignment.center);

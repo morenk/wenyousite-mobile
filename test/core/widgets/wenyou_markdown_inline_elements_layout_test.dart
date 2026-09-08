@@ -18,7 +18,9 @@ void main() {
         home: const Scaffold(body: WenyouMarkdown(data: '`code`')),
       ),
     );
-    final renderer = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final renderer = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
     final inlineBuilders = renderer.builders.entries.where(
       (entry) => !entry.value.isBlockElement(),
     );
@@ -76,6 +78,15 @@ void main() {
         final after = _characterRect(tester, '乙');
         expect(after.left, closeTo(before.left, 0.5));
         expect(after.top, greaterThan(before.bottom));
+        for (final richText in find.byType(RichText).evaluate()) {
+          final paragraph = richText.renderObject! as RenderParagraph;
+          paragraph.visitChildren((child) {
+            if (child is! RenderBox) return;
+            final rect = child.localToGlobal(Offset.zero) & child.size;
+            // 原子表情、提及点击区及长代码都必须占据真实的行高。
+            expect(after.top, greaterThanOrEqualTo(rect.bottom - 0.5));
+          });
+        }
         expect(tester.takeException(), isNull);
       });
     }

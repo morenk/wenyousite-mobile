@@ -228,7 +228,7 @@ void registerThreadComposePagePublishingMediaCases() {
               of: find.byKey(
                 const ValueKey('wenyou-markdown-segment-0-center'),
               ),
-              matching: find.byType(MarkdownBody),
+              matching: find.bySubtype<MarkdownBody>(),
             ),
           )
           .styleSheet!

@@ -48,7 +48,9 @@ void main() {
 
     final editor = tester.widget<QuillEditor>(find.byType(QuillEditor));
     final editorStyles = editor.config.customStyles!;
-    final markdown = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final markdown = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
     final readingStyles = markdown.styleSheet!;
 
     expect(editorStyles.paragraph?.style, spec.body);

@@ -28,7 +28,7 @@ void main() {
     );
 
     expect(find.byKey(const Key('wenyou-markdown-plain-text')), findsOneWidget);
-    expect(find.byType(MarkdownBody), findsNothing);
+    expect(find.bySubtype<MarkdownBody>(), findsNothing);
     expect(find.byType(SelectionArea), findsOneWidget);
     await tester.tap(find.text('第一段纯文字\n仍是纯文字'));
     expect(taps, 1);
@@ -48,9 +48,9 @@ void main() {
         ),
       );
 
-      expect(find.byType(MarkdownBody), findsOneWidget, reason: data);
+      expect(find.bySubtype<MarkdownBody>(), findsOneWidget, reason: data);
       expect(
-        tester.widget<MarkdownBody>(find.byType(MarkdownBody)).selectable,
+        tester.widget<MarkdownBody>(find.bySubtype<MarkdownBody>()).selectable,
         isFalse,
         reason: data,
       );
@@ -129,10 +129,14 @@ void main() {
       ),
     );
 
-    final firstBody = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final firstBody = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
     rebuildHost(() => callbackVersion = 2);
     await tester.pump();
-    final secondBody = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+    final secondBody = tester.widget<MarkdownBody>(
+      find.bySubtype<MarkdownBody>(),
+    );
 
     expect(identical(firstBody, secondBody), isTrue);
     await tester.tap(find.text('已解析正文'));
