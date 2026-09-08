@@ -43,7 +43,7 @@ npm ci
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 ```
 
-不传 `API_BASE_URL` 时连接公网开发 API。Windows 下的前端和后端目录均为只读参考镜像，不得在移动端任务中安装依赖、启动服务、迁移或部署。
+不传 `API_BASE_URL` 时连接公网开发 API。Windows 只保留 `..\references\wenyousite-backend` 后端只读镜像供契约同步；不得在移动端任务中修改它、安装依赖、启动服务、迁移或部署。Web 与 Foundation 不在 Windows 保留工作副本。
 
 ## 契约同步
 
@@ -67,7 +67,7 @@ npm run check
 
 需要 Debug APK 时运行 `npm run check:apk`。完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
 
-GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后默认原子提交并推送 `dev`；`main` 的合并与正式 Tag 只在维护者明确决定时执行。
+GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 
 ## Android 私有发布
 
