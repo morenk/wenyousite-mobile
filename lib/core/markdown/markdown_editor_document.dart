@@ -65,8 +65,9 @@ final class MarkdownHeadingBlock extends MarkdownEditorBlock {
       : MarkdownEditorBlockKind.heading3;
 
   @override
-  List<String> get sourceLines =>
-      _withAlignmentMarker(['${'#' * level} $content'], alignment);
+  List<String> get sourceLines => _withAlignmentMarker([
+    content.isEmpty ? '#' * level : '${'#' * level} $content',
+  ], alignment);
 }
 
 final class MarkdownQuoteBlock extends MarkdownEditorBlock {
@@ -350,11 +351,11 @@ class MarkdownEditorDocument {
     if (line == '<br />') {
       return MarkdownProtocolEmptyBlock(blankLinesBefore: blankLinesBefore);
     }
-    final heading = RegExp(r'^(#{2,3}) (.+)$').firstMatch(line);
+    final heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$').firstMatch(line);
     if (heading != null) {
       return MarkdownHeadingBlock(
         level: heading.group(1)!.length,
-        content: heading.group(2)!,
+        content: heading.group(2) ?? '',
         blankLinesBefore: blankLinesBefore,
         alignment: alignment,
       );

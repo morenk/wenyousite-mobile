@@ -170,6 +170,7 @@ void main() {
           ..insert('\n', {MarkdownDeltaCodec.sourceBreakAttribute: false});
 
         if (const {
+          'aligned-empty-heading',
           'aligned-list',
           'aligned-quote',
           'aligned-regular-image',
