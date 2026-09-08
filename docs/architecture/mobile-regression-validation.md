@@ -26,8 +26,9 @@
 - 应用：温油站 Debug，包名 `site.wenyou.app.debug`，版本 `0.7.0-dev.1-debug`，构建号 `94`。
 - 本地文件：`build/app/outputs/flutter-apk/wenyou-debug-mobile-regression-39e32767.apk`，203697086 字节。
 - SHA-256：`39e32767ecdbed6ac8f4dee0ee1f318d6c98ff15955e83d4949d43b6cf96f014`。
-- 源码组合如上表，精确汇总源码提交见本记录所属候选提交和 PR；所有产品源码均在构建前固定。
-- 安装前 AAPT 已确认 Debug 包名与版本；准备 ADB 更新时设备已断开，`adb devices -l` 为空，本包尚未安装。已请求负责人恢复连接，不能把先前 `6c5aa226` 的安装记录算作本包安装。
+- 源码组合如上表，精确汇总源码提交为 `0cba53e5aafa14bea6230499aeebc991a5a5a599`；所有产品源码均在构建前固定。
+- 安装前 AAPT 已确认 Debug 包名与版本；首次准备 ADB 更新时设备已断开，`adb devices -l` 为空，当时本包尚未安装。负责人恢复连接并明确要求安装后，本次 `adb install -r` 成功，已更新 `site.wenyou.app.debug`。
+- 安装后已核对设备中的版本 `0.7.0-dev.1-debug`、`versionCode` 为 `94`、`lastUpdateTime` 为 `2026-09-09 01:13:22`；设备内 `base.apk` 的 SHA-256 与上述候选 APK 完全一致。负责人应打开“温油站 Debug”复验；先前 `6c5aa226` 的安装记录仅为历史记录。
 
 独立候选的旧实现失败证据见上表文档。未取得负责人真机验收，不关闭任何原问题。
 
