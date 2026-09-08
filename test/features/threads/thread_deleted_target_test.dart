@@ -23,6 +23,50 @@ import 'thread_detail_page_test_support.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  for (final (deletedNumber, targeted, failDelete) in [
+    (25, false, false),
+    (40, false, false),
+    (25, true, false),
+    (25, false, true),
+  ]) {
+    testWidgets('长列表删除第 $deletedNumber 层，定位=$targeted，失败=$failDelete，保留附近位置', (
+      tester,
+    ) async {
+      final posts = _MutablePosts(failDelete: failDelete);
+      final repository = _MutableDetail(posts, floorCount: 40);
+      await _pumpPage(
+        tester,
+        posts,
+        repository,
+        targeted: targeted,
+        targetId: 'floor-$deletedNumber',
+      );
+      final card = find.byKey(Key('thread-floor-card-floor-$deletedNumber'));
+      await tester.scrollUntilVisible(
+        card,
+        500,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 100,
+      );
+      await tester.pumpAndSettle();
+      final scroll = tester
+          .widget<CustomScrollView>(find.byType(CustomScrollView))
+          .controller!;
+      final before = scroll.offset;
+      final requests = repository.floorReads;
+      await _deleteTarget(tester, id: 'floor-$deletedNumber');
+      expect(card, failDelete ? findsOneWidget : findsNothing);
+      expect(scroll.offset, greaterThan(before - 500));
+      expect(repository.floorReads, requests);
+      final neighbor = find.byKey(
+        Key('thread-floor-card-floor-${deletedNumber == 40 ? 39 : 26}'),
+      );
+      expect((failDelete ? card : neighbor).hitTestable(), findsOneWidget);
+      expect(find.text('目标内容已不可见'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('普通入口编辑保存后删除楼层，原文立即移除且刷新不补回', (tester) async {
     final posts = _MutablePosts();
     final repository = _MutableDetail(posts);
@@ -181,6 +225,7 @@ Future<GoRouter> _pumpPage(
   _MutablePosts posts,
   _MutableDetail repository, {
   bool targeted = true,
+  String targetId = 'floor-1',
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -207,7 +252,7 @@ Future<GoRouter> _pumpPage(
       .authenticate(threadDetailPageTestTokensFor('user-1'));
   final router = GoRouter(
     initialLocation: targeted
-        ? '/threads/thread-1?post=floor-1'
+        ? '/threads/thread-1?post=$targetId'
         : '/threads/thread-1',
     routes: [
       GoRoute(
@@ -230,17 +275,18 @@ Future<GoRouter> _pumpPage(
     ),
   );
   await tester.pumpAndSettle();
-  expect(find.byKey(const Key('thread-floor-card-floor-1')), findsOneWidget);
+  expect(
+    find.byKey(Key('thread-floor-card-${targeted ? targetId : 'floor-1'}')),
+    findsOneWidget,
+  );
   return router;
 }
 
-Future<void> _deleteTarget(WidgetTester tester) async {
-  await tester.ensureVisible(
-    find.byKey(const Key('thread-floor-number-floor-1')),
-  );
-  await tester.longPress(find.byKey(const Key('thread-floor-number-floor-1')));
+Future<void> _deleteTarget(WidgetTester tester, {String id = 'floor-1'}) async {
+  await tester.ensureVisible(find.byKey(Key('thread-floor-number-$id')));
+  await tester.longPress(find.byKey(Key('thread-floor-number-$id')));
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('thread-floor-action-floor-1-delete')));
+  await tester.tap(find.byKey(Key('thread-floor-action-$id-delete')));
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(FilledButton, '删除'));
   await tester.pumpAndSettle();
@@ -300,7 +346,7 @@ class _MutablePosts extends ThreadDetailPageTestFakePostRepository {
 }
 
 class _MutableDetail extends ThreadDetailPageTestFakeThreadDetailRepository {
-  _MutableDetail(this.posts)
+  _MutableDetail(this.posts, {this.floorCount = 0})
     : super(
         detail: threadDetailPageTestManagerDetail,
         postTarget: ThreadPostTargetModel(
@@ -312,6 +358,8 @@ class _MutableDetail extends ThreadDetailPageTestFakeThreadDetailRepository {
       );
 
   final _MutablePosts posts;
+  final int floorCount;
+  int floorReads = 0;
   ApiFailure? targetFailure;
 
   @override
@@ -330,7 +378,9 @@ class _MutableDetail extends ThreadDetailPageTestFakeThreadDetailRepository {
       requestedPostId: postId,
       threadId: 'thread-1',
       subthreadId: 'subthread-1',
-      floor: posts.floor,
+      floor: floorCount == 0
+          ? posts.floor
+          : _longFloor(int.parse(postId.substring(6))),
     );
   }
 
@@ -342,6 +392,19 @@ class _MutableDetail extends ThreadDetailPageTestFakeThreadDetailRepository {
     ThreadFloorOrder order = ThreadFloorOrder.oldest,
     String? authorId,
   }) async {
+    floorReads++;
+    if (floorCount > 0) {
+      if (posts.removedIds.isNotEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+      }
+      return CursorPage(
+        items: [
+          for (var number = 1; number <= floorCount; number++)
+            if (!posts.removedIds.contains('floor-$number')) _longFloor(number),
+        ],
+        hasMore: false,
+      );
+    }
     final page = await super.fetchFloors(
       subthreadId: subthreadId,
       cursor: cursor,
@@ -359,3 +422,15 @@ class _MutableDetail extends ThreadDetailPageTestFakeThreadDetailRepository {
     );
   }
 }
+
+ThreadFloorModel _longFloor(int number) => ThreadFloorModel(
+  id: 'floor-$number',
+  floorNumber: number,
+  author: threadDetailPageTestAuthor,
+  body: ThreadBodyModel(markdown: '楼层 $number 正文\n第二行\n第三行'),
+  version: 1,
+  createdAt: threadDetailPageTestRecentFixtureTime,
+  isDeleted: false,
+  replyCount: 0,
+  replies: const [],
+);

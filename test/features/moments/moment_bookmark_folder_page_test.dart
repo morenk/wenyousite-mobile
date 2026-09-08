@@ -5,11 +5,42 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog.dart';
 import 'package:wenyousite_mobile/core/models/bookmark_folder_models.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
+import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_repository_ports.dart';
 import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_bookmark_folder_page.dart';
 
 void main() {
+  testWidgets('移动失败只在选择弹窗报错，取消收藏失败仍有反馈', (tester) async {
+    final repository = _PageRepository(card: _card('moment-1'))
+      ..failWrites = true;
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-bookmark-manage-moment-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-bookmark-move-moment-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('bookmark-folder-picker-option-folder-next')),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('bookmark-folder-picker-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.byType(WenyouFailureBanner), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    final context = tester.element(
+      find.byKey(const Key('bookmark-folder-picker-confirm')),
+    );
+    Navigator.of(context).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-bookmark-manage-moment-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-bookmark-remove-moment-1')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('已取消收藏。'), findsNothing);
+  });
   testWidgets('动态收藏卡片通过 48dp 更多操作移动到独立收藏夹', (tester) async {
     final repository = _PageRepository(card: _card('moment-1'));
     await tester.pumpWidget(_app(repository));
@@ -85,6 +116,7 @@ class _PageRepository implements MomentBookmarkRepository {
   final MomentCard card;
   final List<(String, String)> moves = [];
   final List<String> removes = [];
+  bool failWrites = false;
 
   @override
   Future<List<BookmarkFolderItem>> fetchFolders() async => [
@@ -113,6 +145,9 @@ class _PageRepository implements MomentBookmarkRepository {
 
   @override
   Future<void> moveBookmark(String momentId, String folderId) async {
+    if (failWrites) {
+      throw const ApiFailure(userMessage: '移动失败', httpStatus: 500);
+    }
     moves.add((momentId, folderId));
   }
 
@@ -122,6 +157,9 @@ class _PageRepository implements MomentBookmarkRepository {
     required bool active,
     String? folderId,
   }) async {
+    if (failWrites) {
+      throw const ApiFailure(userMessage: '取消收藏失败', httpStatus: 500);
+    }
     if (!active) removes.add(momentId);
     return MomentActionResult(momentId: momentId, count: 0, active: active);
   }

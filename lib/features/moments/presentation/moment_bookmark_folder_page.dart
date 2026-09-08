@@ -50,27 +50,6 @@ class _MomentBookmarkFolderPageState
         .where((folder) => folder.id == widget.folderId)
         .firstOrNull
         ?.name;
-    ref.listen(provider.select((value) => value.transientFailure), (
-      previous,
-      next,
-    ) {
-      if (next != null && next != previous) {
-        final message = wenyouFailureMessage(
-          next,
-          treatAsWrite: true,
-          objectName: '动态收藏',
-          operationName: '移动收藏',
-        );
-        if (message != null) {
-          showWenyouSnackBar(
-            context,
-            message,
-            pacing: WenyouSnackBarPacing.extended,
-            tone: WenyouSnackBarTone.error,
-          );
-        }
-      }
-    });
     final body = RefreshIndicator(
       onRefresh: () => _refresh(provider),
       child: NotificationListener<ScrollNotification>(
@@ -321,7 +300,24 @@ class _MomentBookmarkFolderPageState
     final notifier = ref.read(provider.notifier);
     if (action == _BookmarkManageAction.remove) {
       final succeeded = await notifier.remove(card);
-      if (!mounted || !succeeded) return;
+      if (!mounted) return;
+      if (!succeeded) {
+        final message = wenyouFailureMessage(
+          ref.read(provider).transientFailure,
+          treatAsWrite: true,
+          objectName: '动态收藏',
+          operationName: '取消收藏',
+        );
+        if (message != null) {
+          showWenyouSnackBar(
+            context,
+            message,
+            pacing: WenyouSnackBarPacing.extended,
+            tone: WenyouSnackBarTone.error,
+          );
+        }
+        return;
+      }
       _refreshCatalog();
       showWenyouSnackBar(context, '已取消收藏。', tone: WenyouSnackBarTone.success);
       return;

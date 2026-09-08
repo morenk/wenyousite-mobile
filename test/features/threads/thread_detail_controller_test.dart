@@ -8,6 +8,57 @@ import 'package:wenyousite_mobile/features/threads/data/thread_detail_repository
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
 void main() {
+  for (final metadataFails in [false, true]) {
+    test('删除保留楼层窗口并拒绝迟到分页，统计刷新失败=$metadataFails', () async {
+      final stalePage = Completer<CursorPage<ThreadFloorModel>>();
+      var threadReads = 0;
+      final repository = _FakeThreadDetailRepository(
+        onThread: (_) async {
+          if (++threadReads > 1 && metadataFails) {
+            throw const ApiFailure(userMessage: '统计刷新失败', httpStatus: 503);
+          }
+          return _detail;
+        },
+        onFloors: (_, cursor) async {
+          if (cursor != null) return stalePage.future;
+          return CursorPage(
+            items: [_floor('first'), _floor('deleted'), _floor('neighbor')],
+            cursor: 'next',
+            hasMore: true,
+          );
+        },
+      );
+      final controller = ThreadDetailController(
+        repository,
+        'thread-1',
+        autoStart: false,
+      );
+      addTearDown(controller.dispose);
+      await controller.loadInitial();
+      final pending = controller.prefetchRemainingFloors();
+      await controller.removeDeletedFloor('deleted');
+      expect(controller.state.floors.map((floor) => floor.id), [
+        'first',
+        'neighbor',
+      ]);
+      expect(controller.state.cursor, 'next');
+      expect(controller.state.hasMore, isTrue);
+      expect(controller.state.phase, ThreadDetailPhase.ready);
+      expect(repository.floorRequests, [
+        'subthread-2:null',
+        'subthread-2:next',
+      ]);
+      stalePage.complete(
+        CursorPage(items: [_floor('deleted'), _floor('stale')], hasMore: false),
+      );
+      await pending;
+      expect(controller.state.floors.map((floor) => floor.id), [
+        'first',
+        'neighbor',
+      ]);
+      expect(controller.state.transientFailure != null, metadataFails);
+    });
+  }
   test('加载详情后优先选择默认子贴并读取首屏楼层', () async {
     final repository = _FakeThreadDetailRepository();
     final controller = ThreadDetailController(

@@ -52,6 +52,10 @@ void main() {
     expect(repository.createdSlots, [2]);
     expect(controller.state.draftAt(2)?.content, '当前编辑器正文');
     expect(find.text('正文已保存到草稿位 2。'), findsOneWidget);
+    expect(find.byKey(const Key('content-drafts-success')), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.text('正文已保存到草稿位 2。'), findsNothing);
   });
 
   testWidgets('草稿位 1 已有内容时确认后开启并显示自动保存状态', (tester) async {
@@ -135,6 +139,10 @@ void main() {
     expect(repository.removedIds, ['draft-1']);
     expect(controller.state.drafts, isEmpty);
     expect(restored, isFalse);
+    expect(find.byKey(const Key('content-drafts-success')), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.text('草稿位 1 的正文已删除。'), findsNothing);
   });
 
   testWidgets('版本冲突保留当前正文并要求基于最新版二次确认', (tester) async {

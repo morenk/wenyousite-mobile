@@ -860,7 +860,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     }
     ref.invalidate(threadPostTargetProvider(floor.id));
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
-    await ref.read(_detailProvider.notifier).refresh();
+    await ref.read(_detailProvider.notifier).removeDeletedFloor(floor.id);
   }
 
   Future<void> _toggleFloorPin(ThreadFloorModel floor) async {

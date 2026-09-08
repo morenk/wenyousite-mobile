@@ -137,6 +137,14 @@ class ThreadDetailController extends StateNotifier<ThreadDetailState> {
     }
   }
 
+  /// 删除已确认后保留已加载窗口，统计重读会取消旧分页请求，避免迟到结果补回。
+  Future<void> removeDeletedFloor(String floorId) async {
+    state = state.copyWith(
+      floors: state.floors.where((floor) => floor.id != floorId).toList(),
+    );
+    await refreshMetadata();
+  }
+
   Future<void> refresh() async {
     final previousSelectedId = state.selectedSubthreadId;
     final epoch = ++_requestEpoch;
