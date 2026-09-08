@@ -22,6 +22,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_inline_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
 
@@ -305,18 +306,26 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       'hr': _HorizontalRuleMarkdownBuilder(fontSize: widget.bodyFontSize),
     },
     onTapLink: (_, href, _) => _openLink(context, href),
-    imageBuilder: (uri, title, alt) => _MarkdownImage(
-      uri: uri,
-      title: title,
-      alt: alt,
-      onAddToStickers: widget.onAddImageToStickers == null
-          ? null
-          : _addImageToStickers,
-      onLongPress: widget.onLongPressNonText == null
-          ? null
-          : _handleNonTextLongPress,
-      blockAlignment: alignment,
-    ),
+    imageBuilder: (uri, title, alt) {
+      final image = _MarkdownImage(
+        uri: uri,
+        title: title,
+        alt: alt,
+        onAddToStickers: widget.onAddImageToStickers == null
+            ? null
+            : _addImageToStickers,
+        onLongPress: widget.onLongPressNonText == null
+            ? null
+            : _handleNonTextLongPress,
+        blockAlignment: alignment,
+      );
+      return title?.startsWith('wenyousite-sticker:') == true
+          ? WenyouMarkdownInlineBuilder.wrap(
+              image,
+              alignment: PlaceholderAlignment.middle,
+            )
+          : image;
+    },
   );
 
   void _handleTapText() {
@@ -495,13 +504,13 @@ class _AllPlayersMentionInlineSyntax extends md.InlineSyntax {
   }
 }
 
-class _MentionMarkdownBuilder extends MarkdownElementBuilder {
+class _MentionMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   _MentionMarkdownBuilder(this.onTap);
 
   final ValueChanged<Uri> onTap;
 
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -521,9 +530,9 @@ class _MentionMarkdownBuilder extends MarkdownElementBuilder {
   }
 }
 
-class _InlineCodeMarkdownBuilder extends MarkdownElementBuilder {
+class _InlineCodeMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -620,7 +629,7 @@ class _InternalReferenceInlineSyntax extends md.InlineSyntax {
   }
 }
 
-class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
+class _InternalReferenceMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   _InternalReferenceMarkdownBuilder(
     this.references,
     this.onTap, {
@@ -632,7 +641,7 @@ class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
   final VoidCallback? onLongPress;
 
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -641,25 +650,13 @@ class _InternalReferenceMarkdownBuilder extends MarkdownElementBuilder {
     final index = int.tryParse(element.attributes['index'] ?? '');
     if (index == null || index < 0 || index >= references.length) return null;
     final portal = references[index];
-    return Text.rich(
-      TextSpan(
-        children: [
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: WenyouInternalReferenceChip(
-              key: ValueKey('markdown-internal-reference-$index'),
-              surfaceKey: ValueKey(
-                'markdown-internal-reference-surface-$index',
-              ),
-              label: portal.label,
-              style: parentStyle,
-              onTap: () => onTap(portal.reference),
-              onLongPress: onLongPress,
-            ),
-          ),
-        ],
-      ),
+    return WenyouInternalReferenceChip(
+      key: ValueKey('markdown-internal-reference-$index'),
+      surfaceKey: ValueKey('markdown-internal-reference-surface-$index'),
+      label: portal.label,
+      style: parentStyle,
+      onTap: () => onTap(portal.reference),
+      onLongPress: onLongPress,
     );
   }
 }
@@ -683,7 +680,7 @@ class _DiceInlineSyntax extends md.InlineSyntax {
   }
 }
 
-class _DiceMarkdownBuilder extends MarkdownElementBuilder {
+class _DiceMarkdownBuilder extends WenyouMarkdownInlineBuilder {
   _DiceMarkdownBuilder(
     this.labelsByNodeId,
     this.semanticsByNodeId,
@@ -697,7 +694,7 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
   final VoidCallback? onLongPress;
 
   @override
-  Widget? visitElementAfterWithContext(
+  Widget? buildInlineContent(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
@@ -707,41 +704,31 @@ class _DiceMarkdownBuilder extends MarkdownElementBuilder {
     final notation = element.textContent;
     final style =
         preferredStyle ?? parentStyle ?? DefaultTextStyle.of(context).style;
-    return Text.rich(
-      TextSpan(
-        children: [
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: ListenableBuilder(
-              listenable: Listenable.merge([
-                labelsByNodeId,
-                semanticsByNodeId,
-                detailsByNodeId,
-              ]),
-              builder: (context, _) {
-                final labels = labelsByNodeId.value;
-                final detail = detailsByNodeId.value[nodeId];
-                final label = detail == null
-                    ? labels[nodeId] ?? '$notation = ?'
-                    : '$notation = ${detail.total}';
-                final settled = detail != null || labels.containsKey(nodeId);
-                return WenyouDiceNode(
-                  key: ValueKey('wenyou-dice-$nodeId'),
-                  label: label,
-                  semanticLabel: settled
-                      ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
-                      : semanticsByNodeId.value[nodeId] ?? '骰子 $notation，待掷',
-                  settled: settled,
-                  style: style,
-                  detail: detail,
-                  onLongPress: onLongPress,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        labelsByNodeId,
+        semanticsByNodeId,
+        detailsByNodeId,
+      ]),
+      builder: (context, _) {
+        final labels = labelsByNodeId.value;
+        final detail = detailsByNodeId.value[nodeId];
+        final label = detail == null
+            ? labels[nodeId] ?? '$notation = ?'
+            : '$notation = ${detail.total}';
+        final settled = detail != null || labels.containsKey(nodeId);
+        return WenyouDiceNode(
+          key: ValueKey('wenyou-dice-$nodeId'),
+          label: label,
+          semanticLabel: settled
+              ? '骰子 $notation，总计 ${label.split('=').last.trim()}'
+              : semanticsByNodeId.value[nodeId] ?? '骰子 $notation，待掷',
+          settled: settled,
+          style: style,
+          detail: detail,
+          onLongPress: onLongPress,
+        );
+      },
     );
   }
 }
@@ -825,6 +812,7 @@ class _MarkdownImage extends StatelessWidget {
     );
     if (isSticker) {
       return Semantics(
+        container: true,
         image: true,
         label: alt?.trim().isNotEmpty == true ? alt!.trim() : '收藏表情',
         excludeSemantics: true,

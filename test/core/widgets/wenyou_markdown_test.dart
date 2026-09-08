@@ -767,15 +767,33 @@ $diceNode
     );
     expect(find.byKey(const Key('content-image-viewer')), findsNothing);
     expect(find.bySemanticsLabel('挥手'), findsOneWidget);
-    final stickerCenter = tester.getCenter(find.bySemanticsLabel('挥手'));
-    expect(
-      tester.getCenter(find.text('前文', findRichText: true)).dy,
-      closeTo(stickerCenter.dy, 0.01),
+    final stickerRect = tester.getRect(find.bySemanticsLabel('挥手'));
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText && widget.text.toPlainText().contains('前文'),
+      ),
     );
+    Rect textRect(String text) {
+      final start = paragraph.text.toPlainText().indexOf(text);
+      return paragraph
+          .getBoxesForSelection(
+            TextSelection(baseOffset: start, extentOffset: start + text.length),
+          )
+          .single
+          .toRect()
+          .shift(paragraph.localToGlobal(Offset.zero));
+    }
+
+    final before = textRect('前文');
+    final after = textRect('后文');
+    expect(before.center.dy, closeTo(after.center.dy, 0.01));
     expect(
-      tester.getCenter(find.text('后文', findRichText: true)).dy,
-      closeTo(stickerCenter.dy, 0.01),
+      before.center.dy,
+      inInclusiveRange(stickerRect.top, stickerRect.bottom),
     );
+    expect(before.right, lessThanOrEqualTo(stickerRect.left + 0.01));
+    expect(after.left, greaterThanOrEqualTo(stickerRect.right - 0.01));
     expect(tester.takeException(), isNull);
   });
 

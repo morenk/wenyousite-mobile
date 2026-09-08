@@ -202,6 +202,7 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
     required String message,
   }) {
     final target = dto.replyToPost;
+    // 与独立讨论一致：不可见目标的详情允许为空，存在时才核对关联。
     if (dto.kind != ReplyResponseDtoKindEnum.FLOOR ||
         dto.floorNumber != null ||
         dto.pinnedAt != null ||
@@ -210,10 +211,8 @@ class ApiThreadDetailRepository implements ThreadDetailRepository {
         dto.subthreadId != parent.subthreadId ||
         dto.authorId != dto.author.id ||
         dto.diceRolls.any((roll) => roll.postId != dto.id) ||
-        (dto.replyToPostId == null && target != null) ||
-        (dto.replyToPostId != null &&
-            (target == null ||
-                target.id != dto.replyToPostId ||
+        (target != null &&
+            (target.id != dto.replyToPostId ||
                 target.authorId != target.author.id))) {
       throw ApiFailure(userMessage: message);
     }

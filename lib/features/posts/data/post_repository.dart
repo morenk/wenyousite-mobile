@@ -268,13 +268,12 @@ class ApiPostRepository implements PostRepository {
         message: message,
       );
       final target = reply.replyToPost;
+      // 目标不可见时后端保留 ID、隐藏详情；仅校验实际返回的目标关联。
       if (reply.parentPostId != rootPostId ||
           (threadId != null && reply.threadId != threadId) ||
           (subthreadId != null && reply.subthreadId != subthreadId) ||
-          (reply.replyToPostId == null && target != null) ||
-          (reply.replyToPostId != null &&
-              (target == null ||
-                  target.id != reply.replyToPostId ||
+          (target != null &&
+              (target.id != reply.replyToPostId ||
                   target.authorId != target.author.id))) {
         throw const ApiFailure(userMessage: message);
       }
