@@ -129,6 +129,8 @@
 
 ## 10. 跨模块约束
 
+引用长文本溢出候选／待负责人验收：子贴正文使用共享阅读器，包含长行内代码的引用必须按实际折行高度布局，下一段不能覆盖其末行；大字号仅统一缩放一次。原“浮陆之国”首子贴正文及首次打开／重开检查见 [引用溢出验收](../architecture/quote-text-overflow-acceptance.md)。
+
 本模块页面排版统一遵循[移动端视觉基线](../architecture/visual-baseline.md)中的 Foundation v6.9.0 语义文字角色，不自定义字号或直接依赖 Material 字体槽位。
 
 主题正文、子贴正文与楼层阅读统一消费 Markdown v4/v5 对齐：合法普通段落和 H2/H3 在同一选择区内按左、中、右渲染，v5 独立普通图片块使用同一布局，协议 marker 不显示。整篇阅读菜单经 clipboard v2 保留合法文字与图片块对齐；系统纯文本 fallback 继续省略 marker。

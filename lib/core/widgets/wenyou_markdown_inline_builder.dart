@@ -40,7 +40,9 @@ abstract class WenyouMarkdownInlineBuilder extends MarkdownElementBuilder {
         WidgetSpan(
           alignment: alignment,
           baseline: TextBaseline.alphabetic,
-          child: child,
+          // WidgetSpan 已按段落 TextScaler 缩放整个组件；内部 Text 再读
+          // MediaQuery 会重复放大，窄屏长代码因而占据异常多行。
+          child: MediaQuery.withNoTextScaling(child: child),
         ),
       ],
     ),

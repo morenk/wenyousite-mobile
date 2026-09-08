@@ -22,6 +22,7 @@ import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_dice_node.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_inline_text_elements.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_internal_reference_text.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_body.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown_inline_builder.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_rich_text_style_spec.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_selectable_action_region.dart';
@@ -259,7 +260,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     MarkdownStyleSheet? styleSheet, {
     bool expandBlockWidth = false,
     WenyouTextAlignment alignment = WenyouTextAlignment.left,
-  }) => MarkdownBody(
+  }) => WenyouMarkdownBody(
     data: data,
     selectable: false,
     // MarkdownBody defaults to fitContent=true, which shrink-wraps its inner
