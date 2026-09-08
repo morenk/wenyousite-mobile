@@ -65,7 +65,7 @@
 - 应用：温油站 Debug，`site.wenyou.app.debug`，`0.7.0-dev.1-debug`，构建号 `94`。
 - 文件：`build/app/outputs/flutter-apk/wenyou-debug-mobile-regression-6b194c06.apk`，203697086 字节。
 - SHA-256：`6b194c06934e9a85ff7cdc4e8ef0816d8572eb8b173885007633ab32ff1cca62`。
-- 精确源码提交和设备安装校验另行追加；本包待负责人验收。
+- 精确源码提交：`15d4b6b71054a35a5553cc6ac9f31baf26cecf17`。本次 `adb install -r` 成功覆盖温油站 Debug并保留数据；设备版本及构建号一致，`lastUpdateTime` 为 `2026-09-09 02:57:06`，设备内 `base.apk` 的完整 SHA-256 与本节候选一致。本包待负责人验收，当前应使用 `6b194c06` 包复验，上述 `f4f05301` 为上一轮记录。
 
 复验顺序：
 
