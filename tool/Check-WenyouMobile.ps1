@@ -1,6 +1,8 @@
 [CmdletBinding()]
 param(
-  [switch]$BuildDebugApk
+  [switch]$BuildDebugApk,
+  # 候选契约尚未部署时仍可收集其他检查；任一失败仍返回非零。
+  [switch]$ContinueAfterFailure
 )
 
 Set-StrictMode -Version Latest
@@ -14,6 +16,7 @@ $repository = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $dartCommand = (Get-Command dart -ErrorAction Stop).Source
 $flutterCommand = (Get-Command flutter -ErrorAction Stop).Source
 $npmCommand = (Get-Command npm -ErrorAction Stop).Source
+$checkFailures = [System.Collections.Generic.List[string]]::new()
 
 function Invoke-WenyouCheckStep {
   param(
@@ -32,6 +35,10 @@ function Invoke-WenyouCheckStep {
     if ($LASTEXITCODE -ne 0) {
       throw "$Label failed with exit code $LASTEXITCODE"
     }
+  } catch {
+    if (-not $ContinueAfterFailure) { throw }
+    $checkFailures.Add("$Label : $($_.Exception.Message)")
+    Write-Warning $checkFailures[$checkFailures.Count - 1]
   } finally {
     Pop-Location
   }
@@ -90,4 +97,9 @@ if ($BuildDebugApk) {
   )
 }
 
+if ($checkFailures.Count -gt 0) {
+  Write-Host "`nWenyou mobile quality gate FAILED ($($checkFailures.Count) steps):"
+  foreach ($failure in $checkFailures) { Write-Host "- $failure" }
+  exit 1
+}
 Write-Host "`nWenyou mobile quality gate passed."

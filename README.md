@@ -67,6 +67,8 @@ npm run check
 
 需要 Debug APK 时运行 `npm run check:apk`。完整门禁和 Android 发布入口都会强制执行公网 API、后端 revision 与 Markdown 契约核对，避免兼容版本先于服务端事实发布。
 
+调试已提交但尚未部署的契约候选时，可运行 `npm run check:apk -- -ContinueAfterFailure` 收集其余检查及候选 APK。所有原检查仍执行，任一失败最终仍返回非零并逐项汇总；这不是完整门禁通过或发布许可。默认命令仍遇错即停，发布流程不使用收集模式。
+
 GitHub Actions 当前仅支持手动触发，不随 `dev` push 自动运行，也不作为日常切片完成条件。日常切片完成后原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；Codex 不得自行合并或发布，`dev`/`main` 的合并与正式 Tag 只在维护者明确决定时执行。
 
 ## Android 私有发布
