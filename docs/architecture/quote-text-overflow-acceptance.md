@@ -30,6 +30,7 @@ WidgetSpan 已按父段落字号缩放其内容，因此内部关闭重复的 Me
 
 ## 候选安装包
 
+- 源码提交：`034ab5c520f098dc2f54d1bcecc5e5eede83cb36`，基于父分支验收记录 `bb60aac`。父分支后续仅更新文档，与通过完整门禁时的 lib、test、依赖和生成文件逐字一致。
 - 本地文件：`build/app/outputs/flutter-apk/wenyou-debug-quote-overflow-562a7954.apk`，242,619,036 字节。
 - 包名：`site.wenyou.app.debug`，应用名“温油站 Debug”，版本 `0.7.0-dev.1-debug`，构建号 94；已经由 aapt 检查。
 - SHA-256：`562a7954f510e321e29189633f028ab3cbbdbd274abfceb6841fad142d468416`。
