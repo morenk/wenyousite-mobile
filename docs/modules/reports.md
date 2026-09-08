@@ -70,7 +70,9 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；后端 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；Foundation `v6.9.0`（`5888132`）。
+契约 `5.18.0-dev.20260905.1`；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+
+本轮来源为 newline v1 revision 2 候选，尚未部署；HTTP 与其他契约不变。公网仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`，移动端对齐适配与跨端验收另行推进。
 
 ## 14. 相关代码与架构文档
 
