@@ -159,7 +159,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final target = targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(targetPostId));
-    final resolvedTarget = target?.valueOrNull;
+    final resolvedTarget = resolvedThreadPostTarget(target);
     _applyEntryTarget(
       _entryTargetCoordinator.resolve(state: state, postTarget: resolvedTarget),
       provider,
@@ -229,7 +229,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           child: NotificationListener<ScrollMetricsNotification>(
             onNotification: _handleTargetLayoutChange,
             child: RefreshIndicator(
-              onRefresh: () => ref.read(provider.notifier).refresh(),
+              onRefresh: _refreshDetail,
               child: KeyedSubtree(
                 key: _renderGeometry.scrollViewportKey,
                 child: CustomScrollView(
@@ -300,6 +300,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     postId: widget.entryTarget.postId,
     subthreadId: widget.entryTarget.subthreadId,
   );
+
+  Future<void> _refreshDetail() async {
+    final targetPostId = widget.entryTarget.postId;
+    if (targetPostId != null) {
+      ref.invalidate(threadPostTargetProvider(targetPostId));
+    }
+    await ref.read(_detailProvider.notifier).refresh();
+  }
 
   void _leaveDetail() {
     final navigator = Navigator.maybeOf(context);
@@ -469,7 +477,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }) {
     final detail = state.detail!;
     final selected = state.selectedSubthread;
-    final target = targetState?.valueOrNull;
+    final target = resolvedThreadPostTarget(targetState);
     final usableTarget =
         target != null &&
             target.threadId == widget.threadId &&
@@ -850,8 +858,9 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
     showWenyouSnackBar(context, '楼层已删除。', tone: WenyouSnackBarTone.success);
+    ref.invalidate(threadPostTargetProvider(floor.id));
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
-    await ref.read(_detailProvider.notifier).refresh();
+    await _refreshDetail();
   }
 
   Future<void> _toggleFloorPin(ThreadFloorModel floor) async {
