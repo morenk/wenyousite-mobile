@@ -37,7 +37,9 @@
 - 版本：`0.7.0-dev.1-debug`，versionCode `94`，最低 API `26`。
 - APK：`build/candidates/image-input-compatibility/wenyou-debug-94-ef969f3d.apk`，242,624,017 字节。
 - SHA-256：`ef969f3d5a7e679f8770579e35ae65837bd5fd0b7fda078ca06cc7a897891bd8`。
-- 未执行 ADB 安装或设备内 APK 校验，负责人尚未确认实际使用的应用包；安装与原生集成测试须在授权后执行。
+- 负责人授权后已通过 `adb install -r` 覆盖安装到型号 `2509FPN0BC` 的设备，安装结果 `Success`；安装前核对 APK 包名为 `site.wenyou.app.debug`。
+- 安装后设备报告版本 `0.7.0-dev.1-debug`、versionCode `94`，`lastUpdateTime` 为 `2026-09-09 06:01:52`；通过 `pm path site.wenyou.app.debug` 定位设备内 `base.apk` 并执行 `sha256sum`，结果与上述候选 SHA-256 完全一致。
+- 本次只完成候选安装及校验；负责人须打开“温油站 Debug”复验原图，原生集成矩阵与原场景验收仍待执行。
 
 ## 负责人手测
 
