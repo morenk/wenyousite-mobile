@@ -16,7 +16,7 @@
 
 ## 当前优先级
 
-本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，仍待 Android 与负责人原场景验收。候选范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
+本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
 
 当前中断项：普通正文与引用的一次回车双端统一，以及引用额外空行候选，**待负责人验收**。已查明此前安装 Release、负责人打开旧 Debug 的包名错配；覆盖更新正确 Debug 后，负责人于 2026-09-08 明确确认 `>` 拆分引用的问题解决。现用已取得的原楼层 Markdown 复现并处理多空行问题，保留保存后的段落边界，历史见 [引用空行验收](docs/architecture/editor-quote-acceptance.md)，本次普通回车候选与真机步骤见 [双端回车验收](docs/architecture/editor-newline-acceptance.md)。
 

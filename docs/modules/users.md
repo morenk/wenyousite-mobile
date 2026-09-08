@@ -55,7 +55,7 @@
 
 ## 9. 加载、空数据、错误、重试和冲突状态
 
-头像与背景共用 media 真实文件头校验；声明类型冲突时提示重新导出，未知文件不能仅凭扩展名进入处理。图片输入兼容性本轮仍为候选，见[验收记录](../architecture/image-input-compatibility-acceptance.md)。
+头像与背景共用 media 真实文件头校验；声明类型冲突时提示重新导出，未知文件不能仅凭扩展名进入处理。图片输入兼容性原图问题已获负责人真机验收通过，完整多入口矩阵仍待补充，见[验收记录](../architecture/image-input-compatibility-acceptance.md)。
 
 拉黑或解除后清除资料、本人内容目录与关系列表的旧投影。
 

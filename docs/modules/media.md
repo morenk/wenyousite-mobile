@@ -95,11 +95,12 @@ GIF 不提供裁剪或转码，校验通过后保留原始文件名和字节；�
 - [x] Android 集成测试通过真实 MethodChannel 验证 WebP 输出可解码、尺寸收束、EXIF 方向纠正与源元数据移除；常规单元/Widget 门禁不隐式启动设备测试。
 
 - [x] 候选自动回归覆盖全部 8 种 EXIF 方向、校正后裁剪坐标、透明颜色、渐进/CMYK JPEG、调色板/16 位 PNG 和七种用途，另用用户原图执行旧实现失败与候选通过的本地对照。
-- [ ] 本轮候选 Android 原生矩阵、真实页面与负责人原图验收；详见[图片兼容性验收](../architecture/image-input-compatibility-acceptance.md)。
+- [x] 负责人于 2026-09-09 在已安装且校验一致的 Debug 构建 94 上确认本次原图问题验收通过；详见[图片兼容性验收](../architecture/image-input-compatibility-acceptance.md)。
+- [ ] 完整 Android 原生矩阵、多入口与大图性能检查仍待补充验证。
 
 ## 12. 已知限制和后续功能
 
-本轮为图片输入兼容性候选，尚未取得负责人真机验收。输入格式仍为 JPG、PNG、GIF、静态 WebP；HEIC/HEIF、AVIF、BMP、HDR 保真和 ICC/P3 广色域矩阵不在本轮保证范围，新增支持需单独验证。无损 PNG 中间态会增加部分图片的编码时间与瞬时内存，设备大图性能仍需手测。
+本次原图问题已取得负责人真机验收通过。输入格式仍为 JPG、PNG、GIF、静态 WebP；HEIC/HEIF、AVIF、BMP、HDR 保真和 ICC/P3 广色域矩阵不在本轮保证范围，新增支持需单独验证。无损 PNG 中间态会增加部分图片的编码时间与瞬时内存，设备大图性能仍需手测。
 
 服务端用户 DTO 未提供头像或主页背景的 thumbnail/medium 字段，因此资料页只使用明确原地址。原图、预览、取景框与失败上传输入只在当前页面/autoDispose 生命周期内短暂保留，也不提供后台队列；页面释放、主动取消后需重新选择，进程在 Android 系统选图期间被终止时仅保底恢复富正文、动态/评论和私聊的待选文件，头像与主页背景仍需重新选择。`flutter_image_compress` 没有取消在途 native 编码的接口：用户取消后不会开始对象存储上传且迟到结果会被丢弃，但已经进入平台编码的任务仍可能运行到返回；当前以全局单路准备、像素上限和 Debug 分阶段计时控制与观测风险，是否进一步降低像素阈值需以 Profile/Release 大图数据决定。当前 `flutter_image_compress_common` 仍由插件应用 Kotlin Gradle Plugin，Flutter 已提示未来需迁移到 Built-in Kotlin；现有可解析版本尚未提供该迁移，后续按上游兼容版本单独处理。契约 5.4 的 `mediaReissueUploadUrl` 尚未接入；同一 `mediaId` 的对象缺失恢复、重签地址、重传、再次确认和取消边界作为独立高风险上传切片实现。相册文件访问由 `image_picker` 与 Android 系统 Photo Picker 管理。
 
