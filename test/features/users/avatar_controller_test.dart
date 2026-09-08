@@ -252,7 +252,7 @@ void main() {
     );
 
     expect(await _pickAndSet(controller), isNull);
-    expect(controller.state.failure?.userMessage, contains('JPG、PNG 和 WebP'));
+    expect(controller.state.failure?.userMessage, contains('图片格式不符'));
     expect(upload.uploadCalls, 0);
   });
 

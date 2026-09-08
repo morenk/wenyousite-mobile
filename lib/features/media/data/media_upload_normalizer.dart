@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
-import 'package:wenyousite_mobile/features/media/data/media_image_validation.dart';
+import 'package:wenyousite_mobile/features/media/data/engine_media_image.dart';
 import 'package:wenyousite_mobile/features/media/data/media_upload_timing.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_normalizer.dart';
@@ -75,14 +75,18 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
   }
 
   Future<MediaUploadInput> _normalize(MediaUploadInput input) async {
+    EngineMediaImage? source;
     try {
-      final inspection = (await timing.measure(
+      final opened = await timing.measure<EngineMediaImage>(
         purpose: input.purpose,
         stage: MediaUploadTimingStage.inspectInput,
         inputBytes: input.bytes.length,
-        operation: () => compute(inspectMediaInputForIsolate, input),
-      )).unwrap();
-      if (inspection.isGif) {
+        operation: () => EngineMediaImage.open(input),
+      );
+      source = opened;
+      if (opened.inspection.isGif) {
+        final firstFrame = await opened.decode(maximumEdge: maximumEdge);
+        firstFrame.dispose();
         return MediaUploadInput(
           filename: input.filename,
           bytes: input.bytes,
@@ -94,18 +98,28 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
       final quality = input.purpose == MediaUploadPurpose.profileCover
           ? profileCoverQuality
           : standardQuality;
-      final (targetWidth, targetHeight) = _targetSize(inspection);
+      final (targetWidth, targetHeight) = opened.targetSize(maximumEdge);
       final bytes = await timing.measure(
         purpose: input.purpose,
         stage: MediaUploadTimingStage.encodeWebp,
         inputBytes: input.bytes.length,
         outputBytes: (output) => output.length,
-        operation: () => encoder.encode(
-          input.bytes,
-          targetWidth: targetWidth,
-          targetHeight: targetHeight,
-          quality: quality,
-        ),
+        operation: () async {
+          final pixels = await opened.decode(maximumEdge: maximumEdge);
+          late final Uint8List canonical;
+          try {
+            // 编码器仅接收引擎输出的标准 PNG，避免不同入口再次解释原始元数据。
+            canonical = await mediaImagePng(pixels);
+          } finally {
+            pixels.dispose();
+          }
+          return encoder.encode(
+            canonical,
+            targetWidth: targetWidth,
+            targetHeight: targetHeight,
+            quality: quality,
+          );
+        },
       );
       if (bytes.isEmpty || bytes.length > maxMediaImageBytes) {
         throw const ApiFailure(userMessage: '图片处理后仍然过大，请缩小后重试。');
@@ -116,20 +130,34 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
         declaredContentType: 'image/webp',
         purpose: input.purpose,
       );
-      final normalized = (await timing.measure(
+      await timing.measure<void>(
         purpose: input.purpose,
         stage: MediaUploadTimingStage.inspectOutput,
         inputBytes: output.bytes.length,
-        operation: () => compute(inspectMediaInputForIsolate, output),
-      )).unwrap();
-      if (normalized.contentType != 'image/webp' || normalized.isGif) {
-        throw const ApiFailure(userMessage: '图片处理失败，请重新选择后重试。');
-      }
+        operation: () async {
+          final normalized = await EngineMediaImage.open(output);
+          try {
+            final inspection = normalized.inspection;
+            if (inspection.contentType != 'image/webp' ||
+                inspection.width != targetWidth ||
+                inspection.height != targetHeight) {
+              throw const ApiFailure(userMessage: '图片处理失败，请重新选择后重试。');
+            }
+            // 头信息有效不代表像素可读，必须解码成品后才能进入上传。
+            final pixels = await normalized.decode();
+            pixels.dispose();
+          } finally {
+            normalized.dispose();
+          }
+        },
+      );
       return output;
     } on ApiFailure {
       rethrow;
     } on Object catch (error) {
       throw ApiFailure(userMessage: '图片处理失败，请重新选择后重试。', cause: error);
+    } finally {
+      source?.dispose();
     }
   }
 
@@ -138,20 +166,6 @@ class FlutterMediaUploadNormalizer implements MediaUploadNormalizer {
     final dot = leaf.lastIndexOf('.');
     final stem = (dot > 0 ? leaf.substring(0, dot) : leaf).trim();
     return stem.isEmpty ? 'image-upload' : stem;
-  }
-
-  (int, int) _targetSize(MediaImageInspection inspection) {
-    final longestEdge = inspection.width > inspection.height
-        ? inspection.width
-        : inspection.height;
-    if (longestEdge <= maximumEdge) {
-      return (inspection.width, inspection.height);
-    }
-    final scale = maximumEdge / longestEdge;
-    return (
-      (inspection.width * scale).round().clamp(1, maximumEdge).toInt(),
-      (inspection.height * scale).round().clamp(1, maximumEdge).toInt(),
-    );
   }
 }
 

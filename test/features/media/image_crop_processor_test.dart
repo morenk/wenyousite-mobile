@@ -8,7 +8,8 @@ import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart'
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
-  const processor = IsolateImageCropProcessor();
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final processor = EngineImageCropProcessor();
 
   test('头像按用户取景生成严格 512 × 512 高质量图片', () async {
     final source = await processor.prepare(_sourceInput());
@@ -19,8 +20,8 @@ void main() {
     );
 
     expect(_sizeOf(output.bytes), (512, 512));
-    expect(output.filename, 'avatar.jpg');
-    expect(output.declaredContentType, 'image/jpeg');
+    expect(output.filename, 'avatar.png');
+    expect(output.declaredContentType, 'image/png');
   });
 
   test('同一来源按独立取景生成 Web 3:1 与移动端 2:1 双画幅', () async {
@@ -44,10 +45,10 @@ void main() {
 
     expect(_sizeOf(selection.web.bytes), (1920, 640));
     expect(_sizeOf(selection.mobile.bytes), (1600, 800));
-    expect(selection.web.declaredContentType, 'image/jpeg');
-    expect(selection.mobile.declaredContentType, 'image/jpeg');
-    expect(selection.web.filename, 'profile-cover-web.jpg');
-    expect(selection.mobile.filename, 'profile-cover-mobile.jpg');
+    expect(selection.web.declaredContentType, 'image/png');
+    expect(selection.mobile.declaredContentType, 'image/png');
+    expect(selection.web.filename, 'profile-cover-web.png');
+    expect(selection.mobile.filename, 'profile-cover-mobile.png');
   });
 
   test('通用图片按选定区域输出新的完整图片文件', () async {
@@ -59,8 +60,8 @@ void main() {
     );
 
     expect(_sizeOf(output.bytes), (90, 90));
-    expect(output.filename, 'cropped-image.jpg');
-    expect(output.declaredContentType, 'image/jpeg');
+    expect(output.filename, 'cropped-image.png');
+    expect(output.declaredContentType, 'image/png');
     expect(output.bytes.length, lessThanOrEqualTo(maxMediaImageBytes));
   });
 
@@ -73,7 +74,7 @@ void main() {
       const NormalizedCropRect(left: 0, top: 0, width: 1, height: 1),
     );
 
-    expect(source.original.bytes.length, input.bytes.length - 2);
+    expect(source.original.bytes, orderedEquals(input.bytes));
     expect(source.original.bytes.sublist(source.original.bytes.length - 2), [
       0xff,
       0xd9,
@@ -90,25 +91,22 @@ void main() {
     expect(source.original.bytes, orderedEquals(input.bytes));
   });
 
-  test('JPEG 非精确尾随重启标记仍按损坏图片拒绝', () async {
+  test('JPEG 主图后附加数据由引擎读取且不改写原文件', () async {
     final jpeg = _jpegInput().bytes;
     final malformed = Uint8List(jpeg.length + 3)
       ..setRange(0, jpeg.length - 2, jpeg)
       ..setRange(jpeg.length - 2, jpeg.length + 1, [0xff, 0xd6, 0x00])
       ..setRange(jpeg.length + 1, jpeg.length + 3, jpeg, jpeg.length - 2);
 
-    await expectLater(
-      processor.prepare(
-        MediaUploadInput(
-          filename: 'malformed.jpg',
-          declaredContentType: 'image/jpeg',
-          bytes: malformed,
-        ),
-      ),
-      throwsA(isA<image.ImageException>()),
+    final input = MediaUploadInput(
+      filename: 'appended.jpg',
+      declaredContentType: 'image/jpeg',
+      bytes: malformed,
     );
+    final source = await processor.prepare(input);
+    expect((source.width, source.height), (180, 90));
+    expect(source.original.bytes, orderedEquals(input.bytes));
   });
-
   test('通用图片处理会在解码前读取延迟加载的相册文件', () async {
     final directory = await Directory.systemTemp.createTemp(
       'wenyou-crop-source-',
