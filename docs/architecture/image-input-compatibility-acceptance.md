@@ -31,6 +31,8 @@
 
 ## 候选安装包
 
+- APK 对应源码提交：`91a25d9afd60a33a324a6112d309d681398385de`；后续验收记录更新不改变该安装包。
+
 - 包名：`site.wenyou.app.debug`；应用标签：温油站 Debug。
 - 版本：`0.7.0-dev.1-debug`，versionCode `94`，最低 API `26`。
 - APK：`build/candidates/image-input-compatibility/wenyou-debug-94-ef969f3d.apk`，242,624,017 字节。
