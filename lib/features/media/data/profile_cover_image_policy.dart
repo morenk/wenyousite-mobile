@@ -1,5 +1,5 @@
-import 'package:mime/mime.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/data/media_image_validation.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 MediaUploadInput validateProfileCoverImageInput(MediaUploadInput input) {
@@ -10,15 +10,7 @@ MediaUploadInput validateProfileCoverImageInput(MediaUploadInput input) {
     throw const ApiFailure(userMessage: '背景图片大小不能超过 10MB。');
   }
   const allowed = {'image/jpeg', 'image/png', 'image/webp'};
-  final declared = input.declaredContentType?.trim().toLowerCase();
-  final detected = lookupMimeType(
-    input.filename,
-    headerBytes: input.bytes.take(32).toList(growable: false),
-  )?.toLowerCase();
-  if (detected != null && !allowed.contains(detected)) {
-    throw const ApiFailure(userMessage: '背景图片仅支持 JPG、PNG 和 WebP。');
-  }
-  final contentType = allowed.contains(detected) ? detected : declared;
+  final contentType = validateMediaImageHeader(input);
   if (!allowed.contains(contentType)) {
     throw const ApiFailure(userMessage: '背景图片仅支持 JPG、PNG 和 WebP。');
   }

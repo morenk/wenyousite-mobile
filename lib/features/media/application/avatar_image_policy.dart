@@ -1,5 +1,5 @@
-import 'package:mime/mime.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_image_policy.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 MediaUploadInput validateAvatarImageInput(MediaUploadInput input) {
@@ -10,15 +10,11 @@ MediaUploadInput validateAvatarImageInput(MediaUploadInput input) {
     throw const ApiFailure(userMessage: '头像大小不能超过 10MB。');
   }
   const allowed = {'image/jpeg', 'image/png', 'image/webp'};
-  final declared = input.declaredContentType?.trim().toLowerCase();
-  final detected = lookupMimeType(
-    input.filename,
-    headerBytes: input.bytes.take(32).toList(growable: false),
-  )?.toLowerCase();
-  if (detected != null && !allowed.contains(detected)) {
-    throw const ApiFailure(userMessage: '头像仅支持 JPG、PNG 和 WebP 图片。');
+  final header = inspectMediaImageHeader(input);
+  if (header.errorMessage case final String message) {
+    throw ApiFailure(userMessage: message);
   }
-  final contentType = allowed.contains(detected) ? detected : declared;
+  final contentType = header.contentType!;
   if (!allowed.contains(contentType)) {
     throw const ApiFailure(userMessage: '头像仅支持 JPG、PNG 和 WebP 图片。');
   }
