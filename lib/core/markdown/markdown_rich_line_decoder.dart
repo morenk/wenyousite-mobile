@@ -92,12 +92,13 @@ class MarkdownRichLineDecoder {
   static MarkdownRichLine? decode(String source) {
     var inlineSource = source;
     final lineAttributes = <String, dynamic>{};
-    final heading = RegExp(r'^(#{2,3}) (.+)$').firstMatch(source);
+    // 空标题也是合法的块；先选 H2/H3、再输入文字时不能将标记读成正文。
+    final heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$').firstMatch(source);
     final quote = MarkdownContent.quoteLineContent(source);
     final list = RegExp(r'^( {0,6})(- |1\. )(.+)$').firstMatch(source);
     if (heading != null) {
       lineAttributes['header'] = heading.group(1)!.length;
-      inlineSource = heading.group(2)!;
+      inlineSource = heading.group(2) ?? '';
     } else if (quote != null) {
       lineAttributes['blockquote'] = true;
       inlineSource = quote;

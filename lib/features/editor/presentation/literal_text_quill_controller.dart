@@ -14,6 +14,22 @@ class LiteralTextQuillController extends QuillController {
     required super.selection,
     required super.config,
   });
+
+  @override
+  Style getSelectionStyle() {
+    final selected = super.getSelectionStyle();
+    if (!selection.isCollapsed ||
+        toggledStyle.attributes.containsKey(Attribute.header.key)) {
+      return selected;
+    }
+    // Quill 在行首收集样式时会排除标题；空标题重开后仍应显示真实行样式。
+    final line = document.queryChild(selection.start).node;
+    final header = line is Line
+        ? line.style.attributes[Attribute.header.key]
+        : null;
+    return header == null ? selected : selected.put(header);
+  }
+
   @override
   void replaceText(
     int index,
@@ -128,7 +144,10 @@ class LiteralTextQuillController extends QuillController {
 
   Object? _plainNewline(Object? data, int index) {
     if (data != '\n') return null;
-    final attributes = document.collectStyle(index, 0).attributes;
+    final line = document.queryChild(index).node;
+    final attributes = line is Line
+        ? line.style.attributes
+        : document.collectStyle(index, 0).attributes;
     if (attributes.containsKey('header') ||
         attributes.containsKey('list') ||
         attributes.containsKey('code-block') ||
