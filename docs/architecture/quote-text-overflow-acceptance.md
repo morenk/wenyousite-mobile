@@ -34,7 +34,7 @@ WidgetSpan 已按父段落字号缩放其内容，因此内部关闭重复的 Me
 - 本地文件：`build/app/outputs/flutter-apk/wenyou-debug-quote-overflow-562a7954.apk`，242,619,036 字节。
 - 包名：`site.wenyou.app.debug`，应用名“温油站 Debug”，版本 `0.7.0-dev.1-debug`，构建号 94；已经由 aapt 检查。
 - SHA-256：`562a7954f510e321e29189633f028ab3cbbdbd274abfceb6841fad142d468416`。
-- 安装状态：尚未安装，正在等待负责人对本次 ADB 覆盖安装的确认。负责人对原引用溢出的验收尚未取得。
+- 安装状态：2026-09-09 负责人明确要求 ADB 安装后，已使用 `adb install -r` 成功覆盖“温油站 Debug”并保留数据。安装前核对实际包名与候选一致；安装后设备 `lastUpdateTime` 为 `2026-09-09 04:17:37`，版本与构建号一致，设备内 `base.apk` 的完整 SHA-256 与本节候选一致。安装通过，原引用溢出仍待负责人在本包复验。
 
 ## 负责人复验步骤
 
