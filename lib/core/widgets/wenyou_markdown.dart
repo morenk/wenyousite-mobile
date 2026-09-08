@@ -150,7 +150,6 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < paragraphs.length; index++) ...[
-            if (index > 0) SizedBox(height: _styleSheet?.blockSpacing ?? 0),
             GestureDetector(
               behavior: HitTestBehavior.translucent,
               onTap: widget.onTapText == null ? null : _handleTapText,
@@ -252,6 +251,14 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     if (index == 0) return false;
     final previous = _renderSegments[index - 1].markdown.trimRight();
     final next = _renderSegments[index].markdown.trimLeft();
+    final previousBlocks = md.Document().parse(previous);
+    final nextBlocks = md.Document().parse(next);
+    if (previousBlocks.isNotEmpty &&
+        nextBlocks.isNotEmpty &&
+        WenyouMarkdownBody.isBodyParagraph(previousBlocks.last) &&
+        WenyouMarkdownBody.isBodyParagraph(nextBlocks.first)) {
+      return false;
+    }
     return !previous.endsWith('<br />') && !next.startsWith('<br />');
   }
 

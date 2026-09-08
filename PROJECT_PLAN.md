@@ -17,7 +17,7 @@
 
 ## 当前优先级
 
-回车对齐反馈：按最新要求继续调整手动回车后的正文对齐，新行恢复默认左对齐，长句自动折行保留整段方向。VPS 已交付已提交的后端与 Web 候选；Windows 已同步契约，移动端适配与负责人验收继续进行，见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。
+回车对齐反馈：移动端候选已实现手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。VPS 已交付后端与 Web 候选，Windows 已同步 revision 2；完整检查、候选交付及负责人真机／跨端验收见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，公网后端仍为旧 revision，Web 部署未在本任务验证；不能视为线上双端已统一。
 
 本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
 

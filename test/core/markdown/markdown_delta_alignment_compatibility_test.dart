@@ -151,13 +151,13 @@ void main() {
         '[wenyousite-align-v1-center]: #\n中段\n\n'
         '[wenyousite-align-v1-right]: #\n右段';
 
-    test('折叠光标在文字、终止换行和空白分隔处只命中预期块', () {
+    test('折叠光标在文字、终止换行和段落边界处只命中预期块', () {
       final delta = MarkdownDeltaCodec.decode(source).delta;
       final plainText = Document.fromDelta(delta).toPlainText();
       final left = plainText.indexOf('左段');
       final center = plainText.indexOf('中段');
       final right = plainText.indexOf('右段');
-      final separator = plainText.indexOf('\n\n') + 1;
+      final separator = center - 1;
 
       expect(_selectionAlignment(delta, left, left), WenyouTextAlignment.left);
       expect(
@@ -176,7 +176,14 @@ void main() {
         _selectionAlignment(delta, separator, separator),
         WenyouTextAlignment.left,
       );
-      expect(_cycle(delta, separator, separator), isEmpty);
+      expect(
+        MarkdownDeltaCodec.encode(
+          delta.compose(_cycle(delta, separator, separator)),
+        ),
+        '[wenyousite-align-v1-center]: #\n左段\n\n'
+        '[wenyousite-align-v1-center]: #\n中段\n\n'
+        '[wenyousite-align-v1-right]: #\n右段',
+      );
     });
 
     test('跨越混合方向的选区按 left 状态一次统一为 center', () {

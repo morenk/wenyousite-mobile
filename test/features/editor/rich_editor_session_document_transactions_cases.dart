@@ -269,7 +269,8 @@ void registerRichEditorSessionDocumentTransactionsCases() {
     );
 
     expect(await separatorSession.flush(), isTrue);
-    expect(editedSeparator.last, 'A\nX\nB');
+    expect(separatorSession.controller.document.toPlainText(), 'A\nXB\n');
+    expect(editedSeparator.last, 'A\n\nXB');
   });
 
   testWidgets('H2 H3 与加粗切换后立即保存当前 Delta', (tester) async {

@@ -1,4 +1,5 @@
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 
 /// Keeps source-only Markdown separators distinct from editable blank lines.
@@ -33,7 +34,9 @@ class MarkdownDeltaLineMetadata {
   /// final Quill newline is treated as the document terminator by position,
   /// so an inherited source-break attribute cannot swallow earlier newlines.
   static Delta prepareForEncoding(Delta source) {
-    source = MarkdownQuoteParagraphs.expand(source);
+    source = MarkdownParagraphBoundaries.expand(
+      MarkdownQuoteParagraphs.expand(source),
+    );
     final output = Delta();
     final totalLength = documentLength(source);
     var documentOffset = 0;
@@ -95,6 +98,7 @@ class MarkdownDeltaLineMetadata {
   }) {
     final allowedOffsets = <int>{};
     final allowedQuoteSeparators = <int, int>{};
+    final allowedParagraphSeparators = <int, int>{};
     final replacedEnd = index + replacedLength;
     final shift = insertedLength - replacedLength;
     for (final offset in _sourceSeparatorOffsets(before)) {
@@ -110,7 +114,10 @@ class MarkdownDeltaLineMetadata {
       }
     }
 
-    for (final entry in _quoteSeparatorOffsets(before).entries) {
+    for (final entry in _separatorOffsets(
+      before,
+      MarkdownQuoteParagraphs.separatorCountKey,
+    ).entries) {
       if (entry.key < index) {
         allowedQuoteSeparators[entry.key] = entry.value;
       } else if (entry.key >= replacedEnd) {
@@ -118,8 +125,29 @@ class MarkdownDeltaLineMetadata {
       }
     }
     if (insertedDelta != null) {
-      for (final entry in _quoteSeparatorOffsets(insertedDelta).entries) {
+      for (final entry in _separatorOffsets(
+        insertedDelta,
+        MarkdownQuoteParagraphs.separatorCountKey,
+      ).entries) {
         allowedQuoteSeparators[index + entry.key] = entry.value;
+      }
+    }
+    for (final entry in _separatorOffsets(
+      before,
+      MarkdownParagraphBoundaries.key,
+    ).entries) {
+      if (entry.key < index) {
+        allowedParagraphSeparators[entry.key] = entry.value;
+      } else if (entry.key >= replacedEnd) {
+        allowedParagraphSeparators[entry.key + shift] = entry.value;
+      }
+    }
+    if (insertedDelta != null) {
+      for (final entry in _separatorOffsets(
+        insertedDelta,
+        MarkdownParagraphBoundaries.key,
+      ).entries) {
+        allowedParagraphSeparators[index + entry.key] = entry.value;
       }
     }
 
@@ -150,8 +178,13 @@ class MarkdownDeltaLineMetadata {
             operation.attributes?['blockquote'] == true
             ? allowedQuoteSeparators[documentOffset]
             : null;
+        final paragraphSeparators =
+            operation.attributes?[MarkdownParagraphBoundaries.key];
+        final expectedParagraphSeparators =
+            allowedParagraphSeparators[documentOffset];
         if (hasSeparator != shouldHaveSeparator ||
-            quoteSeparators != expectedQuoteSeparators) {
+            quoteSeparators != expectedQuoteSeparators ||
+            paragraphSeparators != expectedParagraphSeparators) {
           if (documentOffset > patchOffset) {
             patch.retain(documentOffset - patchOffset);
           }
@@ -161,6 +194,8 @@ class MarkdownDeltaLineMetadata {
             if (quoteSeparators != expectedQuoteSeparators)
               MarkdownQuoteParagraphs.separatorCountKey:
                   expectedQuoteSeparators,
+            if (paragraphSeparators != expectedParagraphSeparators)
+              MarkdownParagraphBoundaries.key: expectedParagraphSeparators,
           });
           patchOffset = documentOffset + 1;
         }
@@ -236,13 +271,12 @@ class MarkdownDeltaLineMetadata {
     return offsets;
   }
 
-  static Map<int, int> _quoteSeparatorOffsets(Delta delta) {
+  static Map<int, int> _separatorOffsets(Delta delta, String key) {
     final offsets = <int, int>{};
     var offset = 0;
     for (final operation in delta.operations) {
       final data = operation.data;
-      final count =
-          operation.attributes?[MarkdownQuoteParagraphs.separatorCountKey];
+      final count = operation.attributes?[key];
       if (data is String && count is int) {
         for (var index = 0; index < data.length; index++) {
           if (data[index] == '\n') offsets[offset + index] = count;

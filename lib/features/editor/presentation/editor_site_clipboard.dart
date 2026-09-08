@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 /// Reconstructs only the allow-listed rich fragment emitted by Wenyou Web.
@@ -109,6 +110,7 @@ class _SiteClipboardDeltaBuilder {
 
   Delta? _canonicalize(Delta raw) {
     try {
+      raw = MarkdownParagraphBoundaries.collapse(raw);
       MarkdownDeltaCodec.encode(raw, imageAlignment: imageAlignment);
       return Delta.from(raw);
     } on Object {
