@@ -8,6 +8,7 @@
 - 后端契约：`5.18.0-dev.20260905.1`，revision `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；本次部署来源仅运维与治理变化，HTTP SDK 与已有普通回车语料不变。公网 `/meta` 已核验同一 revision；普通回车跨端效果仍待负责人验收。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.9.0`。
+- 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
 - 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
 - 已交付范围覆盖应用壳、认证、公开阅读、搜索、动态、主题与讨论、编辑器、媒体、草稿、收藏表情、通知、私聊、社交关系、温油钱包、社区举报、账号设置、主题工作台和私密邀请。各模块仍可能有明确列出的验收缺口，因此不能仅凭“已接入”视为最终完成。
@@ -16,7 +17,7 @@
 
 ## 当前优先级
 
-新增中断项：空正文点击 H2/H3 的保存格式报错，候选待负责人验收，见[空标题候选验收](docs/architecture/editor-empty-heading-acceptance.md)。另按最新反馈继续调整手动回车后的正文对齐：新行恢复默认左对齐，长句自动折行保留整段方向；Web 与共享契约由已授权的 VPS 关联任务处理，尚未交付该新规则。
+回车对齐反馈：按最新要求继续调整手动回车后的正文对齐，新行恢复默认左对齐，长句自动折行保留整段方向；Web 与共享契约由已授权的 VPS 关联任务处理，尚未交付该新规则。
 
 当前中断项：普通正文与引用的一次回车双端统一，以及引用额外空行候选，**待负责人验收**。已查明此前安装 Release、负责人打开旧 Debug 的包名错配；覆盖更新正确 Debug 后，负责人于 2026-09-08 明确确认 `>` 拆分引用的问题解决。现用已取得的原楼层 Markdown 复现并处理多空行问题，保留保存后的段落边界，历史见 [引用空行验收](docs/architecture/editor-quote-acceptance.md)，本次普通回车候选与真机步骤见 [双端回车验收](docs/architecture/editor-newline-acceptance.md)。
 
