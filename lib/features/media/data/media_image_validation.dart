@@ -1,5 +1,6 @@
 import 'package:image/image.dart' as image;
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/features/media/domain/media_image_policy.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 const maxStaticImagePixels = 64 * 1000 * 1000;
@@ -120,4 +121,12 @@ MediaImageInspection inspectMediaInput(MediaUploadInput input) {
     contentType: contentType,
     isGif: isGif,
   );
+}
+
+String validateMediaImageHeader(MediaUploadInput input) {
+  final header = inspectMediaImageHeader(input);
+  if (header.errorMessage case final String message) {
+    throw ApiFailure(userMessage: message);
+  }
+  return header.contentType!;
 }

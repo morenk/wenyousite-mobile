@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/features/media/data/media_upload_normalizer.da
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('静态图按用途转为 WebP 且同一输入重试不重复压缩', () async {
     final encoder = _RecordingWebpEncoder();
     final normalizer = FlutterMediaUploadNormalizer(encoder: encoder);

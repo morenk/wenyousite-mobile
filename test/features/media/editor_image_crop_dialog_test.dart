@@ -2,18 +2,69 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image;
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/features/media/application/image_crop_ports.dart';
 import 'package:wenyousite_mobile/features/media/application/profile_cover_image_ports.dart';
+import 'package:wenyousite_mobile/features/media/data/image_crop_processor.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/media/presentation/image_crop_dialog.dart';
 
 import '../../support/fake_image_crop_processor.dart';
 import '../../support/foundation_test_fonts.dart';
+import '../../support/media_compatibility_fixtures.dart';
 
 void main() {
   setUpAll(loadFoundationTestFonts);
+
+  testWidgets('附加 JPEG 使用真实引擎打开裁剪页、确认并重开成品', (tester) async {
+    final processor = _ObservedEngineProcessor();
+    var selected = MediaUploadInput(
+      filename: 'appended.jpg',
+      bytes: mediaJpegWithAppendedData(),
+    );
+    List<MediaUploadInput>? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () async {
+              result = await showEditorImageCropDialog(
+                context,
+                inputs: [selected],
+                processor: processor,
+              );
+            },
+            child: const Text('打开真实图片'),
+          ),
+        ),
+      ),
+    );
+    for (var attempt = 0; attempt < 2; attempt++) {
+      await tester.runAsync(() async {
+        await tester.tap(find.text('打开真实图片'));
+        await tester.pump();
+        await processor.preparing;
+      });
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('image-crop-error')), findsNothing);
+      expect(find.byKey(const Key('image-crop-viewport')), findsOneWidget);
+      await tester.runAsync(() async {
+        tester
+            .widget<FilledButton>(find.byKey(const Key('image-crop-confirm')))
+            .onPressed!();
+        await processor.cropping;
+      });
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('editor-image-crop-dialog')), findsNothing);
+      expect(result, hasLength(1));
+      selected = result!.single;
+      final decoded = image.decodePng(selected.bytes)!;
+      expect((decoded.width, decoded.height), (80, 48));
+    }
+  });
 
   testWidgets('裁剪画布完整保持原图比例并用目标比例取景框选择区域', (tester) async {
     final input = MediaUploadInput(
@@ -270,6 +321,21 @@ void main() {
     expect(result, [same(input)]);
     expect(processor.cropCalls, 0);
   });
+}
+
+class _ObservedEngineProcessor extends EngineImageCropProcessor {
+  Future<CropImageSource>? preparing;
+  Future<MediaUploadInput>? cropping;
+
+  @override
+  Future<CropImageSource> prepare(MediaUploadInput input) =>
+      preparing = super.prepare(input);
+
+  @override
+  Future<MediaUploadInput> cropImage(
+    CropImageSource source,
+    NormalizedCropRect crop,
+  ) => cropping = super.cropImage(source, crop);
 }
 
 class _RecordingCropProcessor extends FakePassThroughImageCropProcessor {
