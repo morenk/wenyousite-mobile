@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [string]$BackendPath = '..\wenyousite-backend',
+  [string]$BackendPath = '..\references\wenyousite-backend',
   [string]$Remote = 'origin',
   [string]$Branch = 'dev',
   [string]$Revision,

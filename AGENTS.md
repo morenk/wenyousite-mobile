@@ -3,9 +3,12 @@
 ## 0. 开发位置硬约束
 
 - 本仓库的日常开发只允许在 Windows 本地开发机上修改、生成、测试、构建、签名和发布；标准工作区为 `D:\code\wenyousite\wenyousite-mobile`。
+- Windows Codex 需要处理 VPS 上的 Web、后端或 Foundation 源码时，使用 SSH 别名 `wenyou-dev-vps` 打开 `/srv/wenyousite` 下的对应远程项目；不要在普通 SSH 终端里另起一个无关联任务，也不要在 Windows 只读镜像中代改。
+- 每个可独立验收的目标使用单独的 Codex 任务、Git 分支或 Worktree；两个 Codex 任务不得同时修改同一 checkout。跨端变更通过已提交的契约、commit 或明确的 Handoff 交接，不能靠复制目录同步源码。
+- 新增的开发说明、验收记录和运维文档默认使用中文；命令、路径、协议字段及无法准确翻译的技术名词保留英文，并在上下文中说明用途。
 - 在 Linux、VPS 或非 Windows CI 环境发现本仓库时，只允许阅读；必须停止源码修改、Flutter/Gradle 构建、签名和发布。
-- Windows 工作区中的 `wenyousite-frontend` 与 `wenyousite-backend` 只是只读参考镜像。移动端任务只允许对它们执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
-- Web 与后端只能在 VPS 的 `/root/wenyousite` 工作区开发和切换服务。需要修改 Web 或后端时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改。
+- Windows 工作区只保留 `references/wenyousite-backend` 后端只读镜像。移动端任务只允许对它执行 `git fetch`、`git show`、`git diff` 和读取契约；禁止修改源码、安装依赖、启动服务、运行迁移或部署。
+- Web、后端与 Foundation 只能在 VPS 的 `/srv/wenyousite` 工作区开发。需要修改它们时，必须转到 VPS 对应仓库，不能在 Windows 镜像代改；无 sudo 的 `wenyou-dev` 不得切换或重启服务。
 - `wenyousite-foundation` 对移动端而言是已发布依赖。开始任何 Foundation 相关实现前，必须在只读镜像执行 `git fetch origin --tags`，以远端最新正式发布 Tag 为准，并把 `pubspec.yaml` 锁定到该 Tag；若本仓库版本落后，必须先在当前切片同步依赖和迁移变更，禁止继续按旧版规范实现，也禁止直接跟随浮动分支。需要修改 Foundation 源码时必须另开独立任务并在其授权环境发布新 Tag。
 - GitHub Actions 若保留，只能使用 Windows runner 在临时 checkout 内复核质量或 Debug 构建；CI 对仓库和外部系统只读，不拥有部署、签名、制品上传或发布权限，也不能替代 Windows 本地验收。
 
@@ -18,11 +21,12 @@ Android 正式 Release 仅支持 `arm64-v8a`，保留全部现有字体；Debug/
 - 应用名称：温油站
 - Android applicationId：`site.wenyou.app`
 - 开发 API：`https://wenyou.site/api/v1`
+- Tailnet 私有开发 API：`https://wenyou-vps.tail3993f3.ts.net/api/v1`；仅供已登录同一 Tailscale tailnet 的 Windows、模拟器或真机联调，不替代公网兼容性验收。
 - Android 模拟器经显式 SSH 隧道访问 VPS loopback 时：`http://10.0.2.2:3000/api/v1`
 - Flutter SDK：`D:\sdk\flutter`
 - Android SDK：`D:\sdk\android`
 - Flutter/Dart 基线：Flutter `3.44.8`、Dart `3.12.2`
-- 后端只读参考镜像：`..\wenyousite-backend`
+- 后端只读参考镜像：`..\references\wenyousite-backend`
 
 当前阶段是公网开发环境上的第一阶段快速迭代，不是正式生产发布。开发闭环以相关本地检查和真机冒烟为主，GitHub Actions 仅保留手动触发，不作为日常切片完成条件。所有公网联调必须使用专用测试账号；禁止对共享开发数据运行批量删除、账号注销或其他破坏性自动化。
 
@@ -185,10 +189,10 @@ Docs-Impact: updated
 5. 同步测试和模块文档。
 6. 开发反馈批次收敛后运行与变更直接相关的本地检查；高风险切片、阶段验收或准备交付时运行统一质量门禁。
 7. 自查 diff、生成文件、无关修改和敏感信息。
-8. 原子提交并默认推送 `dev`；Bug 候选提交必须注明“待负责人验收”，提交或推送不代表修复完成。
+8. 原子提交并推送 `codex/YYYYMMDD-<目标>` 任务分支；不得直接更新 `dev`。跨端、契约、权限、迁移或基础设施变化必须创建 PR，由负责人明确合并。
 9. 汇报行为、文档、本地验证、Debug APK 和真机手测清单；Bug 按下述流程交给负责人复验，日常开发不等待 CI。
 
-切片完成定义：主路径可操作；加载/空/错/重试/权限状态完整；相关测试和文档同步；变更范围内静态检查零问题；契约无漂移；无伪实现和调试残留；已推送 `dev`。涉及 Android、网络、认证或持久化时还要完成对应本地构建，并把真机关键路径整理为项目负责人可执行的手测清单。Bug 切片还必须取得项目负责人对原问题的明确验收通过；缺少该结果时只能交付候选版本，不能标记修复完成。
+切片完成定义：主路径可操作；加载/空/错/重试/权限状态完整；相关测试和文档同步；变更范围内静态检查零问题；契约无漂移；无伪实现和调试残留；任务分支已推送并可评审。涉及 Android、网络、认证或持久化时还要完成对应本地构建，并把真机关键路径整理为项目负责人可执行的手测清单。Bug 切片还必须取得项目负责人对原问题的明确验收通过；缺少该结果时只能交付候选版本，不能标记修复完成。
 
 ### Bug 候选与负责人验收
 
@@ -241,10 +245,11 @@ GitHub Actions 的 Quality 与 Android Debug APK 工作流在第一阶段仅支�
 ## 9. Git、版本与交付
 
 - 长期开发分支为 `dev`。
-- 用户未明确决定时，禁止合并 `main`、禁止打正式 Tag。
+- 任务分支命名为 `codex/YYYYMMDD-<目标>`，从最新 `origin/dev` 创建。Codex 检查后可提交并推送该分支，但不得自行合并或发布。
+- 用户未明确决定时，禁止合并 `dev` 或 `main`、禁止打正式 Tag。
 - 每个提交必须是可独立理解、独立回滚的完整行为。
 - 禁止提交不能编译或只完成一半的切片。
-- 实现完整且相关检查通过的 Bug 候选允许提交并推送 `dev`，用于追溯和安装复验；`fix` 标题必须含“候选”，正文注明“待负责人验收”及尚未验证的原场景。验收通过前不得在提交或关联记录中关闭原问题；通过后另行记录验收结果，不改写已推送历史。
+- 实现完整且相关检查通过的 Bug 候选允许提交并推送任务分支，用于追溯和安装复验；`fix` 标题必须含“候选”，正文注明“待负责人验收”及尚未验证的原场景。验收通过前不得在提交或关联记录中关闭原问题；通过后另行记录验收结果，不改写已推送历史。
 - 依赖升级、契约同步和生成工具变化使用独立 `chore`。
 - `pubspec.lock`、`package-lock.json` 和生成客户端必须提交。
 - 禁止提交密钥、签名文件、Token、测试账号和私人配置。
