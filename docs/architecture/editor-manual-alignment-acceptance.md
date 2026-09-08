@@ -43,6 +43,7 @@
 
 ## 候选安装包
 
+- 候选应用源码提交：`1fe94358bc7a0313a6e8ef974f4d2b17b8327bc2`。交付前合入 `dev` 的任务清理规范，仅涉及 `AGENTS.md` 与 CHANGELOG，应用、测试及依赖与该候选无差异。
 - APK：`build/app/outputs/flutter-apk/wenyou-debug-manual-alignment-db2c8965.apk`，203,722,314 字节。
 - SHA-256：`db2c896578d3bda6fed24461c413b0ed007612f13b703029e85c0f92b485edac`，同目录提供 `.sha256` 文件。
 - 应用：温油站 Debug，包名 `site.wenyou.app.debug`，版本 `0.7.0-dev.1-debug`、构建 94、最低 API 26。APK v2 签名验证通过，ARM32／ARM64／x86_64 引擎及全部三种 Foundation 字体完整。
