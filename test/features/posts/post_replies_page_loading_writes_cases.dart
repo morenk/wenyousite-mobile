@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,11 +11,71 @@ import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_markdown.dart';
 import 'package:wenyousite_mobile/features/posts/application/post_controllers.dart';
+import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_composer_sheet.dart';
 import 'package:wenyousite_mobile/features/posts/presentation/post_replies_page.dart';
 import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageLoadingWritesCases() {
+  testWidgets('后续回复自动加载，慢请求只显示进度且无需手动展开', (tester) async {
+    final nextPage = Completer<PostReplyPage>();
+    final cursors = <String?>[];
+    final repository = PostRepliesPageTestFakePostRepository(
+      onFetchReplies:
+          ({required rootPostId, cursor, required order, authorId}) async {
+            cursors.add(cursor);
+            if (cursor != null) return nextPage.future;
+            return CursorPage(
+              items: [
+                postRepliesPageTestReply(
+                  'first',
+                  '首屏回复',
+                  postRepliesPageTestAuthor,
+                ),
+              ],
+              cursor: 'next-page',
+              hasMore: true,
+            );
+          },
+    );
+    final container = await postRepliesPageTestPostContainer(repository);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(postRepliesPageTestPostRepliesApp(container));
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(cursors, [null, 'next-page']);
+    expect(find.text('首屏回复'), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-load-more')), findsNothing);
+    expect(find.byKey(const Key('post-replies-loading')), findsOneWidget);
+    expect(find.text('加载更多回复'), findsNothing);
+    expect(find.widgetWithText(TextButton, '重试'), findsNothing);
+
+    await tester.drag(
+      find.byKey(const Key('post-replies-list')),
+      const Offset(0, -150),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(cursors, [null, 'next-page']);
+    nextPage.complete(
+      CursorPage(
+        items: [
+          postRepliesPageTestReply(
+            'last',
+            '自动加载的末条回复',
+            postRepliesPageTestOtherAuthor,
+          ),
+        ],
+        hasMore: false,
+      ),
+    );
+    await postRepliesPageTestPumpUi(tester);
+    expect(find.text('自动加载的末条回复'), findsOneWidget);
+    expect(find.byKey(const Key('post-replies-loading')), findsNothing);
+    expect(find.byKey(const Key('post-replies-load-more')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('楼中楼首屏加载失败展示问题编号并可重试', (tester) async {
     var attempts = 0;
     final repository = PostRepliesPageTestFakePostRepository(
@@ -101,6 +163,11 @@ void registerPostRepliesPageLoadingWritesCases() {
     expect(find.text('更多回复加载失败。'), findsOneWidget);
     expect(find.textContaining('问题编号：discussion-page-request'), findsOneWidget);
     expect(cursors, [null, 'next-page']);
+    expect(find.byKey(const Key('post-replies-load-more')), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('更多回复加载失败。')).dy,
+      greaterThan(tester.getBottomLeft(find.text('已加载的回复')).dy),
+    );
 
     await tester.tap(find.widgetWithText(TextButton, '重试'));
     await postRepliesPageTestPumpUi(tester);

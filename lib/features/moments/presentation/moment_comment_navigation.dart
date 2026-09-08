@@ -128,8 +128,8 @@ class MomentCommentTargetStatus extends StatelessWidget {
         return WenyouStatusBanner(
           key: const Key('moment-comment-target-failure'),
           message: unavailable ? '目标评论已不可见' : failure.userMessage,
-          detail: wenyouFailureDetail(failure),
-          tone: WenyouStatusTone.error,
+          detail: unavailable ? null : wenyouFailureDetail(failure),
+          tone: unavailable ? WenyouStatusTone.neutral : WenyouStatusTone.error,
           action: unavailable
               ? null
               : TextButton(

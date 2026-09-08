@@ -65,6 +65,14 @@ class _ContentDraftsSheetState extends ConsumerState<ContentDraftsSheet> {
   Widget build(BuildContext context) {
     final provider = contentDraftsControllerProvider(widget.draftSessionKey);
     final state = ref.watch(provider);
+    ref.listen(provider.select((value) => value.successMessage), (
+      previous,
+      next,
+    ) {
+      if (next != null && next != previous) {
+        showWenyouSnackBar(context, next, tone: WenyouSnackBarTone.success);
+      }
+    });
     final controller = ref.read(provider.notifier);
     final tokens = context.wenyouTokens;
     return Column(
@@ -221,14 +229,6 @@ class _ReadyDrafts extends ConsumerWidget {
                     icon: const WenyouIcon(WenyouIconIds.actionSync),
                     label: const Text('用当前正文覆盖最新版'),
                   ),
-          ),
-          SizedBox(height: tokens.space12),
-        ],
-        if (state.successMessage != null) ...[
-          WenyouStatusBanner(
-            key: const Key('content-drafts-success'),
-            message: state.successMessage!,
-            tone: WenyouStatusTone.accent,
           ),
           SizedBox(height: tokens.space12),
         ],

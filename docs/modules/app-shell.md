@@ -111,7 +111,7 @@ Android 正式 APK 仅支持 `arm64-v8a`，Debug/Profile 保留 ARM32、ARM64 �
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `1ad27c7871936d2451162ab5ae5914f34f33588e`；Foundation `v6.9.0`（`5888132`）。签到经验遵循实际 `experienceAwarded`，日活奖励可能已由其他有效行为领取。
+契约 `5.18.0-dev.20260905.1`；公网 Markdown v5、客户端兼容 `{3, 4, 5}`；后端 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；Foundation `v6.9.0`（`5888132`）。签到经验遵循实际 `experienceAwarded`，日活奖励可能已由其他有效行为领取。
 
 ## 14. 相关代码与架构文档
 

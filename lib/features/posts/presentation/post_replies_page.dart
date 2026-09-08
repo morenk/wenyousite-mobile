@@ -184,8 +184,6 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                           onAuthorChanged: ref
                               .read(provider.notifier)
                               .setAuthor,
-                          onLoadMore: () =>
-                              ref.read(provider.notifier).loadMore(),
                           onRetry: () => ref
                               .read(provider.notifier)
                               .retryTransientFailure(),
@@ -405,7 +403,6 @@ class _DiscussionList extends StatelessWidget {
     required this.onRetryAuthors,
     required this.onOrderChanged,
     required this.onAuthorChanged,
-    required this.onLoadMore,
     required this.onRetry,
     required this.timeReference,
     required this.onCompose,
@@ -426,7 +423,6 @@ class _DiscussionList extends StatelessWidget {
   final VoidCallback onRetryAuthors;
   final ValueChanged<PostReplyOrder> onOrderChanged;
   final ValueChanged<String?> onAuthorChanged;
-  final VoidCallback onLoadMore;
   final VoidCallback onRetry;
   final DateTime? timeReference;
   final ValueChanged<PostComposerTarget> onCompose;
@@ -484,7 +480,8 @@ class _DiscussionList extends StatelessWidget {
         onAuthorChanged: onAuthorChanged,
       ),
       SizedBox(height: tokens.space12),
-      if (state.transientFailure != null) ...[
+      if (state.transientFailure != null &&
+          state.retryAction != PostDiscussionRetryAction.loadMore) ...[
         WenyouStatusBanner(
           message: state.transientFailure!.userMessage,
           detail: wenyouFailureDetail(state.transientFailure),
@@ -594,19 +591,10 @@ class _DiscussionList extends StatelessWidget {
           ),
           sliver: SliverToBoxAdapter(
             child: WenyouConstrainedWidth(
-              child: state.hasMore
-                  ? OutlinedButton.icon(
-                      key: const Key('post-replies-load-more'),
-                      onPressed: state.isLoadingMore ? null : onLoadMore,
-                      icon: state.isLoadingMore
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(WenyouIconIds.navigationExpand),
-                      label: Text(state.isLoadingMore ? '正在加载' : '加载更多回复'),
-                    )
-                  : const SizedBox.shrink(),
+              child: PostDiscussionPaginationStatus(
+                state: state,
+                onRetry: onRetry,
+              ),
             ),
           ),
         ),

@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/diagnostics/debug_diagnostic_console.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/discussion_author_filter_restore.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_content_item_divider.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
@@ -159,7 +160,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final target = targetPostId == null
         ? null
         : ref.watch(threadPostTargetProvider(targetPostId));
-    final resolvedTarget = target?.valueOrNull;
+    final resolvedTarget = resolvedThreadPostTarget(target);
     _applyEntryTarget(
       _entryTargetCoordinator.resolve(state: state, postTarget: resolvedTarget),
       provider,
@@ -229,7 +230,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           child: NotificationListener<ScrollMetricsNotification>(
             onNotification: _handleTargetLayoutChange,
             child: RefreshIndicator(
-              onRefresh: () => ref.read(provider.notifier).refresh(),
+              onRefresh: _refreshDetail,
               child: KeyedSubtree(
                 key: _renderGeometry.scrollViewportKey,
                 child: CustomScrollView(
@@ -300,6 +301,14 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     postId: widget.entryTarget.postId,
     subthreadId: widget.entryTarget.subthreadId,
   );
+
+  Future<void> _refreshDetail() async {
+    final targetPostId = widget.entryTarget.postId;
+    if (targetPostId != null) {
+      ref.invalidate(threadPostTargetProvider(targetPostId));
+    }
+    await ref.read(_detailProvider.notifier).refresh();
+  }
 
   void _leaveDetail() {
     final navigator = Navigator.maybeOf(context);
@@ -469,7 +478,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   }) {
     final detail = state.detail!;
     final selected = state.selectedSubthread;
-    final target = targetState?.valueOrNull;
+    final target = resolvedThreadPostTarget(targetState);
     final usableTarget =
         target != null &&
             target.threadId == widget.threadId &&
@@ -827,22 +836,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     final detail = state.detail;
     final subthread = state.selectedSubthread;
     if (detail == null || subthread == null) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除这个楼层？'),
-        content: const Text('楼层会被标记为已删除，且无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      title: '删除这个楼层？',
+      confirmLabel: '删除',
     );
     if (confirmed != true || !mounted) return;
     final removed = await ref
@@ -850,8 +847,20 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
         .remove(threadFloorAsPost(detail, subthread, floor));
     if (!removed || !mounted) return;
     showWenyouSnackBar(context, '楼层已删除。', tone: WenyouSnackBarTone.success);
+    final targetId = widget.entryTarget.postId;
+    final target = targetId == null
+        ? null
+        : resolvedThreadPostTarget(
+            ref.read(threadPostTargetProvider(targetId)),
+          );
+    if (targetId == floor.id || target?.floor.id == floor.id) {
+      context.replace(
+        AppRouteLocations.thread(widget.threadId, subthreadId: subthread.id),
+      );
+    }
+    ref.invalidate(threadPostTargetProvider(floor.id));
     ref.invalidate(postFloorDiscussionAuthorsProvider(subthread.id));
-    await ref.read(_detailProvider.notifier).refresh();
+    await ref.read(_detailProvider.notifier).removeDeletedFloor(floor.id);
   }
 
   Future<void> _toggleFloorPin(ThreadFloorModel floor) async {

@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_composer_sheet.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_reply_card.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_discussion_scroll_policy.dart';
@@ -94,7 +95,10 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
       comments: state.comments,
       replyPages: state.replyPages,
       order: state.commentOrder,
-      context: targetValue?.valueOrNull,
+      context:
+          targetValue == null || targetValue.isLoading || targetValue.hasError
+          ? null
+          : targetValue.valueOrNull,
     );
     final session = ref.watch(sessionControllerProvider);
     final sessionScope = ref.watch(sessionScopeProvider);
@@ -508,29 +512,21 @@ class _MomentDetailPageState extends ConsumerState<MomentDetailPage> {
     provider,
     MomentComment comment,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWenyouConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除评论？'),
-        content: const Text('评论会显示为已删除，楼中楼结构会保留。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('moment-comment-delete-confirm'),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      title: '删除评论？',
+      confirmLabel: '删除',
+      confirmKey: const Key('moment-comment-delete-confirm'),
     );
     if (confirmed == true && mounted) {
       final removed = await ref
           .read(provider.notifier)
           .removeComment(comment.id);
-      if (removed) _invalidateTargetContext();
+      if (!removed || !mounted || !context.mounted) return;
+      if (_targetScope?.commentId == comment.id) {
+        context.replace(AppRouteLocations.moment(widget.momentId));
+      }
+      _invalidateTargetContext();
     }
   }
 

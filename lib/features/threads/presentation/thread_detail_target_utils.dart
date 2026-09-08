@@ -1,12 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/features/posts/domain/post_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_detail_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_detail_models.dart';
 
 typedef ThreadTargetFilterRestore =
     Future<void> Function(String authorId, String subthreadId);
+
+/// 定位查询重读或失败后，历史值不能继续补回已删除／不可访问的楼层。
+ThreadPostTargetModel? resolvedThreadPostTarget(
+  AsyncValue<ThreadPostTargetModel>? target,
+) => target == null || target.isLoading || target.hasError
+    ? null
+    : target.valueOrNull;
 
 enum ThreadDetailEntryTargetKind { none, post, subthread }
 
