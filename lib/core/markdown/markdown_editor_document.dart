@@ -1,6 +1,7 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 
 enum MarkdownEditorBlockKind {
@@ -66,7 +67,7 @@ final class MarkdownHeadingBlock extends MarkdownEditorBlock {
 
   @override
   List<String> get sourceLines => _withAlignmentMarker([
-    content.isEmpty ? '#' * level : '${'#' * level} $content',
+    MarkdownEditableBlockSyntax.headingLine(level, content),
   ], alignment);
 }
 
@@ -104,7 +105,11 @@ final class MarkdownListItemBlock extends MarkdownEditorBlock {
 
   @override
   List<String> get sourceLines => [
-    '${'  ' * indent}${ordered ? '1.' : '-'} $content',
+    MarkdownEditableBlockSyntax.listLine(
+      ordered: ordered,
+      indent: indent,
+      content: content,
+    ),
   ];
 
   @override
@@ -351,11 +356,11 @@ class MarkdownEditorDocument {
     if (line == '<br />') {
       return MarkdownProtocolEmptyBlock(blankLinesBefore: blankLinesBefore);
     }
-    final heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$').firstMatch(line);
+    final heading = MarkdownEditableBlockSyntax.heading(line);
     if (heading != null) {
       return MarkdownHeadingBlock(
-        level: heading.group(1)!.length,
-        content: heading.group(2) ?? '',
+        level: heading.level,
+        content: heading.content,
         blankLinesBefore: blankLinesBefore,
         alignment: alignment,
       );
@@ -367,12 +372,12 @@ class MarkdownEditorDocument {
         blankLinesBefore: blankLinesBefore,
       );
     }
-    final list = RegExp(r'^( {0,6})(- |1\. )(.+)$').firstMatch(line);
-    if (list != null && list.group(1)!.length.isEven) {
+    final list = MarkdownEditableBlockSyntax.listItem(line);
+    if (list != null) {
       return MarkdownListItemBlock(
-        ordered: list.group(2) == '1. ',
-        indent: list.group(1)!.length ~/ 2,
-        content: list.group(3)!,
+        ordered: list.ordered,
+        indent: list.indent,
+        content: list.content,
         blankLinesBefore: blankLinesBefore,
       );
     }
@@ -386,7 +391,7 @@ class MarkdownEditorDocument {
   ) {
     if (index + 1 >= lines.length ||
         lines[index].isEmpty ||
-        lines[index + 1] != '---' ||
+        !RegExp(r'^ {0,3}-+[\t ]*$').hasMatch(lines[index + 1]) ||
         literalLines.contains(index) ||
         literalLines.contains(index + 1) ||
         _singleLineBlock(lines[index], 0) != null) {

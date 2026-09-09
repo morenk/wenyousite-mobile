@@ -3,6 +3,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_canonical_literal_decoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_block_validator.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_encoding_buffer.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_extension_nodes.dart';
@@ -10,6 +11,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.da
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
@@ -37,7 +39,8 @@ class MarkdownDeltaCodec {
   static const emptyParagraphAttribute = MarkdownDeltaLineMetadata.emptyKey;
   static const sourceBreakAttribute = MarkdownDeltaLineMetadata.sourceBreakKey;
   static const literalLineAttribute = MarkdownDeltaLineMetadata.literalLineKey;
-  static const literalTextAttribute = 'wenyou_literal_text';
+  static const literalTextAttribute =
+      MarkdownDeltaBlockEncoder.literalTextAttribute;
   static const alignmentAttribute = 'align';
 
   static const _allPlayersLabel = '@全体玩家';
@@ -99,6 +102,15 @@ class MarkdownDeltaCodec {
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
       if (validAlignmentMarkers.contains(lineIndex)) continue;
+      if (line.isEmpty &&
+          lineIndex > 0 &&
+          lineIndex + 1 < lines.length &&
+          !literalLines.contains(lineIndex + 1) &&
+          MarkdownEditableBlockSyntax.listItem(lines[lineIndex + 1])?.content ==
+              '') {
+        // 写出器为避免空列表改变前一块语义所加的源码分隔。
+        continue;
+      }
       final opening = _openingFence.firstMatch(line)?.group(1);
       var isProtocolEmptyParagraph = false;
       Map<String, dynamic>? richLineAttributes;
@@ -191,6 +203,7 @@ class MarkdownDeltaCodec {
     if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
       throw const MarkdownCodecException('正文无法安全保存，请撤销最近的格式操作');
     }
+    MarkdownDeltaBlockValidator.validateEmptyListReading(delta, encoded);
     return encoded;
   }
 
@@ -591,14 +604,16 @@ class MarkdownDeltaCodec {
       final isLineBreak = index < value.length && value[index] == '\n';
       if (!isLineBreak && index != value.length) continue;
       if (index > start) {
-        if (attributes != null) _validateTextAttributes(attributes);
+        if (attributes != null) {
+          MarkdownDeltaBlockEncoder.validateTextAttributes(attributes);
+        }
         inline.add(value.substring(start, index), attributes);
         lineHasLiteralText =
             lineHasLiteralText || attributes?[literalTextAttribute] == true;
       }
       if (!isLineBreak) break;
       inline.flush();
-      final encodedLine = _encodeLine(
+      final encodedLine = MarkdownDeltaBlockEncoder.encode(
         line.toString(),
         attributes,
         containsLiteralText: lineHasLiteralText,
@@ -615,108 +630,6 @@ class MarkdownDeltaCodec {
       start = index + 1;
     }
     return lineHasLiteralText;
-  }
-
-  static void _validateTextAttributes(Map<String, dynamic> attributes) {
-    _rejectUnknownAttributes(attributes, const {
-      'bold',
-      'italic',
-      'strike',
-      'code',
-      'link',
-      emptyParagraphAttribute,
-      sourceBreakAttribute,
-      literalLineAttribute,
-      literalTextAttribute,
-      alignmentAttribute,
-      'header',
-      'list',
-      'blockquote',
-      'indent',
-    });
-  }
-
-  static String _encodeLine(
-    String content,
-    Map<String, dynamic>? attributes, {
-    required bool containsLiteralText,
-  }) {
-    if (attributes == null || attributes.isEmpty) {
-      return containsLiteralText
-          ? MarkdownContent.protectUnsafeWhitespace(content)
-          : content;
-    }
-    _validateTextAttributes(attributes);
-    if (attributes[literalLineAttribute] == true) {
-      final incompatible = attributes.keys.where(
-        (key) => key != literalLineAttribute && key != sourceBreakAttribute,
-      );
-      if (incompatible.isNotEmpty) {
-        throw const MarkdownCodecException('字面源码行不能携带其他富文本属性');
-      }
-      return MarkdownContent.literalizeLine(content);
-    }
-    if (attributes[emptyParagraphAttribute] == true) {
-      if (content.isNotEmpty ||
-          attributes.containsKey('header') ||
-          attributes.containsKey('list') ||
-          attributes.containsKey('indent')) {
-        throw const MarkdownCodecException('这段内容暂时无法安全编辑');
-      }
-      return attributes['blockquote'] == true ? '> <br />' : '<br />';
-    }
-
-    final canonicalContent = MarkdownInlineBoundary.canonicalize(content);
-
-    final indentValue = attributes['indent'];
-    final indent = switch (indentValue) {
-      null => 0,
-      int value when value >= 0 && value <= 3 => value,
-      _ => throw const MarkdownCodecException('列表缩进只支持 0～3 级'),
-    };
-    final header = attributes['header'];
-    final list = attributes['list'];
-    final quote = attributes['blockquote'] == true;
-    final blockStyleCount =
-        (header == null ? 0 : 1) + (list == null ? 0 : 1) + (quote ? 1 : 0);
-    if (blockStyleCount > 1) {
-      throw const MarkdownCodecException('同一行不能组合标题、列表和引用');
-    }
-    final hasUnsafeWhitespace =
-        canonicalContent.startsWith('    ') ||
-        canonicalContent.startsWith('\t') ||
-        RegExp(r' {2,}$').hasMatch(canonicalContent);
-    if (hasUnsafeWhitespace && blockStyleCount == 0 && containsLiteralText) {
-      return MarkdownContent.protectUnsafeWhitespace(canonicalContent);
-    }
-    if (header != null) {
-      if (header != 2 && header != 3) {
-        throw const MarkdownCodecException('编辑器只支持二级与三级标题');
-      }
-      return '${'#' * (header as int)} $canonicalContent';
-    }
-    if (list != null) {
-      if (list != 'bullet' && list != 'ordered') {
-        throw const MarkdownCodecException('编辑器列表类型不受支持');
-      }
-      final prefix = list == 'ordered' ? '1. ' : '- ';
-      return '${'  ' * indent}$prefix$canonicalContent';
-    }
-    if (quote) return canonicalContent.isEmpty ? '>' : '> $canonicalContent';
-    if (indent != 0) {
-      throw const MarkdownCodecException('只有列表行可以携带缩进');
-    }
-    return canonicalContent;
-  }
-
-  static void _rejectUnknownAttributes(
-    Map<String, dynamic> attributes,
-    Set<String> allowed,
-  ) {
-    final unknown = attributes.keys.where((key) => !allowed.contains(key));
-    if (unknown.isNotEmpty) {
-      throw MarkdownCodecException('遇到不支持的富文本属性：${unknown.join(', ')}');
-    }
   }
 
   static void _encodeEmbed(Map<String, dynamic> embed, StringBuffer output) {

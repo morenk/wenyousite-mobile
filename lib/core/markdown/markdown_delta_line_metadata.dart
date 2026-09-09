@@ -41,6 +41,7 @@ class MarkdownDeltaLineMetadata {
     final totalLength = documentLength(source);
     var documentOffset = 0;
     var lineHasContent = false;
+    var lineHasNonWhitespaceContent = false;
 
     for (final operation in source.operations) {
       final data = operation.data;
@@ -48,6 +49,7 @@ class MarkdownDeltaLineMetadata {
         output.insert(data, operation.attributes);
         documentOffset += operation.length!;
         lineHasContent = true;
+        lineHasNonWhitespaceContent = true;
         continue;
       }
 
@@ -59,6 +61,8 @@ class MarkdownDeltaLineMetadata {
           output.insert(segment, _textAttributes(operation.attributes));
           documentOffset += segment.length;
           lineHasContent = true;
+          lineHasNonWhitespaceContent =
+              lineHasNonWhitespaceContent || segment.trim().isNotEmpty;
         }
 
         final isFinalNewline = documentOffset == totalLength - 1;
@@ -67,12 +71,14 @@ class MarkdownDeltaLineMetadata {
           _newlineAttributes(
             operation.attributes,
             lineHasContent: lineHasContent,
+            lineHasNonWhitespaceContent: lineHasNonWhitespaceContent,
             isOnlyDocumentLine: totalLength == 1 && isFinalNewline,
             isFinalNewline: isFinalNewline,
           ),
         );
         documentOffset += 1;
         lineHasContent = false;
+        lineHasNonWhitespaceContent = false;
         segmentStart = index + 1;
       }
 
@@ -81,6 +87,8 @@ class MarkdownDeltaLineMetadata {
         output.insert(segment, _textAttributes(operation.attributes));
         documentOffset += segment.length;
         lineHasContent = true;
+        lineHasNonWhitespaceContent =
+            lineHasNonWhitespaceContent || segment.trim().isNotEmpty;
       }
     }
     return output;
@@ -218,6 +226,7 @@ class MarkdownDeltaLineMetadata {
   static Map<String, dynamic>? _newlineAttributes(
     Map<String, dynamic>? source, {
     required bool lineHasContent,
+    required bool lineHasNonWhitespaceContent,
     required bool isOnlyDocumentLine,
     required bool isFinalNewline,
   }) {
@@ -226,7 +235,7 @@ class MarkdownDeltaLineMetadata {
     final isSourceSeparator =
         source?[sourceSeparatorAttribute] == true && !lineHasContent;
     final onlyPendingAlignment =
-        !lineHasContent &&
+        !lineHasNonWhitespaceContent &&
         attributes.keys
             .where(_blockAttributes.contains)
             .every((key) => key == 'align');

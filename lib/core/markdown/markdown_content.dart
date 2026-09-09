@@ -1,5 +1,6 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -55,7 +56,7 @@ class MarkdownContent {
   static final _tableDelimiter = RegExp(
     r'^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$',
   );
-  static final _listItem = RegExp(r'^(\s*)(?:[-+*]|\d+[.)])[\t ]+');
+  static final _listItem = RegExp(r'^(\s*)(?:[-+*]|\d+[.)])(?:[\t ]+|$)');
   static final _unknownProtocol = RegExp(
     r'\[\[([a-z][a-z0-9_-]*):v(\d+):',
     caseSensitive: false,
@@ -395,7 +396,11 @@ class MarkdownContent {
   static bool _hasHardBreak(String line) {
     // Whitespace after an empty quote marker separates quoted paragraphs;
     // it is not a hard break in text.
-    if (isEmptyQuoteLine(line)) return false;
+    if (isEmptyQuoteLine(line) ||
+        MarkdownEditableBlockSyntax.heading(line)?.content == '' ||
+        MarkdownEditableBlockSyntax.listItem(line)?.content == '') {
+      return false;
+    }
     final spaces = RegExp(r' +$').firstMatch(line)?.group(0)?.length ?? 0;
     final slashes = RegExp(r'\\+$').firstMatch(line)?.group(0)?.length ?? 0;
     return spaces >= 2 || slashes.isOdd;
@@ -502,7 +507,18 @@ class MarkdownContent {
       if (MarkdownAlignmentContract.isMarkerLine(rawLine)) continue;
       if (_image.hasMatch(line) || _httpAutolink.hasMatch(line)) return true;
 
+      final whitespaceReference = RegExp(r'&#(?:0*(?:9|32)|[xX]0*(?:9|20));');
+      final masked = whitespaceReference.hasMatch(line)
+          ? _maskInlineCode(line)
+          : line;
       final visible = line
+          .replaceAllMapped(whitespaceReference, (match) {
+            // 字符引用在代码或转义后是可见原文，不能误判成用户空格。
+            return masked.substring(match.start, match.end) == match.group(0) &&
+                    !_isEscaped(line, match.start)
+                ? ' '
+                : match.group(0)!;
+          })
           .replaceAll(_emptyImage, '')
           .replaceAll(_emptyLink, '')
           .replaceAllMapped(_link, (match) => match.group(1) ?? '')

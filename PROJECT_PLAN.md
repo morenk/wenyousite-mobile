@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
-- 后端契约：`5.18.0-dev.20260905.1`，来源 `3338028459561565c788d5236fb64db84a2ae538`；本轮同步 newline v1 revision 2 的手动回车对齐规则，HTTP SDK 与其他语料不变。最近一次公网 `/meta` 实测仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；移动端手动回车对齐已验收，线上部署版本及跨端效果仍待独立核验。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
+- 后端契约：`5.18.0-dev.20260905.1`，来源 `6bfb818df4ccf5333df7b62018a9f519d91e935b`；本轮同步 newline v1 revision 2 的手动回车对齐规则，HTTP SDK 与其他语料不变。本轮已核对公网 `/meta` 与记录来源一致；移动端手动回车对齐已验收，Web 实际交叉操作仍待独立核验。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.9.0`。
 - 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
@@ -17,7 +17,9 @@
 
 ## 当前优先级
 
-回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，最近一次公网后端检查仍为旧 revision；Web 部署与全部线上跨端组合未在本任务独立核验。
+当前空块格式排查：负责人反馈空列表仍报错，已扩展为格式状态、纯空白输入与独立阅读语义的系统性候选，尚待完整检查和负责人验收。历史嵌套有序列表的缩进映射另需跨端补齐，当前必须阻止有损保存，详见[空块格式验收](docs/architecture/editor-empty-block-acceptance.md)。
+
+回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，本轮后端部署来源核对通过；Web 部署与全部线上跨端组合未在本任务独立核验。
 
 本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
 

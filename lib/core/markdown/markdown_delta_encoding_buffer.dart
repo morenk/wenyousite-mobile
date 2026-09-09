@@ -1,5 +1,6 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 
 /// Writes already-encoded Markdown lines while enforcing the alignment
@@ -45,6 +46,14 @@ final class MarkdownDeltaEncodingBuffer {
     final isImageBlock = imageAlignment && isStandaloneRegularImage;
     final isParagraphShape = hasContent && !isHeading && !isExcludedBlock;
     final joinsMarkdownParagraph = isParagraphShape && !isImageBlock;
+
+    // 空列表不能直接打断正文；缩进后的空 '-' 还可能成为 Setext 标题。
+    // 分隔是 Markdown 语法，不是用户新建的可编辑空行。
+    if (attributes?['list'] != null &&
+        MarkdownEditableBlockSyntax.listItem(encodedLine)?.content == '' &&
+        output.isNotEmpty) {
+      _ensureBlankLine();
+    }
 
     if (alignment != WenyouTextAlignment.left &&
         (!hasContent ||

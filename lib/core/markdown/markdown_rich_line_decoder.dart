@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
@@ -92,25 +93,22 @@ class MarkdownRichLineDecoder {
   static MarkdownRichLine? decode(String source) {
     var inlineSource = source;
     final lineAttributes = <String, dynamic>{};
-    // 空标题也是合法的块；先选 H2/H3、再输入文字时不能将标记读成正文。
-    final heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$').firstMatch(source);
+    final heading = MarkdownEditableBlockSyntax.heading(source);
     final quote = MarkdownContent.quoteLineContent(source);
-    final list = RegExp(r'^( {0,6})(- |1\. )(.+)$').firstMatch(source);
+    final list = MarkdownEditableBlockSyntax.listItem(source);
     if (heading != null) {
-      lineAttributes['header'] = heading.group(1)!.length;
-      inlineSource = heading.group(2) ?? '';
+      lineAttributes['header'] = heading.level;
+      inlineSource = heading.content;
     } else if (quote != null) {
       lineAttributes['blockquote'] = true;
       inlineSource = quote;
     } else if (list != null) {
-      final spaces = list.group(1)!.length;
-      final content = list.group(3)!;
-      if (spaces.isOdd || RegExp(r'^\[[ xX]\]\s').hasMatch(content)) {
+      if (RegExp(r'^\[[ xX]\](?:\s|$)').hasMatch(list.content)) {
         return null;
       }
-      lineAttributes['list'] = list.group(2) == '- ' ? 'bullet' : 'ordered';
-      if (spaces > 0) lineAttributes['indent'] = spaces ~/ 2;
-      inlineSource = content;
+      lineAttributes['list'] = list.ordered ? 'ordered' : 'bullet';
+      if (list.indent > 0) lineAttributes['indent'] = list.indent;
+      inlineSource = list.content;
     }
 
     inlineSource = MarkdownInlineBoundary.canonicalize(inlineSource);
