@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_byte_cache.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
 
 const coverPlaybackSettleDelay = Duration(milliseconds: 300);
 const coverPlaybackMinimumVisibleFraction = 0.5;
@@ -34,7 +34,8 @@ class CoverPlaybackGeometry {
 
 /// 一个应用作用域内只有一个动画租约；失效时同步通知播放器释放解码器。
 class CoverPlaybackCoordinator extends ChangeNotifier {
-  final byteCache = CoverAnimationByteCache();
+  CoverPlaybackCoordinator({this.source});
+  final CoverAnimationSource? source;
   final _candidates = <Object, CoverPlaybackGeometry? Function()>{};
   Timer? _settle;
   Object? _selected;
@@ -118,7 +119,7 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
     _disposed = true;
     _settle?.cancel();
     _candidates.clear();
-    byteCache.clear();
+    source?.releaseMemory();
     super.dispose();
   }
 }

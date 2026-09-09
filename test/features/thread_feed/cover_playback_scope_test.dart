@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/features/thread_feed/domain/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 import 'package:wenyousite_mobile/features/thread_feed/presentation/thread_feed_cover.dart';
 
@@ -23,6 +24,66 @@ Widget _readyPoster(
 }
 
 void main() {
+  for (final ratio in [1.0, 2.0]) {
+    testWidgets('真实封面宽度300与DPR=$ratio选择一档，预览失败不补取原图', (tester) async {
+      final requests = <String>[];
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: const Size(800, 600),
+                devicePixelRatio: ratio,
+              ),
+              child: CoverPlaybackScope(
+                child: Scaffold(
+                  body: Center(
+                    child: SizedBox(
+                      width: 300,
+                      child: ThreadFeedCover(
+                        posterUrl: 'https://cdn.example/poster.webp',
+                        animationUrl: 'https://cdn.example/original.gif',
+                        previewVariants: const [
+                          ThreadFeedCoverPreviewVariant(
+                            url: 'https://cdn.example/small.webp',
+                            width: 480,
+                            height: 270,
+                            bytes: 9000,
+                          ),
+                          ThreadFeedCoverPreviewVariant(
+                            url: 'https://cdn.example/large.webp',
+                            width: 800,
+                            height: 450,
+                            bytes: 14000,
+                          ),
+                        ],
+                        posterBuilder: _readyPoster,
+                        animationLoader: (url, _) async {
+                          requests.add(url);
+                          throw StateError('preview unavailable');
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 1));
+      expect(requests, [
+        ratio == 1
+            ? 'https://cdn.example/small.webp'
+            : 'https://cdn.example/large.webp',
+      ]);
+      expect(find.byType(RawImage), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
   testWidgets('隐藏Tab和减少动态效果撤销播放，恢复重新等待', (tester) async {
     var active = true;
     late StateSetter updateTab;

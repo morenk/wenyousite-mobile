@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
 import 'package:wenyousite_mobile/features/thread_feed/presentation/controlled_cover_animation.dart';
 
 Uint8List _gif() {
@@ -46,6 +47,39 @@ Widget _app({
 );
 
 void main() {
+  for (final succeeds in [true, false]) {
+    testWidgets('缓存能读但无法解码时仅重取一次，重取成功=$succeeds', (tester) async {
+      final source = _InvalidCacheSource(
+        succeeds ? _gif() : Uint8List.fromList([0]),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            width: 100,
+            height: 100,
+            child: ControlledCoverAnimation(
+              url: 'https://cdn.example/cover.gif',
+              playing: true,
+              source: source,
+              poster: const ColoredBox(
+                key: Key('cached-poster'),
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await tester.pump();
+      expect(source.loads, 2);
+      expect(source.invalidations, succeeds ? 1 : 2);
+      expect(find.byType(RawImage), succeeds ? findsOneWidget : findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+  }
   testWidgets('真实动画WebP的两轮契约、多帧像素和停止释放', (tester) async {
     final bytes = File(
       'test/fixtures/cover-animation/hello_loop_2.webp',
@@ -218,4 +252,27 @@ void main() {
     previous.dispose();
     next.dispose();
   });
+}
+
+class _InvalidCacheSource implements CoverAnimationSource {
+  _InvalidCacheSource(this.fresh);
+  final Uint8List fresh;
+  int loads = 0;
+  int invalidations = 0;
+  @override
+  Future<CoverAnimationData> load(String url, CancelToken cancel) async =>
+      ++loads == 1
+      ? CoverAnimationData(Uint8List.fromList([0]), fromCache: true)
+      : CoverAnimationData(fresh);
+  @override
+  Future<void> invalidate(String url) async {
+    invalidations++;
+  }
+
+  @override
+  void changeViewer(String? accountId, {required bool purge}) {}
+  @override
+  void releaseMemory() {}
+  @override
+  void dispose() {}
 }

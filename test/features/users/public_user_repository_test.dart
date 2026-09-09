@@ -94,6 +94,12 @@ void main() {
     );
     final played = await repository.fetchPlayedThreads('user-1');
     final bookmarks = await repository.fetchBookmarks('user-1');
+    expect(created.items.single.coverMedia?.previewVariants.single.width, 480);
+    expect(played.items.single.coverMedia?.previewVariants.single.width, 480);
+    expect(
+      bookmarks.items.single.coverMedia?.previewVariants.single.width,
+      480,
+    );
     expect(
       bookmarks.items.single.coverMedia?.animationUrl,
       'https://cdn.example.com/bookmark-cover.jpg',

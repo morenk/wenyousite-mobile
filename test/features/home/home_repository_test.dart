@@ -67,6 +67,7 @@ void main() {
     expect(item.tags.single.name, '太空歌剧');
     expect(item.coverImageUrls, ['https://cdn.example.com/cover.jpg']);
     expect(item.coverMedia?.animationUrl, 'https://cdn.example.com/cover.jpg');
+    expect(item.coverMedia?.previewVariants.single.width, 480);
     expect(
       item.coverMedia?.staticUrl,
       'https://cdn.example.com/cover_poster.webp',

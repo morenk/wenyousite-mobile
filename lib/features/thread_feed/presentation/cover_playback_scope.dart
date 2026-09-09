@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
+import 'package:wenyousite_mobile/core/application/visibility_cache_invalidation.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
 import 'package:wenyousite_mobile/features/thread_feed/application/cover_playback_coordinator.dart';
 
 class CoverPlaybackScope extends ConsumerStatefulWidget {
@@ -23,12 +25,19 @@ class CoverPlaybackScope extends ConsumerStatefulWidget {
 
 class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
     with WidgetsBindingObserver {
-  final _coordinator = CoverPlaybackCoordinator();
+  late final CoverPlaybackCoordinator _coordinator;
   bool _resumed = true;
 
   @override
   void initState() {
     super.initState();
+    _coordinator = CoverPlaybackCoordinator(
+      source: ref.read(coverAnimationSourceProvider),
+    );
+    _coordinator.source?.changeViewer(
+      ref.read(viewerScopeProvider).session.accountId,
+      purge: false,
+    );
     WidgetsBinding.instance.addObserver(this);
     _resumed =
         WidgetsBinding.instance.lifecycleState == null ||
@@ -71,10 +80,21 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
   }
 
   @override
-  void didHaveMemoryPressure() => _coordinator.byteCache.clear();
+  void didHaveMemoryPressure() => _coordinator.source?.releaseMemory();
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(viewerScopeProvider, (previous, next) {
+      _coordinator.interrupt();
+      _coordinator.source?.changeViewer(
+        next.session.accountId,
+        // 启动恢复账号前尚未取文件；按持久 owner 校验可复用同账号公开缓存。
+        purge:
+            previous?.session.accountId != null ||
+            previous?.visibilityRevision != next.visibilityRevision,
+      );
+      _coordinator.settle();
+    });
     ref.listen(
       dataSaverPreferenceControllerProvider.select((state) => state.enabled),
       (_, _) => _updateAllowed(),

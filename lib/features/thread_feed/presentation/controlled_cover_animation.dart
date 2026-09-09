@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_byte_cache.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
 
 typedef CoverAnimationLoader =
     Future<Uint8List> Function(String url, CancelToken cancel);
@@ -38,7 +38,8 @@ class ControlledCoverAnimation extends StatefulWidget {
     required this.playing,
     required this.poster,
     this.lease,
-    this.byteCache,
+    this.source,
+    this.decodeWidth,
     this.loader = loadCoverAnimation,
     super.key,
   });
@@ -47,7 +48,8 @@ class ControlledCoverAnimation extends StatefulWidget {
   final bool playing;
   final Widget poster;
   final ValueListenable<bool>? lease;
-  final CoverAnimationByteCache? byteCache;
+  final CoverAnimationSource? source;
+  final int? decodeWidth;
   final CoverAnimationLoader loader;
 
   @override
@@ -92,7 +94,10 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
       widget.lease?.addListener(_leaseChanged);
       _stop();
     }
-    if (oldWidget.url != widget.url || oldWidget.playing != widget.playing) {
+    if (oldWidget.url != widget.url ||
+        oldWidget.playing != widget.playing ||
+        oldWidget.source != widget.source ||
+        oldWidget.decodeWidth != widget.decodeWidth) {
       _stop();
     }
     _sync();
@@ -102,6 +107,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     if (!_playing || _started) return;
     _started = true;
     final width =
+        widget.decodeWidth ??
         (MediaQuery.sizeOf(context).width *
                 MediaQuery.devicePixelRatioOf(context))
             .round()
@@ -114,15 +120,26 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     _cancel = cancel;
     try {
       final url = widget.url;
-      final bytes =
-          widget.byteCache?.get(url) ?? await widget.loader(url, cancel);
-      if (!_current(generation)) return;
-      widget.byteCache?.put(url, bytes);
-      final codec = await ui.instantiateImageCodec(
-        bytes,
-        targetWidth: width,
-        allowUpscaling: false,
-      );
+      final source = widget.source;
+      ui.Codec? codec;
+      for (var attempt = 0; attempt < 2; attempt++) {
+        final data = source != null
+            ? await source.load(url, cancel)
+            : CoverAnimationData(await widget.loader(url, cancel));
+        if (!_current(generation)) return;
+        try {
+          codec = await ui.instantiateImageCodec(
+            data.bytes,
+            targetWidth: width,
+            allowUpscaling: false,
+          );
+          break;
+        } on Object {
+          await source?.invalidate(url);
+          if (!_current(generation) || !data.fromCache || attempt != 0) rethrow;
+        }
+      }
+      if (codec == null) return;
       if (!_current(generation)) {
         codec.dispose();
         return;

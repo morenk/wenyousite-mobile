@@ -49,6 +49,15 @@ void main() {
     expect(item.coverImageUrls, ['https://cdn.example.com/cover.jpg']);
     expect(item.coverMedia?.animationUrl, 'https://cdn.example.com/cover.jpg');
     expect(
+      item
+          .copyWithFolderId('another-folder')
+          .coverMedia
+          ?.previewVariants
+          .single
+          .width,
+      480,
+    );
+    expect(
       item.copyWithFolderId('another-folder').coverMedia?.staticUrl,
       'https://cdn.example.com/cover_poster.webp',
     );

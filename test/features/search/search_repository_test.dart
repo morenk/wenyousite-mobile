@@ -77,6 +77,11 @@ void main() {
       'https://cdn.example.com/cover.jpg',
     ]);
     expect(threads.single.memberCount, 5);
+    expect(threads.single.coverMedia?.previewVariants.single.width, 480);
+    expect(
+      overview.threads.single.coverMedia?.previewVariants.single.width,
+      480,
+    );
     expect(
       threads.single.coverMedia?.animationUrl,
       'https://cdn.example.com/cover.jpg',

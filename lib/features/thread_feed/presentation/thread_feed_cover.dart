@@ -4,6 +4,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/thread_feed/application/cover_playback_coordinator.dart';
+import 'package:wenyousite_mobile/features/thread_feed/domain/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/thread_feed/presentation/controlled_cover_animation.dart';
 import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
 
@@ -20,6 +21,7 @@ class ThreadFeedCover extends StatefulWidget {
     this.posterUrl,
     this.animationUrl,
     this.animationLoader = loadCoverAnimation,
+    this.previewVariants = const [],
     this.posterBuilder,
     super.key,
   });
@@ -27,6 +29,7 @@ class ThreadFeedCover extends StatefulWidget {
   final String? posterUrl;
   final String? animationUrl;
   final CoverAnimationLoader animationLoader;
+  final List<ThreadFeedCoverPreviewVariant> previewVariants;
   final CoverPosterBuilder? posterBuilder;
 
   @override
@@ -195,13 +198,29 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
         aspectRatio: 16 / 9,
         child: widget.animationUrl == null || widget.posterUrl == null
             ? poster
-            : ControlledCoverAnimation(
-                url: widget.animationUrl!,
-                playing: false,
-                lease: _lease,
-                byteCache: _coordinator?.byteCache,
-                poster: poster,
-                loader: widget.animationLoader,
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final ratio = MediaQuery.devicePixelRatioOf(context);
+                  final url = selectThreadCoverAnimation(
+                    variants: widget.previewVariants,
+                    originalUrl: widget.animationUrl,
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    devicePixelRatio: ratio,
+                  );
+                  return ControlledCoverAnimation(
+                    url: url!,
+                    decodeWidth: (constraints.maxWidth * ratio).round().clamp(
+                      1,
+                      1080,
+                    ),
+                    playing: false,
+                    lease: _lease,
+                    source: _coordinator?.source,
+                    poster: poster,
+                    loader: widget.animationLoader,
+                  );
+                },
               ),
       ),
     );
