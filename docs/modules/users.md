@@ -114,9 +114,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
-
-本轮来源为已合并的 newline v1 revision 2 契约；HTTP 与其他契约不变，公网后端仍运行旧 revision。公网仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`，移动端对齐适配与跨端验收另行推进。
+封面契约审查：API `5.19.0-dev.20260909.1`，后端已提交 `c6a01225fbe26aa2eaeecf9cc74dc3c9c1bf5aa4`；Foundation 固定正式 `v6.9.0`。新增可空 `coverMedia` 与首帧静态地址，保留旧 `coverImages`；Markdown 行为未变化。候选契约同步不代表后端或消费者已发布。
 
 ## 14. 相关代码与架构文档
 

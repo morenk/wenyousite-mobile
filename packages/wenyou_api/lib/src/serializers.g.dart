@@ -493,6 +493,7 @@ Serializers _$serializers =
           ..add(ThreadCategoryInfoDto.serializer)
           ..add(ThreadCategoryResponseDto.serializer)
           ..add(ThreadCountResponseDto.serializer)
+          ..add(ThreadCoverMediaResponseDto.serializer)
           ..add(ThreadDetailResponseDto.serializer)
           ..add(ThreadDetailResponseDtoStatusEnum.serializer)
           ..add(ThreadDetailResponseDtoVisibilityEnum.serializer)

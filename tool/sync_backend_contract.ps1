@@ -151,6 +151,7 @@ $contractFiles = @(
   @{ Source = 'contracts/mobile-v1-golden-fixtures.json'; Destination = 'mobile-v1-golden-fixtures.json' },
   @{ Source = 'contracts/mobile-v1-operation-coverage.json'; Destination = 'mobile-v1-operation-coverage.json' },
   @{ Source = $threadCategorySource; Destination = (Split-Path -Leaf $threadCategorySource) },
+  @{ Source = 'contracts/thread-cover-media-v1-fixtures.json'; Destination = 'thread-cover-media-v1-fixtures.json' },
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' }
