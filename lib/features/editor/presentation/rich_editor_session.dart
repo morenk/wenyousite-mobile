@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:wenyousite_mobile/core/diagnostics/failure_diagnostics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_editing_compatibility.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_gateway.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
@@ -48,6 +49,7 @@ class RichEditorSession extends ChangeNotifier {
     this.codecDebounce = const Duration(milliseconds: 120),
     this.maximumSerializedLength = 10000,
     this.clipboardScope,
+    this.blockAlignment = true,
     this.imageAlignment = false,
     EditorClipboardGateway? clipboardGateway,
     Future<String?> Function()? readClipboardText,
@@ -81,19 +83,21 @@ class RichEditorSession extends ChangeNotifier {
       ),
     );
     _listenToDocument(document);
+    _protectUnsupportedSource(initialMarkdown, decoded);
     focusNode.addListener(_onFocusChanged);
   }
 
   final Duration codecDebounce;
   final int maximumSerializedLength;
   final Object? clipboardScope;
+  final bool blockAlignment;
   final bool imageAlignment;
   final ValueChanged<String> onMarkdownChanged;
   final EditorClipboardGateway _clipboardGateway;
   final WenyouEditorClipboardStore _clipboardStore;
   late final WenyouSiteClipboardParser _siteClipboardParser;
 
-  late final QuillController controller;
+  late final LiteralTextQuillController controller;
   final FocusNode focusNode = FocusNode();
   final ScrollController scrollController = ScrollController();
   Timer? _codecTimer;
@@ -102,6 +106,8 @@ class RichEditorSession extends ChangeNotifier {
   bool _applyingDocument = false;
   bool _disposed = false;
   bool _dirty = false;
+  bool _externallyReadOnly = false;
+  String? _protectedSourceSignature;
   int _documentGeneration = 0;
   int _scheduledExternalRevision = -1;
   String _lastMarkdown = '';
@@ -122,7 +128,28 @@ class RichEditorSession extends ChangeNotifier {
   int get characterCount =>
       controller.document.toPlainText().trimRight().length;
 
-  set readOnly(bool value) => controller.readOnly = value;
+  bool get isSourceProtected => _protectedSourceSignature != null;
+  bool get canCloseProtectedSource =>
+      isSourceProtected && _protectedSourceSignature == _documentSignature();
+
+  set readOnly(bool value) {
+    _externallyReadOnly = value;
+    controller.readOnly = value || isSourceProtected;
+  }
+
+  void _protectUnsupportedSource(String source, MarkdownDeltaDocument decoded) {
+    final compatibility = MarkdownEditingCompatibility.assess(
+      source,
+      blockAlignment: blockAlignment,
+      imageAlignment: imageAlignment,
+      decoded: decoded,
+    );
+    _protectedSourceSignature = compatibility.edit
+        ? null
+        : _documentSignature();
+    _codecFailure = compatibility.edit ? null : '这段内容暂不支持编辑，原文已保留。';
+    controller.readOnly = _externallyReadOnly || isSourceProtected;
+  }
 
   Map<ShortcutActivator, Intent> get clipboardShortcuts => {
     const SingleActivator(LogicalKeyboardKey.keyC, control: true):
@@ -326,6 +353,7 @@ class RichEditorSession extends ChangeNotifier {
       _lastMarkdown = markdown;
       _serializedLength = markdown.length;
       _dirty = false;
+      _protectUnsupportedSource(markdown, decoded);
     } on Object catch (error) {
       _codecFailure = '恢复正文时发生错误：$error';
     } finally {
@@ -349,6 +377,7 @@ class RichEditorSession extends ChangeNotifier {
   bool _flushCurrentDelta({bool reportFailure = false}) {
     _codecTimer?.cancel();
     _codecTimer = null;
+    if (isSourceProtected) return false;
     try {
       final markdown = MarkdownDeltaCodec.encode(
         controller.document.toDelta(),
@@ -422,16 +451,18 @@ class RichEditorSession extends ChangeNotifier {
       });
     }
 
-    controller.compose(change, controller.selection, ChangeSource.local);
     final cursor =
         start +
         (needsLeadingNewline ? 1 : 0) +
         1 +
         (needsTrailingNewline || end < plainText.length - 1 ? 1 : 0);
-    controller.updateSelection(
-      TextSelection.collapsed(offset: cursor),
-      ChangeSource.local,
-    );
+    controller.runEditCommand(() {
+      controller.compose(change, controller.selection, ChangeSource.local);
+      controller.updateSelection(
+        TextSelection.collapsed(offset: cursor),
+        ChangeSource.local,
+      );
+    });
     focusNode.requestFocus();
     _flushCurrentDelta();
   }
@@ -441,6 +472,7 @@ class RichEditorSession extends ChangeNotifier {
     String alt = '图片',
     String? title,
   }) {
+    if (controller.readOnly) return;
     _replaceSelectionWithBlockEmbed(
       Embeddable(MarkdownDeltaCodec.imageEmbed, {
         'version': 1,

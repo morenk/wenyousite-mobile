@@ -13,6 +13,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_line_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_reader_paragraph_syntax.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_link.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 import 'package:wenyousite_mobile/core/navigation/wenyou_page_transitions.dart';
@@ -281,6 +282,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
       const MarkdownQuoteLineSyntax(_emptyParagraphTag),
       const MarkdownLiteralRowsSyntax(),
       _EmptyParagraphBlockSyntax(),
+      const MarkdownReaderParagraphSyntax(),
     ],
     inlineSyntaxes: [
       _InternalReferenceInlineSyntax(),
