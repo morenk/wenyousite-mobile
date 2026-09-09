@@ -1,9 +1,10 @@
 // ignore_for_file: experimental_member_use
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_clipboard_paste.dart';
 import 'package:wenyousite_mobile/features/editor/presentation/editor_document_alignment.dart';
 
@@ -61,8 +62,18 @@ class LiteralTextQuillController extends QuillController {
             len == 0 ? '' : document.getPlainText(index, len),
           )
         : null;
-    final effectiveData =
-        internalReference ?? _plainNewline(data, index) ?? data;
+    final newline = _plainNewline(data, index);
+    final effectiveData = internalReference ?? newline ?? data;
+    final continuationStyle = newline != null && keepStyleOnNewLine
+        ? Style.attr(
+            Map.fromEntries(
+              getSelectionStyle().attributes.entries.where(
+                (entry) =>
+                    entry.value.isInline && entry.key != Attribute.link.key,
+              ),
+            ),
+          )
+        : null;
     final effectiveSelection = internalReference == null
         ? textSelection
         : TextSelection.collapsed(offset: index + 1);
@@ -98,6 +109,41 @@ class LiteralTextQuillController extends QuillController {
     if (sourceSeparatorPatch.isNotEmpty) {
       document.compose(sourceSeparatorPatch, ChangeSource.local);
     }
+    if (newline != null && effectiveSelection != null) {
+      // 显式换行 Delta 不经过插入规则，不应再次使用 Quill 的位置补偿。
+      updateSelection(effectiveSelection, ChangeSource.local);
+    }
+    if (effectiveData is Delta &&
+        effectiveData.operations.any(
+          (operation) =>
+              operation.attributes?[MarkdownDeltaLineMetadata
+                  .sourceSeparatorAttribute] ==
+              true,
+        )) {
+      final current = document.toDelta();
+      final patch = current.diff(MarkdownParagraphBoundaries.collapse(current));
+      if (patch.isNotEmpty) {
+        // Delta 替换已包含准确插入长度，使用调用方的插入终点，避免
+        // Quill 再把整个片段当成一个 embed 计算位置偏移。
+        final intended = effectiveSelection ?? selection;
+        final adjusted = intended.copyWith(
+          baseOffset: patch.transformPosition(intended.baseOffset),
+          extentOffset: patch.transformPosition(intended.extentOffset),
+        );
+        document.compose(patch, ChangeSource.local);
+        updateSelection(adjusted, ChangeSource.local);
+      }
+    }
+    if (effectiveData is Delta &&
+        effectiveData.operations.length == 1 &&
+        effectiveData.operations.single.attributes?[MarkdownParagraphBoundaries
+                .key] ==
+            1) {
+      if (MarkdownParagraphBoundaries.range(before, index)?.start == index) {
+        _resetNewParagraphAlignment(index);
+      }
+      _resetNewParagraphAlignment(index + insertedLength);
+    }
     repairEditorTrailingNewlineAlignment(
       controller: this,
       before: before,
@@ -105,6 +151,7 @@ class LiteralTextQuillController extends QuillController {
       replacedLength: len,
       selection: effectiveSelection,
     );
+    if (continuationStyle != null) toggledStyle = continuationStyle;
     if (effectiveData is! String || effectiveData.isEmpty) return;
 
     final formatting = Delta();
@@ -156,10 +203,42 @@ class LiteralTextQuillController extends QuillController {
     }
     // Quill's string insertion exits an empty quote/aligned line without
     // inserting anything. An explicit Delta keeps the user's Enter literal.
+    final startsParagraph =
+        attributes['blockquote']?.value != true &&
+        !HardwareKeyboard.instance.isShiftPressed;
+    final range = MarkdownParagraphBoundaries.range(document.toDelta(), index);
     return Delta()..insert('\n', {
       if (attributes['blockquote']?.value == true) 'blockquote': true,
-      if (attributes['align']?.value case final String alignment)
-        'align': alignment,
+      if (startsParagraph) MarkdownParagraphBoundaries.key: 1,
+      if ((!startsParagraph || range?.start != index) &&
+          attributes['align']?.value != null)
+        'align': attributes['align']!.value,
     });
+  }
+
+  void _resetNewParagraphAlignment(int position) {
+    final delta = document.toDelta();
+    final range = MarkdownParagraphBoundaries.range(delta, position);
+    if (range == null) return;
+    final patch = Delta();
+    var offset = 0;
+    var patched = 0;
+    for (final operation in delta.operations) {
+      if (operation.data case final String text) {
+        for (var index = 0; index < text.length; index++) {
+          final at = offset + index;
+          if (text[index] == '\n' &&
+              at >= range.start &&
+              at < range.end &&
+              operation.attributes?['align'] != null) {
+            if (at > patched) patch.retain(at - patched);
+            patch.retain(1, {'align': null});
+            patched = at + 1;
+          }
+        }
+      }
+      offset += operation.length!;
+    }
+    if (patch.isNotEmpty) document.compose(patch, ChangeSource.local);
   }
 }

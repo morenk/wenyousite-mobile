@@ -74,13 +74,15 @@ void main() {
               '\n' * breaks +
               '甲乙'.substring(offset);
           expect(session.controller.document.toPlainText(), '$expectedText\n');
-          final expected = expectedText
-              .split('\n')
-              .map(
-                (line) =>
-                    '${quote ? '> ' : ''}${line.isEmpty ? '<br />' : line}',
-              )
-              .join('\n');
+          final expected = !quote && breaks == 1 && offset == 1
+              ? '甲\n\n乙'
+              : expectedText
+                    .split('\n')
+                    .map(
+                      (line) =>
+                          '${quote ? '> ' : ''}${line.isEmpty ? '<br />' : line}',
+                    )
+                    .join('\n');
           expect(await session.flush(), isTrue);
           expect(
             MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
@@ -196,7 +198,7 @@ void main() {
       expect(await session.flush(), isTrue);
       expect(
         MarkdownDeltaCodec.encode(session.controller.document.toDelta()),
-        '$prefix**甲**\n$prefix**乙**',
+        prefix.isEmpty ? '**甲**\n\n**乙**' : '$prefix**甲**\n$prefix**乙**',
       );
     });
   }

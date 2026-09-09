@@ -12,6 +12,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
@@ -176,7 +177,9 @@ class MarkdownDeltaCodec {
     }
 
     return MarkdownDeltaDocument(
-      delta: MarkdownQuoteParagraphs.collapse(delta),
+      delta: MarkdownParagraphBoundaries.collapse(
+        MarkdownQuoteParagraphs.collapse(delta),
+      ),
       editorDocument: editorDocument,
       issues: List.unmodifiable(issues),
     );

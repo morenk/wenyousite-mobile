@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 
 /// flutter_markdown_plus 1.0.12 对所有段落强制固定 strut；多行代码、
 /// 表情等 WidgetSpan 的实际高度会被忽略。通过公开 build 扩展点适配
@@ -20,8 +21,37 @@ class WenyouMarkdownBody extends MarkdownBody {
   });
 
   @override
-  Widget build(BuildContext context, List<Widget>? children) =>
-      super.build(context, children?.map(_allowInlineHeight).toList());
+  Widget build(BuildContext context, List<Widget>? children) {
+    final blocks = md.Document(
+      blockSyntaxes: blockSyntaxes,
+      inlineSyntaxes: inlineSyntaxes,
+      extensionSet: extensionSet ?? md.ExtensionSet.gitHubFlavored,
+      encodeHtml: false,
+    ).parse(data);
+    // 上游在相邻顶层块之间插入 SizedBox。只收紧正文段落之间的
+    // 间距；标题、列表、引用及图片仍保持既有块间距和内部结构。
+    final mapped = <Widget>[];
+    for (var index = 0; index < (children?.length ?? 0); index++) {
+      final child = children![index];
+      if (children.length == blocks.length * 2 - 1 &&
+          index.isOdd &&
+          child is SizedBox &&
+          isBodyParagraph(blocks[index ~/ 2]) &&
+          isBodyParagraph(blocks[index ~/ 2 + 1])) {
+        continue;
+      }
+      mapped.add(_allowInlineHeight(child));
+    }
+    return super.build(context, mapped);
+  }
+
+  static bool isBodyParagraph(md.Node node) =>
+      node is md.Element &&
+      node.tag == 'p' &&
+      !(node.children?.any(
+            (child) => child is md.Element && child.tag == 'img',
+          ) ??
+          false);
 }
 
 Widget _allowInlineHeight(Widget widget) {
