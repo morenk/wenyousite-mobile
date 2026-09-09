@@ -595,6 +595,11 @@ final _threadWithCover = ThreadFeedCardModel(
     'https://example.com/cover.jpg',
     'https://example.com/ignored-second-cover.jpg',
   ],
+  coverMedia: const ThreadFeedCoverMedia(
+    url: 'https://example.com/cover.jpg',
+    animated: false,
+    posterUrl: 'https://example.com/cover.jpg',
+  ),
   memberCount: 5,
   playerCount: 2,
   postCount: 12,

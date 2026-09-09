@@ -6,6 +6,8 @@ import 'package:wenyousite_mobile/features/home/data/home_repository.dart';
 import 'package:wenyousite_mobile/features/home/domain/home_models.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 
+import '../../support/thread_cover_fixtures.dart';
+
 void main() {
   test('分类按服务端顺序映射且过滤停用项', () async {
     final threadsApi = _MockThreadsApi();
@@ -64,6 +66,11 @@ void main() {
     expect(item.preview, '向星海出发');
     expect(item.tags.single.name, '太空歌剧');
     expect(item.coverImageUrls, ['https://cdn.example.com/cover.jpg']);
+    expect(item.coverMedia?.animationUrl, 'https://cdn.example.com/cover.jpg');
+    expect(
+      item.coverMedia?.staticUrl,
+      'https://cdn.example.com/cover_poster.webp',
+    );
     expect(item.memberCount, 5);
     expect(item.postCount, 12);
     expect(item.tipTotal, '8');
@@ -232,6 +239,7 @@ Response<ThreadsFindAll200Response> _threadsResponse({
                   ..posts = 12,
               )
               ..preview = '  向星海出发  '
+              ..coverMedia = animatedThreadCoverFixture().toBuilder()
               ..coverImages.addAll([
                 'https://cdn.example.com/cover.jpg',
                 'https://cdn.example.com/ignored-second-cover.jpg',

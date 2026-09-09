@@ -1,0 +1,296 @@
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:wenyousite_mobile/app/app_theme.dart';
+import 'package:wenyousite_mobile/core/application/data_saver_preference.dart';
+import 'package:wenyousite_mobile/core/navigation/wenyou_feedback_visibility.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/cover_playback_scope.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/thread_feed_cover.dart';
+
+Widget _readyPoster(
+  BuildContext context,
+  String url,
+  VoidCallback onReady,
+  VoidCallback onError,
+) {
+  WidgetsBinding.instance.addPostFrameCallback((_) => onReady());
+  return const ColoredBox(color: Colors.white);
+}
+
+void main() {
+  testWidgets('隐藏Tab和减少动态效果撤销播放，恢复重新等待', (tester) async {
+    var active = true;
+    late StateSetter updateTab;
+    final tokens = <CancelToken>[];
+    Future<Uint8List> loader(String _, CancelToken token) {
+      tokens.add(token);
+      return Completer<Uint8List>().future;
+    }
+
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (_, child) => CoverPlaybackScope(child: child!),
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                updateTab = setState;
+                return TickerMode(
+                  enabled: active,
+                  child: Offstage(
+                    offstage: !active,
+                    child: Center(
+                      child: SizedBox(
+                        width: 300,
+                        child: ThreadFeedCover(
+                          posterUrl: 'https://cdn.example/poster.webp',
+                          animationUrl: 'https://cdn.example/a.gif',
+                          animationLoader: loader,
+                          posterBuilder: _readyPoster,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tokens.length, 1);
+    updateTab(() => active = false);
+    await tester.pump();
+    expect(tokens.single.isCancelled, isTrue);
+    await tester.pump(const Duration(seconds: 1));
+    expect(tokens.length, 1);
+    updateTab(() => active = true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 299));
+    expect(tokens.length, 1);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(tokens.length, 2);
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    await tester.pump();
+    expect(tokens.last.isCancelled, isTrue);
+    await tester.pump(const Duration(seconds: 1));
+    expect(tokens.length, 2);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('poster加载或解码失败保持占位且迟到成功不启动动画', (tester) async {
+    var calls = 0;
+    VoidCallback? ready;
+    VoidCallback? failed;
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (_, child) => CoverPlaybackScope(child: child!),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 300,
+                child: ThreadFeedCover(
+                  posterUrl: 'https://cdn.example/missing.webp',
+                  animationUrl: 'https://cdn.example/a.gif',
+                  animationLoader: (_, _) {
+                    calls++;
+                    return Completer<Uint8List>().future;
+                  },
+                  posterBuilder: (_, _, onReady, onError) {
+                    ready = onReady;
+                    failed = onError;
+                    return const ColoredBox(color: Colors.white);
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(calls, 0);
+    failed!();
+    ready!();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(calls, 0);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('列表只请求中心动画，拖动/后台/省流量取消下载，恢复需停稳', (tester) async {
+    tester.view.physicalSize = const Size(400, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final requests = <String>[];
+    final tokens = <CancelToken>[];
+    final container = ProviderContainer();
+    final scroll = ScrollController();
+    Future<Uint8List> loader(String url, CancelToken cancel) {
+      requests.add(url);
+      tokens.add(cancel);
+      return Completer<Uint8List>().future;
+    }
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => CoverPlaybackScope(child: child!),
+          home: Scaffold(
+            body: ListView(
+              controller: scroll,
+              children: [
+                for (var index = 0; index < 5; index++)
+                  ThreadFeedCover(
+                    posterUrl: 'https://cdn.example/$index.jpg',
+                    animationUrl: 'https://cdn.example/$index.gif',
+                    animationLoader: loader,
+                    posterBuilder: _readyPoster,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 299));
+    expect(requests, isEmpty);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(requests, ['https://cdn.example/1.gif']);
+    final gesture = await tester.startGesture(const Offset(200, 400));
+    await gesture.moveBy(const Offset(0, -70));
+    await tester.pump();
+    expect(tokens.single.isCancelled, isTrue);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(requests.length, 2);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    expect(tokens.last.isCancelled, isTrue);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 299));
+    expect(requests.length, 2);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(requests.length, 3);
+    await container
+        .read(dataSaverPreferenceControllerProvider.notifier)
+        .select(true);
+    expect(tokens.last.isCancelled, isTrue);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(requests.length, 3);
+    await tester.pumpWidget(const SizedBox());
+    container.dispose();
+    scroll.dispose();
+  });
+
+  testWidgets('缺失可信poster不请求旧原图，详情遮挡与返回重新等待', (tester) async {
+    final visibility = WenyouFeedbackVisibility();
+    final navigator = GlobalKey<NavigatorState>();
+    var calls = 0;
+    CancelToken? token;
+    Future<Uint8List> loader(String _, CancelToken cancel) {
+      calls++;
+      token = cancel;
+      return Completer<Uint8List>().future;
+    }
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          navigatorKey: navigator,
+          navigatorObservers: [visibility.createObserver()],
+          builder: (context, child) =>
+              CoverPlaybackScope(navigationChanges: visibility, child: child!),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 300,
+                child: ThreadFeedCover(
+                  animationUrl: 'https://external.example/a.gif',
+                  animationLoader: loader,
+                  posterBuilder: _readyPoster,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(calls, 0);
+    expect(find.byType(WenyouCachedImage), findsNothing);
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          navigatorKey: navigator,
+          navigatorObservers: [visibility.createObserver()],
+          builder: (context, child) =>
+              CoverPlaybackScope(navigationChanges: visibility, child: child!),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 300,
+                child: ThreadFeedCover(
+                  posterUrl: 'https://cdn.example/poster.jpg',
+                  animationUrl: 'https://cdn.example/a.gif',
+                  animationLoader: loader,
+                  posterBuilder: _readyPoster,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(calls, 1);
+    unawaited(
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('详情')),
+        ),
+      ),
+    );
+    expect(token!.isCancelled, isTrue);
+    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(calls, 1);
+    navigator.currentState!.pop();
+    await tester.pumpAndSettle();
+    final afterTransition = calls;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 299));
+    expect(calls, afterTransition);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(calls, 2);
+    await tester.pumpWidget(const SizedBox());
+    visibility.dispose();
+  });
+}

@@ -19,6 +19,22 @@ class ThreadFeedTag {
   final String name;
 }
 
+class ThreadFeedCoverMedia {
+  const ThreadFeedCoverMedia({
+    required this.url,
+    this.animated,
+    this.posterUrl,
+  });
+
+  final String url;
+  final bool? animated;
+  final String? posterUrl;
+
+  String? get staticUrl => posterUrl;
+  String? get animationUrl =>
+      animated == true && staticUrl != null ? url : null;
+}
+
 class ThreadFeedCardModel {
   const ThreadFeedCardModel({
     required this.id,
@@ -34,6 +50,7 @@ class ThreadFeedCardModel {
     this.ownerId = '',
     this.tags = const [],
     this.coverImageUrls = const [],
+    this.coverMedia,
     this.playerCount,
     this.tipTotal = '0',
     this.createdAt,
@@ -57,6 +74,7 @@ class ThreadFeedCardModel {
   final String? preview;
   final List<ThreadFeedTag> tags;
   final List<String> coverImageUrls;
+  final ThreadFeedCoverMedia? coverMedia;
   final int memberCount;
   final int? playerCount;
   final int postCount;

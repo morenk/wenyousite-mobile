@@ -6,6 +6,8 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/search/data/search_repository.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
+import '../../support/thread_cover_fixtures.dart';
+
 void main() {
   test('搜索仓库映射综合、动态、分类与主题内结果契约', () async {
     final api = _MockSearchApi();
@@ -75,6 +77,14 @@ void main() {
       'https://cdn.example.com/cover.jpg',
     ]);
     expect(threads.single.memberCount, 5);
+    expect(
+      threads.single.coverMedia?.animationUrl,
+      'https://cdn.example.com/cover.jpg',
+    );
+    expect(
+      overview.threads.single.coverMedia?.staticUrl,
+      'https://cdn.example.com/cover_poster.webp',
+    );
     expect(users.single.username, '温柔测试员');
     expect(users.single.avatarUrl, isNull);
     expect(users.single.bio, isNull);
@@ -307,6 +317,7 @@ SearchThreadResponseDto _threadDto() {
           ..players = 2
           ..posts = 12,
       )
+      ..coverMedia = animatedThreadCoverFixture().toBuilder()
       ..coverImages.addAll([
         'https://cdn.example.com/cover.jpg',
         'https://cdn.example.com/ignored-second-cover.jpg',
