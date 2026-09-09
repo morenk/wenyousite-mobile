@@ -49,6 +49,7 @@
 
 2026-09-09 已构建本轮 Debug 候选，尚未安装，尚未取得负责人验收。任务分支为 `codex/20260909-empty-block-semantics`，不合并或清理待验收分支。
 
+- 候选源码提交：`02d1a3505d001a73b35be8b3c940a29691993ff0`；契约来源独立提交为 `b9075ed`。后续验收记录提交不改变 APK 源码。
 - 应用：温油站 Debug，`site.wenyou.app.debug`；版本 `0.7.0-dev.1-debug`，构建号 `94`。
 - APK：`D:\code\wenyousite\.worktrees\mobile-empty-block-semantics\build\empty-block-candidate\wenyou-debug-empty-block-7d6813b5.apk`，203,727,646 字节。
 - SHA-256：`7d6813b5a67f66de61cc323b665c748951b323c137d34a1402f7799af437f7e3`。
