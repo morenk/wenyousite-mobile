@@ -13,6 +13,8 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
   final bool? animated;
   @override
   final String? posterUrl;
+  @override
+  final BuiltList<ThreadCoverPreviewVariantResponseDto>? previewVariants;
 
   factory _$ThreadCoverMediaResponseDto([
     void Function(ThreadCoverMediaResponseDtoBuilder)? updates,
@@ -22,6 +24,7 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
     required this.url,
     this.animated,
     this.posterUrl,
+    this.previewVariants,
   }) : super._();
   @override
   ThreadCoverMediaResponseDto rebuild(
@@ -38,7 +41,8 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
     return other is ThreadCoverMediaResponseDto &&
         url == other.url &&
         animated == other.animated &&
-        posterUrl == other.posterUrl;
+        posterUrl == other.posterUrl &&
+        previewVariants == other.previewVariants;
   }
 
   @override
@@ -47,6 +51,7 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, animated.hashCode);
     _$hash = $jc(_$hash, posterUrl.hashCode);
+    _$hash = $jc(_$hash, previewVariants.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -56,7 +61,8 @@ class _$ThreadCoverMediaResponseDto extends ThreadCoverMediaResponseDto {
     return (newBuiltValueToStringHelper(r'ThreadCoverMediaResponseDto')
           ..add('url', url)
           ..add('animated', animated)
-          ..add('posterUrl', posterUrl))
+          ..add('posterUrl', posterUrl)
+          ..add('previewVariants', previewVariants))
         .toString();
   }
 }
@@ -81,6 +87,14 @@ class ThreadCoverMediaResponseDtoBuilder
   String? get posterUrl => _$this._posterUrl;
   set posterUrl(String? posterUrl) => _$this._posterUrl = posterUrl;
 
+  ListBuilder<ThreadCoverPreviewVariantResponseDto>? _previewVariants;
+  ListBuilder<ThreadCoverPreviewVariantResponseDto> get previewVariants =>
+      _$this._previewVariants ??=
+          ListBuilder<ThreadCoverPreviewVariantResponseDto>();
+  set previewVariants(
+    ListBuilder<ThreadCoverPreviewVariantResponseDto>? previewVariants,
+  ) => _$this._previewVariants = previewVariants;
+
   ThreadCoverMediaResponseDtoBuilder() {
     ThreadCoverMediaResponseDto._defaults(this);
   }
@@ -91,6 +105,7 @@ class ThreadCoverMediaResponseDtoBuilder
       _url = $v.url;
       _animated = $v.animated;
       _posterUrl = $v.posterUrl;
+      _previewVariants = $v.previewVariants?.toBuilder();
       _$v = null;
     }
     return this;
@@ -110,17 +125,34 @@ class ThreadCoverMediaResponseDtoBuilder
   ThreadCoverMediaResponseDto build() => _build();
 
   _$ThreadCoverMediaResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$ThreadCoverMediaResponseDto._(
-          url: BuiltValueNullFieldError.checkNotNull(
-            url,
-            r'ThreadCoverMediaResponseDto',
-            'url',
-          ),
-          animated: animated,
-          posterUrl: posterUrl,
+    _$ThreadCoverMediaResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$ThreadCoverMediaResponseDto._(
+            url: BuiltValueNullFieldError.checkNotNull(
+              url,
+              r'ThreadCoverMediaResponseDto',
+              'url',
+            ),
+            animated: animated,
+            posterUrl: posterUrl,
+            previewVariants: _previewVariants?.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'previewVariants';
+        _previewVariants?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'ThreadCoverMediaResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

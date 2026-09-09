@@ -431,6 +431,7 @@ export 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 export 'package:wenyou_api/src/model/thread_category_response_dto.dart';
 export 'package:wenyou_api/src/model/thread_count_response_dto.dart';
 export 'package:wenyou_api/src/model/thread_cover_media_response_dto.dart';
+export 'package:wenyou_api/src/model/thread_cover_preview_variant_response_dto.dart';
 export 'package:wenyou_api/src/model/thread_detail_response_dto.dart';
 export 'package:wenyou_api/src/model/thread_export_dto.dart';
 export 'package:wenyou_api/src/model/thread_like_response_dto.dart';

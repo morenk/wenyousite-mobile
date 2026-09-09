@@ -3,6 +3,8 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:built_collection/built_collection.dart';
+import 'package:wenyou_api/src/model/thread_cover_preview_variant_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,6 +16,7 @@ part 'thread_cover_media_response_dto.g.dart';
 /// * [url] - 第一张普通正文图片的原始播放地址，与 coverImages[0] 一致；未知媒体不得自动请求
 /// * [animated] - 可信的动画属性；无法确认、未完成或历史 GIF 返回 null
 /// * [posterUrl] - 可用于列表静止状态的第一帧静态地址；未知时返回 null，客户端显示占位，禁止回退加载原图
+/// * [previewVariants] - 可选列表动画变体，按单帧像素面积升序；缺失或 null 时，只有已确认 animated=true 且有独立静态 poster 的媒体可受控回退原 url
 @BuiltValue()
 abstract class ThreadCoverMediaResponseDto implements Built<ThreadCoverMediaResponseDto, ThreadCoverMediaResponseDtoBuilder> {
   /// 第一张普通正文图片的原始播放地址，与 coverImages[0] 一致；未知媒体不得自动请求
@@ -27,6 +30,10 @@ abstract class ThreadCoverMediaResponseDto implements Built<ThreadCoverMediaResp
   /// 可用于列表静止状态的第一帧静态地址；未知时返回 null，客户端显示占位，禁止回退加载原图
   @BuiltValueField(wireName: r'posterUrl')
   String? get posterUrl;
+
+  /// 可选列表动画变体，按单帧像素面积升序；缺失或 null 时，只有已确认 animated=true 且有独立静态 poster 的媒体可受控回退原 url
+  @BuiltValueField(wireName: r'previewVariants')
+  BuiltList<ThreadCoverPreviewVariantResponseDto>? get previewVariants;
 
   ThreadCoverMediaResponseDto._();
 
@@ -66,6 +73,13 @@ class _$ThreadCoverMediaResponseDtoSerializer implements PrimitiveSerializer<Thr
       object.posterUrl,
       specifiedType: const FullType.nullable(String),
     );
+    if (object.previewVariants != null) {
+      yield r'previewVariants';
+      yield serializers.serialize(
+        object.previewVariants,
+        specifiedType: const FullType.nullable(BuiltList, [FullType(ThreadCoverPreviewVariantResponseDto)]),
+      );
+    }
   }
 
   @override
@@ -111,6 +125,14 @@ class _$ThreadCoverMediaResponseDtoSerializer implements PrimitiveSerializer<Thr
           ) as String?;
           if (valueDes == null) continue;
           result.posterUrl = valueDes;
+          break;
+        case r'previewVariants':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(BuiltList, [FullType(ThreadCoverPreviewVariantResponseDto)]),
+          ) as BuiltList<ThreadCoverPreviewVariantResponseDto>?;
+          if (valueDes == null) continue;
+          result.previewVariants.replace(valueDes);
           break;
         default:
           unhandled.add(key);

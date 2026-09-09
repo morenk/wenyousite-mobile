@@ -26,6 +26,8 @@
 
 各列表通过生成的 `ThreadCoverMediaResponseDto` 读取可空 coverMedia；原 coverImages 保留。Home、Search、ThreadList、BookmarkThread 和 OwnBookmarkThread 的映射共享一个校验入口：源 URL 必须与 coverImages[0] 一致，动画原图不能充当自己的静态 poster。只消费显式动画属性，不看后缀。
 
+`ThreadCoverPreviewVariantResponseDto` 描述可选列表预览的地址、实际宽高和完整文件字节数；previewVariants 为可空数组，最多两项，不改变正文原图地址。
+
 `threadCategoriesList` 使用 `ThreadCategoryResponseDto`，目录为公开请求。主题 DTO `HomeThreadListItemResponseDto` 的统一映射供消费者仓储复用；主题查询本身仍由消费者持有。
 
 ## 6. 状态模型和数据流
@@ -71,7 +73,7 @@
 
 ## 13. 最近审查的契约版本和后端提交
 
-封面契约审查：API `5.19.0-dev.20260909.1`，后端已提交 `c6a01225fbe26aa2eaeecf9cc74dc3c9c1bf5aa4`；Foundation 固定正式 `v6.9.0`。新增可空 `coverMedia` 与首帧静态地址，保留旧 `coverImages`；Markdown 行为未变化。候选契约同步不代表后端或消费者已发布。
+封面契约审查：API `5.20.0-dev.20260909.1`，后端已提交 `5f438976c94f63706629108b27e1f7840a3c85a0`；Foundation 固定正式 `v6.9.0`。新增可空 `previewVariants`，保留原图、首帧地址与旧 `coverImages`；Markdown 行为未变化。候选契约同步不代表后端或消费者已发布。
 
 ## 14. 相关代码与架构文档
 

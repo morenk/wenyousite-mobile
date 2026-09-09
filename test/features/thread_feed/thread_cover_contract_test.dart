@@ -30,6 +30,9 @@ void main() {
       switch (item['name']) {
         case 'registered-gif':
         case 'registered-animation-webp':
+        case 'preview-two-sizes':
+        case 'preview-single-size':
+        case 'preview-null-original-fallback':
           expect(value!.animationUrl, dto!.url);
           expect(value.staticUrl, dto.posterUrl);
         case 'registered-static':
