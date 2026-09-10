@@ -142,7 +142,10 @@ class PostDiscussionList extends StatelessWidget {
       key: const Key('post-replies-list'),
       controller: scrollController,
       scrollCacheExtent: discussionScrollCacheExtent,
-      physics: const AlwaysScrollableScrollPhysics(),
+      physics: ReadingQuickScrollPhysics(
+        controller: quickScroll,
+        parent: const AlwaysScrollableScrollPhysics(),
+      ),
       slivers: [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(

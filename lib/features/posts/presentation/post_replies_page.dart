@@ -89,6 +89,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
     });
     final state = ref.watch(provider);
     _quickScroll.synchronize(
+      contentRevision: (state.root, state.replies),
       scope: (
         threadId,
         rootPostId,

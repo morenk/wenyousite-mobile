@@ -88,6 +88,42 @@ void main() {
     });
   }
 
+  testWidgets('首次进入长首楼子贴，快翻到中间不会提前抵达讨论底部', (tester) async {
+    final longFirstFloor = ThreadFloorModel(
+      id: 'cold-long-first-floor',
+      floorNumber: 99,
+      author: threadDetailPageTestAuthor,
+      body: ThreadBodyModel(
+        markdown: List.filled(300, '首次阅读的超长楼层正文。').join('\n\n'),
+      ),
+      createdAt: threadDetailPageTestRecentFixtureTime,
+      isDeleted: false,
+      replyCount: 0,
+      replies: const [],
+    );
+    await tester.pumpWidget(
+      threadDetailPageTestDetailApp(
+        ThreadDetailPageTestFakeThreadDetailRepository(
+          mainFloors: [longFirstFloor, ...floors],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    await tester.pumpAndSettle();
+    final quick = tester
+        .widget<ReadingQuickScrollAction>(find.byType(ReadingQuickScrollAction))
+        .controller;
+    quick.beginDrag(0.5);
+    await tester.pumpAndSettle();
+    expect(quick.scrollController.position.extentAfter, greaterThan(500));
+    expect(quick.fraction, 0.5);
+    quick.endDrag(0.5);
+    await tester.pumpAndSettle();
+    expect(quick.fraction, closeTo(0.5, 0.03));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('快翻取消迟到深链，不被旧目标重新拉回', (tester) async {
     final pending = Completer<ThreadPostTargetModel>();
     await tester.pumpWidget(

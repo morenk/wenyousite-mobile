@@ -12,6 +12,7 @@ void main() {
     WidgetTester tester, {
     double width = 360,
     double scale = 1,
+    int initialCount = 0,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = Size(width, 800);
@@ -26,7 +27,7 @@ void main() {
             size: Size(width, 800),
             textScaler: TextScaler.linear(scale),
           ),
-          child: _Harness(key: key),
+          child: _Harness(key: key, initialCount: initialCount),
         ),
       ),
     );
@@ -156,6 +157,81 @@ void main() {
     expect(state.scroll.offset, closeTo(beforeScopeLayout, 1));
   });
 
+  testWidgets('首次长短楼层懒布局收缩估算后，滑杆一半仍停在阅读范围中间', (tester) async {
+    final state = await mount(tester, initialCount: 80);
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    await tester.pumpAndSettle();
+    final coldRange = state.scroll.position.maxScrollExtent;
+    final rect = tester.getRect(find.byType(Slider));
+    final gesture = await tester.startGesture(
+      Offset(rect.left + 24, rect.center.dy),
+    );
+    await gesture.moveTo(rect.center);
+    await tester.pump();
+    // 第一个完成布局的画面就不能错误停在底部，无需松手或二次快翻。
+    expect(state.scroll.position.extentAfter, greaterThan(100));
+    await tester.pumpAndSettle();
+    expect(state.quick.isDragging, isTrue);
+    expect(state.quick.fraction, closeTo(0.5, 0.03));
+    final actualRange =
+        state.bodyHeight +
+        state.count * 80 -
+        state.scroll.position.viewportDimension;
+    // 首屏仅布局 7000dp 长楼层，对其余 80 条 80dp 楼层的外推明显偏大。
+    expect(coldRange, greaterThan(actualRange * 2));
+    expect(
+      state.scroll.offset / actualRange,
+      closeTo(state.quick.fraction, 0.03),
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(state.quick.fraction, closeTo(0.5, 0.03));
+    state.quick.beginDrag(0.5);
+    await tester.pumpAndSettle();
+    expect(state.scroll.offset, closeTo(actualRange * 0.5, 1));
+    state.quick.endDrag(0.5);
+    final continuedGesture = await tester.startGesture(rect.center);
+    await continuedGesture.moveTo(
+      Offset(rect.left + rect.width * 0.7, rect.center.dy),
+    );
+    await tester.pumpAndSettle();
+    expect(state.scroll.position.extentAfter, greaterThan(100));
+    await continuedGesture.moveTo(Offset(rect.right - 1, rect.center.dy));
+    await tester.pumpAndSettle();
+    expect(state.scroll.position.extentAfter, lessThanOrEqualTo(1));
+    await continuedGesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('校正后的阅读范围在图片撑高和新页到达后失效', (tester) async {
+    final state = await mount(tester, initialCount: 80);
+    state.quick.toggle();
+    await tester.pumpAndSettle();
+    for (var round = 0; round < 3; round++) {
+      state.quick.beginDrag(0.5);
+      await tester.pumpAndSettle();
+      final actualRange =
+          state.bodyHeight +
+          state.count * 80 -
+          state.scroll.position.viewportDimension;
+      expect(state.scroll.offset, closeTo(actualRange * 0.5, 1));
+      state.quick.endDrag(0.5);
+      await tester.pumpAndSettle();
+      expect(state.quick.fraction, closeTo(0.5, 0.01));
+      if (round < 2) {
+        final stopped = state.scroll.offset;
+        if (round == 0) {
+          state.growBody();
+        } else {
+          state.append();
+        }
+        await tester.pumpAndSettle();
+        expect(state.scroll.offset, closeTo(stopped, 1));
+        expect(state.quick.fraction, lessThan(0.5));
+      }
+    }
+  });
+
   testWidgets('收起或更换筛选取消排队中的快翻', (tester) async {
     final state = await mount(tester);
     state.quick.toggle();
@@ -280,7 +356,8 @@ void main() {
 }
 
 class _Harness extends StatefulWidget {
-  const _Harness({super.key});
+  const _Harness({super.key, this.initialCount = 0});
+  final int initialCount;
   @override
   State<_Harness> createState() => _HarnessState();
 }
@@ -296,7 +373,7 @@ class _HarnessState extends State<_Harness> {
   int taps = 0;
   int retries = 0;
   int scope = 0;
-  int count = 0;
+  late int count = widget.initialCount;
   double bodyHeight = 7000;
   bool hasMore = false;
   bool loading = false;
@@ -324,7 +401,7 @@ class _HarnessState extends State<_Harness> {
   @override
   Widget build(BuildContext context) {
     buildCount++;
-    quick.synchronize(scope: scope, enabled: true);
+    quick.synchronize(scope: scope, enabled: true, contentRevision: count);
     return Scaffold(
       appBar: AppBar(actions: [ReadingQuickScrollAction(controller: quick)]),
       body: SizedBox.expand(
@@ -333,6 +410,7 @@ class _HarnessState extends State<_Harness> {
           controller: quick,
           child: ListView(
             controller: scroll,
+            physics: ReadingQuickScrollPhysics(controller: quick),
             children: [
               ReadingPositionAnchor(
                 controller: quick,

@@ -16,6 +16,8 @@ class ReadingQuickScrollController extends ChangeNotifier {
   final GlobalKey? pinnedHeaderKey;
   final _anchors = <RenderBox, String>{};
   Object? _scope;
+  Object? _contentRevision;
+  double? _measuredMax;
   bool _disposed = false;
   bool _snapshotScheduled = false;
   bool _moveScheduled = false;
@@ -45,13 +47,20 @@ class ReadingQuickScrollController extends ChangeNotifier {
           scrollController.position.minScrollExtent;
 
   /// 在页面 build 中同步，子控件随该次 build 更新，不能在此发通知。
-  void synchronize({required Object scope, required bool enabled}) {
+  void synchronize({
+    required Object scope,
+    required bool enabled,
+    Object? contentRevision,
+  }) {
     if (_scope != scope || !enabled) {
       _cancelMovement();
       _open = false;
       _location = '阅读位置';
       _fraction = 0;
+      _measuredMax = null;
     }
+    if (_contentRevision != contentRevision) _measuredMax = null;
+    _contentRevision = contentRevision;
     _scope = scope;
     _enabled = enabled;
     scheduleSnapshot();
@@ -88,7 +97,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     onUserNavigation();
     final p = scrollController.position;
     _dragMin = p.minScrollExtent;
-    _dragMax = p.maxScrollExtent;
+    _dragMax = _readingMax(p);
     _dragging = true;
     updateDrag(value);
   }
@@ -130,6 +139,34 @@ class ReadingQuickScrollController extends ChangeNotifier {
     });
   }
 
+  double? _adjustForMeasuredRange(ScrollMetrics metrics) {
+    if (!_dragging ||
+        _followingEnd ||
+        metrics.maxScrollExtent >= _dragMax ||
+        metrics.maxScrollExtent < metrics.minScrollExtent) {
+      return null;
+    }
+    // 首次懒布局可能把长楼层高度外推到整份列表；收缩后的旧映射会
+    // 使滑杆尚在中间、正文已经到底。只收紧估算，在布局内校正，
+    // 避免先绘制底部再在下一帧跳回。分页增长仍保持当前拖动范围。
+    _dragMin = metrics.minScrollExtent;
+    _dragMax = metrics.maxScrollExtent;
+    _measuredMax = _dragMax;
+    return _dragMin + (_dragMax - _dragMin) * _fraction;
+  }
+
+  double _readingMax(ScrollPosition position) =>
+      (_measuredMax ?? position.maxScrollExtent).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+
+  void _invalidateMeasuredRange() {
+    if (_measuredMax == null) return;
+    _measuredMax = null;
+    scheduleSnapshot();
+  }
+
   void endDrag(double value) {
     if (!_dragging) return;
     updateDrag(value);
@@ -162,6 +199,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
         scrollController.jumpTo(target);
       }
       if (stable >= 2) {
+        if (end) _measuredMax = p.maxScrollExtent;
         scheduleSnapshot();
         return;
       }
@@ -194,7 +232,14 @@ class ReadingQuickScrollController extends ChangeNotifier {
     return false;
   }
 
-  void _onScroll() => scheduleSnapshot();
+  void _onScroll() {
+    if (scrollController.hasClients &&
+        _measuredMax != null &&
+        scrollController.position.pixels > _measuredMax! + 1) {
+      _measuredMax = null;
+    }
+    scheduleSnapshot();
+  }
 
   void registerAnchor(RenderBox box, String label) {
     _anchors[box] = label;
@@ -217,10 +262,12 @@ class ReadingQuickScrollController extends ChangeNotifier {
           // 只在仍按住末端且布局边界改变时继续推进；静止等待分页不空转。
           if ((p.pixels - p.maxScrollExtent).abs() > 1) {
             _queueMove(p.maxScrollExtent);
+          } else {
+            _measuredMax = p.maxScrollExtent;
           }
         }
         if (p.hasContentDimensions && !_dragging && _pendingOffset == null) {
-          final range = p.maxScrollExtent - p.minScrollExtent;
+          final range = _readingMax(p) - p.minScrollExtent;
           _fraction = range <= 0
               ? 0
               : ((p.pixels - p.minScrollExtent) / range).clamp(0, 1);
@@ -284,6 +331,35 @@ class ReadingQuickScrollController extends ChangeNotifier {
   }
 }
 
+/// 仅接到页面主阅读列表，保留原滚动、回弹及下拉刷新规则。
+class ReadingQuickScrollPhysics extends ScrollPhysics {
+  const ReadingQuickScrollPhysics({required this.controller, super.parent});
+
+  final ReadingQuickScrollController controller;
+
+  @override
+  ReadingQuickScrollPhysics applyTo(ScrollPhysics? ancestor) =>
+      ReadingQuickScrollPhysics(
+        controller: controller,
+        parent: buildParent(ancestor),
+      );
+
+  @override
+  double adjustPositionForNewDimensions({
+    required ScrollMetrics oldPosition,
+    required ScrollMetrics newPosition,
+    required bool isScrolling,
+    required double velocity,
+  }) =>
+      controller._adjustForMeasuredRange(newPosition) ??
+      super.adjustPositionForNewDimensions(
+        oldPosition: oldPosition,
+        newPosition: newPosition,
+        isScrolling: isScrolling,
+        velocity: velocity,
+      );
+}
+
 /// 只登记已布局的正文，不为了定位创建屏幕外 Markdown 或图片。
 class ReadingPositionAnchor extends SingleChildRenderObjectWidget {
   const ReadingPositionAnchor({
@@ -314,6 +390,16 @@ class _ReadingAnchor extends RenderProxyBox {
 
   ReadingQuickScrollController controller;
   String label;
+  Size? _lastSize;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    if (_lastSize != null && _lastSize != size) {
+      controller._invalidateMeasuredRange();
+    }
+    _lastSize = size;
+  }
 
   void update(ReadingQuickScrollController next, String text) {
     controller.unregisterAnchor(this);

@@ -115,6 +115,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
     });
     final state = ref.watch(provider);
     _quickScroll.synchronize(
+      contentRevision: (state.floors, state.selectedSubthread?.body),
       scope: (
         widget.threadId,
         state.selectedSubthreadId,
@@ -263,7 +264,10 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                     ),
                     controller: _subthreadScroll.controller,
                     scrollCacheExtent: discussionScrollCacheExtent,
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    physics: ReadingQuickScrollPhysics(
+                      controller: _quickScroll,
+                      parent: const AlwaysScrollableScrollPhysics(),
+                    ),
                     slivers: [
                       ...buildThreadDetailReadingSlivers(
                         context,
