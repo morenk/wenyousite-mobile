@@ -77,4 +77,6 @@ media application 负责相册选择、格式校验、`STICKER_SOURCE` 用途和
 
 ## 14. 相关代码与架构文档
 
+跨模块调用统一通过 `lib/features/stickers/stickers.dart` 的显式导出入口；本次仅为阅读页拆分整理引用，业务行为与状态模型不变。
+
 端口、控制器与状态：`lib/features/stickers/application/`；API 适配器：`lib/features/stickers/data/`；页面：`lib/features/stickers/presentation/`。参见[导航](../architecture/navigation.md)、[网络与会话](../architecture/networking.md)、[媒体](media.md)、[编辑器](editor.md)与[站内私聊](direct-messages.md)。

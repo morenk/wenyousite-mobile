@@ -17,11 +17,13 @@ List<Widget> buildThreadDetailAppBarActions({
   required String threadId,
   required ThreadDetailState state,
   required VoidCallback onSearch,
+  Widget? quickScrollAction,
   required ValueChanged<ThreadLatestPostModel> onLatestTarget,
   required ValueChanged<ThreadDetailAppBarAction> onSelected,
 }) {
   final detail = state.detail;
   return [
+    ?quickScrollAction,
     IconButton(
       key: const Key('thread-detail-search'),
       tooltip: '搜索主题内容',

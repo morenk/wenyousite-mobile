@@ -74,4 +74,6 @@ users、threads、posts、moments 和 direct_messages 只提供目标事实与�
 
 ## 14. 相关代码与架构文档
 
+跨模块调用统一通过 `lib/features/reports/reports.dart` 的显式导出入口；本次仅为阅读页拆分整理引用，业务行为与状态模型不变。
+
 代码入口：`lib/features/reports/application/report_repository_ports.dart`、`lib/features/reports/data/`、`lib/main.dart`。参见[用户](users.md)、[主题](threads.md)、[楼层与回复](posts.md)、[动态](moments.md)、[站内私聊](direct-messages.md)、[认证](auth.md)、[网络与会话](../architecture/networking.md)、[API 生成和覆盖审计](../architecture/api-generation.md)与[主题帖测试审计](../architecture/thread-detail-test-audit.md)。
