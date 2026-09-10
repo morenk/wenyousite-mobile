@@ -110,7 +110,9 @@ class DiscussionTargetRevealCoordinator {
         Scrollable.ensureVisible(
           targetContext,
           duration: Duration.zero,
-          alignment: 0.12,
+          // 按块开头对齐，避免比例对齐把超长目标的作者与正文开头滚出视口。
+          // 视口负责扣除吸顶 Sliver；末尾短目标按自然滚动边界停靠。
+          alignment: 0,
         );
         _lastContentSignature = contentSignature;
         _attemptTargetId = null;
