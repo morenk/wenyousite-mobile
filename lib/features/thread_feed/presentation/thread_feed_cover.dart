@@ -38,8 +38,9 @@ class ThreadFeedCover extends StatefulWidget {
 
 class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   final _token = Object();
-  final _lease = ValueNotifier(false);
+  final _phase = ValueNotifier(CoverPlaybackPhase.idle);
   final _boundsKey = GlobalKey();
+  final _routeAnimations = <Animation<double>>{};
   CoverPlaybackCoordinator? _coordinator;
   bool _enabled = false;
   bool _posterReady = false;
@@ -59,7 +60,42 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
         TickerMode.valuesOf(context).enabled &&
         ModalRoute.isCurrentOf(context) != false &&
         !MediaQuery.disableAnimationsOf(context);
-    if (!_enabled) _lease.value = false;
+    _updateRouteSubscriptions();
+    if (!_enabled) _phase.value = CoverPlaybackPhase.idle;
+    _registerAfterLayout();
+  }
+
+  void _updateRouteSubscriptions() {
+    final animations = <Animation<double>>{};
+    var routeContext = context;
+    final seen = <NavigatorState>{};
+    while (true) {
+      final route = ModalRoute.of(routeContext);
+      final animation = route?.animation;
+      final secondary = route?.secondaryAnimation;
+      if (animation != null) animations.add(animation);
+      if (secondary != null) animations.add(secondary);
+      final navigator = Navigator.maybeOf(routeContext);
+      if (navigator == null || !seen.add(navigator)) break;
+      routeContext = navigator.context;
+    }
+    for (final animation in _routeAnimations.difference(animations)) {
+      animation.removeStatusListener(_routeStatusChanged);
+    }
+    for (final animation in animations.difference(_routeAnimations)) {
+      animation.addStatusListener(_routeStatusChanged);
+    }
+    _routeAnimations
+      ..clear()
+      ..addAll(animations);
+  }
+
+  void _routeStatusChanged(AnimationStatus status) {
+    if (status != AnimationStatus.completed) {
+      _phase.value = CoverPlaybackPhase.idle;
+      _coordinator?.unregister(_token);
+    }
+    // 包括父 Navigator 的转场；完成后按最终布局重测，无需用户再滚动唤醒。
     _registerAfterLayout();
   }
 
@@ -68,7 +104,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.posterUrl != widget.posterUrl ||
         oldWidget.animationUrl != widget.animationUrl) {
-      _lease.value = false;
+      _phase.value = CoverPlaybackPhase.idle;
       _posterReady = false;
       _posterGeneration++;
       _coordinator?.unregister(_token);
@@ -91,8 +127,15 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
     WidgetsBinding.instance.ensureVisualUpdate();
   }
 
-  void _selectionChanged() => _lease.value =
-      _enabled && _posterReady && _coordinator?.selected == _token;
+  void _selectionChanged() {
+    _phase.value = !_enabled || !_posterReady
+        ? CoverPlaybackPhase.idle
+        : _coordinator?.selected == _token
+        ? CoverPlaybackPhase.playing
+        : _coordinator?.preparing == _token
+        ? CoverPlaybackPhase.preparing
+        : CoverPlaybackPhase.idle;
+  }
 
   void _posterLoaded(int generation) {
     if (!mounted || generation != _posterGeneration || _posterReady) return;
@@ -104,7 +147,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
     if (!mounted || generation != _posterGeneration) return;
     _posterGeneration++;
     _posterReady = false;
-    _lease.value = false;
+    _phase.value = CoverPlaybackPhase.idle;
     _coordinator?.unregister(_token);
   }
 
@@ -118,7 +161,10 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
       if (route != null &&
           (!route.isCurrent ||
               (route.animation != null &&
-                  route.animation!.status != AnimationStatus.completed))) {
+                  route.animation!.status != AnimationStatus.completed) ||
+              (route.secondaryAnimation != null &&
+                  route.secondaryAnimation!.status !=
+                      AnimationStatus.dismissed))) {
         return null;
       }
       final navigator = Navigator.maybeOf(routeContext);
@@ -215,7 +261,7 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
                       1080,
                     ),
                     playing: false,
-                    lease: _lease,
+                    phase: _phase,
                     source: _coordinator?.source,
                     poster: poster,
                     loader: widget.animationLoader,
@@ -227,15 +273,18 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   }
 
   void _detach() {
-    _lease.value = false;
+    _phase.value = CoverPlaybackPhase.idle;
     _coordinator?.removeListener(_selectionChanged);
     _coordinator?.unregister(_token);
   }
 
   @override
   void dispose() {
+    for (final animation in _routeAnimations) {
+      animation.removeStatusListener(_routeStatusChanged);
+    }
     _detach();
-    _lease.dispose();
+    _phase.dispose();
     super.dispose();
   }
 }

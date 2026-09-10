@@ -24,6 +24,76 @@ Widget _readyPoster(
 }
 
 void main() {
+  for (final nested in [false, true]) {
+    testWidgets('真实路由转场完成后无需滚动唤醒唯一准备，嵌套父路由=$nested', (tester) async {
+      final navigator = GlobalKey<NavigatorState>();
+      final tokens = <CancelToken>[];
+      Widget coverPage() => Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 300,
+            child: ThreadFeedCover(
+              posterUrl: 'https://cdn.example/poster.webp',
+              animationUrl: 'https://cdn.example/a.gif',
+              posterBuilder: _readyPoster,
+              animationLoader: (_, cancel) {
+                tokens.add(cancel);
+                return Completer<Uint8List>().future;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.light,
+            navigatorKey: navigator,
+            builder: (_, child) => CoverPlaybackScope(child: child!),
+            home: const Scaffold(body: Text('入口')),
+          ),
+        ),
+      );
+      unawaited(
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => nested
+                ? Navigator(
+                    onGenerateRoute: (_) =>
+                        MaterialPageRoute<void>(builder: (_) => coverPage()),
+                  )
+                : coverPage(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(tokens, isEmpty);
+      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
+      expect(tokens.length, 1);
+      unawaited(
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('详情')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tokens.single.isCancelled, isTrue);
+      navigator.currentState!.pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 140));
+      expect(tokens.length, 1);
+      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
+      expect(tokens.length, 2);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   for (final ratio in [1.0, 2.0]) {
     testWidgets('真实封面宽度300与DPR=$ratio选择一档，预览失败不补取原图', (tester) async {
       final requests = <String>[];
@@ -136,9 +206,7 @@ void main() {
     expect(tokens.length, 1);
     updateTab(() => active = true);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 299));
-    expect(tokens.length, 1);
-    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
     expect(tokens.length, 2);
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
@@ -230,10 +298,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 299));
-    expect(requests, isEmpty);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1));
     expect(requests, ['https://cdn.example/1.gif']);
     final gesture = await tester.startGesture(const Offset(200, 400));
     await gesture.moveBy(const Offset(0, -70));
@@ -248,10 +313,7 @@ void main() {
     expect(tokens.last.isCancelled, isTrue);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 299));
-    expect(requests.length, 2);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1));
     expect(requests.length, 3);
     await container
         .read(dataSaverPreferenceControllerProvider.notifier)
@@ -344,12 +406,7 @@ void main() {
     expect(calls, 1);
     navigator.currentState!.pop();
     await tester.pumpAndSettle();
-    final afterTransition = calls;
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 299));
-    expect(calls, afterTransition);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1));
     expect(calls, 2);
     await tester.pumpWidget(const SizedBox());
     visibility.dispose();

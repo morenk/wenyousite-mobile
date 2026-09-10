@@ -30,6 +30,10 @@ class CachedCoverAnimationSource implements CoverAnimationSource {
   final Dio Function() _createDio;
   final CoverAnimationByteCache _memory;
   final _inflight = <String, _CoverDownload>{};
+  final _writeTickets = <String, Object>{};
+  int _pendingWriteBytes = 0;
+  int _pendingWriteCount = 0;
+  bool _touching = false;
   String _owner = _digest('guest');
   int _generation = 0;
   bool _disposed = false;
@@ -80,13 +84,7 @@ class CachedCoverAnimationSource implements CoverAnimationSource {
     try {
       final memory = _memory.get(key);
       if (memory != null) {
-        if (diskAvailable) {
-          try {
-            await disk.touch(key);
-          } on Exception {
-            diskAvailable = false;
-          }
-        }
+        _touch(key);
         if (!_current(generation, cancel)) {
           throw const CoverAnimationLoadException();
         }
@@ -143,21 +141,9 @@ class CachedCoverAnimationSource implements CoverAnimationSource {
           now(),
         );
         if (expires != null) {
-          if (diskAvailable) {
-            try {
-              await disk.put(
-                owner,
-                key,
-                bytes,
-                expires,
-                () => _current(generation, cancel),
-              );
-            } on Exception {
-              diskAvailable = false;
-            }
-          }
           if (_current(generation, cancel)) {
             _memory.put(key, bytes, expires: expires);
+            _persist(owner, key, bytes, expires, generation, cancel);
           }
         }
         if (!_current(generation, cancel)) {
@@ -173,9 +159,64 @@ class CachedCoverAnimationSource implements CoverAnimationSource {
     }
   }
 
+  void _touch(String key) {
+    // 热命中不等待索引写入，已有一次 touch 时合并后续请求。
+    if (!diskAvailable || _touching) return;
+    _touching = true;
+    unawaited(() async {
+      try {
+        await disk.touch(key);
+      } on Exception {
+        diskAvailable = false;
+      } finally {
+        _touching = false;
+      }
+    }());
+  }
+
+  void _persist(
+    String owner,
+    String key,
+    Uint8List bytes,
+    DateTime expires,
+    int generation,
+    CancelToken cancel,
+  ) {
+    // 慢磁盘的闭包仍持有字节，单独约束队列，不能绕过编码缓存的容量限制。
+    if (!diskAvailable ||
+        _pendingWriteCount >= 2 ||
+        _pendingWriteBytes + bytes.length > 32 * 1024 * 1024) {
+      return;
+    }
+    final ticket = Object();
+    _writeTickets[key] = ticket;
+    _pendingWriteCount++;
+    _pendingWriteBytes += bytes.length;
+    unawaited(() async {
+      try {
+        await disk.put(
+          owner,
+          key,
+          bytes,
+          expires,
+          () =>
+              _current(generation, cancel) &&
+              identical(_writeTickets[key], ticket),
+        );
+      } on Exception {
+        diskAvailable = false;
+      } finally {
+        if (identical(_writeTickets[key], ticket)) _writeTickets.remove(key);
+        _pendingWriteCount--;
+        _pendingWriteBytes -= bytes.length;
+      }
+    }());
+  }
+
   @override
   Future<void> invalidate(String url) async {
     final key = _digest(url);
+    _writeTickets.remove(key);
     _memory.remove(key);
     if (diskAvailable) {
       try {
@@ -201,6 +242,7 @@ class CachedCoverAnimationSource implements CoverAnimationSource {
 
   void _cancelAll() {
     _generation++;
+    _writeTickets.clear();
     for (final flight in _inflight.values) {
       flight.cancel.cancel('cover viewer changed');
     }

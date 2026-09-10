@@ -29,28 +29,62 @@ void main() {
     expect(coordinator.selected, 'animation');
   });
 
-  testWidgets('300ms停稳后仅选中心项，滚动立即撤销并重置等待', (tester) async {
+  testWidgets('远离中心的poster完成注册不重新延迟已经确定的中心候选', (tester) async {
+    final coordinator = CoverPlaybackCoordinator();
+    addTearDown(coordinator.dispose);
+    coordinator.register('center', () => geometry(150));
+    await tester.pump(const Duration(milliseconds: 200));
+    coordinator.register('edge', () => geometry(0));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(coordinator.selected, 'center');
+  });
+
+  testWidgets('准备与120ms确认并行，滚动立即撤销并重置等待', (tester) async {
     final coordinator = CoverPlaybackCoordinator();
     addTearDown(coordinator.dispose);
     coordinator.register('top', () => geometry(0));
     coordinator.register('center', () => geometry(150));
     coordinator.register('bottom', () => geometry(300));
-    await tester.pump(const Duration(milliseconds: 299));
+    await tester.pump();
+    expect(coordinator.preparing, 'center');
+    await tester.pump(const Duration(milliseconds: 119));
     expect(coordinator.selected, isNull);
     await tester.pump(const Duration(milliseconds: 1));
     expect(coordinator.selected, 'center');
     coordinator.scrollStarted();
     expect(coordinator.selected, isNull);
+    expect(coordinator.preparing, isNull);
     await tester.pump(const Duration(seconds: 1));
     expect(coordinator.selected, isNull);
     coordinator.scrollEnded();
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 80));
     coordinator.scrollStarted();
     coordinator.scrollEnded();
-    await tester.pump(const Duration(milliseconds: 299));
+    await tester.pump(const Duration(milliseconds: 119));
     expect(coordinator.selected, isNull);
     await tester.pump(const Duration(milliseconds: 1));
     expect(coordinator.selected, 'center');
+  });
+
+  testWidgets('中心候选不变时连续注册不饿死确认，新中心先撤销旧准备', (tester) async {
+    final coordinator = CoverPlaybackCoordinator();
+    addTearDown(coordinator.dispose);
+    coordinator.register('center', () => geometry(150));
+    await tester.pump();
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 30));
+      coordinator.register('edge-$i', () => geometry(0));
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 30));
+    expect(coordinator.selected, 'center');
+    final changes = <Object?>[];
+    coordinator.addListener(() => changes.add(coordinator.preparing));
+    coordinator.unregister('center');
+    await tester.pump();
+    expect(changes, [null, 'edge-0']);
+    expect(coordinator.selected, isNull);
+    coordinator.interrupt();
   });
 
   testWidgets('半可见门槛、当前项平距优先和稳定顺序', (tester) async {

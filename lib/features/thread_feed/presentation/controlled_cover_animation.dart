@@ -5,9 +5,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_playback_coordinator.dart';
 
 typedef CoverAnimationLoader =
     Future<Uint8List> Function(String url, CancelToken cancel);
+typedef CoverAnimationCodecFactory =
+    Future<ui.Codec> Function(Uint8List bytes, int width);
+
+Future<ui.Codec> decodeCoverAnimation(Uint8List bytes, int width) =>
+    ui.instantiateImageCodec(bytes, targetWidth: width, allowUpscaling: false);
 
 Future<Uint8List> loadCoverAnimation(String url, CancelToken cancel) async {
   final dio = Dio(
@@ -38,9 +44,11 @@ class ControlledCoverAnimation extends StatefulWidget {
     required this.playing,
     required this.poster,
     this.lease,
+    this.phase,
     this.source,
     this.decodeWidth,
     this.loader = loadCoverAnimation,
+    this.codecFactory = decodeCoverAnimation,
     super.key,
   });
 
@@ -48,9 +56,11 @@ class ControlledCoverAnimation extends StatefulWidget {
   final bool playing;
   final Widget poster;
   final ValueListenable<bool>? lease;
+  final ValueListenable<CoverPlaybackPhase>? phase;
   final CoverAnimationSource? source;
   final int? decodeWidth;
   final CoverAnimationLoader loader;
+  final CoverAnimationCodecFactory codecFactory;
 
   @override
   State<ControlledCoverAnimation> createState() =>
@@ -65,17 +75,24 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   int _generation = 0;
   int _framesShown = 0;
   bool _started = false;
+  Duration? _frameDuration;
 
-  bool get _playing => widget.lease?.value ?? widget.playing;
+  bool get _playing => widget.phase != null
+      ? widget.phase!.value == CoverPlaybackPhase.playing
+      : widget.lease?.value ?? widget.playing;
+  bool get _active => widget.phase?.value != null
+      ? widget.phase!.value != CoverPlaybackPhase.idle
+      : _playing;
 
   @override
   void initState() {
     super.initState();
     widget.lease?.addListener(_leaseChanged);
+    widget.phase?.addListener(_leaseChanged);
   }
 
   void _leaseChanged() {
-    _stop();
+    if (!_active) _stop();
     _sync();
     if (mounted) setState(() {});
   }
@@ -94,9 +111,15 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
       widget.lease?.addListener(_leaseChanged);
       _stop();
     }
+    if (oldWidget.phase != widget.phase) {
+      oldWidget.phase?.removeListener(_leaseChanged);
+      widget.phase?.addListener(_leaseChanged);
+      _stop();
+    }
     if (oldWidget.url != widget.url ||
         oldWidget.playing != widget.playing ||
         oldWidget.source != widget.source ||
+        oldWidget.codecFactory != widget.codecFactory ||
         oldWidget.decodeWidth != widget.decodeWidth) {
       _stop();
     }
@@ -104,7 +127,11 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   }
 
   void _sync() {
-    if (!_playing || _started) return;
+    if (!_active) return;
+    if (_started) {
+      _scheduleNext();
+      return;
+    }
     _started = true;
     final width =
         widget.decodeWidth ??
@@ -128,11 +155,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
             : CoverAnimationData(await widget.loader(url, cancel));
         if (!_current(generation)) return;
         try {
-          codec = await ui.instantiateImageCodec(
-            data.bytes,
-            targetWidth: width,
-            allowUpscaling: false,
-          );
+          codec = await widget.codecFactory(data.bytes, width);
           break;
         } on Object {
           await source?.invalidate(url);
@@ -145,7 +168,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
         return;
       }
       _codec = codec;
-      await _next(generation);
+      await _next(generation, preparingFirstFrame: true);
     } on Object {
       if (_current(generation)) {
         _release();
@@ -155,11 +178,15 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   }
 
   bool _current(int generation) =>
-      mounted && _playing && generation == _generation;
+      mounted && _active && generation == _generation;
 
-  Future<void> _next(int generation) async {
+  Future<void> _next(int generation, {bool preparingFirstFrame = false}) async {
     final codec = _codec;
-    if (codec == null || !_current(generation)) return;
+    if (codec == null ||
+        !_current(generation) ||
+        (!preparingFirstFrame && !_playing)) {
+      return;
+    }
     try {
       final next = await codec.getNextFrame();
       if (!_current(generation)) {
@@ -170,6 +197,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
       setState(() => _frame = next.image);
       _disposeAfterPaint(old);
       _framesShown++;
+      _frameDuration = next.duration;
       final finished =
           codec.frameCount <= 1 ||
           (codec.repetitionCount >= 0 &&
@@ -179,13 +207,27 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
         _codec = null;
         return;
       }
-      _timer = Timer(next.duration, () => unawaited(_next(generation)));
+      _scheduleNext();
     } on Object {
       if (_current(generation)) {
         _release();
         setState(() {});
       }
     }
+  }
+
+  void _scheduleNext() {
+    final duration = _frameDuration;
+    if (!_playing || _codec == null || duration == null || _timer != null) {
+      return;
+    }
+    // 准备期间首帧冻结；真正激活时才开始计算它的完整显示时长。
+    final generation = _generation;
+    _timer = Timer(duration, () {
+      _timer = null;
+      _frameDuration = null;
+      unawaited(_next(generation));
+    });
   }
 
   void _disposeAfterPaint(ui.Image? image) {
@@ -208,6 +250,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     _disposeAfterPaint(_frame);
     _frame = null;
     _framesShown = 0;
+    _frameDuration = null;
   }
 
   void _stop() {
@@ -228,6 +271,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   @override
   void dispose() {
     widget.lease?.removeListener(_leaseChanged);
+    widget.phase?.removeListener(_leaseChanged);
     _stop();
     super.dispose();
   }

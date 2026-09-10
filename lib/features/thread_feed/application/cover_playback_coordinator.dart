@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
 
-const coverPlaybackSettleDelay = Duration(milliseconds: 300);
+const coverPlaybackSettleDelay = Duration(milliseconds: 120);
 const coverPlaybackMinimumVisibleFraction = 0.5;
+
+enum CoverPlaybackPhase { idle, preparing, playing }
 
 class CoverPlaybackGeometry {
   const CoverPlaybackGeometry({
@@ -38,6 +40,9 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
   final CoverAnimationSource? source;
   final _candidates = <Object, CoverPlaybackGeometry? Function()>{};
   Timer? _settle;
+  bool _reviewPending = false;
+  int _reviewEpoch = 0;
+  Object? _preparing;
   Object? _selected;
   Object? _previous;
   bool _allowed = true;
@@ -45,6 +50,7 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
   bool _disposed = false;
 
   Object? get selected => _selected;
+  Object? get preparing => _preparing;
 
   void register(Object token, CoverPlaybackGeometry? Function() measure) {
     _candidates[token] = measure;
@@ -53,7 +59,7 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
 
   void unregister(Object token) {
     if (_candidates.remove(token) == null) return;
-    if (_selected == token) _select(null);
+    if (_preparing == token) interrupt();
     if (_previous == token) _previous = null;
     settle();
   }
@@ -78,18 +84,50 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
   void interrupt() {
     _settle?.cancel();
     _settle = null;
+    _reviewPending = false;
+    _reviewEpoch++;
     if (_selected != null) _previous = _selected;
-    _select(null);
+    if (_selected != null || _preparing != null) {
+      _selected = null;
+      _preparing = null;
+      notifyListeners();
+    }
   }
 
   void settle() {
-    _settle?.cancel();
     if (!_allowed || _scrolling || _disposed) return;
-    _settle = Timer(coverPlaybackSettleDelay, _choose);
+    // 同帧的 poster 注册只测量一次，不重置已有中心候选的确认计时。
+    if (_reviewPending) return;
+    _reviewPending = true;
+    final epoch = _reviewEpoch;
+    scheduleMicrotask(() {
+      if (epoch != _reviewEpoch || _disposed) return;
+      _reviewPending = false;
+      _prepare();
+    });
   }
 
-  void _choose() {
+  void _prepare() {
     if (!_allowed || _scrolling || _disposed) return;
+    final best = _best();
+    if (best == _preparing) return;
+    // 先通知全部旧播放器释放，再授予新准备租约，避免监听顺序造成双解码。
+    interrupt();
+    if (best == null) return;
+    _preparing = best;
+    notifyListeners();
+    _settle = Timer(coverPlaybackSettleDelay, () {
+      _settle = null;
+      if (!_allowed || _scrolling || _disposed) return;
+      if (_best() != _preparing) {
+        _prepare();
+      } else {
+        _select(_preparing);
+      }
+    });
+  }
+
+  Object? _best() {
     Object? best;
     var bestDistance = double.infinity;
     for (final entry in _candidates.entries) {
@@ -100,12 +138,13 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
       }
       final distance = geometry.distance;
       if (distance < bestDistance ||
-          (distance == bestDistance && entry.key == (_selected ?? _previous))) {
+          (distance == bestDistance &&
+              entry.key == (_preparing ?? _previous))) {
         best = entry.key;
         bestDistance = distance;
       }
     }
-    _select(best);
+    return best;
   }
 
   void _select(Object? token) {
@@ -118,6 +157,7 @@ class CoverPlaybackCoordinator extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _settle?.cancel();
+    _reviewEpoch++;
     _candidates.clear();
     source?.releaseMemory();
     super.dispose();

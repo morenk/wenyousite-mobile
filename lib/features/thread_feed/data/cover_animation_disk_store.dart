@@ -177,6 +177,9 @@ class CoverAnimationDiskStore {
 
   Future<void> clear() => _serial(_clear);
 
+  /// 等待已排队的持久化完成；播放关键路径不等待此屏障。
+  Future<void> flush() => _queue;
+
   Future<void> _clear() async {
     _directory ??= await directory();
     await _directory!.create(recursive: true);

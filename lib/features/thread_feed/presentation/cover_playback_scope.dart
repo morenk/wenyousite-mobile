@@ -76,7 +76,9 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
   @override
   void didChangeMetrics() {
     _coordinator.interrupt();
-    _coordinator.settle();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _coordinator.settle();
+    });
   }
 
   @override
@@ -115,7 +117,7 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
         },
         child: NotificationListener<ScrollMetricsNotification>(
           onNotification: (_) {
-            _coordinator.interrupt();
+            // 分页只改变内容范围时保留相同中心候选，实际几何变化由重测决定。
             _coordinator.settle();
             return false;
           },

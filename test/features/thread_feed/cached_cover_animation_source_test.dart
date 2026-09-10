@@ -12,6 +12,7 @@ void main() {
   late HttpServer server;
   late DateTime clock;
   late CachedCoverAnimationSource source;
+  final sources = <CachedCoverAnimationSource>[];
   var requests = 0;
   var control = '';
   var status = 200;
@@ -32,21 +33,27 @@ void main() {
         now: () => clock,
       ),
     );
+    sources.add(result);
     addTearDown(result.dispose);
     return result;
   }
 
   String address([String resource = 'v1.webp']) =>
       'http://127.0.0.1:${server.port}/$resource';
-  Future<int> fileCount() async =>
-      (await directory
-              .list()
-              .where((item) => item.path.endsWith('.bin'))
-              .toList())
-          .length;
+  Future<int> fileCount() async {
+    for (final current in sources) {
+      await current.disk.flush();
+    }
+    return (await directory
+            .list()
+            .where((item) => item.path.endsWith('.bin'))
+            .toList())
+        .length;
+  }
 
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('wenyou-cover-cache-');
+    sources.clear();
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     clock = DateTime.utc(2026, 9, 9);
     requests = 0;
@@ -92,6 +99,9 @@ void main() {
         responseGate!.complete();
       }
       await server.close(force: true);
+      for (final current in sources) {
+        await current.disk.flush();
+      }
       await directory.delete(recursive: true);
     });
     source = create();
@@ -116,6 +126,7 @@ void main() {
   test('已登录用户冷启动恢复同账号后命中持久缓存', () async {
     source.changeViewer('restored-user', purge: false);
     await source.load(address(), CancelToken());
+    await source.disk.flush();
     source.dispose();
     final restarted = create();
     // 实际 StartupGate 会先完成会话恢复，再首次实例化并激活来源。
@@ -126,6 +137,7 @@ void main() {
 
   test('损坏索引与路径穿越键不能读取或删除专用目录之外文件', () async {
     await source.load(address(), CancelToken());
+    await source.disk.flush();
     final outside = File(
       '${directory.parent.path}/${directory.uri.pathSegments.where((part) => part.isNotEmpty).last}-outside.bin',
     );
@@ -220,11 +232,14 @@ void main() {
   test('容量与条目双上限按最近访问淘汰，过期读清理磁盘', () async {
     source = create(entries: 2, bytes: payload.length * 2);
     await source.load(address('a.webp'), CancelToken());
+    await source.disk.flush();
     clock = clock.add(const Duration(seconds: 1));
     await source.load(address('b.webp'), CancelToken());
+    await source.disk.flush();
     clock = clock.add(const Duration(seconds: 1));
     source.releaseMemory();
     await source.load(address('a.webp'), CancelToken());
+    await source.disk.flush();
     clock = clock.add(const Duration(seconds: 1));
     await source.load(address('c.webp'), CancelToken());
     expect(await fileCount(), 2);
@@ -250,6 +265,7 @@ void main() {
 
   test('被改坏的缓存hash不命中，单次网络重取并清除崩溃残留', () async {
     await source.load(address(), CancelToken());
+    await source.disk.flush();
     final file =
         (await directory
                     .list()

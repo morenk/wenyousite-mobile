@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_playback_coordinator.dart';
 import 'package:wenyousite_mobile/features/thread_feed/presentation/controlled_cover_animation.dart';
 
 Uint8List _gif() {
@@ -31,6 +32,8 @@ Widget _app({
   required bool playing,
   required CoverAnimationLoader loader,
   ValueNotifier<bool>? lease,
+  ValueNotifier<CoverPlaybackPhase>? phase,
+  CoverAnimationCodecFactory codecFactory = decodeCoverAnimation,
   String url = 'https://cdn.example/cover.gif',
 }) => MaterialApp(
   home: SizedBox(
@@ -40,6 +43,8 @@ Widget _app({
       url: url,
       playing: playing,
       lease: lease,
+      phase: phase,
+      codecFactory: codecFactory,
       loader: loader,
       poster: const ColoredBox(key: Key('poster'), color: Colors.white),
     ),
@@ -47,6 +52,106 @@ Widget _app({
 );
 
 void main() {
+  testWidgets('后续帧解码未完成时无关重建不能并发请求或加速时间线', (tester) async {
+    final gate = Completer<void>();
+    late _SlowFrameCodec codec;
+    Future<ui.Codec> factory(Uint8List bytes, int width) async {
+      codec = _SlowFrameCodec(await decodeCoverAnimation(bytes, width), gate);
+      return codec;
+    }
+
+    Future<Uint8List> loader(String _, CancelToken _) async => _gif();
+    Widget app() => _app(playing: true, loader: loader, codecFactory: factory);
+    await tester.pumpWidget(app());
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 150)),
+    );
+    await tester.pump();
+    expect(codec.requests, 1);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(codec.requests, 2);
+    for (var i = 0; i < 4; i++) {
+      await tester.pumpWidget(app());
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(codec.requests, 2);
+    expect(codec.maximumInflight, 1);
+    await tester.runAsync(() async {
+      gate.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pump();
+    expect(codec.requests, 2);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('80ms资源准备与确认并行，120ms激活不重载且完整显示首帧', (tester) async {
+    final phase = ValueNotifier(CoverPlaybackPhase.preparing);
+    final ready = Completer<Uint8List>();
+    var loads = 0;
+    await tester.pumpWidget(
+      _app(
+        playing: false,
+        phase: phase,
+        loader: (_, _) {
+          loads++;
+          return ready.future;
+        },
+      ),
+    );
+    expect(loads, 1);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.runAsync(() async {
+      ready.complete(_gif());
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    expect(find.byType(RawImage), findsNothing);
+    await tester.pump(const Duration(milliseconds: 40));
+    phase.value = CoverPlaybackPhase.playing;
+    await tester.pump();
+    expect(loads, 1);
+    final first = tester.widget<RawImage>(find.byType(RawImage)).image!;
+    await tester.pump(const Duration(milliseconds: 99));
+    expect(tester.widget<RawImage>(find.byType(RawImage)).image, same(first));
+    await tester.pump(const Duration(milliseconds: 1));
+    // 首帧的100ms来自真实GIF时间线，不从准备阶段计时，也不修改帧延迟。
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 30)),
+    );
+    await tester.pump();
+    expect(
+      tester.widget<RawImage>(find.byType(RawImage)).image,
+      isNot(same(first)),
+    );
+    phase.value = CoverPlaybackPhase.idle;
+    await tester.pump();
+    expect(find.byType(RawImage), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    phase.dispose();
+  });
+
+  testWidgets('确认前撤销准备同步取消请求且迟到数据不能解码播放', (tester) async {
+    final phase = ValueNotifier(CoverPlaybackPhase.preparing);
+    final ready = Completer<Uint8List>();
+    late CancelToken token;
+    await tester.pumpWidget(
+      _app(
+        playing: false,
+        phase: phase,
+        loader: (_, cancel) {
+          token = cancel;
+          return ready.future;
+        },
+      ),
+    );
+    phase.value = CoverPlaybackPhase.idle;
+    expect(token.isCancelled, isTrue);
+    ready.complete(_gif());
+    await tester.pump();
+    expect(find.byType(RawImage), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    phase.dispose();
+  });
   for (final succeeds in [true, false]) {
     testWidgets('缓存能读但无法解码时仅重取一次，重取成功=$succeeds', (tester) async {
       final source = _InvalidCacheSource(
@@ -275,4 +380,32 @@ class _InvalidCacheSource implements CoverAnimationSource {
   void releaseMemory() {}
   @override
   void dispose() {}
+}
+
+class _SlowFrameCodec implements ui.Codec {
+  _SlowFrameCodec(this.delegate, this.gate);
+  final ui.Codec delegate;
+  final Completer<void> gate;
+  int requests = 0;
+  int inflight = 0;
+  int maximumInflight = 0;
+  @override
+  int get frameCount => delegate.frameCount;
+  @override
+  int get repetitionCount => delegate.repetitionCount;
+  @override
+  Future<ui.FrameInfo> getNextFrame() async {
+    requests++;
+    inflight++;
+    if (inflight > maximumInflight) maximumInflight = inflight;
+    try {
+      if (requests == 2) await gate.future;
+      return await delegate.getNextFrame();
+    } finally {
+      inflight--;
+    }
+  }
+
+  @override
+  void dispose() => delegate.dispose();
 }
