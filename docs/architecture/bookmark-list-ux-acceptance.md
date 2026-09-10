@@ -18,13 +18,21 @@
 
 - 旧实现：在前置契约同步后、界面修改前运行“收藏管理入口位于卡片内且不再外置两种按钮”，因缺少卡片内管理入口失败；日志 `bookmark-ux-before.log`。
 - 候选：34 项收藏相关测试通过，另补充取消在途不跳详情断言通过；12 组视觉测试覆盖 320/390/800dp、亮暗色、1x/2x 字号，生成页面及管理面板共 24 张 Golden。24 字收藏夹名称、标题与入口不重叠、48dp 触控尺寸、8dp 顶部间距均有独立布局断言。
-- `npm run check -- -ContinueAfterFailure` 完整门禁通过，涵盖格式、应用及生成包分析、架构、21 个模块文档、154/154 移动端 API 覆盖、契约再生成一致性、公网兼容检查、全量 Flutter 测试和 17 项 Windows 工具测试。APK 标识待构建后补充。为了在 16GB Windows 开发机与其他任务共存，完整测试通过临时 `dart_test.yaml` 限制单并发，仍执行全部测试；检查后已删除该临时文件，不提交。
+- `npm run check -- -ContinueAfterFailure` 完整门禁通过，涵盖格式、应用及生成包分析、架构、21 个模块文档、154/154 移动端 API 覆盖、契约再生成一致性、公网兼容检查、全量 Flutter 测试和 17 项 Windows 工具测试。为了在 16GB Windows 开发机与其他任务共存，完整测试通过临时 `dart_test.yaml` 限制单并发，仍执行全部测试；检查后已删除该临时文件，不提交。
 - Flutter 全量结果：2,473 项通过，1 项既有外部回执测试未启用，零失败；包括未修改的首页卡片 Golden。完整门禁日志为 `bookmark-ux-check.log`。
 - Foundation 已在只读缓存 fetch 远端及 tags，最新正式 Tag 为 `v6.9.0` / `5888132fb604482a53964c192bb0e1a2874a9a64`，与锁定依赖一致。
 - 后端前置契约同步提交 `5a614fd`：从旧 `3338028` 同步至 `0ee2c0de1d9c570e495e778be6661b074b7a4bef` / `5.20.0-dev.20260909.1`，保留原封面消费方式。开始排查时公网仍为 5.18，01:16 完整门禁的只读核验已确认公网更新至同一 5.20 revision，`GET /threads` 兼容检查通过。
 - 已查看普通手机、窄屏双倍字号、暗色及宽屏双倍字号截图，未发现本次新增控件重叠。截图为本地测试数据，不代表已完成原主题、原封面或负责人真机验收。
 
 ## 负责人手测
+
+候选源码 `67082fec4c3b576b272a4c36bc3f4889d5ffc00b`，任务分支 `codex/20260911-bookmark-list-ux`，评审 [PR #20](https://github.com/morenk/wenyousite-mobile/pull/20)。未合并、未发布、未执行 ADB 安装。
+
+- APK：`D:/code/wenyousite/recovery/bookmark-list-ux-67082fe/wenyou-debug-bookmark-list-ux-67082fe.apk`，203,745,950 字节。
+- 实际包名 `site.wenyou.app.debug`，应用名“温油站 Debug”，versionName `0.7.0-dev.1-debug`、versionCode `94`，最低 API 26；Debug 包保留 ARM32、ARM64、x86_64。
+- SHA-256：`0611e73d011b63c46f8ae8b4ad5c8eb4d6b536d1c7b3272a591cff8729b5af01`。apksigner 验签通过，APK 与日志复制前后逐项核对 SHA-256；同目录保留 manifest.json、校验文件和构建／门禁／回归日志。
+- Windows `flutter build apk --debug` 成功，使用仅本次进程生效的 Gradle 2GB 堆、单 worker、单次 daemon 限制；构建应用源码与上述提交一致。保留既有图片压缩插件 KGP 和 SDK XML 兼容警告，详见 `bookmark-ux-build.log`。
+- 原截图主题、封面及负责人真实设备尚未在候选包上复验。相同构建号不能证明旧 Debug 已更新；后续若授权 ADB 安装，须再次核对目标包更新时间及设备内 APK 哈希。
 
 1. 打开候选应用“温油站 Debug”，确认包名 `site.wenyou.app.debug`，进入原截图所在的收藏夹和主题。
 2. 核对卡片下方没有外置管理按钮；标题右侧更多入口完整，长标题与图标不重叠，封面、摘要和统计仍可阅读。

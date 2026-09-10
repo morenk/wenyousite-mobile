@@ -7,6 +7,7 @@
 - 复用 Foundation v6.9.0 图标、排版和主题；管理写入保留禁用、当前项加载与既有错误恢复，不改变其他消费者的卡片布局。
 - 旧实现已在“管理入口位于卡片内”回归中失败；候选验证及真机复验结果见[收藏页布局候选验收](architecture/bookmark-list-ux-acceptance.md)。尚未取得负责人验收通过。
 - 完整门禁通过：2,473 项 Flutter 测试、17 项 Windows 工具测试，1 项既有外部测试未启用；24 张新增 Golden 与原有首页卡片基线通过，公网契约及精确 revision 已对齐。
+- 源码候选 `67082fe` 已推送并建立 [PR #20](https://github.com/morenk/wenyousite-mobile/pull/20)。Debug APK 构建及验签通过，包名 `site.wenyou.app.debug`、版本 `0.7.0-dev.1-debug`（94）、SHA-256 前缀 `0611e73d`；安装包与日志保存在独立制品目录，完整标识见验收记录。未安装真机、未合并或正式发布。
 
 ## 收藏页优化前置契约同步（2026-09-11）
 
