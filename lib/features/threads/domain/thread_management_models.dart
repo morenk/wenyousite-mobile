@@ -1,3 +1,4 @@
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_compose_models.dart'
     show normalizeTagNames;
 
@@ -50,6 +51,7 @@ class ThreadManagementSnapshot {
     required this.isOwner,
     this.defaultSubthreadId,
     this.defaultSubthreadVersion = 0,
+    this.defaultSubthreadPostingPolicy = SubthreadPostingPolicy.participants,
     this.bodyPostId,
     this.bodyVersion,
     this.body = '',
@@ -67,6 +69,7 @@ class ThreadManagementSnapshot {
   final bool isOwner;
   final String? defaultSubthreadId;
   final int defaultSubthreadVersion;
+  final SubthreadPostingPolicy defaultSubthreadPostingPolicy;
   final String? bodyPostId;
   final int? bodyVersion;
   final String body;
@@ -99,6 +102,7 @@ class ThreadManagementDraft {
     required this.categorySlug,
     required this.status,
     required this.visibility,
+    this.defaultSubthreadPostingPolicy,
     this.tagNames = const [],
   });
 
@@ -106,6 +110,7 @@ class ThreadManagementDraft {
   final String? categorySlug;
   final ThreadManagementStatus status;
   final ThreadManagementVisibility visibility;
+  final SubthreadPostingPolicy? defaultSubthreadPostingPolicy;
   final List<String> tagNames;
 
   List<String> get normalizedTagNames => normalizeTagNames(tagNames);
@@ -115,6 +120,9 @@ class ThreadManagementDraft {
         categorySlug != snapshot.categorySlug ||
         status != snapshot.status ||
         visibility != snapshot.visibility ||
+        (defaultSubthreadPostingPolicy != null &&
+            defaultSubthreadPostingPolicy !=
+                snapshot.defaultSubthreadPostingPolicy) ||
         !_sameStrings(normalizedTagNames, snapshot.tagNames);
   }
 

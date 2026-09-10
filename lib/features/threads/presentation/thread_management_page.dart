@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/subthread_management_page.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_export_sheet.dart';
@@ -46,6 +47,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
   String? _categorySlug;
   ThreadManagementStatus _status = ThreadManagementStatus.recruiting;
   ThreadManagementVisibility _visibility = ThreadManagementVisibility.public;
+  SubthreadPostingPolicy? _postingPolicy;
   List<String> _tagNames = const [];
   String? _boundSignature;
   bool _changed = false;
@@ -194,6 +196,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
             ThreadManagementPublishingSection(
               status: _status,
               visibility: _visibility,
+              postingPolicy: thread.published ? _postingPolicy : null,
               enabled: !locked,
               canChangeVisibility: thread.isOwner,
               onStatusChanged: (value) {
@@ -202,6 +205,10 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
               },
               onVisibilityChanged: (value) {
                 setState(() => _visibility = value);
+                unawaited(_autosave.saveNow());
+              },
+              onPostingPolicyChanged: (value) {
+                setState(() => _postingPolicy = value);
                 unawaited(_autosave.saveNow());
               },
             ),
@@ -308,6 +315,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     categorySlug: _categorySlug,
     status: _status,
     visibility: _visibility,
+    defaultSubthreadPostingPolicy: _postingPolicy,
     tagNames: _tagNames,
   );
 
@@ -367,6 +375,7 @@ class _ThreadManagementPageState extends ConsumerState<ThreadManagementPage> {
     _categorySlug = snapshot.categorySlug;
     _status = snapshot.status;
     _visibility = snapshot.visibility;
+    _postingPolicy = snapshot.defaultSubthreadPostingPolicy;
     _tagNames = List.unmodifiable(snapshot.tagNames);
   }
 

@@ -4,6 +4,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/features/threads/presentation/thread_management_autosave.dart';
 
 void main() {
+  testWidgets('空保存结束后再次修改主贴权限仍然发起保存', (tester) async {
+    var dirty = false;
+    var saves = 0;
+    final coordinator = ThreadManagementAutosaveCoordinator(
+      hasChanges: () => dirty,
+      onSave: () async {
+        saves += 1;
+        dirty = false;
+        return true;
+      },
+    );
+    addTearDown(coordinator.dispose);
+    expect(await coordinator.saveNow(), isTrue);
+    dirty = true;
+    expect(await coordinator.saveNow(), isTrue);
+    expect(saves, 1);
+    expect(dirty, isFalse);
+    await tester.pump(const Duration(milliseconds: 1500));
+  });
+
   testWidgets('连续输入只在最后一次修改静止 1.2 秒后保存', (tester) async {
     var dirty = true;
     var saves = 0;
@@ -32,6 +52,34 @@ void main() {
     expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
     await tester.pump(const Duration(milliseconds: 1));
     expect(coordinator.status, ThreadManagementAutosaveStatus.idle);
+  });
+
+  testWidgets('失败保存释放在途状态，重试可保存且离开等待同一次完成', (tester) async {
+    var dirty = true;
+    var saves = 0;
+    final retry = Completer<bool>();
+    final coordinator = ThreadManagementAutosaveCoordinator(
+      hasChanges: () => dirty,
+      onSave: () async {
+        saves += 1;
+        if (saves == 1) return false;
+        final succeeded = await retry.future;
+        dirty = !succeeded;
+        return succeeded;
+      },
+    );
+    addTearDown(coordinator.dispose);
+    expect(await coordinator.saveNow(), isFalse);
+    expect(coordinator.status, ThreadManagementAutosaveStatus.failed);
+    final saving = coordinator.saveNow();
+    final leaving = coordinator.saveNow();
+    expect(identical(saving, leaving), isTrue);
+    expect(saves, 2);
+    retry.complete(true);
+    expect(await leaving, isTrue);
+    expect(dirty, isFalse);
+    expect(coordinator.status, ThreadManagementAutosaveStatus.saved);
+    await tester.pump(const Duration(milliseconds: 1500));
   });
 
   testWidgets('写入期间的新修改串行合并到下一次保存', (tester) async {

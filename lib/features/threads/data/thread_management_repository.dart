@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog_ports.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
 export 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart'
@@ -102,6 +103,20 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
           }
           if (draft.status != current.status) {
             builder.status = _mapSaveStatus(draft.status);
+          }
+          final postingPolicy = draft.defaultSubthreadPostingPolicy;
+          if (postingPolicy != null &&
+              postingPolicy != current.defaultSubthreadPostingPolicy) {
+            builder.defaultSubthreadPostingPolicy = switch (postingPolicy) {
+              SubthreadPostingPolicy.participants =>
+                SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+                    .PARTICIPANTS,
+              SubthreadPostingPolicy.collaborators =>
+                SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+                    .COLLABORATORS,
+              SubthreadPostingPolicy.players =>
+                SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum.PLAYERS,
+            };
           }
           if (draft.visibility != current.visibility) {
             if (!current.isOwner) {
@@ -247,6 +262,18 @@ class ApiThreadManagementRepository implements ThreadManagementRepository {
       isOwner: isOwner,
       defaultSubthreadId: defaultSubthread.id,
       defaultSubthreadVersion: defaultSubthread.version.toInt(),
+      defaultSubthreadPostingPolicy: switch (defaultSubthread.postingPolicy) {
+        ThreadSubthreadResponseDtoPostingPolicyEnum.PARTICIPANTS =>
+          SubthreadPostingPolicy.participants,
+        ThreadSubthreadResponseDtoPostingPolicyEnum.COLLABORATORS =>
+          SubthreadPostingPolicy.collaborators,
+        ThreadSubthreadResponseDtoPostingPolicyEnum.PLAYERS =>
+          SubthreadPostingPolicy.players,
+        _ => throw ApiFailure.contractViolation(
+          userMessage: '主贴发言权限加载失败，请稍后重试。',
+          diagnosticCode: 'threads.manage.unknown_posting_policy',
+        ),
+      },
       bodyPostId: body?.id,
       bodyVersion: body?.version.toInt(),
       body: MarkdownContent.normalize(body?.content ?? ''),

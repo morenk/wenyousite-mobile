@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/core/network/api_request_policy.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
 import 'package:wenyousite_mobile/features/threads/data/thread_management_repository.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
 void main() {
@@ -99,7 +100,111 @@ void main() {
     expect(captured.status, SaveThreadAggregateDtoStatusEnum.CLOSED);
     expect(captured.visibility, isNull);
     expect(captured.published, isNull);
+    expect(captured.defaultSubthreadPostingPolicy, isNull);
     expect(updated.title, '新标题');
+  });
+
+  for (final policy in SubthreadPostingPolicy.values) {
+    test('协作者通过聚合保存主贴权限 ${policy.name} 并回填真实权限', () async {
+      final apiPolicy = ThreadSubthreadResponseDtoPostingPolicyEnum.valueOf(
+        switch (policy) {
+          SubthreadPostingPolicy.participants => 'PARTICIPANTS',
+          SubthreadPostingPolicy.collaborators => 'COLLABORATORS',
+          SubthreadPostingPolicy.players => 'PLAYERS',
+        },
+      );
+      final api = _MockThreadsApi();
+      when(
+        () => api.threadsSaveAggregate(
+          id: 'thread-1',
+          saveThreadAggregateDto: any(named: 'saveThreadAggregateDto'),
+        ),
+      ).thenAnswer(
+        (_) async => _aggregateResponse(_detail(postingPolicy: apiPolicy)),
+      );
+      final repository = ApiThreadManagementRepository(
+        api,
+        ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
+      );
+      final updated = await repository.update(
+        current: _snapshot(
+          isOwner: false,
+          postingPolicy: policy == SubthreadPostingPolicy.players
+              ? SubthreadPostingPolicy.collaborators
+              : SubthreadPostingPolicy.players,
+        ),
+        draft: ThreadManagementDraft(
+          title: '新标题',
+          categorySlug: 'RPG',
+          status: ThreadManagementStatus.closed,
+          visibility: ThreadManagementVisibility.public,
+          defaultSubthreadPostingPolicy: policy,
+        ),
+      );
+      final dto =
+          verify(
+                () => api.threadsSaveAggregate(
+                  id: 'thread-1',
+                  saveThreadAggregateDto: captureAny(
+                    named: 'saveThreadAggregateDto',
+                  ),
+                ),
+              ).captured.single
+              as SaveThreadAggregateDto;
+      expect(dto.defaultSubthreadPostingPolicy?.name, apiPolicy.name);
+      expect(dto.defaultSubthreadVersion, 3);
+      expect(dto.title, '新标题');
+      expect(dto.status, SaveThreadAggregateDtoStatusEnum.CLOSED);
+      expect(dto.content, '主正文');
+      expect(updated.defaultSubthreadPostingPolicy, policy);
+    });
+  }
+
+  test('省略权限字段不会把已限制的主贴重置为开放', () async {
+    final api = _MockThreadsApi();
+    when(
+      () => api.threadsSaveAggregate(
+        id: 'thread-1',
+        saveThreadAggregateDto: any(named: 'saveThreadAggregateDto'),
+      ),
+    ).thenAnswer(
+      (_) async => _aggregateResponse(
+        _detail(
+          postingPolicy: ThreadSubthreadResponseDtoPostingPolicyEnum.PLAYERS,
+        ),
+      ),
+    );
+    final updated =
+        await ApiThreadManagementRepository(
+          api,
+          ApiThreadCategoryCatalogRepository(_MockCategoriesApi()),
+        ).update(
+          current: _snapshot(
+            isOwner: true,
+            postingPolicy: SubthreadPostingPolicy.players,
+          ),
+          draft: const ThreadManagementDraft(
+            title: '新标题',
+            categorySlug: 'RPG',
+            status: ThreadManagementStatus.recruiting,
+            visibility: ThreadManagementVisibility.public,
+          ),
+        );
+    final dto =
+        verify(
+              () => api.threadsSaveAggregate(
+                id: 'thread-1',
+                saveThreadAggregateDto: captureAny(
+                  named: 'saveThreadAggregateDto',
+                ),
+              ),
+            ).captured.single
+            as SaveThreadAggregateDto;
+    expect(dto.defaultSubthreadPostingPolicy, isNull);
+    expect(
+      updated.defaultSubthreadPostingPolicy,
+      SubthreadPostingPolicy.players,
+    );
   });
 
   test('档案导出透传完整选项并采用响应头 UTF-8 文件名', () async {
@@ -221,7 +326,10 @@ class _MockThreadsApi extends Mock implements ThreadsApi {}
 
 class _MockCategoriesApi extends Mock implements ThreadCategoriesApi {}
 
-ThreadManagementSnapshot _snapshot({required bool isOwner}) {
+ThreadManagementSnapshot _snapshot({
+  required bool isOwner,
+  SubthreadPostingPolicy postingPolicy = SubthreadPostingPolicy.participants,
+}) {
   return ThreadManagementSnapshot(
     id: 'thread-1',
     title: '原主题',
@@ -232,6 +340,7 @@ ThreadManagementSnapshot _snapshot({required bool isOwner}) {
     published: true,
     canManage: true,
     isOwner: isOwner,
+    defaultSubthreadPostingPolicy: postingPolicy,
     defaultSubthreadId: 'subthread-1',
     defaultSubthreadVersion: 3,
     bodyPostId: 'body-1',
@@ -296,6 +405,8 @@ Response<ThreadCategoriesList200Response> _categoryResponse() {
 ThreadDetailResponseDto _detail({
   String title = '原主题',
   String category = 'RPG',
+  ThreadSubthreadResponseDtoPostingPolicyEnum postingPolicy =
+      ThreadSubthreadResponseDtoPostingPolicyEnum.PARTICIPANTS,
   ThreadDetailResponseDtoStatusEnum status =
       ThreadDetailResponseDtoStatusEnum.RECRUITING,
 }) {
@@ -349,8 +460,7 @@ ThreadDetailResponseDto _detail({
             ..threadId = 'thread-1'
             ..title = title
             ..sortOrder = 0
-            ..postingPolicy =
-                ThreadSubthreadResponseDtoPostingPolicyEnum.PARTICIPANTS
+            ..postingPolicy = postingPolicy
             ..postingCapability.update(
               (capability) => capability.canPost = true,
             )

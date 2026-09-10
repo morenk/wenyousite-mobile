@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/application/thread_management_repository_ports.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
 void main() {
@@ -20,9 +21,14 @@ void main() {
       categorySlug: 'RPG',
       status: ThreadManagementStatus.closed,
       visibility: ThreadManagementVisibility.public,
+      defaultSubthreadPostingPolicy: SubthreadPostingPolicy.players,
     );
     expect(await controller.save(pending), isFalse);
     expect(controller.state.conflict?.pending.title, '本机标题');
+    expect(
+      controller.state.conflict?.pending.defaultSubthreadPostingPolicy,
+      SubthreadPostingPolicy.players,
+    );
     expect(controller.state.conflict?.latest.thread.version, 4);
     expect(controller.state.bootstrap?.thread.version, 3);
 
@@ -31,10 +37,15 @@ void main() {
       categorySlug: 'RPG',
       status: ThreadManagementStatus.closed,
       visibility: ThreadManagementVisibility.public,
+      defaultSubthreadPostingPolicy: SubthreadPostingPolicy.collaborators,
     );
     expect(await controller.overwriteConflict(editedAfterConflict), isTrue);
     expect(repository.updateVersions, [3, 4]);
     expect(controller.state.bootstrap?.thread.title, '冲突后继续编辑的标题');
+    expect(
+      controller.state.bootstrap?.thread.defaultSubthreadPostingPolicy,
+      SubthreadPostingPolicy.collaborators,
+    );
     expect(controller.state.failure, isNull);
   });
 
@@ -166,6 +177,9 @@ class _FakeRepository implements ThreadManagementRepository {
       categorySlug: draft.categorySlug,
       status: draft.status,
       visibility: draft.visibility,
+      defaultSubthreadPostingPolicy:
+          draft.defaultSubthreadPostingPolicy ??
+          current.defaultSubthreadPostingPolicy,
       version: current.version + 1,
       published: current.published,
       canManage: current.canManage,

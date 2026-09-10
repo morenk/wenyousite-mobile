@@ -3,6 +3,7 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_filter_controls.dart';
+import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
 import 'package:wenyousite_mobile/features/threads/domain/thread_management_models.dart';
 
 class ThreadManagementBasicsSection extends StatelessWidget {
@@ -147,19 +148,23 @@ class ThreadManagementPublishingSection extends StatelessWidget {
   const ThreadManagementPublishingSection({
     required this.status,
     required this.visibility,
+    required this.postingPolicy,
     required this.enabled,
     required this.canChangeVisibility,
     required this.onStatusChanged,
     required this.onVisibilityChanged,
+    required this.onPostingPolicyChanged,
     super.key,
   });
 
   final ThreadManagementStatus status;
   final ThreadManagementVisibility visibility;
+  final SubthreadPostingPolicy? postingPolicy;
   final bool enabled;
   final bool canChangeVisibility;
   final ValueChanged<ThreadManagementStatus> onStatusChanged;
   final ValueChanged<ThreadManagementVisibility> onVisibilityChanged;
+  final ValueChanged<SubthreadPostingPolicy> onPostingPolicyChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +184,7 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                       await _showChoiceSheet<ThreadManagementStatus>(
                         context: context,
                         title: '选择招募状态',
-                        supportingText: '状态只用于展示，不会限制发帖；发帖权限可在子贴管理中设置。',
+                        supportingText: '状态只用于展示，不会限制发言；发言权限单独设置。',
                         selected: status,
                         optionKeyPrefix: 'thread-management-status-choice',
                         options: [
@@ -234,6 +239,50 @@ class ThreadManagementPublishingSection extends StatelessWidget {
                   onVisibilityChanged(selected);
                 },
         ),
+        if (postingPolicy != null) ...[
+          SizedBox(height: tokens.space4),
+          _ThreadSettingRow(
+            key: const Key('thread-management-posting-policy'),
+            label: '主贴发言权限',
+            value: postingPolicy!.label,
+            enabled: enabled,
+            onTap: !enabled
+                ? null
+                : () async {
+                    final selected =
+                        await _showChoiceSheet<SubthreadPostingPolicy>(
+                          context: context,
+                          title: '主贴发言权限',
+                          supportingText: '仅影响主贴下的发言，子贴权限单独设置。',
+                          selected: postingPolicy,
+                          optionKeyPrefix:
+                              'thread-management-posting-policy-choice',
+                          options: [
+                            for (final value in SubthreadPostingPolicy.values)
+                              WenyouFilterOption(
+                                value: value,
+                                keyValue: value.name,
+                                label: value.label,
+                                supportingLabel: switch (value) {
+                                  SubthreadPostingPolicy.participants =>
+                                    '有权查看的登录用户均可发言',
+                                  SubthreadPostingPolicy.collaborators =>
+                                    '只有楼主和协作者可以发言',
+                                  SubthreadPostingPolicy.players =>
+                                    '玩家、楼主和协作者可以发言',
+                                },
+                              ),
+                          ],
+                        );
+                    if (!context.mounted ||
+                        selected == null ||
+                        selected == postingPolicy) {
+                      return;
+                    }
+                    onPostingPolicyChanged(selected);
+                  },
+          ),
+        ],
       ],
     );
   }
