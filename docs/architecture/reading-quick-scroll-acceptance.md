@@ -82,6 +82,7 @@
 
 ### 首次懒布局校正候选
 
+- 候选源码提交：`d2bf7071f43b08a630406d0bf69e76f08daeb4e1`。
 - 包名 `site.wenyou.app.debug`，versionName `0.7.0-dev.1-debug`，versionCode `94`；`aapt dump badging` 与 `apksigner verify` 均已核对。
 - APK：`D:\code\wenyousite\.worktrees\mobile-reading-scrubber\build\app\outputs\flutter-apk\app-debug.apk`，203,765,118 字节。
 - SHA-256：`0e414866bfc1d2efb170684c9775b557434dd54e89d91e9afe8b58a5d24cc441`。
