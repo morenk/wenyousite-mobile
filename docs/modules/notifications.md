@@ -96,7 +96,7 @@ V1 仅 API 拉取，不做 FCM、WebSocket、SSE、后台唤醒或后台角标�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+契约 `5.20.0-dev.20260909.1`；Markdown v5；后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`；Foundation `v6.9.0`（`5888132`）。
 
 本轮来源为已合并的 newline v1 revision 2 契约；HTTP 与其他契约不变，公网后端仍运行旧 revision。公网仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`，移动端对齐适配与跨端验收另行推进。
 
