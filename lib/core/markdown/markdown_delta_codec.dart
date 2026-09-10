@@ -8,10 +8,12 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_encoding_buffer.d
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_extension_nodes.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_inline_encoder.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_rich_lines.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -30,7 +32,8 @@ class MarkdownDeltaCodec {
   static const diceEmbed = MarkdownDiceContract.embedType;
   static const stickerEmbed = 'wenyou_sticker';
   static const imageEmbed = 'wenyou_image';
-  static const internalReferenceEmbed = 'wenyou_internal_reference';
+  static const internalReferenceEmbed =
+      MarkdownDeltaRichLines.internalReferenceEmbed;
   static const compatibilityEmbed = 'wenyou_compatibility';
   static const horizontalRuleEmbed = 'wenyou_horizontal_rule';
 
@@ -99,6 +102,27 @@ class MarkdownDeltaCodec {
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
       if (validAlignmentMarkers.contains(lineIndex)) continue;
+      final multilineEnd =
+          alignmentAnalysis.protection.multilineCodeRanges[lineIndex];
+      if (multilineEnd != null && !literalLines.contains(lineIndex)) {
+        final rich = MarkdownRichLineDecoder.decode(
+          alignmentAnalysis.protection.multilineCodeSources[lineIndex]!,
+        );
+        if (rich != null) {
+          MarkdownDeltaRichLines.append(rich, delta);
+          final direction = alignmentAnalysis.alignmentForLine(lineIndex);
+          delta.insert('\n', {
+            ...rich.lineAttributes,
+            if (direction != WenyouTextAlignment.left)
+              alignmentAttribute: direction.name,
+            if (multilineEnd == lines.length - 1) sourceBreakAttribute: false,
+            if (validAlignmentMarkers.contains(multilineEnd + 1))
+              MarkdownParagraphBoundaries.key: 1,
+          });
+          lineIndex = multilineEnd;
+          continue;
+        }
+      }
       final opening = _openingFence.firstMatch(line)?.group(1);
       var isProtocolEmptyParagraph = false;
       Map<String, dynamic>? richLineAttributes;
@@ -126,9 +150,7 @@ class MarkdownDeltaCodec {
       } else if (_emptyParagraph.hasMatch(line)) {
         // 独占 <br /> 是协议空段，不进入可编辑文本。
         isProtocolEmptyParagraph = true;
-      } else if (line == '---' ||
-          (readerClipboard &&
-              MarkdownRichLineDecoder.isReaderThematicBreak(line))) {
+      } else if (MarkdownRichLineDecoder.isReaderThematicBreak(line)) {
         delta.insert({
           horizontalRuleEmbed: const {'version': 1},
         });
@@ -156,7 +178,7 @@ class MarkdownDeltaCodec {
             diceNodeIds,
           );
         } else {
-          _appendRichLine(richLine, delta);
+          MarkdownDeltaRichLines.append(richLine, delta);
           richLineAttributes = richLine.lineAttributes;
         }
       }
@@ -164,6 +186,15 @@ class MarkdownDeltaCodec {
       final isLastLine = lineIndex == lines.length - 1;
       final attributes = <String, dynamic>{
         ...?richLineAttributes,
+        if (MarkdownContent.hasWhitespaceGuards(line))
+          MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
+        // marker 是独立段落边界；即使源码没有空行，也不能把前段和目标段合并。
+        if (validAlignmentMarkers.contains(lineIndex + 1) &&
+            line.isNotEmpty &&
+            richLineAttributes?['header'] == null &&
+            richLineAttributes?['list'] == null &&
+            richLineAttributes?['blockquote'] != true)
+          MarkdownParagraphBoundaries.key: 1,
         if (alignmentAnalysis.alignmentForLine(lineIndex) case final alignment
             when alignment != WenyouTextAlignment.left)
           alignmentAttribute: alignment.name,
@@ -300,7 +331,7 @@ class MarkdownDeltaCodec {
         }
         if (isFirst) lineAttributes = attributes;
       } else if (rich != null) {
-        _appendRichLine(rich, delta);
+        MarkdownDeltaRichLines.append(rich, delta);
         if (isFirst) lineAttributes = attributes;
       } else if (MarkdownContent.decodeLiteralSpans(source) case final spans?) {
         for (final span in spans) {
@@ -523,61 +554,14 @@ class MarkdownDeltaCodec {
     },
   );
 
-  static void _appendRichLine(MarkdownRichLine richLine, Delta delta) {
-    for (final span in richLine.spans) {
-      final portal = span.internalReference;
-      if (portal == null) {
-        delta.insert(span.text, span.attributes);
-      } else {
-        delta.insert({
-          internalReferenceEmbed: {
-            'version': 1,
-            'label': portal.label,
-            'location': portal.reference.location.toString(),
-          },
-        });
-      }
-    }
-  }
-
   static MarkdownRichLine? _tryDecodeRichLine(
     String source, {
     bool protocolTextOnly = false,
-  }) {
-    if (!protocolTextOnly &&
-        (source.contains('](/users/') ||
-            source.contains(_allPlayersLabel) ||
-            source.toLowerCase().contains('[[dice:') ||
-            source.contains('!['))) {
-      return null;
-    }
-    final richLine = MarkdownRichLineDecoder.decode(source);
-    if (richLine == null) return null;
-
-    final candidate = Delta();
-    _appendRichLine(richLine, candidate);
-    candidate.insert('\n', {
-      ...richLine.lineAttributes,
-      sourceBreakAttribute: false,
-    });
-    try {
-      final encoded = _encode(candidate, false);
-      // Automatic URL links retain their existing source spelling. Explicit
-      // rich marks may canonicalize their nesting after semantic proof.
-      if (encoded != MarkdownInlineBoundary.canonicalize(source) &&
-          RegExp(r'(^|[\s>])<?https?://').hasMatch(source)) {
-        return null;
-      }
-      final reparsed = MarkdownRichLineDecoder.decode(encoded);
-      if (reparsed == null || !richLine.semanticallyEquivalentTo(reparsed)) {
-        return null;
-      }
-    } on MarkdownCodecException {
-      return null;
-    }
-    return richLine;
-  }
-
+  }) => MarkdownDeltaRichLines.decode(
+    source,
+    protocolTextOnly: protocolTextOnly,
+    encode: (delta) => _encode(delta, false),
+  );
   static bool _encodeText(
     String value,
     Map<String, dynamic>? attributes,
@@ -628,6 +612,8 @@ class MarkdownDeltaCodec {
       sourceBreakAttribute,
       literalLineAttribute,
       literalTextAttribute,
+      MarkdownInlineCodeSource.key,
+      MarkdownDeltaLineMetadata.guardedWhitespaceKey,
       alignmentAttribute,
       'header',
       'list',
@@ -686,7 +672,11 @@ class MarkdownDeltaCodec {
         canonicalContent.startsWith('    ') ||
         canonicalContent.startsWith('\t') ||
         RegExp(r' {2,}$').hasMatch(canonicalContent);
-    if (hasUnsafeWhitespace && blockStyleCount == 0 && containsLiteralText) {
+    if (hasUnsafeWhitespace &&
+        blockStyleCount == 0 &&
+        (containsLiteralText ||
+            attributes[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
+                true)) {
       return MarkdownContent.protectUnsafeWhitespace(canonicalContent);
     }
     if (header != null) {

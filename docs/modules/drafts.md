@@ -32,6 +32,8 @@
 
 ## 6. 状态模型和数据流
 
+块边界候选经真实 Drift 快照写入、读取和 RichEditorSession 恢复验证：Markdown v5 独立块对齐与可见行保持，Delta 来源属性仅留在内存，持久化仍写完整 Markdown。共享 fixture revision 2 已接入，负责人验收仍待完成。
+
 `ThreadComposeState.localSnapshotStatus` 区分 idle、saving、saved、failed；`ThreadRemoteDraft` 保存服务端主题、默认子贴和正文版本；`PendingCreateOperation` 区分 pending、sending、awaitingConfirmation。`RemoteThreadDraftsState` 独立管理完整主题草稿箱的加载、列表、删除目标和失败，列表摘要不直接承担编辑版本。数据库只存完整 Markdown 和表单元数据，不保存 Delta。
 
 `ContentDraftsState` 分离列表加载阶段、槽位用量、按槽位排序的领域草稿、当前写入/删除目标、动作反馈、版本冲突及自动保存开关/等待/保存中/已保存/失败状态；`ContentDraftConflict` 同时保留刚读取的云端最新版和未提交的本机正文。自动保存控制器以编辑器会话为 key，面板关闭后由对应页面继续观察，编辑器释放时自动取消防抖任务。五槽位草稿、主题远端草稿与本地快照的抽象端口都位于各自 `application` 层，API/Drift 适配器由 `main.dart` 组合根绑定；服务端 DTO 不直接承担面板状态。
