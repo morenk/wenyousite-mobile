@@ -69,6 +69,7 @@
 
 ### 末端跟随修订候选
 
+- 候选源码提交：`c4763e36bc4d4f461d879a015667b1fdcc264a1d`。
 - `flutter build apk --debug` 与 `apksigner verify` 通过；仍为 `site.wenyou.app.debug`、`0.7.0-dev.1-debug`、构建号 `94`，使用文件摘要区分候选。
 - APK：`D:\code\wenyousite\.worktrees\mobile-reading-scrubber\build\app\outputs\flutter-apk\app-debug.apk`，203,765,118 字节。
 - SHA-256：`580a9e3d8937290fc8d7e7f48afe5ba8a380a4ef926fefd6633090a59eae78f6`。
