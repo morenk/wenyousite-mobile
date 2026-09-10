@@ -48,6 +48,7 @@
 
 ## 交付与验收结果
 
+- 候选源码提交：`ef318202e1c3a4447dee154825125a2638d16966`；后续仅补记交付证据，不改变该安装包对应代码。
 - 源码版本：`0.7.0-dev.1+94`；APK 实际 versionName：`0.7.0-dev.1-debug`，versionCode：`94`。
 - Debug applicationId：`site.wenyou.app.debug`；应用名：`温油站 Debug`。`aapt dump badging` 已核对；包含 ARM32、ARM64 和 x86_64。
 - APK：`D:\code\wenyousite\.worktrees\mobile-reading-scrubber\build\app\outputs\flutter-apk\app-debug.apk`，203,765,118 字节。
