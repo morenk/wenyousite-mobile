@@ -9,6 +9,7 @@ import 'package:wenyousite_mobile/app/app_route_locations.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reorder_feedback.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/domain/subthread_management_models.dart';
@@ -117,6 +118,8 @@ class _SubthreadDirectory extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               buildDefaultDragHandles: false,
               itemCount: items.length,
+              proxyDecorator: (child, _, animation) =>
+                  WenyouReorderFeedback(animation: animation, child: child),
               onReorderItem: state.isBusy
                   ? (_, _) {}
                   : (oldIndex, newIndex) => unawaited(
