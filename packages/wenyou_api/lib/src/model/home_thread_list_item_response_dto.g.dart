@@ -203,6 +203,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
   final String preview;
   @override
   final BuiltList<String> coverImages;
+  @override
+  final ThreadCoverMediaResponseDto? coverMedia;
 
   factory _$HomeThreadListItemResponseDto([
     void Function(HomeThreadListItemResponseDtoBuilder)? updates,
@@ -227,6 +229,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
     required this.count,
     required this.preview,
     required this.coverImages,
+    this.coverMedia,
   }) : super._();
   @override
   HomeThreadListItemResponseDto rebuild(
@@ -258,7 +261,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
         topicTags == other.topicTags &&
         count == other.count &&
         preview == other.preview &&
-        coverImages == other.coverImages;
+        coverImages == other.coverImages &&
+        coverMedia == other.coverMedia;
   }
 
   @override
@@ -282,6 +286,7 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, coverImages.hashCode);
+    _$hash = $jc(_$hash, coverMedia.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -306,7 +311,8 @@ class _$HomeThreadListItemResponseDto extends HomeThreadListItemResponseDto {
           ..add('topicTags', topicTags)
           ..add('count', count)
           ..add('preview', preview)
-          ..add('coverImages', coverImages))
+          ..add('coverImages', coverImages)
+          ..add('coverMedia', coverMedia))
         .toString();
   }
 }
@@ -406,6 +412,12 @@ class HomeThreadListItemResponseDtoBuilder
   set coverImages(ListBuilder<String>? coverImages) =>
       _$this._coverImages = coverImages;
 
+  ThreadCoverMediaResponseDtoBuilder? _coverMedia;
+  ThreadCoverMediaResponseDtoBuilder get coverMedia =>
+      _$this._coverMedia ??= ThreadCoverMediaResponseDtoBuilder();
+  set coverMedia(ThreadCoverMediaResponseDtoBuilder? coverMedia) =>
+      _$this._coverMedia = coverMedia;
+
   HomeThreadListItemResponseDtoBuilder() {
     HomeThreadListItemResponseDto._defaults(this);
   }
@@ -431,6 +443,7 @@ class HomeThreadListItemResponseDtoBuilder
       _count = $v.count.toBuilder();
       _preview = $v.preview;
       _coverImages = $v.coverImages.toBuilder();
+      _coverMedia = $v.coverMedia?.toBuilder();
       _$v = null;
     }
     return this;
@@ -513,6 +526,7 @@ class HomeThreadListItemResponseDtoBuilder
               'preview',
             ),
             coverImages: coverImages.build(),
+            coverMedia: _coverMedia?.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -531,6 +545,8 @@ class HomeThreadListItemResponseDtoBuilder
 
         _$failedField = 'coverImages';
         coverImages.build();
+        _$failedField = 'coverMedia';
+        _coverMedia?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'HomeThreadListItemResponseDto',
