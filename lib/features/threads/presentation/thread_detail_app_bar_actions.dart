@@ -23,7 +23,6 @@ List<Widget> buildThreadDetailAppBarActions({
 }) {
   final detail = state.detail;
   return [
-    ?quickScrollAction,
     IconButton(
       key: const Key('thread-detail-search'),
       tooltip: '搜索主题内容',
@@ -36,6 +35,7 @@ List<Widget> buildThreadDetailAppBarActions({
       available: (detail?.postCount ?? 0) > 0 || state.floors.isNotEmpty,
       onTarget: onLatestTarget,
     ),
+    ?quickScrollAction,
     if (detail != null &&
         (!detail.isCurrentUserOwner || detail.canManageThread))
       WenyouAnchoredActionBubble<ThreadDetailAppBarAction>(

@@ -39,7 +39,7 @@ void main() {
     state.scroll.jumpTo(240);
     await tester.pumpAndSettle();
     final before = tester.getRect(find.byKey(const Key('reading-body')));
-    await tester.tap(find.text('快翻'));
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
     await tester.pumpAndSettle();
     final after = tester.getRect(find.byKey(const Key('reading-body')));
     final bar = tester.getRect(
@@ -83,6 +83,79 @@ void main() {
     expect(state.scroll.offset, closeTo(stopped, 1));
   });
 
+  testWidgets('按住滑杆末端时持续抵达新增楼层和图片撑高后的末尾', (tester) async {
+    final state = await mount(tester);
+    state.setLoading();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
+    await tester.pumpAndSettle();
+    final rect = tester.getRect(find.byType(Slider));
+    final gesture = await tester.startGesture(rect.center);
+    await gesture.moveTo(Offset(rect.right - 1, rect.center.dy));
+    await tester.pumpAndSettle();
+    expect(state.quick.isDragging, isTrue);
+    expect(state.quick.fraction, 1);
+    expect(find.text('正在加载更多，按住末端继续快翻'), findsOneWidget);
+    for (var page = 0; page < 3; page++) {
+      state.append();
+      await tester.pumpAndSettle();
+      expect(state.scroll.position.extentAfter, lessThanOrEqualTo(1));
+      expect(state.quick.fraction, 1);
+    }
+    state.growBody();
+    await tester.pumpAndSettle();
+    expect(state.scroll.position.extentAfter, lessThanOrEqualTo(1));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    final stopped = state.scroll.offset;
+    state.append();
+    await tester.pumpAndSettle();
+    expect(state.scroll.offset, closeTo(stopped, 1));
+    expect(state.quick.fraction, lessThan(1));
+  });
+
+  testWidgets('从末端往回拖用当前范围微调，离开末端后不再追随新增内容', (tester) async {
+    final state = await mount(tester);
+    state.quick.toggle();
+    await tester.pumpAndSettle();
+    state.quick.beginDrag(1);
+    await tester.pumpAndSettle();
+    state.append();
+    await tester.pumpAndSettle();
+    final expandedRange = state.scroll.position.maxScrollExtent;
+    state.quick.updateDrag(0.6);
+    await tester.pumpAndSettle();
+    expect(state.scroll.offset, closeTo(expandedRange * 0.6, 1));
+    state.append();
+    await tester.pumpAndSettle();
+    expect(state.scroll.offset, closeTo(expandedRange * 0.6, 1));
+    state.quick.endDrag(0.6);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('末端跟随后收起或切换范围，后续加载不能继续拉动页面', (tester) async {
+    final state = await mount(tester);
+    state.quick.toggle();
+    await tester.pumpAndSettle();
+    state.quick.beginDrag(1);
+    await tester.pumpAndSettle();
+    state.append();
+    state.quick.close();
+    final stopped = state.scroll.offset;
+    await tester.pumpAndSettle();
+    expect(state.scroll.offset, closeTo(stopped, 1));
+    state.quick.toggle();
+    await tester.pumpAndSettle();
+    state.quick.beginDrag(1);
+    await tester.pumpAndSettle();
+    state.changeScope();
+    state.append();
+    final beforeScopeLayout = state.scroll.offset;
+    await tester.pumpAndSettle();
+    expect(state.quick.isOpen, isFalse);
+    expect(state.scroll.offset, closeTo(beforeScopeLayout, 1));
+  });
+
   testWidgets('收起或更换筛选取消排队中的快翻', (tester) async {
     final state = await mount(tester);
     state.quick.toggle();
@@ -108,7 +181,7 @@ void main() {
 
   testWidgets('手指仍按着滑杆时正文已移动，且不重建正文页面', (tester) async {
     final state = await mount(tester);
-    await tester.tap(find.text('快翻'));
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
     await tester.pumpAndSettle();
     final builds = state.buildCount;
     final rect = tester.getRect(find.byType(Slider));
@@ -152,7 +225,7 @@ void main() {
     final state = await mount(tester);
     state.setLoading();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('快翻'));
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
     await tester.pumpAndSettle();
     expect(find.text('正在加载更多，当前可快翻已加载内容'), findsOneWidget);
     expect(find.text('已加载\n末尾'), findsOneWidget);
@@ -181,7 +254,7 @@ void main() {
       await mount(tester, width: width, scale: 2);
       final semantics = tester.ensureSemantics();
 
-      await tester.tap(find.text('快翻'));
+      await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.bySemanticsLabel('快翻阅读位置'), findsOneWidget);
@@ -224,11 +297,13 @@ class _HarnessState extends State<_Harness> {
   int retries = 0;
   int scope = 0;
   int count = 0;
+  double bodyHeight = 7000;
   bool hasMore = false;
   bool loading = false;
   bool failed = false;
 
   void append() => setState(() => count += 20);
+  void growBody() => setState(() => bodyHeight += 3000);
   void changeScope() => setState(() => scope++);
   void setLoading() => setState(() {
     hasMore = true;
@@ -265,7 +340,10 @@ class _HarnessState extends State<_Harness> {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => taps++,
-                  child: const SizedBox(height: 7000, child: Text('超长楼层正文')),
+                  child: SizedBox(
+                    height: bodyHeight,
+                    child: const Text('超长楼层正文'),
+                  ),
                 ),
               ),
               for (var i = 0; i < count; i++)

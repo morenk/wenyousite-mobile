@@ -36,7 +36,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('快翻'));
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
     await tester.pumpAndSettle();
     final bar = tester.getRect(
       find.byKey(const Key('reading-quick-scroll-bar')),

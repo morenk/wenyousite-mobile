@@ -177,6 +177,10 @@ class ReadingQuickScrollBar extends StatelessWidget {
                     _StatusLine(
                       text: loadFailed
                           ? '更多内容加载失败，当前可快翻已加载内容'
+                          : controller.isFollowingEnd
+                          ? loading
+                                ? '正在加载更多，按住末端继续快翻'
+                                : '按住末端继续快翻，松手即可停下'
                           : loading
                           ? '正在加载更多，当前可快翻已加载内容'
                           : '当前可快翻已加载内容',

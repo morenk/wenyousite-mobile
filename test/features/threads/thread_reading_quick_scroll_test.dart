@@ -46,7 +46,15 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('快翻'));
+      expect(
+        tester
+            .getRect(find.byKey(const Key('reading-quick-scroll-toggle')))
+            .left,
+        greaterThanOrEqualTo(
+          tester.getRect(find.byKey(const Key('thread-detail-latest'))).right,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
       await tester.pumpAndSettle();
       final bar = tester.getRect(
         find.byKey(const Key('reading-quick-scroll-bar')),
@@ -93,7 +101,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.text('快翻'));
+    await tester.tap(find.byKey(const Key('reading-quick-scroll-toggle')));
     await tester.pumpAndSettle();
     final quick = tester
         .widget<ReadingQuickScrollAction>(find.byType(ReadingQuickScrollAction))

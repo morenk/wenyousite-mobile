@@ -22,6 +22,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
   bool _open = false;
   bool _enabled = false;
   bool _dragging = false;
+  bool _followingEnd = false;
   double _fraction = 0;
   double _dragMin = 0;
   double _dragMax = 0;
@@ -33,6 +34,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
   bool get isOpen => _open;
   bool get enabled => _enabled;
   bool get isDragging => _dragging;
+  bool get isFollowingEnd => _dragging && _followingEnd;
   double get fraction => _fraction;
   String get location => _location;
   bool get edgeFailed => _failedEdge != null;
@@ -76,6 +78,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     _epoch++;
     _pendingOffset = null;
     _dragging = false;
+    _followingEnd = false;
     _failedEdge = null;
   }
 
@@ -93,8 +96,23 @@ class ReadingQuickScrollController extends ChangeNotifier {
   void updateDrag(double value) {
     if (!_dragging) beginDrag(value);
     if (!_dragging) return;
+    if (_followingEnd) {
+      // 离开末端时以刚抵达的范围继续微调，避免退回开始拖动时的旧范围。
+      final p = scrollController.position;
+      _dragMin = p.minScrollExtent;
+      _dragMax = p.maxScrollExtent;
+    }
     _fraction = value.clamp(0, 1);
-    _pendingOffset = _dragMin + (_dragMax - _dragMin) * _fraction;
+    _followingEnd = _fraction == 1;
+    _queueMove(
+      _followingEnd
+          ? scrollController.position.maxScrollExtent
+          : _dragMin + (_dragMax - _dragMin) * _fraction,
+    );
+  }
+
+  void _queueMove(double offset) {
+    _pendingOffset = offset;
     if (_moveScheduled) return;
     _moveScheduled = true;
     WidgetsBinding.instance.scheduleFrameCallback((_) {
@@ -116,6 +134,7 @@ class ReadingQuickScrollController extends ChangeNotifier {
     if (!_dragging) return;
     updateDrag(value);
     _dragging = false;
+    _followingEnd = false;
     // 最后一个手指位置仍在下一帧应用，不启动惯性或后续自动跟随。
     scheduleSnapshot();
   }
@@ -192,6 +211,14 @@ class ReadingQuickScrollController extends ChangeNotifier {
       if (_disposed) return;
       if (scrollController.hasClients) {
         final p = scrollController.position;
+        if (p.hasContentDimensions && isFollowingEnd) {
+          _dragMin = p.minScrollExtent;
+          _dragMax = p.maxScrollExtent;
+          // 只在仍按住末端且布局边界改变时继续推进；静止等待分页不空转。
+          if ((p.pixels - p.maxScrollExtent).abs() > 1) {
+            _queueMove(p.maxScrollExtent);
+          }
+        }
         if (p.hasContentDimensions && !_dragging && _pendingOffset == null) {
           final range = p.maxScrollExtent - p.minScrollExtent;
           _fraction = range <= 0

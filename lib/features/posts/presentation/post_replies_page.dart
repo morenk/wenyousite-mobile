@@ -150,8 +150,8 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
               ? const Text('楼中楼讨论')
               : PostDiscussionTitle(root: readyRoot),
           actions: [
-            ReadingQuickScrollAction(controller: _quickScroll),
             _returnToRootAction(context),
+            ReadingQuickScrollAction(controller: _quickScroll),
           ],
         ),
         body: ReadingProgressViewport(
