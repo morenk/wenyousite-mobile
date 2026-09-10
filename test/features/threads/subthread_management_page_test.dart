@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_reorder_feedback.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/threads/application/subthread_management_controller.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
@@ -244,6 +245,56 @@ void main() {
     expect(await moving, isTrue);
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(third).dy, lessThan(tester.getTopLeft(second).dy));
+  });
+
+  testWidgets('真实子贴拖动复用抬起落下，落位后保持乐观顺序', (tester) async {
+    final reorder = Completer<List<SubthreadManagementItem>>();
+    final repository = _FakeRepository(
+      initial: _initialBootstrap(includeThird: true),
+      reorderCompleter: reorder,
+    );
+    await _pumpWorkspace(tester, repository);
+    final second = find.byKey(const ValueKey('subthread-edit-sub-second'));
+    final third = find.byKey(const ValueKey('subthread-edit-sub-third'));
+    final start = tester.getCenter(
+      find.descendant(
+        of: second,
+        matching: find.byType(ReorderableDragStartListener),
+      ),
+    );
+    final destination = tester.getCenter(third);
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(0, 24));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final proxy = find.byType(WenyouReorderFeedback);
+    expect(proxy, findsOneWidget);
+    expect(
+      tester
+          .widget<PhysicalModel>(
+            find.descendant(of: proxy, matching: find.byType(PhysicalModel)),
+          )
+          .elevation,
+      greaterThan(0),
+    );
+    await gesture.moveTo(Offset(start.dx, destination.dy));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.moveBy(const Offset(0, 100));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(second).dy,
+      greaterThan(tester.getTopLeft(third).dy),
+    );
+    reorder.complete(repository.currentItems);
+    await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(second).dy,
+      greaterThan(tester.getTopLeft(third).dy),
+    );
+    expect(find.byType(WenyouReorderFeedback), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   for (final width in [360.0, 400.0, 600.0]) {

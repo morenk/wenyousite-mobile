@@ -201,6 +201,8 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
   @override
   final BuiltList<String> coverImages;
   @override
+  final ThreadCoverMediaResponseDto? coverMedia;
+  @override
   final String bookmarkId;
   @override
   final String bookmarkFolderId;
@@ -228,6 +230,7 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
     required this.count,
     required this.preview,
     required this.coverImages,
+    this.coverMedia,
     required this.bookmarkId,
     required this.bookmarkFolderId,
   }) : super._();
@@ -262,6 +265,7 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
         count == other.count &&
         preview == other.preview &&
         coverImages == other.coverImages &&
+        coverMedia == other.coverMedia &&
         bookmarkId == other.bookmarkId &&
         bookmarkFolderId == other.bookmarkFolderId;
   }
@@ -287,6 +291,7 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
     _$hash = $jc(_$hash, count.hashCode);
     _$hash = $jc(_$hash, preview.hashCode);
     _$hash = $jc(_$hash, coverImages.hashCode);
+    _$hash = $jc(_$hash, coverMedia.hashCode);
     _$hash = $jc(_$hash, bookmarkId.hashCode);
     _$hash = $jc(_$hash, bookmarkFolderId.hashCode);
     _$hash = $jf(_$hash);
@@ -314,6 +319,7 @@ class _$OwnBookmarkThreadResponseDto extends OwnBookmarkThreadResponseDto {
           ..add('count', count)
           ..add('preview', preview)
           ..add('coverImages', coverImages)
+          ..add('coverMedia', coverMedia)
           ..add('bookmarkId', bookmarkId)
           ..add('bookmarkFolderId', bookmarkFolderId))
         .toString();
@@ -415,6 +421,12 @@ class OwnBookmarkThreadResponseDtoBuilder
   set coverImages(ListBuilder<String>? coverImages) =>
       _$this._coverImages = coverImages;
 
+  ThreadCoverMediaResponseDtoBuilder? _coverMedia;
+  ThreadCoverMediaResponseDtoBuilder get coverMedia =>
+      _$this._coverMedia ??= ThreadCoverMediaResponseDtoBuilder();
+  set coverMedia(ThreadCoverMediaResponseDtoBuilder? coverMedia) =>
+      _$this._coverMedia = coverMedia;
+
   String? _bookmarkId;
   String? get bookmarkId => _$this._bookmarkId;
   set bookmarkId(String? bookmarkId) => _$this._bookmarkId = bookmarkId;
@@ -449,6 +461,7 @@ class OwnBookmarkThreadResponseDtoBuilder
       _count = $v.count.toBuilder();
       _preview = $v.preview;
       _coverImages = $v.coverImages.toBuilder();
+      _coverMedia = $v.coverMedia?.toBuilder();
       _bookmarkId = $v.bookmarkId;
       _bookmarkFolderId = $v.bookmarkFolderId;
       _$v = null;
@@ -533,6 +546,7 @@ class OwnBookmarkThreadResponseDtoBuilder
               'preview',
             ),
             coverImages: coverImages.build(),
+            coverMedia: _coverMedia?.build(),
             bookmarkId: BuiltValueNullFieldError.checkNotNull(
               bookmarkId,
               r'OwnBookmarkThreadResponseDto',
@@ -561,6 +575,8 @@ class OwnBookmarkThreadResponseDtoBuilder
 
         _$failedField = 'coverImages';
         coverImages.build();
+        _$failedField = 'coverMedia';
+        _coverMedia?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'OwnBookmarkThreadResponseDto',
