@@ -17,6 +17,7 @@ class ThreadFeedCard extends StatelessWidget {
     required this.category,
     required this.onTap,
     this.onTagTap,
+    this.trailing,
     super.key,
   });
 
@@ -24,6 +25,7 @@ class ThreadFeedCard extends StatelessWidget {
   final ThreadCategoryPresentation? category;
   final VoidCallback onTap;
   final ValueChanged<ThreadFeedTag>? onTagTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +48,17 @@ class ThreadFeedCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  thread.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouListTitle,
-                ),
+                if (trailing case final action?)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _title(context)),
+                      SizedBox(width: tokens.space8),
+                      action,
+                    ],
+                  )
+                else
+                  _title(context),
                 SizedBox(height: tokens.space8),
                 _ThreadHeader(thread: thread, category: category),
                 if (thread.coverImageUrls.isNotEmpty) ...[
@@ -84,6 +91,13 @@ class ThreadFeedCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _title(BuildContext context) => Text(
+    thread.title,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: Theme.of(context).textTheme.wenyouListTitle,
+  );
 }
 
 typedef HomeThreadCard = ThreadFeedCard;
