@@ -1,13 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
 
-const coverPlaybackSettleDelay = Duration(milliseconds: 120);
 const coverPlaybackMinimumVisibleFraction = 0.5;
 
-enum CoverPlaybackPhase { idle, preparing, playing }
+enum CoverPlaybackPhase { idle, playing }
 
 class CoverPlaybackGeometry {
   const CoverPlaybackGeometry({
@@ -21,143 +19,92 @@ class CoverPlaybackGeometry {
   final Rect? visibleBounds;
 
   double get visibleFraction {
-    final bounds = visibleBounds ?? viewport;
-    if (cover.isEmpty || bounds.isEmpty || !cover.overlaps(bounds)) {
-      return 0;
-    }
+    final bounds = (visibleBounds ?? viewport).intersect(viewport);
+    if (cover.isEmpty || bounds.isEmpty || !cover.overlaps(bounds)) return 0;
     final intersection = cover.intersect(bounds);
     return intersection.width *
         intersection.height /
         (cover.width * cover.height);
   }
-
-  double get distance => (cover.center - viewport.center).distanceSquared;
 }
 
-/// 一个应用作用域内只有一个动画租约；失效时同步通知播放器释放解码器。
+/// 半可见时激活，完全离屏才停止；每帧合并测量，持续可见项保持自己的播放器。
 class CoverPlaybackCoordinator extends ChangeNotifier {
   CoverPlaybackCoordinator({this.source});
   final CoverAnimationSource? source;
   final _candidates = <Object, CoverPlaybackGeometry? Function()>{};
-  Timer? _settle;
+  final _active = <Object>{};
   bool _reviewPending = false;
   int _reviewEpoch = 0;
-  Object? _preparing;
-  Object? _selected;
-  Object? _previous;
   bool _allowed = true;
-  bool _scrolling = false;
   bool _disposed = false;
 
-  Object? get selected => _selected;
-  Object? get preparing => _preparing;
+  Set<Object> get activeTokens => Set.unmodifiable(_active);
+  bool isActive(Object token) => _active.contains(token);
 
   void register(Object token, CoverPlaybackGeometry? Function() measure) {
     _candidates[token] = measure;
-    settle();
+    remeasure();
   }
 
   void unregister(Object token) {
-    if (_candidates.remove(token) == null) return;
-    if (_preparing == token) interrupt();
-    if (_previous == token) _previous = null;
-    settle();
+    _candidates.remove(token);
+    if (_active.remove(token) && !_disposed) notifyListeners();
   }
 
   void setAllowed(bool allowed) {
     if (_allowed == allowed) return;
     _allowed = allowed;
-    interrupt();
-    if (allowed) settle();
-  }
-
-  void scrollStarted() {
-    _scrolling = true;
-    interrupt();
-  }
-
-  void scrollEnded() {
-    _scrolling = false;
-    settle();
+    if (!allowed) {
+      interrupt();
+    } else {
+      remeasure();
+    }
   }
 
   void interrupt() {
-    _settle?.cancel();
-    _settle = null;
     _reviewPending = false;
     _reviewEpoch++;
-    if (_selected != null) _previous = _selected;
-    if (_selected != null || _preparing != null) {
-      _selected = null;
-      _preparing = null;
-      notifyListeners();
-    }
+    if (_active.isEmpty || _disposed) return;
+    _active.clear();
+    notifyListeners();
   }
 
-  void settle() {
-    if (!_allowed || _scrolling || _disposed) return;
-    // 同帧的 poster 注册只测量一次，不重置已有中心候选的确认计时。
-    if (_reviewPending) return;
+  void remeasure() {
+    if (!_allowed || _disposed || _reviewPending) return;
     _reviewPending = true;
     final epoch = _reviewEpoch;
-    scheduleMicrotask(() {
-      if (epoch != _reviewEpoch || _disposed) return;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_disposed || epoch != _reviewEpoch) return;
       _reviewPending = false;
-      _prepare();
+      _refresh();
     });
+    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
-  void _prepare() {
-    if (!_allowed || _scrolling || _disposed) return;
-    final best = _best();
-    if (best == _preparing) return;
-    // 先通知全部旧播放器释放，再授予新准备租约，避免监听顺序造成双解码。
-    interrupt();
-    if (best == null) return;
-    _preparing = best;
-    notifyListeners();
-    _settle = Timer(coverPlaybackSettleDelay, () {
-      _settle = null;
-      if (!_allowed || _scrolling || _disposed) return;
-      if (_best() != _preparing) {
-        _prepare();
-      } else {
-        _select(_preparing);
-      }
-    });
-  }
-
-  Object? _best() {
-    Object? best;
-    var bestDistance = double.infinity;
+  void _refresh() {
+    if (!_allowed || _disposed) return;
+    final next = <Object>{};
     for (final entry in _candidates.entries) {
-      final geometry = entry.value();
-      if (geometry == null ||
-          geometry.visibleFraction < coverPlaybackMinimumVisibleFraction) {
-        continue;
-      }
-      final distance = geometry.distance;
-      if (distance < bestDistance ||
-          (distance == bestDistance &&
-              entry.key == (_preparing ?? _previous))) {
-        best = entry.key;
-        bestDistance = distance;
+      final fraction = entry.value()?.visibleFraction ?? 0;
+      if (_active.contains(entry.key)
+          ? fraction > 0
+          : fraction >= coverPlaybackMinimumVisibleFraction) {
+        next.add(entry.key);
       }
     }
-    return best;
-  }
-
-  void _select(Object? token) {
-    if (_selected == token || _disposed) return;
-    _selected = token;
+    if (setEquals(next, _active)) return;
+    _active
+      ..clear()
+      ..addAll(next);
     notifyListeners();
   }
 
   @override
   void dispose() {
     _disposed = true;
-    _settle?.cancel();
     _reviewEpoch++;
+    _active.clear();
     _candidates.clear();
     source?.releaseMemory();
     super.dispose();

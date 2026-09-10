@@ -25,7 +25,7 @@ Widget _readyPoster(
 
 void main() {
   for (final nested in [false, true]) {
-    testWidgets('真实路由转场完成后无需滚动唤醒唯一准备，嵌套父路由=$nested', (tester) async {
+    testWidgets('真实路由转场完成后无需滚动激活可见项，嵌套父路由=$nested', (tester) async {
       final navigator = GlobalKey<NavigatorState>();
       final tokens = <CancelToken>[];
       Widget coverPage() => Scaffold(
@@ -154,7 +154,7 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
-  testWidgets('隐藏Tab和减少动态效果撤销播放，恢复重新等待', (tester) async {
+  testWidgets('隐藏Tab和减少动态效果撤销播放，恢复立即重测', (tester) async {
     var active = true;
     late StateSetter updateTab;
     final tokens = <CancelToken>[];
@@ -259,7 +259,7 @@ void main() {
     expect(calls, 0);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('列表只请求中心动画，拖动/后台/省流量取消下载，恢复需停稳', (tester) async {
+  testWidgets('半可见的所有封面立即请求，滚动保持，离屏及全局限制才撤销', (tester) async {
     tester.view.physicalSize = const Size(400, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -299,35 +299,51 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    expect(requests, ['https://cdn.example/1.gif']);
+    expect(requests, [
+      'https://cdn.example/0.gif',
+      'https://cdn.example/1.gif',
+      'https://cdn.example/2.gif',
+    ]);
     final gesture = await tester.startGesture(const Offset(200, 400));
     await gesture.moveBy(const Offset(0, -70));
     await tester.pump();
-    expect(tokens.single.isCancelled, isTrue);
+    expect(tokens.every((token) => !token.isCancelled), isTrue);
     await gesture.up();
     await tester.pumpAndSettle();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(requests.length, 2);
+    expect(requests.length, 3);
+    scroll.jumpTo(250);
+    await tester.pump();
+    expect(tokens.first.isCancelled, isTrue);
+    expect(tokens[1].isCancelled, isFalse);
+    expect(tokens[2].isCancelled, isFalse);
+    expect(requests.last, 'https://cdn.example/3.gif');
+    scroll.jumpTo(0);
+    await tester.pump();
+    expect(tokens[3].isCancelled, isTrue);
+    expect(tokens[1].isCancelled, isFalse);
+    expect(tokens[2].isCancelled, isFalse);
+    expect(requests.last, 'https://cdn.example/0.gif');
+    expect(requests.length, 5);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    expect(tokens.last.isCancelled, isTrue);
+    expect(tokens.every((token) => token.isCancelled), isTrue);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     await tester.pump();
-    expect(requests.length, 3);
+    expect(requests.length, 8);
     await container
         .read(dataSaverPreferenceControllerProvider.notifier)
         .select(true);
-    expect(tokens.last.isCancelled, isTrue);
+    expect(tokens.every((token) => token.isCancelled), isTrue);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(requests.length, 3);
+    expect(requests.length, 8);
     await tester.pumpWidget(const SizedBox());
     container.dispose();
     scroll.dispose();
   });
 
-  testWidgets('缺失可信poster不请求旧原图，详情遮挡与返回重新等待', (tester) async {
+  testWidgets('缺失可信poster不请求旧原图，详情遮挡与返回重新激活', (tester) async {
     final visibility = WenyouFeedbackVisibility();
     final navigator = GlobalKey<NavigatorState>();
     var calls = 0;

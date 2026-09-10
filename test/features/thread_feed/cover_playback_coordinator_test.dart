@@ -9,120 +9,106 @@ void main() {
     viewport: viewport,
   );
 
-  test('普通封面裁切不改变滚动视口中心', () {
+  test('可见面积同时受视口和祖先裁切约束', () {
     const value = CoverPlaybackGeometry(
-      cover: Rect.fromLTWH(0, 0, 100, 100),
+      cover: Rect.fromLTWH(0, 350, 100, 100),
       viewport: viewport,
-      visibleBounds: Rect.fromLTWH(0, 0, 100, 60),
+      visibleBounds: Rect.fromLTWH(0, 0, 100, 1000),
     );
-    expect(value.visibleFraction, 0.6);
-    expect(value.distance, 150 * 150);
+    expect(value.visibleFraction, 0.5);
   });
 
-  testWidgets('非候选静态封面加载完成不延后动画停稳计时', (tester) async {
+  testWidgets('所有至少半可见项下一帧立即激活，不设数量上限', (tester) async {
     final coordinator = CoverPlaybackCoordinator();
-    addTearDown(coordinator.dispose);
-    coordinator.register('animation', () => geometry(150));
-    await tester.pump(const Duration(milliseconds: 200));
-    coordinator.unregister('static-cover');
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(coordinator.selected, 'animation');
-  });
-
-  testWidgets('远离中心的poster完成注册不重新延迟已经确定的中心候选', (tester) async {
-    final coordinator = CoverPlaybackCoordinator();
-    addTearDown(coordinator.dispose);
-    coordinator.register('center', () => geometry(150));
-    await tester.pump(const Duration(milliseconds: 200));
-    coordinator.register('edge', () => geometry(0));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(coordinator.selected, 'center');
-  });
-
-  testWidgets('准备与120ms确认并行，滚动立即撤销并重置等待', (tester) async {
-    final coordinator = CoverPlaybackCoordinator();
-    addTearDown(coordinator.dispose);
-    coordinator.register('top', () => geometry(0));
-    coordinator.register('center', () => geometry(150));
-    coordinator.register('bottom', () => geometry(300));
-    await tester.pump();
-    expect(coordinator.preparing, 'center');
-    await tester.pump(const Duration(milliseconds: 119));
-    expect(coordinator.selected, isNull);
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(coordinator.selected, 'center');
-    coordinator.scrollStarted();
-    expect(coordinator.selected, isNull);
-    expect(coordinator.preparing, isNull);
-    await tester.pump(const Duration(seconds: 1));
-    expect(coordinator.selected, isNull);
-    coordinator.scrollEnded();
-    await tester.pump(const Duration(milliseconds: 80));
-    coordinator.scrollStarted();
-    coordinator.scrollEnded();
-    await tester.pump(const Duration(milliseconds: 119));
-    expect(coordinator.selected, isNull);
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(coordinator.selected, 'center');
-  });
-
-  testWidgets('中心候选不变时连续注册不饿死确认，新中心先撤销旧准备', (tester) async {
-    final coordinator = CoverPlaybackCoordinator();
-    addTearDown(coordinator.dispose);
-    coordinator.register('center', () => geometry(150));
-    await tester.pump();
-    for (var i = 0; i < 3; i++) {
-      await tester.pump(const Duration(milliseconds: 30));
-      coordinator.register('edge-$i', () => geometry(0));
-      await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      coordinator.register(i, () => geometry(100));
     }
-    await tester.pump(const Duration(milliseconds: 30));
-    expect(coordinator.selected, 'center');
-    final changes = <Object?>[];
-    coordinator.addListener(() => changes.add(coordinator.preparing));
-    coordinator.unregister('center');
+    expect(coordinator.activeTokens, isEmpty);
     await tester.pump();
-    expect(changes, [null, 'edge-0']);
-    expect(coordinator.selected, isNull);
-    coordinator.interrupt();
+    expect(
+      coordinator.activeTokens,
+      Set<Object>.from(List.generate(20, (i) => i)),
+    );
+    coordinator.dispose();
   });
 
-  testWidgets('半可见门槛、当前项平距优先和稳定顺序', (tester) async {
+  testWidgets('50%进入与0%退出滞回，重入必须重新达到半可见', (tester) async {
     final coordinator = CoverPlaybackCoordinator();
-    addTearDown(coordinator.dispose);
-    var first = -51.0;
-    var second = 350.0;
-    coordinator.register('first', () => geometry(first));
-    coordinator.register('second', () => geometry(second));
-    await tester.pump(coverPlaybackSettleDelay);
-    expect(coordinator.selected, 'second');
-    first = 100;
-    second = 200;
-    coordinator.scrollStarted();
-    coordinator.scrollEnded();
-    await tester.pump(coverPlaybackSettleDelay);
-    expect(coordinator.selected, 'second');
-    coordinator.unregister('second');
-    expect(coordinator.selected, isNull);
-    await tester.pump(coverPlaybackSettleDelay);
-    expect(coordinator.selected, 'first');
+    var y = -51.0;
+    coordinator.register('cover', () => geometry(y));
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isFalse);
+    y = -50;
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isTrue);
+    y = -99;
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isTrue);
+    y = -100;
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isFalse);
+    y = -99;
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isFalse);
+    y = -50;
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isTrue);
+    coordinator.dispose();
   });
 
-  testWidgets('后台、省流量和路由遮挡取消计时，恢复重新等待', (tester) async {
+  testWidgets('连续滚动重测同帧合并，持续可见项不撤销不重建', (tester) async {
     final coordinator = CoverPlaybackCoordinator();
-    addTearDown(coordinator.dispose);
+    var measurements = 0;
+    var notifications = 0;
+    coordinator.addListener(() => notifications++);
+    coordinator.register('first', () {
+      measurements++;
+      return geometry(100);
+    });
+    coordinator.register('second', () {
+      measurements++;
+      return geometry(250);
+    });
+    await tester.pump();
+    expect(notifications, 1);
+    final baseline = measurements;
+    for (var i = 0; i < 15; i++) {
+      coordinator.remeasure();
+    }
+    await tester.pump();
+    expect(measurements, baseline + 2);
+    expect(notifications, 1);
+    coordinator.register('offscreen', () => geometry(500));
+    await tester.pump();
+    expect(notifications, 1);
+    coordinator.unregister('first');
+    expect(coordinator.activeTokens, {'second'});
+    expect(notifications, 2);
+    coordinator.dispose();
+  });
+
+  testWidgets('后台省流量等全局限制立即撤销，恢复按当前可见性激活', (tester) async {
+    final coordinator = CoverPlaybackCoordinator();
     var visible = true;
-    coordinator.register('cover', () => visible ? geometry(150) : null);
-    await tester.pump(coverPlaybackSettleDelay);
+    coordinator.register('cover', () => visible ? geometry(100) : null);
+    await tester.pump();
     coordinator.setAllowed(false);
-    expect(coordinator.selected, isNull);
+    expect(coordinator.activeTokens, isEmpty);
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.activeTokens, isEmpty);
     coordinator.setAllowed(true);
-    await tester.pump(coverPlaybackSettleDelay);
-    expect(coordinator.selected, 'cover');
-    coordinator.interrupt();
+    await tester.pump();
+    expect(coordinator.isActive('cover'), isTrue);
     visible = false;
-    coordinator.settle();
-    await tester.pump(coverPlaybackSettleDelay);
-    expect(coordinator.selected, isNull);
+    coordinator.remeasure();
+    await tester.pump();
+    expect(coordinator.activeTokens, isEmpty);
+    coordinator.dispose();
   });
 }

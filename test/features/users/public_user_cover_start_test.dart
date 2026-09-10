@@ -144,7 +144,7 @@ Future<void> _cachePoster(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('个人主页轻滑同一封面停稳立即准备，分页不重启，详情返回和Tab均恢复', (tester) async {
+  testWidgets('个人主页可见封面轻滑持续，分页不重启，详情返回和收藏Tab恢复', (tester) async {
     tester.view.physicalSize = const Size(400, 700);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -187,29 +187,27 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 120));
-    expect(source.urls.last, 'https://cdn.example/created-0.gif');
+    await tester.pump();
+    expect(source.urls, contains('https://cdn.example/created-0.gif'));
     final beforeScroll = source.urls.length;
+    final visibleTokens = source.tokens
+        .where((token) => !token.isCancelled)
+        .toList();
+    expect(visibleTokens, isNotEmpty);
     final gesture = await tester.startGesture(const Offset(200, 400));
     await gesture.moveBy(const Offset(0, -30));
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(source.tokens.last.isCancelled, isTrue);
-    expect(source.urls.length, beforeScroll);
-    await gesture.up();
     await tester.pump();
-    expect(source.urls.length, beforeScroll + 1);
-    expect(source.urls.last, 'https://cdn.example/created-0.gif');
+    expect(visibleTokens.every((token) => !token.isCancelled), isTrue);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(source.urls.length, beforeScroll);
     final active = tester
         .widgetList<ControlledCoverAnimation>(
           find.byType(ControlledCoverAnimation),
         )
-        .where((widget) => widget.phase!.value != CoverPlaybackPhase.idle)
+        .where((widget) => widget.phase!.value == CoverPlaybackPhase.playing)
         .toList();
-    expect(active.length, 1);
-    expect(active.single.phase!.value, CoverPlaybackPhase.preparing);
-    await tester.pump(const Duration(milliseconds: 120));
-    expect(active.single.phase!.value, CoverPlaybackPhase.playing);
-
+    expect(active, isNotEmpty);
     final beforePagination = source.urls.length;
     await container
         .read(publicUserControllerProvider('profile').notifier)
@@ -225,21 +223,21 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(source.tokens.last.isCancelled, isTrue);
+    expect(source.tokens.every((token) => token.isCancelled), isTrue);
     navigator.currentState!.pop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 140));
     expect(source.urls.length, beforePagination);
     await tester.pumpAndSettle();
     await tester.pump();
-    expect(source.urls.length, beforePagination + 1);
+    expect(source.urls.length, greaterThan(beforePagination));
 
     await container
         .read(publicUserControllerProvider('profile').notifier)
-        .selectTab(PublicUserContentTab.played);
+        .selectTab(PublicUserContentTab.bookmarks);
     await tester.pumpAndSettle();
     await tester.pump();
-    expect(source.urls.last, contains('/played-'));
+    expect(source.urls.last, contains('/bookmarks-'));
     expect(
       tester
           .widgetList<ControlledCoverAnimation>(

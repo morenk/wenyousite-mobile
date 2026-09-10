@@ -49,6 +49,8 @@ class ControlledCoverAnimation extends StatefulWidget {
     this.decodeWidth,
     this.loader = loadCoverAnimation,
     this.codecFactory = decodeCoverAnimation,
+    this.onFirstFrameDecoded,
+    this.onFirstFramePainted,
     super.key,
   });
 
@@ -61,6 +63,12 @@ class ControlledCoverAnimation extends StatefulWidget {
   final int? decodeWidth;
   final CoverAnimationLoader loader;
   final CoverAnimationCodecFactory codecFactory;
+
+  /// 可选的受控性能采样；未提供时不创建计时、日志或网络事件。
+  final VoidCallback? onFirstFrameDecoded;
+
+  /// 对应 RawImage 所在帧完成绘制后通知，不等同显示屏已完成扫描。
+  final VoidCallback? onFirstFramePainted;
 
   @override
   State<ControlledCoverAnimation> createState() =>
@@ -76,13 +84,12 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   int _framesShown = 0;
   bool _started = false;
   Duration? _frameDuration;
+  bool _firstPaintScheduled = false;
 
   bool get _playing => widget.phase != null
       ? widget.phase!.value == CoverPlaybackPhase.playing
       : widget.lease?.value ?? widget.playing;
-  bool get _active => widget.phase?.value != null
-      ? widget.phase!.value != CoverPlaybackPhase.idle
-      : _playing;
+  bool get _active => _playing;
 
   @override
   void initState() {
@@ -168,7 +175,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
         return;
       }
       _codec = codec;
-      await _next(generation, preparingFirstFrame: true);
+      await _next(generation);
     } on Object {
       if (_current(generation)) {
         _release();
@@ -180,11 +187,9 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   bool _current(int generation) =>
       mounted && _active && generation == _generation;
 
-  Future<void> _next(int generation, {bool preparingFirstFrame = false}) async {
+  Future<void> _next(int generation) async {
     final codec = _codec;
-    if (codec == null ||
-        !_current(generation) ||
-        (!preparingFirstFrame && !_playing)) {
+    if (codec == null || !_current(generation) || !_playing) {
       return;
     }
     try {
@@ -197,6 +202,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
       setState(() => _frame = next.image);
       _disposeAfterPaint(old);
       _framesShown++;
+      if (_framesShown == 1) widget.onFirstFrameDecoded?.call();
       _frameDuration = next.duration;
       final finished =
           codec.frameCount <= 1 ||
@@ -221,7 +227,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     if (!_playing || _codec == null || duration == null || _timer != null) {
       return;
     }
-    // 准备期间首帧冻结；真正激活时才开始计算它的完整显示时长。
+    // 完整保留每帧显示时长；在途解码先消耗duration，重建不能再排一帧。
     final generation = _generation;
     _timer = Timer(duration, () {
       _timer = null;
@@ -251,6 +257,7 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
     _frame = null;
     _framesShown = 0;
     _frameDuration = null;
+    _firstPaintScheduled = false;
   }
 
   void _stop() {
@@ -260,13 +267,23 @@ class _ControlledCoverAnimationState extends State<ControlledCoverAnimation> {
   }
 
   @override
-  Widget build(BuildContext context) => _playing && _frame != null
-      ? RawImage(
-          image: _frame,
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.low,
-        )
-      : widget.poster;
+  Widget build(BuildContext context) {
+    if (!_playing || _frame == null) return widget.poster;
+    if (!_firstPaintScheduled && widget.onFirstFramePainted != null) {
+      _firstPaintScheduled = true;
+      final generation = _generation;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_current(generation) && _frame != null) {
+          widget.onFirstFramePainted?.call();
+        }
+      });
+    }
+    return RawImage(
+      image: _frame,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.low,
+    );
+  }
 
   @override
   void dispose() {

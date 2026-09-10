@@ -23,6 +23,8 @@ class ThreadFeedCover extends StatefulWidget {
     this.animationLoader = loadCoverAnimation,
     this.previewVariants = const [],
     this.posterBuilder,
+    this.onFirstFrameDecoded,
+    this.onFirstFramePainted,
     super.key,
   });
 
@@ -31,6 +33,8 @@ class ThreadFeedCover extends StatefulWidget {
   final CoverAnimationLoader animationLoader;
   final List<ThreadFeedCoverPreviewVariant> previewVariants;
   final CoverPosterBuilder? posterBuilder;
+  final VoidCallback? onFirstFrameDecoded;
+  final VoidCallback? onFirstFramePainted;
 
   @override
   State<ThreadFeedCover> createState() => _ThreadFeedCoverState();
@@ -130,10 +134,8 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
   void _selectionChanged() {
     _phase.value = !_enabled || !_posterReady
         ? CoverPlaybackPhase.idle
-        : _coordinator?.selected == _token
+        : _coordinator?.isActive(_token) == true
         ? CoverPlaybackPhase.playing
-        : _coordinator?.preparing == _token
-        ? CoverPlaybackPhase.preparing
         : CoverPlaybackPhase.idle;
   }
 
@@ -246,6 +248,8 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
             ? poster
             : LayoutBuilder(
                 builder: (context, constraints) {
+                  // 局部约束变化也要在布局后重测，不撤销仍可见的邻卡。
+                  _coordinator?.remeasure();
                   final ratio = MediaQuery.devicePixelRatioOf(context);
                   final url = selectThreadCoverAnimation(
                     variants: widget.previewVariants,
@@ -265,6 +269,8 @@ class _ThreadFeedCoverState extends State<ThreadFeedCover> {
                     source: _coordinator?.source,
                     poster: poster,
                     loader: widget.animationLoader,
+                    onFirstFrameDecoded: widget.onFirstFrameDecoded,
+                    onFirstFramePainted: widget.onFirstFramePainted,
                   );
                 },
               ),

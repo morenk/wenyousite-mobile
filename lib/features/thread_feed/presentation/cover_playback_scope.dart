@@ -56,7 +56,7 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
 
   void _navigationChanged() {
     _coordinator.interrupt();
-    _coordinator.scrollEnded();
+    _coordinator.remeasure();
   }
 
   @override
@@ -75,9 +75,8 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
 
   @override
   void didChangeMetrics() {
-    _coordinator.interrupt();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _coordinator.settle();
+      if (mounted) _coordinator.remeasure();
     });
   }
 
@@ -95,7 +94,7 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
             previous?.session.accountId != null ||
             previous?.visibilityRevision != next.visibilityRevision,
       );
-      _coordinator.settle();
+      _coordinator.remeasure();
     });
     ref.listen(
       dataSaverPreferenceControllerProvider.select((state) => state.enabled),
@@ -106,19 +105,13 @@ class _CoverPlaybackScopeState extends ConsumerState<CoverPlaybackScope>
       coordinator: _coordinator,
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if (notification is ScrollStartNotification ||
-              notification is ScrollUpdateNotification ||
-              notification is OverscrollNotification) {
-            _coordinator.scrollStarted();
-          } else if (notification is ScrollEndNotification) {
-            _coordinator.scrollEnded();
-          }
+          _coordinator.remeasure();
           return false;
         },
         child: NotificationListener<ScrollMetricsNotification>(
           onNotification: (_) {
-            // 分页只改变内容范围时保留相同中心候选，实际几何变化由重测决定。
-            _coordinator.settle();
+            // 分页不重启持续可见项，是否进出视口由布局后的测量决定。
+            _coordinator.remeasure();
             return false;
           },
           child: widget.child,
