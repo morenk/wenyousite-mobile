@@ -1,6 +1,12 @@
 # 个人主页动画封面起播候选验收
 
-状态：负责人已更改播放策略；多播候选已完成受控 Profile 验证，待个人主页真机复验。最终 Debug／统一完整门禁证据以PR交付记录为准。下述 300 ms／120 ms 记录为已发生的历史，不代表现行产品规则。
+状态：多播应用候选已通过完整门禁，负责人于2026-09-11确认个人主页起播与滚动连续性“观感符合预期，可以验收”。验收限于下述精确制品和个人主页场景，不扩大到Web实景或低端设备。下述300 ms／120 ms记录为已发生的历史，不代表现行产品规则。
+
+## 已验收应用制品
+
+正常应用入口`lib/main.dart`的Debug源码为`a0691d6f7a603a5a2cd9561e7a68678d29edc6ea`，tree `b8119a2a7b11ed8a0b17d31b510bdae937e2c652`。APK为`build/app/outputs/flutter-apk/app-debug.apk`，243,611,125 bytes，SHA-256 `A2D24DC7837ACB90964A5D37E2132B8F8651226992E493F64A05B0142F98A125`；`site.wenyou.app.debug`／温油站 Debug／`0.7.0-dev.1-debug`（94），最低API26，v2签名通过。根任务以ADB覆盖安装并核对设备`4b9c39b5`上的完整APK哈希一致，安装时间`2026-09-11 04:59:13`，未清数据。
+
+同一冻结应用源码唯一`npm run check`退出码0：Flutter 2541通过、1项既有Sentry外部回执跳过、0失败（测试23分17秒），Windows工具17/17；OpenAPI验证及确定性再生成、生产API精确SHA、全库／生成API分析、891文件格式、21模块文档、架构与API覆盖全部通过。生产核验为API `5.20.0-dev.20260909.1`／后端`0ee2c0de1d9c570e495e778be6661b074b7a4bef`。日志`%TEMP%/wenyou-cover-multiplay-full-gate.log`。本次后续提交只记录外部验收事实，不改变已构建和已验收应用源码，不重构建APK；最终PR HEAD与应用SHA分开记录于PR14。
 
 ## 本轮策略变更
 
@@ -45,7 +51,7 @@ flutter drive --driver=test_driver/performance_test.dart --target=integration_te
 
 本机28组的Flutter build/raster阶段超过16.67ms比例均为0；超过8.33ms仅双原GIF持续组为0.281%，其他组为0。fixture按16ms pump驱动采样，未采集平台实际present／丢帧计数，不能据此宣称真实个人主页稳定120fps。PSS是独立Profile整个进程、约2秒采样观察峰值；缓存、组次顺序及meminfo触发的Explicit GC（日志约8–24ms）均可能影响结果。USB充电，结束电量34%、温度33.9°C；只在这一台设备和合成素材上测量，不能推广到低端机或所有GIF。
 
-仍待负责人用最终Debug在原个人主页复验。测试未修改产品多播规则、帧率或缓存预算，未安装正式包或携带真实账号数据；根任务已停止本轮HTTP／PSS采样并移除本轮专属ADB reverse。
+负责人已在上述最终Debug上验收个人主页起播与滚动连续性。测试未修改产品多播规则、帧率或缓存预算，未安装正式包或携带真实账号数据；根任务已停止本轮HTTP／PSS采样并移除本轮专属ADB reverse。
 
 ## 历史候选与验收反馈
 
