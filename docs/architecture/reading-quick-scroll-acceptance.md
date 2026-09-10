@@ -86,5 +86,5 @@
 - 包名 `site.wenyou.app.debug`，versionName `0.7.0-dev.1-debug`，versionCode `94`；`aapt dump badging` 与 `apksigner verify` 均已核对。
 - APK：`D:\code\wenyousite\.worktrees\mobile-reading-scrubber\build\app\outputs\flutter-apk\app-debug.apk`，203,765,118 字节。
 - SHA-256：`0e414866bfc1d2efb170684c9775b557434dd54e89d91e9afe8b58a5d24cc441`。
-- 构建后 ADB 设备列表为空，未安装本候选；负责人设备仍未核验这份摘要。
+- 构建时设备未连接；负责人随后明确要求 ADB 安装，已通过 `install -r` 更新同一 `site.wenyou.app.debug` 应用并保留数据。安装后 `lastUpdateTime` 为 `2026-09-11 04:12:02`，设备内 `base.apk` SHA-256 与上述候选完全一致，已启动“温油站 Debug”。安装成功不代替原场景验收通过。
 - 复验步骤：离开主题后重新进入原问题子贴，或选择尚未浏览的子贴；不要先滑到底预热。立即打开快翻并拖到中间，确认正文尚未到底；松手后再拖动应保持一致，最右端仍可按住跟随新增楼层。原帖、真机和真实网络结果继续待负责人验收。
