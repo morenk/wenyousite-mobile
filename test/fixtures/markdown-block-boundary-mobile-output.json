@@ -3,7 +3,7 @@
   "backendRevision": "a91cbb8b605223c596af299be22c5547f69e25b9",
   "fixtureRevision": 2,
   "fixtureSha256": "822509411fbf3379847a04ec64a4a32ddb1bb8fb96aecbf38b395b049134fda9",
-  "description": "由消费者回归记录的实际输出；pageSaves来自真实楼层页面IME提交，codeSaves来自真实Quill输入后会话flush。仅合成测试语料，不含完整原楼层正文。",
+  "description": "由消费者回归记录的实际输出；pageSaves来自真实楼层页面IME提交，codeSaves来自真实Quill输入后会话flush。codecCases含unsafe-target预期拒绝负例，不能视为可发布结果。仅合成测试语料，不含完整原楼层正文。",
   "codecCases": [
     {
       "id": "center-paragraph-after-paragraph",
@@ -15,7 +15,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-paragraph",
@@ -27,7 +28,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-heading-2",
@@ -39,7 +41,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-heading-2",
@@ -51,7 +54,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-heading-3",
@@ -63,7 +67,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-heading-3",
@@ -75,7 +80,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-image",
@@ -87,7 +93,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-image",
@@ -99,7 +106,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-bullet-list",
@@ -111,7 +119,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-bullet-list",
@@ -123,7 +132,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-blockquote",
@@ -135,7 +145,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-blockquote",
@@ -147,7 +158,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-horizontal-rule",
@@ -157,7 +169,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-horizontal-rule",
@@ -167,7 +180,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-after-empty-paragraph",
@@ -179,7 +193,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-before-empty-paragraph",
@@ -191,7 +206,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-crlf",
@@ -203,7 +219,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-blank-before",
@@ -217,7 +234,8 @@
         "left",
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-paragraph-consecutive-aligned-blocks",
@@ -231,7 +249,8 @@
         "left",
         "center",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-paragraph",
@@ -243,7 +262,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-paragraph",
@@ -255,7 +275,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-heading-2",
@@ -267,7 +288,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-heading-2",
@@ -279,7 +301,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-heading-3",
@@ -291,7 +314,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-heading-3",
@@ -303,7 +327,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-image",
@@ -315,7 +340,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-image",
@@ -327,7 +353,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-bullet-list",
@@ -339,7 +366,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-bullet-list",
@@ -351,7 +379,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-blockquote",
@@ -363,7 +392,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-blockquote",
@@ -375,7 +405,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-horizontal-rule",
@@ -385,7 +416,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-horizontal-rule",
@@ -395,7 +427,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-after-empty-paragraph",
@@ -407,7 +440,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-before-empty-paragraph",
@@ -419,7 +453,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-crlf",
@@ -431,7 +466,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-blank-before",
@@ -445,7 +481,8 @@
         "left",
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-2-consecutive-aligned-blocks",
@@ -459,7 +496,8 @@
         "left",
         "center",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-paragraph",
@@ -471,7 +509,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-paragraph",
@@ -483,7 +522,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-heading-2",
@@ -495,7 +535,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-heading-2",
@@ -507,7 +548,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-heading-3",
@@ -519,7 +561,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-heading-3",
@@ -531,7 +574,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-image",
@@ -543,7 +587,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-image",
@@ -555,7 +600,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-bullet-list",
@@ -567,7 +613,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-bullet-list",
@@ -579,7 +626,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-blockquote",
@@ -591,7 +639,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-blockquote",
@@ -603,7 +652,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-horizontal-rule",
@@ -613,7 +663,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-horizontal-rule",
@@ -623,7 +674,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-after-empty-paragraph",
@@ -635,7 +687,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-before-empty-paragraph",
@@ -647,7 +700,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-crlf",
@@ -659,7 +713,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-blank-before",
@@ -673,7 +728,8 @@
         "left",
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-heading-3-consecutive-aligned-blocks",
@@ -687,7 +743,8 @@
         "left",
         "center",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-paragraph",
@@ -699,7 +756,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-paragraph",
@@ -711,7 +769,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-heading-2",
@@ -723,7 +782,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-heading-2",
@@ -735,7 +795,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-heading-3",
@@ -747,7 +808,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-heading-3",
@@ -759,7 +821,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-image",
@@ -771,7 +834,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-image",
@@ -783,7 +847,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-bullet-list",
@@ -795,7 +860,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-bullet-list",
@@ -807,7 +873,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-blockquote",
@@ -819,7 +886,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-blockquote",
@@ -831,7 +899,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-horizontal-rule",
@@ -841,7 +910,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-horizontal-rule",
@@ -851,7 +921,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-after-empty-paragraph",
@@ -863,7 +934,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-before-empty-paragraph",
@@ -875,7 +947,8 @@
       "lineAlignments": [
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-crlf",
@@ -887,7 +960,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-blank-before",
@@ -901,7 +975,8 @@
         "left",
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-image-consecutive-aligned-blocks",
@@ -915,7 +990,8 @@
         "left",
         "center",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-paragraph",
@@ -927,7 +1003,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-paragraph",
@@ -939,7 +1016,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-heading-2",
@@ -951,7 +1029,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-heading-2",
@@ -963,7 +1042,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-heading-3",
@@ -975,7 +1055,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-heading-3",
@@ -987,7 +1068,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-image",
@@ -999,7 +1081,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-image",
@@ -1011,7 +1094,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-bullet-list",
@@ -1023,7 +1107,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-bullet-list",
@@ -1035,7 +1120,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-blockquote",
@@ -1047,7 +1133,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-blockquote",
@@ -1059,7 +1146,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-horizontal-rule",
@@ -1069,7 +1157,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-horizontal-rule",
@@ -1079,7 +1168,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-after-empty-paragraph",
@@ -1091,7 +1181,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-before-empty-paragraph",
@@ -1103,7 +1194,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-crlf",
@@ -1115,7 +1207,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-blank-before",
@@ -1129,7 +1222,8 @@
         "left",
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-paragraph-consecutive-aligned-blocks",
@@ -1143,7 +1237,8 @@
         "left",
         "right",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-paragraph",
@@ -1155,7 +1250,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-paragraph",
@@ -1167,7 +1263,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-heading-2",
@@ -1179,7 +1276,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-heading-2",
@@ -1191,7 +1289,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-heading-3",
@@ -1203,7 +1302,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-heading-3",
@@ -1215,7 +1315,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-image",
@@ -1227,7 +1328,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-image",
@@ -1239,7 +1341,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-bullet-list",
@@ -1251,7 +1354,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-bullet-list",
@@ -1263,7 +1367,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-blockquote",
@@ -1275,7 +1380,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-blockquote",
@@ -1287,7 +1393,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-horizontal-rule",
@@ -1297,7 +1404,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-horizontal-rule",
@@ -1307,7 +1415,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-after-empty-paragraph",
@@ -1319,7 +1428,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-before-empty-paragraph",
@@ -1331,7 +1441,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-crlf",
@@ -1343,7 +1454,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-blank-before",
@@ -1357,7 +1469,8 @@
         "left",
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-2-consecutive-aligned-blocks",
@@ -1371,7 +1484,8 @@
         "left",
         "right",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-paragraph",
@@ -1383,7 +1497,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-paragraph",
@@ -1395,7 +1510,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-heading-2",
@@ -1407,7 +1523,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-heading-2",
@@ -1419,7 +1536,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-heading-3",
@@ -1431,7 +1549,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-heading-3",
@@ -1443,7 +1562,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-image",
@@ -1455,7 +1575,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-image",
@@ -1467,7 +1588,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-bullet-list",
@@ -1479,7 +1601,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-bullet-list",
@@ -1491,7 +1614,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-blockquote",
@@ -1503,7 +1627,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-blockquote",
@@ -1515,7 +1640,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-horizontal-rule",
@@ -1525,7 +1651,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-horizontal-rule",
@@ -1535,7 +1662,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-after-empty-paragraph",
@@ -1547,7 +1675,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-before-empty-paragraph",
@@ -1559,7 +1688,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-crlf",
@@ -1571,7 +1701,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-blank-before",
@@ -1585,7 +1716,8 @@
         "left",
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-heading-3-consecutive-aligned-blocks",
@@ -1599,7 +1731,8 @@
         "left",
         "right",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-paragraph",
@@ -1611,7 +1744,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-paragraph",
@@ -1623,7 +1757,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-heading-2",
@@ -1635,7 +1770,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-heading-2",
@@ -1647,7 +1783,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-heading-3",
@@ -1659,7 +1796,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-heading-3",
@@ -1671,7 +1809,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-image",
@@ -1683,7 +1822,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-image",
@@ -1695,7 +1835,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-bullet-list",
@@ -1707,7 +1848,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-bullet-list",
@@ -1719,7 +1861,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-blockquote",
@@ -1731,7 +1874,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-blockquote",
@@ -1743,7 +1887,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-horizontal-rule",
@@ -1753,7 +1898,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-horizontal-rule",
@@ -1763,7 +1909,8 @@
       ],
       "lineAlignments": [
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-after-empty-paragraph",
@@ -1775,7 +1922,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-before-empty-paragraph",
@@ -1787,7 +1935,8 @@
       "lineAlignments": [
         "right",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-crlf",
@@ -1799,7 +1948,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-blank-before",
@@ -1813,7 +1963,8 @@
         "left",
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-image-consecutive-aligned-blocks",
@@ -1827,7 +1978,8 @@
         "left",
         "right",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "legacy-soft-lines",
@@ -1843,7 +1995,8 @@
         "center",
         "center",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "setext-target",
@@ -1855,7 +2008,8 @@
       "lineAlignments": [
         "left",
         "right"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "escaped-marker",
@@ -1867,7 +2021,8 @@
       "lineAlignments": [
         "left",
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "inline-code-marker",
@@ -1877,7 +2032,8 @@
       ],
       "lineAlignments": [
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "multiline-inline-code-marker",
@@ -1887,7 +2043,8 @@
       ],
       "lineAlignments": [
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-list",
@@ -1897,7 +2054,8 @@
         "[wenyousite-align-v1-center]: #",
         "列表"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-quote",
@@ -1907,7 +2065,8 @@
         "[wenyousite-align-v1-center]: #",
         "引用"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-hr",
@@ -1916,7 +2075,8 @@
         "前文",
         "[wenyousite-align-v1-center]: #"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-empty",
@@ -1926,7 +2086,8 @@
         "[wenyousite-align-v1-center]: #",
         ""
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-h1",
@@ -1936,7 +2097,8 @@
         "[wenyousite-align-v1-center]: #",
         "# 标题"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-h4",
@@ -1946,7 +2108,8 @@
         "[wenyousite-align-v1-center]: #",
         "#### 标题"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-mixed-image",
@@ -1956,7 +2119,8 @@
         "[wenyousite-align-v1-center]: #",
         "文字 [图片]"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-image-soft-text",
@@ -1967,7 +2131,8 @@
         "[图片]",
         "文字"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-blank-gap",
@@ -1977,7 +2142,8 @@
         "[wenyousite-align-v1-center]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-duplicate",
@@ -1987,7 +2153,8 @@
         "[wenyousite-align-v1-center]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-invalid-orphan",
@@ -1996,7 +2163,8 @@
         "前文",
         "[wenyousite-align-v1-center]: #"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-list",
@@ -2006,7 +2174,8 @@
         "[wenyousite-align-v1-right]: #",
         "列表"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-quote",
@@ -2016,7 +2185,8 @@
         "[wenyousite-align-v1-right]: #",
         "引用"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-hr",
@@ -2025,7 +2195,8 @@
         "前文",
         "[wenyousite-align-v1-right]: #"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-empty",
@@ -2035,7 +2206,8 @@
         "[wenyousite-align-v1-right]: #",
         ""
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-h1",
@@ -2045,7 +2217,8 @@
         "[wenyousite-align-v1-right]: #",
         "# 标题"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-h4",
@@ -2055,7 +2228,8 @@
         "[wenyousite-align-v1-right]: #",
         "#### 标题"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-mixed-image",
@@ -2065,7 +2239,8 @@
         "[wenyousite-align-v1-right]: #",
         "文字 [图片]"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-image-soft-text",
@@ -2076,7 +2251,8 @@
         "[图片]",
         "文字"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-blank-gap",
@@ -2086,7 +2262,8 @@
         "[wenyousite-align-v1-right]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-duplicate",
@@ -2096,7 +2273,8 @@
         "[wenyousite-align-v1-right]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-invalid-orphan",
@@ -2105,7 +2283,8 @@
         "前文",
         "[wenyousite-align-v1-right]: #"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "nested-quote",
@@ -2114,7 +2293,8 @@
         "> [wenyousite-align-v1-center]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "nested-list",
@@ -2124,7 +2304,8 @@
         "  [wenyousite-align-v1-center]: #",
         "  正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "nested-indent",
@@ -2133,7 +2314,8 @@
         " [wenyousite-align-v1-center]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "protected-fence",
@@ -2145,7 +2327,8 @@
         "正文",
         "```"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "protected-html",
@@ -2157,7 +2340,8 @@
         "正文",
         "</div>"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "protected-indent-code",
@@ -2166,7 +2350,8 @@
         "    [wenyousite-align-v1-center]: #",
         "    正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "error-after-boundary",
@@ -2176,7 +2361,8 @@
         "正文",
         "# 禁止标题"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "unsafe-target",
@@ -2185,7 +2371,12 @@
         "前文",
         "[链接](ftp://example.com)"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": false,
+      "expectedError": {
+        "code": "unsafe-link",
+        "line": 3
+      }
     },
     {
       "id": "unknown-version",
@@ -2195,7 +2386,8 @@
         "[wenyousite-align-v2-center]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "wrong-value",
@@ -2205,7 +2397,8 @@
         "[wenyousite-align-v1-left]: #",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "trailing-space",
@@ -2215,7 +2408,8 @@
         "[wenyousite-align-v1-center]: # ",
         "正文"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "multiline-inline-code-mobile-regression",
@@ -2225,7 +2419,8 @@
       ],
       "lineAlignments": [
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "raw-html-heading-mobile-regression",
@@ -2236,7 +2431,8 @@
         "## title",
         "</div>"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-link-url-later-code",
@@ -2248,7 +2444,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-link-url-multiline-code",
@@ -2260,7 +2457,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-image-url-later-code",
@@ -2272,7 +2470,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-image-url-multiline-code",
@@ -2284,7 +2483,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-link-title-later-code",
@@ -2297,7 +2497,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-link-title-multiline-code",
@@ -2310,7 +2511,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-image-title-later-code",
@@ -2322,7 +2524,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "backtick-image-title-multiline-code",
@@ -2334,7 +2537,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "multiline-code-protects-empty-row-and-marker",
@@ -2344,7 +2548,8 @@
       ],
       "lineAlignments": [
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "html-after-empty-row-still-protected",
@@ -2356,7 +2561,8 @@
         "## title",
         "</div>"
       ],
-      "editorFallback": "unsupported-source"
+      "editorFallback": "unsupported-source",
+      "expectedBackendAccepted": true
     },
     {
       "id": "aligned-multiline-code-after-text",
@@ -2368,7 +2574,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "marker-after-multiline-code",
@@ -2380,7 +2587,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "aligned-multiline-code-at-start",
@@ -2390,7 +2598,8 @@
       ],
       "lineAlignments": [
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "marker-after-two-multiline-codes",
@@ -2402,7 +2611,8 @@
       "lineAlignments": [
         "left",
         "center"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "list-lazy-multiline-code-marker",
@@ -2412,7 +2622,8 @@
       ],
       "lineAlignments": [
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     },
     {
       "id": "quote-lazy-multiline-code-marker",
@@ -2422,96 +2633,114 @@
       ],
       "lineAlignments": [
         "left"
-      ]
+      ],
+      "expectedBackendAccepted": true
     }
   ],
   "pageSaves": [
     {
       "id": "center-insert-round-0",
       "markdown": "前文\n\n[wenyousite-align-v1-center]: #\n正新增文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-insert-round-1",
       "markdown": "前文\n\n[wenyousite-align-v1-center]: #\n正新增文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-insert-round-2",
       "markdown": "前文\n\n[wenyousite-align-v1-center]: #\n正新增文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-enter-round-0",
       "markdown": "前文\n\n[wenyousite-align-v1-center]: #\n正\n\n文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-enter-round-1",
       "markdown": "前文\n\n[wenyousite-align-v1-center]: #\n正\n\n文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "center-enter-round-2",
       "markdown": "前文\n\n[wenyousite-align-v1-center]: #\n正\n\n文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-insert-round-0",
       "markdown": "前文\n\n[wenyousite-align-v1-right]: #\n正新增文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-insert-round-1",
       "markdown": "前文\n\n[wenyousite-align-v1-right]: #\n正新增文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-insert-round-2",
       "markdown": "前文\n\n[wenyousite-align-v1-right]: #\n正新增文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-enter-round-0",
       "markdown": "前文\n\n[wenyousite-align-v1-right]: #\n正\n\n文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-enter-round-1",
       "markdown": "前文\n\n[wenyousite-align-v1-right]: #\n正\n\n文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "right-enter-round-2",
       "markdown": "前文\n\n[wenyousite-align-v1-right]: #\n正\n\n文",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "synthetic-whitespace-1",
       "markdown": "甲续                       乙\n⁠                                                             丙  ⁠\n⁠  丁 戊　己",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     },
     {
       "id": "synthetic-whitespace-2",
       "markdown": "⁠  甲续  😀 乙　丙  ⁠",
-      "producer": "PostRepliesPage-IME-submit"
+      "producer": "PostRepliesPage-IME-submit",
+      "expectedBackendAccepted": true
     }
   ],
   "codeSaves": [
     {
       "id": "inline-code-paragraph",
       "markdown": "😀 `代码 [wenyousite-align-v1-center]: # 正续文`",
-      "producer": "RichEditorSession-IME-flush"
+      "producer": "RichEditorSession-IME-flush",
+      "expectedBackendAccepted": true
     },
     {
       "id": "inline-code-list",
       "markdown": "- 😀 `代码 [wenyousite-align-v1-center]: # 正续文`",
-      "producer": "RichEditorSession-IME-flush"
+      "producer": "RichEditorSession-IME-flush",
+      "expectedBackendAccepted": true
     },
     {
       "id": "inline-code-blockquote",
       "markdown": "> 😀 `代码 [wenyousite-align-v1-center]: # 正续文`",
-      "producer": "RichEditorSession-IME-flush"
+      "producer": "RichEditorSession-IME-flush",
+      "expectedBackendAccepted": true
     }
   ]
 }

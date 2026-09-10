@@ -76,6 +76,9 @@ void main() {
             decoded.delta,
           ).map((row) => row['text']).toList(),
           'editorFallback': 'unsupported-source',
+          'expectedBackendAccepted': item['id'] != 'unsafe-target',
+          if (item['id'] == 'unsafe-target')
+            'expectedError': {'code': 'unsafe-link', 'line': 3},
         });
         return;
       }
@@ -137,6 +140,7 @@ void main() {
       exports.add({
         'id': item['id'],
         'markdown': saved,
+        'expectedBackendAccepted': true,
         'editorLines': rows.map((row) => row['text']).toList(),
         if (usesExistingLinkTitleFallback(item['id'] as String))
           'editorFallback': 'existing-link-title-source',

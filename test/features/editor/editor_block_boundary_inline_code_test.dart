@@ -74,6 +74,7 @@ void main() {
         'id': 'inline-code-${block.keys.firstOrNull ?? 'paragraph'}',
         'markdown': emitted,
         'producer': 'RichEditorSession-IME-flush',
+        'expectedBackendAccepted': true,
       });
       expect(
         MarkdownAlignmentContract.analyze(saved).validMarkerLines,

@@ -1,5 +1,4 @@
 import 'package:markdown/markdown.dart' as md;
-import 'package:wenyousite_mobile/core/markdown/markdown_container_quote_syntax.dart';
 
 /// Plain text and explicit empty rows form one line layout. Stop before any
 /// structural block so heading/list/image semantics stay with their parsers.
@@ -62,7 +61,7 @@ class MarkdownLiteralRowsSyntax extends md.BlockSyntax {
 
 /// Explicit quoted empty rows share one text layout, so the Markdown widget
 /// does not add paragraph spacing on both sides of every empty row.
-class MarkdownQuoteLineSyntax extends MarkdownContainerQuoteSyntax {
+class MarkdownQuoteLineSyntax extends md.BlockquoteSyntax {
   const MarkdownQuoteLineSyntax(this.emptyParagraphTag);
 
   final String emptyParagraphTag;

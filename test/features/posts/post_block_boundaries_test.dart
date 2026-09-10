@@ -84,6 +84,7 @@ void main() {
           'id': '${item['id']}-round-$round',
           'markdown': repository.updateRequests.last.content,
           'producer': 'PostRepliesPage-IME-submit',
+          'expectedBackendAccepted': true,
         });
         expect(find.byKey(const Key('post-composer-sheet')), findsNothing);
         await _edit(tester);
@@ -180,6 +181,7 @@ void main() {
           'id': 'synthetic-whitespace-$i',
           'markdown': repository.updateRequests.single.content,
           'producer': 'PostRepliesPage-IME-submit',
+          'expectedBackendAccepted': true,
         });
       }
       await _edit(tester);

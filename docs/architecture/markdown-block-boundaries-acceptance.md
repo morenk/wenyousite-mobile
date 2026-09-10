@@ -64,6 +64,19 @@
 共享序列化输出由测试写入 `build/mobile-block-boundary-serialized.json`，分别标记普通支持、既有 link title 降级和不支持源码降级；`editorLines` 是编辑器实际可见行。最终语料经 Git 交给 Backend 校验发布可接受性，不能以 Codec 自洽代替此证据。
 
 公网 `/meta` 仍为 `0ee2c0d`，候选契约 `a91cbb8` 尚未部署，因此统一门禁的公网 revision 检查预计继续失败，必须单独记录。未安装 Android 候选包，未取得负责人原场景验收，Web → Android → Web 登录链路仍待手测；Widget/Drift/剪贴板替身不代替设备或线上验证。
+## 保存阻断与最终收口补充
+
+治理从 VPS 只读 Mobile 镜像取得 `db744dc` 的 225 份实际输出，使用 Backend 共用 validator 独立校验：224 份接受，唯一 `unsafe-target` 按 `unsafe-link`、第 3 行拒绝；14 份真实页面提交与 3 份真实 Quill flush 全部接受。该负例由 Codec 保留作为编辑源码，不是可发布保存结果，产物已显式标记 `expectedBackendAccepted: false` 及 `expectedError`。
+
+针对该负例新增真实会话与楼层提交入口回归，在 `db744dc` 上 2 项均失败：flush 返回 true，页面确实调用了写仓储。候选追加 `MarkdownSubmissionGuard`，在会话发布 Markdown 之前遍历实际 AST，复用 `MarkdownContent.isSafeLink/isSafeImage` 拒绝不允许的 URL scheme；保留可修改正文，失败时不发布变更、不发送写请求。代码、完整转义字面文本及既有站内地址分别回归，不扩大白名单。原失败记录为 `build/block-boundary-unsafe-original.log`。
+
+Backend `169b336` 独立确认：仅转义链接括号但保留裸 `ftp://example.com` 时，GFM 仍产生自动链接，仍应拒绝；裸 FTP 和显式 FTP 链接也拒绝。因此将最初错误的“部分转义即可通过”测试预期改为拒绝，另用编辑器现有完整标点转义的文本验证允许保留字面示例。未为测试放宽 URL 策略。
+
+第二轮统一门禁 `build/block-boundary-final-check.log`：应用和生成客户端分析、格式、文档、架构、API 覆盖、生成一致性及 Windows 工具测试通过，Debug APK 构建成功；全量有 3 项失败，分别是旧引用布局 Golden 与运行中新增的 unsafe-target 两个旧行为断言。修正发生于本轮启动后，该轮不能代表最终 clean 候选。
+
+已查看 Golden 的 master/test/maskedDiff：通用引用收集器使普通 lazy 正文进入旧引用布局。恢复既有阅读 QuoteLineSyntax，仅在源码保护中保留容器适配，并使用真实 code 范围的阅读投影；不更新旧 Golden。后续独立专项 `build/block-boundary-final-candidate-regression.log` 450 通过，仅上述部分转义预期失败；纠正后 `build/block-boundary-guard-golden-verified.log` 的 19 项（含真实 flush/不发写请求、旧 Golden 与安全正负例）全部通过。新增裸 FTP／HTTPS 数据点随最终稳定树全量覆盖。追加实现静态分析零问题（`build/block-boundary-guard-analyze.log`）。
+
+以下最终统一门禁会在追加提交后固定源码串行执行，前述运行中修改日志均作为过程证据保留。
 ## 后续验收条件
 
 Backend revision 2 已由独立 chore `3a3d94b` 同步；最终运行消费者序列化接受验证并更新统一门禁结果。真机必须使用本候选 Debug APK，应用包名为 `site.wenyou.app.debug`，不能凭相同构建号认为其他包名已更新。
