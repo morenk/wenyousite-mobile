@@ -104,7 +104,7 @@ capability 由 app 组合层从启动契约注入，前台生命周期由应用�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
+契约 `5.21.0-dev.20260911.1`；Markdown v5；后端 `88ad7be52722c2fa2810515badd2a2ec4d2d2cfd`；Foundation `v6.9.0`（`5888132`）。
 
 本轮来源为已合并的 newline v1 revision 2 契约；HTTP 与其他契约不变，公网后端仍运行旧 revision。公网仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`，移动端对齐适配与跨端验收另行推进。
 
