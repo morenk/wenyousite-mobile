@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
-- 后端契约：`5.18.0-dev.20260905.1`，来源 `3338028459561565c788d5236fb64db84a2ae538`；本轮同步 newline v1 revision 2 的手动回车对齐规则，HTTP SDK 与其他语料不变。最近一次公网 `/meta` 实测仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`；移动端手动回车对齐已验收，线上部署版本及跨端效果仍待独立核验。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
+- 后端契约：`5.20.0-dev.20260909.1`，来源 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`；2026-09-11 公网 `/meta` 已核对一致。同步可空封面媒体及预览档位生成类型，播放能力由独立切片接入；现有正文、楼层、回复与分页契约不变。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
 - 视觉依赖：Foundation `v6.9.0`。
 - 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
