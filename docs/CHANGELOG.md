@@ -1,5 +1,11 @@
 # 移动端变更记录
 
+## 富文本块边界共享契约 revision 2（2026-09-11，候选／待验收）
+
+- 锁定 Backend `a91cbb8`，同步 208 项块边界案例，明确有意义空白行、反引号 URL/title 与真实代码保护范围。
+- 新增代码与相邻对齐块、列表／引用 lazy 跨行代码及代码中空段标记的共享反例；HTTP OpenAPI 与 Markdown v5 不变。
+- 消费者回归、最终门禁与负责人验收按[候选记录](architecture/markdown-block-boundaries-acceptance.md)继续推进。
+
 ## 富文本块边界共享契约同步（2026-09-11，候选／待验收）
 
 - 锁定 Backend `75daf5a`，同步块边界 v1 revision 1 的源码位置、对齐、编辑、复制与空格语料；同步脚本纳入固定文件。

@@ -92,7 +92,7 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-11 块边界候选契约：同步 Backend `75daf5a66486b1e6c80bf904388bdfd664e14dd5` 的 `markdown-block-boundary-v1-fixtures.json`（v1 revision 1）。HTTP 与 Markdown v5 不变；共享样例已接入仓库，消费者实现及负责人验收仍在进行，见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+2026-09-11 块边界候选契约：同步 Backend `a91cbb8b605223c596af299be22c5547f69e25b9` 的 `markdown-block-boundary-v1-fixtures.json`（v1 revision 2）。HTTP 与 Markdown v5 不变；共享样例已接入仓库，消费者实现及负责人验收仍在进行，见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 
 2026-09-11 增量登记：契约 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本次仅兼容新增列表封面媒体及预览变体生成模型，本模块行为与已列明的验收状态保持原样；下列记录保留历史审查范围。
 
