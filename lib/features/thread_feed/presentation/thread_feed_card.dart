@@ -3,10 +3,10 @@ import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_avatar_button.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_level_badge.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_tag_link.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_time_text.dart';
+import 'package:wenyousite_mobile/features/thread_feed/presentation/thread_feed_cover.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 const _threadAuthorAvatarSize = 32.0;
@@ -17,6 +17,7 @@ class ThreadFeedCard extends StatelessWidget {
     required this.category,
     required this.onTap,
     this.onTagTap,
+    this.trailing,
     super.key,
   });
 
@@ -24,6 +25,7 @@ class ThreadFeedCard extends StatelessWidget {
   final ThreadCategoryPresentation? category;
   final VoidCallback onTap;
   final ValueChanged<ThreadFeedTag>? onTagTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -46,19 +48,28 @@ class ThreadFeedCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  thread.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.wenyouListTitle,
-                ),
+                if (trailing case final action?)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _title(context)),
+                      SizedBox(width: tokens.space8),
+                      action,
+                    ],
+                  )
+                else
+                  _title(context),
                 SizedBox(height: tokens.space8),
                 _ThreadHeader(thread: thread, category: category),
-                if (thread.coverImageUrls.isNotEmpty) ...[
+                if (thread.coverImageUrls.isNotEmpty ||
+                    thread.coverMedia != null) ...[
                   SizedBox(height: tokens.space8),
-                  _ThreadCover(
+                  ThreadFeedCover(
                     key: Key('home-thread-cover-${thread.id}'),
-                    url: thread.coverImageUrls.first,
+                    posterUrl: thread.coverMedia?.staticUrl,
+                    animationUrl: thread.coverMedia?.animationUrl,
+                    previewVariants:
+                        thread.coverMedia?.previewVariants ?? const [],
                   ),
                 ],
                 if (thread.preview != null) ...[
@@ -84,6 +95,13 @@ class ThreadFeedCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _title(BuildContext context) => Text(
+    thread.title,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: Theme.of(context).textTheme.wenyouListTitle,
+  );
 }
 
 typedef HomeThreadCard = ThreadFeedCard;
@@ -214,48 +232,6 @@ class _ThreadAuthorAvatar extends StatelessWidget {
       username: ownerName,
       avatarUrl: avatarUrl,
       size: _threadAuthorAvatarSize,
-    );
-  }
-}
-
-class _ThreadCover extends StatelessWidget {
-  const _ThreadCover({required this.url, super.key});
-
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final placeholder = ColoredBox(
-      color: tokens.softPanel,
-      child: Center(
-        child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
-      ),
-    );
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens.radius12),
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: WenyouCachedImage(
-          imageUrl: url,
-          fit: BoxFit.cover,
-          cacheWidth: 1080,
-          cacheHeight: 608,
-          placeholder: (_, _) => placeholder,
-          errorWidget: (_, _, _) => Semantics(
-            label: '图片加载失败',
-            child: ColoredBox(
-              color: tokens.softPanel,
-              child: Center(
-                child: WenyouIcon(
-                  WenyouIconIds.statusImageUnavailable,
-                  color: tokens.mutedText,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

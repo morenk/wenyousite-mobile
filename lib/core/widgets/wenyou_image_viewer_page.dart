@@ -31,6 +31,7 @@ class WenyouImageViewerPage extends StatefulWidget {
     this.closeTooltip = '关闭图片预览',
     this.errorLabel = '原图加载失败，请检查网络后返回重试',
     this.onPageChanged,
+    this.imageBuilder,
     super.key,
   }) : assert(items.length > 0),
        assert(initialIndex >= 0 && initialIndex < items.length);
@@ -45,6 +46,8 @@ class WenyouImageViewerPage extends StatefulWidget {
   final String closeTooltip;
   final String errorLabel;
   final ValueChanged<int>? onPageChanged;
+  final Widget? Function(BuildContext context, int index, bool current)?
+  imageBuilder;
 
   @override
   State<WenyouImageViewerPage> createState() => _WenyouImageViewerPageState();
@@ -117,6 +120,11 @@ class _WenyouImageViewerPageState extends State<WenyouImageViewerPage> {
                 itemBuilder: (context, index) => _ZoomableViewerImage(
                   key: ValueKey(widget.items[index].id ?? index),
                   item: widget.items[index],
+                  image: widget.imageBuilder?.call(
+                    context,
+                    index,
+                    index == _index,
+                  ),
                   errorLabel: widget.errorLabel,
                   onZoomChanged: (zoomed) {
                     if (mounted && _zoomed != zoomed) {
@@ -145,10 +153,12 @@ class _ZoomableViewerImage extends StatefulWidget {
     required this.item,
     required this.errorLabel,
     required this.onZoomChanged,
+    this.image,
     super.key,
   });
 
   final WenyouImageViewerItem item;
+  final Widget? image;
   final String errorLabel;
   final ValueChanged<bool> onZoomChanged;
 
@@ -199,41 +209,44 @@ class _ZoomableViewerImageState extends State<_ZoomableViewerImage> {
           child: Semantics(
             image: true,
             label: widget.item.semanticLabel,
-            child: WenyouCachedImage(
-              imageUrl: widget.item.url,
-              fallbackImageUrls: widget.item.fallbackUrls,
-              fit: BoxFit.contain,
-              placeholder: (_, _) => Center(
-                child: WenyouIcon(
-                  WenyouIconIds.actionImage,
-                  color: tokens.onImageViewerBackground.withValues(alpha: 0.7),
-                  size: 40,
-                ),
-              ),
-              errorWidget: (_, _, _) => Padding(
-                padding: EdgeInsets.all(tokens.space24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    WenyouIcon(
-                      WenyouIconIds.statusImageUnavailable,
+            child:
+                widget.image ??
+                WenyouCachedImage(
+                  imageUrl: widget.item.url,
+                  fallbackImageUrls: widget.item.fallbackUrls,
+                  fit: BoxFit.contain,
+                  placeholder: (_, _) => Center(
+                    child: WenyouIcon(
+                      WenyouIconIds.actionImage,
                       color: tokens.onImageViewerBackground.withValues(
                         alpha: 0.7,
                       ),
-                      size: 48,
+                      size: 40,
                     ),
-                    SizedBox(height: tokens.space8),
-                    Text(
-                      widget.errorLabel,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.wenyouBody.copyWith(
-                        color: tokens.onImageViewerBackground,
-                      ),
+                  ),
+                  errorWidget: (_, _, _) => Padding(
+                    padding: EdgeInsets.all(tokens.space24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        WenyouIcon(
+                          WenyouIconIds.statusImageUnavailable,
+                          color: tokens.onImageViewerBackground.withValues(
+                            alpha: 0.7,
+                          ),
+                          size: 48,
+                        ),
+                        SizedBox(height: tokens.space8),
+                        Text(
+                          widget.errorLabel,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.wenyouBody
+                              .copyWith(color: tokens.onImageViewerBackground),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
           ),
         ),
       ),

@@ -14,7 +14,7 @@ part 'moment_bookmark_folder_response_dto.g.dart';
 /// * [id]
 /// * [name]
 /// * [isDefault]
-/// * [momentBookmarkCount]
+/// * [momentBookmarkCount] - 当前用户在该收藏夹中可见的动态收藏总数，与列表使用相同可见性规则，不受分页影响
 /// * [createdAt]
 @BuiltValue()
 abstract class MomentBookmarkFolderResponseDto implements Built<MomentBookmarkFolderResponseDto, MomentBookmarkFolderResponseDtoBuilder> {
@@ -27,6 +27,7 @@ abstract class MomentBookmarkFolderResponseDto implements Built<MomentBookmarkFo
   @BuiltValueField(wireName: r'isDefault')
   bool get isDefault;
 
+  /// 当前用户在该收藏夹中可见的动态收藏总数，与列表使用相同可见性规则，不受分页影响
   @BuiltValueField(wireName: r'momentBookmarkCount')
   num get momentBookmarkCount;
 

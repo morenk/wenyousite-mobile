@@ -57,6 +57,8 @@ import 'package:wenyousite_mobile/features/social/data/user_relation_list_reposi
 import 'package:wenyousite_mobile/features/social/data/user_relation_repository.dart';
 import 'package:wenyousite_mobile/features/stickers/data/sticker_repository.dart';
 import 'package:wenyousite_mobile/features/tags/data/tag_repository.dart';
+import 'package:wenyousite_mobile/features/thread_feed/application/cover_animation_source_ports.dart';
+import 'package:wenyousite_mobile/features/thread_feed/data/device_cover_animation_source.dart';
 import 'package:wenyousite_mobile/features/thread_feed/data/thread_category_catalog_repository.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_catalog.dart';
 import 'package:wenyousite_mobile/features/threads/data/subthread_management_repository.dart';
@@ -75,6 +77,9 @@ import 'package:wenyousite_mobile/features/users/data/public_user_repository.dar
 import 'package:wenyousite_mobile/features/wallet/data/wallet_repository.dart';
 
 List<Override> productionProviderOverrides() => [
+  coverAnimationSourceProvider.overrideWith(
+    (ref) => ref.watch(deviceCoverAnimationSourceProvider),
+  ),
   clipboardNavigationGatewayProvider.overrideWith(
     (ref) => ref.watch(deviceClipboardNavigationGatewayProvider),
   ),

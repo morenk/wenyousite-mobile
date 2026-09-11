@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wenyousite_foundation/wenyousite_foundation.dart';
 import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_confirmation_dialog.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
@@ -11,6 +10,7 @@ import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart
 import 'package:wenyousite_mobile/features/media/presentation/editor_image_crop_dialog.dart';
 import 'package:wenyousite_mobile/features/stickers/application/sticker_collection_controller.dart';
 import 'package:wenyousite_mobile/features/stickers/domain/sticker_models.dart';
+import 'package:wenyousite_mobile/features/stickers/presentation/sticker_reorder_grid.dart';
 
 class StickerCollectionPage extends ConsumerStatefulWidget {
   const StickerCollectionPage({super.key});
@@ -22,6 +22,16 @@ class StickerCollectionPage extends ConsumerStatefulWidget {
 
 class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   final Object _uploadTaskId = Object();
+  final _scrollController = ScrollController();
+  final _viewportKey = GlobalKey();
+  bool _managing = false;
+  bool _dragging = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,37 +42,50 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
       mediaUploadTaskControllerProvider(_uploadTaskId),
     );
     final notifier = ref.read(stickerCollectionControllerProvider.notifier);
-    return Scaffold(
-      appBar: AppBar(title: const Text('表情包')),
-      body: switch (state.phase) {
-        StickerCollectionPhase.loading => const WenyouPageBody(
-          maxWidth: 680,
-          child: WenyouListSkeleton(label: '正在加载表情收藏', showAvatar: false),
+    return WenyouSettingsTypography(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('表情包'),
+          actions: [
+            TextButton(
+              key: const Key('stickers-manage'),
+              onPressed: _dragging
+                  ? null
+                  : () => setState(() => _managing = !_managing),
+              child: Text(_managing ? '完成' : '管理'),
+            ),
+          ],
         ),
-        StickerCollectionPhase.failed => WenyouPageBody(
-          maxWidth: 680,
-          child: WenyouPanel(
-            child: WenyouEmptyState(
-              icon: WenyouIconIds.statusOffline,
-              title: '表情收藏加载失败',
-              message: state.failure?.userMessage ?? '请稍后重试。',
-              detail: wenyouFailureDetail(state.failure),
-              action: OutlinedButton.icon(
-                key: const Key('stickers-retry'),
-                onPressed: notifier.load,
-                icon: const WenyouIcon(WenyouIconIds.actionRefresh),
-                label: const Text('重新加载'),
+        body: switch (state.phase) {
+          StickerCollectionPhase.loading => const WenyouPageBody(
+            maxWidth: 680,
+            child: StickerGridSkeleton(),
+          ),
+          StickerCollectionPhase.failed => WenyouPageBody(
+            maxWidth: 680,
+            child: WenyouPanel(
+              child: WenyouEmptyState(
+                icon: WenyouIconIds.statusOffline,
+                title: '表情收藏加载失败',
+                message: state.failure?.userMessage ?? '请稍后重试。',
+                detail: wenyouFailureDetail(state.failure),
+                action: OutlinedButton.icon(
+                  key: const Key('stickers-retry'),
+                  onPressed: notifier.load,
+                  icon: const WenyouIcon(WenyouIconIds.actionRefresh),
+                  label: const Text('重新加载'),
+                ),
               ),
             ),
           ),
-        ),
-        StickerCollectionPhase.ready => _buildReady(
-          context,
-          state,
-          notifier,
-          uploadState,
-        ),
-      },
+          StickerCollectionPhase.ready => _buildReady(
+            context,
+            state,
+            notifier,
+            uploadState,
+          ),
+        },
+      ),
     );
   }
 
@@ -74,15 +97,19 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   ) {
     final collection = state.collection!;
     final tokens = context.wenyouTokens;
+    final horizontal = wenyouHorizontalPagePadding(context);
     return RefreshIndicator(
+      notificationPredicate: (_) => !_dragging && !state.isBusy,
       onRefresh: notifier.load,
       child: ListView(
+        key: _viewportKey,
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          tokens.space12,
+          horizontal,
           tokens.space16,
-          tokens.space12,
-          tokens.space24,
+          horizontal,
+          tokens.space24 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
           WenyouConstrainedWidth(
@@ -90,7 +117,20 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const WenyouSectionHeader(title: '我的表情包'),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  spacing: tokens.space12,
+                  children: [
+                    Text(
+                      '长按拖动排序',
+                      style: Theme.of(context).textTheme.wenyouCaption,
+                    ),
+                    Text(
+                      '${collection.items.length}/${collection.limit} 个收藏',
+                      style: Theme.of(context).textTheme.wenyouCaption,
+                    ),
+                  ],
+                ),
                 SizedBox(height: tokens.space12),
                 if (state.transientFailure != null) ...[
                   WenyouStatusBanner(
@@ -132,124 +172,88 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
                   ),
                   SizedBox(height: tokens.space12),
                 ],
-                if (state.successMessage != null) ...[
-                  WenyouStatusBanner(
-                    tone: WenyouStatusTone.accent,
-                    message: state.successMessage!,
-                  ),
+                if (uploadState.isBusy) ...[
                   SizedBox(height: tokens.space12),
-                ],
-                WenyouPanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${collection.items.length}/${collection.limit} 个收藏',
-                              style: Theme.of(context).textTheme.wenyouRowTitle,
-                            ),
-                          ),
-                          FilledButton.icon(
-                            key: const Key('stickers-add-gallery'),
-                            onPressed:
-                                state.isBusy ||
-                                    uploadState.isBusy ||
-                                    collection.isFull
-                                ? null
-                                : _addFromGallery,
-                            icon: uploadState.isBusy
-                                ? const SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const WenyouIcon(
-                                    WenyouIconIds.actionAddImage,
-                                  ),
-                            label: Text(uploadState.isBusy ? '处理中' : '从相册添加'),
-                          ),
-                        ],
-                      ),
-                      if (uploadState.isBusy) ...[
-                        SizedBox(height: tokens.space12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                uploadState.progressLabel,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.wenyouCaption,
-                              ),
-                            ),
-                            TextButton(
-                              key: const Key('stickers-cancel-upload'),
-                              onPressed: () => ref
-                                  .read(
-                                    mediaUploadTaskControllerProvider(
-                                      _uploadTaskId,
-                                    ).notifier,
-                                  )
-                                  .cancel(),
-                              child: const Text('取消'),
-                            ),
-                          ],
-                        ),
-                        LinearProgressIndicator(
-                          value: uploadState.progress?.fraction,
-                        ),
-                      ],
-                      if (collection.pendingImports.isNotEmpty) ...[
-                        SizedBox(height: tokens.space12),
-                        Text(
-                          '正在处理 ${collection.pendingImports.length} 个表情…',
+                      Expanded(
+                        child: Text(
+                          uploadState.progressLabel,
                           style: Theme.of(context).textTheme.wenyouCaption,
                         ),
-                      ],
+                      ),
+                      TextButton(
+                        key: const Key('stickers-cancel-upload'),
+                        onPressed: () => ref
+                            .read(
+                              mediaUploadTaskControllerProvider(
+                                _uploadTaskId,
+                              ).notifier,
+                            )
+                            .cancel(),
+                        child: const Text('取消'),
+                      ),
                     ],
                   ),
-                ),
+                  LinearProgressIndicator(
+                    value: uploadState.progress?.fraction,
+                  ),
+                ],
+                if (collection.pendingImports.isNotEmpty) ...[
+                  SizedBox(height: tokens.space12),
+                  Text(
+                    '正在处理 ${collection.pendingImports.length} 个表情…',
+                    style: Theme.of(context).textTheme.wenyouCaption,
+                  ),
+                ],
                 SizedBox(height: tokens.space12),
-                if (collection.items.isEmpty)
-                  const WenyouPanel(
-                    child: WenyouEmptyState(
-                      icon: WenyouIconIds.actionAddReaction,
-                      title: '还没有收藏表情',
-                    ),
-                  )
-                else
-                  WenyouPanel(
-                    padding: EdgeInsets.zero,
-                    child: ReorderableListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      buildDefaultDragHandles: false,
-                      itemCount: collection.items.length,
-                      onReorderItem: (oldIndex, newIndex) {
-                        if (state.isBusy) return;
-                        final items = [...collection.items];
-                        final item = items.removeAt(oldIndex);
-                        items.insert(newIndex, item);
-                        notifier.reorder(items);
-                      },
-                      itemBuilder: (context, index) {
-                        final sticker = collection.items[index];
-                        return _StickerListTile(
-                          key: ValueKey(sticker.id),
-                          sticker: sticker,
-                          index: index,
-                          removing:
-                              state.action == StickerAction.removing &&
-                              state.actionTarget == sticker.id,
-                          disabled: state.isBusy || uploadState.isBusy,
-                          onRemove: () => _confirmRemove(sticker),
-                        );
-                      },
+                StickerReorderGrid(
+                  items: collection.items,
+                  scrollController: _scrollController,
+                  viewportKey: _viewportKey,
+                  managing: _managing,
+                  canRemove: !state.isBusy && !uploadState.isBusy,
+                  enabled:
+                      !uploadState.isBusy &&
+                      (!state.isBusy ||
+                          (state.action == StickerAction.reordering &&
+                              state.transientFailure == null)),
+                  resetSignal: state.transientFailure,
+                  onDragChanged: (value) => setState(() => _dragging = value),
+                  onReorder: notifier.reorder,
+                  onRemove: _confirmRemove,
+                  addButton: Tooltip(
+                    message: '从相册添加',
+                    child: OutlinedButton(
+                      key: const Key('stickers-add-gallery'),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        side: BorderSide(color: tokens.border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(tokens.radius12),
+                        ),
+                      ),
+                      onPressed:
+                          state.isBusy ||
+                              uploadState.isBusy ||
+                              collection.isFull ||
+                              _dragging
+                          ? null
+                          : _addFromGallery,
+                      child: Semantics(
+                        label: '从相册添加',
+                        child: const WenyouIcon(WenyouIconIds.actionAddImage),
+                      ),
                     ),
                   ),
+                ),
+                if (collection.items.isEmpty) ...[
+                  SizedBox(height: tokens.space24),
+                  const WenyouEmptyState(
+                    icon: WenyouIconIds.actionAddReaction,
+                    title: '还没有收藏表情',
+                  ),
+                ],
               ],
             ),
           ),
@@ -301,90 +305,21 @@ class _StickerCollectionPageState extends ConsumerState<StickerCollectionPage> {
   }
 }
 
-class _StickerListTile extends StatelessWidget {
-  const _StickerListTile({
-    required this.sticker,
-    required this.index,
-    required this.removing,
-    required this.disabled,
-    required this.onRemove,
-    super.key,
-  });
-
-  final UserSticker sticker;
-  final int index;
-  final bool removing;
-  final bool disabled;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.wenyouTokens;
-    final fallback = ColoredBox(
-      color: tokens.softPanel,
-      child: WenyouIcon(WenyouIconIds.actionImage, color: tokens.mutedText),
-    );
-    return Column(
-      children: [
-        ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens.radius12),
-            child: SizedBox.square(
-              dimension: 56,
-              child: WenyouCachedImage(
-                imageUrl: sticker.asset.thumbnailUrl,
-                fit: BoxFit.contain,
-                placeholder: (_, _) => fallback,
-                errorWidget: (_, _, _) => fallback,
-              ),
-            ),
-          ),
-          title: Text(sticker.asset.animated ? '动态表情' : '静态表情'),
-          subtitle: Text('${sticker.asset.width} × ${sticker.asset.height}'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                key: ValueKey('sticker-remove-${sticker.id}'),
-                onPressed: disabled ? null : onRemove,
-                tooltip: '移除表情',
-                icon: removing
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const WenyouIcon(WenyouIconIds.actionDelete),
-              ),
-              ReorderableDragStartListener(
-                index: index,
-                enabled: !disabled,
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: WenyouIcon(WenyouIconIds.actionReorder),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-      ],
-    );
-  }
-}
-
 class _StickersUnavailablePage extends StatelessWidget {
   const _StickersUnavailablePage();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('表情包')),
-      body: const WenyouPageBody(
-        maxWidth: 600,
-        child: WenyouPanel(
-          child: WenyouEmptyState(
-            icon: WenyouIconIds.actionAddReaction,
-            title: '表情包功能当前未开放',
+    return WenyouSettingsTypography(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('表情包')),
+        body: const WenyouPageBody(
+          maxWidth: 600,
+          child: WenyouPanel(
+            child: WenyouEmptyState(
+              icon: WenyouIconIds.actionAddReaction,
+              title: '表情包功能当前未开放',
+            ),
           ),
         ),
       ),

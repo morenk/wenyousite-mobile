@@ -41,6 +41,13 @@ if ($env:WENYOU_GATE_TEST_FAIL -eq 'yes' -and $args -contains 'api:verify:produc
     const passed = run(['-ContinueAfterFailure'], 'no');
     assert.equal(passed.status, 0, passed.stdout + passed.stderr);
     assert.match(passed.stdout, /quality gate passed/);
+    assert.match(passed.stdout, /STUB flutter test --concurrency=1/);
+    const parallel = run(['-TestConcurrency', '2'], 'no');
+    assert.equal(parallel.status, 0, parallel.stdout + parallel.stderr);
+    assert.match(parallel.stdout, /STUB flutter test --concurrency=2/);
+    const invalid = run(['-TestConcurrency', '0'], 'no');
+    assert.notEqual(invalid.status, 0, invalid.stdout + invalid.stderr);
+    assert.doesNotMatch(invalid.stdout, /STUB flutter test/);
   } finally {
     const resolved = path.resolve(fixture);
     assert.equal(path.dirname(resolved), path.resolve(os.tmpdir()));
