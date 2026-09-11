@@ -131,3 +131,5 @@ Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上�
 本次只更新来源元数据和必要文档；225 份消费者审计语料保留生成时的 `a91cbb8` 来源，运行时代码、测试、依赖声明与 Android 配置不变。候选 APK 继续对应 `05996c08` 及其已记录哈希，不宣称针对新文档提交重新构建；本轮不安装或正式发布 Android 包。负责人尚未完成公网／真机验收，保留任务分支、Worktree、APK 与日志。
 
 来源同步后 `npm ci`、OpenAPI 校验与 `npm run api:check` 通过，生成客户端及依赖锁文件零差异；21 模块文档检查通过，`contract_revision.test.mjs` 的固定来源导出／拒绝非 dev 祖先回归通过。记录为 `build/block-boundary-deployed-source-check.log`、`build/block-boundary-deployed-docs.log`、`build/block-boundary-deployed-tool-test.log`。公网部署确认及与并发合入 PR #25 的组合复核继续记录，不以历史 APK 代表后续组合源码。
+
+随后正常合入 `origin/dev` 的 PR #25 合并提交 `e5d72c34c98e8764518cd6a26f2ff508ca29d6a6`；仅 CHANGELOG 顶部发生冲突，双方记录全部保留，动态图源码和负责人验收记录保持完整。既有 `flutter_cache_manager 3.4.2` 由传递依赖改为直接测试依赖，无版本变化。组合树 `flutter pub get`、全应用分析零问题（215.6 秒），834 项相关回归全部通过（48 秒），覆盖全部 core Markdown、来源兼容、真实编辑／保存／草稿／剪贴板、安全阻断、旧引用 Golden、图片查看器与动态图页面。日志为 `build/block-boundary-combined-check.log`；组合文档检查 21 模块通过。没有把两份历史候选 APK 作为组合安装包，也未重跑完整门禁或构建新 APK。
