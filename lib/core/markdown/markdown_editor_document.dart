@@ -3,6 +3,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_empty_paragraphs.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 
 enum MarkdownEditorBlockKind {
   paragraph,
@@ -92,11 +93,13 @@ final class MarkdownListItemBlock extends MarkdownEditorBlock {
     required this.indent,
     required this.content,
     required super.blankLinesBefore,
+    this.originalLines,
   });
 
   final bool ordered;
   final int indent;
   final String content;
+  final List<String>? originalLines;
 
   @override
   MarkdownEditorBlockKind get kind => ordered
@@ -104,13 +107,15 @@ final class MarkdownListItemBlock extends MarkdownEditorBlock {
       : MarkdownEditorBlockKind.bulletListItem;
 
   @override
-  List<String> get sourceLines => [
-    MarkdownEditableBlockSyntax.listLine(
-      ordered: ordered,
-      indent: indent,
-      content: content,
-    ),
-  ];
+  List<String> get sourceLines =>
+      originalLines ??
+      [
+        MarkdownEditableBlockSyntax.listLine(
+          ordered: ordered,
+          indent: indent,
+          content: content,
+        ),
+      ];
 
   @override
   String get structuralKey => '${kind.name}:$indent';
@@ -195,6 +200,7 @@ class MarkdownEditorDocument {
       return const MarkdownEditorDocument._(blocks: [], trailingBlankLines: 0);
     }
     final lines = source.split('\n');
+    final lists = MarkdownListStructure.parse(source);
     final literalLines = MarkdownContent.unsupportedLineIndexes(
       source,
       imageAlignment: imageAlignment,
@@ -226,6 +232,23 @@ class MarkdownEditorDocument {
       final blockAlignment =
           alignmentAnalysis.blockStartingAt(index)?.alignment ??
           WenyouTextAlignment.left;
+
+      if (lists[index] case final list? when !list.taskList) {
+        for (var rowIndex = 0; rowIndex < list.rows.length; rowIndex++) {
+          final row = list.rows[rowIndex];
+          blocks.add(
+            MarkdownListItemBlock(
+              ordered: row.ordered,
+              indent: row.depth,
+              content: row.content,
+              blankLinesBefore: rowIndex == 0 ? blankLinesBefore : 0,
+              originalLines: rowIndex == 0 ? list.source.split('\n') : const [],
+            ),
+          );
+        }
+        index = list.end;
+        continue;
+      }
 
       if (literalLines.contains(index)) {
         final compatibilityLines = <String>[];
@@ -272,6 +295,7 @@ class MarkdownEditorDocument {
           lines[index].isNotEmpty &&
           !literalLines.contains(index) &&
           !_isSetextHeading(lines, literalLines, index) &&
+          !lists.containsKey(index) &&
           _singleLineBlock(lines[index], 0) == null &&
           !validAlignmentMarkers.contains(index)) {
         softLines.add(lines[index]);
@@ -297,6 +321,7 @@ class MarkdownEditorDocument {
     final output = StringBuffer();
     MarkdownEditorBlock? previous;
     for (final block in blocks) {
+      if (block.sourceLines.isEmpty) continue;
       final gap = previous == null
           ? block.blankLinesBefore
           : previous.kind == MarkdownEditorBlockKind.horizontalRule ||

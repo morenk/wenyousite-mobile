@@ -26,6 +26,7 @@ abstract final class MarkdownDeltaBlockEncoder {
       literalTextAttribute,
       MarkdownInlineCodeSource.key,
       MarkdownDeltaLineMetadata.guardedWhitespaceKey,
+      MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey,
       alignmentAttribute,
       'header',
       'list',
@@ -69,8 +70,8 @@ abstract final class MarkdownDeltaBlockEncoder {
     final indentValue = attributes['indent'];
     final indent = switch (indentValue) {
       null => 0,
-      int value when value >= 0 && value <= 3 => value,
-      _ => throw const MarkdownCodecException('列表缩进只支持 0～3 级'),
+      int value when value >= 0 && value <= 2 => value,
+      _ => throw const MarkdownCodecException('列表最多支持三级'),
     };
     final header = attributes['header'];
     final list = attributes['list'];
@@ -80,7 +81,10 @@ abstract final class MarkdownDeltaBlockEncoder {
     if (blockStyleCount > 1) {
       throw const MarkdownCodecException('同一行不能组合标题、列表和引用');
     }
-    if (blockStyleCount > 0 && RegExp(r'^[\t ]+$').hasMatch(canonicalContent)) {
+    if (blockStyleCount > 0 &&
+        (RegExp(r'^[\t ]+$').hasMatch(canonicalContent) ||
+            (list != null &&
+                RegExp(r'^[\t \u00a0]+$').hasMatch(canonicalContent)))) {
       // 区分用户输入的空格／Tab 与块标记后的语法空白，不添加占位文字。
       canonicalContent = canonicalContent.codeUnits
           .map((unit) => '&#$unit;')
@@ -88,6 +92,9 @@ abstract final class MarkdownDeltaBlockEncoder {
     }
     final hasUnsafeWhitespace =
         canonicalContent.startsWith('    ') ||
+        (attributes[MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey] ==
+                true &&
+            canonicalContent.startsWith(' ')) ||
         canonicalContent.startsWith('\t') ||
         RegExp(r' {2,}$').hasMatch(canonicalContent);
     if (hasUnsafeWhitespace &&
@@ -95,7 +102,14 @@ abstract final class MarkdownDeltaBlockEncoder {
         (containsLiteralText ||
             attributes[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
                 true)) {
-      return MarkdownContent.protectUnsafeWhitespace(canonicalContent);
+      return MarkdownContent.protectUnsafeWhitespace(
+        canonicalContent,
+        minimumIndent:
+            attributes[MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey] ==
+                true
+            ? 1
+            : 4,
+      );
     }
     if (header != null) {
       if (header != 2 && header != 3) {
@@ -110,11 +124,7 @@ abstract final class MarkdownDeltaBlockEncoder {
       if (list != 'bullet' && list != 'ordered') {
         throw const MarkdownCodecException('编辑器列表类型不受支持');
       }
-      return MarkdownEditableBlockSyntax.listLine(
-        ordered: list == 'ordered',
-        indent: indent,
-        content: canonicalContent,
-      );
+      return canonicalContent;
     }
     if (quote) return canonicalContent.isEmpty ? '>' : '> $canonicalContent';
     if (indent != 0) {

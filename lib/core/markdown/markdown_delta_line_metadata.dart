@@ -13,6 +13,8 @@ class MarkdownDeltaLineMetadata {
   static const sourceBreakKey = 'wenyou_source_break';
   static const literalLineKey = 'wenyou_literal_line';
   static const guardedWhitespaceKey = 'wenyou_guarded_whitespace';
+  static const guardedLeadingWhitespaceKey =
+      'wenyou_guarded_leading_whitespace';
   static const sourceSeparatorAttribute = 'wenyou_source_separator';
 
   static const _blockAttributes = {

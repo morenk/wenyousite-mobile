@@ -114,6 +114,8 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 11. 测试场景与验收条件
 
+- 列表后空行候选：真实回复页面创建有序列表，连续回车退出列表并保留空行，分别以空行结束、续写普通正文和另起列表；提交后重新打开编辑器，文字、空行数量和列表归属保持。自动页面测试使用仓储替身，公网保存及原视频操作仍待负责人真机复验，详见[列表候选验收记录](../architecture/editor-list-candidate-acceptance.md)。
+
 - [x] Markdown v4/v5 对齐楼层/回复按块渲染且 marker 不可见；v5 独立图片块在阅读、Delta 与 clipboard v2 往返保持对齐，图片文字混排继续拒绝，纯文本回退不含协议文本。
 - [x] Web 同源的标点/符号紧邻格式和粗体尾随单空格后紧接行内代码的旧正文，在楼层/回复阅读态精确显示且定界符不可见；其他空白、代码、链接、图片、定义、转义与畸形输入保持字面。
 - [x] 主楼顺序与范围发言者分别直接操作且每次只请求一次，分页保持组合筛选，切换子贴清除作者并保留顺序；筛选空态可恢复全部楼层，筛选外目标先恢复再定位，内嵌楼中楼不受主楼筛选影响。
@@ -158,7 +160,7 @@ v5 图片在写入 `postsUpdate`、`postsUpsertBody` 或创建接口前会规范
 
 ## 13. 最近审查的契约版本和后端提交
 
-2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
+2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者现已形成结构适配候选，真机验收待完成，见[候选验收记录](../architecture/editor-list-candidate-acceptance.md)。
 
 2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 

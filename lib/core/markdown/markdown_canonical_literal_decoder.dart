@@ -69,6 +69,8 @@ class MarkdownCanonicalLiteralDecoder {
       ...richLine.lineAttributes,
       if (MarkdownContent.hasWhitespaceGuards(source))
         MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
+      if (MarkdownContent.hasLeadingWhitespaceGuard(source))
+        MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey: true,
     };
     final candidate = Delta.from(decoded)
       ..insert('\n', {...lineAttributes, sourceBreakAttribute: false});

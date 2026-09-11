@@ -1,6 +1,7 @@
 import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 
 class MarkdownContent {
   MarkdownContent._();
@@ -66,9 +67,11 @@ class MarkdownContent {
     r'''[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]''',
   );
   static const _wordJoiner = '\u2060';
+  static bool hasLeadingWhitespaceGuard(String line) =>
+      line.startsWith('$_wordJoiner ') || line.startsWith('$_wordJoiner\t');
   static bool hasWhitespaceGuards(String line) =>
       (line.startsWith(_wordJoiner) &&
-          (line.substring(1).startsWith('    ') ||
+          (line.substring(1).startsWith(' ') ||
               line.substring(1).startsWith('\t'))) ||
       RegExp(r' {2,}\u2060$').hasMatch(line);
 
@@ -125,7 +128,7 @@ class MarkdownContent {
     var source = line;
     var foundEncoding = false;
     if (source.startsWith(_wordJoiner) &&
-        (source.substring(1).startsWith('    ') ||
+        (source.substring(1).startsWith(' ') ||
             source.substring(1).startsWith('\t'))) {
       source = source.substring(1);
       foundEncoding = true;
@@ -190,9 +193,10 @@ class MarkdownContent {
   /// Prevents plain leading indentation and trailing spaces from becoming
   /// code blocks or hard breaks. The guards are removed again by
   /// [decodeLiteralLine].
-  static String protectUnsafeWhitespace(String line) {
+  static String protectUnsafeWhitespace(String line, {int minimumIndent = 4}) {
     var protected = line;
-    if (protected.startsWith('    ') || protected.startsWith('\t')) {
+    if (protected.startsWith(' ' * minimumIndent) ||
+        protected.startsWith('\t')) {
       protected = '$_wordJoiner$protected';
     }
     if (RegExp(r' {2,}$').hasMatch(protected)) {
@@ -297,6 +301,11 @@ class MarkdownContent {
     required bool imageAlignment,
   }) {
     final affected = <int>{};
+    final listRanges = MarkdownListStructure.parse(lines.join('\n'));
+    final listLines = <int>{
+      for (final range in listRanges.values.where((range) => range.editable))
+        for (var i = range.start; i < range.end; i++) i,
+    };
     _markFencedCode(lines, affected);
     _markTables(lines, affected);
     final analysis = MarkdownAlignmentContract.analyzeLines(
@@ -309,7 +318,7 @@ class MarkdownContent {
         (index) =>
             lines[index].isNotEmpty &&
             !(analysis.protection.indentedCodeLines.contains(index) &&
-                _listItem.hasMatch(lines[index])),
+                listLines.contains(index)),
       ),
     );
 
@@ -320,11 +329,16 @@ class MarkdownContent {
       if (heading != null && (heading.length == 1 || heading.length >= 4)) {
         affected.add(index);
       }
-      if (_taskList.hasMatch(line) || _isIndentedCode(line)) {
+      if (_taskList.hasMatch(line) ||
+          (_isIndentedCode(line) && !listLines.contains(index))) {
         affected.add(index);
       }
-      final listIndent = _listItem.firstMatch(line)?.group(1);
-      if (listIndent != null && _indentWidth(listIndent) >= 6) {
+      // 仅保留被契约拒绝的旧源码的字面展示规则；合法列表已由树解析排除，
+      // 不再把有序列表第三层的六个空格误判成第四层。
+      final legacyIndent = _listItem.firstMatch(line)?.group(1);
+      if (!listLines.contains(index) &&
+          legacyIndent != null &&
+          legacyIndent.replaceAll('\t', '    ').length >= 6) {
         affected.add(index);
       }
       if (_hasHardBreak(line) ||
@@ -395,14 +409,6 @@ class MarkdownContent {
   static bool _isIndentedCode(String line) {
     if (line.trim().isEmpty || _listItem.hasMatch(line)) return false;
     return line.startsWith('    ') || line.startsWith('\t');
-  }
-
-  static int _indentWidth(String value) {
-    var width = 0;
-    for (final unit in value.codeUnits) {
-      width += unit == 0x09 ? 4 : 1;
-    }
-    return width;
   }
 
   static bool _hasHardBreak(String line) {
@@ -519,7 +525,9 @@ class MarkdownContent {
       if (MarkdownAlignmentContract.isMarkerLine(rawLine)) continue;
       if (_image.hasMatch(line) || _httpAutolink.hasMatch(line)) return true;
 
-      final whitespaceReference = RegExp(r'&#(?:0*(?:9|32)|[xX]0*(?:9|20));');
+      final whitespaceReference = RegExp(
+        r'&#(?:0*(?:9|32|160)|[xX]0*(?:9|20|[aA]0));',
+      );
       final masked = whitespaceReference.hasMatch(line)
           ? _maskInlineCode(line)
           : line;

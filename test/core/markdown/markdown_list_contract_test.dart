@@ -3,9 +3,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_delta_codec.dart';
 
-// 契约同步切片只核对独立定义的规范写法，不表示移动端 Codec 已实现契约。
-// 原文读取、真实编辑和保存重开在列表修复切片中另行验收。
+// 独立契约阅读预期与 Codec 原文／规范写法消费分别验证；兼容保护明确
+// 保留源码，不能把拒绝有损保存计为完整的可编辑支持。
 void main() {
   final fixture =
       jsonDecode(
@@ -32,6 +33,39 @@ void main() {
   });
 
   for (final row in cases) {
+    for (final field in ['markdown', 'canonical']) {
+      test('${row['id']} $field 移动端读取、保存与独立阅读树一致', () {
+        final source = row[field] as String;
+        final document = MarkdownDeltaCodec.decode(source);
+        const protected = {
+          'legacy-two-space-ordered',
+          'setext-is-heading',
+          'wide-ordered-marker',
+          'loose-item-blocks',
+          'mention-marks-empty-child',
+        };
+        if (protected.contains(row['id'])) {
+          expect(
+            document.issues.map((issue) => issue.kind),
+            contains(MarkdownCodecIssueKind.unsupportedList),
+          );
+          expect(document.issues.single.rawToken, source);
+          expect(
+            () => MarkdownDeltaCodec.encode(document.delta),
+            throwsA(isA<MarkdownCodecException>()),
+          );
+          return;
+        }
+        expect(document.issues, isEmpty);
+        final text = document.delta.operations.map((op) => op.data).join();
+        expect(text, '${(row['editableLines'] as List).join('\n')}\n');
+        final saved = MarkdownDeltaCodec.encode(document.delta);
+        expect(_readingItems(saved), row['items']);
+        final reopened = MarkdownDeltaCodec.decode(saved);
+        expect(reopened.delta.operations.map((op) => op.data).join(), text);
+        expect(MarkdownDeltaCodec.encode(reopened.delta), saved);
+      });
+    }
     test('${row['id']} 规范写法保留独立阅读树和直属文字块', () {
       final items = _readingItems(row['canonical'] as String);
       expect(items, row['items']);
@@ -54,9 +88,41 @@ void main() {
       expect(_readingItems(row['canonical'] as String), expected!['items']);
     });
   }
+
+  for (final row
+      in (fixture['rejected'] as List).cast<Map<String, dynamic>>()) {
+    test('${row['id']} 拒绝结构不丢失原文或截断层级', () {
+      final source = row['markdown'] as String;
+      final document = MarkdownDeltaCodec.decode(source);
+      if (['four-real-levels', 'list-html-row'].contains(row['id'])) {
+        expect(document.issues.single.rawToken, source);
+        expect(
+          () => MarkdownDeltaCodec.encode(document.delta),
+          throwsA(isA<MarkdownCodecException>()),
+        );
+      } else {
+        expect(
+          document.delta.operations.map((op) => op.data).join(),
+          '$source\n',
+        );
+        expect(
+          document.delta.operations.any((op) => op.attributes?['list'] != null),
+          isFalse,
+        );
+        final saved = MarkdownDeltaCodec.encode(document.delta);
+        expect(_readingItems(saved), isEmpty);
+        expect(
+          MarkdownDeltaCodec.decode(
+            saved,
+          ).delta.operations.map((op) => op.data).join(),
+          '$source\n',
+        );
+      }
+    });
+  }
 }
 
-// 直接使用阅读解析器，不导入待测 Codec。预期来自后端固定机器夹具。
+// 直接使用阅读解析器，不调用待测 Codec。预期来自后端固定机器夹具。
 List<Map<String, Object?>> _readingItems(String source) {
   final items = <Map<String, Object?>>[];
   void visit(md.Element list, int depth, int? parent) {

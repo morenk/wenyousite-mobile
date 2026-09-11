@@ -91,7 +91,10 @@ class MarkdownRichLineDecoder {
   static bool isReaderThematicBreak(String source) =>
       MarkdownAlignmentContract.isThematicBreak(source);
 
-  static MarkdownRichLine? decode(String source) {
+  static MarkdownRichLine? decode(String source) => _decode(source, false);
+  static MarkdownRichLine? decodeInline(String source) => _decode(source, true);
+
+  static MarkdownRichLine? _decode(String source, bool inlineOnly) {
     var inlineSource = source;
     final lineAttributes = <String, dynamic>{};
     final heading = MarkdownEditableBlockSyntax.heading(source);
@@ -102,7 +105,9 @@ class MarkdownRichLineDecoder {
           ).firstMatch(source)?.group(1)
         : MarkdownContent.quoteLineContent(source);
     final list = MarkdownEditableBlockSyntax.listItem(source);
-    if (heading != null) {
+    if (inlineOnly) {
+      // 容器解析已完成；这里的标记属于条目正文。
+    } else if (heading != null) {
       lineAttributes['header'] = heading.level;
       inlineSource = heading.content;
     } else if (quote != null) {

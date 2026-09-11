@@ -14,6 +14,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_delta_semantics.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editor_document.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_paragraph_boundaries.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_quote_paragraphs.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_rich_line_decoder.dart';
@@ -89,6 +90,7 @@ class MarkdownDeltaCodec {
     final issues = <MarkdownCodecIssue>[];
     final diceNodeIds = <String>{};
     final lines = source.split('\n');
+    final lists = MarkdownListStructure.parse(source);
     final literalLines = MarkdownContent.unsupportedLineIndexes(
       source,
       imageAlignment: imageAlignment,
@@ -103,6 +105,45 @@ class MarkdownDeltaCodec {
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
       if (validAlignmentMarkers.contains(lineIndex)) continue;
+      if (lists[lineIndex] case final list? when !list.taskList) {
+        if (!list.editable &&
+            !(readerClipboard &&
+                list.rows.every((row) => row.simple && row.depth < 3))) {
+          _insertCompatibility(
+            delta,
+            issues,
+            MarkdownCodecIssueKind.unsupportedList,
+            list.source,
+            '这段列表暂时无法编辑，原文已保留',
+          );
+          delta.insert('\n', {
+            if (list.end == lines.length) sourceBreakAttribute: false,
+          });
+        } else {
+          for (var i = 0; i < list.rows.length; i++) {
+            final row = list.rows[i];
+            // 只解码已由块解析器确定的条目内容，不能把内容中的标记再当块前缀。
+            final rich = MarkdownRichLineDecoder.decodeInline(row.content);
+            if (rich != null &&
+                !MarkdownContent.hasCanonicalLiteralEncoding(row.content) &&
+                !RegExp(
+                  r'\[\[dice:|!\[|\]\(/users/|@全体玩家',
+                ).hasMatch(row.content)) {
+              MarkdownDeltaRichLines.append(rich, delta);
+            } else {
+              _decodeInlineLine(row.content, delta, issues, diceNodeIds);
+            }
+            delta.insert('\n', {
+              'list': row.ordered ? 'ordered' : 'bullet',
+              if (row.depth > 0) 'indent': row.depth,
+              if (i == list.rows.length - 1 && list.end == lines.length)
+                sourceBreakAttribute: false,
+            });
+          }
+        }
+        lineIndex = list.end - 1;
+        continue;
+      }
       if (line.isEmpty &&
           lineIndex > 0 &&
           lineIndex + 1 < lines.length &&
@@ -198,6 +239,8 @@ class MarkdownDeltaCodec {
         ...?richLineAttributes,
         if (MarkdownContent.hasWhitespaceGuards(line))
           MarkdownDeltaLineMetadata.guardedWhitespaceKey: true,
+        if (MarkdownContent.hasLeadingWhitespaceGuard(line))
+          MarkdownDeltaLineMetadata.guardedLeadingWhitespaceKey: true,
         // marker 是独立段落边界；即使源码没有空行，也不能把前段和目标段合并。
         if (validAlignmentMarkers.contains(lineIndex + 1) &&
             line.isNotEmpty &&
@@ -281,6 +324,7 @@ class MarkdownDeltaCodec {
       _encodeEmbed(Map<String, dynamic>.from(data), line);
     }
     inline.flush();
+    encodingBuffer.finishLists();
     if (line.isNotEmpty) encodingBuffer.output.write(line);
     final encoded = sanitizeUnsupported
         ? MarkdownContent.literalizeUnsupported(
@@ -691,6 +735,9 @@ class MarkdownDeltaCodec {
         }
         output.write('[$label](${reference.location})');
       case compatibilityEmbed:
+        if (payload['reason'] == MarkdownCodecIssueKind.unsupportedList.name) {
+          throw const MarkdownCodecException('这段列表暂时无法编辑，原文已保留');
+        }
         output.write(_requiredString(payload, 'raw', type));
       case horizontalRuleEmbed:
         output.write(MarkdownEditorDocument.horizontalRuleMarker);

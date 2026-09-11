@@ -7,6 +7,7 @@ enum MarkdownCodecIssueKind {
   duplicateDice,
   invalidSticker,
   unsafeImage,
+  unsupportedList,
 }
 
 class MarkdownCodecIssue {

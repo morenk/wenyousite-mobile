@@ -318,6 +318,11 @@ class _ClipboardBlockCollector {
     required List<_ClipboardLine> output,
   }) {
     final ordered = list.localName == 'ol';
+    if (depth > 2 ||
+        (ordered &&
+            (int.tryParse(list.attributes['start'] ?? '1') ?? 1) != 1)) {
+      throw const MarkdownCodecException('这段列表暂时无法粘贴');
+    }
     for (final item in list.children.where(
       (child) => child.localName == 'li',
     )) {
@@ -328,14 +333,16 @@ class _ClipboardBlockCollector {
       );
       final contentLines = _ClipboardInlineBuilder(source).build(contentNodes);
       final content = _mergeInlineLines(contentLines);
-      if (!_isVisiblyEmpty(content)) {
-        output.add(
-          _ClipboardLine(content, {
-            'list': ordered ? 'ordered' : 'bullet',
-            if (depth > 0) 'indent': depth.clamp(0, 3),
-          }),
-        );
+      if (contentLines.length > 1 ||
+          item.children.any((node) => ['h2', 'h3'].contains(node.localName))) {
+        throw const MarkdownCodecException('这段列表暂时无法粘贴');
       }
+      output.add(
+        _ClipboardLine(content, {
+          'list': ordered ? 'ordered' : 'bullet',
+          if (depth > 0) 'indent': depth,
+        }),
+      );
       for (final nested in item.children.where(
         (child) => child.localName == 'ul' || child.localName == 'ol',
       )) {

@@ -19,7 +19,7 @@ void main() {
       selection: const TextSelection.collapsed(offset: 0),
       url: 'https://example.com',
     );
-    expect(await session.flush(), isTrue);
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
     expect(_encode(session), isEmpty);
     session.controller.replaceText(
       0,
@@ -32,7 +32,7 @@ void main() {
       selection: const TextSelection(baseOffset: 0, extentOffset: 2),
       url: 'https://example.com',
     );
-    expect(await session.flush(), isTrue);
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
     final nodes = _elements(
       md.Document().parseLines(_encode(session).split('\n')),
     );
@@ -44,7 +44,7 @@ void main() {
       const TextSelection.collapsed(offset: 0),
     );
     await tester.pump();
-    expect(await session.flush(), isTrue);
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
     expect(MarkdownContent.hasVisibleContent(_encode(session)), isFalse);
   });
 
@@ -52,7 +52,7 @@ void main() {
     final session = _session('');
     session.insertHorizontalRule();
     await tester.pump();
-    expect(await session.flush(), isTrue);
+    expect(await session.flush(), isTrue, reason: session.codecFailure);
     final saved = _encode(session);
     expect(
       (md.Document().parseLines(saved.split('\n')).single as md.Element).tag,
@@ -122,7 +122,7 @@ void main() {
           TextSelection.collapsed(offset: whitespace.length),
         );
         await tester.pump();
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         final saved = _encode(session);
         expect(
           _session(saved).controller.document.toPlainText(),
@@ -146,7 +146,7 @@ void main() {
         _apply(session.controller, format);
         await tester.pump(const Duration(milliseconds: 400));
         expect(session.codecFailure, isNull);
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         final empty = _encode(session);
         expect(MarkdownContent.hasVisibleContent(empty), isFalse);
         final reopened = _session(empty);
@@ -162,7 +162,7 @@ void main() {
           const TextSelection.collapsed(offset: 1),
         );
         await tester.pump();
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         final filled = _encode(session);
         expect(MarkdownContent.hasVisibleContent(filled), isTrue);
         _expectBlock(
@@ -180,7 +180,7 @@ void main() {
           const TextSelection.collapsed(offset: 0),
         );
         await tester.pump();
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         expect(_encode(session), empty);
       });
     }
@@ -256,7 +256,7 @@ void main() {
         marker == '-' ? _Format.bullet : _Format.ordered,
       );
       await tester.pump();
-      expect(await session.flush(), isTrue);
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
       final saved = _encode(session);
       final reading = md.Document().parseLines(saved.split('\n'));
       expect((reading[0] as md.Element).tag, 'p');
@@ -284,7 +284,7 @@ void main() {
         const TextSelection.collapsed(offset: 3),
       );
       await tester.pump();
-      expect(await session.flush(), isTrue);
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
       final nodes = md.Document().parseLines(_encode(session).split('\n'));
       expect(_elements(nodes).where((node) => node.tag == 'li').length, 2);
       expect(
@@ -295,9 +295,9 @@ void main() {
         session.controller,
         marker == '-' ? _Format.ordered : _Format.bullet,
       );
-      expect(await session.flush(), isTrue);
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
       _apply(session.controller, _Format.body);
-      expect(await session.flush(), isTrue);
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
       expect(
         _session(_encode(session)).controller.document.toPlainText(),
         '正文\n\n',
@@ -307,11 +307,11 @@ void main() {
 
   for (final ordered in [false, true]) {
     final marker = ordered ? '1.' : '-';
-    for (final depth in ordered ? [0] : [0, 1, 2]) {
+    for (final depth in [0, 1, 2]) {
       testWidgets('深度 $depth 的 $marker 列表末项删空、保存与续写', (tester) async {
         final source = [
           for (var level = 0; level <= depth; level++)
-            '${'  ' * level}$marker 甲',
+            '${(ordered ? '   ' : '  ') * level}$marker 甲',
         ].join('\n');
         final session = _session(source);
         final position = depth * 2;
@@ -322,7 +322,7 @@ void main() {
           TextSelection.collapsed(offset: position),
         );
         await tester.pump();
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         final saved = _encode(session);
         final reading = md.Document().parseLines(saved.split('\n'));
         final items = _elements(reading).where((node) => node.tag == 'li');
@@ -364,7 +364,7 @@ void main() {
         TextSelection.collapsed(offset: position),
       );
       await tester.pump();
-      expect(await session.flush(), isTrue);
+      expect(await session.flush(), isTrue, reason: session.codecFailure);
       final saved = _encode(session);
       final items = _elements(
         md.Document().parseLines(saved.split('\n')),
@@ -394,19 +394,21 @@ void main() {
     });
   }
 
-  testWidgets('旧两空格有序缩进删空不得静默丢失阅读列表项', (tester) async {
-    final session = _session('1. 甲\n  1. 乙\n    1. 丙');
+  testWidgets('旧两空格有序列表保留完整原文并阻止有损编辑', (tester) async {
+    const original = '1. 甲\n  1. 乙\n    1. 丙';
+    final session = _session(original);
+    expect(session.issues.single.rawToken, original);
     session.controller.replaceText(
-      4,
       1,
-      '',
+      0,
+      '新文字',
       const TextSelection.collapsed(offset: 4),
     );
     await tester.pump();
-    // 该历史缩进映射需要跨端契约调整；在此之前必须保留编辑内容并拒绝有损保存。
+    // 共享契约规定这是两个根项，第二项含续行；不能猜成三级后覆写。
     expect(await session.flush(), isFalse);
-    expect(session.controller.document.toPlainText(), '甲\n乙\n\n');
-    expect(session.codecFailure, contains('列表层级'));
+    expect(session.controller.document.toPlainText(), '\uFFFC新文字\n');
+    expect(session.codecFailure, contains('原文已保留'));
   });
 
   for (final format in _Format.values) {
@@ -420,7 +422,7 @@ void main() {
         final session = _session('');
         _apply(session.controller, format);
         WenyouEditorFormatPolicy.toggle(session.controller, mark);
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         expect(MarkdownContent.hasVisibleContent(_encode(session)), isFalse);
         session.controller.replaceText(
           0,
@@ -429,7 +431,7 @@ void main() {
           const TextSelection.collapsed(offset: 1),
         );
         await tester.pump();
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         final saved = _encode(session);
         final nodes = _elements(
           md.Document(
@@ -450,7 +452,7 @@ void main() {
           const TextSelection.collapsed(offset: 0),
         );
         await tester.pump();
-        expect(await session.flush(), isTrue);
+        expect(await session.flush(), isTrue, reason: session.codecFailure);
         expect(MarkdownContent.hasVisibleContent(_encode(session)), isFalse);
       });
     }

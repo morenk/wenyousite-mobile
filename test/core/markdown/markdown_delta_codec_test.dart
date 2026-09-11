@@ -159,7 +159,15 @@ void main() {
 
     test('$id canonical Markdown 经 Delta 按 v4 能力白名单往返', () {
       final document = MarkdownDeltaCodec.decode(canonical);
-
+      if (id == 'four-level-list') {
+        // list-v1 revision 2 明确拒绝真实第四层，保留原文而不扁平化后保存。
+        expect(document.issues.single.rawToken, canonical);
+        expect(
+          () => MarkdownDeltaCodec.encode(document.delta),
+          throwsA(isA<MarkdownCodecException>()),
+        );
+        return;
+      }
       expect(MarkdownDeltaCodec.encode(document.delta), expected);
     });
 
@@ -501,6 +509,8 @@ void main() {
       ..insert('粗斜', {'bold': true, 'italic': true})
       ..insert('链接', {'link': 'https://wenyou.site/help'})
       ..insert('\n')
+      ..insert('父项')
+      ..insert('\n', {'list': 'bullet'})
       ..insert('条目')
       ..insert('\n', {'list': 'bullet', 'indent': 1})
       ..insert('引用')
@@ -511,16 +521,17 @@ void main() {
     expect(
       MarkdownDeltaCodec.encode(delta),
       '## 标题\n***粗斜***[链接](https://wenyou.site/help)\n'
-      '  - 条目\n> 引用\n``a`b``',
+      '- 父项\n  - 条目\n\n> 引用\n``a`b``',
     );
   });
 
   test('受支持的既有 Markdown 解码为 Quill 富文本属性而不是源码标记', () {
     const source =
         '## 标题\n'
-        '***粗斜***[链接](https://wenyou.site/help)\n'
+        '***粗斜***[链接](https://wenyou.site/help)\n\n'
+        '- 父项\n'
         '  - 条目\n'
-        '> 引用\n'
+        '\n> 引用\n'
         '``a`b``';
 
     final document = MarkdownDeltaCodec.decode(source);

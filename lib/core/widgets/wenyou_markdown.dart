@@ -281,6 +281,7 @@ class _WenyouMarkdownState extends State<WenyouMarkdown> {
     softLineBreak: true,
     styleSheet: styleSheet,
     blockSyntaxes: [
+      const md.SetextHeaderSyntax(),
       const MarkdownQuoteLineSyntax(_emptyParagraphTag),
       const MarkdownLiteralRowsSyntax(),
       _EmptyParagraphBlockSyntax(),
