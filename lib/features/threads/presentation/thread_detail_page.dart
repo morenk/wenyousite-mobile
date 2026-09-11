@@ -52,6 +52,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _pageInstanceToken = Object();
   final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
+  final _itemListKey = GlobalKey();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
   final _targetReveal = DiscussionTargetRevealCoordinator();
@@ -282,6 +283,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
                         renderGeometry: _renderGeometry,
                         quickScroll: _quickScroll,
                         targetKey: _targetKey,
+                        itemListKey: _itemListKey,
                         onSelectSubthread: (id) =>
                             _selectSubthreadFromUser(id, provider),
                         onCompose: _compose,
@@ -496,6 +498,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       itemCount: displayedFloors.length,
       ready: !state.isLoadingFloors,
       targetKey: _targetKey,
+      itemListKey: _itemListKey,
       scrollController: _subthreadScroll.controller,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),

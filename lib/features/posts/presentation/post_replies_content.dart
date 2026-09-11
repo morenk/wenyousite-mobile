@@ -36,6 +36,7 @@ class PostDiscussionList extends StatelessWidget {
     required this.authenticated,
     required this.focusedReplyId,
     required this.targetKey,
+    required this.itemListKey,
     required this.scrollController,
     required this.quickScroll,
     required this.canReport,
@@ -58,6 +59,7 @@ class PostDiscussionList extends StatelessWidget {
   final bool authenticated;
   final String? focusedReplyId;
   final GlobalKey targetKey;
+  final GlobalKey itemListKey;
   final ScrollController scrollController;
   final ReadingQuickScrollController quickScroll;
   final bool canReport;
@@ -177,6 +179,7 @@ class PostDiscussionList extends StatelessWidget {
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: horizontal),
             sliver: SliverList.builder(
+              key: itemListKey,
               itemCount: state.replies.length,
               itemBuilder: (context, index) {
                 final reply = state.replies[index];
