@@ -96,6 +96,7 @@ class _StartHarness extends StatefulWidget {
 class _StartHarnessState extends State<_StartHarness> {
   final controller = ScrollController();
   final targetKey = GlobalKey();
+  final itemListKey = GlobalKey();
   final reveal = DiscussionTargetRevealCoordinator();
   double growth = 0;
 
@@ -117,6 +118,7 @@ class _StartHarnessState extends State<_StartHarness> {
       itemCount: 3,
       ready: true,
       targetKey: targetKey,
+      itemListKey: itemListKey,
       scrollController: controller,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),
@@ -137,20 +139,21 @@ class _StartHarnessState extends State<_StartHarness> {
                   pinned: true,
                   delegate: _PinnedHeader(widget.pinnedHeight),
                 ),
-              SliverToBoxAdapter(
-                child: SizedBox(height: widget.beforeHeight + growth),
-              ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  key: targetKey,
-                  height: widget.targetHeight + growth,
-                  child: const Align(
-                    alignment: Alignment.topLeft,
-                    child: Text('作者 · 楼层号\n正文开头'),
+              SliverList.list(
+                key: itemListKey,
+                children: [
+                  SizedBox(height: widget.beforeHeight + growth),
+                  SizedBox(
+                    key: targetKey,
+                    height: widget.targetHeight + growth,
+                    child: const Align(
+                      alignment: Alignment.topLeft,
+                      child: Text('作者 · 楼层号\n正文开头'),
+                    ),
                   ),
-                ),
+                  SizedBox(height: widget.tailHeight),
+                ],
               ),
-              SliverToBoxAdapter(child: SizedBox(height: widget.tailHeight)),
             ],
           ),
         ),

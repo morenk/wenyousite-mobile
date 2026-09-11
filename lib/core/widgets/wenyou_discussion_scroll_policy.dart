@@ -1,5 +1,11 @@
 import 'package:flutter/rendering.dart'
-    show RenderAbstractViewport, RenderObject, RenderSliver, ScrollCacheExtent;
+    show
+        RenderAbstractViewport,
+        RenderObject,
+        RenderSliver,
+        RenderSliverMultiBoxAdaptor,
+        SliverMultiBoxAdaptorParentData,
+        ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
 /// Prepares the visible discussion plus two viewports on either side.
@@ -52,12 +58,11 @@ class DiscussionPrefetchScheduler {
 /// lazy sliver yet. The target owns automatic movement until the first user
 /// drag, and can be reset when route or filter context changes.
 class DiscussionTargetRevealCoordinator {
-  static const maxEstimatedAttempts = 6;
-
   String? _lastContentSignature;
   String? _scopeSignature;
   String? _attemptTargetId;
-  var _attempts = 0;
+  String? _seekContentSignature;
+  final _visitedSeeks = <String>{};
   var _scheduled = false;
   var _releasedByUser = false;
 
@@ -65,7 +70,8 @@ class DiscussionTargetRevealCoordinator {
     _lastContentSignature = null;
     _scopeSignature = null;
     _attemptTargetId = null;
-    _attempts = 0;
+    _seekContentSignature = null;
+    _visitedSeeks.clear();
     _scheduled = false;
     _releasedByUser = false;
   }
@@ -78,6 +84,7 @@ class DiscussionTargetRevealCoordinator {
     required int itemCount,
     required bool ready,
     required GlobalKey targetKey,
+    required GlobalKey itemListKey,
     required ScrollController scrollController,
     required bool Function() isMounted,
     required VoidCallback requestRebuild,
@@ -88,14 +95,17 @@ class DiscussionTargetRevealCoordinator {
     }
     if (!ready ||
         targetIndex < 0 ||
+        targetIndex >= itemCount ||
         _releasedByUser ||
         _scheduled ||
         _lastContentSignature == contentSignature) {
       return;
     }
-    if (_attemptTargetId != targetId) {
+    if (_attemptTargetId != targetId ||
+        _seekContentSignature != contentSignature) {
       _attemptTargetId = targetId;
-      _attempts = 0;
+      _seekContentSignature = contentSignature;
+      _visitedSeeks.clear();
     }
     _scheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,19 +126,51 @@ class DiscussionTargetRevealCoordinator {
         );
         _lastContentSignature = contentSignature;
         _attemptTargetId = null;
-        _attempts = 0;
+        _visitedSeeks.clear();
         return;
       }
-      if (!scrollController.hasClients || _attempts >= maxEstimatedAttempts) {
+      if (!scrollController.hasClients) {
         return;
       }
-      _attempts += 1;
+      final list = itemListKey.currentContext?.findRenderObject();
+      if (list is! RenderSliverMultiBoxAdaptor || !list.attached) return;
+      final viewport = RenderAbstractViewport.maybeOf(list);
+      if (viewport == null) return;
       final position = scrollController.position;
-      final fraction = (targetIndex + 1) / (itemCount + 1);
-      final estimated = position.maxScrollExtent * fraction;
-      scrollController.jumpTo(
-        estimated.clamp(position.minScrollExtent, position.maxScrollExtent),
+      final first = list.firstChild;
+      final last = list.lastChild;
+      double destination;
+      if (first == null || last == null) {
+        destination = viewport.getOffsetToReveal(list, 0).offset;
+      } else if (targetIndex > list.indexOf(last)) {
+        // 沿已完成布局的行边界前进，不能用平均行高估算长短混排的目标。
+        destination =
+            viewport.getOffsetToReveal(last, 0).offset + last.size.height;
+      } else if (targetIndex < list.indexOf(first)) {
+        destination =
+            viewport.getOffsetToReveal(first, 0).offset -
+            position.viewportDimension;
+      } else {
+        var row = first;
+        while (list.indexOf(row) < targetIndex) {
+          row = list.childAfter(row)!;
+        }
+        destination = viewport.getOffsetToReveal(row, 0).offset;
+      }
+      destination = destination.clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
       );
+      // 几何尚未推进时停止重排；内容更新会重新尝试，不限制目标距离。
+      final seek =
+          '$contentSignature:${first == null ? null : list.indexOf(first)}:'
+          '${last == null ? null : list.indexOf(last)}:${position.pixels}:$destination';
+      if (!destination.isFinite ||
+          (destination - position.pixels).abs() < 0.5 ||
+          !_visitedSeeks.add(seek)) {
+        return;
+      }
+      scrollController.jumpTo(destination);
       if (isMounted()) requestRebuild();
     });
   }
@@ -140,6 +182,11 @@ class DiscussionTargetRevealCoordinator {
     RenderObject child = target;
     while (child.parent != null) {
       final parent = child.parent!;
+      final parentData = child.parentData;
+      if (parentData is SliverMultiBoxAdaptorParentData &&
+          parentData.keptAlive) {
+        return false;
+      }
       if (parent is RenderSliver && parent.childScrollOffset(child) == null) {
         return false;
       }

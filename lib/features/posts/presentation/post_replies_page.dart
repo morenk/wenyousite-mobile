@@ -52,6 +52,7 @@ class PostRepliesPage extends ConsumerStatefulWidget {
 
 class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
+  final _itemListKey = GlobalKey();
   final _scrollController = ScrollController();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _targetReveal = DiscussionTargetRevealCoordinator();
@@ -174,6 +175,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                           authenticated: session.isAuthenticated,
                           focusedReplyId: focusedReplyId,
                           targetKey: _targetKey,
+                          itemListKey: _itemListKey,
                           scrollController: _scrollController,
                           canReport: threadContext?.canReport ?? false,
                           canManageThread:
@@ -251,6 +253,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       itemCount: state.replies.length,
       ready: targetIndex >= 0,
       targetKey: _targetKey,
+      itemListKey: _itemListKey,
       scrollController: _scrollController,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),
@@ -396,6 +399,7 @@ class _DiscussionList extends StatelessWidget {
     required this.authenticated,
     required this.focusedReplyId,
     required this.targetKey,
+    required this.itemListKey,
     required this.scrollController,
     required this.canReport,
     required this.canManageThread,
@@ -416,6 +420,7 @@ class _DiscussionList extends StatelessWidget {
   final bool authenticated;
   final String? focusedReplyId;
   final GlobalKey targetKey;
+  final GlobalKey itemListKey;
   final ScrollController scrollController;
   final bool canReport;
   final bool canManageThread;
@@ -527,6 +532,7 @@ class _DiscussionList extends StatelessWidget {
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: horizontal),
             sliver: SliverList.builder(
+              key: itemListKey,
               itemCount: state.replies.length,
               itemBuilder: (context, index) {
                 final reply = state.replies[index];

@@ -55,6 +55,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
   final _pageInstanceToken = Object();
   final _subthreadScroll = ThreadDetailSubthreadScrollCoordinator();
   final _targetKey = GlobalKey();
+  final _itemListKey = GlobalKey();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _entryTargetCoordinator = ThreadDetailEntryTargetCoordinator();
   final _targetReveal = DiscussionTargetRevealCoordinator();
@@ -432,6 +433,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
       itemCount: displayedFloors.length,
       ready: !state.isLoadingFloors,
       targetKey: _targetKey,
+      itemListKey: _itemListKey,
       scrollController: _subthreadScroll.controller,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),
@@ -651,6 +653,7 @@ class _ThreadDetailPageState extends ConsumerState<ThreadDetailPage> {
           )
         else
           SliverList(
+            key: _itemListKey,
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final floor = displayedFloors[index];
