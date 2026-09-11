@@ -5,6 +5,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/models/cursor_page.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 import 'package:wenyousite_mobile/features/users/application/user_repository_ports.dart';
 import 'package:wenyousite_mobile/features/users/data/profile_cover_mapper.dart';
@@ -195,6 +196,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
           )
           .toList(growable: false),
       coverImageUrls: _safeHttpUrls(dto.coverImages),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),
@@ -229,6 +231,7 @@ class ApiPublicUserRepository implements PublicUserRepository {
           )
           .toList(growable: false),
       coverImageUrls: _safeHttpUrls(dto.coverImages),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),

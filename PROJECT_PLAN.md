@@ -4,10 +4,15 @@
 
 ## 当前基线
 
+- 2026-09-11 列表契约候选：当前任务整合移动端 `765f023` 的既有开发基线，并同步后端 `062412601b3a8dbf4f64494115a2445d312dd53d`。OpenAPI 升至 `5.20.1-dev.20260911.1`，补充收藏夹计数的可见性口径，字段形状不变；新增 editor-list v1 revision 2。规范样例可以独立读取，移动端原文读取、结构编码和负责人验收尚未完成，见[列表统一排查](docs/architecture/editor-list-unification-investigation.md)。
+
+- 2026-09-11 契约同步：本任务分支已同步后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef` 的 `5.20.0-dev.20260909.1`，生成客户端增加可空封面媒体与动画预览字段，暂不接入播放。同日 01:16 完整门禁已确认公网更新至该契约及精确 revision，主题响应兼容检查通过；下列旧契约条目保留此前交付背景。
+
 - 客户端：开发版本 `0.7.0-dev.1+94`，线上正式版本仍为 `0.7.0+93`；新正式 APK 仅支持 Android 8+ ARM64，全部字体保留。正式包名 `site.wenyou.app`，Debug 包名 `site.wenyou.app.debug`，真机性能包名 `site.wenyou.app.profile`；本次只生成本地验收制品，不晋级线上更新策略。
-- 后端契约：`5.18.0-dev.20260905.1`，来源 `3338028459561565c788d5236fb64db84a2ae538`；已同步 newline v1 revision 2 的手动回车对齐规则，HTTP SDK 与其他语料不变。2026-09-10 公网 `/meta` 实测为 `6bfb818df4ccf5333df7b62018a9f519d91e935b`，与来源的同步契约/指南无 diff；来源 SHA 尚未同步。移动端手动回车对齐已验收，Web 部署与完整线上跨端效果仍待独立核验。签到经验、主题帖档案导出、子贴主楼层置顶、Markdown v5、编辑器往返 v7、剪贴板 v2 与独立图片块对齐保持原能力。
+- 后端契约：`5.20.1-dev.20260911.1`，来源 `b785336c5b31cb228f3021650b9de1c39ade02e5`；收藏夹可见计数语义已同步。2026-09-11 同步时公网仍为 `8bf370f`／5.20.0，公网版本核验另行记录。
 - 正文契约：公网当前激活 Markdown v5；客户端兼容 `{3, 4, 5}`，独占一行的普通图片可使用左、中、右块对齐；站内引用契约：`wenyousite-internal-reference` v1。
-- 视觉依赖：Foundation `v6.9.0`。
+- 视觉依赖：Foundation `v6.10.0`。
+- 表情网格及共享排序动画：2026-09-11 负责人真机验收通过并授权合并；表情管理采用五列紧凑网格、长按排序与静默乐观保存，子贴排序复用抬起／落下反馈。未取得 Profile 帧时间采样，见[验收记录](docs/architecture/sticker-grid-acceptance.md)。
 - 空正文选择 H2/H3：2026-09-09 负责人在覆盖安装的 Debug 包 `1c7fb8a6` 上验收通过，原问题修复完成，见[空标题验收](docs/architecture/editor-empty-heading-acceptance.md)。
 - 引用长文本溢出：2026-09-09 负责人在 Debug 包 `562a7954` 上验收通过；按实际行内内容高度排版，保留既有分页和删除调整。源码与验收记录见 [引用溢出验收](docs/architecture/quote-text-overflow-acceptance.md)。
 - 性能基线：Android 真机 Profile 三轮 60 Hz 门禁覆盖外观切换、共享转场、动态流和 Markdown 时间线；机器可读结果见 `tool/performance/android_profile_baseline.json`。
@@ -17,13 +22,17 @@
 
 ## 当前优先级
 
-2026-09-10 已启动[富文本跨端稳定性专项](docs/architecture/rich-text-stability-plan.md)，并汇总[三端基线核验](docs/architecture/rich-text-stability-baseline.md)与[首批共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。后端公网/本机/远端为 `6bfb818`，与本地 `3338028` 的同步契约/指南无差异；Web dev 及 current 元数据为 `ae968c8`，浏览器实际资源和双向旅程未验证。复用既有回归，不更换编辑器、不迁移正文；下一步先核对并补 newline 一致性检查、验证编码失败后的旧值提交风险，再扩展操作矩阵。来源 SHA 同步仍需独立切片，不把本文档计划视为协议或业务修复完成。
+富文本跨端稳定性专项沿用[阶段计划](docs/architecture/rich-text-stability-plan.md)、[三端历史基线](docs/architecture/rich-text-stability-baseline.md)和[共享操作矩阵提案](docs/architecture/rich-text-stability-matrix.md)。这些记录描述 2026-09-10 的审查现场；当前依赖和后续整改以上方最新基线及下述整改计划为准。
 
-回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，原验收时后端部署仍为旧 revision，本轮部署快照见上方基线；Web 部署与全部线上跨端组合尚未独立核验。
+编辑器系统整改已于 2026-09-11 获负责人授权开始：按[正文语义整改计划](docs/architecture/editor-semantics-remediation-plan.md)依次登记入口、统一移动端结构消费、覆盖连续编辑状态、核对跨端独立结果并交付真机候选。当前 `1a66b68b` 列表候选仍待验收，不把局部检查通过记为整个编辑器整改完成。
+
+当前空块格式排查：负责人反馈空列表仍报错，已扩展为格式状态、纯空白输入与独立阅读语义的系统性候选，尚待完整检查和负责人验收。历史嵌套有序列表的缩进映射另需跨端补齐，当前必须阻止有损保存，详见[空块格式验收](docs/architecture/editor-empty-block-acceptance.md)。
+
+回车对齐反馈已于 2026-09-09 取得负责人验收通过：移动端手动 Enter 新段恢复默认左对齐、长句自动折行保留整段方向，相邻正文段落不增加空行。对应源码 `1fe9435`、Debug 包 `db2c8965`，负责人已授权合并 PR #12 并清理任务分支；完整检查及保留制品见[手动回车对齐验收](docs/architecture/editor-manual-alignment-acceptance.md)。三个远端 PR 已合并，本轮后端部署来源核对通过；Web 部署与全部线上跨端组合未在本任务独立核验。
 
 本轮新增图片输入兼容性加固：统一引擎解码与无损中间图，原始失败图片已完成本地旧实现失败／候选通过对照，负责人于 2026-09-09 在 Debug 构建 94 上确认原问题真机验收通过并授权合并。完整 Android 原生矩阵与大图性能仍待补充验证，范围和限制见[图片兼容性验收](docs/architecture/image-input-compatibility-acceptance.md)。
 
-当前验收边界：移动端普通正文手动回车对齐已按上述记录通过；引用标记拆分于 2026-09-08 通过。引用内部额外空行的独立原场景及完整线上双向旅程仍缺明确验收证据，保持**待负责人验收／待跨端核验**，不以手动回车对齐的通过扩大完成范围。此前安装 Release、负责人打开旧 Debug 的错配及多空行候选保留在[引用空行验收](docs/architecture/editor-quote-acceptance.md)和[旧双端回车记录](docs/architecture/editor-newline-acceptance.md)；旧记录中 Enter 继承方向的表格不再作为 revision 2 的当前规则。
+当前中断项：普通正文与引用的一次回车双端统一，以及引用额外空行候选，**待负责人验收**。已查明此前安装 Release、负责人打开旧 Debug 的包名错配；覆盖更新正确 Debug 后，负责人于 2026-09-08 明确确认 `>` 拆分引用的问题解决。现用已取得的原楼层 Markdown 复现并处理多空行问题，保留保存后的段落边界，历史见 [引用空行验收](docs/architecture/editor-quote-acceptance.md)，本次普通回车候选与真机步骤见 [双端回车验收](docs/architecture/editor-newline-acceptance.md)。
 
 1. 完成正式签名包的真实更新安装冒烟，覆盖线上 `/meta`、下载、SHA-256、签名、安装器返回和旧版本升级后的会话/本地数据保留。
 2. 接入协作者权限闭环：展示本人协作主题列表，消费子贴 `postingCapability`，识别协作者任免通知，并在权限撤销或管理写入被拒时退出管理页、刷新成员与协作列表。
@@ -58,7 +67,7 @@
 - 主路径与加载、空、错、重试、权限和冲突状态均可操作。
 - 行为、测试、模块当前事实文档在同一切片同步；纯内部重构按仓库约定声明 `Docs-Impact: none - 原因`。
 - 普通切片运行相关测试和受影响范围检查；认证、契约、网络、上传、持久化、发布等高风险切片运行 `npm run check`，必要时构建 Debug APK。
-- 无敏感信息、调试残留或伪实现；提交保持原子并推送 `codex/YYYYMMDD-<目标>` 任务分支，不直接更新 `dev`；合并由负责人明确授权。
+- 无敏感信息、调试残留或伪实现；提交保持原子且默认推送 `dev`。
 - Bug 必须由负责人亲自复验原场景并明确通过，才能标记修复完成；候选提交、自动检查或安装成功均不代表验收通过。未验收或验收失败时继续保持进行中，执行 [Bug 候选与负责人验收流程](AGENTS.md#bug-候选与负责人验收)。
 
 `dev → main`、正式版本号、Tag 和对外晋级只由维护者明确决定。

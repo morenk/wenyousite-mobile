@@ -12,6 +12,23 @@ import '../../support/foundation_test_fonts.dart';
 void main() {
   setUpAll(loadFoundationTestFonts);
 
+  testWidgets('外观页可直接开启与关闭省流量', (tester) async {
+    await tester.pumpWidget(
+      _testApp(
+        store: _FakeAppearanceStore(),
+        preference: AppearancePreference.system,
+      ),
+    );
+    final toggle = find.byKey(const Key('cover-data-saver'));
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+  });
+
   testWidgets('展示 Foundation 三种偏好并持久化黑夜选择', (tester) async {
     final store = _FakeAppearanceStore();
     await tester.pumpWidget(

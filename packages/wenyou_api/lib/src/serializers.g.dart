@@ -493,6 +493,8 @@ Serializers _$serializers =
           ..add(ThreadCategoryInfoDto.serializer)
           ..add(ThreadCategoryResponseDto.serializer)
           ..add(ThreadCountResponseDto.serializer)
+          ..add(ThreadCoverMediaResponseDto.serializer)
+          ..add(ThreadCoverPreviewVariantResponseDto.serializer)
           ..add(ThreadDetailResponseDto.serializer)
           ..add(ThreadDetailResponseDtoStatusEnum.serializer)
           ..add(ThreadDetailResponseDtoVisibilityEnum.serializer)
@@ -1060,6 +1062,12 @@ Serializers _$serializers =
               const FullType(ThreadCategoryResponseDto),
             ]),
             () => ListBuilder<ThreadCategoryResponseDto>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(ThreadCoverPreviewVariantResponseDto),
+            ]),
+            () => ListBuilder<ThreadCoverPreviewVariantResponseDto>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [

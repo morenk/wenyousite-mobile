@@ -27,6 +27,7 @@ class BookmarkListItem {
     this.preview,
     this.tags = const [],
     this.coverImageUrls = const [],
+    this.coverMedia,
     this.playerCount,
   });
 
@@ -48,6 +49,7 @@ class BookmarkListItem {
   final String? preview;
   final List<ThreadFeedTag> tags;
   final List<String> coverImageUrls;
+  final ThreadFeedCoverMedia? coverMedia;
   final int memberCount;
   final int? playerCount;
   final int postCount;
@@ -73,6 +75,7 @@ class BookmarkListItem {
       preview: preview,
       tags: tags,
       coverImageUrls: coverImageUrls,
+      coverMedia: coverMedia,
       memberCount: memberCount,
       playerCount: playerCount,
       postCount: postCount,

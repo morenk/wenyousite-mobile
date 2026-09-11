@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 受控性能fixture仅通过ADB reverse访问本机HTTP，不开放其他明文域名。 -->
+    <application android:networkSecurityConfig="@xml/profile_network_security_config" />
 </manifest>
