@@ -98,6 +98,8 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 2026-09-11 列表契约候选同步：Backend `062412601b3a8dbf4f64494115a2445d312dd53d`，OpenAPI `5.20.1-dev.20260911.1`；新增 editor-list v1 revision 2，夹具最初固定于 `aa1bcbd4d087f03a17817e9eca8bcd1f92bb53da`。同时同步收藏夹计数按当前用户可见性统计的契约说明；字段形状、块边界 v1 revision 2 与既有消费代码保持；列表消费者及真机验收仍待完成，见[列表统一排查](../architecture/editor-list-unification-investigation.md)。
 
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
 2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 
 2026-09-11 块边界候选契约：同步 Backend `a91cbb8b605223c596af299be22c5547f69e25b9` 的 `markdown-block-boundary-v1-fixtures.json`（v1 revision 2）。HTTP 与 Markdown v5 不变；共享样例已接入仓库，消费者实现及负责人验收仍在进行，见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
