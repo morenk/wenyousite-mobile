@@ -40,6 +40,7 @@ class PostRepliesPage extends ConsumerStatefulWidget {
 
 class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
   final _targetKey = GlobalKey();
+  final _itemListKey = GlobalKey();
   final _scrollController = ScrollController();
   final _composerDrafts = <String, PostComposerDraft>{};
   final _targetReveal = DiscussionTargetRevealCoordinator();
@@ -187,6 +188,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
                             authenticated: session.isAuthenticated,
                             focusedReplyId: focusedReplyId,
                             targetKey: _targetKey,
+                            itemListKey: _itemListKey,
                             scrollController: _scrollController,
                             quickScroll: _quickScroll,
                             canReport: threadContext?.canReport ?? false,
@@ -281,6 +283,7 @@ class _PostRepliesPageState extends ConsumerState<PostRepliesPage> {
       itemCount: state.replies.length,
       ready: targetIndex >= 0,
       targetKey: _targetKey,
+      itemListKey: _itemListKey,
       scrollController: _scrollController,
       isMounted: () => mounted,
       requestRebuild: () => setState(() {}),

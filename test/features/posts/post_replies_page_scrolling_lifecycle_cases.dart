@@ -20,6 +20,41 @@ import 'post_replies_page_test_support.dart';
 
 void registerPostRepliesPageScrollingLifecycleCases() {
   setUpAll(loadFoundationTestFonts);
+  testWidgets('楼中楼末尾长回复从作者信息开头定位', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stickersEnabledProvider.overrideWithValue(false),
+          postRepositoryProvider.overrideWithValue(
+            PostRepliesPageTestFakePostRepository(
+              initialReplies: [
+                postRepliesPageTestReply(
+                  'long-target',
+                  List.filled(90, '楼中楼长正文，作者与正文开头必须可见。').join('\n\n'),
+                  postRepliesPageTestOtherAuthor,
+                ),
+              ],
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const PostRepliesPage(
+            threadId: 'thread',
+            rootPostId: 'root',
+            focusedReplyId: 'long-target',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final target = tester.getRect(
+      find.byKey(const ValueKey('target-frame-long-target')),
+    );
+    final viewport = tester.getRect(find.byKey(const Key('post-replies-list')));
+    expect(target.height, greaterThan(viewport.height));
+    expect(target.top, closeTo(viewport.top, 1));
+  });
   testWidgets('上传中点击编辑器外部会在关闭 Sheet 前取消任务', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
