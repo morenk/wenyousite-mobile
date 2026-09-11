@@ -8,6 +8,8 @@ part of 'sticker_asset_response_dto.dart';
 
 class _$StickerAssetResponseDto extends StickerAssetResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String id;
   @override
   final String url;
@@ -29,6 +31,7 @@ class _$StickerAssetResponseDto extends StickerAssetResponseDto {
   ]) => (StickerAssetResponseDtoBuilder()..update(updates))._build();
 
   _$StickerAssetResponseDto._({
+    this.display,
     required this.id,
     required this.url,
     required this.thumbnailUrl,
@@ -51,6 +54,7 @@ class _$StickerAssetResponseDto extends StickerAssetResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is StickerAssetResponseDto &&
+        display == other.display &&
         id == other.id &&
         url == other.url &&
         thumbnailUrl == other.thumbnailUrl &&
@@ -64,6 +68,7 @@ class _$StickerAssetResponseDto extends StickerAssetResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, thumbnailUrl.hashCode);
@@ -79,6 +84,7 @@ class _$StickerAssetResponseDto extends StickerAssetResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'StickerAssetResponseDto')
+          ..add('display', display)
           ..add('id', id)
           ..add('url', url)
           ..add('thumbnailUrl', thumbnailUrl)
@@ -95,6 +101,12 @@ class StickerAssetResponseDtoBuilder
     implements
         Builder<StickerAssetResponseDto, StickerAssetResponseDtoBuilder> {
   _$StickerAssetResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _id;
   String? get id => _$this._id;
@@ -135,6 +147,7 @@ class StickerAssetResponseDtoBuilder
   StickerAssetResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _id = $v.id;
       _url = $v.url;
       _thumbnailUrl = $v.thumbnailUrl;
@@ -162,50 +175,67 @@ class StickerAssetResponseDtoBuilder
   StickerAssetResponseDto build() => _build();
 
   _$StickerAssetResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$StickerAssetResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'StickerAssetResponseDto',
-            'id',
-          ),
-          url: BuiltValueNullFieldError.checkNotNull(
-            url,
-            r'StickerAssetResponseDto',
-            'url',
-          ),
-          thumbnailUrl: BuiltValueNullFieldError.checkNotNull(
-            thumbnailUrl,
-            r'StickerAssetResponseDto',
-            'thumbnailUrl',
-          ),
-          width: BuiltValueNullFieldError.checkNotNull(
-            width,
-            r'StickerAssetResponseDto',
-            'width',
-          ),
-          height: BuiltValueNullFieldError.checkNotNull(
-            height,
-            r'StickerAssetResponseDto',
-            'height',
-          ),
-          animated: BuiltValueNullFieldError.checkNotNull(
-            animated,
-            r'StickerAssetResponseDto',
-            'animated',
-          ),
-          frameCount: BuiltValueNullFieldError.checkNotNull(
-            frameCount,
-            r'StickerAssetResponseDto',
-            'frameCount',
-          ),
-          durationMs: BuiltValueNullFieldError.checkNotNull(
-            durationMs,
-            r'StickerAssetResponseDto',
-            'durationMs',
-          ),
+    _$StickerAssetResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$StickerAssetResponseDto._(
+            display: _display?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'StickerAssetResponseDto',
+              'id',
+            ),
+            url: BuiltValueNullFieldError.checkNotNull(
+              url,
+              r'StickerAssetResponseDto',
+              'url',
+            ),
+            thumbnailUrl: BuiltValueNullFieldError.checkNotNull(
+              thumbnailUrl,
+              r'StickerAssetResponseDto',
+              'thumbnailUrl',
+            ),
+            width: BuiltValueNullFieldError.checkNotNull(
+              width,
+              r'StickerAssetResponseDto',
+              'width',
+            ),
+            height: BuiltValueNullFieldError.checkNotNull(
+              height,
+              r'StickerAssetResponseDto',
+              'height',
+            ),
+            animated: BuiltValueNullFieldError.checkNotNull(
+              animated,
+              r'StickerAssetResponseDto',
+              'animated',
+            ),
+            frameCount: BuiltValueNullFieldError.checkNotNull(
+              frameCount,
+              r'StickerAssetResponseDto',
+              'frameCount',
+            ),
+            durationMs: BuiltValueNullFieldError.checkNotNull(
+              durationMs,
+              r'StickerAssetResponseDto',
+              'durationMs',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'display';
+        _display?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'StickerAssetResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

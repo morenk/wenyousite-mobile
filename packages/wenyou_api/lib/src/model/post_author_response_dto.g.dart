@@ -8,6 +8,8 @@ part of 'post_author_response_dto.dart';
 
 class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -21,6 +23,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   ]) => (PostAuthorResponseDtoBuilder()..update(updates))._build();
 
   _$PostAuthorResponseDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -39,6 +42,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostAuthorResponseDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
@@ -48,6 +52,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -59,6 +64,7 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostAuthorResponseDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
@@ -70,6 +76,12 @@ class _$PostAuthorResponseDto extends PostAuthorResponseDto {
 class PostAuthorResponseDtoBuilder
     implements Builder<PostAuthorResponseDto, PostAuthorResponseDtoBuilder> {
   _$PostAuthorResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -94,6 +106,7 @@ class PostAuthorResponseDtoBuilder
   PostAuthorResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -117,26 +130,43 @@ class PostAuthorResponseDtoBuilder
   PostAuthorResponseDto build() => _build();
 
   _$PostAuthorResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$PostAuthorResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'PostAuthorResponseDto',
-            'id',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'PostAuthorResponseDto',
-            'username',
-          ),
-          avatar: avatar,
-          level: BuiltValueNullFieldError.checkNotNull(
-            level,
-            r'PostAuthorResponseDto',
-            'level',
-          ),
+    _$PostAuthorResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$PostAuthorResponseDto._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'PostAuthorResponseDto',
+              'id',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'PostAuthorResponseDto',
+              'username',
+            ),
+            avatar: avatar,
+            level: BuiltValueNullFieldError.checkNotNull(
+              level,
+              r'PostAuthorResponseDto',
+              'level',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'PostAuthorResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

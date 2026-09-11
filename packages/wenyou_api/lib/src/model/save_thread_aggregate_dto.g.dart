@@ -81,12 +81,61 @@ _$saveThreadAggregateDtoVisibilityEnumValues =
       ],
     );
 
+const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PARTICIPANTS =
+    const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum._(
+      'PARTICIPANTS',
+    );
+const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_COLLABORATORS =
+    const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum._(
+      'COLLABORATORS',
+    );
+const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PLAYERS =
+    const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum._('PLAYERS');
+const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi =
+    const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum._(
+      'unknownDefaultOpenApi',
+    );
+
+SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValueOf(String name) {
+  switch (name) {
+    case 'PARTICIPANTS':
+      return _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PARTICIPANTS;
+    case 'COLLABORATORS':
+      return _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_COLLABORATORS;
+    case 'PLAYERS':
+      return _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PLAYERS;
+    case 'unknownDefaultOpenApi':
+      return _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi;
+    default:
+      return _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi;
+  }
+}
+
+final BuiltSet<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum>
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValues =
+    BuiltSet<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum>(const <
+      SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+    >[
+      _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PARTICIPANTS,
+      _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_COLLABORATORS,
+      _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PLAYERS,
+      _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi,
+    ]);
+
 Serializer<SaveThreadAggregateDtoStatusEnum>
 _$saveThreadAggregateDtoStatusEnumSerializer =
     _$SaveThreadAggregateDtoStatusEnumSerializer();
 Serializer<SaveThreadAggregateDtoVisibilityEnum>
 _$saveThreadAggregateDtoVisibilityEnumSerializer =
     _$SaveThreadAggregateDtoVisibilityEnumSerializer();
+Serializer<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum>
+_$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer =
+    _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer();
 
 class _$SaveThreadAggregateDtoStatusEnumSerializer
     implements PrimitiveSerializer<SaveThreadAggregateDtoStatusEnum> {
@@ -162,6 +211,49 @@ class _$SaveThreadAggregateDtoVisibilityEnumSerializer
   );
 }
 
+class _$SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer
+    implements
+        PrimitiveSerializer<
+          SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum
+        > {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'PARTICIPANTS': 'PARTICIPANTS',
+    'COLLABORATORS': 'COLLABORATORS',
+    'PLAYERS': 'PLAYERS',
+    'unknownDefaultOpenApi': 'unknown_default_open_api',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'PARTICIPANTS': 'PARTICIPANTS',
+    'COLLABORATORS': 'COLLABORATORS',
+    'PLAYERS': 'PLAYERS',
+    'unknown_default_open_api': 'unknownDefaultOpenApi',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[
+    SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum,
+  ];
+  @override
+  final String wireName =
+      'SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   @override
   final String? title;
@@ -177,6 +269,9 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
   final num version;
   @override
   final num defaultSubthreadVersion;
+  @override
+  final SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum?
+  defaultSubthreadPostingPolicy;
   @override
   final num? bodyVersion;
   @override
@@ -196,6 +291,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
     this.published,
     required this.version,
     required this.defaultSubthreadVersion,
+    this.defaultSubthreadPostingPolicy,
     this.bodyVersion,
     required this.content,
     required this.tagNames,
@@ -220,6 +316,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
         published == other.published &&
         version == other.version &&
         defaultSubthreadVersion == other.defaultSubthreadVersion &&
+        defaultSubthreadPostingPolicy == other.defaultSubthreadPostingPolicy &&
         bodyVersion == other.bodyVersion &&
         content == other.content &&
         tagNames == other.tagNames;
@@ -235,6 +332,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
     _$hash = $jc(_$hash, published.hashCode);
     _$hash = $jc(_$hash, version.hashCode);
     _$hash = $jc(_$hash, defaultSubthreadVersion.hashCode);
+    _$hash = $jc(_$hash, defaultSubthreadPostingPolicy.hashCode);
     _$hash = $jc(_$hash, bodyVersion.hashCode);
     _$hash = $jc(_$hash, content.hashCode);
     _$hash = $jc(_$hash, tagNames.hashCode);
@@ -252,6 +350,7 @@ class _$SaveThreadAggregateDto extends SaveThreadAggregateDto {
           ..add('published', published)
           ..add('version', version)
           ..add('defaultSubthreadVersion', defaultSubthreadVersion)
+          ..add('defaultSubthreadPostingPolicy', defaultSubthreadPostingPolicy)
           ..add('bodyVersion', bodyVersion)
           ..add('content', content)
           ..add('tagNames', tagNames))
@@ -294,6 +393,15 @@ class SaveThreadAggregateDtoBuilder
   set defaultSubthreadVersion(num? defaultSubthreadVersion) =>
       _$this._defaultSubthreadVersion = defaultSubthreadVersion;
 
+  SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum?
+  _defaultSubthreadPostingPolicy;
+  SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum?
+  get defaultSubthreadPostingPolicy => _$this._defaultSubthreadPostingPolicy;
+  set defaultSubthreadPostingPolicy(
+    SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum?
+    defaultSubthreadPostingPolicy,
+  ) => _$this._defaultSubthreadPostingPolicy = defaultSubthreadPostingPolicy;
+
   num? _bodyVersion;
   num? get bodyVersion => _$this._bodyVersion;
   set bodyVersion(num? bodyVersion) => _$this._bodyVersion = bodyVersion;
@@ -321,6 +429,7 @@ class SaveThreadAggregateDtoBuilder
       _published = $v.published;
       _version = $v.version;
       _defaultSubthreadVersion = $v.defaultSubthreadVersion;
+      _defaultSubthreadPostingPolicy = $v.defaultSubthreadPostingPolicy;
       _bodyVersion = $v.bodyVersion;
       _content = $v.content;
       _tagNames = $v.tagNames.toBuilder();
@@ -363,6 +472,7 @@ class SaveThreadAggregateDtoBuilder
               r'SaveThreadAggregateDto',
               'defaultSubthreadVersion',
             ),
+            defaultSubthreadPostingPolicy: defaultSubthreadPostingPolicy,
             bodyVersion: bodyVersion,
             content: BuiltValueNullFieldError.checkNotNull(
               content,

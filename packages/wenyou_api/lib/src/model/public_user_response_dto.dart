@@ -6,6 +6,7 @@
 import 'package:wenyou_api/src/model/profile_cover_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/user_social_count_response_dto.dart';
+import 'package:wenyou_api/src/model/media_display_response_dto.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,6 +15,7 @@ part 'public_user_response_dto.g.dart';
 /// PublicUserResponseDto
 ///
 /// Properties:
+/// * [avatarDisplay] - 头像完整 WebP 展示资源；avatar 保留来源身份
 /// * [id]
 /// * [username]
 /// * [avatar]
@@ -36,6 +38,10 @@ part 'public_user_response_dto.g.dart';
 /// * [isDeactivated]
 @BuiltValue()
 abstract class PublicUserResponseDto implements Built<PublicUserResponseDto, PublicUserResponseDtoBuilder> {
+  /// 头像完整 WebP 展示资源；avatar 保留来源身份
+  @BuiltValueField(wireName: r'avatarDisplay')
+  MediaDisplayResponseDto? get avatarDisplay;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -122,6 +128,13 @@ class _$PublicUserResponseDtoSerializer implements PrimitiveSerializer<PublicUse
     PublicUserResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.avatarDisplay != null) {
+      yield r'avatarDisplay';
+      yield serializers.serialize(
+        object.avatarDisplay,
+        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -281,6 +294,14 @@ class _$PublicUserResponseDtoSerializer implements PrimitiveSerializer<PublicUse
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'avatarDisplay':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
+          ) as MediaDisplayResponseDto?;
+          if (valueDes == null) continue;
+          result.avatarDisplay.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

@@ -19,6 +19,7 @@ part 'save_thread_aggregate_dto.g.dart';
 /// * [published] - 仅允许从草稿发布，不允许撤回
 /// * [version] - 主题帖乐观锁版本
 /// * [defaultSubthreadVersion] - 默认子贴乐观锁版本
+/// * [defaultSubthreadPostingPolicy] - 主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴
 /// * [bodyVersion] - 已有默认正文的乐观锁版本
 /// * [content] - 默认子贴 Markdown 正文
 /// * [tagNames]
@@ -50,6 +51,11 @@ abstract class SaveThreadAggregateDto implements Built<SaveThreadAggregateDto, S
   /// 默认子贴乐观锁版本
   @BuiltValueField(wireName: r'defaultSubthreadVersion')
   num get defaultSubthreadVersion;
+
+  /// 主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴
+  @BuiltValueField(wireName: r'defaultSubthreadPostingPolicy')
+  SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum? get defaultSubthreadPostingPolicy;
+  // enum defaultSubthreadPostingPolicyEnum {  PARTICIPANTS,  COLLABORATORS,  PLAYERS,  };
 
   /// 已有默认正文的乐观锁版本
   @BuiltValueField(wireName: r'bodyVersion')
@@ -130,6 +136,13 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
       object.defaultSubthreadVersion,
       specifiedType: const FullType(num),
     );
+    if (object.defaultSubthreadPostingPolicy != null) {
+      yield r'defaultSubthreadPostingPolicy';
+      yield serializers.serialize(
+        object.defaultSubthreadPostingPolicy,
+        specifiedType: const FullType(SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum),
+      );
+    }
     if (object.bodyVersion != null) {
       yield r'bodyVersion';
       yield serializers.serialize(
@@ -219,6 +232,13 @@ class _$SaveThreadAggregateDtoSerializer implements PrimitiveSerializer<SaveThre
           ) as num;
           result.defaultSubthreadVersion = valueDes;
           break;
+        case r'defaultSubthreadPostingPolicy':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum),
+          ) as SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum;
+          result.defaultSubthreadPostingPolicy = valueDes;
+          break;
         case r'bodyVersion':
           final valueDes = serializers.deserialize(
             value,
@@ -303,4 +323,27 @@ class SaveThreadAggregateDtoVisibilityEnum extends EnumClass {
 
   static BuiltSet<SaveThreadAggregateDtoVisibilityEnum> get values => _$saveThreadAggregateDtoVisibilityEnumValues;
   static SaveThreadAggregateDtoVisibilityEnum valueOf(String name) => _$saveThreadAggregateDtoVisibilityEnumValueOf(name);
+}
+
+class SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum extends EnumClass {
+
+  /// 主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴
+  @BuiltValueEnumConst(wireName: r'PARTICIPANTS')
+  static const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum PARTICIPANTS = _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PARTICIPANTS;
+  /// 主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴
+  @BuiltValueEnumConst(wireName: r'COLLABORATORS')
+  static const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum COLLABORATORS = _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_COLLABORATORS;
+  /// 主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴
+  @BuiltValueEnumConst(wireName: r'PLAYERS')
+  static const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum PLAYERS = _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_PLAYERS;
+  /// 主贴发言权限；省略保留原值。仅影响默认子贴楼层与回复，不修改其他子贴
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum unknownDefaultOpenApi = _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum_unknownDefaultOpenApi;
+
+  static Serializer<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum> get serializer => _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumSerializer;
+
+  const SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum._(String name): super(name);
+
+  static BuiltSet<SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum> get values => _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValues;
+  static SaveThreadAggregateDtoDefaultSubthreadPostingPolicyEnum valueOf(String name) => _$saveThreadAggregateDtoDefaultSubthreadPostingPolicyEnumValueOf(name);
 }
