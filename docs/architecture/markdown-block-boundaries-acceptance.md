@@ -108,6 +108,8 @@ Backend `169b336` 独立确认：仅转义链接括号但保留裸 `ftp://exampl
 
 ## 后续验收条件
 
+公网检查在 `tool/verify_production_api.dart` 中要求 `actualRevision == expectedRevision`，比较完整 SHA 精确相等，不比较祖先关系或契约内容哈希。因此仅部署 Backend 候选 `169b336` 或最终合并提交，不会使当前来源固定为 `a91cbb8` 的检查自动通过。取得明确合并与部署授权后，须以实际已发布 Backend 的完整 SHA，通过既有 `tool/sync_backend_contract.ps1` 更新消费者契约来源元数据，核验共享契约字节及 Markdown v5 未变，再复跑公网检查与受影响门禁；若契约实际变化，按独立契约同步切片处理。当前继续固定已提交的 `a91cbb8` 共享语料，不修改校验器、不提前同步未发布来源或部署。
+
 Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上节记录。真机必须使用本候选 Debug APK，应用包名为 `site.wenyou.app.debug`，不能凭相同构建号认为其他包名已更新。若后续授权 ADB 安装，须核对实际复验包名、安装后更新时间及设备内 APK SHA-256。
 
 负责人使用专用测试账号按顺序复验：
