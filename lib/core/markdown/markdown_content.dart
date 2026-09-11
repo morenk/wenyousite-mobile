@@ -66,6 +66,11 @@ class MarkdownContent {
     r'''[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]''',
   );
   static const _wordJoiner = '\u2060';
+  static bool hasWhitespaceGuards(String line) =>
+      (line.startsWith(_wordJoiner) &&
+          (line.substring(1).startsWith('    ') ||
+              line.substring(1).startsWith('\t'))) ||
+      RegExp(r' {2,}\u2060$').hasMatch(line);
 
   /// Escapes untrusted editor text without adding block separators.
   ///
@@ -294,16 +299,23 @@ class MarkdownContent {
     final affected = <int>{};
     _markFencedCode(lines, affected);
     _markTables(lines, affected);
+    final analysis = MarkdownAlignmentContract.analyzeLines(
+      lines,
+      imageAlignment: imageAlignment,
+    );
+    affected.addAll(analysis.invalidMarkerLines);
     affected.addAll(
-      MarkdownAlignmentContract.analyzeLines(
-        lines,
-        imageAlignment: imageAlignment,
-      ).invalidMarkerLines,
+      analysis.protection.blockLines.where(
+        (index) =>
+            lines[index].isNotEmpty &&
+            !(analysis.protection.indentedCodeLines.contains(index) &&
+                _listItem.hasMatch(lines[index])),
+      ),
     );
 
     for (var index = 0; index < lines.length; index++) {
       if (affected.contains(index)) continue;
-      final line = lines[index];
+      final line = analysis.protection.maskedLines[index];
       final heading = _atxHeading.firstMatch(line)?.group(1);
       if (heading != null && (heading.length == 1 || heading.length >= 4)) {
         affected.add(index);

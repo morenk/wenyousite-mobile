@@ -4,13 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wenyousite_mobile/app/app_theme.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
-import 'package:wenyousite_mobile/core/widgets/wenyou_cached_image.dart';
 import 'package:wenyousite_mobile/features/media/application/media_upload_task_controller.dart';
 import 'package:wenyousite_mobile/features/media/domain/media_upload_models.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_draft_store_ports.dart';
 import 'package:wenyousite_mobile/features/moments/data/moment_repository.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_compose_page.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_detail_page.dart';
+import 'package:wenyousite_mobile/features/moments/presentation/moment_playback_image.dart';
 import '../../support/moment_test_draft_store.dart';
 import 'moment_pages_test_support.dart';
 
@@ -107,10 +107,10 @@ void registerMomentPagesRecoveryMediaCases() {
       findsOneWidget,
     );
     expect(find.text('1 / 3'), findsOneWidget);
-    final firstImage = tester.widget<WenyouCachedImage>(
+    final firstImage = tester.widget<MomentPlaybackImage>(
       find.byKey(const Key('moment-content-image-0')),
     );
-    expect(firstImage.imageUrl, 'https://cdn.example.com/1-md.webp');
+    expect(firstImage.previewUrls.first, 'https://cdn.example.com/1-md.webp');
     expect(firstImage.fit, BoxFit.contain);
     expect(
       tester.getBottomRight(find.text('今日微光')).dy,
@@ -129,10 +129,10 @@ void registerMomentPagesRecoveryMediaCases() {
 
     expect(find.text('2 / 3'), findsOneWidget);
     expect(tester.getSize(gallery), initialStageSize);
-    final secondImage = tester.widget<WenyouCachedImage>(
+    final secondImage = tester.widget<MomentPlaybackImage>(
       find.byKey(const Key('moment-content-image-1')),
     );
-    expect(secondImage.imageUrl, 'https://cdn.example.com/2-md.webp');
+    expect(secondImage.previewUrls.first, 'https://cdn.example.com/2-md.webp');
     expect(secondImage.fit, BoxFit.contain);
 
     await tester.tap(find.byKey(const Key('moment-detail-image')));

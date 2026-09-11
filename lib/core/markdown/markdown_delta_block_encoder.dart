@@ -3,6 +3,7 @@ import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_delta_line_metadata.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_editable_block_syntax.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 
 /// 验证行属性并写出受支持块；空块与有内容块经过同一入口和冲突规则。
 abstract final class MarkdownDeltaBlockEncoder {
@@ -23,6 +24,8 @@ abstract final class MarkdownDeltaBlockEncoder {
       sourceBreakAttribute,
       literalLineAttribute,
       literalTextAttribute,
+      MarkdownInlineCodeSource.key,
+      MarkdownDeltaLineMetadata.guardedWhitespaceKey,
       alignmentAttribute,
       'header',
       'list',
@@ -87,7 +90,11 @@ abstract final class MarkdownDeltaBlockEncoder {
         canonicalContent.startsWith('    ') ||
         canonicalContent.startsWith('\t') ||
         RegExp(r' {2,}$').hasMatch(canonicalContent);
-    if (hasUnsafeWhitespace && blockStyleCount == 0 && containsLiteralText) {
+    if (hasUnsafeWhitespace &&
+        blockStyleCount == 0 &&
+        (containsLiteralText ||
+            attributes[MarkdownDeltaLineMetadata.guardedWhitespaceKey] ==
+                true)) {
       return MarkdownContent.protectUnsafeWhitespace(canonicalContent);
     }
     if (header != null) {

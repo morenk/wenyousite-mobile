@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +14,40 @@ import 'package:wenyousite_mobile/features/moments/domain/moment_models.dart';
 import 'package:wenyousite_mobile/features/moments/presentation/moment_bookmark_folder_page.dart';
 
 void main() {
+  testWidgets('关闭管理面板不写入，取消在途不能重复操作', (tester) async {
+    final gate = Completer<void>();
+    final repository = _PageRepository(card: _card('moment-1'))
+      ..writeGate = gate;
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+    final manage = find.byKey(const Key('moment-bookmark-manage-moment-1'));
+    await tester.tap(manage);
+    await tester.pumpAndSettle();
+    Navigator.of(tester.element(find.text('取消收藏'))).pop();
+    await tester.pumpAndSettle();
+    expect(repository.moves, isEmpty);
+    expect(repository.removes, isEmpty);
+
+    await tester.tap(manage);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('moment-bookmark-remove-moment-1')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.widget<IconButton>(manage).onPressed, isNull);
+    expect(
+      find.descendant(
+        of: manage,
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(manage);
+    expect(repository.removes, ['moment-1']);
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('已取消收藏。'), findsOneWidget);
+  });
+
   testWidgets('移动失败只在选择弹窗报错，取消收藏失败仍有反馈', (tester) async {
     final repository = _PageRepository(card: _card('moment-1'))
       ..failWrites = true;
@@ -117,6 +153,7 @@ class _PageRepository implements MomentBookmarkRepository {
   final List<(String, String)> moves = [];
   final List<String> removes = [];
   bool failWrites = false;
+  Completer<void>? writeGate;
 
   @override
   Future<List<BookmarkFolderItem>> fetchFolders() async => [
@@ -161,6 +198,7 @@ class _PageRepository implements MomentBookmarkRepository {
       throw const ApiFailure(userMessage: '取消收藏失败', httpStatus: 500);
     }
     if (!active) removes.add(momentId);
+    await writeGate?.future;
     return MomentActionResult(momentId: momentId, count: 0, active: active);
   }
 

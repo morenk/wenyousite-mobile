@@ -16,6 +16,7 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
     this.initialIndex = 0,
     this.onAddToStickers,
     this.closeKey,
+    this.imageBuilder,
     super.key,
   }) : assert(items.length > 0),
        assert(initialIndex >= 0 && initialIndex < items.length);
@@ -47,6 +48,8 @@ class ContentImageViewerPage extends ConsumerStatefulWidget {
   final int initialIndex;
   final Future<String> Function(WenyouImageViewerItem item)? onAddToStickers;
   final Key? closeKey;
+  final Widget? Function(BuildContext context, int index, bool current)?
+  imageBuilder;
 
   @override
   ConsumerState<ContentImageViewerPage> createState() =>
@@ -84,6 +87,7 @@ class _ContentImageViewerPageState
       closeTooltip: '关闭原图',
       closeKey: widget.closeKey,
       items: widget.items,
+      imageBuilder: widget.imageBuilder,
       initialIndex: widget.initialIndex,
       onPageChanged: (index) => setState(() => _index = index),
       titleBuilder: (index, count) {

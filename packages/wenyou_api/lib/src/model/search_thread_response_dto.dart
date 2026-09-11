@@ -7,6 +7,7 @@ import 'package:wenyou_api/src/model/thread_category_info_dto.dart';
 import 'package:wenyou_api/src/model/thread_list_count_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/thread_tag_relation_response_dto.dart';
+import 'package:wenyou_api/src/model/thread_cover_media_response_dto.dart';
 import 'package:wenyou_api/src/model/post_author_response_dto.dart';
 import 'package:wenyou_api/src/model/thread_list_default_subthread_response_dto.dart';
 import 'package:built_value/built_value.dart';
@@ -35,6 +36,7 @@ part 'search_thread_response_dto.g.dart';
 /// * [count]
 /// * [preview] - 默认主贴正文的纯文本预览
 /// * [coverImages] - 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
+/// * [coverMedia] - 第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段
 /// * [relevance] - 仅说明本次查询的标题相关度；客户端不得作为稳定业务字段依赖
 @BuiltValue()
 abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto, SearchThreadResponseDtoBuilder> {
@@ -98,6 +100,10 @@ abstract class SearchThreadResponseDto implements Built<SearchThreadResponseDto,
   /// 默认主贴正文中的第一张普通图片 URL；无图时返回空数组
   @BuiltValueField(wireName: r'coverImages')
   BuiltList<String> get coverImages;
+
+  /// 第一张普通正文图片的封面读模型；无图时返回 null。旧服务可能省略，消费者须兼容缺字段
+  @BuiltValueField(wireName: r'coverMedia')
+  ThreadCoverMediaResponseDto? get coverMedia;
 
   /// 仅说明本次查询的标题相关度；客户端不得作为稳定业务字段依赖
   @BuiltValueField(wireName: r'relevance')
@@ -215,6 +221,11 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
     yield serializers.serialize(
       object.coverImages,
       specifiedType: const FullType(BuiltList, [FullType(String)]),
+    );
+    yield r'coverMedia';
+    yield object.coverMedia == null ? null : serializers.serialize(
+      object.coverMedia,
+      specifiedType: const FullType.nullable(ThreadCoverMediaResponseDto),
     );
     if (object.relevance != null) {
       yield r'relevance';
@@ -375,6 +386,14 @@ class _$SearchThreadResponseDtoSerializer implements PrimitiveSerializer<SearchT
             specifiedType: const FullType(BuiltList, [FullType(String)]),
           ) as BuiltList<String>;
           result.coverImages.replace(valueDes);
+          break;
+        case r'coverMedia':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ThreadCoverMediaResponseDto),
+          ) as ThreadCoverMediaResponseDto?;
+          if (valueDes == null) continue;
+          result.coverMedia.replace(valueDes);
           break;
         case r'relevance':
           final valueDes = serializers.deserialize(

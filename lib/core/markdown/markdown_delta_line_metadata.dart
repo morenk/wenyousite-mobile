@@ -12,6 +12,7 @@ class MarkdownDeltaLineMetadata {
   static const emptyKey = 'wenyou_empty_paragraph';
   static const sourceBreakKey = 'wenyou_source_break';
   static const literalLineKey = 'wenyou_literal_line';
+  static const guardedWhitespaceKey = 'wenyou_guarded_whitespace';
   static const sourceSeparatorAttribute = 'wenyou_source_separator';
 
   static const _blockAttributes = {

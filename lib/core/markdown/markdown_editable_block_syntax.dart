@@ -4,7 +4,7 @@
 /// 列表等不支持的上下文，不能用前缀识别替代完整 Markdown 语义校验。
 abstract final class MarkdownEditableBlockSyntax {
   static final _heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$');
-  static final _list = RegExp(r'^( {0,6})(-|1\.)(?:[\t ](.*))?$');
+  static final _list = RegExp(r'^( {0,6})(-|1\.)(?:[\t ](.*))?$', dotAll: true);
   static final _onlyAsciiSpace = RegExp(r'^[\t ]*$');
 
   static ({int level, String content})? heading(String source) {
