@@ -2,6 +2,8 @@
 
 ## 当前状态与范围
 
+2026-09-11 最终公网复核：Backend 已健康部署到 `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，Mobile 精确生产 API 检查通过，原部署 revision 阻塞解除。本地候选已包含 PR #25 和最新 `origin/dev`，按用户明确授权推进 PR #26 正常合并；合并结果以 PR 记录为准。块边界原问题仍待负责人公网／真机验收，分支、Worktree、日志与历史 APK 保留。
+
 2026-09-11 后续授权：用户已明确授权本轮合并与部署，用于先在公网 Web 验证。Backend PR #17 合并为 `5b766305e21d2a39bd53bb0c3aacc05fad81152f` 后，Mobile 通过既有同步脚本更新来源元数据，契约内容不变。公网与 Mobile 合并结果见“合并来源同步与公网复核”。下述冻结候选及历史门禁记录保留原始 revision 和结果，不将合并授权视为负责人验收通过。
 
 2026-09-11：候选实现／本地验证与 Debug APK 已交付／待负责人验收。任务分支 `codex/20260911-markdown-block-boundaries` 从 fetch 后的 `origin/dev`（`dbba204dd5d43252a400ff50a4db7348415d62f3`）建立，独立 Windows Worktree 为 `C:\Users\quhui\.codex\worktrees\202d\wenyousite-mobile`。已同步 Backend revision 2 并补充消费者实现与回归；原 revision 1 的 8 项空白行预期已在共享版本中修订。完整门禁仅公网部署 revision 检查失败，详见最终验证；不能视为原问题修复完成。
@@ -129,6 +131,8 @@ Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上�
 当前来源更新为 Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；此前 `5b766305` 部署因权限故障回滚到 `0ee2c0d`，未据此合并 Mobile。按治理交接再次通过同一同步脚本、相同只读镜像及显式完整 SHA 导出，仍只有来源元数据变化；所有契约字节与块边界 fixture 哈希不变。运行时代码、834 项组合回归对应的测试实现及既有 APK 未改动，不重复全量测试或构建。公网健康确认后才执行精确来源检查及 PR 合并；前次同步与验证记录如下保留。
 
 对 `8bf370f6` 来源复跑 OpenAPI 校验、`npm run api:check` 及 21 模块文档检查，全部通过；生成流程结束后确认生成客户端、源码、测试、Android 配置和依赖锁文件零差异，`git diff --check` 通过。日志为 `build/block-boundary-redeploy-source-check.log` 与 `build/block-boundary-redeploy-docs.log`。
+
+治理确认第二次标准部署退出 0、API／worker active、独立公网 health 为 ok 后，在干净候选 `dc2cc4f2b2de798548a684dcdcafec88f17407f6` 执行 `npm run api:verify:production`，退出 0：HTTP／bundle 均为 `5.20.0-dev.20260909.1`，实际 build 与本地来源精确同为 `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，本地基础 fixture Markdown v4／公网 Markdown v5 均在客户端支持范围，公开 `GET /threads` Schema 兼容。日志为 `build/block-boundary-production-final.log`。未更改校验器或改写旧失败日志，也未重跑无变化的完整测试及 APK；合并前重新 fetch 并确认最新 `origin/dev = e5d72c34`（PR #25）已包含于候选。
 
 按用户本轮明确授权，在原 Windows 任务执行 `pwsh -NoProfile -File tool/sync_backend_contract.ps1 -BackendPath D:/code/wenyousite/references/wenyousite-backend -Revision 5b766305e21d2a39bd53bb0c3aacc05fad81152f`，从已合并 Backend 重新导出。`contracts` 唯一差异为 `backend-contract.properties` 的来源 SHA；OpenAPI、所有共享 fixture、Markdown v5 图片对齐与空白行契约、契约 CHANGELOG 和移动端指南均无差异。块边界 fixture SHA-256 仍为 `822509411fbf3379847a04ec64a4a32ddb1bb8fb96aecbf38b395b049134fda9`。
 
