@@ -105,3 +105,12 @@
 - 最终组合验证：完整入口 `npm run check -- -ContinueAfterFailure` 收集了全量结果，Flutter 2,969 项通过，1 项既有外部 Sentry 测试按配置跳过；Windows 工具 17 项通过，契约生成无漂移，模块文档与 API 覆盖 154/154 通过。首次检查发现新增测试使用旧语义 API、README 版本遗漏，已修正；最终全仓 `flutter analyze --fatal-infos --fatal-warnings` 零问题、架构检查复跑通过。
 - 12 张受入口影响的 Golden 已更新，已查看 320dp 快翻、360dp 管理者与独立讨论、600dp 快翻图；按钮与底部发表入口未见重叠。图标、名称、48dp 命中区与开启状态断言通过。
 - 公网精确版本检查仍未通过（期待 5.20.1／b785336，实际 5.20.0／8bf370f），因此完整门禁尚未全绿；移动端保留 PR 与任务工作区等待公网对齐，不将这次依赖升级视为后端部署授权。Foundation PR #7、正式 Tag 和 Release 已发布，其本地/远端任务分支与 VPS 临时 Worktree 已清理。
+
+### 正式图标 Debug 安装包（2026-09-11）
+
+- 源码提交：`17e15a377c5517eae3ec4d12551d9e6e0c9b905d`；后续提交仅补充交付记录。
+- `flutter build apk --debug` 与 `apksigner verify --verbose` 通过，APK v2 签名有效；包名 `site.wenyou.app.debug`，应用名“温油站 Debug”，versionName `0.7.0-dev.1-debug`，versionCode `94`，包含 ARM32、ARM64、x86_64。
+- APK 留档：`D:\code\wenyousite\artifacts\reading-quick-scroll-20260911\reading-quick-scroll-17e15a37.apk`，243,628,918 字节。
+- SHA-256：`0ac40f4a9fa445435bd43adc5eb1b2f47db15de5dc6e6b106101c3db16c10927`。已确认包内包含 Foundation 的 `move-vertical.svg`；未将旧安装包冒充本次构建。
+- 本次图标包未执行 ADB 安装；负责人之前通过的是本记录中的 `d2bf707` 候选。原快翻问题验收通过，新图标有 Widget／Golden 验证，未单独记录新包真机图标验收。
+- 源码与交付记录位于移动端 PR #23；因公网契约版本未对齐，保留 Draft PR、本地／远端任务分支与 Worktree，不执行移动端合并、正式 Tag 或正式 APK 发布。
