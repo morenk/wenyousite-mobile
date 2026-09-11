@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:wenyou_api/src/model/markdown_media_display_response_dto.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:wenyou_api/src/model/recent_reply_dice_response_dto.dart';
 import 'package:wenyou_api/src/model/recent_reply_subthread_response_dto.dart';
@@ -15,6 +16,7 @@ part 'recent_reply_response_dto.g.dart';
 /// RecentReplyResponseDto
 ///
 /// Properties:
+/// * [mediaDisplays] - 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
 /// * [id]
 /// * [createdAt]
 /// * [floorNumber]
@@ -28,6 +30,10 @@ part 'recent_reply_response_dto.g.dart';
 /// * [preview]
 @BuiltValue()
 abstract class RecentReplyResponseDto implements Built<RecentReplyResponseDto, RecentReplyResponseDtoBuilder> {
+  /// 仅此次已授权正文中的精确来源映射；编辑保存继续使用 sourceUrl
+  @BuiltValueField(wireName: r'mediaDisplays')
+  BuiltList<MarkdownMediaDisplayResponseDto>? get mediaDisplays;
+
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -84,6 +90,13 @@ class _$RecentReplyResponseDtoSerializer implements PrimitiveSerializer<RecentRe
     RecentReplyResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.mediaDisplays != null) {
+      yield r'mediaDisplays';
+      yield serializers.serialize(
+        object.mediaDisplays,
+        specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -162,6 +175,13 @@ class _$RecentReplyResponseDtoSerializer implements PrimitiveSerializer<RecentRe
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'mediaDisplays':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(MarkdownMediaDisplayResponseDto)]),
+          ) as BuiltList<MarkdownMediaDisplayResponseDto>;
+          result.mediaDisplays.replace(valueDes);
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

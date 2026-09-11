@@ -3,38 +3,33 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:wenyou_api/src/model/media_display_response_dto.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'sticker_asset_response_dto.g.dart';
+part 'media_display_response_dto.g.dart';
 
-/// StickerAssetResponseDto
+/// MediaDisplayResponseDto
 ///
 /// Properties:
-/// * [display] - 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
-/// * [id]
-/// * [url]
-/// * [thumbnailUrl]
+/// * [url] - 可信完整展示资源；不得据来源 URL 猜测或改写扩展名
+/// * [contentType]
 /// * [width]
 /// * [height]
+/// * [bytes]
 /// * [animated]
-/// * [frameCount]
-/// * [durationMs]
+/// * [frameCount] - 静态图为 1；动画必须保留全部帧
+/// * [durationMs] - 完整单轮时长；静态图为 0
+/// * [loopCount] - 0 无限循环，1 播放一次；静态图固定 1
 @BuiltValue()
-abstract class StickerAssetResponseDto implements Built<StickerAssetResponseDto, StickerAssetResponseDtoBuilder> {
-  /// 完整 WebP 展示资源；缺少或为空时为兼容历史媒体
-  @BuiltValueField(wireName: r'display')
-  MediaDisplayResponseDto? get display;
-
-  @BuiltValueField(wireName: r'id')
-  String get id;
-
+abstract class MediaDisplayResponseDto implements Built<MediaDisplayResponseDto, MediaDisplayResponseDtoBuilder> {
+  /// 可信完整展示资源；不得据来源 URL 猜测或改写扩展名
   @BuiltValueField(wireName: r'url')
   String get url;
 
-  @BuiltValueField(wireName: r'thumbnailUrl')
-  String get thumbnailUrl;
+  @BuiltValueField(wireName: r'contentType')
+  MediaDisplayResponseDtoContentTypeEnum get contentType;
+  // enum contentTypeEnum {  image/webp,  };
 
   @BuiltValueField(wireName: r'width')
   num get width;
@@ -42,59 +37,56 @@ abstract class StickerAssetResponseDto implements Built<StickerAssetResponseDto,
   @BuiltValueField(wireName: r'height')
   num get height;
 
+  @BuiltValueField(wireName: r'bytes')
+  num get bytes;
+
   @BuiltValueField(wireName: r'animated')
   bool get animated;
 
+  /// 静态图为 1；动画必须保留全部帧
   @BuiltValueField(wireName: r'frameCount')
   num get frameCount;
 
+  /// 完整单轮时长；静态图为 0
   @BuiltValueField(wireName: r'durationMs')
   num get durationMs;
 
-  StickerAssetResponseDto._();
+  /// 0 无限循环，1 播放一次；静态图固定 1
+  @BuiltValueField(wireName: r'loopCount')
+  num get loopCount;
 
-  factory StickerAssetResponseDto([void updates(StickerAssetResponseDtoBuilder b)]) = _$StickerAssetResponseDto;
+  MediaDisplayResponseDto._();
+
+  factory MediaDisplayResponseDto([void updates(MediaDisplayResponseDtoBuilder b)]) = _$MediaDisplayResponseDto;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(StickerAssetResponseDtoBuilder b) => b;
+  static void _defaults(MediaDisplayResponseDtoBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<StickerAssetResponseDto> get serializer => _$StickerAssetResponseDtoSerializer();
+  static Serializer<MediaDisplayResponseDto> get serializer => _$MediaDisplayResponseDtoSerializer();
 }
 
-class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<StickerAssetResponseDto> {
+class _$MediaDisplayResponseDtoSerializer implements PrimitiveSerializer<MediaDisplayResponseDto> {
   @override
-  final Iterable<Type> types = const [StickerAssetResponseDto, _$StickerAssetResponseDto];
+  final Iterable<Type> types = const [MediaDisplayResponseDto, _$MediaDisplayResponseDto];
 
   @override
-  final String wireName = r'StickerAssetResponseDto';
+  final String wireName = r'MediaDisplayResponseDto';
 
   Iterable<Object?> _serializeProperties(
     Serializers serializers,
-    StickerAssetResponseDto object, {
+    MediaDisplayResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
-    if (object.display != null) {
-      yield r'display';
-      yield serializers.serialize(
-        object.display,
-        specifiedType: const FullType.nullable(MediaDisplayResponseDto),
-      );
-    }
-    yield r'id';
-    yield serializers.serialize(
-      object.id,
-      specifiedType: const FullType(String),
-    );
     yield r'url';
     yield serializers.serialize(
       object.url,
       specifiedType: const FullType(String),
     );
-    yield r'thumbnailUrl';
+    yield r'contentType';
     yield serializers.serialize(
-      object.thumbnailUrl,
-      specifiedType: const FullType(String),
+      object.contentType,
+      specifiedType: const FullType(MediaDisplayResponseDtoContentTypeEnum),
     );
     yield r'width';
     yield serializers.serialize(
@@ -104,6 +96,11 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
     yield r'height';
     yield serializers.serialize(
       object.height,
+      specifiedType: const FullType(num),
+    );
+    yield r'bytes';
+    yield serializers.serialize(
+      object.bytes,
       specifiedType: const FullType(num),
     );
     yield r'animated';
@@ -121,12 +118,17 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
       object.durationMs,
       specifiedType: const FullType(num),
     );
+    yield r'loopCount';
+    yield serializers.serialize(
+      object.loopCount,
+      specifiedType: const FullType(num),
+    );
   }
 
   @override
   Object serialize(
     Serializers serializers,
-    StickerAssetResponseDto object, {
+    MediaDisplayResponseDto object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
@@ -137,28 +139,13 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
     required List<Object?> serializedList,
-    required StickerAssetResponseDtoBuilder result,
+    required MediaDisplayResponseDtoBuilder result,
     required List<Object?> unhandled,
   }) {
     for (var i = 0; i < serializedList.length; i += 2) {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
-        case r'display':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(MediaDisplayResponseDto),
-          ) as MediaDisplayResponseDto?;
-          if (valueDes == null) continue;
-          result.display.replace(valueDes);
-          break;
-        case r'id':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.id = valueDes;
-          break;
         case r'url':
           final valueDes = serializers.deserialize(
             value,
@@ -166,12 +153,12 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
           ) as String;
           result.url = valueDes;
           break;
-        case r'thumbnailUrl':
+        case r'contentType':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.thumbnailUrl = valueDes;
+            specifiedType: const FullType(MediaDisplayResponseDtoContentTypeEnum),
+          ) as MediaDisplayResponseDtoContentTypeEnum;
+          result.contentType = valueDes;
           break;
         case r'width':
           final valueDes = serializers.deserialize(
@@ -186,6 +173,13 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
             specifiedType: const FullType(num),
           ) as num;
           result.height = valueDes;
+          break;
+        case r'bytes':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.bytes = valueDes;
           break;
         case r'animated':
           final valueDes = serializers.deserialize(
@@ -208,6 +202,13 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
           ) as num;
           result.durationMs = valueDes;
           break;
+        case r'loopCount':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(num),
+          ) as num;
+          result.loopCount = valueDes;
+          break;
         default:
           unhandled.add(key);
           unhandled.add(value);
@@ -217,12 +218,12 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
   }
 
   @override
-  StickerAssetResponseDto deserialize(
+  MediaDisplayResponseDto deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = StickerAssetResponseDtoBuilder();
+    final result = MediaDisplayResponseDtoBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(
@@ -235,4 +236,19 @@ class _$StickerAssetResponseDtoSerializer implements PrimitiveSerializer<Sticker
     );
     return result.build();
   }
+}
+
+class MediaDisplayResponseDtoContentTypeEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'image/webp')
+  static const MediaDisplayResponseDtoContentTypeEnum imageSlashWebp = _$mediaDisplayResponseDtoContentTypeEnum_imageSlashWebp;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const MediaDisplayResponseDtoContentTypeEnum unknownDefaultOpenApi = _$mediaDisplayResponseDtoContentTypeEnum_unknownDefaultOpenApi;
+
+  static Serializer<MediaDisplayResponseDtoContentTypeEnum> get serializer => _$mediaDisplayResponseDtoContentTypeEnumSerializer;
+
+  const MediaDisplayResponseDtoContentTypeEnum._(String name): super(name);
+
+  static BuiltSet<MediaDisplayResponseDtoContentTypeEnum> get values => _$mediaDisplayResponseDtoContentTypeEnumValues;
+  static MediaDisplayResponseDtoContentTypeEnum valueOf(String name) => _$mediaDisplayResponseDtoContentTypeEnumValueOf(name);
 }

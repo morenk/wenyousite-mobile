@@ -8,6 +8,8 @@ part of 'direct_message_media_response_dto.dart';
 
 class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
   @override
+  final MediaDisplayResponseDto? display;
+  @override
   final String id;
   @override
   final String url;
@@ -29,6 +31,7 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
   ]) => (DirectMessageMediaResponseDtoBuilder()..update(updates))._build();
 
   _$DirectMessageMediaResponseDto._({
+    this.display,
     required this.id,
     required this.url,
     this.thumbnailUrl,
@@ -51,6 +54,7 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is DirectMessageMediaResponseDto &&
+        display == other.display &&
         id == other.id &&
         url == other.url &&
         thumbnailUrl == other.thumbnailUrl &&
@@ -64,6 +68,7 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, thumbnailUrl.hashCode);
@@ -79,6 +84,7 @@ class _$DirectMessageMediaResponseDto extends DirectMessageMediaResponseDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'DirectMessageMediaResponseDto')
+          ..add('display', display)
           ..add('id', id)
           ..add('url', url)
           ..add('thumbnailUrl', thumbnailUrl)
@@ -98,6 +104,12 @@ class DirectMessageMediaResponseDtoBuilder
           DirectMessageMediaResponseDtoBuilder
         > {
   _$DirectMessageMediaResponseDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _display;
+  MediaDisplayResponseDtoBuilder get display =>
+      _$this._display ??= MediaDisplayResponseDtoBuilder();
+  set display(MediaDisplayResponseDtoBuilder? display) =>
+      _$this._display = display;
 
   String? _id;
   String? get id => _$this._id;
@@ -138,6 +150,7 @@ class DirectMessageMediaResponseDtoBuilder
   DirectMessageMediaResponseDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _display = $v.display?.toBuilder();
       _id = $v.id;
       _url = $v.url;
       _thumbnailUrl = $v.thumbnailUrl;
@@ -165,30 +178,47 @@ class DirectMessageMediaResponseDtoBuilder
   DirectMessageMediaResponseDto build() => _build();
 
   _$DirectMessageMediaResponseDto _build() {
-    final _$result =
-        _$v ??
-        _$DirectMessageMediaResponseDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'DirectMessageMediaResponseDto',
-            'id',
-          ),
-          url: BuiltValueNullFieldError.checkNotNull(
-            url,
-            r'DirectMessageMediaResponseDto',
-            'url',
-          ),
-          thumbnailUrl: thumbnailUrl,
-          mediumUrl: mediumUrl,
-          contentType: contentType,
-          width: width,
-          height: height,
-          animated: BuiltValueNullFieldError.checkNotNull(
-            animated,
-            r'DirectMessageMediaResponseDto',
-            'animated',
-          ),
+    _$DirectMessageMediaResponseDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$DirectMessageMediaResponseDto._(
+            display: _display?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'DirectMessageMediaResponseDto',
+              'id',
+            ),
+            url: BuiltValueNullFieldError.checkNotNull(
+              url,
+              r'DirectMessageMediaResponseDto',
+              'url',
+            ),
+            thumbnailUrl: thumbnailUrl,
+            mediumUrl: mediumUrl,
+            contentType: contentType,
+            width: width,
+            height: height,
+            animated: BuiltValueNullFieldError.checkNotNull(
+              animated,
+              r'DirectMessageMediaResponseDto',
+              'animated',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'display';
+        _display?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'DirectMessageMediaResponseDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }
