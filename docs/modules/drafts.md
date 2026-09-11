@@ -32,6 +32,8 @@
 
 ## 6. 状态模型和数据流
 
+块边界候选经真实 Drift 快照写入、读取和 RichEditorSession 恢复验证：Markdown v5 独立块对齐与可见行保持，Delta 来源属性仅留在内存，持久化仍写完整 Markdown。共享 fixture revision 2 已接入，负责人验收仍待完成。
+
 `ThreadComposeState.localSnapshotStatus` 区分 idle、saving、saved、failed；`ThreadRemoteDraft` 保存服务端主题、默认子贴和正文版本；`PendingCreateOperation` 区分 pending、sending、awaitingConfirmation。`RemoteThreadDraftsState` 独立管理完整主题草稿箱的加载、列表、删除目标和失败，列表摘要不直接承担编辑版本。数据库只存完整 Markdown 和表单元数据，不保存 Delta。
 
 `ContentDraftsState` 分离列表加载阶段、槽位用量、按槽位排序的领域草稿、当前写入/删除目标、动作反馈、版本冲突及自动保存开关/等待/保存中/已保存/失败状态；`ContentDraftConflict` 同时保留刚读取的云端最新版和未提交的本机正文。自动保存控制器以编辑器会话为 key，面板关闭后由对应页面继续观察，编辑器释放时自动取消防抖任务。五槽位草稿、主题远端草稿与本地快照的抽象端口都位于各自 `application` 层，API/Drift 适配器由 `main.dart` 组合根绑定；服务端 DTO 不直接承担面板状态。
@@ -39,6 +41,8 @@
 主题创作、动态草稿、完整主题草稿箱和五槽位正文草稿共同观察稳定的 `SessionScope(accountId, generation)`：Access Token 刷新只替换凭据，不重建这些状态；登录账号变化、明确退出或会话失效才推进代次并释放旧账号状态。
 
 ## 7. 鉴权、权限和隐私规则
+
+保存前按实际链接／图片节点复用中央 URL 策略；不支持的地址会保留当前正文并提示修改，不发布正文变更或发送写请求。代码和完整转义的字面示例保持可保存，既有站内坐标仍按原节点规则校验。此为块边界候选的追加回归，仍待负责人验收。
 
 两类服务端草稿都必须登录。本地快照按 JWT `sub` 分区，但服务端仍是身份和权限事实；主题草稿详情必须再次匹配当前 ownerId、目标 ID、未发布和未删除事实，未知可见范围 fail-closed。切号或会话失效会释放两类服务端草稿状态，不展示其他账号内容；普通 Token 刷新不得误判为身份变化。Token、预签名 URL、验证码和密码不得进入草稿。退出登录不静默删除尚未发布的账号快照；账号注销也不会由远端端点删除本机快照，但原账号不可恢复，因此注销前必须把这类草稿视为不可恢复内容并明确提示。
 
@@ -92,8 +96,11 @@ Markdown 规范化和可见性由编辑器与核心 Markdown 能力保持，数�
 
 ## 13. 最近审查的契约版本和后端提交
 
-本次契约同步审查：API `5.20.0-dev.20260909.1`，后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本轮从已合并的兼容后端同步精确来源，机器契约、封面语料与生成类型不变。以下保留本模块其他功能的既有审查记录。
+2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 
+2026-09-11 块边界候选契约：同步 Backend `a91cbb8b605223c596af299be22c5547f69e25b9` 的 `markdown-block-boundary-v1-fixtures.json`（v1 revision 2）。HTTP 与 Markdown v5 不变；共享样例已接入仓库，消费者实现及负责人验收仍在进行，见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
+
+2026-09-11 增量登记：契约 `5.20.0-dev.20260909.1`，后端及公网 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`。本次仅兼容新增列表封面媒体及预览变体生成模型，本模块行为与已列明的验收状态保持原样；下列记录保留历史审查范围。
 
 契约 `5.18.0-dev.20260905.1`；Markdown v5；后端 `3338028459561565c788d5236fb64db84a2ae538`；Foundation `v6.9.0`（`5888132`）。
 

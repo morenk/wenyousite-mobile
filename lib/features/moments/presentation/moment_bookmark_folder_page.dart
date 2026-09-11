@@ -10,6 +10,7 @@ import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/application/bookmark_folder_catalog_controller.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_manage_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/moments/application/moment_bookmark_repository_ports.dart';
@@ -206,6 +207,7 @@ class _MomentBookmarkFolderPageState
                 key: Key('moment-bookmark-card-${card.id}'),
                 moment: card,
                 managePending: state.pendingMomentId == card.id,
+                manageEnabled: !state.isBusy,
                 onTap: () => context.pushNamed(
                   'moment-detail',
                   pathParameters: {'momentId': card.id},
@@ -262,43 +264,18 @@ class _MomentBookmarkFolderPageState
     provider,
     String? folderName,
   ) async {
-    final action = await showModalBottomSheet<_BookmarkManageAction>(
+    if (ref.read(provider).isBusy) return;
+    final action = await showWenyouBookmarkManageSheet(
       context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const WenyouIcon(WenyouIconIds.contentFolderOpen),
-              title: Text(folderName ?? '当前收藏夹'),
-              subtitle: const Text('当前所在收藏夹'),
-            ),
-            ListTile(
-              key: Key('moment-bookmark-move-${card.id}'),
-              enabled: card.canInteract,
-              leading: const WenyouIcon(WenyouIconIds.actionMove),
-              title: const Text('移动到其他收藏夹'),
-              subtitle: card.canInteract ? null : const Text('这条动态暂时无法移动'),
-              onTap: card.canInteract
-                  ? () => Navigator.of(context).pop(_BookmarkManageAction.move)
-                  : null,
-            ),
-            ListTile(
-              key: Key('moment-bookmark-remove-${card.id}'),
-              leading: const WenyouIcon(WenyouIconIds.actionRemoveBookmark),
-              title: const Text('取消收藏'),
-              onTap: () =>
-                  Navigator.of(context).pop(_BookmarkManageAction.remove),
-            ),
-          ],
-        ),
-      ),
+      folderName: folderName ?? widget.initialFolderName,
+      canMove: card.canInteract,
+      moveUnavailableReason: '这条动态暂时无法移动',
+      moveKey: Key('moment-bookmark-move-${card.id}'),
+      removeKey: Key('moment-bookmark-remove-${card.id}'),
     );
     if (!mounted || action == null) return;
     final notifier = ref.read(provider.notifier);
-    if (action == _BookmarkManageAction.remove) {
+    if (action == BookmarkManageAction.remove) {
       final succeeded = await notifier.remove(card);
       if (!mounted) return;
       if (!succeeded) {
@@ -364,5 +341,3 @@ class _MomentBookmarkFolderPageState
     return (width - contentWidth) / 2;
   }
 }
-
-enum _BookmarkManageAction { move, remove }

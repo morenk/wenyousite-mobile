@@ -6,8 +6,13 @@
 
 正常应用入口`lib/main.dart`的Debug源码为`a0691d6f7a603a5a2cd9561e7a68678d29edc6ea`，tree `b8119a2a7b11ed8a0b17d31b510bdae937e2c652`。APK为`build/app/outputs/flutter-apk/app-debug.apk`，243,611,125 bytes，SHA-256 `A2D24DC7837ACB90964A5D37E2132B8F8651226992E493F64A05B0142F98A125`；`site.wenyou.app.debug`／温油站 Debug／`0.7.0-dev.1-debug`（94），最低API26，v2签名通过。根任务以ADB覆盖安装并核对设备`4b9c39b5`上的完整APK哈希一致，安装时间`2026-09-11 04:59:13`，未清数据。
 
-同一冻结应用源码唯一`npm run check`退出码0：Flutter 2541通过、1项既有Sentry外部回执跳过、0失败（测试23分17秒），Windows工具17/17；OpenAPI验证及确定性再生成、生产API精确SHA、全库／生成API分析、891文件格式、21模块文档、架构与API覆盖全部通过。生产核验为API `5.20.0-dev.20260909.1`／后端`0ee2c0de1d9c570e495e778be6661b074b7a4bef`。日志`%TEMP%/wenyou-cover-multiplay-full-gate.log`。本次后续提交只记录外部验收事实，不改变已构建和已验收应用源码，不重构建APK；最终PR HEAD与应用SHA分开记录于PR14。
+同一冻结应用源码唯一`npm run check`退出码0：Flutter 2541通过、1项既有Sentry外部回执跳过、0失败（测试23分17秒），Windows工具17/17；OpenAPI验证及确定性再生成、生产API精确SHA、全库／生成API分析、891文件格式、21模块文档、架构与API覆盖全部通过。生产核验为API `5.20.0-dev.20260909.1`／后端`0ee2c0de1d9c570e495e778be6661b074b7a4bef`。日志`%TEMP%/wenyou-cover-multiplay-full-gate.log`。该验收记录提交仅记录外部验收事实，不改变当时已构建应用；后续整合源码与已验收应用SHA分开记录于PR14。
 
+## 授权合并时的基线整合
+
+2026-09-11负责人授权合并及任务清理。PR14纳入已合并dev `f88f81c7d2e9898c4883e79f0a0efa71214f2c13`：保留动态贴列表静止／详情播放、表情网格、富文本块边界与收藏管理入口；主题封面仍按本记录多播规则。冲突按双方行为合并，模块与契约来源采用最新Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`；收藏页回归同时保留新管理交互／Golden与封面生命周期。
+
+原始Profile证据、已验收Debug／Profile APK及历史失败／通过日志已在删除Worktree前逐文件SHA-256归档到治理工作区`artifacts/cover-autoplay-merge-20260911/mobile`。整合后的完整检查与构建按PR14精确SHA另行记录，不沿用旧制品的全量结果，也不把旧真机验收扩展到整合APK；本次合并清理不覆盖安装用户手机、不正式发布。
 ## 本轮策略变更
 
 负责人明确改为：所有至少半可见封面立即加载播放，无并播数量上限、不等待停稳；已经激活的封面只在完全离屏后停止。滚动时持续可见项保持时间线；重新进入从头播放并复用有效缓存。保留路由／后台／隐藏页／省流量／减少动态效果边界、原帧时长及有限循环。

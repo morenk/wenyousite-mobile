@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:wenyousite_mobile/core/markdown/markdown_alignment.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_inline_boundary.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 import 'package:wenyousite_mobile/core/navigation/internal_reference.dart';
 
 class MarkdownRichLine {
@@ -85,17 +87,24 @@ class MarkdownRichLineDecoder {
     return source;
   }
 
-  static bool isReaderThematicBreak(String source) => RegExp(
-    r'^ {0,3}(?:(?:\*\s*){3,}|(?:_\s*){3,}|(?:-\s*){3,})$',
-  ).hasMatch(source);
+  static bool isReaderThematicBreak(String source) =>
+      MarkdownAlignmentContract.isThematicBreak(source);
 
   static MarkdownRichLine? decode(String source) {
     var inlineSource = source;
     final lineAttributes = <String, dynamic>{};
     // 空标题也是合法的块；先选 H2/H3、再输入文字时不能将标记读成正文。
     final heading = RegExp(r'^(#{2,3})(?:[\t ]+(.*))?$').firstMatch(source);
-    final quote = MarkdownContent.quoteLineContent(source);
-    final list = RegExp(r'^( {0,6})(- |1\. )(.+)$').firstMatch(source);
+    final quote = source.contains('\n')
+        ? RegExp(
+            r'^ {0,3}>[\t ]?(.*)$',
+            dotAll: true,
+          ).firstMatch(source)?.group(1)
+        : MarkdownContent.quoteLineContent(source);
+    final list = RegExp(
+      r'^( {0,6})(- |1\. )(.+)$',
+      dotAll: true,
+    ).firstMatch(source);
     if (heading != null) {
       lineAttributes['header'] = heading.group(1)!.length;
       inlineSource = heading.group(2) ?? '';
@@ -117,6 +126,7 @@ class MarkdownRichLineDecoder {
 
     final spans = <MarkdownRichSpan>[];
     final nodes = md.Document(
+      inlineSyntaxes: [MarkdownInlineCodeSource.syntax()],
       extensionSet: md.ExtensionSet.gitHubFlavored,
       encodeHtml: false,
     ).parseInline(inlineSource);
@@ -215,6 +225,9 @@ class MarkdownRichLineDecoder {
         attributes['strike'] = true;
       } else if (node.tag == 'code') {
         attributes['code'] = true;
+        if (node.attributes[MarkdownInlineCodeSource.key] case final source?) {
+          attributes[MarkdownInlineCodeSource.key] = source;
+        }
       } else if (node.tag == 'a') {
         // Delta links have no title field; accepting one would erase source
         // metadata during canonicalization (including escaped image syntax).

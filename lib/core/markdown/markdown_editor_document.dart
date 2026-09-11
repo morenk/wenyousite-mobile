@@ -268,7 +268,7 @@ class MarkdownEditorDocument {
           !literalLines.contains(index) &&
           !_isSetextHeading(lines, literalLines, index) &&
           _singleLineBlock(lines[index], 0) == null &&
-          !MarkdownAlignmentContract.isMarkerLine(lines[index])) {
+          !validAlignmentMarkers.contains(index)) {
         softLines.add(lines[index]);
         index += 1;
       }
@@ -345,7 +345,8 @@ class MarkdownEditorDocument {
     int blankLinesBefore, {
     WenyouTextAlignment alignment = WenyouTextAlignment.left,
   }) {
-    if (line == '---' || line == horizontalRuleMarker) {
+    if (MarkdownAlignmentContract.isThematicBreak(line) ||
+        line == horizontalRuleMarker) {
       return MarkdownHorizontalRuleBlock(blankLinesBefore: blankLinesBefore);
     }
     if (line == '<br />') {
