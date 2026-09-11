@@ -180,6 +180,9 @@ $contractFiles = @(
   @{ Source = $threadCategorySource; Destination = (Split-Path -Leaf $threadCategorySource) },
   @{ Source = 'contracts/thread-cover-media-v1-fixtures.json'; Destination = 'thread-cover-media-v1-fixtures.json' },
   @{ Source = 'contracts/media-display-v1-fixtures.json'; Destination = 'media-display-v1-fixtures.json' },
+  @{ Source = 'contracts/fixtures/media-display/duplicate-frames.gif'; Destination = 'fixtures/media-display/duplicate-frames.gif' },
+  @{ Source = 'contracts/fixtures/media-display/duplicate-frames.webp'; Destination = 'fixtures/media-display/duplicate-frames.webp' },
+  @{ Source = 'contracts/fixtures/media-display/manifest.json'; Destination = 'fixtures/media-display/manifest.json' },
   @{ Source = 'contracts/internal-reference-v1-fixtures.json'; Destination = 'internal-reference-v1-fixtures.json' },
   @{ Source = 'contracts/CHANGELOG.md'; Destination = 'CHANGELOG.md' },
   @{ Source = 'docs/mobile-client-guide.md'; Destination = 'mobile-client-guide.md' },
@@ -214,6 +217,7 @@ Get-ChildItem -LiteralPath $contractDirectory -File |
 foreach ($contractFile in $contractFiles) {
   $source = [string]$contractFile.Source
   $destination = Join-Path $contractDirectory ([string]$contractFile.Destination)
+  New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
   if ($source -eq 'contracts/markdown-editor-list-v1-fixtures.json') {
     Export-BackendBlob $source $destination $editorListRevision ([string]$editorListSource.sha256)
   } else {

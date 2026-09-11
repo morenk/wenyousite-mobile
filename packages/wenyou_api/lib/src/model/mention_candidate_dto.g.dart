@@ -81,6 +81,8 @@ class _$MentionCandidateDtoRelationEnumSerializer
 
 class _$MentionCandidateDto extends MentionCandidateDto {
   @override
+  final MediaDisplayResponseDto? avatarDisplay;
+  @override
   final String id;
   @override
   final String username;
@@ -94,6 +96,7 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   ]) => (MentionCandidateDtoBuilder()..update(updates))._build();
 
   _$MentionCandidateDto._({
+    this.avatarDisplay,
     required this.id,
     required this.username,
     this.avatar,
@@ -112,6 +115,7 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MentionCandidateDto &&
+        avatarDisplay == other.avatarDisplay &&
         id == other.id &&
         username == other.username &&
         avatar == other.avatar &&
@@ -121,6 +125,7 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, avatarDisplay.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, username.hashCode);
     _$hash = $jc(_$hash, avatar.hashCode);
@@ -132,6 +137,7 @@ class _$MentionCandidateDto extends MentionCandidateDto {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MentionCandidateDto')
+          ..add('avatarDisplay', avatarDisplay)
           ..add('id', id)
           ..add('username', username)
           ..add('avatar', avatar)
@@ -143,6 +149,12 @@ class _$MentionCandidateDto extends MentionCandidateDto {
 class MentionCandidateDtoBuilder
     implements Builder<MentionCandidateDto, MentionCandidateDtoBuilder> {
   _$MentionCandidateDto? _$v;
+
+  MediaDisplayResponseDtoBuilder? _avatarDisplay;
+  MediaDisplayResponseDtoBuilder get avatarDisplay =>
+      _$this._avatarDisplay ??= MediaDisplayResponseDtoBuilder();
+  set avatarDisplay(MediaDisplayResponseDtoBuilder? avatarDisplay) =>
+      _$this._avatarDisplay = avatarDisplay;
 
   String? _id;
   String? get id => _$this._id;
@@ -168,6 +180,7 @@ class MentionCandidateDtoBuilder
   MentionCandidateDtoBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _avatarDisplay = $v.avatarDisplay?.toBuilder();
       _id = $v.id;
       _username = $v.username;
       _avatar = $v.avatar;
@@ -191,26 +204,43 @@ class MentionCandidateDtoBuilder
   MentionCandidateDto build() => _build();
 
   _$MentionCandidateDto _build() {
-    final _$result =
-        _$v ??
-        _$MentionCandidateDto._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'MentionCandidateDto',
-            'id',
-          ),
-          username: BuiltValueNullFieldError.checkNotNull(
-            username,
-            r'MentionCandidateDto',
-            'username',
-          ),
-          avatar: avatar,
-          relation: BuiltValueNullFieldError.checkNotNull(
-            relation,
-            r'MentionCandidateDto',
-            'relation',
-          ),
+    _$MentionCandidateDto _$result;
+    try {
+      _$result =
+          _$v ??
+          _$MentionCandidateDto._(
+            avatarDisplay: _avatarDisplay?.build(),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'MentionCandidateDto',
+              'id',
+            ),
+            username: BuiltValueNullFieldError.checkNotNull(
+              username,
+              r'MentionCandidateDto',
+              'username',
+            ),
+            avatar: avatar,
+            relation: BuiltValueNullFieldError.checkNotNull(
+              relation,
+              r'MentionCandidateDto',
+              'relation',
+            ),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'avatarDisplay';
+        _avatarDisplay?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'MentionCandidateDto',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }
