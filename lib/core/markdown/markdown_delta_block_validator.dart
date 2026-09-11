@@ -1,14 +1,16 @@
 import 'package:flutter_quill/quill_delta.dart';
-import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_list_structure.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 
 class MarkdownDeltaBlockValidator {
   MarkdownDeltaBlockValidator._();
 
-  /// 空列表标记可能被阅读器当作标题下划线或正文；再编码自洽不足以证明安全。
-  static void validateEmptyListReading(Delta delta, String markdown) {
-    var listItems = 0;
-    var emptyItems = 0;
+  /// 整篇校验与阅读／写出共用本站空段、代码保护和列表边界规则。
+  /// 空项和非空项始终核对类型、父子关系与直属内容是否为空。
+  static void validateListReading(Delta delta, String markdown) {
+    final expected = <({bool ordered, int depth, int? parent, bool empty})>[];
+    final parents = <int, int>{};
     var hasContent = false;
     for (final operation in delta.operations) {
       final value = operation.data;
@@ -21,41 +23,43 @@ class MarkdownDeltaBlockValidator {
           hasContent = true;
           continue;
         }
-        if (operation.attributes?['list'] != null) {
-          listItems++;
-          if (!hasContent) emptyItems++;
+        if (operation.attributes?['list'] case final String type) {
+          final depth = operation.attributes?['indent'] as int? ?? 0;
+          final parent = depth == 0 ? null : parents[depth - 1];
+          if (depth > 0 && parent == null) {
+            throw const MarkdownCodecException('列表缺少上一级条目');
+          }
+          parents.removeWhere((level, _) => level >= depth);
+          parents[depth] = expected.length;
+          expected.add((
+            ordered: type == 'ordered',
+            depth: depth,
+            parent: parent,
+            empty: !hasContent,
+          ));
+        } else {
+          parents.clear();
         }
         hasContent = false;
       }
     }
-    if (emptyItems == 0) return;
-    var readItems = 0;
-    var readEmptyItems = 0;
-    void visit(Iterable<md.Node> nodes) {
-      for (final node in nodes.whereType<md.Element>()) {
-        if (node.tag == 'li') {
-          readItems++;
-          // 子列表的文字属于子项；父项可以为空而仍然拥有非空子项。
-          final ownContent = (node.children ?? const <md.Node>[])
-              .where(
-                (child) =>
-                    child is! md.Element ||
-                    (child.tag != 'ul' && child.tag != 'ol'),
-              )
-              .map((child) => child.textContent)
-              .join();
-          if (ownContent.isEmpty) readEmptyItems++;
-        }
-        visit(node.children ?? const []);
+    final actual = <({bool ordered, int depth, int? parent, bool empty})>[];
+    final source = MarkdownSourceProtection.prepareForReader(markdown);
+    for (final list in MarkdownListStructure.parse(source).values) {
+      final offset = actual.length;
+      for (final row in list.rows) {
+        actual.add((
+          ordered: row.ordered,
+          depth: row.depth,
+          parent: row.parent == null ? null : offset + row.parent!,
+          empty: row.content.isEmpty,
+        ));
       }
     }
-
-    visit(
-      md.Document(
-        extensionSet: md.ExtensionSet.gitHubFlavored,
-      ).parseLines(markdown.split('\n')),
-    );
-    if (readItems != listItems || readEmptyItems != emptyItems) {
+    if (actual.length != expected.length ||
+        Iterable.generate(
+          expected.length,
+        ).any((i) => actual[i] != expected[i])) {
       throw const MarkdownCodecException('列表层级无法安全保存，请调整列表缩进');
     }
   }

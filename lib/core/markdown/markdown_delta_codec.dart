@@ -275,7 +275,7 @@ class MarkdownDeltaCodec {
     if (!MarkdownDeltaSemantics.equivalent(delta, reopened)) {
       throw const MarkdownCodecException('正文无法安全保存，请撤销最近的格式操作');
     }
-    MarkdownDeltaBlockValidator.validateEmptyListReading(delta, encoded);
+    MarkdownDeltaBlockValidator.validateListReading(delta, encoded);
     return encoded;
   }
 
