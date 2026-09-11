@@ -1,5 +1,6 @@
 import 'package:markdown/markdown.dart' as md;
 import 'package:wenyousite_mobile/core/markdown/markdown_dice_contract.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_source_protection.dart';
 
 enum WenyouTextAlignment { left, center, right }
 
@@ -26,11 +27,13 @@ final class MarkdownAlignmentAnalysis {
     required this.lines,
     required this.blocks,
     required this.invalidMarkerLines,
+    required this.protection,
   });
 
   final List<String> lines;
   final List<MarkdownAlignmentBlock> blocks;
   final Set<int> invalidMarkerLines;
+  final MarkdownSourceProtection protection;
 
   Set<int> get validMarkerLines =>
       Set<int>.unmodifiable(blocks.map((block) => block.markerLine));
@@ -99,44 +102,39 @@ abstract final class MarkdownAlignmentContract {
     caseSensitive: false,
   );
   static final RegExp _openingFence = RegExp(r'^ {0,3}(`{3,}|~{3,})');
-  static final RegExp _closingFence = RegExp(r'^ {0,3}(`{3,}|~{3,})[\t ]*$');
   static const _stickerTitlePrefix = 'wenyousite-sticker:v1:';
   static final RegExp _stickerAssetId = RegExp(r'^c[a-z0-9]{20,}$');
 
   static MarkdownAlignmentAnalysis analyze(
     String markdown, {
     bool imageAlignment = false,
-  }) => analyzeLines(markdown.split('\n'), imageAlignment: imageAlignment);
+  }) => analyzeLines(
+    markdown.replaceAll(RegExp(r'\r\n?'), '\n').split('\n'),
+    imageAlignment: imageAlignment,
+  );
 
   static MarkdownAlignmentAnalysis analyzeLines(
     List<String> sourceLines, {
     bool imageAlignment = false,
   }) {
-    final lines = List<String>.unmodifiable(sourceLines);
+    final lines = List<String>.unmodifiable(
+      sourceLines.map(
+        (line) =>
+            line.endsWith('\r') ? line.substring(0, line.length - 1) : line,
+      ),
+    );
+    final protection = MarkdownSourceProtection.analyze(lines);
     final blocks = <MarkdownAlignmentBlock>[];
     final invalid = <int>{};
-    _AlignmentFence? fence;
 
     for (var index = 0; index < lines.length; index++) {
       final line = lines[index];
-      if (fence != null) {
-        final closing = _closingFence.firstMatch(line)?.group(1);
-        if (closing != null &&
-            closing[0] == fence.marker &&
-            closing.length >= fence.length) {
-          fence = null;
-        }
-        continue;
-      }
-      final opening = _openingFence.firstMatch(line)?.group(1);
-      if (opening != null) {
-        fence = _AlignmentFence(opening[0], opening.length);
-        continue;
-      }
+      if (protection.blockLines.contains(index)) continue;
       if (line.startsWith('    ') || line.startsWith('\t')) continue;
-      final marker = _storedMarker.firstMatch(line);
+      final masked = protection.maskedLines[index];
+      final marker = _storedMarker.firstMatch(masked);
       if (marker == null) {
-        if (isMarkerLine(line) || _hasUnescapedProtocol(line)) {
+        if (isMarkerLine(masked) || _hasUnescapedProtocol(masked)) {
           invalid.add(index);
         }
         continue;
@@ -145,7 +143,7 @@ abstract final class MarkdownAlignmentContract {
         invalid.add(index);
         continue;
       }
-      final target = _targetAt(lines, index + 1);
+      final target = _targetAt(lines, index + 1, protection);
       final hasContent =
           target?.hasContent == true ||
           (imageAlignment && target?.hasStickerProtocol == true);
@@ -173,10 +171,12 @@ abstract final class MarkdownAlignmentContract {
       lines: lines,
       blocks: List.unmodifiable(blocks),
       invalidMarkerLines: Set.unmodifiable(invalid),
+      protection: protection,
     );
   }
 
   static bool isMarkerLine(String line) => _reservedMarker.hasMatch(line);
+  static bool isThematicBreak(String line) => _thematicBreak.hasMatch(line);
 
   static String markerFor(WenyouTextAlignment alignment) => switch (alignment) {
     WenyouTextAlignment.left => '',
@@ -251,7 +251,11 @@ abstract final class MarkdownAlignmentContract {
     );
   }
 
-  static _AlignmentTarget? _targetAt(List<String> lines, int start) {
+  static _AlignmentTarget? _targetAt(
+    List<String> lines,
+    int start,
+    MarkdownSourceProtection protection,
+  ) {
     final first = lines[start];
     if (first.trim().isEmpty || isMarkerLine(first)) return null;
 
@@ -289,13 +293,17 @@ abstract final class MarkdownAlignmentContract {
     var end = start;
     while (end + 1 < lines.length &&
         lines[end + 1].trim().isNotEmpty &&
-        !isMarkerLine(lines[end + 1]) &&
-        !_startsNonParagraphBlock(lines[end + 1]) &&
+        !isMarkerLine(protection.maskedLines[end + 1]) &&
+        !_startsNonParagraphBlock(protection.maskedLines[end + 1]) &&
         !_isSetextHeading(lines[end], lines[end + 1])) {
       end += 1;
     }
     final paragraphLines = lines.sublist(start, end + 1);
-    if (paragraphLines.any(_hasUnsupportedParagraphSource)) return null;
+    if (protection.maskedLines
+        .sublist(start, end + 1)
+        .any(_hasUnsupportedParagraphSource)) {
+      return null;
+    }
     final node = _parseSingleBlock(paragraphLines);
     if (node is! md.Element || node.tag != 'p') return null;
     final isStandaloneRegularImage = _isStandaloneRegularImageNode(node);
@@ -315,7 +323,7 @@ abstract final class MarkdownAlignmentContract {
       _list.hasMatch(line) ||
       _thematicBreak.hasMatch(line) ||
       _emptyParagraph.hasMatch(line) ||
-      RegExp(r'^ {0,3}(`{3,}|~{3,})').hasMatch(line) ||
+      _openingFence.hasMatch(line) ||
       line.startsWith('    ') ||
       line.startsWith('\t');
 
@@ -507,11 +515,4 @@ final class _AlignmentTarget {
   final bool hasRegularImage;
   final bool hasStickerProtocol;
   final bool isStandaloneRegularImage;
-}
-
-final class _AlignmentFence {
-  const _AlignmentFence(this.marker, this.length);
-
-  final String marker;
-  final int length;
 }

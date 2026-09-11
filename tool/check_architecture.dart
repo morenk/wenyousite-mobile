@@ -2,6 +2,7 @@ import 'dart:io';
 import 'architecture/allowlist.dart';
 import 'architecture/dependency_checks.dart';
 import 'architecture/dependency_graph.dart';
+import 'architecture/editor_semantics_checks.dart';
 import 'architecture/presentation_checks.dart';
 import 'architecture/source_files.dart';
 
@@ -97,6 +98,7 @@ List<String> collectArchitectureFailures(Directory root) {
   _checkLegacyStateNotifierBudget(applicationFiles, failures, root);
   checkFeatureSpinnerBudget(applicationFiles, failures, root);
   checkEditorPublicSurface(applicationFiles, failures, root, graph);
+  checkEditorSemanticsBoundary(applicationFiles, failures, root, graph);
   checkFoundationIconBoundary(applicationFiles, failures, root);
   checkTypographyBoundary(applicationFiles, failures, root);
   checkSharedTabBoundary(applicationFiles, failures, root);

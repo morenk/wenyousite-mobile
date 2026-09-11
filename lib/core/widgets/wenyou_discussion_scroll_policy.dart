@@ -222,4 +222,7 @@ class DiscussionTargetRevealCoordinator {
     if (startsUserScroll) _releasedByUser = true;
     return false;
   }
+
+  /// 滑杆和首尾按钮发起的是程序滚动，也必须结束深链的自动对齐。
+  void releaseForUserNavigation() => _releasedByUser = true;
 }

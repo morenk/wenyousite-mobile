@@ -156,6 +156,7 @@ final class _SemanticLine {
   bool get requiresBlockSeparator =>
       literal ||
       block['empty'] == true ||
+      block['list'] != null ||
       (runs.operations.length == 1 &&
           runs.operations.single.data is Map &&
           ((runs.operations.single.data as Map).containsKey('wenyou_image') ||

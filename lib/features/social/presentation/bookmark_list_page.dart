@@ -8,6 +8,7 @@ import 'package:wenyousite_mobile/app/wenyou_text_styles.dart';
 import 'package:wenyousite_mobile/app/wenyou_theme_tokens.dart';
 import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_folder_picker.dart';
+import 'package:wenyousite_mobile/core/widgets/wenyou_bookmark_manage_sheet.dart';
 import 'package:wenyousite_mobile/core/widgets/wenyou_ui.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_controller.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
@@ -180,7 +181,7 @@ class _ReadyBookmarkList extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
           horizontal,
-          tokens.space16,
+          tokens.space8,
           horizontal,
           tokens.space32,
         ),
@@ -219,7 +220,6 @@ class _ReadyBookmarkList extends StatelessWidget {
               ),
             ),
           ],
-          SizedBox(height: tokens.space16),
           if (state.isRefreshingList && state.items.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(
@@ -375,85 +375,67 @@ class _BookmarkThreadListItem extends StatelessWidget {
     final tokens = context.wenyouTokens;
     final isMoving = pendingAction == BookmarkPendingAction.move;
     final isRemoving = pendingAction == BookmarkPendingAction.remove;
-    return Column(
+    final onManage = disableActions || isMoving || isRemoving
+        ? null
+        : () => _manage(context);
+    return ThreadFeedCard(
       key: ValueKey('bookmark-thread-${item.threadId}'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ThreadFeedCard(
-          thread: _threadModel(item),
-          category: category,
-          onTap: () => context.pushNamed(
-            'thread-detail',
-            pathParameters: {'threadId': item.threadId},
+      thread: _threadModel(item),
+      category: category,
+      onTap: () => context.pushNamed(
+        'thread-detail',
+        pathParameters: {'threadId': item.threadId},
+      ),
+      onTagTap: (tag) =>
+          context.pushNamed('tag-threads', pathParameters: {'tagId': tag.id}),
+      trailing: Semantics(
+        container: true,
+        label: isMoving
+            ? '正在移动收藏：${item.title}'
+            : isRemoving
+            ? '正在取消收藏：${item.title}'
+            : '管理收藏：${item.title}',
+        button: true,
+        enabled: !(disableActions || isMoving || isRemoving),
+        excludeSemantics: true,
+        onTap: onManage,
+        child: IconButton(
+          key: ValueKey('bookmark-manage-${item.bookmarkId}'),
+          tooltip: '管理收藏',
+          constraints: BoxConstraints.tightFor(
+            width: tokens.minimumTouchTarget,
+            height: tokens.minimumTouchTarget,
           ),
-          onTagTap: (tag) => context.pushNamed(
-            'tag-threads',
-            pathParameters: {'tagId': tag.id},
-          ),
+          onPressed: onManage,
+          icon: isMoving || isRemoving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const WenyouIcon(WenyouIconIds.actionMore, size: 18),
         ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            tokens.space16,
-            tokens.space4,
-            tokens.space8,
-            tokens.space8,
-          ),
-          child: Row(
-            children: [
-              if (canMove)
-                Flexible(
-                  child: Semantics(
-                    label: '移动“${item.title}”到收藏夹',
-                    button: true,
-                    enabled: !(disableActions || isMoving || isRemoving),
-                    excludeSemantics: true,
-                    child: OutlinedButton.icon(
-                      key: ValueKey('bookmark-move-${item.bookmarkId}'),
-                      onPressed: disableActions || isMoving || isRemoving
-                          ? null
-                          : onMove,
-                      icon: isMoving
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const WenyouIcon(
-                              WenyouIconIds.actionMove,
-                              size: 18,
-                            ),
-                      label: Text(
-                        folderName ?? '选择收藏夹',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ),
-              const Spacer(),
-              Semantics(
-                label: '取消收藏“${item.title}”',
-                button: true,
-                enabled: !(disableActions || isMoving || isRemoving),
-                excludeSemantics: true,
-                child: IconButton(
-                  key: ValueKey('bookmark-remove-${item.bookmarkId}'),
-                  tooltip: '取消收藏',
-                  onPressed: disableActions || isMoving || isRemoving
-                      ? null
-                      : onRemove,
-                  icon: isRemoving
-                      ? const SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const WenyouIcon(WenyouIconIds.actionRemoveBookmark),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
+  }
+
+  Future<void> _manage(BuildContext context) async {
+    final action = await showWenyouBookmarkManageSheet(
+      context: context,
+      folderName: folderName,
+      canMove: canMove,
+      moveUnavailableReason: '收藏夹加载失败，请刷新后重试',
+      moveKey: ValueKey('bookmark-move-${item.bookmarkId}'),
+      removeKey: ValueKey('bookmark-remove-${item.bookmarkId}'),
+    );
+    if (!context.mounted) return;
+    switch (action) {
+      case BookmarkManageAction.move:
+        onMove();
+      case BookmarkManageAction.remove:
+        onRemove();
+      case null:
+        break;
+    }
   }
 }
 
@@ -480,6 +462,7 @@ ThreadFeedCardModel _threadModel(BookmarkListItem item) {
     preview: item.preview,
     tags: item.tags,
     coverImageUrls: item.coverImageUrls,
+    coverMedia: item.coverMedia,
     memberCount: item.memberCount,
     playerCount: item.playerCount,
     postCount: item.postCount,

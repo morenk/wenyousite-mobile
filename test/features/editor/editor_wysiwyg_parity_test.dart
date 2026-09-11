@@ -68,6 +68,7 @@ void main() {
     expect(editorStyles.quote?.decoration, spec.quoteDecoration);
     expect(readingStyles.blockquoteDecoration, spec.quoteDecoration);
     expect(readingStyles.listBullet, spec.listMarker);
+    expect(editorStyles.leading?.style, readingStyles.listBullet);
     expect(
       readingStyles.horizontalRuleDecoration,
       spec.horizontalRuleDecoration,
@@ -84,7 +85,7 @@ void main() {
     }
     expect(
       MarkdownDeltaCodec.encode(controller.document.toDelta()),
-      _wysiwygMarkdown,
+      _wysiwygMarkdown.replaceFirst('2. [[dice:', '1. [[dice:'),
     );
     expect(tester.takeException(), isNull);
   });

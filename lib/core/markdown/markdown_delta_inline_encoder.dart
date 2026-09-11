@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_codec_types.dart';
 import 'package:wenyousite_mobile/core/markdown/markdown_content.dart';
+import 'package:wenyousite_mobile/core/markdown/markdown_inline_code_source.dart';
 
 /// Input provenance controls escaping inside a run, never its style boundary.
 final class MarkdownDeltaInlineEncoder {
@@ -12,6 +13,7 @@ final class MarkdownDeltaInlineEncoder {
   final StringBuffer output;
   final _pieces = <({String text, bool literal})>[];
   Map<String, dynamic> _marks = const {};
+  String? _codeSource;
 
   static Map<String, dynamic> visibleMarks(Map<String, dynamic>? attributes) =>
       {
@@ -22,8 +24,11 @@ final class MarkdownDeltaInlineEncoder {
 
   void add(String text, Map<String, dynamic>? attributes) {
     final marks = visibleMarks(attributes);
+    final source = attributes?[MarkdownInlineCodeSource.key] as String?;
     if (!mapEquals(marks, _marks)) flush();
     _marks = marks;
+    // Quill 插字会拆分来源属性；同样式代码仍必须只输出一对分隔符。
+    _codeSource = _pieces.isEmpty || source == _codeSource ? source : null;
     _pieces.add((text: text, literal: attributes?[literalTextKey] == true));
   }
 
@@ -35,7 +40,10 @@ final class MarkdownDeltaInlineEncoder {
       throw const MarkdownCodecException('行内代码不能与其他行内格式组合');
     }
     if (code) {
-      output.write(_inlineCode(value));
+      output.write(
+        MarkdownInlineCodeSource.preserved(value, _codeSource) ??
+            _inlineCode(value),
+      );
     } else {
       final core = value.trim();
       final leading = value.length - value.trimLeft().length;
@@ -76,6 +84,7 @@ final class MarkdownDeltaInlineEncoder {
     }
     _pieces.clear();
     _marks = const {};
+    _codeSource = null;
   }
 
   static String _inlineCode(String value) {
