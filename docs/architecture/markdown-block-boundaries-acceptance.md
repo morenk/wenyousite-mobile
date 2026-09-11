@@ -2,7 +2,7 @@
 
 ## 当前状态与范围
 
-2026-09-11：候选实现／最终门禁复核中／待负责人验收。任务分支 `codex/20260911-markdown-block-boundaries` 从 fetch 后的 `origin/dev`（`dbba204dd5d43252a400ff50a4db7348415d62f3`）建立，独立 Windows Worktree 为 `C:\Users\quhui\.codex\worktrees\202d\wenyousite-mobile`。已同步 Backend revision 2 并补充消费者实现与回归；原 revision 1 的 8 项空白行预期已在共享版本中修订，网络依赖阻塞已解除。不能视为原问题修复完成。
+2026-09-11：候选实现／本地验证与 Debug APK 已交付／待负责人验收。任务分支 `codex/20260911-markdown-block-boundaries` 从 fetch 后的 `origin/dev`（`dbba204dd5d43252a400ff50a4db7348415d62f3`）建立，独立 Windows Worktree 为 `C:\Users\quhui\.codex\worktrees\202d\wenyousite-mobile`。已同步 Backend revision 2 并补充消费者实现与回归；原 revision 1 的 8 项空白行预期已在共享版本中修订。完整门禁仅公网部署 revision 检查失败，详见最终验证；不能视为原问题修复完成。
 
 目标是统一已有 Markdown v5 对齐块边界并保护阅读、编辑、保存重开、草稿和剪贴板链路。不扩大格式或 URL 白名单，不迁移旧内容，不修改 HTTP 字段、字体、Foundation 视觉规范、摘要紧凑规则或段内粘贴继承目标段落对齐的行为。
 
@@ -52,7 +52,7 @@
 
 ## 最终补充回归与验证边界
 
-最终相关回归 `build/block-boundary-final-focused.log`：433 项全部通过。`test/fixtures/markdown-block-boundary-mobile-output.json` 固定 208 份 Codec 输出、14 份真实楼层页面 IME 提交和 3 份真实 Quill 输入后会话 flush 输出，共 225 份；不包含完整原楼层正文，等待 Backend 共用 validator 独立接受验证。21 个模块文档门禁通过。最终统一门禁与 APK 复核继续执行。
+追加保存阻断前的相关回归 `build/block-boundary-final-focused.log`：433 项全部通过。`test/fixtures/markdown-block-boundary-mobile-output.json` 固定 208 份 Codec 输出、14 份真实楼层页面 IME 提交和 3 份真实 Quill 输入后会话 flush 输出，共 225 份；不包含完整原楼层正文。Backend 独立接受验证与最终统一门禁结果见下文。
 
 - revision 2 的 208 项共享案例全部执行；结合精确边界、三类真实 Quill 容器输入与真实阅读共 404 项通过（`build/block-boundary-rev2-reader.log`）。
 - 完全显式引用与缩进列表跨行代码、引用／列表嵌套围栏及缩进代码共 5 项负例，核对 marker 不被误报或消费、完整字面文字、代码／容器属性及保存稳定；结合原有格式策略共 16 项通过（`build/block-boundary-explicit-containers.log`）。保留旧列表 0～2 级可编辑能力，第 3 级仍按既有边界拒绝。
@@ -76,10 +76,39 @@ Backend `169b336` 独立确认：仅转义链接括号但保留裸 `ftp://exampl
 
 已查看 Golden 的 master/test/maskedDiff：通用引用收集器使普通 lazy 正文进入旧引用布局。恢复既有阅读 QuoteLineSyntax，仅在源码保护中保留容器适配，并使用真实 code 范围的阅读投影；不更新旧 Golden。后续独立专项 `build/block-boundary-final-candidate-regression.log` 450 通过，仅上述部分转义预期失败；纠正后 `build/block-boundary-guard-golden-verified.log` 的 19 项（含真实 flush/不发写请求、旧 Golden 与安全正负例）全部通过。新增裸 FTP／HTTPS 数据点随最终稳定树全量覆盖。追加实现静态分析零问题（`build/block-boundary-guard-analyze.log`）。
 
-以下最终统一门禁会在追加提交后固定源码串行执行，前述运行中修改日志均作为过程证据保留。
+最终统一门禁在追加提交后固定源码串行执行，前述运行中修改日志均作为过程证据保留。
+
+## 最终冻结候选验证与安装包
+
+2026-09-11 06:42～06:55（Asia/Shanghai），在干净代码提交 `05996c08bf4e8a4ea5ee34db12636523ebaf0336` 上串行执行 `npm run check -- -ContinueAfterFailure -BuildDebugApk`。完整日志为 `build/block-boundary-verified-check.log`；结束后确认源码、测试、Android 配置、依赖锁文件及生成客户端均无修改。后续提交仅补充本验证记录。
+
+| 检查 | 最终结果 |
+| --- | --- |
+| OpenAPI 校验与客户端再生成一致性 | 通过，生成文件零差异 |
+| Dart 格式、应用及生成客户端静态分析 | 通过，零分析问题 |
+| 架构与模块文档 | 通过，21 个模块完整；未提高文件行数基线 |
+| Mobile API 覆盖 | 154/154，0 遗漏；既有范围外 62 项 |
+| 全量 Flutter 测试 | 2922 通过、1 跳过、0 失败，含原 Golden 与实际保存阻断回归 |
+| Windows 发布工具测试 | 17/17 通过 |
+| Debug APK | 构建成功，Gradle 38.3 秒 |
+| 公网契约与兼容性检查 | 失败：本地来源 `a91cbb8`，公网 build 仍为 `0ee2c0d`；HTTP 同为 `5.20.0-dev.20260909.1`，公网 Markdown v5 位于现有支持范围 |
+
+统一入口最终返回非零，仅上述公网 revision 一项失败；未跳过、放宽或修改校验器，也未部署后端。唯一跳过测试为既有 `diagnostic_live_receipt_test.dart` 的 Sentry 显式联网接收验收，默认未设置 `WENYOU_VALIDATE_SENTRY`；与本候选块边界回归无关。
+
+治理任务在 VPS 只读 Mobile 镜像通过 `git fetch` 与 `git show 05996c08` 取得语料，由 Backend clean `169b336` 调用实际 `findUnsupportedMarkdownFormats` 独立审计：225 份中 224 接受，唯一 `unsafe-target` 按预期拒绝（`unsafe-link`，`startLine = endLine = 3`），预期偏差为 0；14 份真实页面保存及 3 份代码编辑保存全部接受。语料 Git blob SHA-256 为 `847e4e79675c20fbc26fabd91e4e1ec4977c96eccc51e7bc542bf1a3342a9c4f`。Windows CRLF 文件与 Git LF 文件规范化后逐字节相等；最终全量测试重新产出的 208/14/3 份 Markdown 及接受标记与已审计语料逐项一致。Backend validator 提交不改变 Mobile 的 fixture 来源锁定。
+
+候选 APK 与上述源码提交对应，未安装、上传或正式发布：
+
+- 路径：`C:\Users\quhui\.codex\worktrees\202d\wenyousite-mobile\build\app\outputs\flutter-apk\app-debug.apk`。
+- 应用：温油站 Debug；`applicationId = site.wenyou.app.debug`。
+- 包内 `versionName = 0.7.0-dev.1-debug`、`versionCode = 94`；项目版本 `0.7.0-dev.1+94`。
+- SHA-256：`766bb4ccd56082aa31bce67ded9d5b207ea5d4552ae780dd2a138b170a346f74`；大小 203,791,230 字节。
+- `aapt dump badging` 核对最低 API 26、target API 36，Debug ABI 为 `arm64-v8a`、`armeabi-v7a`、`x86_64`。
+- 评审入口：[候选 PR #26](https://github.com/morenk/wenyousite-mobile/pull/26)，目标 `dev`，保留 Draft；未合并。
+
 ## 后续验收条件
 
-Backend revision 2 已由独立 chore `3a3d94b` 同步；最终运行消费者序列化接受验证并更新统一门禁结果。真机必须使用本候选 Debug APK，应用包名为 `site.wenyou.app.debug`，不能凭相同构建号认为其他包名已更新。
+Backend revision 2 已由独立 chore `3a3d94b` 同步；自动验证已按上节记录。真机必须使用本候选 Debug APK，应用包名为 `site.wenyou.app.debug`，不能凭相同构建号认为其他包名已更新。若后续授权 ADB 安装，须核对实际复验包名、安装后更新时间及设备内 APK SHA-256。
 
 负责人使用专用测试账号按顺序复验：
 
