@@ -171,6 +171,8 @@ Delta 仅存在页面内存，后端、服务端主题草稿和 Drift 都保存 
 
 ## 13. 最近审查的契约版本和后端提交
 
+2026-09-11 契约审查：同步 Backend `b785336c5b31cb228f3021650b9de1c39ade02e5`、`5.20.1-dev.20260911.1`，收藏夹数量明确为当前用户可见总数。仅契约说明、生成字段文档与版本变化；本模块既有行为及单独验收状态保持。此时公网仍为 `8bf370f`／5.20.0，部署核验单独记录。
+
 2026-09-11 合并来源同步：Backend `8bf370f6ef5357535683aa6d3f8c03bd2d08d108`，包含发布权限修复；通过既有脚本重新导出后仅来源元数据变化，OpenAPI、块边界 v1 revision 2 及其他共享契约字节不变。模块行为与候选验收状态保持，前次部署回滚、公网核验及安装包溯源见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
 
 2026-09-11 块边界候选契约：同步 Backend `a91cbb8b605223c596af299be22c5547f69e25b9` 的 `markdown-block-boundary-v1-fixtures.json`（v1 revision 2）。HTTP 与 Markdown v5 不变；共享样例已接入仓库，消费者实现及负责人验收仍在进行，见[块边界验收](../architecture/markdown-block-boundaries-acceptance.md)。
