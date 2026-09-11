@@ -6,6 +6,7 @@ import 'package:wenyousite_mobile/core/network/api_failure.dart';
 import 'package:wenyousite_mobile/core/network/network_providers.dart';
 import 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart';
 import 'package:wenyousite_mobile/features/social/domain/bookmark_list_models.dart';
+import 'package:wenyousite_mobile/features/thread_feed/thread_feed_mapping.dart';
 import 'package:wenyousite_mobile/features/thread_feed/thread_feed_models.dart';
 
 export 'package:wenyousite_mobile/features/social/application/bookmark_list_repository_ports.dart'
@@ -163,6 +164,7 @@ class ApiBookmarkListRepository implements BookmarkListRepository {
           .whereType<String>()
           .take(1)
           .toList(growable: false),
+      coverMedia: mapThreadFeedCoverMedia(dto.coverMedia, dto.coverImages),
       memberCount: dto.count.members.toInt(),
       playerCount: dto.count.players.toInt(),
       postCount: dto.count.posts.toInt(),

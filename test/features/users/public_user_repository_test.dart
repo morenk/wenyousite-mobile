@@ -4,6 +4,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:wenyou_api/wenyou_api.dart';
 import 'package:wenyousite_mobile/features/users/data/public_user_repository.dart';
 
+import '../../support/thread_cover_fixtures.dart';
+
 void main() {
   test('公开用户资料传递用户 ID 并完整映射统计与关系状态', () async {
     final api = _MockUsersApi();
@@ -86,8 +88,22 @@ void main() {
       cursor: 'cursor-1',
       limit: 7,
     );
+    expect(
+      created.items.single.coverMedia?.animationUrl,
+      'https://cdn.example.com/cover.jpg',
+    );
     final played = await repository.fetchPlayedThreads('user-1');
     final bookmarks = await repository.fetchBookmarks('user-1');
+    expect(created.items.single.coverMedia?.previewVariants.single.width, 480);
+    expect(played.items.single.coverMedia?.previewVariants.single.width, 480);
+    expect(
+      bookmarks.items.single.coverMedia?.previewVariants.single.width,
+      480,
+    );
+    expect(
+      bookmarks.items.single.coverMedia?.animationUrl,
+      'https://cdn.example.com/bookmark-cover.jpg',
+    );
     final replies = await repository.fetchRecentReplies('user-1');
 
     expect(created.cursor, 'cursor-2');
@@ -195,9 +211,12 @@ Response<UsersGetUserBookmarks200Response> _bookmarksResponse() {
                 ),
               )
               ..preview = '  收藏主题摘要  '
-              ..coverImages.addAll([
-                'file:///invalid.jpg',
+              ..coverMedia = animatedThreadCoverFixture(
                 'https://cdn.example.com/bookmark-cover.jpg',
+              ).toBuilder()
+              ..coverImages.addAll([
+                'https://cdn.example.com/bookmark-cover.jpg',
+                'file:///invalid.jpg',
               ])
               ..owner.update(
                 (owner) => owner
@@ -283,6 +302,7 @@ ThreadListItemResponseDto _thread({
         ),
       )
       ..preview = '  向星海出发  '
+      ..coverMedia = animatedThreadCoverFixture().toBuilder()
       ..coverImages.add('https://cdn.example.com/cover.jpg')
       ..owner.update(
         (owner) => owner
