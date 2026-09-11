@@ -127,7 +127,7 @@ media/application 提供相册与上传端口、唯一任务状态、取消、�
 
 ## 13. 最近审查的契约版本和后端提交
 
-契约 `5.20.0-dev.20260909.1`；Markdown v5（动态正文不消费）；后端 `0ee2c0de1d9c570e495e778be6661b074b7a4bef`；Foundation `v6.9.0`（`5888132`）。
+契约 `5.20.1-dev.20260911.1`；Markdown v5（动态正文不消费）；后端 `b785336c5b31cb228f3021650b9de1c39ade02e5`；Foundation `v6.9.0`（`5888132`）。
 
 本轮来源为已合并的 newline v1 revision 2 契约；HTTP 与其他契约不变，公网后端仍运行旧 revision。公网仍为 `e8d0fd6cb193ab5e9a1c2c51c03382ef300adc0c`，移动端对齐适配与跨端验收另行推进。
 
